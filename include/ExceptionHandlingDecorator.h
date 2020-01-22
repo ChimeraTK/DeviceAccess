@@ -18,9 +18,14 @@ namespace ChimeraTK {
   template<typename UserType>
   class ExceptionHandlingDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
-    ExceptionHandlingDecorator(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod) {}
+    /**
+     * Decorate the accessors which is handed in the constuctor. It needs the device module to implement
+     * the exception handling. Accessors which write to the device in addition need a recovery accessor
+     * so the variables can be written again after a device has recovered from an error. Accessors
+     * which only read don't specify the third parameter.
+     */
+    ExceptionHandlingDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
+        DeviceModule& devMod, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor = {nullptr});
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
@@ -34,17 +39,21 @@ namespace ChimeraTK {
 
     TransferFuture doReadTransferAsync() override;
 
+    void doPreWrite() override;
+
     DataValidity dataValidity() const override;
 
     void interrupt() override;
 
     void setOwner(EntityOwner* owner);
-    
+
    protected:
+    using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
     DeviceModule& deviceModule;
     DataValidity localValidity{DataValidity::ok};
     bool genericTransfer(std::function<bool(void)> callable, bool updateOwnerValidityFlag = true);
     void setOwnerValidity(DataValidity newValidity);
+    boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
     EntityOwner* _owner = {nullptr};
   };
 

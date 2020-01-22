@@ -163,6 +163,9 @@ void Application::run() {
     deviceModule->prepare();
   }
 
+  // Switch life-cycle state to run
+  lifeCycleState = LifeCycleState::run;
+
   // start the necessary threads for the FanOuts etc.
   for(auto& internalModule : internalModuleList) {
     internalModule->activate();
@@ -199,6 +202,9 @@ void Application::run() {
 /*********************************************************************************************************************/
 
 void Application::shutdown() {
+  // switch life-cycle state
+  lifeCycleState = LifeCycleState::shutdown;
+
   // first allow to run the application threads again, if we are in testable
   // mode
   if(testableMode && testableModeTestLock()) {
@@ -358,7 +364,14 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   assert(devmod != nullptr);
 
   // decorate the accessor with a ExceptionHandlingDecorator and return it
-  return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod);
+  if(direction.dir == VariableDirection::feeding){
+    // writable registers additionally get a recoveryAccessor
+    auto recoveryAccessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
+    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, recoveryAccessor);
+  }
+  else{
+    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod);
+  }
 }
 
 /*********************************************************************************************************************/

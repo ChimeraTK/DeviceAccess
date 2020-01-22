@@ -35,18 +35,28 @@ namespace ChimeraTK {
 
   /** Hierarchy modifier: specify if and how the module hierarchy should be modified in EntityOwner::findTag() etc. */
   enum class HierarchyModifier {
-    none,       ///< No modification is performed
-    hideThis,   ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
-                ///< exactly one level up. The structure below this level is kept.
+    none,     ///< No modification is performed
+    hideThis, ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
+    ///< exactly one level up. The structure below this level is kept.
     moveToRoot, ///< The module at which this flag is specified is moved to the root level, together with the entire
-                ///< structure below the module. Note: Unless you run findTag() or so on the entire application, the
-                ///< moved hierarchy structures might not be visible in the control system etc.
+    ///< structure below the module. Note: Unless you run findTag() or so on the entire application, the
+    ///< moved hierarchy structures might not be visible in the control system etc.
     oneLevelUp, ///< Move the module up to the level where the owner lives. Instead of creating a "daughter"
-                ///< of the owning module, it creates a "sister" (module that lives on the same level).
-                ///< This modifyer can only be used in sub-modules, not on the first level
-    oneUpAndHide///< Move the structure inside the module up to the level where the owner lives. Instead of adding a hierrarchy
+    ///< of the owning module, it creates a "sister" (module that lives on the same level).
+    ///< This modifyer can only be used in sub-modules, not on the first level
+    oneUpAndHide ///< Move the structure inside the module up to the level where the owner lives. Instead of adding a hierrarchy
     ///< level, one level is removed. This modifyer can only be used in sub-modules, not on the first level
     ///< inside an application.
+  };
+
+  /** Enum to define the life-cycle states of an Application. */
+  enum class LifeCycleState {
+    initialisation, ///< Initialisation phase including ApplicationModule::prepare(). Single threaded operation. All
+    ///< devices are closed.
+    run, ///< Actual run phase with full multi threading. The state is entered right before the threads are launched, so
+    ///< there is no guarantee that the application threads have already reached a certain point. Devices will be opened
+    ///< after this point.
+    shutdown ///< The application is in the process of shutting down.
   };
 
 } /* namespace ChimeraTK */

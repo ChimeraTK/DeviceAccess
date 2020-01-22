@@ -56,8 +56,11 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   std::cout << "testBasicInitialisation" << std::endl;
   TestApplication app;
-
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG2 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+  app.cs("REG2", typeid(int32_t), 1) >> app.dev("REG2");
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
@@ -81,7 +84,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   dummyBackend->throwExceptionWrite = true;
 
   // FIXME: Due to a bug it is /REG2/REG2 instead of just /REG2. This will fails once the bug has been solved.
-  auto reg2_cs = test.getScalar<int32_t>("/REG2/REG2");
+  auto reg2_cs = test.getScalar<int32_t>("/REG2");
   reg2_cs = 19;
   reg2_cs.write();
   test.stepApplication();
@@ -113,7 +116,11 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG4 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+  app.cs("REG4", typeid(int32_t), 1) >> app.dev("REG4");
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
@@ -149,7 +156,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+  auto reg4_cs = test.getScalar<int32_t>("/REG4");
   reg4_cs = 19;
   reg4_cs.write();
   test.stepApplication();
@@ -178,7 +185,12 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG4 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+
+  app.cs("REG4", typeid(int32_t), 1) >> app.dev("REG4");
   ctk::TestFacility test(false); // test facility without testable mode
 
   // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue, but has not finished error handling yet.
@@ -189,7 +201,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 30000);
   CHECK_EQUAL_TIMEOUT(
-      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 3000);
+      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 10000);
 
   // Check that the execution of init handlers was stopped after the exception:
   // initialiseReg2 and initialiseReg3 were not executed. As we already checked with timeout that the
@@ -213,8 +225,8 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   // wait until the device is reported to be OK again (chech with timeout),
   // then check the initialisation (again, no extra timeout needed because of the logic:
   // success is only reported after successful init).
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 3000);
-  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 3000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 10000);
 
   // initialisation should be correct now
   reg1.readLatest();
@@ -240,24 +252,24 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+  auto reg4_cs = test.getScalar<int32_t>("/REG4");
   reg4_cs = 20;
   reg4_cs.write();
 
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 3000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 10000);
   // First we see the message from the failing write
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"),
-      "DummyException: write throws by request", 3000);
+      "DummyException: write throws by request", 10000);
   dummyBackend->throwExceptionWrite = false;
   // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write exception because write does not throw any more)
   CHECK_EQUAL_TIMEOUT(
-      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 3000);
+      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 10000);
 
   // Now fix the initialisation error and check that the device comes up.
   throwInInitialisation = false;
   // Wait until the device is OK again
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 3000);
-  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 3000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 10000);
   // Finally check that the 20 arrives on the device
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 10000);
 }

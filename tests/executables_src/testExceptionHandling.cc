@@ -161,8 +161,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   trigger.write();
   BOOST_CHECK(!message1.readLatest());
   BOOST_CHECK(!status1.readLatest());
-  CHECK_TIMEOUT(readback1.readLatest(), 1000);
-  CHECK_TIMEOUT(readback2.readLatest(), 1000);
+  CHECK_TIMEOUT(readback1.readLatest(), 10000);
+  CHECK_TIMEOUT(readback2.readLatest(), 10000);
   BOOST_CHECK(static_cast<std::string>(message1) == "");
   BOOST_CHECK(status1 == 0);
   BOOST_CHECK_EQUAL(readback1, 42);
@@ -175,8 +175,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     readbackDummy2 = 20 + i;
     dummyBackend1->throwExceptionRead = true;
     trigger.write();
-    CHECK_TIMEOUT(message1.readLatest(), 1000);
-    CHECK_TIMEOUT(status1.readLatest(), 1000);
+    CHECK_TIMEOUT(message1.readLatest(), 10000);
+    CHECK_TIMEOUT(status1.readLatest(), 10000);
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
     BOOST_CHECK(readback1.readNonBlocking());                                 // we have been signalized new data
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     // the second device must still be functional
     BOOST_CHECK(!message2.readNonBlocking());
     BOOST_CHECK(!status2.readNonBlocking());
-    CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
+    CHECK_TIMEOUT(readback2.readNonBlocking(), 10000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 20 + i);
 
     // even with device 1 failing the second one must process the data, so send a new trigger
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     trigger.write();
     BOOST_CHECK(!readback1.readNonBlocking());                                // we should not have gotten any new data
     BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::faulty); // But the fault flag should still be set
-    CHECK_TIMEOUT(readback2.readNonBlocking(), 1000);                         // device 2 still works
+    CHECK_TIMEOUT(readback2.readNonBlocking(), 10000);                        // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 120 + i);
 
     // Now "cure" the device problem
@@ -201,24 +201,24 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     readbackDummy2 = 40 + i;
     dummyBackend1->throwExceptionRead = false;
     trigger.write();
-    CHECK_TIMEOUT(message1.readLatest(), 1000);
-    CHECK_TIMEOUT(status1.readLatest(), 1000);
-    CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
+    CHECK_TIMEOUT(message1.readLatest(), 10000);
+    CHECK_TIMEOUT(status1.readLatest(), 10000);
+    CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
     BOOST_CHECK_EQUAL(readback1, 30 + i);
     BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::ok); // The fault flag should have been cleared
     // there are two more copies in the queue, since the two triggers received during the error state is still
     // processed after recovery
-    CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
+    CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);
     BOOST_CHECK_EQUAL(readback1, 30 + i);
-    CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
+    CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);
     BOOST_CHECK_EQUAL(readback1, 30 + i);
     BOOST_CHECK(!readback1.readNonBlocking()); // now the queue should be empty
     // device2
     BOOST_CHECK(!message2.readNonBlocking());
     BOOST_CHECK(!status2.readNonBlocking());
-    CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
+    CHECK_TIMEOUT(readback2.readNonBlocking(), 10000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 40 + i);
   }
 }
@@ -266,8 +266,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
   actuator2.write();
   BOOST_CHECK(!message1.readLatest());
   BOOST_CHECK(!status1.readLatest());
-  CHECK_TIMEOUT(actuatorDummy1 == 29, 1000);
-  CHECK_TIMEOUT(actuatorDummy2 == 39, 1000);
+  CHECK_TIMEOUT(actuatorDummy1 == 29, 10000);
+  CHECK_TIMEOUT(actuatorDummy2 == 39, 10000);
   BOOST_CHECK(static_cast<std::string>(message1) == "");
   BOOST_CHECK(status1 == 0);
 
@@ -279,8 +279,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     actuator1.write();
     actuator2 = 40 + i;
     actuator2.write();
-    CHECK_TIMEOUT(message1.readLatest(), 1000);
-    CHECK_TIMEOUT(status1.readLatest(), 1000);
+    CHECK_TIMEOUT(message1.readLatest(), 10000);
+    CHECK_TIMEOUT(status1.readLatest(), 10000);
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
     usleep(10000);                                  // 10ms wait time so potential wrong values could have propagated
@@ -288,18 +288,18 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     // the second device must still be functional
     BOOST_CHECK(!message2.readNonBlocking());
     BOOST_CHECK(!status2.readNonBlocking());
-    CHECK_TIMEOUT(actuatorDummy2 == int(40 + i), 1000); // device 2 still works
+    CHECK_TIMEOUT(actuatorDummy2 == int(40 + i), 10000); // device 2 still works
 
     // even with device 1 failing the second one must process the data, so send a new data before fixing dev1
     actuator2 = 120 + i;
     actuator2.write();
-    CHECK_TIMEOUT(actuatorDummy2 == int(120 + i), 1000); // device 2 still works
+    CHECK_TIMEOUT(actuatorDummy2 == int(120 + i), 10000); // device 2 still works
 
     // Now "cure" the device problem
     dummyBackend1->throwExceptionWrite = false;
-    CHECK_TIMEOUT(message1.readLatest(), 1000);
-    CHECK_TIMEOUT(status1.readLatest(), 1000);
-    CHECK_TIMEOUT(actuatorDummy1 == int(30 + i), 1000); // write is now complete
+    CHECK_TIMEOUT(message1.readLatest(), 10000);
+    CHECK_TIMEOUT(status1.readLatest(), 10000);
+    CHECK_TIMEOUT(actuatorDummy1 == int(30 + i), 10000); // write is now complete
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
   }
@@ -345,37 +345,36 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   readbackDummy2 = 110;
   trigger.write();
   //device 1 is in Error state
-  CHECK_TIMEOUT(message1.readLatest(), 1000);
-  CHECK_TIMEOUT(status1.readLatest(), 1000);
+  CHECK_TIMEOUT(message1.readLatest(), 10000);
+  CHECK_TIMEOUT(status1.readLatest(), 10000);
   BOOST_CHECK_EQUAL(status1, 1);
   CHECK_TIMEOUT(readback1.readNonBlocking(), 1000); // read the error flag
   BOOST_CHECK(readback1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(!readback1.readNonBlocking());
-  while(true) {
-    // Device 2 might/will also come up in error state until the device is opened (which happends asynchronously in a
-    // separate thread).
-    readback2.readNonBlocking();
-    if(readback2.dataValidity() == ctk::DataValidity::ok) break;
-  }
+
+  // Device 2 might/will also come up in error state until the device is opened (which happends asynchronously in a
+  // separate thread).
+  /// So we have to read until we get a DataValidity::ok
+  CHECK_TIMEOUT((readback2.readNonBlocking(), readback2.dataValidity() == ctk::DataValidity::ok), 10000);
   BOOST_CHECK_EQUAL(readback2, 110);
 
   // even with device 1 failing the second one must process the data, so send a new trigger
   // before fixing dev1
   readbackDummy2 = 120;
   trigger.write();
-  CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
+  CHECK_TIMEOUT(readback2.readNonBlocking(), 10000); // device 2 still works
   BOOST_CHECK_EQUAL(readback2, 120);
   //Device is not in error state.
-  CHECK_TIMEOUT(!message2.readLatest(), 1000);
-  CHECK_TIMEOUT(!status2.readLatest(), 1000);
+  CHECK_TIMEOUT(!message2.readLatest(), 10000);
+  CHECK_TIMEOUT(!status2.readLatest(), 10000);
 
   //fix device 1
   dummyBackend1->throwExceptionOpen = false;
   //device 1 is fixed
-  CHECK_TIMEOUT(message1.readLatest(), 1000);
-  CHECK_TIMEOUT(status1.readLatest(), 1000);
+  CHECK_TIMEOUT(message1.readLatest(), 10000);
+  CHECK_TIMEOUT(status1.readLatest(), 10000);
   BOOST_CHECK_EQUAL(status1, 0);
-  CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
+  CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);
   BOOST_CHECK_EQUAL(readback1, 100);
 }
 
@@ -394,7 +393,7 @@ BOOST_AUTO_TEST_CASE(testConstants) {
   dev.open(ExceptionDummyCDD1);
 
   // after opening a device the runApplication() might return, but the initialisation might not have happened in the other thread yet. So check with timeout.
-  CHECK_TIMEOUT(dev.read<int32_t>("/MyModule/actuator") == 18, 3000);
+  CHECK_TIMEOUT(dev.read<int32_t>("/MyModule/actuator") == 18, 10000);
 
   // So far this is also tested by testDeviceAccessors. Now cause errors.
   // Take back the value of the constant which was written to the device before making the device fail for further writes.
@@ -421,7 +420,7 @@ BOOST_AUTO_TEST_CASE(testConstants) {
   pleaseWriteToMe.write();
   test.stepApplication();
 
-  CHECK_TIMEOUT(dev.read<int32_t>("/MyModule/actuator") == 18, 3000);
+  CHECK_TIMEOUT(dev.read<int32_t>("/MyModule/actuator") == 18, 10000);
 }
 
 /// @todo FIXME: Write test that errors during constant writing are handled correctly, incl. correct error messages to the control system
@@ -439,9 +438,12 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   //app.dumpConnections();
 
   //Wait for the devices to come up.
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "status"), 0, 3000);
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "status"), 0, 3000);
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "status"), 0, 3000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "status"), 0, 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "status"), 0, 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "status"), 0, 10000);
 
   // make all devices fail, and wait until they report the error state, one after another
   auto dummyBackend2 =
@@ -454,15 +456,16 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   trigger2.write(); // triggers the read of readBack
 
   // wait for the error to be reported in the control system
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "status"), 1, 3000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "status"), 1, 10000);
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "message"),
-      "DummyException: read throws by request", 3000);
+      "DummyException: read throws by request", 10000);
 
   auto theInt = test.getScalar<int32_t>("/Device2/Integers/signed32");
   theInt.write();
   // the read is the first error we see. The second one is not reported any more for this device.
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "message"),
-      "DummyException: read throws by request", 3000);
+      "DummyException: read throws by request", 10000);
 
   // device 2 successfully broken!
 
@@ -476,9 +479,10 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   triggerActuator.write();
 
   // wait for the error to be reported in the control system
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "status"), 1, 3000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "status"), 1, 10000);
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "message"),
-      "DummyException: write throws by request", 3000);
+      "DummyException: write throws by request", 10000);
 
   auto triggerReadback = test.getScalar<int32_t>("/triggerReadback");
   triggerReadback.write();
@@ -493,9 +497,10 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   auto triggerRealistic = test.getScalar<int32_t>("/triggerRealistic");
   triggerRealistic.write();
 
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "status"), 1, 3000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "status"), 1, 10000);
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "message"),
-      "DummyException: read throws by request", 3000);
+      "DummyException: read throws by request", 10000);
 
   auto reg4 = test.getScalar<int32_t>("/Device3/MODULE/REG4");
   reg4.write();
