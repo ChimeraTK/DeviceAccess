@@ -197,6 +197,8 @@ namespace ChimeraTK {
     void registerDeviceModule(DeviceModule* deviceModule);
     void unregisterDeviceModule(DeviceModule* deviceModule);
 
+    LifeCycleState getLifeCycleState() const { return lifeCycleState; }
+
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -392,6 +394,9 @@ namespace ChimeraTK {
     /** Counter for how many write() operations have overwritten unread data */
     std::atomic<size_t> dataLossCounter{0};
 
+    /** Life-cycle state of the application */
+    std::atomic<LifeCycleState> lifeCycleState{LifeCycleState::initialisation};
+
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
@@ -404,11 +409,11 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("getDataValidity() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-    void incrementDataFaultCounter() override {
+    void incrementDataFaultCounter(bool) override {
       throw ChimeraTK::logic_error("incrementDataFaultCounter() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-    void decrementDataFaultCounter() override {
+    void decrementDataFaultCounter(bool) override {
       throw ChimeraTK::logic_error("decrementDataFaultCounter() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }

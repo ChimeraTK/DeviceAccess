@@ -142,18 +142,18 @@ namespace ChimeraTK {
     mutable Device device;
 
     DataValidity getDataValidity() const override { return DataValidity::ok; }
-    void incrementDataFaultCounter() override {
+    void incrementDataFaultCounter(bool) override {
       throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceModule. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-    void decrementDataFaultCounter() override {
+    void decrementDataFaultCounter(bool) override {
       throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
 
     /** Add initialisation handlers to the device.
      *
-     *  Initialisation handlers are called after the device has been opended, or after the device is recovering
+     *  Initialisation handlers are called after the device has been opened, or after the device is recovering
      *  from an error (i.e. an accessor has thrown an exception and Device::isFunctional() returns true afterwards).
      *
      *  You can add mupltiple handlers. They are executed in the sequence in which they are registered. If a handler
@@ -268,6 +268,9 @@ namespace ChimeraTK {
     friend class Application;
     friend struct history::ServerHistory;
     friend class detail::DeviceModuleProxy;
+
+    template<typename T>
+    friend class ExceptionHandlingDecorator;
   };
 
 } /* namespace ChimeraTK */

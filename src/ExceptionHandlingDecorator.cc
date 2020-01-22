@@ -25,10 +25,10 @@ namespace ChimeraTK {
       localValidity = newValidity;
       if(!_owner) return;
       if(newValidity == DataValidity::faulty) {
-        _owner->incrementDataFaultCounter();
+        _owner->incrementDataFaultCounter(true);
       }
       else {
-        _owner->decrementDataFaultCounter();
+        _owner->decrementDataFaultCounter(true);
       }
     }
   }
@@ -49,6 +49,15 @@ namespace ChimeraTK {
     while(true) {
       try {
         if(!deviceModule.device.isOpened()) {
+          if(Application::getInstance().getLifeCycleState() != LifeCycleState::run) {
+            // If the application has not yet fully started, we cannot wait for the device to open. Instead register
+            // the variable in the DeviceMoule, so the transfer will be performed after the device is opened.
+            assert(_recoveryAccessor != nullptr); // should always be true for writeable registers with this decorator
+            // Note: it's ok to use the recoveryAccessor here as well, since device opening and recovery happens in the
+            // same thread in the DeviceModule.
+            deviceModule.writeAfterOpen.push_back(this->_recoveryAccessor);
+            return false;
+          }
           setOwnerValidityFunction(DataValidity::faulty);
           Application::getInstance().testableModeUnlock("waitForDeviceOpen");
           boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
@@ -114,16 +123,6 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPreRead() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(), true; });
-  }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPostRead() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(), true; });
-  }
-
-  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite() {
     /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
      * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
@@ -147,13 +146,8 @@ namespace ChimeraTK {
       }
     } // lock guard goes out of scope
 
-    // Now delegate call to the generic decorator, which swaps the buffer
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; });
-  }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPostWrite() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(), true; }, false);
+    // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
+    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
   }
 
   template<typename UserType>

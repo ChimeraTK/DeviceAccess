@@ -75,12 +75,8 @@ namespace ChimeraTK {
       return faultCounter == 0 ? DataValidity::ok : DataValidity::faulty;
     }
 
-    void incrementDataFaultCounter() override { ++faultCounter; }
-
-    void decrementDataFaultCounter() override {
-      assert(faultCounter > 0);
-      --faultCounter;
-    }
+    void incrementDataFaultCounter(bool writeAllOutputs) override;
+    void decrementDataFaultCounter(bool writeAllOutputs) override;
 
     void setCurrentVersionNumber(VersionNumber versionNumber) override {
       if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;

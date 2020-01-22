@@ -10,12 +10,14 @@
       if(timeout_reached) break;                                                                                       \
       usleep(1000);                                                                                                    \
     }                                                                                                                  \
-  }
+  }                                                                                                                    \
+  (void)0
 
 #define CHECK_EQUAL_TIMEOUT(left, right, maxMilliseconds)                                                              \
   {                                                                                                                    \
     CHECK_TIMEOUT(left == right, maxMilliseconds);                                                                     \
     BOOST_CHECK_EQUAL(left, right);                                                                                    \
-  }
+  }                                                                                                                    \
+  (void)0
 
 #endif // CHECK_TIMEOUT_H

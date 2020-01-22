@@ -172,6 +172,9 @@ void Application::run() {
     }
   }
 
+  // Switch life-cycle state to run
+  lifeCycleState = LifeCycleState::run;
+
   // start the necessary threads for the FanOuts etc.
   for(auto& internalModule : internalModuleList) {
     internalModule->activate();
@@ -190,6 +193,9 @@ void Application::run() {
 /*********************************************************************************************************************/
 
 void Application::shutdown() {
+  // switch life-cycle state
+  lifeCycleState = LifeCycleState::shutdown;
+
   // first allow to run the application threads again, if we are in testable
   // mode
   if(testableMode && testableModeTestLock()) {

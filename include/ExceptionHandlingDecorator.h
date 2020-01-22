@@ -39,19 +39,14 @@ namespace ChimeraTK {
 
     TransferFuture doReadTransferAsync() override;
 
-    void doPreRead() override;
-    void doPostRead() override;
-
     void doPreWrite() override;
-
-    void doPostWrite() override;
 
     DataValidity dataValidity() const override;
 
     void interrupt() override;
 
     void setOwner(EntityOwner* owner);
-    
+
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
     DeviceModule& deviceModule;

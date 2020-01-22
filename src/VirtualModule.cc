@@ -132,6 +132,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VirtualModule& VirtualModule::createAndGetSubmoduleRecursive(const RegisterPath& moduleName) {
+    if(moduleName == "") return *this;
     auto slash = std::string(moduleName).find_first_of("/", 1);
     if(slash == std::string::npos) {
       return createAndGetSubmodule(moduleName);
