@@ -268,6 +268,9 @@ namespace ChimeraTK {
     friend class Application;
     friend struct history::ServerHistory;
     friend class detail::DeviceModuleProxy;
+
+    template<typename T>
+    friend class ExceptionHandlingDecorator;
   };
 
 } /* namespace ChimeraTK */
