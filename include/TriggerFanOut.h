@@ -18,6 +18,8 @@
 #include "Profiler.h"
 #include "DeviceModule.h"
 
+constexpr useconds_t DeviceOpenTimeout = 500;
+
 namespace ChimeraTK {
 
   /** InternalModule which waits for a trigger, then reads a number of variables
@@ -25,7 +27,7 @@ namespace ChimeraTK {
   class TriggerFanOut : public InternalModule {
    public:
     TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule)
-    : externalTrigger(externalTriggerImpl), dm(deviceModule) {}
+    : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule) {}
 
     ~TriggerFanOut() { deactivate(); }
 
@@ -38,7 +40,7 @@ namespace ChimeraTK {
       if(_thread.joinable()) {
         _thread.interrupt();
         externalTrigger->interrupt();
-        dm.notify();
+        _deviceModule.notify();
         _thread.join();
       }
       assert(!_thread.joinable());
@@ -77,6 +79,17 @@ namespace ChimeraTK {
         auto lastValidity = DataValidity::ok;
       retry:
         try {
+          if(!_deviceModule.device.isOpened()) {
+            if(lastValidity == DataValidity::ok) {
+              lastValidity = DataValidity::faulty;
+              auto version = externalTrigger->getVersionNumber();
+              boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, DataValidity::faulty));
+            }
+            Application::getInstance().testableModeUnlock("waitForDeviceOpen");
+            boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
+            Application::getInstance().testableModeLock("waitForDeviceOpen");
+            goto retry;
+          }
           transferGroup.read();
         }
         catch(ChimeraTK::runtime_error& e) {
@@ -86,7 +99,7 @@ namespace ChimeraTK {
             lastValidity = DataValidity::faulty;
             boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
           }
-          dm.reportException(e.what());
+          _deviceModule.reportException(e.what());
           goto retry;
         }
         // send the data to the consumers
@@ -140,7 +153,7 @@ namespace ChimeraTK {
     boost::thread _thread;
 
     /** The DeviceModule of the feeder. Required for exception handling */
-    DeviceModule& dm;
+    DeviceModule& _deviceModule;
   };
 
 } /* namespace ChimeraTK */

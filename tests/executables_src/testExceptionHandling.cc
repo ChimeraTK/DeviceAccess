@@ -348,8 +348,14 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   CHECK_TIMEOUT(message1.readLatest(), 10000);
   CHECK_TIMEOUT(status1.readLatest(), 10000);
   BOOST_CHECK_EQUAL(status1, 1);
+  CHECK_TIMEOUT(readback1.readNonBlocking(), 1000); // read the error flag
+  BOOST_CHECK(readback1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(!readback1.readNonBlocking());
-  CHECK_TIMEOUT(readback2.readNonBlocking(), 10000);
+
+  // Device 2 might/will also come up in error state until the device is opened (which happends asynchronously in a
+  // separate thread).
+  /// So we have to read until we get a DataValidity::ok
+  CHECK_TIMEOUT((readback2.readNonBlocking(), readback2.dataValidity() == ctk::DataValidity::ok), 10000);
   BOOST_CHECK_EQUAL(readback2, 110);
 
   // even with device 1 failing the second one must process the data, so send a new trigger
