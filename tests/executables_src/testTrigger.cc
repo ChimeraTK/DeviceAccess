@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerTransferGroup, T, test_types) {
 
   // trigger the transfer
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(backend->numberOfTransfers == 1, 200);
+  CHECK_TIMEOUT(backend->numberOfTransfers == 1, 10000);
   BOOST_CHECK(backend->last_bar == 0);
   BOOST_CHECK(backend->last_address == 0);
   BOOST_CHECK(backend->last_sizeInBytes == 12);
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerTransferGroup, T, test_types) {
 
   // trigger the transfer
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(backend->numberOfTransfers == 2, 200);
+  CHECK_TIMEOUT(backend->numberOfTransfers == 2, 10000);
   BOOST_CHECK(backend->last_bar == 0);
   BOOST_CHECK(backend->last_address == 0);
   BOOST_CHECK(backend->last_sizeInBytes == 12);

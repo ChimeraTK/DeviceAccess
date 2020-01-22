@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDevice, T, test_types) {
   ChimeraTK::Device dev;
   dev.open("Dummy0");
 
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 18, 3000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 18, 10000);
 }
 
 /*********************************************************************************************************************/
@@ -384,8 +384,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDeviceFanOut, T, test_types) {
   ChimeraTK::Device dev;
   dev.open("Dummy0");
 
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 20, 3000);
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/readBack") == 20, 3000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 20, 10000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/readBack") == 20, 10000);
 }
 
 /*********************************************************************************************************************/

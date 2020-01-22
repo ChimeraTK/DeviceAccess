@@ -144,11 +144,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDev, T, test_types) {
 
   myFeeder->accessData(0) = 18;
   myFeeder->write();
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 18, 3000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 18, 10000);
 
   myFeeder->accessData(0) = 20;
   myFeeder->write();
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 20, 3000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 20, 10000);
 }
 
 /*********************************************************************************************************************/
@@ -174,13 +174,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDevFanOut, T, test_types) {
 
   myFeeder->accessData(0) = 18;
   myFeeder->write();
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 18, 3000);
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/readBack") == 18, 3000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 18, 10000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/readBack") == 18, 10000);
 
   myFeeder->accessData(0) = 20;
   myFeeder->write();
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 20, 3000);
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/readBack") == 20, 3000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 20, 10000);
+  CHECK_TIMEOUT(dev.read<T>("/MyModule/readBack") == 20, 10000);
 }
 
 /*********************************************************************************************************************/
