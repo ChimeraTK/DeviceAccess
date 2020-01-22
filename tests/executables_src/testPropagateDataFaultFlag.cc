@@ -498,10 +498,50 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::ok);
 }
 
+BOOST_AUTO_TEST_CASE(testInvalidTrigger){
+  auto deviceRegister = device1->getRawAccessor("m1", "i3");
+  deviceRegister = 20;
 
+  auto trigger = test.getScalar<int>("trigger");
+  auto result = test.getScalar<int>("i3"); //Cs hook into reg: m1.i3
 
-BOOST_AUTO_TEST_CASE(testConsumingFanout){ 
+  //----------------------------------------------------------------//
+  // trigger works as expected
+  trigger = 1;
+  trigger.write();
 
+  test.stepApplication();
+
+  result.read();
+  BOOST_CHECK_EQUAL(result, 20);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  //----------------------------------------------------------------//
+  // faulty trigger
+  deviceRegister = 30;
+  trigger = 1;
+  trigger.setDataValidity(ctk::DataValidity::faulty);
+  trigger.write();
+
+  test.stepApplication();
+
+  result.read();
+  BOOST_CHECK_EQUAL(result, 30);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  //----------------------------------------------------------------//
+  // recovery
+  deviceRegister = 50;
+
+  trigger = 1;
+  trigger.setDataValidity(ctk::DataValidity::ok);
+  trigger.write();
+
+  test.stepApplication();
+
+  result.read();
+  BOOST_CHECK_EQUAL(result, 50);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 }
 
 BOOST_AUTO_TEST_CASE(testTrigger){}
