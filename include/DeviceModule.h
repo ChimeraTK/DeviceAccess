@@ -184,6 +184,15 @@ namespace ChimeraTK {
     ScalarOutput<int> deviceBecameFunctional{
         this, "deviceBecameFunctional", "", ""}; // should be changed to data type void
 
+    /** Add a TransferElement to the list DeviceModule::writeRecoveryOpen. This list will be written during a recovery,
+     * after the constant accessors DeviceModule::writeAfterOpen are written. This is locked by a unique_lock.
+     * You can get a shared_lock with getRecoverySharedLock(). */
+    void addRecoveryAccessor(boost::shared_ptr<TransferElement> recoveryAccessor);
+
+    /** Returns a shared lock for the DeviceModule::recoverySharedMutex. This locks writing
+     * the list DeviceModule::writeRecoveryOpen, during a recovery.*/
+    boost::shared_lock<boost::shared_mutex> getRecoverySharedLock();
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
@@ -242,12 +251,19 @@ namespace ChimeraTK {
      *  to the device. */
     std::list<boost::shared_ptr<TransferElement>> writeAfterOpen;
 
+    /** List of TransferElements to be written after the device has been recovered.
+     *  See function addRecoveryAccessor() for details.*/
+    std::list<boost::shared_ptr<TransferElement>> writeRecoveryOpen;
+
     Application* owner{nullptr};
 
     mutable bool deviceIsInitialized = false;
 
     /* The list of initialisation handler callback functions */
     std::list<std::function<void(DeviceModule*)>> initialisationHandlers;
+
+    /** Mutex for writing the DeviceModule::writeRecoveryOpen.*/
+    boost::shared_mutex recoverySharedMutex;
 
     friend class Application;
     friend struct history::ServerHistory;
