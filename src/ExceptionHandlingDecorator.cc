@@ -52,12 +52,10 @@ namespace ChimeraTK {
           if(Application::getInstance().getLifeCycleState() != LifeCycleState::run) {
             // If the application has not yet fully started, we cannot wait for the device to open. Instead register
             // the variable in the DeviceMoule, so the transfer will be performed after the device is opened.
-
-            // >>>>>>>>>>>>>> FIX ME <<<<<<<<<<<<
-            // >>>>>>>>>>>>>> FIX ME <<<<<<<<<<<<
-            // >>>>>>>>>>>>>> FIX ME <<<<<<<<<<<<
-            // need to make a copy of the target accessor!!!
-            deviceModule.writeAfterOpen.push_back(this->_target);
+            assert(_recoveryAccessor != nullptr); // should always be true for writeable registers with this decorator
+            // Note: it's ok to use the recoveryAccessor here as well, since device opening and recovery happens in the
+            // same thread in the DeviceModule.
+            deviceModule.writeAfterOpen.push_back(this->_recoveryAccessor);
             return false;
           }
           setOwnerValidityFunction(DataValidity::faulty);
