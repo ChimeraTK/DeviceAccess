@@ -8,22 +8,28 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
   bool throwExceptionOpen{false};
   bool throwExceptionRead{false};
   bool throwExceptionWrite{false};
+  bool thereHaveBeenExceptions{false};
+
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
   }
 
   void open() override {
     if(throwExceptionOpen) {
+      thereHaveBeenExceptions = true;
       throw(ChimeraTK::runtime_error("DummyException: This is a test"));
     }
     ChimeraTK::DummyBackend::open();
     if(throwExceptionRead || throwExceptionWrite) {
+      thereHaveBeenExceptions = true;
       throw(ChimeraTK::runtime_error("DummyException: open throws because of device error when already open."));
     }
+    thereHaveBeenExceptions = false;
   }
 
   void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
     if(throwExceptionRead) {
+      thereHaveBeenExceptions = true;
       throw(ChimeraTK::runtime_error("DummyException: read throws by request"));
     }
     ChimeraTK::DummyBackend::read(bar, address, data, sizeInBytes);
@@ -31,13 +37,14 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
 
   void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override {
     if(throwExceptionWrite) {
+      thereHaveBeenExceptions = true;
       throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
     }
     ChimeraTK::DummyBackend::write(bar, address, data, sizeInBytes);
   }
 
   bool isFunctional() const override {
-    return (_opened && !throwExceptionOpen && !throwExceptionRead && !throwExceptionWrite);
+    return (_opened && !throwExceptionOpen && !throwExceptionRead && !throwExceptionWrite && !thereHaveBeenExceptions);
   }
 
   class BackendRegisterer {

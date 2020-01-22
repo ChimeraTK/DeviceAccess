@@ -197,6 +197,8 @@ namespace ChimeraTK {
     void registerDeviceModule(DeviceModule* deviceModule);
     void unregisterDeviceModule(DeviceModule* deviceModule);
 
+    LifeCycleState getLifeCycleState() const { return lifeCycleState; }
+
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -391,6 +393,9 @@ namespace ChimeraTK {
 
     /** Counter for how many write() operations have overwritten unread data */
     std::atomic<size_t> dataLossCounter{0};
+
+    /** Life-cycle state of the application */
+    std::atomic<LifeCycleState> lifeCycleState{LifeCycleState::initialisation};
 
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "

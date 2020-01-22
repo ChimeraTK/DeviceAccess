@@ -11,6 +11,7 @@
 using namespace boost::unit_test_framework;
 
 #include "ApplicationCore.h"
+#include "TestFacility.h"
 #include "ConfigReader.h"
 
 namespace ctk = ChimeraTK;
@@ -131,7 +132,7 @@ struct TestModule : ctk::ApplicationModule {
 /* dummy application */
 
 struct TestApplication : public ctk::Application {
-  TestApplication() : Application("testSuite") {}
+  TestApplication() : Application("TestApplication") {}
   ~TestApplication() { shutdown(); }
 
   void defineConnections() {} // the setup is done in the tests
@@ -165,6 +166,23 @@ struct TestApplicationNoConfigs : public ctk::Application {
 
   TestModule testModule{this, "TestModule", "The test module"};
 };
+
+/*********************************************************************************************************************/
+/* dummy application which directly connects config reader variables to a device */
+
+struct TestApplicationWithDevice : public ctk::Application {
+  TestApplicationWithDevice() : Application("TestApplicationWithDevice") {}
+  ~TestApplicationWithDevice() { shutdown(); }
+
+  void defineConnections() {
+    device.connectTo(config);
+    dumpConnections();
+  }
+
+  ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
+  ctk::DeviceModule device{this, "(dummy?map=configReaderDevice.map)"};
+};
+
 /*********************************************************************************************************************/
 /* test trigger by app variable when connecting a polled device register to an
  * app variable */
@@ -231,5 +249,29 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   {
     TestApplicationNoConfigs app;
     BOOST_CHECK(app.testModule.appConfig_has_thrown);
+  }
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDirectWriteToDevice) {
+  std::cout << "==> testDirectWriteToDevice" << std::endl;
+  TestApplicationWithDevice app;
+  ctk::TestFacility test;
+  test.runApplication();
+  auto var32u = app.device.device.getScalarRegisterAccessor<uint32_t>("var32u");
+  auto var16 = app.device.device.getScalarRegisterAccessor<int16_t>("var16");
+  auto module1var16 = app.device.device.getScalarRegisterAccessor<int16_t>("module1/var16");
+  auto intArray = app.device.device.getOneDRegisterAccessor<int32_t>("intArray");
+  var32u.read();
+  var16.read();
+  module1var16.read();
+  intArray.read();
+  BOOST_CHECK_EQUAL(var32u, 234567);
+  BOOST_CHECK_EQUAL(var16, -567);
+  BOOST_CHECK_EQUAL(module1var16, -567);
+  BOOST_CHECK_EQUAL(intArray.getNElements(), 10);
+  for(size_t i = 0; i < 10; ++i) {
+    BOOST_CHECK_EQUAL(intArray[i], 10 - i);
   }
 }

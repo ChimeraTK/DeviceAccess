@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testBlockingRead, T, test_types) {
     usleep(10000);
     BOOST_CHECK(pvOutput.readNonBlocking() == false);
     test.stepApplication();
-    CHECK_TIMEOUT(pvOutput.readNonBlocking() == true, 200);
+    CHECK_TIMEOUT(pvOutput.readNonBlocking() == true, 10000);
     int val = pvOutput;
     BOOST_CHECK(val == 120 + i);
   }
@@ -914,7 +914,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
   for(int i = 0; i < 5; ++i) {
     test.writeScalar<T>("input", 120 + i);
     test.stepApplication();
-    CHECK_TIMEOUT(test.readScalar<T>("output") == T(120 + i), 200);
+    CHECK_TIMEOUT(test.readScalar<T>("output") == T(120 + i), 10000);
   }
 
   // same with array function (still a scalar variable behind, but this does not
@@ -923,7 +923,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
     std::vector<T> myValue{T(120 + i)};
     test.writeArray<T>("input", myValue);
     test.stepApplication();
-    CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{T(120 + i)}, 200);
+    CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{T(120 + i)}, 10000);
   }
 }
 
