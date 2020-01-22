@@ -89,4 +89,20 @@ namespace ChimeraTK {
     Application::testableModeUnlock("terminate");
   }
 
+  void ApplicationModule::incrementDataFaultCounter(bool writeAllOutputs) {
+    ++faultCounter;
+    // writeAll only once for first incrementDataFaultCounter call -> going with faultCounter from 0 to 1
+    if (writeAllOutputs && faultCounter == 1)
+      this->writeAll(); 
+  }
+
+  void ApplicationModule::decrementDataFaultCounter(bool writeAllOutputs) {
+    assert(faultCounter > 0);
+    --faultCounter;
+    //writeAll only once for last decrementDataFaultCounter call -> going with faultCounter from 1 to 0
+    if (writeAllOutputs && faultCounter == 0)
+      this->writeAll();
+  }
+  
+  
 } /* namespace ChimeraTK */
