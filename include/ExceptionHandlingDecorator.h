@@ -50,7 +50,11 @@ namespace ChimeraTK {
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
     DeviceModule& deviceModule;
-    DataValidity localValidity{DataValidity::ok};
+
+    // local validity is faulty for read-only accessors at first, which will be overwritten after the first successful
+    // read.
+    DataValidity localValidity{this->isWriteable() ? DataValidity::ok : DataValidity::faulty};
+
     bool genericTransfer(std::function<bool(void)> callable, bool updateOwnerValidityFlag = true);
     void setOwnerValidity(DataValidity newValidity);
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
