@@ -699,4 +699,85 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout){
   BOOST_CHECK_EQUAL(fromConsumingFanout, 0);
   BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
 }
+
+BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto m1_result = test.getScalar<int>("m1/Module1_result");
+  auto m2_result = test.getScalar<int>("m2/Module2_result");
+
+  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
+  consumingFanoutSource = 1000;
+
+  auto pollRegister = device2->getRawAccessor("m1", "i2");
+  pollRegister = 100;
+
+  threadedFanoutInput = 1;
+
+  // ------------------------------------------------------------------//
+  // without exception
+  app.run();
+  threadedFanoutInput.write();
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1101);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1101);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
+
+  // ------------------------------------------------------------------//
+  // faulty threadedFanout input
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::faulty);
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1101);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1101);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+
+  // ---------------------------------------------------------------------//
+  // device module exception
+  device2->throwExceptionRead = true;
+  threadedFanoutInput = 0;
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1101);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1101);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+
+  // ---------------------------------------------------------------------//
+  // device exception recovery
+  device2->throwExceptionRead = false;
+
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1100);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1100);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+
+  // ---------------------------------------------------------------------//
+  // recovery: fanout input
+  device2->throwExceptionRead = false;
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::ok);
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1100);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1100);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
