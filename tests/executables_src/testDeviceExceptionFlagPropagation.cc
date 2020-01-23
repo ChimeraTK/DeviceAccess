@@ -14,20 +14,11 @@ using namespace boost::unit_test_framework;
 #include "TestFacility.h"
 #include "VariableGroup.h"
 
+#include "check_timeout.h"
+
 namespace ctk = ChimeraTK;
 
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
-
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    while(!(condition)) {                                                                                              \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-    }                                                                                                                  \
-  }
 
 struct TestApplication : ctk::Application {
   TestApplication() : Application("testSuite") {}
