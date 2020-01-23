@@ -352,9 +352,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   CHECK_TIMEOUT(message1.readLatest(), 10000);
   CHECK_TIMEOUT(status1.readLatest(), 10000);
   BOOST_CHECK_EQUAL(status1, 1);
-  CHECK_TIMEOUT(readback1.readNonBlocking(), 1000); // read the error flag
-  BOOST_CHECK(readback1.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(!readback1.readNonBlocking());
+  BOOST_CHECK(!readback1.readNonBlocking()); // error state at the beginning is not yet propagated
 
   // Device 2 might/will also come up in error state until the device is opened (which happends asynchronously in a
   // separate thread).
