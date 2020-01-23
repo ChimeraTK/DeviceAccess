@@ -189,8 +189,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToCS, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
-
   app.dev("/MyModule/readBack", typeid(T), 1)[app.testModule.theTrigger] >> app.cs("myCSVar");
 
   ctk::Device dev("Dummy0");
@@ -204,24 +202,23 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToCS, T, test_types) {
 
   // single theaded test only, since the receiving process scalar does not support blocking
   myCSVar->read(); // read initial value
-  BOOST_CHECK(myCSVar->accessData(0) == 1);
-  app.testModule.feedingToDevice = 42;
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 1);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
+  dev.write("MyModule/actuator", 42);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.setCurrentVersionNumber({});
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 42);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 42);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice = 120;
-  BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
+  dev.write("MyModule/actuator", 120);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 120);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 120);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
 }
@@ -243,8 +240,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
-
   app.dev("/MyModule/readBack", typeid(T), 1)[app.cs("theTrigger", typeid(T), 1)] >> app.cs("myCSVar");
 
   ctk::Device dev("Dummy0");
@@ -263,25 +258,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
 
   // single theaded test only, since the receiving process scalar does not support blocking
   myCSVar->read(); // read initial value
-  BOOST_CHECK(myCSVar->accessData(0) == 1);
-  app.testModule.feedingToDevice = 42;
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 1);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
+  dev.write("MyModule/actuator", 42);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   myCSVar->accessData(0) = 0;
   theTrigger->write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 42);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 42);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice = 120;
-  BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
+  dev.write("MyModule/actuator", 120);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   myCSVar->accessData(0) = 0;
   theTrigger->write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 120);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 120);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
 }
