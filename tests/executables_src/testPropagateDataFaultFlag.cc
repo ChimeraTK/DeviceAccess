@@ -544,7 +544,6 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger){
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testTrigger){}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -606,4 +605,45 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   BOOST_CHECK_EQUAL(result, 11000);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 }
+
+BOOST_AUTO_TEST_CASE(testreadDeviceWithTrigger) {
+  auto trigger = test.getScalar<int>("trigger");
+  auto fromDevice = test.getScalar<int>("i3"); // cs side display: m1.i3
+  //----------------------------------------------------------------//
+  // trigger works as expected
+  trigger = 1;
+
+  auto deviceRegister = device1->getRawAccessor("m1", "i3");
+  deviceRegister = 30;
+
+  app.run();
+  trigger.write();
+
+  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromDevice, 30);
+  BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
+
+  //----------------------------------------------------------------//
+  // Device module exception
+  deviceRegister = 10;
+  device1->throwExceptionRead = true;
+
+  trigger = 1;
+  trigger.write();
+
+  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromDevice, 30);
+  BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::faulty);
+  //----------------------------------------------------------------//
+  // Recovery
+  device1->throwExceptionRead = false;
+
+  trigger = 1;
+  trigger.write();
+
+  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromDevice, 10);
+  BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
