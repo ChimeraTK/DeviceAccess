@@ -92,7 +92,7 @@ namespace ChimeraTK {
 
     /** Version number of last push-type read operation - will be passed on to any
      * write operations */
-    VersionNumber currentVersionNumber;
+    VersionNumber currentVersionNumber{nullptr};
 
     /** Fault counter. If non-zero, getDataValidity() returns a fault, otherwise ok. */
     size_t faultCounter{0};

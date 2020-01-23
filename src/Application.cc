@@ -148,9 +148,6 @@ void Application::checkConnections() {
 void Application::run() {
   assert(applicationName != "");
 
-  // we need to set our start version to a version which is bigger than all current versions in the accessors.
-  _startVersion = {};
-
   // set all initial version numbers in the modules to the same value
   for(auto& module : getSubmoduleListRecursive()) {
     if(module->getModuleType() != ModuleType::ApplicationModule) continue;

@@ -91,7 +91,7 @@ namespace ChimeraTK {
     bool isInterrupted{false};
     boost::promise<void> promise;
 
-    VersionNumber versionNumber;
+    VersionNumber versionNumber{nullptr};
   };
 
 } /* namespace ChimeraTK */

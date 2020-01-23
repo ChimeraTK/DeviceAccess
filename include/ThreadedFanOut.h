@@ -58,7 +58,7 @@ namespace ChimeraTK {
       Application::testableModeLock("start");
       testableModeReached = true;
 
-      ChimeraTK::VersionNumber version;
+      ChimeraTK::VersionNumber version{nullptr};
       readInitialValues();
       while(true) {
         // send out copies to slaves
@@ -127,7 +127,7 @@ namespace ChimeraTK {
       testableModeReached = true;
 
       TransferElementID var;
-      ChimeraTK::VersionNumber version;
+      ChimeraTK::VersionNumber version{nullptr};
 
       readInitialValues();
 
