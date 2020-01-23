@@ -103,8 +103,7 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
   app.b.connectTo(app.cs);
 
   ctk::TestFacility test;
-  app.initialise();
-  app.run();
+  test.runApplication();
   auto var2 = test.getScalar<double>("var2");
   auto var3 = test.getScalar<double>("var3");
   auto max = test.getScalar<double>("max");
@@ -161,13 +160,12 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
   app.b.connectTo(app.cs);
   app.a.var1 >> app.cs("var1_copied"); // add a ThreadedFanOut with return channel as well...
   ctk::TestFacility test;
-  app.initialise();
-  app.run();
   auto var1 = test.getScalar<int>("var1");
   auto var1_copied = test.getScalar<int>("var1_copied");
   auto var2 = test.getScalar<double>("var2");
   auto var3 = test.getScalar<double>("var3");
   auto max = test.getScalar<double>("max");
+  test.runApplication();
 
   // set maximum in B, so that var1=49 is still below maximum but var2=50 is
   // already above and rounding in ModuleB will change the value again

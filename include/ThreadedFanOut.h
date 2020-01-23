@@ -23,14 +23,23 @@ namespace ChimeraTK {
   template<typename UserType>
   class ThreadedFanOut : public FanOut<UserType>, public InternalModule {
    public:
-    ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl)
-    : FanOut<UserType>(feedingImpl) {}
+    ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl, VariableNetwork& network)
+    : FanOut<UserType>(feedingImpl), _network(network) {}
 
     ~ThreadedFanOut() { deactivate(); }
 
     void activate() override {
       assert(!_thread.joinable());
       _thread = boost::thread([this] { this->run(); });
+
+      // Wait until the thread has launched and acquired and released the testable mode lock at least once.
+      if(Application::getInstance().isTestableModeEnabled()) {
+        while(!testableModeReached) {
+          Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
+          usleep(100);
+          Application::getInstance().testableModeLock("acquireForReachTestableMode");
+        }
+      }
     }
 
     void deactivate() override {
@@ -47,17 +56,15 @@ namespace ChimeraTK {
     virtual void run() {
       Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
       Application::testableModeLock("start");
+      testableModeReached = true;
 
+      ChimeraTK::VersionNumber version{nullptr};
+      readInitialValues();
       while(true) {
-        // receive data
-        boost::this_thread::interruption_point();
-        Profiler::stopMeasurement();
-        FanOut<UserType>::impl->read();
+        // send out copies to slaves
         Profiler::startMeasurement();
         boost::this_thread::interruption_point();
         auto validity = FanOut<UserType>::impl->dataValidity();
-        // send out copies to slaves
-        auto version = FanOut<UserType>::impl->getVersionNumber();
         for(auto& slave : FanOut<UserType>::slaves) {
           // do not send copy if no data is expected (e.g. trigger)
           if(slave->getNumberOfSamples() != 0) {
@@ -67,12 +74,30 @@ namespace ChimeraTK {
           bool dataLoss = slave->writeDestructively(version);
           if(dataLoss) Application::incrementDataLossCounter();
         }
+        // receive data
+        boost::this_thread::interruption_point();
+        Profiler::stopMeasurement();
+        FanOut<UserType>::impl->read();
+        version = FanOut<UserType>::impl->getVersionNumber();
+      }
+    }
+
+    void readInitialValues() {
+      auto hasInitialValue = _network.getFeedingNode().hasInitialValue();
+      if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
+        FanOut<UserType>::impl->readLatest();
+      }
+      else if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
+        FanOut<UserType>::impl->read();
       }
     }
 
    protected:
     /** Thread handling the synchronisation, if needed */
     boost::thread _thread;
+
+    /** Reference to VariableNetwork which is being realised by this FanOut. **/
+    VariableNetwork& _network;
   };
 
   /********************************************************************************************************************/
@@ -99,22 +124,16 @@ namespace ChimeraTK {
     void run() override {
       Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
       Application::testableModeLock("start");
+      testableModeReached = true;
+
+      TransferElementID var;
+      ChimeraTK::VersionNumber version{nullptr};
+
+      readInitialValues();
 
       ReadAnyGroup group({FanOut<UserType>::impl, _returnChannelSlave});
       while(true) {
-        // receive data
-        boost::this_thread::interruption_point();
-        Profiler::stopMeasurement();
-        auto var = group.readAny();
-        Profiler::startMeasurement();
-        boost::this_thread::interruption_point();
-        // if the update came through the return channel, return it to the feeder
-        if(var == _returnChannelSlave->getId()) {
-          FanOut<UserType>::impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
-          FanOut<UserType>::impl->writeDestructively(_returnChannelSlave->getVersionNumber());
-        }
         // send out copies to slaves
-        auto version = FanOut<UserType>::impl->getVersionNumber();
         for(auto& slave : FanOut<UserType>::slaves) {
           // do not feed back value returnChannelSlave if it was received from it
           if(slave->getId() == var) continue;
@@ -125,6 +144,18 @@ namespace ChimeraTK {
           bool dataLoss = slave->writeDestructively(version);
           if(dataLoss) Application::incrementDataLossCounter();
         }
+        // receive data
+        boost::this_thread::interruption_point();
+        Profiler::stopMeasurement();
+        var = group.readAny();
+        Profiler::startMeasurement();
+        boost::this_thread::interruption_point();
+        // if the update came through the return channel, return it to the feeder
+        if(var == _returnChannelSlave->getId()) {
+          FanOut<UserType>::impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
+          FanOut<UserType>::impl->writeDestructively(_returnChannelSlave->getVersionNumber());
+        }
+        version = FanOut<UserType>::impl->getVersionNumber();
       }
     }
 
@@ -133,6 +164,10 @@ namespace ChimeraTK {
     boost::thread _thread;
 
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnChannelSlave;
+
+    using ThreadedFanOut<UserType>::_network;
+    using ThreadedFanOut<UserType>::readInitialValues;
+    using EntityOwner::testableModeReached;
   };
 
 } /* namespace ChimeraTK */

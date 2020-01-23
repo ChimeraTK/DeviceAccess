@@ -35,12 +35,26 @@ namespace ChimeraTK {
       Application::getInstance().initialise();
     }
 
-    /** Start the application. This simply calls Application::run(). Since the
-     * application is in testable mode, it
-     *  will be ??? TODO define precisely what happens on start up */
+    /** Start the application in testable mode. */
     void runApplication() const {
+      // send default values for all control system variables
+      for(auto& pv : pvManager->getAllProcessVariables()) {
+        callForType(pv->getValueType(), [&pv, this](auto arg) {
+          if(!pv->isWriteable()) return;
+          typedef decltype(arg) T;
+          auto pv_casted = boost::dynamic_pointer_cast<NDRegisterAccessor<T>>(pv);
+          auto table = boost::fusion::at_key<T>(defaults.table);
+          if(table.find(pv->getName()) != table.end()) {
+            pv_casted->accessChannel(0) = table.at(pv->getName());
+          }
+          pv_casted->write();
+        });
+      }
+      // start the application
       Application::getInstance().run();
+      // set thread name
       Application::registerThread("TestThread");
+      // wait until all devices are opened
       Application::testableModeUnlock("waitDevicesToOpen");
       while(true) {
         boost::this_thread::yield();
@@ -51,6 +65,13 @@ namespace ChimeraTK {
         if(allOpened) break;
       }
       Application::testableModeLock("waitDevicesToOpen");
+      // receive all initial values for the control system variables
+      if(Application::getInstance().isTestableModeEnabled()) {
+        for(auto& pv : pvManager->getAllProcessVariables()) {
+          if(!pv->isReadable()) continue;
+          pv->readNonBlocking();
+        }
+      }
     }
 
     /** Perform a "step" of the application. This runs the application until all
@@ -166,6 +187,26 @@ namespace ChimeraTK {
       return acc;
     }
 
+    /** Set default value for scalar process variable. */
+    template<typename T>
+    void setScalarDefault(const ChimeraTK::RegisterPath& name, const T& value) {
+      std::vector<T> vv;
+      vv.push_back(value);
+      setArrayDefault(name, vv);
+    }
+
+    /** Set default value for array process variable. */
+    template<typename T>
+    void setArrayDefault(const ChimeraTK::RegisterPath& name, const std::vector<T>& value) {
+      // check if PV exists
+      auto pv = pvManager->getProcessArray<T>(name);
+      if(pv == nullptr) {
+        throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
+      }
+      // store default value in map
+      boost::fusion::at_key<T>(defaults.table)[name] = value;
+    }
+
    protected:
     boost::shared_ptr<ControlSystemPVManager> pvManager;
 
@@ -182,6 +223,11 @@ namespace ChimeraTK {
     template<typename UserType>
     using ArrayMap = std::map<std::string, ChimeraTK::OneDRegisterAccessor<UserType>>;
     mutable ChimeraTK::TemplateUserTypeMap<ArrayMap> arrayMap;
+
+    // default values for process variables
+    template<typename UserType>
+    using Defaults = std::map<std::string, std::vector<UserType>>;
+    ChimeraTK::TemplateUserTypeMap<Defaults> defaults;
   };
 
 } /* namespace ChimeraTK */

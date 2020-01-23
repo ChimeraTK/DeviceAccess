@@ -78,6 +78,9 @@ TestApplicationConnectTo::~TestApplicationConnectTo() {
 template<typename T, typename LAMBDA>
 void testDirectRegister(ctk::TestFacility& test, ChimeraTK::ScalarRegisterAccessor<T> sender,
     ChimeraTK::ScalarRegisterAccessor<T> receiver, LAMBDA trigger, bool testMinMax = true) {
+  std::cout << "testDirectRegister<" << typeid(T).name() << ">: " << sender.getName() << " -> " << receiver.getName()
+            << std::endl;
+
   sender = 42;
   sender.write();
   trigger();
@@ -194,7 +197,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
 
   ctk::TestFacility test;
   auto devActuator = dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
-  // The direction of 'readback' is "device to application". For this to work it hat to be read only.
+  // The direction of 'readback' is "device to application". For this to work it had to be read only.
   // In order to write to it in the test, we use the "DUMMY_WRITEABLE" variable.
   auto devReadback = dev.getScalarRegisterAccessor<int32_t>("/MyModule/readBack.DUMMY_WRITEABLE");
   auto devint32 = dev.getScalarRegisterAccessor<int32_t>("/Integers/signed32");

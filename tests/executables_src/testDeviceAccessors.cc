@@ -44,7 +44,10 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags) {}
 
   ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
 
@@ -74,8 +77,7 @@ struct TestApplication : public ctk::Application {
   TestModule<T> testModule{this, "testModule", "The test module"};
   ctk::DeviceModule dev{this, "Dummy0"};
 
-  // note: direct device-to-controlsystem connections are tested in
-  // testControlSystemAccessors!
+  // note: direct device-to-controlsystem connections are tested in testControlSystemAccessors!
 };
 
 /*********************************************************************************************************************/
@@ -91,7 +93,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDevice, T, test_types) {
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
 
   ctk::TestFacility test;
-  app.run();
+  test.runApplication();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
@@ -121,7 +123,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator") >> app.dev["MyModule"]("readBack");
   ctk::TestFacility test;
-  app.run();
+  test.runApplication();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
 
@@ -160,16 +162,20 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
 
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   ctk::TestFacility test;
-  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
+  regacc = 1; // write initial value which should be present in accessor after app start
+  regacc.write();
+
+  test.runApplication();
+
   // single theaded test only, since read() does not block in this case
-  app.testModule.consumingPoll = 0;
+  BOOST_CHECK(app.testModule.consumingPoll == 1);
   regacc = 42;
   regacc.write();
-  BOOST_CHECK(app.testModule.consumingPoll == 0);
+  BOOST_CHECK(app.testModule.consumingPoll == 1);
   app.testModule.consumingPoll.read();
   BOOST_CHECK(app.testModule.consumingPoll == 42);
   app.testModule.consumingPoll.read();
@@ -201,21 +207,27 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
       app.testModule.consumingPush2;
   ctk::TestFacility test;
-  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
+  regacc = 1; // write initial value which should be present in accessor after app start
+  regacc.write();
+
+  test.runApplication();
+
   // single theaded test only, since read() does not block in this case
-  app.testModule.consumingPoll = 0;
+  BOOST_CHECK(app.testModule.consumingPoll == 1);
+  BOOST_CHECK(app.testModule.consumingPush2 == 1);
   regacc = 42;
   regacc.write();
 
-  BOOST_CHECK(app.testModule.consumingPoll == 0);
+  BOOST_CHECK(app.testModule.consumingPoll == 1);
+  BOOST_CHECK(app.testModule.consumingPush2 == 1);
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
   BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
-  BOOST_CHECK(app.testModule.consumingPush == 0);
-  BOOST_CHECK(app.testModule.consumingPush2 == 0);
+  BOOST_CHECK(app.testModule.consumingPush == 1);
+  BOOST_CHECK(app.testModule.consumingPush2 == 1);
   app.testModule.consumingPoll.read();
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == true);
   BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == true);
@@ -305,20 +317,20 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergedNetworks, T, test_types) {
   }
   BOOST_CHECK_EQUAL(nDeviceFeeders, 1);
 
-  // run the application to see if everything still behaves as expected
-  app.run();
-
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
+  regacc = 1;
+  regacc.write();
+
+  // run the application to see if everything still behaves as expected
+  test.runApplication();
 
   // single theaded test only, since read() does not block in this case
-  app.testModule.consumingPush = 0;
-  app.testModule.consumingPush2 = 0;
   regacc = 42;
   regacc.write();
-  BOOST_CHECK(app.testModule.consumingPush == 0);
-  BOOST_CHECK(app.testModule.consumingPush2 == 0);
+  BOOST_CHECK(app.testModule.consumingPush == 1);
+  BOOST_CHECK(app.testModule.consumingPush2 == 1);
   app.testModule.feedingToDevice.write();
   app.testModule.consumingPush.read();
   app.testModule.consumingPush2.read();
@@ -388,10 +400,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDeviceModuleSubscriptOp, T, test_types) {
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
   ctk::TestFacility test;
-  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
+  test.runApplication();
 
   regacc = 0;
   app.testModule.feedingToDevice = 42;

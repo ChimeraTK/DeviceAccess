@@ -233,6 +233,12 @@ namespace ChimeraTK {
     /** List of tags to be added to all accessors and modules inside this module
      */
     std::unordered_set<std::string> _tags;
+
+    /** Flag used by the testable mode to identify whether a thread within the EntityOwner has reached the point where
+     *  the testable mode lock is acquired.
+     *  @todo This should be moved to a more proper place in the hierarchy (e.g. ModuleImpl) after InternalModule class
+     *  has been properly unified with the normal Module class. */
+    std::atomic<bool> testableModeReached{false};
   };
 
 } /* namespace ChimeraTK */

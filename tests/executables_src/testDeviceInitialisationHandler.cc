@@ -24,21 +24,25 @@ static bool throwInInitialisation = false;
 static constexpr char deviceCDD[] = "(ExceptionDummy?map=test.map)";
 static constexpr char exceptionMessage[] = "DEBUG: runtime error intentionally cased in device initialisation";
 
-void initialiseReg1(ctk::DeviceModule* dev) {
-  dev->device.write<int32_t>("/REG1", 42);
+int32_t var1{0};
+int32_t var2{0};
+int32_t var3{0};
+
+void initialiseReg1(ctk::DeviceModule*) {
+  var1 = 42;
   if(throwInInitialisation) {
     throw ctk::runtime_error(exceptionMessage);
   }
 }
 
-void initialiseReg2(ctk::DeviceModule* dev) {
+void initialiseReg2(ctk::DeviceModule*) {
   // the initialisation of reg 2 must happen after the initialisation of reg1
-  dev->device.write<int32_t>("/REG2", dev->device.read<int32_t>("/REG1") + 5);
+  var2 = var1 + 5;
 }
 
-void initialiseReg3(ctk::DeviceModule* dev) {
+void initialiseReg3(ctk::DeviceModule*) {
   // the initialisation of reg 3 must happen after the initialisation of reg2
-  dev->device.write<int32_t>("/REG3", dev->device.read<int32_t>("/REG2") + 5);
+  var3 = var2 + 5;
 }
 
 /* dummy application */
@@ -56,100 +60,79 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   std::cout << "testBasicInitialisation" << std::endl;
   TestApplication app;
-  /*
-   * Directly connecting REG2 so that other variables do not update from
-   * CS after the device has recoverd from exception state.
-  */
-  app.cs("REG2", typeid(int32_t), 1) >> app.dev("REG2");
+
+  var1 = 0;
+  var2 = 0;
+  var3 = 0;
+
+  app.dev.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
-
   ctk::Device dummy;
   dummy.open(deviceCDD);
-  auto reg1 = dummy.getScalarRegisterAccessor<int32_t>("/REG1");
-  reg1.readLatest();
 
   // ********************************************************
   // REQUIRED TEST 1: After opening the device is initialised
   // ********************************************************
-  BOOST_CHECK_EQUAL(reg1, 42);
+  BOOST_CHECK_EQUAL(var1, 42);
 
-  reg1 = 0;
-  reg1.write();
+  var1 = 0;
 
   // check that accessing an exception triggers a reconnection with re-initialisation
   auto dummyBackend =
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  // FIXME: Due to a bug it is /REG2/REG2 instead of just /REG2. This will fails once the bug has been solved.
   auto reg2_cs = test.getScalar<int32_t>("/REG2");
   reg2_cs = 19;
   reg2_cs.write();
   test.stepApplication();
 
-  auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/REG2");
-  reg2.readLatest();
-
-  BOOST_CHECK_EQUAL(reg2, 0);
-  BOOST_CHECK_EQUAL(reg1, 0);
+  BOOST_CHECK_EQUAL(var2, 0);
+  BOOST_CHECK_EQUAL(var1, 0);
   dummyBackend->throwExceptionWrite = false; // now the device should work again and be re-initialised
 
   reg2_cs = 20;
   reg2_cs.write();
   test.stepApplication();
 
-  reg2.readLatest();
-  BOOST_CHECK_EQUAL(reg2, 20);
+  BOOST_CHECK_EQUAL(dummy.read<int32_t>("/REG2"), 20);
 
   // ****************************************************************
   // REQUIRED TEST 2: After an exception the device is re-initialised
   // ****************************************************************
-  reg1.readLatest();
-  BOOST_CHECK_EQUAL(reg1, 42);
+  BOOST_CHECK_EQUAL(var1, 42);
 }
 
 BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
   std::cout << "testMultipleInitialisationHandlers" << std::endl;
   TestApplication app;
 
+  var1 = 0;
+  var2 = 0;
+  var3 = 0;
+
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  /*
-   * Directly connecting REG4 so that other variables do not update from
-   * CS after the device has recoverd from exception state.
-  */
-  app.cs("REG4", typeid(int32_t), 1) >> app.dev("REG4");
+  app.dev.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
   auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status");
 
-  ctk::Device dummy;
-  dummy.open(deviceCDD);
-  auto reg1 = dummy.getScalarRegisterAccessor<int32_t>("/REG1");
-  auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/REG2");
-  auto reg3 = dummy.getScalarRegisterAccessor<int32_t>("/REG3");
-  reg1.readLatest();
-  reg2.readLatest();
-  reg3.readLatest();
-
   // *********************************************************
   // REQUIRED TEST 4: Handlers are executed in the right order
   // *********************************************************
-  BOOST_CHECK_EQUAL(reg1, 42);
-  BOOST_CHECK_EQUAL(reg2, 47); // the initialiser used reg1+5, so order matters
-  BOOST_CHECK_EQUAL(reg3, 52); // the initialiser used reg2+5, so order matters
+  BOOST_CHECK_EQUAL(var1, 42);
+  BOOST_CHECK_EQUAL(var2, 47); // the initialiser used reg1+5, so order matters
+  BOOST_CHECK_EQUAL(var3, 52); // the initialiser used reg2+5, so order matters
 
   // check that after an exception the re-initialisation is OK
-  reg1 = 0;
-  reg1.write();
-  reg2 = 0;
-  reg2.write();
-  reg3 = 0;
-  reg3.write();
+  var1 = 0;
+  var2 = 0;
+  var3 = 0;
 
   // cause an exception
   auto dummyBackend =
@@ -168,30 +151,27 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
   reg4_cs.write();
   test.stepApplication();
 
-  reg1.readLatest();
-  reg2.readLatest();
-  reg3.readLatest();
-
-  BOOST_CHECK_EQUAL(reg1, 42);
-  BOOST_CHECK_EQUAL(reg2, 47); // the initialiser used reg1+5, so order matters
-  BOOST_CHECK_EQUAL(reg3, 52); // the initialiser used reg2+5, so order matters
+  BOOST_CHECK_EQUAL(var1, 42);
+  BOOST_CHECK_EQUAL(var2, 47); // the initialiser used reg1+5, so order matters
+  BOOST_CHECK_EQUAL(var3, 52); // the initialiser used reg2+5, so order matters
 }
 
 BOOST_AUTO_TEST_CASE(testInitialisationException) {
   std::cout << "testInitialisationException" << std::endl;
+
+  var1 = 0;
+  var2 = 0;
+  var3 = 0;
 
   throwInInitialisation = true;
   TestApplication app;
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  /*
-   * Directly connecting REG4 so that other variables do not update from
-   * CS after the device has recoverd from exception state.
-  */
-
-  app.cs("REG4", typeid(int32_t), 1) >> app.dev("REG4");
+  app.dev.connectTo(app.cs);
   ctk::TestFacility test(false); // test facility without testable mode
+  ctk::Device dummy;
+  dummy.open(deviceCDD);
 
   // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue, but has not finished error handling yet.
   // In this special case we cannot make the programme continue, because stepApplication only works if the queues are not empty.
@@ -206,18 +186,10 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   // Check that the execution of init handlers was stopped after the exception:
   // initialiseReg2 and initialiseReg3 were not executed. As we already checked with timeout that the
   // initialisation error has been reported, we know that the data was written to the device and don't need the timeout here.
-  ctk::Device dummy;
-  dummy.open(deviceCDD);
-  auto reg1 = dummy.getScalarRegisterAccessor<int32_t>("/REG1");
-  auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/REG2");
-  auto reg3 = dummy.getScalarRegisterAccessor<int32_t>("/REG3");
-  reg1.readLatest();
-  reg2.readLatest();
-  reg3.readLatest();
 
-  BOOST_CHECK_EQUAL(reg1, 42);
-  BOOST_CHECK_EQUAL(reg2, 0);
-  BOOST_CHECK_EQUAL(reg3, 0);
+  BOOST_CHECK_EQUAL(var1, 42);
+  BOOST_CHECK_EQUAL(var2, 0);
+  BOOST_CHECK_EQUAL(var3, 0);
 
   // recover the error
   throwInInitialisation = false;
@@ -229,22 +201,15 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 10000);
 
   // initialisation should be correct now
-  reg1.readLatest();
-  reg2.readLatest();
-  reg3.readLatest();
-
-  BOOST_CHECK_EQUAL(reg1, 42);
-  BOOST_CHECK_EQUAL(reg2, 47);
-  BOOST_CHECK_EQUAL(reg3, 52);
+  BOOST_CHECK_EQUAL(var1, 42);
+  BOOST_CHECK_EQUAL(var2, 47);
+  BOOST_CHECK_EQUAL(var3, 52);
 
   // now check that the initialisation error is also reportet when recovering
   // Prepare registers to be initialised
-  reg1 = 12;
-  reg1.write();
-  reg2 = 13;
-  reg2.write();
-  reg3 = 14;
-  reg3.write();
+  var1 = 12;
+  var2 = 13;
+  var3 = 14;
 
   // Make initialisation fail when executed, and then cause an error condition
   throwInInitialisation = true;

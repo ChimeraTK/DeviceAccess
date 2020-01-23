@@ -154,6 +154,10 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
 
   auto trigger = test.getScalar<int>("trigger");
 
+  // we do not use testable mode, so we need to read the initial values at CS ourself where present
+  readback1.read();
+  readback2.read();
+
   readbackDummy1 = 42;
   readbackDummy2 = 52;
 
@@ -348,9 +352,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   CHECK_TIMEOUT(message1.readLatest(), 10000);
   CHECK_TIMEOUT(status1.readLatest(), 10000);
   BOOST_CHECK_EQUAL(status1, 1);
-  CHECK_TIMEOUT(readback1.readNonBlocking(), 1000); // read the error flag
-  BOOST_CHECK(readback1.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(!readback1.readNonBlocking());
+  BOOST_CHECK(!readback1.readNonBlocking()); // error state at the beginning is not yet propagated
 
   // Device 2 might/will also come up in error state until the device is opened (which happends asynchronously in a
   // separate thread).
@@ -432,10 +434,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   TestApplication2 app;
 
   ctk::TestFacility test(false); // test facility without testable mode
-
-  app.initialise();
-  app.run();
-  //app.dumpConnections();
+  test.runApplication();
 
   //Wait for the devices to come up.
   CHECK_EQUAL_TIMEOUT(

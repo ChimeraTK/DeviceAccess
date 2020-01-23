@@ -149,10 +149,9 @@ void Application::run() {
   assert(applicationName != "");
 
   // set all initial version numbers in the modules to the same value
-  VersionNumber startVersion;
   for(auto& module : getSubmoduleListRecursive()) {
     if(module->getModuleType() != ModuleType::ApplicationModule) continue;
-    module->setCurrentVersionNumber(startVersion);
+    module->setCurrentVersionNumber(_startVersion);
   }
 
   // prepare the modules
@@ -161,6 +160,16 @@ void Application::run() {
   }
   for(auto& deviceModule : deviceModuleList) {
     deviceModule->prepare();
+  }
+
+  // check for application PVs which have a value, which needs to be propagated as initial value
+  for(auto& module : getSubmoduleListRecursive()) {
+    for(auto& var : module->getAccessorList()) {
+      if(!var.getAppAccessorNoType().isWriteable()) continue;
+      if(var.getAppAccessorNoType().getVersionNumber() >= _startVersion) {
+        var.setHasInitialValue(true);
+      }
+    }
   }
 
   // Switch life-cycle state to run
@@ -173,24 +182,6 @@ void Application::run() {
 
   for(auto& deviceModule : deviceModuleList) {
     deviceModule->run();
-  }
-
-  // Read all non-device variables once, to set the startup value from the persistency layer
-  // (without triggering an action inside the application)
-  // Note: this will read all application variables directly connected to either the control system or to another
-  // application module, e.g. the ConfigReader (which will provide initial values as well).
-  // Device variables are excluded for two reasons: Firstly, the device might be in an exception state when launching
-  // the application, so reading the variable would block until the device is properly opened. Secondly, some strange
-  // devices might cause side-effects when registers are read, and there would be no way to prevent these automatic
-  // reads from happening. If an application requires having an initial value from the device, it can simply issue
-  // a readLatest() at the beginning of its mainLoop() function.
-  for(auto& module : getSubmoduleListRecursive()) {
-    for(auto& variable : module->getAccessorList()) {
-      if(variable.getDirection().dir == VariableDirection::consuming &&
-          variable.getOwner().getFeedingNode().getType() != NodeType::Device) {
-        variable.getAppAccessorNoType().readLatest();
-      }
-    }
   }
 
   // start the threads for the modules
@@ -740,7 +731,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
           // connect the Device with e.g. a ControlSystem node via a
           // ThreadedFanOut
-          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
           fanOut->addSlave(consumingImpl, consumer);
           internalModuleList.push_back(fanOut);
           connectionMade = true;
@@ -749,7 +740,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto consumingImpl = createProcessVariable<UserType>(consumer);
           // connect the ControlSystem with e.g. a Device node via an
           // ThreadedFanOut
-          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
           fanOut->addSlave(consumingImpl, consumer);
           internalModuleList.push_back(fanOut);
           connectionMade = true;
@@ -785,7 +776,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             assert(devmod != nullptr);
 
             // create the trigger fan out and store it in the map and the internalModuleList
-            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl(), *devmod);
+            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl(), *devmod, network);
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
@@ -798,10 +789,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           // the right implementation of the FanOut
           boost::shared_ptr<ThreadedFanOut<UserType>> threadedFanOut;
           if(!feeder.getDirection().withReturn) {
-            threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+            threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
           }
           else {
-            threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl);
+            threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl, network);
           }
           internalModuleList.push_back(threadedFanOut);
           fanOut = threadedFanOut;

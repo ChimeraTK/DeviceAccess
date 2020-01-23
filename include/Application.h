@@ -199,6 +199,8 @@ namespace ChimeraTK {
 
     LifeCycleState getLifeCycleState() const { return lifeCycleState; }
 
+    VersionNumber getStartVersion() const { return _startVersion; }
+
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -379,6 +381,15 @@ namespace ChimeraTK {
      * VariableNetworkNode.*/
     std::unordered_set<const void*> debugMode_variableList;
 
+    /** Counter for how many write() operations have overwritten unread data */
+    std::atomic<size_t> dataLossCounter{0};
+
+    /** Life-cycle state of the application */
+    std::atomic<LifeCycleState> lifeCycleState{LifeCycleState::initialisation};
+
+    /** Version number used at application start, e.g. to propagate initial values */
+    VersionNumber _startVersion;
+
     template<typename UserType>
     friend class TestableModeAccessorDecorator; // needs access to the
                                                 // testableMode_mutex and
@@ -390,13 +401,6 @@ namespace ChimeraTK {
 
     template<typename UserType>
     friend class DebugPrintAccessorDecorator; // needs access to the idMap
-
-    /** Counter for how many write() operations have overwritten unread data */
-    std::atomic<size_t> dataLossCounter{0};
-
-    /** Life-cycle state of the application */
-    std::atomic<LifeCycleState> lifeCycleState{LifeCycleState::initialisation};
-
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");

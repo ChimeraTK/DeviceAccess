@@ -78,6 +78,10 @@ namespace ChimeraTK {
     void incrementDataFaultCounter(bool writeAllOutputs) override;
     void decrementDataFaultCounter(bool writeAllOutputs) override;
 
+    void setCurrentVersionNumber(VersionNumber versionNumber) override {
+      if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+    }
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */
@@ -86,13 +90,9 @@ namespace ChimeraTK {
     /** The thread executing mainLoop() */
     boost::thread moduleThread;
 
-    void setCurrentVersionNumber(VersionNumber versionNumber) override {
-      if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
-    }
-
     /** Version number of last push-type read operation - will be passed on to any
      * write operations */
-    VersionNumber currentVersionNumber;
+    VersionNumber currentVersionNumber{nullptr};
 
     /** Fault counter. If non-zero, getDataValidity() returns a fault, otherwise ok. */
     size_t faultCounter{0};

@@ -64,7 +64,6 @@ namespace ChimeraTK {
     /// virtualise() returns a reference.
     mutable VirtualModule virtualisedModule{"INVALID", "", ModuleType::Invalid};
     mutable bool virtualisedModule_isValid{false};
-    std::atomic<bool> testableModeReached{false};
   };
 
 } /* namespace ChimeraTK */

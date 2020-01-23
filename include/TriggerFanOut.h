@@ -26,14 +26,24 @@ namespace ChimeraTK {
    * and distributes each of them to any number of slaves. */
   class TriggerFanOut : public InternalModule {
    public:
-    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule)
-    : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule) {}
+    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule,
+        VariableNetwork& network)
+    : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule), _network(network) {}
 
     ~TriggerFanOut() { deactivate(); }
 
     void activate() override {
       assert(!_thread.joinable());
       _thread = boost::thread([this] { this->run(); });
+
+      // Wait until the thread has launched and acquired and released the testable mode lock at least once.
+      if(Application::getInstance().isTestableModeEnabled()) {
+        while(!testableModeReached) {
+          Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
+          usleep(100);
+          Application::getInstance().testableModeLock("acquireForReachTestableMode");
+        }
+      }
     }
 
     void deactivate() override {
@@ -66,13 +76,18 @@ namespace ChimeraTK {
     void run() {
       Application::registerThread("TrFO" + externalTrigger->getName());
       Application::testableModeLock("start");
-      while(true) {
-        // wait for external trigger
-        boost::this_thread::interruption_point();
-        Profiler::stopMeasurement();
+      testableModeReached = true;
+
+      ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
+
+      // If trigger gets an initial value pushed, read it (otherwise we would trigger twice at application start)
+      auto hasInitialValue = _network.getFeedingNode().getExternalTrigger().hasInitialValue();
+      if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
         externalTrigger->read();
-        Profiler::startMeasurement();
-        boost::this_thread::interruption_point();
+        version = externalTrigger->getVersionNumber();
+      }
+
+      while(true) {
         // receive data. We need to catch exceptions here, since the ExceptionHandlingDecorator cannot do this for us
         // inside a TransferGroup, if the exception is thrown inside doReadTransfer() (as it is directly called on the
         // lowest-level TransferElements inside the group).
@@ -80,11 +95,6 @@ namespace ChimeraTK {
       retry:
         try {
           if(!_deviceModule.device.isOpened()) {
-            if(lastValidity == DataValidity::ok) {
-              lastValidity = DataValidity::faulty;
-              auto version = externalTrigger->getVersionNumber();
-              boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, DataValidity::faulty));
-            }
             Application::getInstance().testableModeUnlock("waitForDeviceOpen");
             boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
             Application::getInstance().testableModeLock("waitForDeviceOpen");
@@ -94,7 +104,6 @@ namespace ChimeraTK {
         }
         catch(ChimeraTK::runtime_error& e) {
           // send the data to the consumers
-          auto version = externalTrigger->getVersionNumber();
           if(lastValidity == DataValidity::ok) {
             lastValidity = DataValidity::faulty;
             boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
@@ -102,9 +111,15 @@ namespace ChimeraTK {
           _deviceModule.reportException(e.what());
           goto retry;
         }
-        // send the data to the consumers
-        auto version = externalTrigger->getVersionNumber();
+        // send the version number to the consumers
         boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version));
+        // wait for external trigger (exception handling is done here by the decorator)
+        boost::this_thread::interruption_point();
+        Profiler::stopMeasurement();
+        externalTrigger->read();
+        Profiler::startMeasurement();
+        boost::this_thread::interruption_point();
+        version = externalTrigger->getVersionNumber();
       }
     }
 
@@ -154,6 +169,9 @@ namespace ChimeraTK {
 
     /** The DeviceModule of the feeder. Required for exception handling */
     DeviceModule& _deviceModule;
+
+    /** Reference to VariableNetwork which is being realised by this FanOut. **/
+    VariableNetwork& _network;
   };
 
 } /* namespace ChimeraTK */

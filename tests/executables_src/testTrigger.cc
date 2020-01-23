@@ -29,6 +29,8 @@
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
+#include "check_timeout.h"
+
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
@@ -36,17 +38,6 @@ constexpr char dummySdm[] = "sdm://./TestTransferGroupDummy=test.map";
 
 // list of user types the accessors are tested with
 typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
-
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    while(!(condition)) {                                                                                              \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-    }                                                                                                                  \
-  }
 
 /**********************************************************************************************************************/
 
@@ -78,7 +69,10 @@ class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
   ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
@@ -91,7 +85,11 @@ struct TestModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<T> theTrigger{this, "theTrigger", "MV/m", "Description"};
   ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
-  void mainLoop() {}
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required to test the initial values reliably.
+  boost::barrier mainLoopStarted;
+
+  void mainLoop() { mainLoopStarted.wait(); }
 };
 
 /*********************************************************************************************************************/
@@ -135,16 +133,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToApp, T, test_types) {
 
   app.dev["MyModule"]("readBack")[app.testModule.theTrigger] >> app.testModule.consumingPush;
   app.initialise();
+
+  ctk::Device dev("Dummy0");
+  dev.open();
+  dev.write("MyModule/actuator", 1); // write initial value
+
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // single theaded test
-  app.testModule.consumingPush = 0;
   app.testModule.feedingToDevice = 42;
-  BOOST_CHECK(app.testModule.consumingPush == 0);
+  BOOST_CHECK(app.testModule.consumingPush == 1);
   app.testModule.feedingToDevice.write();
-  BOOST_CHECK(app.testModule.consumingPush == 0);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush == 1);
   app.testModule.theTrigger.write();
-  BOOST_CHECK(app.testModule.consumingPush == 0);
   app.testModule.consumingPush.read();
   BOOST_CHECK(app.testModule.consumingPush == 42);
 
@@ -186,34 +189,36 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToCS, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
-
   app.dev("/MyModule/readBack", typeid(T), 1)[app.testModule.theTrigger] >> app.cs("myCSVar");
+
+  ctk::Device dev("Dummy0");
+  dev.open();
+  dev.write("MyModule/actuator", 1); // write initial value
 
   app.initialise();
   app.run();
 
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
 
-  // single theaded test only, since the receiving process scalar does not
-  // support blocking
+  // single theaded test only, since the receiving process scalar does not support blocking
+  myCSVar->read(); // read initial value
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 1);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice = 42;
+  dev.write("MyModule/actuator", 42);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
-  BOOST_CHECK(myCSVar->readNonBlocking() == false);
+  app.testModule.setCurrentVersionNumber({});
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 42);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 42);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice = 120;
-  BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
+  dev.write("MyModule/actuator", 120);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 120);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 120);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
 }
@@ -235,9 +240,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
-
   app.dev("/MyModule/readBack", typeid(T), 1)[app.cs("theTrigger", typeid(T), 1)] >> app.cs("myCSVar");
+
+  ctk::Device dev("Dummy0");
+  dev.open();
+  dev.write("MyModule/actuator", 1); // write initial value
 
   app.initialise();
   app.run();
@@ -245,27 +252,30 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
   auto theTrigger = pvManagers.first->getProcessArray<T>("/theTrigger");
 
-  // single theaded test only, since the receiving process scalar does not
-  // support blocking
+  // Need to send the trigger once, since ApplicationCore expects all CS variables to be written once by the
+  // ControlSystemAdapter. We do not use the TestFacility here, so we have to do it ourself.
+  theTrigger->write();
+
+  // single theaded test only, since the receiving process scalar does not support blocking
+  myCSVar->read(); // read initial value
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 1);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice = 42;
-  BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
+  dev.write("MyModule/actuator", 42);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   myCSVar->accessData(0) = 0;
   theTrigger->write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 42);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 42);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice = 120;
-  BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  app.testModule.feedingToDevice.write();
+  dev.write("MyModule/actuator", 120);
+  usleep(10000);
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   myCSVar->accessData(0) = 0;
   theTrigger->write();
-  CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(myCSVar->accessData(0) == 120);
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 120);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
 }

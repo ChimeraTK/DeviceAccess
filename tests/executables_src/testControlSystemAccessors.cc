@@ -11,6 +11,7 @@
 
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
+#include <boost/thread/barrier.hpp>
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
@@ -46,12 +47,19 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarPushInput<T> consumer{this, "consumer", "", "No comment."};
   ctk::ScalarOutput<T> feeder{this, "feeder", "MV/m", "Some fancy explanation about this variable"};
 
-  void mainLoop() {}
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required to test the initial values reliably.
+  boost::barrier mainLoopStarted;
+
+  void mainLoop() { mainLoopStarted.wait(); }
 };
 
 /*********************************************************************************************************************/
@@ -123,6 +131,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromCS, T, test_types) {
   BOOST_CHECK(myConsumer->getName() == "/myConsumer");
   BOOST_CHECK(myConsumer->getUnit() == "");
   BOOST_CHECK(myConsumer->getDescription() == "The test module - No comment.");
+
+  myConsumer->accessData(0) = 123; // set inital value
+  myConsumer->write();
+
+  app.run();                             // should propagate initial value
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+  BOOST_CHECK(app.testModule.consumer == 123); // check initial value
 
   myConsumer->accessData(0) = 42;
   myConsumer->write();
@@ -246,13 +262,30 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMultipleRePublications, T, test_types) {
   app.testModule.consumer >> app.cs("myConsumer_copy1");
   app.testModule.consumer >> app.cs("myConsumer_copy2");
   app.testModule.consumer >> app.cs("myConsumer_copy3");
+
   app.initialise();
-  app.run(); // make the connections and start the FanOut threads
 
   auto myConsumer = pvManagers.first->getProcessArray<T>("/myConsumer");
   auto myConsumer_copy1 = pvManagers.first->getProcessArray<T>("/myConsumer_copy1");
   auto myConsumer_copy2 = pvManagers.first->getProcessArray<T>("/myConsumer_copy2");
   auto myConsumer_copy3 = pvManagers.first->getProcessArray<T>("/myConsumer_copy3");
+
+  myConsumer->accessData(0) = 66; // set inital value
+  myConsumer->write();
+
+  app.run();                             // make the connections, start the FanOut threads and propagate initial value
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+  BOOST_CHECK(app.testModule.consumer == 66);
+  myConsumer_copy1->read();
+  myConsumer_copy2->read();
+  myConsumer_copy3->read();
+  BOOST_CHECK(myConsumer_copy1->accessData(0) == 66);
+  BOOST_CHECK(myConsumer_copy2->accessData(0) == 66);
+  BOOST_CHECK(myConsumer_copy3->accessData(0) == 66);
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == false);
 
   BOOST_CHECK(myConsumer->getName() == "/myConsumer");
   BOOST_CHECK(myConsumer->getUnit() == "");

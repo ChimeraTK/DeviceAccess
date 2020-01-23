@@ -81,9 +81,38 @@ namespace ChimeraTK {
 
   void ApplicationModule::mainLoopWrapper() {
     Application::registerThread("AM_" + getName());
+
+    // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
     Application::testableModeLock("start");
+
+    // Read all variables once to obtain the initial values from the devices and from the control system persistency
+    // layer. This is done in two steps, first for all poll-type variables and then for all push-types, because
+    // poll-type reads might trigger distribution of values to push-type variables via a ConsumingFanOut.
+    for(auto& variable : getAccessorListRecursive()) {
+      if(!variable.getAppAccessorNoType().isReadable()) continue;
+      if(variable.getMode() == UpdateMode::poll) {
+        auto hasInitialValue = variable.hasInitialValue();
+        if(hasInitialValue != VariableNetworkNode::InitialValueMode::None) {
+          variable.getAppAccessorNoType().readLatest();
+        }
+      }
+    }
+    for(auto& variable : getAccessorListRecursive()) {
+      if(!variable.getAppAccessorNoType().isReadable()) continue;
+      if(variable.getMode() == UpdateMode::push) {
+        auto hasInitialValue = variable.hasInitialValue();
+        if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
+          variable.getAppAccessorNoType().readLatest();
+        }
+        else if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
+          variable.getAppAccessorNoType().read();
+        }
+      }
+    }
+
     // We are holding the testable mode lock, so we are sure the mechanism will work now.
     testableModeReached = true;
+
     // enter the main loop
     mainLoop();
     Application::testableModeUnlock("terminate");

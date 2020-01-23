@@ -383,4 +383,36 @@ namespace ChimeraTK {
 
   void VariableNetworkNode::setPublicName(const std::string& name) const { pdata->publicName = name; }
 
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::setHasInitialValue(bool hasInitialValue) { pdata->hasInitialValue = hasInitialValue; }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::InitialValueMode VariableNetworkNode::hasInitialValue() const {
+    if(getType() == NodeType::ControlSystem) {
+      return InitialValueMode::Push;
+    }
+    if(getType() == NodeType::Device || getType() == NodeType::Constant) {
+      if(getOwner().getTriggerType() == VariableNetwork::TriggerType::feeder) {
+        return InitialValueMode::Poll;
+      }
+      else {
+        assert(getOwner().getTriggerType() == VariableNetwork::TriggerType::external ||
+            getOwner().getTriggerType() == VariableNetwork::TriggerType::pollingConsumer);
+        return InitialValueMode::Push;
+      }
+    }
+    assert(getType() == NodeType::Application);
+    if(getDirection().dir == VariableDirection::feeding) {
+      if(pdata->hasInitialValue) {
+        return InitialValueMode::Push;
+      }
+      else {
+        return InitialValueMode::None;
+      }
+    }
+    return getOwner().getFeedingNode().hasInitialValue();
+  }
+
 } // namespace ChimeraTK

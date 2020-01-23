@@ -135,7 +135,8 @@ namespace ChimeraTK {
       if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
     }
 
-    VersionNumber currentVersionNumber;
+    VersionNumber currentVersionNumber{nullptr};
+
     /** This function connects DeviceError VariableGroup to ContolSystem*/
     void defineConnections() override;
 
