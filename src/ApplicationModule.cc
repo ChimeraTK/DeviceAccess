@@ -89,7 +89,7 @@ namespace ChimeraTK {
     // layer. This is done in two steps, first for all poll-type variables and then for all push-types, because
     // poll-type reads might trigger distribution of values to push-type variables via a ConsumingFanOut.
     for(auto& variable : getAccessorListRecursive()) {
-      if(variable.getDirection().dir == VariableDirection::feeding) continue;
+      if(!variable.getAppAccessorNoType().isReadable()) continue;
       if(variable.getMode() == UpdateMode::poll) {
         auto hasInitialValue = variable.hasInitialValue();
         if(hasInitialValue != VariableNetworkNode::InitialValueMode::None) {
@@ -98,7 +98,7 @@ namespace ChimeraTK {
       }
     }
     for(auto& variable : getAccessorListRecursive()) {
-      if(variable.getDirection().dir == VariableDirection::feeding) continue;
+      if(!variable.getAppAccessorNoType().isReadable()) continue;
       if(variable.getMode() == UpdateMode::push) {
         auto hasInitialValue = variable.hasInitialValue();
         if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
