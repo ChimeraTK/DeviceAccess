@@ -646,4 +646,57 @@ BOOST_AUTO_TEST_CASE(testreadDeviceWithTrigger) {
   BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
 }
 
+BOOST_AUTO_TEST_CASE(testConsumingFanout){
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
+  auto result = test.getScalar<int>("m1/Module1_result");
+
+  auto pollRegisterSource = device2->getRawAccessor("m1","i2");
+  pollRegisterSource = 100; 
+
+  threadedFanoutInput = 10;
+
+  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
+  consumingFanoutSource = 1;
+
+  //----------------------------------------------------------//
+  // no device module exception
+  app.run();
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 111);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromConsumingFanout, 1);
+  BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
+
+  // --------------------------------------------------------//
+  // device exception on consuming fanout source read
+  consumingFanoutSource = 0;
+
+  device1->throwExceptionRead = true;
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 111);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromConsumingFanout, 1);
+  BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::faulty);
+
+  // --------------------------------------------------------//
+  // Recovery
+  device1->throwExceptionRead = true;
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 110);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromConsumingFanout, 0);
+  BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
+}
 BOOST_AUTO_TEST_SUITE_END()
