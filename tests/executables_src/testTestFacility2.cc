@@ -45,12 +45,11 @@ struct TestApp : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testSumLimiter){
     TestApp theTestApp;
     ChimeraTK::TestFacility testFacility;
+    testFacility.setScalarDefault<double>("/input", 25.);
 
-    testFacility.writeScalar<double>("/input",25.);
-    sleep(2);
     testFacility.runApplication();
 
-    // at this point all main loops should have started and inputs waiting in read()
+    // at this point all main loops should have started, default values are processed and inputs waiting in read()
 
     BOOST_CHECK_CLOSE(testFacility.readScalar<double>("/output"), 50., 0.001);
 
