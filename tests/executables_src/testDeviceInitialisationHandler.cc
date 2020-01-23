@@ -84,8 +84,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  // FIXME: Due to a bug it is /REG2/REG2 instead of just /REG2. This will fails once the bug has been solved.
-  auto reg2_cs = test.getScalar<int32_t>("/REG2/REG2");
+  auto reg2_cs = test.getScalar<int32_t>("/REG2");
   reg2_cs = 19;
   reg2_cs.write();
   test.stepApplication();
@@ -140,7 +139,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+  auto reg4_cs = test.getScalar<int32_t>("/REG4");
   reg4_cs = 19;
   reg4_cs.write();
   test.stepApplication();
@@ -218,7 +217,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+  auto reg4_cs = test.getScalar<int32_t>("/REG4");
   reg4_cs = 20;
   reg4_cs.write();
 
