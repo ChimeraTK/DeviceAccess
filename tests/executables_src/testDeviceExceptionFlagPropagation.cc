@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     // Open and put device in an error state
     dummyBackend1->throwExceptionOpen = true;
     ctk::TestFacility test(false);
-    CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::ok, 10000);
+    BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
 
     // set the read mode
     app.module.readMode = readMode;
@@ -107,7 +107,8 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
 
     // Trigger and check
     app.name.name.tick.write();
-    CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty, 10000);
+    usleep(10000);
+    BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
 
     // recover from error state
     dummyBackend1->throwExceptionOpen = false;
