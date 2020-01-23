@@ -95,11 +95,6 @@ namespace ChimeraTK {
       retry:
         try {
           if(!_deviceModule.device.isOpened()) {
-            if(lastValidity == DataValidity::ok) {
-              lastValidity = DataValidity::faulty;
-              version = externalTrigger->getVersionNumber();
-              boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, DataValidity::faulty));
-            }
             Application::getInstance().testableModeUnlock("waitForDeviceOpen");
             boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
             Application::getInstance().testableModeLock("waitForDeviceOpen");
@@ -118,7 +113,7 @@ namespace ChimeraTK {
         }
         // send the version number to the consumers
         boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version));
-        // wait for external trigger
+        // wait for external trigger (exception handling is done here by the decorator)
         boost::this_thread::interruption_point();
         Profiler::stopMeasurement();
         externalTrigger->read();

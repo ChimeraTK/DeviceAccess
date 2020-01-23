@@ -58,7 +58,6 @@ namespace ChimeraTK {
             deviceModule.writeAfterOpen.push_back(this->_recoveryAccessor);
             return false;
           }
-          setOwnerValidityFunction(DataValidity::faulty);
           Application::getInstance().testableModeUnlock("waitForDeviceOpen");
           boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
           Application::getInstance().testableModeLock("waitForDeviceOpen");
