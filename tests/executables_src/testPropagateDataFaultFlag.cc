@@ -417,32 +417,32 @@ struct TestApplication3 : ctk::Application {
   Module2 m2{ this, "m2", "" };
 
   ctk::ControlSystemModule cs;
-  ctk::DeviceModule device1{ this, ExceptionDummyCDD1 };
-  ctk::DeviceModule device2{ this, ExceptionDummyCDD2 };
+  ctk::DeviceModule device1DummyBackend{ this, ExceptionDummyCDD1 };
+  ctk::DeviceModule device2DummyBackend{ this, ExceptionDummyCDD2 };
 
   void defineConnections() override {
-    device1["m1"]("i1") >> m1("i1");
+    device1DummyBackend["m1"]("i1") >> m1("i1");
     findTag("CS").connectTo(cs);
-    findTag("DEVICE1").connectTo(device1);
-    findTag("DEVICE2").connectTo(device2);
-    device1["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
+    findTag("DEVICE1").connectTo(device1DummyBackend);
+    findTag("DEVICE2").connectTo(device2DummyBackend);
+    device1DummyBackend["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
   }
 };
 
 struct Fixture_testFacility {
   Fixture_testFacility()
-      : device1(boost::dynamic_pointer_cast<ExceptionDummy>(
+      : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
             ChimeraTK::BackendFactory::getInstance().createBackend(
                 TestApplication3::ExceptionDummyCDD1))),
-        device2(boost::dynamic_pointer_cast<ExceptionDummy>(
+        device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
             ChimeraTK::BackendFactory::getInstance().createBackend(
                 TestApplication3::ExceptionDummyCDD2))) {
-    device1->open();
-    device2->open();
+    device1DummyBackend->open();
+    device2DummyBackend->open();
     test.runApplication();
   }
-  boost::shared_ptr<ExceptionDummy> device1;
-  boost::shared_ptr<ExceptionDummy> device2;
+  boost::shared_ptr<ExceptionDummy> device1DummyBackend;
+  boost::shared_ptr<ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
   ctk::TestFacility test;
 };
@@ -457,10 +457,10 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   threadedFanoutInput = 20;
   threadedFanoutInput.write();
   // write to register: m1.i1 linked with the consumingFanout.
-  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
   consumingFanoutSource = 10;
 
-  auto pollRegister = device2->getRawAccessor("m1", "i2");
+  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
   pollRegister = 5;
 
   test.stepApplication();
@@ -499,7 +499,7 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
 }
 
 BOOST_AUTO_TEST_CASE(testInvalidTrigger){
-  auto deviceRegister = device1->getRawAccessor("m1", "i3");
+  auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
   deviceRegister = 20;
 
   auto trigger = test.getScalar<int>("trigger");
@@ -549,17 +549,17 @@ BOOST_AUTO_TEST_SUITE_END()
 
 struct Fixture_noTestFacility {
   Fixture_noTestFacility()
-      : device1(boost::dynamic_pointer_cast<ExceptionDummy>(
+      : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
             ChimeraTK::BackendFactory::getInstance().createBackend(
                 TestApplication3::ExceptionDummyCDD1))),
-        device2(boost::dynamic_pointer_cast<ExceptionDummy>(
+        device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
             ChimeraTK::BackendFactory::getInstance().createBackend(
                 TestApplication3::ExceptionDummyCDD2))) {
-    device1->open();
-    device2->open();
+    device1DummyBackend->open();
+    device2DummyBackend->open();
   }
-  boost::shared_ptr<ExceptionDummy> device1;
-  boost::shared_ptr<ExceptionDummy> device2;
+  boost::shared_ptr<ExceptionDummy> device1DummyBackend;
+  boost::shared_ptr<ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
   ctk::TestFacility test{ false };
 };
@@ -567,8 +567,8 @@ struct Fixture_noTestFacility {
 BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestFacility)
 
 BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
-  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
-  auto pollRegister = device2->getRawAccessor("m1", "i2");
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
 
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto result = test.getScalar<int>("m1/Module1_result");
@@ -590,7 +590,7 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   // device module exception
   pollRegister = 0;
 
-  device2->throwExceptionRead = true;
+  device2DummyBackend->throwExceptionRead = true;
 
   threadedFanoutInput.write();
   CHECK_TIMEOUT(result.readLatest(), 10000);
@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
 
   // -------------------------------------------------------------//
   // recovery from device module exception
-  device2->throwExceptionRead = false;
+  device2DummyBackend->throwExceptionRead = false;
 
   CHECK_TIMEOUT(result.readLatest(), 10000);
   BOOST_CHECK_EQUAL(result, 11000);
@@ -613,7 +613,7 @@ BOOST_AUTO_TEST_CASE(testreadDeviceWithTrigger) {
   // trigger works as expected
   trigger = 1;
 
-  auto deviceRegister = device1->getRawAccessor("m1", "i3");
+  auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
   deviceRegister = 30;
 
   app.run();
@@ -626,7 +626,7 @@ BOOST_AUTO_TEST_CASE(testreadDeviceWithTrigger) {
   //----------------------------------------------------------------//
   // Device module exception
   deviceRegister = 10;
-  device1->throwExceptionRead = true;
+  device1DummyBackend->throwExceptionRead = true;
 
   trigger = 1;
   trigger.write();
@@ -636,7 +636,7 @@ BOOST_AUTO_TEST_CASE(testreadDeviceWithTrigger) {
   BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::faulty);
   //----------------------------------------------------------------//
   // Recovery
-  device1->throwExceptionRead = false;
+  device1DummyBackend->throwExceptionRead = false;
 
   trigger = 1;
   trigger.write();
@@ -651,12 +651,12 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout){
   auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
   auto result = test.getScalar<int>("m1/Module1_result");
 
-  auto pollRegisterSource = device2->getRawAccessor("m1","i2");
+  auto pollRegisterSource = device2DummyBackend->getRawAccessor("m1","i2");
   pollRegisterSource = 100; 
 
   threadedFanoutInput = 10;
 
-  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
   consumingFanoutSource = 1;
 
   //----------------------------------------------------------//
@@ -676,7 +676,7 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout){
   // device exception on consuming fanout source read
   consumingFanoutSource = 0;
 
-  device1->throwExceptionRead = true;
+  device1DummyBackend->throwExceptionRead = true;
   threadedFanoutInput.write();
 
   CHECK_TIMEOUT(result.readLatest(), 10000);
@@ -689,7 +689,7 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout){
 
   // --------------------------------------------------------//
   // Recovery
-  device1->throwExceptionRead = true;
+  device1DummyBackend->throwExceptionRead = true;
 
   CHECK_TIMEOUT(result.readLatest(), 10000);
   BOOST_CHECK_EQUAL(result, 110);
@@ -705,10 +705,10 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   auto m1_result = test.getScalar<int>("m1/Module1_result");
   auto m2_result = test.getScalar<int>("m2/Module2_result");
 
-  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
   consumingFanoutSource = 1000;
 
-  auto pollRegister = device2->getRawAccessor("m1", "i2");
+  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
   pollRegister = 100;
 
   threadedFanoutInput = 1;
@@ -740,7 +740,7 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
   // ---------------------------------------------------------------------//
   // device module exception
-  device2->throwExceptionRead = true;
+  device2DummyBackend->throwExceptionRead = true;
   threadedFanoutInput = 0;
   threadedFanoutInput.write();
 
@@ -754,8 +754,7 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
   // ---------------------------------------------------------------------//
   // device exception recovery
-  device2->throwExceptionRead = false;
-
+  device2DummyBackend->throwExceptionRead = false;
 
   CHECK_TIMEOUT(m1_result.readLatest(), 10000);
   BOOST_CHECK_EQUAL(m1_result, 1100);
@@ -767,7 +766,7 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
   // ---------------------------------------------------------------------//
   // recovery: fanout input
-  device2->throwExceptionRead = false;
+  device2DummyBackend->throwExceptionRead = false;
   threadedFanoutInput.setDataValidity(ctk::DataValidity::ok);
   threadedFanoutInput.write();
 
