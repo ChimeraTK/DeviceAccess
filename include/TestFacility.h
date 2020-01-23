@@ -192,7 +192,7 @@ namespace ChimeraTK {
     void setScalarDefault(const ChimeraTK::RegisterPath& name, const T& value) {
       std::vector<T> vv;
       vv.push_back(value);
-      setArrayDefaults(name, vv);
+      setArrayDefault(name, vv);
     }
 
     /** Set default value for array process variable. */
