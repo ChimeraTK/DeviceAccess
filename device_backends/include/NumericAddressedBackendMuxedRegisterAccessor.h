@@ -138,7 +138,7 @@ namespace ChimeraTK {
     bool _isNotWriteable;
 
     /// Version number of last transfer
-    VersionNumber currentVersion;
+    VersionNumber currentVersion{nullptr};
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};

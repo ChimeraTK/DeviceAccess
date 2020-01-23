@@ -152,7 +152,7 @@ namespace ChimeraTK {
     void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
 
     // Version number of the last transfer
-    VersionNumber currentVersion;
+    VersionNumber currentVersion{nullptr};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LNMBackendVariableAccessor);
