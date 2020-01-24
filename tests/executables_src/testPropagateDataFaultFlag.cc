@@ -341,18 +341,18 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
 
 struct Module1 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarPushInput<int> fromThreadedFanout{ this, "o1", "", "", { "DEVICE1", "CS" } };
+  ctk::ScalarPushInput<int> fromThreadedFanout{this, "o1", "", "", {"DEVICE1", "CS"}};
 
   // As a workaround the device side connection is done manually for
   // acheiving this consumingFanout; see:
   // TestApplication3::defineConnections
-  ctk::ScalarPollInput<int> fromConsumingFanout{ this, "i1", "", "", { "CS" } };
+  ctk::ScalarPollInput<int> fromConsumingFanout{this, "i1", "", "", {"CS"}};
 
-  ctk::ScalarPollInput<int> fromDevice{ this, "i2", "", "", { "DEVICE2" } };
-  ctk::ScalarOutput<int> result{ this, "Module1_result", "", "", { "CS" } };
+  ctk::ScalarPollInput<int> fromDevice{this, "i2", "", "", {"DEVICE2"}};
+  ctk::ScalarOutput<int> result{this, "Module1_result", "", "", {"CS"}};
 
   void mainLoop() override {
-    while (true) {
+    while(true) {
       readAll();
       result = fromConsumingFanout + fromThreadedFanout + fromDevice;
       writeAll();
@@ -365,17 +365,13 @@ struct Module2 : ctk::ApplicationModule {
 
   struct : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarPushInput<int> result{ this,
-                                      "Module1_result",
-                                      "",
-                                      "",
-                                      { "CS" } };
-  } m1VarsFromCS{ this, "m1", "", ctk::HierarchyModifier::oneLevelUp }; // "m1" being in there 
-                                                                        // not good for a general case
-  ctk::ScalarOutput<int> result{ this, "Module2_result", "", "", { "CS" } };
+    ctk::ScalarPushInput<int> result{this, "Module1_result", "", "", {"CS"}};
+  } m1VarsFromCS{this, "m1", "", ctk::HierarchyModifier::oneLevelUp}; // "m1" being in there
+                                                                      // not good for a general case
+  ctk::ScalarOutput<int> result{this, "Module2_result", "", "", {"CS"}};
 
   void mainLoop() override {
-    while (true) {
+    while(true) {
       readAll();
       result = static_cast<int>(m1VarsFromCS.result);
       writeAll();
@@ -385,7 +381,7 @@ struct Module2 : ctk::ApplicationModule {
 
 // struct TestApplication3 : ctk::ApplicationModule {
 struct TestApplication3 : ctk::Application {
-/*
+  /*
  *   CS +---> threaded fanout +------------------+
  *                +                              v
  *                +--------+                   +Device1+
@@ -406,19 +402,19 @@ struct TestApplication3 : ctk::Application {
  *                         |
  *                         +
  *                         CS
- */                        
+ */
 
   constexpr static char const* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=testDataValidity1.map)";
   constexpr static char const* ExceptionDummyCDD2 = "(ExceptionDummy:1?map=testDataValidity2.map)";
   TestApplication3() : Application("testDataFlagPropagation") {}
   ~TestApplication3() { shutdown(); }
 
-  Module1 m1{ this, "m1", "" };
-  Module2 m2{ this, "m2", "" };
+  Module1 m1{this, "m1", ""};
+  Module2 m2{this, "m2", ""};
 
   ctk::ControlSystemModule cs;
-  ctk::DeviceModule device1DummyBackend{ this, ExceptionDummyCDD1 };
-  ctk::DeviceModule device2DummyBackend{ this, ExceptionDummyCDD2 };
+  ctk::DeviceModule device1DummyBackend{this, ExceptionDummyCDD1};
+  ctk::DeviceModule device2DummyBackend{this, ExceptionDummyCDD2};
 
   void defineConnections() override {
     device1DummyBackend["m1"]("i1") >> m1("i1");
@@ -431,12 +427,10 @@ struct TestApplication3 : ctk::Application {
 
 struct Fixture_testFacility {
   Fixture_testFacility()
-      : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
-            ChimeraTK::BackendFactory::getInstance().createBackend(
-                TestApplication3::ExceptionDummyCDD1))),
-        device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
-            ChimeraTK::BackendFactory::getInstance().createBackend(
-                TestApplication3::ExceptionDummyCDD2))) {
+  : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
+    device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
     device1DummyBackend->open();
     device2DummyBackend->open();
     test.runApplication();
@@ -471,7 +465,7 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
 
   BOOST_CHECK_EQUAL(m2_result, 35);
-  BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::ok);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
 
   threadedFanoutInput = 10;
   threadedFanoutInput.setDataValidity(ctk::DataValidity::faulty);
@@ -483,7 +477,7 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   BOOST_CHECK_EQUAL(m1_result, 25);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK_EQUAL(m2_result, 25);
-  BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::faulty);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
 
   threadedFanoutInput = 40;
   threadedFanoutInput.setDataValidity(ctk::DataValidity::ok);
@@ -495,12 +489,12 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   BOOST_CHECK_EQUAL(m1_result, 55);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(m2_result, 55);
-  BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::ok);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testInvalidTrigger){
+BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   return; // FIXME Test does not pass because feature is not implemented yet.
-          // See issue #FIXME
+          // See issue #109
   auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
   deviceRegister = 20;
 
@@ -546,24 +540,21 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger){
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 }
 
-
 BOOST_AUTO_TEST_SUITE_END()
 
 struct Fixture_noTestFacility {
   Fixture_noTestFacility()
-      : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
-            ChimeraTK::BackendFactory::getInstance().createBackend(
-                TestApplication3::ExceptionDummyCDD1))),
-        device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
-            ChimeraTK::BackendFactory::getInstance().createBackend(
-                TestApplication3::ExceptionDummyCDD2))) {
+  : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
+    device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
     device1DummyBackend->open();
     device2DummyBackend->open();
   }
   boost::shared_ptr<ExceptionDummy> device1DummyBackend;
   boost::shared_ptr<ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
-  ctk::TestFacility test{ false };
+  ctk::TestFacility test{false};
 };
 
 BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestFacility)
@@ -610,9 +601,9 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testreadDeviceWithTrigger) {
+BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
   return; // FIXME Test does not pass because feature is not implemented yet.
-          // See issue #FIXME
+          // See issue #110
   auto trigger = test.getScalar<int>("trigger");
   auto fromDevice = test.getScalar<int>("i3"); // cs side display: m1.i3
   //----------------------------------------------------------------//
@@ -652,15 +643,15 @@ BOOST_AUTO_TEST_CASE(testreadDeviceWithTrigger) {
   BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testConsumingFanout){
+BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   return; // FIXME Test does not pass because feature is not implemented yet.
           // See issue #102
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
   auto result = test.getScalar<int>("m1/Module1_result");
 
-  auto pollRegisterSource = device2DummyBackend->getRawAccessor("m1","i2");
-  pollRegisterSource = 100; 
+  auto pollRegisterSource = device2DummyBackend->getRawAccessor("m1", "i2");
+  pollRegisterSource = 100;
 
   threadedFanoutInput = 10;
 
