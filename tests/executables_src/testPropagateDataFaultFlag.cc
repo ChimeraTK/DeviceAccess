@@ -16,20 +16,12 @@
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
 #include "TestFacility.h"
+#include "ExceptionDevice.h"
+#include "ModuleGroup.h"
+#include "check_timeout.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
-
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    while(!(condition)) {                                                                                              \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-    }                                                                                                                  \
-  }
 
 /* dummy application */
 
@@ -240,7 +232,7 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
 
   test.runApplication();
 
-  app.dumpConnections();
+  //app.dumpConnections();
 
   // test if fault flag propagates to all outputs
   Ai1 = 1;
@@ -340,3 +332,452 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
 }
 
 /*********************************************************************************************************************/
+/*
+ * Tests below verify data fault flag propagation on:
+ * - Threaded FanOut
+ * - Consuming FanOut
+ * - Triggers
+ */
+
+struct Module1 : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+  ctk::ScalarPushInput<int> fromThreadedFanout{this, "o1", "", "", {"DEVICE1", "CS"}};
+
+  // As a workaround the device side connection is done manually for
+  // acheiving this consumingFanout; see:
+  // TestApplication3::defineConnections
+  ctk::ScalarPollInput<int> fromConsumingFanout{this, "i1", "", "", {"CS"}};
+
+  ctk::ScalarPollInput<int> fromDevice{this, "i2", "", "", {"DEVICE2"}};
+  ctk::ScalarOutput<int> result{this, "Module1_result", "", "", {"CS"}};
+
+  void mainLoop() override {
+    while(true) {
+      readAll();
+      result = fromConsumingFanout + fromThreadedFanout + fromDevice;
+      writeAll();
+    }
+  }
+};
+
+struct Module2 : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  struct : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<int> result{this, "Module1_result", "", "", {"CS"}};
+  } m1VarsFromCS{this, "m1", "", ctk::HierarchyModifier::oneLevelUp}; // "m1" being in there
+                                                                      // not good for a general case
+  ctk::ScalarOutput<int> result{this, "Module2_result", "", "", {"CS"}};
+
+  void mainLoop() override {
+    while(true) {
+      readAll();
+      result = static_cast<int>(m1VarsFromCS.result);
+      writeAll();
+    }
+  }
+};
+
+// struct TestApplication3 : ctk::ApplicationModule {
+struct TestApplication3 : ctk::Application {
+  /*
+ *   CS +---> threaded fanout +------------------+
+ *                +                              v
+ *                +--------+                   +Device1+
+ *                         |                   |       |
+ *                         v                +--+       |
+ *     CS   <---------+ Module1 <-------+   v          |
+ *                 |       ^            +Consuming     |
+ *                 |       +---------+    fanout       |
+ *                 +----+            +      +          |
+ *                      v         Device2   |          |
+ *     CS   <---------+ Module2             |          |
+ *                                          |          |
+ *     CS   <-------------------------------+          |
+ *                                                     |
+ *                                                     |
+ *     CS   <---------+ Trigger <----------------------+
+ *                         ^
+ *                         |
+ *                         +
+ *                         CS
+ */
+
+  constexpr static char const* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=testDataValidity1.map)";
+  constexpr static char const* ExceptionDummyCDD2 = "(ExceptionDummy:1?map=testDataValidity2.map)";
+  TestApplication3() : Application("testDataFlagPropagation") {}
+  ~TestApplication3() { shutdown(); }
+
+  Module1 m1{this, "m1", ""};
+  Module2 m2{this, "m2", ""};
+
+  ctk::ControlSystemModule cs;
+  ctk::DeviceModule device1DummyBackend{this, ExceptionDummyCDD1};
+  ctk::DeviceModule device2DummyBackend{this, ExceptionDummyCDD2};
+
+  void defineConnections() override {
+    device1DummyBackend["m1"]("i1") >> m1("i1");
+    findTag("CS").connectTo(cs);
+    findTag("DEVICE1").connectTo(device1DummyBackend);
+    findTag("DEVICE2").connectTo(device2DummyBackend);
+    device1DummyBackend["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
+  }
+};
+
+struct Fixture_testFacility {
+  Fixture_testFacility()
+  : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
+    device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
+    device1DummyBackend->open();
+    device2DummyBackend->open();
+    test.runApplication();
+  }
+  boost::shared_ptr<ExceptionDummy> device1DummyBackend;
+  boost::shared_ptr<ExceptionDummy> device2DummyBackend;
+  TestApplication3 app;
+  ctk::TestFacility test;
+};
+
+BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, Fixture_testFacility)
+
+BOOST_AUTO_TEST_CASE(testThreadedFanout) {
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto m1_result = test.getScalar<int>("m1/Module1_result");
+  auto m2_result = test.getScalar<int>("m2/Module2_result");
+
+  threadedFanoutInput = 20;
+  threadedFanoutInput.write();
+  // write to register: m1.i1 linked with the consumingFanout.
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  consumingFanoutSource = 10;
+
+  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+  pollRegister = 5;
+
+  test.stepApplication();
+
+  m1_result.read();
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m1_result, 35);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+
+  BOOST_CHECK_EQUAL(m2_result, 35);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
+
+  threadedFanoutInput = 10;
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::faulty);
+  threadedFanoutInput.write();
+  test.stepApplication();
+
+  m1_result.read();
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m1_result, 25);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(m2_result, 25);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+
+  threadedFanoutInput = 40;
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::ok);
+  threadedFanoutInput.write();
+  test.stepApplication();
+
+  m1_result.read();
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m1_result, 55);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(m2_result, 55);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
+}
+
+BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
+  return; // FIXME Test does not pass because feature is not implemented yet.
+          // See issue #109
+  auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
+  deviceRegister = 20;
+
+  auto trigger = test.getScalar<int>("trigger");
+  auto result = test.getScalar<int>("i3"); //Cs hook into reg: m1.i3
+
+  //----------------------------------------------------------------//
+  // trigger works as expected
+  trigger = 1;
+  trigger.write();
+
+  test.stepApplication();
+
+  result.read();
+  BOOST_CHECK_EQUAL(result, 20);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  //----------------------------------------------------------------//
+  // faulty trigger
+  deviceRegister = 30;
+  trigger = 1;
+  trigger.setDataValidity(ctk::DataValidity::faulty);
+  trigger.write();
+
+  test.stepApplication();
+
+  result.read();
+  BOOST_CHECK_EQUAL(result, 30);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  //----------------------------------------------------------------//
+  // recovery
+  deviceRegister = 50;
+
+  trigger = 1;
+  trigger.setDataValidity(ctk::DataValidity::ok);
+  trigger.write();
+
+  test.stepApplication();
+
+  result.read();
+  BOOST_CHECK_EQUAL(result, 50);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+struct Fixture_noTestFacility {
+  Fixture_noTestFacility()
+  : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
+    device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
+    device1DummyBackend->open();
+    device2DummyBackend->open();
+  }
+  boost::shared_ptr<ExceptionDummy> device1DummyBackend;
+  boost::shared_ptr<ExceptionDummy> device2DummyBackend;
+  TestApplication3 app;
+  ctk::TestFacility test{false};
+};
+
+BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestFacility)
+
+BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
+  return; // FIXME Test does not pass because feature is not implemented yet.
+          // See issue #102
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto result = test.getScalar<int>("m1/Module1_result");
+
+  threadedFanoutInput = 10000;
+  consumingFanoutSource = 1000;
+  pollRegister = 1;
+
+  // -------------------------------------------------------------//
+  // without errors
+  app.run();
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 11001);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  // -------------------------------------------------------------//
+  // device module exception
+  pollRegister = 0;
+
+  device2DummyBackend->throwExceptionRead = true;
+
+  threadedFanoutInput.write();
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 11001);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // -------------------------------------------------------------//
+  // recovery from device module exception
+  device2DummyBackend->throwExceptionRead = false;
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 11000);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+}
+
+BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
+  return; // FIXME Test does not pass because feature is not implemented yet.
+          // See issue #110
+  auto trigger = test.getScalar<int>("trigger");
+  auto fromDevice = test.getScalar<int>("i3"); // cs side display: m1.i3
+  //----------------------------------------------------------------//
+  // trigger works as expected
+  trigger = 1;
+
+  auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
+  deviceRegister = 30;
+
+  app.run();
+  trigger.write();
+
+  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromDevice, 30);
+  BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
+
+  //----------------------------------------------------------------//
+  // Device module exception
+  deviceRegister = 10;
+  device1DummyBackend->throwExceptionRead = true;
+
+  trigger = 1;
+  trigger.write();
+
+  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromDevice, 30);
+  BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::faulty);
+  //----------------------------------------------------------------//
+  // Recovery
+  device1DummyBackend->throwExceptionRead = false;
+
+  trigger = 1;
+  trigger.write();
+
+  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromDevice, 10);
+  BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
+}
+
+BOOST_AUTO_TEST_CASE(testConsumingFanout) {
+  return; // FIXME Test does not pass because feature is not implemented yet.
+          // See issue #102
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
+  auto result = test.getScalar<int>("m1/Module1_result");
+
+  auto pollRegisterSource = device2DummyBackend->getRawAccessor("m1", "i2");
+  pollRegisterSource = 100;
+
+  threadedFanoutInput = 10;
+
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  consumingFanoutSource = 1;
+
+  //----------------------------------------------------------//
+  // no device module exception
+  app.run();
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 111);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromConsumingFanout, 1);
+  BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
+
+  // --------------------------------------------------------//
+  // device exception on consuming fanout source read
+  consumingFanoutSource = 0;
+
+  device1DummyBackend->throwExceptionRead = true;
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 111);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromConsumingFanout, 1);
+  BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::faulty);
+
+  // --------------------------------------------------------//
+  // Recovery
+  device1DummyBackend->throwExceptionRead = true;
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 110);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(fromConsumingFanout, 0);
+  BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
+}
+
+BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
+  return; // FIXME Test does not pass because feature is not implemented yet.
+          // See issue #102
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto m1_result = test.getScalar<int>("m1/Module1_result");
+  auto m2_result = test.getScalar<int>("m2/Module2_result");
+
+  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  consumingFanoutSource = 1000;
+
+  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+  pollRegister = 100;
+
+  threadedFanoutInput = 1;
+
+  // ------------------------------------------------------------------//
+  // without exception
+  app.run();
+  threadedFanoutInput.write();
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1101);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1101);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
+
+  // ------------------------------------------------------------------//
+  // faulty threadedFanout input
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::faulty);
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1101);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1101);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+
+  // ---------------------------------------------------------------------//
+  // device module exception
+  device2DummyBackend->throwExceptionRead = true;
+  threadedFanoutInput = 0;
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1101);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1101);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+
+  // ---------------------------------------------------------------------//
+  // device exception recovery
+  device2DummyBackend->throwExceptionRead = false;
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1100);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1100);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+
+  // ---------------------------------------------------------------------//
+  // recovery: fanout input
+  device2DummyBackend->throwExceptionRead = false;
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::ok);
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1100);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+
+  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(m2_result, 1100);
+  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
