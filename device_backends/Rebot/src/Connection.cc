@@ -5,7 +5,6 @@ namespace ChimeraTK {
 namespace Rebot {
 
   using Error = boost::system::error_code;
-  using Iterator = boost::asio::ip::tcp::resolver::iterator;
 
   Connection::Connection(const std::string& address, const std::string& port,
                          uint32_t connectionTimeout_sec)
@@ -21,7 +20,7 @@ namespace Rebot {
     boost::asio::ip::tcp::resolver r(ioService_);
     boost::asio::async_connect(
         s_, r.resolve({ address_.c_str(), port_.c_str() }),
-        [=](const Error ec, Iterator) { disconnectionTimerCancel(ec); });
+        [=](const Error ec, auto) { this->disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();

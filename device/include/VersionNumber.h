@@ -40,6 +40,12 @@ namespace ChimeraTK {
     explicit VersionNumber(std::chrono::system_clock::time_point timestamp)
     : _value(nextVersionNumber()), _time(timestamp) {}
 
+    /** Create null version number, which is guaranteed to be smaller than all version numbers generated with the
+     *  default constructor. This should be used to initialse version numbers which are never actually used for data
+     *  transfers (e.g. at application start). The argument is a dummy argument to distinguish the contructor
+     *  signature. */
+    explicit VersionNumber(std::nullptr_t) : _value(0), _time() {}
+
     /** Return the time stamp associated with this version number */
     std::chrono::time_point<std::chrono::system_clock> getTime() const { return _time; }
 

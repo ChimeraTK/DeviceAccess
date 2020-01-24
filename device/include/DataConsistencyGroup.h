@@ -57,7 +57,7 @@ namespace ChimeraTK {
     std::unordered_set<TransferElementID> lasteSateOfConsistentElements;
 
     /// Holds the version number this group elements should be consistent to
-    VersionNumber versionNumberToBeConsistentTo;
+    VersionNumber versionNumberToBeConsistentTo{nullptr};
 
     /// Vector of push-type elements in this group, there are only push type elemenst, like in ReadAnyGroup
     std::map<TransferElementID, TransferElementAbstractor> push_elements;
