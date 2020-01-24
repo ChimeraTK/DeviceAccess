@@ -28,6 +28,8 @@ namespace ChimeraTK {
 
     void close() override;
 
+    bool isFunctional() const override { return _opened; }
+
     std::string readDeviceInfo() override { return std::string("Logical name mapping file: ") + _lmapFileName; }
 
     static boost::shared_ptr<DeviceBackend> createInstance(

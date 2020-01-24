@@ -48,6 +48,7 @@ namespace ChimeraTK {
     virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
     virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
     virtual std::string readDeviceInfo();
+    bool isFunctional() const override { return _opened; }
 
     int32_t& getRegisterContent(uint8_t bar, uint32_t address);
 

@@ -489,6 +489,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer17) {
 }
 
 struct DysfunctDummy : public ChimeraTK::DummyBackend {
+  std::atomic<bool> _hasErrors = {false};
+  bool isFunctional() const override { return _opened && !_hasErrors; }
   DysfunctDummy (std::string mapFileName) : DummyBackend(mapFileName){
     _hasErrors = true;
   }

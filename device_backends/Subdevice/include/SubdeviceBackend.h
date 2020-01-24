@@ -120,6 +120,9 @@ namespace ChimeraTK {
 
     /// obtain the target backend if not yet done
     void obtainTargetBackend();
+
+    bool isFunctional() const override { return _opened && targetDevice->isFunctional(); }
+
   };
 
 } // namespace ChimeraTK

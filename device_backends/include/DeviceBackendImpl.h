@@ -23,9 +23,6 @@ namespace ChimeraTK {
 
     virtual bool isConnected() { return _connected; }
 
-    // A functional device must be opened and not report any errors. The base implementation does not know about errors and just reports the open flag.
-    bool isFunctional() const override { return _opened && !_hasErrors; }
-
     virtual const RegisterCatalogue& getRegisterCatalogue() const { return _catalogue; }
 
     virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/, size_t /*sizeInBytes*/) {
@@ -69,9 +66,6 @@ namespace ChimeraTK {
     /** flag if device is connected. */
     bool _connected;
 
-    /** Flag if the device has (known) errors. Can be set to make isFunctional() report false.
-     */
-    std::atomic<bool> _hasErrors = {false};
   };
 
 } // namespace ChimeraTK

@@ -127,6 +127,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   void close() override { _opened = false; }
 
+  bool isFunctional() const override { return _opened; }
+
   std::map<std::string, cppext::future_queue<void>> notificationQueue;
   std::map<std::string, size_t> registers;
 };

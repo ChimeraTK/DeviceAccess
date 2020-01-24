@@ -617,4 +617,24 @@ BOOST_AUTO_TEST_CASE(test2regsScalar) {
 
 /*********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testIsFunctional) {
+  setDMapFilePath("subdeviceTest.dmap");
+
+  Device dev;
+  dev.open("SUBDEV1");
+  Device target;
+  target.open("TARGET1");
+  BOOST_CHECK(dev.isFunctional());
+  //Close target device.
+  target.close();
+  //Device should not be functional anymore
+  BOOST_CHECK(!dev.isFunctional());
+  target.open();
+  BOOST_CHECK(dev.isFunctional());
+  dev.close();
+  BOOST_CHECK(!dev.isFunctional());
+}
+
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
