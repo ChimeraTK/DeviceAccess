@@ -724,6 +724,14 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         auto consumer = consumers.front();
         if(consumer.getType() == NodeType::Application) {
           consumer.setAppAccessorImplementation(feedingImpl);
+          //check if the feedingImpl is from a device. In this case it has been decorated with an ExceptionHandlingDecorator
+          auto feedingDeviceImpl = boost::dynamic_pointer_cast<ChimeraTK::ExceptionHandlingDecorator<UserType>>(feedingImpl);
+          if (feedingDeviceImpl){
+            auto owningModule = consumer.getOwningModule(); // application module or variable group
+            feedingDeviceImpl->setOwner(owningModule);
+            // The decorator comes up with data validity faulty, and we have to keep the counting consistent
+            owningModule->incrementDataFaultCounter(false);
+          }
           connectionMade = true;
         }
         else if(consumer.getType() == NodeType::Device) {
