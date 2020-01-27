@@ -430,11 +430,42 @@ BOOST_AUTO_TEST_CASE(testConstantWitingErrors) {}
 
 BOOST_AUTO_TEST_CASE(testShutdown) {
   std::cout << "testShutdown" << std::endl;
+  static const uint32_t DEFAULT = 55;
+
+  auto dummyBackend2 =
+      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+
   //Test that the application does shut down with a broken device and blocking accessors
   TestApplication2 app;
-
   ctk::TestFacility test(false); // test facility without testable mode
+
+  // Non zero defaults set here to avoid race conditions documented in
+  // https://github.com/ChimeraTK/ApplicationCore/issues/103
+  test.setScalarDefault("/Device2/MyModule/actuator", static_cast<int32_t>(DEFAULT));
+  test.setScalarDefault("/Device2/Integers/signed32", static_cast<int32_t>(DEFAULT));
+  test.setScalarDefault("/Device2/Integers/unsigned32", static_cast<uint32_t>(DEFAULT));
+  test.setScalarDefault("/Device2/Integers/signed16", static_cast<int16_t>(DEFAULT));
+  test.setScalarDefault("/Device2/Integers/unsigned16", static_cast<uint16_t>(DEFAULT));
+  test.setScalarDefault("/Device2/Integers/signed8", static_cast<int8_t>(DEFAULT));
+  test.setScalarDefault("/Device2/Integers/unsigned8", static_cast<uint8_t>(DEFAULT));
+  test.setScalarDefault("/Device2/FixedPoint/value", static_cast<double>(DEFAULT));
+  test.setScalarDefault("/Device2/Deep/Hierarchies/Need/Tests/As/well", static_cast<int32_t>(DEFAULT));
+  test.setScalarDefault("/Device2/Deep/Hierarchies/Need/Another/test", static_cast<int32_t>(DEFAULT));
+
   test.runApplication();
+
+  // verify defaults have been written to the device
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("MyModule", "actuator") == static_cast<int32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "signed32") == static_cast<int32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "unsigned32") == static_cast<uint32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "signed16") == static_cast<int16_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "unsigned16") == static_cast<uint16_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "signed8") == static_cast<int8_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "unsigned8") == static_cast<uint8_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("FixedPoint", "value") == 14080, 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Tests/As", "well") == static_cast<int32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Another", "test") == static_cast<int32_t>(DEFAULT), 10000);
+
 
   //Wait for the devices to come up.
   CHECK_EQUAL_TIMEOUT(
@@ -445,8 +476,6 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "status"), 0, 10000);
 
   // make all devices fail, and wait until they report the error state, one after another
-  auto dummyBackend2 =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
   dummyBackend2->throwExceptionWrite = true;
   dummyBackend2->throwExceptionRead = true;
 
