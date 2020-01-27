@@ -444,6 +444,7 @@ struct Fixture_testFacility {
 BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, Fixture_testFacility)
 
 BOOST_AUTO_TEST_CASE(testThreadedFanout) {
+  std::cout << "testThreadedFanout" << std::endl;
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto m1_result = test.getScalar<int>("m1/Module1_result");
   auto m2_result = test.getScalar<int>("m2/Module2_result");
@@ -493,6 +494,7 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
 }
 
 BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
+  std::cout << "testInvalidTrigger" << std::endl;
   return; // FIXME Test does not pass because feature is not implemented yet.
           // See issue #109
   auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
@@ -542,8 +544,8 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-struct Fixture_noTestFacility {
-  Fixture_noTestFacility()
+struct Fixture_noTestableMode {
+  Fixture_noTestableMode()
   : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
     device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
@@ -557,11 +559,10 @@ struct Fixture_noTestFacility {
   ctk::TestFacility test{false};
 };
 
-BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestFacility)
+BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestableMode)
 
 BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
-  return; // FIXME Test does not pass because feature is not implemented yet.
-          // See issue #102
+  std::cout << "testDeviceReadFailure" << std::endl;
   auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
   auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
 
@@ -574,11 +575,10 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
 
   // -------------------------------------------------------------//
   // without errors
-  app.run();
+  test.runApplication();
   threadedFanoutInput.write();
 
-  CHECK_TIMEOUT(result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(result, 11001);
+  CHECK_TIMEOUT((result.readLatest(), result == 11001), 10000);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 
   // -------------------------------------------------------------//
@@ -602,6 +602,7 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
 }
 
 BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
+  std::cout << "testReadDeviceWithTrigger" << std::endl;
   return; // FIXME Test does not pass because feature is not implemented yet.
           // See issue #110
   auto trigger = test.getScalar<int>("trigger");
@@ -644,6 +645,7 @@ BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
 }
 
 BOOST_AUTO_TEST_CASE(testConsumingFanout) {
+  std::cout << "testConsumingFanout" << std::endl;
   return; // FIXME Test does not pass because feature is not implemented yet.
           // See issue #102
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
@@ -700,8 +702,7 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
 }
 
 BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
-  return; // FIXME Test does not pass because feature is not implemented yet.
-          // See issue #102
+  std::cout << "testDataFlowOnDeviceException" << std::endl;
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto m1_result = test.getScalar<int>("m1/Module1_result");
   auto m2_result = test.getScalar<int>("m2/Module2_result");
@@ -716,9 +717,9 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
   // ------------------------------------------------------------------//
   // without exception
-  app.run();
+  test.runApplication();
   threadedFanoutInput.write();
-  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  CHECK_EQUAL_TIMEOUT((m1_result.readNonBlocking(), m1_result), 1101, 10000);
   BOOST_CHECK_EQUAL(m1_result, 1101);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
 
@@ -739,45 +740,61 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   BOOST_CHECK_EQUAL(m2_result, 1101);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
 
+  auto deviceStatus =
+      test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD2 / "status");
+  // the device is still OK
+  CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 0, 10000);
+
   // ---------------------------------------------------------------------//
   // device module exception
   device2DummyBackend->throwExceptionRead = true;
+  pollRegister = 200;
   threadedFanoutInput = 0;
   threadedFanoutInput.write();
 
-  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(m1_result, 1101);
-  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+  // Now the device has to go into the error state
+  CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 1, 10000);
 
-  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(m2_result, 1101);
-  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+  // The result of m1 must not be written out again. We can't test this at this safely here.
+  // Instead, we know that the next read after recovery will already contain the new data.
 
   // ---------------------------------------------------------------------//
   // device exception recovery
   device2DummyBackend->throwExceptionRead = false;
 
-  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(m1_result, 1100);
-  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+  // device error recovers. There must be exactly one new status values with the right value.
+  deviceStatus.read();
+  BOOST_CHECK(deviceStatus == 0);
+  // nothing else in the queue
+  BOOST_CHECK(deviceStatus.readNonBlocking() == false);
 
-  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(m2_result, 1100);
+  m1_result.read(); // we know there must be exaclty one value being written. Wait for it.
+  BOOST_CHECK_EQUAL(m1_result, 1200);
+  // Data validity still faulty because the input from the fan is invalid
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+  // again, nothing else in the queue
+  BOOST_CHECK(m1_result.readNonBlocking() == false);
+
+  // same for m2
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m2_result, 1200);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(m2_result.readNonBlocking() == false);
 
   // ---------------------------------------------------------------------//
   // recovery: fanout input
-  device2DummyBackend->throwExceptionRead = false;
   threadedFanoutInput.setDataValidity(ctk::DataValidity::ok);
   threadedFanoutInput.write();
 
-  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(m1_result, 1100);
+  m1_result.read();
+  BOOST_CHECK_EQUAL(m1_result, 1200);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(m1_result.readNonBlocking() == false);
 
-  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(m2_result, 1100);
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m2_result, 1200);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(m1_result.readNonBlocking() == false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
