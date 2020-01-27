@@ -10,24 +10,21 @@ class TimerDummy : public ChimeraTK::DeviceBackendImpl {
  public:
   TimerDummy() : DeviceBackendImpl() { FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl); }
 
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string,
-      std::string,
-      std::list<std::string>,
-      std::string) {
+  static boost::shared_ptr<DeviceBackend> createInstance(
+      std::string, std::string, std::list<std::string>, std::string) {
     return boost::shared_ptr<DeviceBackend>(new TimerDummy());
   }
 
   template<typename UserType>
   boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
-      const ChimeraTK::RegisterPath& registerPathName,
-      size_t,
-      size_t,
-      ChimeraTK::AccessModeFlags flags);
+      const ChimeraTK::RegisterPath& registerPathName, size_t, size_t, ChimeraTK::AccessModeFlags flags);
   DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(TimerDummy, getRegisterAccessor_impl, 4);
 
   void open() override {}
 
   void close() override {}
+
+  bool isFunctional() const override { return true; }
 
   std::string readDeviceInfo() override { return std::string("Dummy timing device "); }
 
@@ -98,10 +95,7 @@ void TimerDummyRegisterAccessor<std::string>::doPostRead() {}
 
 template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> TimerDummy::getRegisterAccessor_impl(
-    const ChimeraTK::RegisterPath& registerPathName,
-    size_t,
-    size_t,
-    ChimeraTK::AccessModeFlags flags) {
+    const ChimeraTK::RegisterPath& registerPathName, size_t, size_t, ChimeraTK::AccessModeFlags flags) {
   assert(registerPathName == "/macropulseNr");
   assert(flags.has(ChimeraTK::AccessMode::wait_for_new_data));
   flags.checkForUnknownFlags({ChimeraTK::AccessMode::wait_for_new_data});
