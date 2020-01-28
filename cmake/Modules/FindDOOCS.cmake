@@ -72,7 +72,19 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";daqreader;")
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DAQReader TTF2evutl TTF2XML lzo2 DAQsvrutil)
 endif()
 
-set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap gul)
+#This is for the transition only. The logic is not bullet proof, but in almost all cases
+#if there is libgul14.so, it means DOOCS brought it and needs it.
+FIND_LIBRARY(LIB_GULOLD libgul.so ${DOOCS_DIR})
+FIND_LIBRARY(LIB_GUL14 libgul14.so ${DOOCS_DIR})
+message("LIB_GULOLD ${LIB_GULOLD} , LIB_GUL14 ${LIB_GUL14}")
+if ("${LIB_GUL14}" MATCHES "LIB_GUL14-NOTFOUND")
+  set(LIB_GUL "gul")
+else()
+  set(LIB_GUL "gul14")
+endif()
+
+set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap ${LIB_GUL})
+message("DOOCS_LIBRARIES ${DOOCS_LIBRARIES}")
 
 # now set the required variables based on the determined DOOCS_DIR
 set(DOOCS_INCLUDE_DIRS ${DOOCS_DIR}/include)
