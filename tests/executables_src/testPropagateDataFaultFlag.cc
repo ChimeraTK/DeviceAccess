@@ -435,6 +435,12 @@ struct Fixture_testFacility {
     device2DummyBackend->open();
     test.runApplication();
   }
+
+  ~Fixture_testFacility() {
+    device1DummyBackend->throwExceptionRead = false;
+    device2DummyBackend->throwExceptionWrite = false;
+  }
+
   boost::shared_ptr<ExceptionDummy> device1DummyBackend;
   boost::shared_ptr<ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
@@ -553,6 +559,11 @@ struct Fixture_noTestableMode {
     device1DummyBackend->open();
     device2DummyBackend->open();
   }
+  ~Fixture_noTestableMode() {
+    device1DummyBackend->throwExceptionRead = false;
+    device2DummyBackend->throwExceptionWrite = false;
+  }
+
   boost::shared_ptr<ExceptionDummy> device1DummyBackend;
   boost::shared_ptr<ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
