@@ -65,6 +65,14 @@ namespace ChimeraTK {
         if(allOpened) break;
       }
       Application::testableModeLock("waitDevicesToOpen");
+      // make sure all initial values have been propagated when in testable mode
+      if(Application::getInstance().isTestableModeEnabled()) {
+        // call stepApplication() only in testable mode and only if the queues are not empty
+        if(Application::getInstance().testableMode_counter != 0) {
+          stepApplication();
+        }
+      }
+
       // receive all initial values for the control system variables
       if(Application::getInstance().isTestableModeEnabled()) {
         for(auto& pv : pvManager->getAllProcessVariables()) {

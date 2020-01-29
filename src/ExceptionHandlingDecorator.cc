@@ -58,9 +58,18 @@ namespace ChimeraTK {
             deviceModule.writeAfterOpen.push_back(this->_recoveryAccessor);
             return false;
           }
-          Application::getInstance().testableModeUnlock("waitForDeviceOpen");
+          // We artificially increase the testabel mode counter so the test does not slip out of testable mode here in case
+          // the queues are empty. At the moment, the exception handling has to be done before you get the lock back in your test.
+          // Exception handling cannot be tested in testable mode at the moment.
+          if(Application::getInstance().isTestableModeEnabled()) {
+            ++Application::getInstance().testableMode_counter;
+            Application::getInstance().testableModeUnlock("waitForDeviceOpen");
+          }
           boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
-          Application::getInstance().testableModeLock("waitForDeviceOpen");
+          if(Application::getInstance().isTestableModeEnabled()) {
+            Application::getInstance().testableModeLock("waitForDeviceOpen");
+            --Application::getInstance().testableMode_counter;
+          }
           continue;
         }
         auto retval = callable();

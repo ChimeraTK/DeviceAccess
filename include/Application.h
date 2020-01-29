@@ -211,6 +211,9 @@ namespace ChimeraTK {
     template<typename UserType>
     friend class Accessor;
 
+    template<typename UserType>
+    friend class ExceptionHandlingDecorator;
+
     /** Finalise connections, i.e. decide still-undecided details mostly for
      * Device and ControlSystem variables */
     void finaliseNetworks();
