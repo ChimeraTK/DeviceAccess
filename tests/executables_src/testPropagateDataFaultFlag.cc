@@ -558,7 +558,19 @@ struct Fixture_noTestableMode {
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
     device1DummyBackend->open();
     device2DummyBackend->open();
+
+    // the block below is a work around for a race condition; make sure
+    // all values are propagated to the device registers before starting
+    // the test.
+    static const int DEFAULT = 1;
+    test.setScalarDefault("m1/o1", DEFAULT);
+
+    test.runApplication();
+
+    // Making sure the default is written to the device before proceeding.
+    CHECK_EQUAL_TIMEOUT(int(device1DummyBackend->getRawAccessor("m1", "o1")), DEFAULT, 10000);
   }
+
   ~Fixture_noTestableMode() {
     device1DummyBackend->throwExceptionRead = false;
     device2DummyBackend->throwExceptionWrite = false;
@@ -586,7 +598,6 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
 
   // -------------------------------------------------------------//
   // without errors
-  test.runApplication();
   threadedFanoutInput.write();
 
   CHECK_TIMEOUT((result.readLatest(), result == 11001), 10000);
@@ -599,17 +610,24 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   device2DummyBackend->throwExceptionRead = true;
 
   threadedFanoutInput.write();
-  CHECK_TIMEOUT(result.readLatest(), 10000);
+  // when the error detected the old value is written with faulty flag
+  result.read();
   BOOST_CHECK_EQUAL(result, 11001);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
   // -------------------------------------------------------------//
   // recovery from device module exception
   device2DummyBackend->throwExceptionRead = false;
-
-  CHECK_TIMEOUT(result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(result, 11000);
+  // When the device recovers, the old value is written with ok flag
+  // It might be that the main loop does not write the value each time, so it has
+  // to be done once so the data does not stay invalid.
+  result.read();
+  BOOST_CHECK_EQUAL(result, 11001);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  // finally the loop runs though and propagates the new value
+  result.read();
+  BOOST_CHECK_EQUAL(result, 11000);
 }
 
 BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
@@ -625,7 +643,6 @@ BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
   auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
   deviceRegister = 30;
 
-  app.run();
   trigger.write();
 
   CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
@@ -673,7 +690,6 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
 
   //----------------------------------------------------------//
   // no device module exception
-  app.run();
   threadedFanoutInput.write();
 
   CHECK_TIMEOUT(result.readLatest(), 10000);
@@ -728,13 +744,15 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
   // ------------------------------------------------------------------//
   // without exception
-  test.runApplication();
   threadedFanoutInput.write();
+  // Read till the value we want; there is a chance of spurious values
+  // sneaking in due to a race condition when dealing with device
+  // modules. These spurious entries (with value: PV defaults) do
+  // not matter for a real application.
   CHECK_EQUAL_TIMEOUT((m1_result.readNonBlocking(), m1_result), 1101, 10000);
-  BOOST_CHECK_EQUAL(m1_result, 1101);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
 
-  CHECK_TIMEOUT(m2_result.readLatest(), 10000);
+  CHECK_EQUAL_TIMEOUT((m2_result.readLatest(), m2_result), 1101, 10000);
   BOOST_CHECK_EQUAL(m2_result, 1101);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
 
