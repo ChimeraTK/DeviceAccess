@@ -633,12 +633,12 @@ void Application::optimiseConnections() {
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnections() {                                                                // LCOV_EXCL_LINE
-  std::cout << "==== List of all variable connections of the current Application ====" << std::endl; // LCOV_EXCL_LINE
+void Application::dumpConnections(std::ostream& stream) {                                            // LCOV_EXCL_LINE
+  stream << "==== List of all variable connections of the current Application ====" << std::endl;    // LCOV_EXCL_LINE
   for(auto& network : networkList) {                                                                 // LCOV_EXCL_LINE
-    network.dump();                                                                                  // LCOV_EXCL_LINE
+    network.dump("", stream);                                                                        // LCOV_EXCL_LINE
   }                                                                                                  // LCOV_EXCL_LINE
-  std::cout << "=====================================================================" << std::endl; // LCOV_EXCL_LINE
+  stream << "=====================================================================" << std::endl;    // LCOV_EXCL_LINE
 } // LCOV_EXCL_LINE
 
 void Application::dumpConnectionGraph(const std::string& fileName) {
