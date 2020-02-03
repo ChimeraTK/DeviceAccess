@@ -68,7 +68,7 @@ namespace ChimeraTK {
     /** Output the connections requested in the initialise() function to
      * std::cout. This may be done also before
      *  makeConnections() has been called. */
-    void dumpConnections();
+    void dumpConnections(std::ostream& stream = std::cout);
 
     /** Create Graphviz dot graph and write to file. The graph will contain the
      * connections made in the initilise() function. @see dumpConnections */
