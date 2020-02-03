@@ -316,25 +316,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerTransferGroup, T, test_types) {
   dev.write("/REG2", 22);
   dev.write("/REG3", 33);
 
-  // trigger the transfer
-  app.testModule.theTrigger.write();
+  // from the inital value transfer
   CHECK_TIMEOUT(backend->numberOfTransfers == 1, 10000);
-  BOOST_CHECK(backend->last_bar == 0);
-  BOOST_CHECK(backend->last_address == 0);
-  BOOST_CHECK(backend->last_sizeInBytes == 12);
-
-  // check result
-  app.testModule.consumingPush.read();
-  app.testModule.consumingPush2.read();
-  app.testModule.consumingPush3.read();
-  BOOST_CHECK(app.testModule.consumingPush == 11);
-  BOOST_CHECK(app.testModule.consumingPush2 == 22);
-  BOOST_CHECK(app.testModule.consumingPush3 == 33);
-
-  // prepare a second transfer
-  dev.write("/REG1", 12);
-  dev.write("/REG2", 23);
-  dev.write("/REG3", 34);
 
   // trigger the transfer
   app.testModule.theTrigger.write();
@@ -347,9 +330,29 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerTransferGroup, T, test_types) {
   app.testModule.consumingPush.read();
   app.testModule.consumingPush2.read();
   app.testModule.consumingPush3.read();
-  BOOST_CHECK(app.testModule.consumingPush == 12);
-  BOOST_CHECK(app.testModule.consumingPush2 == 23);
-  BOOST_CHECK(app.testModule.consumingPush3 == 34);
+  BOOST_CHECK_EQUAL(app.testModule.consumingPush, 11);
+  BOOST_CHECK_EQUAL(app.testModule.consumingPush2, 22);
+  BOOST_CHECK_EQUAL(app.testModule.consumingPush3, 33);
+
+  // prepare a second transfer
+  dev.write("/REG1", 12);
+  dev.write("/REG2", 23);
+  dev.write("/REG3", 34);
+
+  // trigger the transfer
+  app.testModule.theTrigger.write();
+  CHECK_TIMEOUT(backend->numberOfTransfers == 3, 10000);
+  BOOST_CHECK(backend->last_bar == 0);
+  BOOST_CHECK(backend->last_address == 0);
+  BOOST_CHECK(backend->last_sizeInBytes == 12);
+
+  // check result
+  app.testModule.consumingPush.read();
+  app.testModule.consumingPush2.read();
+  app.testModule.consumingPush3.read();
+  BOOST_CHECK_EQUAL(app.testModule.consumingPush, 12);
+  BOOST_CHECK_EQUAL(app.testModule.consumingPush2, 23);
+  BOOST_CHECK_EQUAL(app.testModule.consumingPush3, 34);
 
   dev.close();
 }
