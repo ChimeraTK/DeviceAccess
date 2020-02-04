@@ -314,6 +314,16 @@ namespace ChimeraTK {
      * etc.). */
     bool testableMode{false};
 
+    /** Flag which is set by the TestFacility in runApplication() at the beginning. This is used to make sure
+     *  runApplication() is called by the TestFacility and not manually. */
+    bool testFacilityRunApplicationCalled{false};
+
+    /** Flag whether initialise() has been called already, to make sure it doesn't get called twice. */
+    bool initialiseCalled{false};
+
+    /** Flag whether run() has been called already, to make sure it doesn't get called twice. */
+    bool runCalled{false};
+
     /** Mutex used in testable mode to take control over the application threads.
      * Use only through the lock object obtained through
      * getLockObjectForCurrentThread().

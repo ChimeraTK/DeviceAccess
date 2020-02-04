@@ -56,6 +56,11 @@ Application::Application(const std::string& name) : ApplicationBase(name), Entit
 /*********************************************************************************************************************/
 
 void Application::initialise() {
+  if(initialiseCalled) {
+    throw ChimeraTK::logic_error("Application::initialise() was already called before.");
+  }
+  initialiseCalled = true;
+
   // call the user-defined defineConnections() function which describes the
   // structure of the application
   defineConnections();
@@ -147,6 +152,18 @@ void Application::checkConnections() {
 
 void Application::run() {
   assert(applicationName != "");
+
+  if(testableMode) {
+    if(!testFacilityRunApplicationCalled) {
+      throw ChimeraTK::logic_error(
+          "Testable mode enabled but Application::run() called directly. Call TestFacility::runApplication() instead.");
+    }
+  }
+
+  if(runCalled) {
+    throw ChimeraTK::logic_error("Application::run() has already been called before.");
+  }
+  runCalled = true;
 
   // set all initial version numbers in the modules to the same value
   for(auto& module : getSubmoduleListRecursive()) {

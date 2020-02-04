@@ -113,10 +113,7 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
 
   ctk::TestFacility test;
 
-  // write initial values since we do not use the test facility for the app management
-  test.writeScalar("/READ_ONLY_TEST/startTest", 0);
-
-  app.run();
+  test.runApplication();
 
   // Should trigger the blocking read in ReadOnlyTestApplication's
   // ApplicationModule. It then writes to a read-only register of the device,
@@ -124,6 +121,8 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
   // here, as the exception gets thrown in the thread of the module.
   test.writeScalar("/READ_ONLY_TEST/startTest", 1);
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::cout << "testProcessVariableRecovery" << std::endl;

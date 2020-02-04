@@ -37,6 +37,7 @@ namespace ChimeraTK {
 
     /** Start the application in testable mode. */
     void runApplication() const {
+      Application::getInstance().testFacilityRunApplicationCalled = true;
       // send default values for all control system variables
       for(auto& pv : pvManager->getAllProcessVariables()) {
         callForType(pv->getValueType(), [&pv, this](auto arg) {
