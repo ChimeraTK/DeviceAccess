@@ -40,45 +40,78 @@ struct TestApplication : public ctk::Application {
 };
 
 struct OutputModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  OutputModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarPushInput<int32_t> trigger{this, "trigger", "", "I wait for this to start."};
   ctk::ScalarOutput<int32_t> actuator{this, "actuator", "", "This is where I write to."};
 
   void mainLoop() override {
+    mainLoopStarted.wait();
+
     trigger.read();
     actuator = int32_t(trigger);
     actuator.write();
   }
+
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required to make sure the initial value propagation is done.
+  // execute this right after the Application::run():
+  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+  boost::barrier mainLoopStarted;
 };
 
 struct InputModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  InputModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarPushInput<int32_t> trigger{this, "trigger", "", "I wait for this to start."};
   ctk::ScalarPollInput<int32_t> readback{this, "readback", "", "Just going to read something."};
 
   void mainLoop() override {
+    mainLoopStarted.wait();
+
     trigger.read();
     readback.read();
-    // not very useful because I am doing anything with the read values, but still a useful test
+    // I am not doing anything with the read values, but still a useful test (we do not get here anyway)
   }
+
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required to make sure the initial value propagation is done.
+  // execute this right after the Application::run():
+  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+  boost::barrier mainLoopStarted;
 };
 
 struct RealisticModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  RealisticModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarPushInput<int32_t> reg1{this, "REG1", "", "misused as input"};
   ctk::ScalarPollInput<int32_t> reg2{this, "REG2", "", "also no input..."};
   ctk::ScalarOutput<int32_t> reg3{this, "REG3", "", "my output"};
 
   void mainLoop() override {
+    mainLoopStarted.wait();
+
     reg1.read();
     reg2.readLatest();
 
     reg3 = reg1 * reg2;
     reg3.write();
   }
+
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required to make sure the initial value propagation is done.
+  // execute this right after the Application::run():
+  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+  boost::barrier mainLoopStarted;
 };
 
 // A more compicated scenario with module that have blocking reads and writes, fans that connect to the device and the CS, and direct connection device/CS only without fans.
@@ -458,6 +491,9 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   test.setScalarDefault("/Device3/MODULE/REG4", static_cast<int32_t>(DEFAULT));
 
   test.runApplication();
+  app.inputModule.mainLoopStarted.wait();
+  app.outputModule.mainLoopStarted.wait();
+  app.realisticModule.mainLoopStarted.wait();
 
   // verify defaults have been written to the device
   CHECK_TIMEOUT(dummyBackend2->getRawAccessor("MyModule", "actuator") == static_cast<int32_t>(DEFAULT), 10000);
