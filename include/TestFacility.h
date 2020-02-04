@@ -42,6 +42,11 @@ namespace ChimeraTK {
       for(auto& pv : pvManager->getAllProcessVariables()) {
         callForType(pv->getValueType(), [&pv, this](auto arg) {
           if(!pv->isWriteable()) return;
+          if(pv->getVersionNumber() != VersionNumber(nullptr)) {
+            throw ChimeraTK::logic_error("The variable '" + pv->getName() +
+                "' has been written before TestFacility::runApplication() was called. Instead use "
+                "TestFacility::setScalarDefault() resp. setArrayDefault() to set initial values.");
+          }
           typedef decltype(arg) T;
           auto pv_casted = boost::dynamic_pointer_cast<NDRegisterAccessor<T>>(pv);
           auto table = boost::fusion::at_key<T>(defaults.table);
