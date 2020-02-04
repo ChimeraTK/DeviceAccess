@@ -432,10 +432,14 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   std::cout << "testShutdown" << std::endl;
   static const uint32_t DEFAULT = 55;
 
+  auto dummyBackend1 =
+      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
   auto dummyBackend2 =
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+  auto dummyBackend3 =
+      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
 
-  //Test that the application does shut down with a broken device and blocking accessors
+  // Test that the application does shut down with a broken device and blocking accessors
   TestApplication2 app;
   ctk::TestFacility test(false); // test facility without testable mode
 
@@ -451,6 +455,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   test.setScalarDefault("/Device2/FixedPoint/value", static_cast<double>(DEFAULT));
   test.setScalarDefault("/Device2/Deep/Hierarchies/Need/Tests/As/well", static_cast<int32_t>(DEFAULT));
   test.setScalarDefault("/Device2/Deep/Hierarchies/Need/Another/test", static_cast<int32_t>(DEFAULT));
+  test.setScalarDefault("/Device3/MODULE/REG4", static_cast<int32_t>(DEFAULT));
 
   test.runApplication();
 
@@ -463,11 +468,13 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "signed8") == static_cast<int8_t>(DEFAULT), 10000);
   CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "unsigned8") == static_cast<uint8_t>(DEFAULT), 10000);
   CHECK_TIMEOUT(dummyBackend2->getRawAccessor("FixedPoint", "value") == 14080, 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Tests/As", "well") == static_cast<int32_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Another", "test") == static_cast<int32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(
+      dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Tests/As", "well") == static_cast<int32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(
+      dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Another", "test") == static_cast<int32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dummyBackend3->getRawAccessor("MODULE", "REG4") == static_cast<int32_t>(DEFAULT), 10000);
 
-
-  //Wait for the devices to come up.
+  // Wait for the devices to come up.
   CHECK_EQUAL_TIMEOUT(
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "status"), 0, 10000);
   CHECK_EQUAL_TIMEOUT(
@@ -498,8 +505,6 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   // device 2 successfully broken!
 
   // block the output accessor of "outputModule
-  auto dummyBackend1 =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
   dummyBackend1->throwExceptionWrite = true;
   dummyBackend1->throwExceptionRead = true;
 
@@ -517,9 +522,8 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
 
   // device 1 successfully broken!
 
-  auto dummyBackend3 =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
-  dummyBackend3->throwExceptionWrite = true;
+  dummyBackend3->throwExceptionWrite =
+      false; // do not set to true, otherwise there is a race condition whether the read or the write in RealisticModule::mainLoop() triggers the exception
   dummyBackend3->throwExceptionRead = true;
 
   auto triggerRealistic = test.getScalar<int32_t>("/triggerRealistic");
