@@ -20,6 +20,7 @@
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
 #include "VirtualModule.h"
+#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -136,11 +137,10 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   std::cout << "==> testConnectTo" << std::endl;
 
   TestApplication app;
-
   app.first.connectTo(app.second);
 
-  app.initialise();
-  app.run();
+  ctk::TestFacility test;
+  test.runApplication();
 
   app.second.testModule.varGroup.varA = 1;
   app.second.testModule.eliminatedGroup.varGroup.varB = 2;
@@ -180,12 +180,11 @@ BOOST_AUTO_TEST_CASE(testConnectTwice) {
   std::cout << "==> testConnectTwice" << std::endl;
 
   TestApplication app;
-
   app.second.testModule.varA >> app.first.testModule.varA;
   app.first.connectTo(app.second);
 
-  app.initialise();
-  app.run();
+  ctk::TestFacility test;
+  test.runApplication();
 
   app.second.testModule.varGroup.varA = 1;
   app.second.testModule.eliminatedGroup.varGroup.varB = 2;

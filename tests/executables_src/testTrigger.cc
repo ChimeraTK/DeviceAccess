@@ -86,7 +86,10 @@ struct TestModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
   // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
-  // mainLoop(). This is required to test the initial values reliably.
+  // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
+  // mainLoop.
+  // execute this right after the Application::run():
+  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
   boost::barrier mainLoopStarted;
 
   void mainLoop() { mainLoopStarted.wait(); }

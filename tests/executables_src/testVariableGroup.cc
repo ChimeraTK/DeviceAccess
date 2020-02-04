@@ -26,7 +26,10 @@ namespace ctk = ChimeraTK;
 /* the ApplicationModule for the test is a template of the user type */
 
 struct TestModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   struct MixedGroup : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -46,7 +49,14 @@ struct TestModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<int> feedingPoll2{this, "feedingPoll2", "MV/m", "Descrption"};
   ctk::ScalarOutput<int> feedingPoll3{this, "feedingPoll3", "MV/m", "Descrption"};
 
-  void mainLoop() {}
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
+  // mainLoop.
+  // execute this right after the Application::run():
+  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+  boost::barrier mainLoopStarted;
+
+  void mainLoop() { mainLoopStarted.wait(); }
 };
 
 /*********************************************************************************************************************/
@@ -79,6 +89,7 @@ BOOST_AUTO_TEST_CASE(testModuleReadWrite) {
   app.testModule.feedingPoll3 >> app.testModule.mixedGroup.consumingPoll3;
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // single theaded test
   app.testModule.mixedGroup.consumingPush = 666;
@@ -227,6 +238,7 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
 
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   auto group = app.testModule.mixedGroup.readAnyGroup();
 

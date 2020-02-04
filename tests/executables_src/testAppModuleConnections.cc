@@ -30,7 +30,10 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarOutput<T> feedingPush{this, "feedingPush", "MV/m", "Some output scalar"};
   ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
@@ -55,7 +58,14 @@ struct TestModule : public ctk::ApplicationModule {
   ctk::ArrayPushInput<T> lateConstrArrayPushInput;
   ctk::ArrayOutput<T> lateConstrArrayOutput;
 
-  void mainLoop() {}
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
+  // mainLoop.
+  // execute this right after the Application::run():
+  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+  boost::barrier mainLoopStarted;
+
+  void mainLoop() { mainLoopStarted.wait(); }
 };
 
 /*********************************************************************************************************************/
@@ -84,6 +94,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushAccessors, T, test_types) {
   app.testModule.feedingPush >> app.testModule.consumingPush;
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // single theaded test
   app.testModule.consumingPush = 0;
@@ -125,6 +136,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFourScalarPushAccessors, T, test_types) {
   app.testModule.feedingPush >> app.testModule.consumingPush3;
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // single theaded test
   app.testModule.consumingPush = 0;
@@ -189,6 +201,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushPollAccessors, T, test_types) {
   app.testModule.feedingPush >> app.testModule.consumingPoll;
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // single theaded test only, since read() does not block in this case
   app.testModule.consumingPoll = 0;
@@ -225,6 +238,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
   app.testModule.feedingArray >> app.testModule.consumingPushArray;
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
   BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
@@ -283,6 +297,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testLateConstruction, T, test_types) {
   // run the app
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // test the scalars
   app.testModule.feedingPush = 42;
@@ -334,6 +349,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
   // run the app
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // test data transfer
   app.testModule.feedingPseudoArray[0] = 33;
