@@ -197,6 +197,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToCS, T, test_types) {
 
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
 
@@ -248,6 +249,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
 
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
   auto theTrigger = pvManagers.first->getProcessArray<T>("/theTrigger");
@@ -307,6 +309,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerTransferGroup, T, test_types) {
   app.dev2("/REG3")[app.testModule.theTrigger] >> app.testModule.consumingPush3;
   app.initialise();
   app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // initialise values
   app.testModule.consumingPush = 0;
