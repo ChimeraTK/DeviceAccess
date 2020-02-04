@@ -136,6 +136,10 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode VariableNetworkNode::operator>>(VariableNetworkNode other) {
+    if(Application::getInstance().initialiseCalled) {
+      throw ChimeraTK::logic_error("Cannot make connections after Application::initialise() has been run.");
+    }
+
     if(pdata->direction.dir == VariableDirection::invalid) {
       if(!other.hasOwner()) {
         pdata->direction = {VariableDirection::feeding, false};

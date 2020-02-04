@@ -59,7 +59,6 @@ void Application::initialise() {
   if(initialiseCalled) {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");
   }
-  initialiseCalled = true;
 
   // call the user-defined defineConnections() function which describes the
   // structure of the application
@@ -71,6 +70,9 @@ void Application::initialise() {
   // realise the connections between variable accessors as described in the
   // initialise() function
   makeConnections();
+
+  // set flag to prevent further calls to this function and to prevent definition of additional connections.
+  initialiseCalled = true;
 }
 
 /*********************************************************************************************************************/
