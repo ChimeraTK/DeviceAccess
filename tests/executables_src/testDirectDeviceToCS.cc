@@ -16,23 +16,13 @@
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
 #include <ChimeraTK/Device.h>
+#include "check_timeout.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 // list of user types the accessors are tested with
 typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
-
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    while(!(condition)) {                                                                                              \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-    }                                                                                                                  \
-  }
 
 /*********************************************************************************************************************/
 /* dummy application */
