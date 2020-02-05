@@ -60,66 +60,93 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void Module::readAll() {
+  void Module::readAll(bool includeReturnChannels) {
     auto recursiveAccessorList = getAccessorListRecursive();
     // first blockingly read all push-type variables
     for(auto accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() != UpdateMode::push) continue;
+      if(includeReturnChannels) {
+        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+      }
+      else {
+        if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+      }
       accessor.getAppAccessorNoType().read();
     }
     // next non-blockingly read the latest values of all poll-type variables
     for(auto accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() == UpdateMode::push) continue;
+      // poll-type accessors cannot have a readback channel
+      if(accessor.getDirection().dir != VariableDirection::consuming) continue;
       accessor.getAppAccessorNoType().readLatest();
     }
   }
 
   /*********************************************************************************************************************/
 
-  void Module::readAllNonBlocking() {
+  void Module::readAllNonBlocking(bool includeReturnChannels) {
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() != UpdateMode::push) continue;
+      if(includeReturnChannels) {
+        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+      }
+      else {
+        if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+      }
       accessor.getAppAccessorNoType().readNonBlocking();
     }
     for(auto accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() == UpdateMode::push) continue;
+      // poll-type accessors cannot have a readback channel
+      if(accessor.getDirection().dir != VariableDirection::consuming) continue;
       accessor.getAppAccessorNoType().readLatest();
     }
   }
 
   /*********************************************************************************************************************/
 
-  void Module::readAllLatest() {
+  void Module::readAllLatest(bool includeReturnChannels) {
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+      if(includeReturnChannels) {
+        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+      }
+      else {
+        if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+      }
       accessor.getAppAccessorNoType().readLatest();
     }
   }
 
   /*********************************************************************************************************************/
 
-  void Module::writeAll() {
+  void Module::writeAll(bool includeReturnChannels) {
     auto versionNumber = getCurrentVersionNumber();
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
+      if(includeReturnChannels) {
+        if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
+      }
+      else {
+        if(accessor.getDirection().dir != VariableDirection::feeding) continue;
+      }
       accessor.getAppAccessorNoType().write(versionNumber);
     }
   }
 
   /*********************************************************************************************************************/
 
-  void Module::writeAllDestructively() {
+  void Module::writeAllDestructively(bool includeReturnChannels) {
     auto versionNumber = getCurrentVersionNumber();
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
+      if(includeReturnChannels) {
+        if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
+      }
+      else {
+        if(accessor.getDirection().dir != VariableDirection::feeding) continue;
+      }
       accessor.getAppAccessorNoType().writeDestructively(versionNumber);
     }
   }

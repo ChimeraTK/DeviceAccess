@@ -65,23 +65,27 @@ namespace ChimeraTK {
      * Module. */
     ChimeraTK::ReadAnyGroup readAnyGroup();
 
-    /** Read all readable variables in the group. If there are push-type variables
-     * in the group, this call will block until all of the variables have received
-     * an update. All push-type variables are read first, the poll-type
-     *  variables are therefore updated with the latest values upon return. */
-    void readAll();
+    /** Read all readable variables in the group. If there are push-type variables in the group, this call will block
+     *  until all of the variables have received an update. All push-type variables are read first, the poll-type
+     *  variables are therefore updated with the latest values upon return.
+     *  includeReturnChannels determines whether return channels of *OutputRB accessors are included in the read. */
+    void readAll(bool includeReturnChannels = false);
 
-    /** Just call readNonBlocking() on all readable variables in the group. */
-    void readAllNonBlocking();
+    /** Just call readNonBlocking() on all readable variables in the group.
+     *  includeReturnChannels determines whether return channels of *OutputRB accessors are included in the read. */
+    void readAllNonBlocking(bool includeReturnChannels = false);
 
-    /** Just call readLatest() on all readable variables in the group. */
-    void readAllLatest();
+    /** Just call readLatest() on all readable variables in the group.
+     *  includeReturnChannels determines whether return channels of *OutputRB accessors are included in the read. */
+    void readAllLatest(bool includeReturnChannels = false);
 
-    /** Just call write() on all writable variables in the group. */
-    void writeAll();
+    /** Just call write() on all writable variables in the group.
+     *  includeReturnChannels determines whether return channels of *InputWB accessors are included in the write. */
+    void writeAll(bool includeReturnChannels = false);
 
-    /** Just call writeDestructively() on all writable variables in the group. */
-    void writeAllDestructively();
+    /** Just call writeDestructively() on all writable variables in the group.
+     *  includeReturnChannels determines whether return channels of *InputWB accessors are included in the write. */
+    void writeAllDestructively(bool includeReturnChannels = false);
 
     /** Function call operator: Return VariableNetworkNode of the given variable
      * name */
