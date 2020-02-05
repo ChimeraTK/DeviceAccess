@@ -394,21 +394,21 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::InitialValueMode VariableNetworkNode::hasInitialValue() const {
-    if(getType() == NodeType::ControlSystem) {
-      return InitialValueMode::Push;
-    }
-    if(getType() == NodeType::Device || getType() == NodeType::Constant) {
-      if(getOwner().getTriggerType() == VariableNetwork::TriggerType::feeder) {
-        return InitialValueMode::Poll;
-      }
-      else {
-        assert(getOwner().getTriggerType() == VariableNetwork::TriggerType::external ||
-            getOwner().getTriggerType() == VariableNetwork::TriggerType::pollingConsumer);
+    if(getDirection().dir == VariableDirection::feeding) {
+      if(getType() == NodeType::ControlSystem) {
         return InitialValueMode::Push;
       }
-    }
-    assert(getType() == NodeType::Application);
-    if(getDirection().dir == VariableDirection::feeding) {
+      if(getType() == NodeType::Device || getType() == NodeType::Constant) {
+        if(getOwner().getTriggerType() == VariableNetwork::TriggerType::feeder) {
+          return InitialValueMode::Poll;
+        }
+        else {
+          assert(getOwner().getTriggerType() == VariableNetwork::TriggerType::external ||
+              getOwner().getTriggerType() == VariableNetwork::TriggerType::pollingConsumer);
+          return InitialValueMode::Push;
+        }
+      }
+      assert(getType() == NodeType::Application);
       if(pdata->hasInitialValue) {
         return InitialValueMode::Push;
       }
@@ -416,7 +416,22 @@ namespace ChimeraTK {
         return InitialValueMode::None;
       }
     }
-    return getOwner().getFeedingNode().hasInitialValue();
+    else {
+      auto feederInitialValue = getOwner().getFeedingNode().hasInitialValue();
+      if(getOwner().countConsumingNodes() == 1) {
+        return feederInitialValue;
+      }
+      else {
+        if(feederInitialValue != InitialValueMode::None) {
+          // More then one consuming node: FanOut in between. Need to wait for FanOut to process the initial value!
+          // If the FanOut is a ConsumingFanOut, InitialValueMode::Push doesn't hurt as that fan out is always poll-type
+          return InitialValueMode::Push;
+        }
+        else {
+          return InitialValueMode::None;
+        }
+      }
+    }
   }
 
 } // namespace ChimeraTK
