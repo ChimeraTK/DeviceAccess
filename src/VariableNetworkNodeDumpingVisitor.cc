@@ -40,10 +40,6 @@ namespace ChimeraTK {
     stream() << "]";
     stream() << _separator;
 
-    if(t.hasInitialValue() == VariableNetworkNode::InitialValueMode::None) stream() << "no initial" << _separator;
-    if(t.hasInitialValue() == VariableNetworkNode::InitialValueMode::Push) stream() << "push initial" << _separator;
-    if(t.hasInitialValue() == VariableNetworkNode::InitialValueMode::Poll) stream() << "poll initial" << _separator;
-
     stream() << std::endl;
   }
 
