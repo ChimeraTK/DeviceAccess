@@ -284,7 +284,7 @@ namespace ChimeraTK {
       std::stringstream msg;
       msg << "No feeding node in this network!" << std::endl;
       msg << "The illegal network:" << std::endl;
-      if(!hasFeedingNode()) dump("", msg);
+      dump("", msg);
       throw ChimeraTK::logic_error(msg.str());
     }
     return *iter;
