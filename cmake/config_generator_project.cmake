@@ -6,6 +6,7 @@
 #   PROJECT(exampleserver-config NONE)
 #   cmake_minimum_required(VERSION 3.5)
 #
+#   # Note: Always keep MAJOR_VERSION and MINOR_VERSION identical to the server version. Count only the patch separately.
 #   set(${PROJECT_NAME}_MAJOR_VERSION 01)
 #   set(${PROJECT_NAME}_MINOR_VERSION 00)
 #   set(${PROJECT_NAME}_PATCH_VERSION 00)
@@ -16,7 +17,7 @@
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
-find_package(ConfigGenerator 01.00 REQUIRED)
+find_package(ConfigGenerator 02.00 REQUIRED)
 
 set(DESTDIR share/ConfigGenerator${ConfigGenerator_VERSION})
 
