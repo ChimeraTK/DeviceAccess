@@ -50,6 +50,9 @@ namespace ChimeraTK {
           assert(reg_casted != nullptr); // this is our own catalogue
           // fetch the value of the target constant
           if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
+            if(reg_casted->plugins.size() > 0) {
+              parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");
+            }
             // put to stream buffer
             callForType(reg_casted->valueType, [&](auto arg) {
               std::stringstream buf;
@@ -165,6 +168,9 @@ namespace ChimeraTK {
           assert(reg_casted != nullptr); // this is our own catalogue
           // fetch the value of the target constant
           if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
+            if(reg_casted->plugins.size() > 0) {
+              parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");
+            }
             // convert via string
             std::stringstream buf;
             callForType(reg_casted->valueType,
