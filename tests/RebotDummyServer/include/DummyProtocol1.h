@@ -12,14 +12,14 @@ namespace ChimeraTK {
     DummyProtocol1(RebotDummySession& parent);
 
     /// The multi word read is not limited in the size any more
-    virtual void multiWordRead(std::vector<uint32_t>& buffer);
+    void multiWordRead(std::vector<uint32_t>& buffer) override;
 
     /// First protocol version that implements hello
-    virtual uint32_t multiWordWrite(std::vector<uint32_t>& buffer);
-    virtual uint32_t continueMultiWordWrite(std::vector<uint32_t>& buffer);
+    uint32_t multiWordWrite(std::vector<uint32_t>& buffer) override;
+    uint32_t continueMultiWordWrite(std::vector<uint32_t>& buffer) override;
 
     /// First protocol version that implements hello
-    virtual void hello(std::vector<uint32_t>& buffer);
+    void hello(std::vector<uint32_t>& buffer) override;
 
     uint32_t protocolVersion() const override { return 1; }
 

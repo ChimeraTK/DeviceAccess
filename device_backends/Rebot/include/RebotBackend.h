@@ -74,7 +74,7 @@ namespace Rebot {
         std::map<std::string, std::string>
             parameters);
 
-    bool isFunctional() const ;
+    bool isFunctional() const override;
 
    protected:
 

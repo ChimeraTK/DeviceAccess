@@ -137,7 +137,7 @@ namespace ChimeraTK { namespace LNMBackend {
         boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
 
     void updateRegisterInfo() override;
-    DataType getTargetDataType(DataType) const { return DataType::uint32; }
+    DataType getTargetDataType(DataType) const override { return DataType::uint32; }
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(

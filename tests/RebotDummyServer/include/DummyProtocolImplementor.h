@@ -17,6 +17,8 @@ struct DummyProtocolImplementor {
   virtual void ping(std::vector<uint32_t>& buffer) = 0;
   /// implement this for EVERY protocol version
   virtual uint32_t protocolVersion() const = 0;
+
+  virtual ~DummyProtocolImplementor() = default;
 };
 
 #endif // DUMMY_PROTOCOL_IMPLEMENTOR_H
