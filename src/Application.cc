@@ -170,7 +170,7 @@ void Application::run() {
   // set all initial version numbers in the modules to the same value
   for(auto& module : getSubmoduleListRecursive()) {
     if(module->getModuleType() != ModuleType::ApplicationModule) continue;
-    module->setCurrentVersionNumber(_startVersion);
+    module->setCurrentVersionNumber(getStartVersion());
   }
 
   // prepare the modules
@@ -185,7 +185,7 @@ void Application::run() {
   for(auto& module : getSubmoduleListRecursive()) {
     for(auto& var : module->getAccessorList()) {
       if(!var.getAppAccessorNoType().isWriteable()) continue;
-      if(var.getAppAccessorNoType().getVersionNumber() >= _startVersion) {
+      if(var.getAppAccessorNoType().getVersionNumber() >= getStartVersion()) {
         var.setHasInitialValue(true);
       }
     }
