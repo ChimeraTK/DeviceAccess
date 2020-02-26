@@ -1,6 +1,8 @@
 /**
 \mainpage
-\subpage exceptionHandling
+
+API documentation:
+- \subpage exceptionHandling
 
 Module documentation:
 - \subpage loggingdoc
@@ -13,5 +15,8 @@ Examples:
 \li \ref example2a
 \li \ref example3
 \li \ref statusmonitordoc
+
+Technical specifications:
+- \subpage spec_initialValuePropagation
 
 */
