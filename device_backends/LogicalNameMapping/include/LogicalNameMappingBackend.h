@@ -28,7 +28,7 @@ namespace ChimeraTK {
 
     void close() override;
 
-    bool isFunctional() const override { return _opened; }
+    bool isFunctional() const override; 
 
     std::string readDeviceInfo() override { return std::string("Logical name mapping file: ") + _lmapFileName; }
 
