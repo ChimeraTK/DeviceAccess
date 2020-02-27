@@ -1,14 +1,14 @@
 #define BOOST_TEST_MODULE testExceptionsDummy
 
 #include "ExceptionDevice.h"
-#include <ChimeraTK/BackendFactory.h>
-#include <ChimeraTK/Device.h>
+#include "BackendFactory.h"
+#include "Device.h"
 #include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend("(ExceptionDummy:1?map=test3.map)"));
+auto exceptionDummy = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend("(ExceptionDummy:1?map=test3.map)"));
 ctk::Device device;
 
 BOOST_AUTO_TEST_CASE(testExceptionsDummyDevice) {
