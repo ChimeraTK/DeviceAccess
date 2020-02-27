@@ -79,6 +79,14 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename TRIGGERTYPE>
+    void MicroDAQ<TRIGGERTYPE>::addSource(const DeviceModule& source, const RegisterPath& namePrefix) {
+    auto mod = source.virtualiseFromCatalog();
+    addSource(mod, namePrefix);
+  }
+
+  /*********************************************************************************************************************/
+
+  template<typename TRIGGERTYPE>
   template<typename UserType>
   VariableNetworkNode MicroDAQ<TRIGGERTYPE>::getAccessor(const std::string& variableName) {
     // check if variable name already registered

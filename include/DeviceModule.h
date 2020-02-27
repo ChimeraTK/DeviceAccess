@@ -268,6 +268,8 @@ namespace ChimeraTK {
 
     friend class Application;
     friend struct history::ServerHistory;
+    template<typename TRIGGERTYPE>
+    friend class MicroDAQ;
     friend class detail::DeviceModuleProxy;
 
     template<typename T>
