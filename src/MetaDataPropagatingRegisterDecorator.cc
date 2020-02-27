@@ -16,9 +16,9 @@ namespace ChimeraTK {
     auto valid = ChimeraTK::NDRegisterAccessorDecorator<T>::dataValidity();
     if(valid != lastValidity) {
       if(valid == DataValidity::faulty)
-        _owner->incrementDataFaultCounter(false);
+        _owner->incrementDataFaultCounter();
       else
-        _owner->decrementDataFaultCounter(false);
+        _owner->decrementDataFaultCounter();
       lastValidity = valid;
     }
   }

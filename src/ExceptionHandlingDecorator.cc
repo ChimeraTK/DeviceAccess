@@ -25,10 +25,10 @@ namespace ChimeraTK {
       localValidity = newValidity;
       if(!_owner) return;
       if(newValidity == DataValidity::faulty) {
-        _owner->incrementDataFaultCounter(true);
+        _owner->incrementExceptionCounter();
       }
       else {
-        _owner->decrementDataFaultCounter(true);
+        _owner->decrementExceptionCounter();
       }
     }
   }

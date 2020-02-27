@@ -118,20 +118,28 @@ namespace ChimeraTK {
     Application::testableModeUnlock("terminate");
   }
 
-  void ApplicationModule::incrementDataFaultCounter(bool writeAllOutputs) {
-    ++faultCounter;
+  void ApplicationModule::incrementDataFaultCounter() {
+    ++dataFaultCounter;
     // writeAll only once for first incrementDataFaultCounter call -> going with faultCounter from 0 to 1
-    if (writeAllOutputs && faultCounter == 1)
-      this->writeAll(); 
+//    if (writeAllOutputs && faultCounter == 1)
+//      this->writeAll();
   }
 
-  void ApplicationModule::decrementDataFaultCounter(bool writeAllOutputs) {
-    assert(faultCounter > 0);
-    --faultCounter;
-    //writeAll only once for last decrementDataFaultCounter call -> going with faultCounter from 1 to 0
-    if (writeAllOutputs && faultCounter == 0)
-      this->writeAll();
+  void ApplicationModule::decrementDataFaultCounter() {
+    assert(dataFaultCounter > 0);
+    --dataFaultCounter;
+//    //writeAll only once for last decrementDataFaultCounter call -> going with faultCounter from 1 to 0
+//    if (writeAllOutputs && faultCounter == 0)
+//      this->writeAll();
   }
-  
+
+  void ApplicationModule::incrementExceptionCounter() {
+    ++exceptionCounter;
+  }
+
+  void ApplicationModule::decrementExceptionCounter() {
+    assert(exceptionCounter > 0);
+    --exceptionCounter;
+  }
   
 } /* namespace ChimeraTK */

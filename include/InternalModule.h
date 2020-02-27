@@ -42,8 +42,10 @@ namespace ChimeraTK {
     VersionNumber getCurrentVersionNumber() const override { throw; }
     void setCurrentVersionNumber(VersionNumber /*versionNumber*/) override { throw; }
     DataValidity getDataValidity() const override { throw; }
-    void incrementDataFaultCounter(bool) override { throw; }
-    void decrementDataFaultCounter(bool) override { throw; }
+    void incrementDataFaultCounter() override { throw; }
+    void decrementDataFaultCounter() override { throw; }
+    void incrementExceptionCounter() override { throw; }
+    void decrementExceptionCounter() override { throw; }
   };
 
 } /* namespace ChimeraTK */

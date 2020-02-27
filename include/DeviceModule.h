@@ -143,12 +143,21 @@ namespace ChimeraTK {
     mutable Device device;
 
     DataValidity getDataValidity() const override { return DataValidity::ok; }
-    void incrementDataFaultCounter(bool) override {
+    void incrementDataFaultCounter() override {
       throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceModule. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-    void decrementDataFaultCounter(bool) override {
+    void decrementDataFaultCounter() override {
       throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+
+    void incrementExceptionCounter() override {
+      throw ChimeraTK::logic_error("incrementExceptionCounter() called on  a DeviceModule. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+    void decrementExceptionCounter() override {
+      throw ChimeraTK::logic_error("decrementExceptionCounter() called on  a DeviceModule. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
 

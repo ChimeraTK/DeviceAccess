@@ -72,11 +72,13 @@ namespace ChimeraTK {
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
     DataValidity getDataValidity() const override {
-      return faultCounter == 0 ? DataValidity::ok : DataValidity::faulty;
+      return dataFaultCounter == 0 ? DataValidity::ok : DataValidity::faulty;
     }
 
-    void incrementDataFaultCounter(bool writeAllOutputs) override;
-    void decrementDataFaultCounter(bool writeAllOutputs) override;
+    void incrementDataFaultCounter() override;
+    void decrementDataFaultCounter() override;
+    void incrementExceptionCounter() override;
+    void decrementExceptionCounter() override;
 
     void setCurrentVersionNumber(VersionNumber versionNumber) override {
       if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
@@ -94,8 +96,9 @@ namespace ChimeraTK {
      * write operations */
     VersionNumber currentVersionNumber{nullptr};
 
-    /** Fault counter. If non-zero, getDataValidity() returns a fault, otherwise ok. */
-    size_t faultCounter{0};
+    /** Data fault and exception counters. TODO: Change this to metion the effect of both cnts If non-zero, getDataValidity() returns a fault, otherwise ok. */
+    size_t dataFaultCounter{0};
+    size_t exceptionCounter{0};
   };
 
 } /* namespace ChimeraTK */
