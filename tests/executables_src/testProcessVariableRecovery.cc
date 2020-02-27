@@ -10,7 +10,7 @@
 #include "ArrayAccessor.h"
 #include "ConfigReader.h"
 
-#include <ChimeraTK/ExceptionDevice.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
 #include <ChimeraTK/Device.h>
 #include <stdlib.h>
 #include <regex>
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 3)[0], 100, 10000);
 
   auto dummyBackend =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
 
   //Set the device to throw.
   dummyBackend->throwExceptionOpen = true;

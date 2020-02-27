@@ -9,7 +9,7 @@
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/DummyRegisterAccessor.h>
-#include <ChimeraTK/ExceptionDevice.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
@@ -156,9 +156,9 @@ struct TestApplication2 : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   std::cout << "testExceptionHandlingRead" << std::endl;
   TestApplication app;
-  boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
-  boost::shared_ptr<ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
 
   ChimeraTK::DummyRegisterAccessor<int> readbackDummy1(dummyBackend1.get(), "MyModule", "readBack");
@@ -265,9 +265,9 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
 BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
   std::cout << "testExceptionHandlingWrite" << std::endl;
   TestApplication app;
-  boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
-  boost::shared_ptr<ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
 
   ChimeraTK::DummyRegisterAccessor<int> actuatorDummy1(dummyBackend1.get(), "MyModule", "actuator");
@@ -346,9 +346,9 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
 BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   std::cout << "testExceptionHandlingOpen" << std::endl;
   TestApplication app;
-  boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
-  boost::shared_ptr<ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
 
   ChimeraTK::DummyRegisterAccessor<int> readbackDummy1(dummyBackend1.get(), "MyModule", "readBack");
@@ -434,7 +434,7 @@ BOOST_AUTO_TEST_CASE(testConstants) {
   // Take back the value of the constant which was written to the device before making the device fail for further writes.
   dev.write<int32_t>("/MyModule/actuator", 0);
   auto dummyBackend =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
   dummyBackend->throwExceptionWrite = true;
 
   auto pleaseWriteToMe = test.getScalar<int32_t>("/PleaseWriteToMe");
@@ -466,11 +466,11 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   static const uint32_t DEFAULT = 55;
 
   auto dummyBackend1 =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
   auto dummyBackend2 =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
   auto dummyBackend3 =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
 
   // Test that the application does shut down with a broken device and blocking accessors
   TestApplication2 app;
