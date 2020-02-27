@@ -35,6 +35,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 7. Outputs of `ApplicationModule`s:
   1. By default, no initial values are propagated.
   2. Initial values can be written in `ApplicationModule::prepare()`. This fact is recorded in the variable model (`VariableNetworkNode`), see 8.b.v
+  3. Since in `ApplicationModule::prepare()` all devices are still closed, any writes to device variables at this point need to be delayed until the device is open. The actual write is hence performed by the DeviceModule.
 8. Inputs of `ApplicationModule`s:
   1. Initial values are read before start of `mainLoop()`.
   2. Since not all variables have initial values (see 7.a), the variable model (`VariableNetworkNode`) needs to be checked whether an initial value is present and how it needs to be read. This dependes on the data source type:
