@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE testExceptionsDummy
 
-#include "ExceptionDevice.h"
+#include "ExceptionDummyBackend.h"
 #include "BackendFactory.h"
 #include "Device.h"
 #include <boost/test/included/unit_test.hpp>
