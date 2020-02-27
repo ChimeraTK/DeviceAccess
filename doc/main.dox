@@ -3,6 +3,7 @@
 
 API documentation:
 - \subpage exceptionHandling
+- \subpage exceptionHandlingDesign
 
 Module documentation:
 - \subpage loggingdoc

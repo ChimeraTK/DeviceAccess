@@ -10,9 +10,9 @@
 #include "DeviceModule.h"
 //#include "ScalarAccessor.h"
 #include "TestFacility.h"
-#include "ExceptionDevice.h"
 
 #include <ChimeraTK/Device.h>
+#include <ChimeraTK/ExceptionDevice.h>
 #include <stdlib.h>
 
 #include "check_timeout.h"

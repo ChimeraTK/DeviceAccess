@@ -16,9 +16,10 @@
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
 #include "TestFacility.h"
-#include "ExceptionDevice.h"
 #include "ModuleGroup.h"
 #include "check_timeout.h"
+
+#include <ChimeraTK/ExceptionDevice.h>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

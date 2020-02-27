@@ -4,12 +4,12 @@
 using namespace boost::unit_test_framework;
 
 #include <ChimeraTK/DummyRegisterAccessor.h>
+#include <ChimeraTK/ExceptionDevice.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
-#include "ExceptionDevice.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"

@@ -5,15 +5,16 @@
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "TestFacility.h"
-#include "ExceptionDevice.h"
-#include <ChimeraTK/Device.h>
-#include <stdlib.h>
 #include "check_timeout.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "ConfigReader.h"
 
+#include <ChimeraTK/ExceptionDevice.h>
+#include <ChimeraTK/Device.h>
+#include <stdlib.h>
 #include <regex>
+
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
