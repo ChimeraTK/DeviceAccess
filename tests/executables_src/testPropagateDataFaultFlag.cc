@@ -828,3 +828,85 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+// Module and Application for test case "testDataValidPropagationOnException"
+struct Module3 : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+  ctk::ScalarPushInput<int> pushTypeInputFromCS{this, "o1", "", "", {"CS"}};
+
+  ctk::ScalarPollInput<int> pollInputFromDevice{this, "i2", "", "", {"DEVICE2"}};
+  ctk::ScalarOutput<int> result{this, "Module3_result", "", "", {"CS"}};
+
+  void mainLoop() override {
+    while(true) {
+      pushTypeInputFromCS.read();
+      pollInputFromDevice.read();
+      result =  pushTypeInputFromCS + pollInputFromDevice;
+      result.write();
+    }
+  }
+};
+
+struct TestApplication4 : ctk::Application {
+  /*
+   *
+   */
+
+  constexpr static char const* ExceptionDummyCDD2 = "(ExceptionDummy:1?map=testDataValidity2.map)";
+  TestApplication4() : Application("testDataFlagPropagation") {}
+  ~TestApplication4() { shutdown(); }
+
+  Module3 module{this, "module", ""};
+
+  ctk::ControlSystemModule cs;
+  ctk::DeviceModule device2{this, ExceptionDummyCDD2};
+
+  void defineConnections() override {
+    findTag("CS").connectTo(cs);
+    findTag("DEVICE2").flatten().connectTo(device2["m1"]);
+  }
+};
+
+
+
+BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException){
+  std::cout << "testDataValidPropagationOnException" << std::endl;
+
+  boost::shared_ptr<ExceptionDummy> device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2)));
+
+  TestApplication4 app;
+  ctk::TestFacility test{false};
+  test.runApplication();
+
+  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+  auto pushInput = test.getScalar<int>("module/o1");
+  auto result = test.getScalar<int>("module/Module3_result");
+
+  auto deviceStatus =
+      test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication4::ExceptionDummyCDD2 / "status");
+
+  pollRegister = 1;
+  pushInput = 10;
+  pushInput.write();
+
+  CHECK_TIMEOUT((result.readLatest(), result == 11), 10000);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+  CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 0, 10000);
+
+  // Set data validity to faulty and trigger excetion in the same update
+  pollRegister = 2;
+  pushInput = 20;
+  pushInput.setDataValidity(ctk::DataValidity::faulty);
+  device2DummyBackend->throwExceptionRead = true;
+  pushInput.write();
+
+  // Output should be rewritten and the data valditity should be propagated
+  CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 1, 10000);
+  CHECK_EQUAL_TIMEOUT(result.readNonBlocking(), true, 10000);
+  BOOST_CHECK_EQUAL( result , 11);
+  std::cout << "Result is " << result << std::endl;
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+}
