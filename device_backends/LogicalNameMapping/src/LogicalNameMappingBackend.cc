@@ -226,4 +226,17 @@ namespace ChimeraTK {
   };
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(InstantiateLogicalNameMappingBackendFunctions);
 
+  /********************************************************************************************************************/
+  bool LogicalNameMappingBackend::isFunctional() const {
+    if (not _opened) {
+      return false;
+    }
+
+    for (auto& e : _devices) {
+      if (not e.second->isFunctional()) {
+        return false;
+      }
+    }
+    return true;
+  }
 } // namespace ChimeraTK
