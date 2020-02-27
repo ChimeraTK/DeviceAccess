@@ -34,7 +34,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
   2. Read accessors need to be read after 6.a. [TBD: Is this ordering even possible? It is more like a 'nice to have' and not strictly required.]
 7. Outputs of `ApplicationModule`s:
   1. By default, no initial values are propagated.
-  2. Initial values can be written in `ApplicationModule::prepare()`.
+  2. Initial values can be written in `ApplicationModule::prepare()`. This fact is recorded in the variable model (`VariableNetworkNode`), see 8.b.v
 8. Inputs of `ApplicationModule`s:
   1. Initial values are read before start of `mainLoop()`.
   2. Since not all variables have initial values (see 7.a), the variable model (`VariableNetworkNode`) needs to be checked whether an initial value is present and how it needs to be read. This dependes on the data source type:
