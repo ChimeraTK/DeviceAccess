@@ -987,7 +987,8 @@ BOOST_AUTO_TEST_CASE(testIsFunctional) {
       BackendFactory::getInstance().createBackend(
           "(ExceptionDummy:1?map=test3.map)"));
 
-  Device d{"LMAP0"};
+  Device d{"LMAP1"};
+  d.open();
   BOOST_CHECK(d.isFunctional() == true);
 
   exceptionDummyBackend->throwExceptionRead = true;

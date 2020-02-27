@@ -1,0 +1,14 @@
+<logicalNameMap>
+    <redirectedRegister name="NotUsed0">
+        <targetDevice>EDUMMY</targetDevice>
+        <targetRegister>/FixedPoint/value</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="NotUsed1">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="NotUsed2">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+    </redirectedRegister>
+</logicalNameMap>
