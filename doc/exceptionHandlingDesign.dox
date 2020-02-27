@@ -6,9 +6,52 @@
 Exceptions must be handled by ApplicationCore in a way that the application developer does not have to care much about it.
 
 In case of a ChimeraTK::runtime exception the Application must catch the expection and report it to the DeviceModule. The DeviceModule should handle this exception and block the device until the device can be opened again. As there could many devices make sure only the faulty device is blocked.
-Even if a device is faulty it should not block the server from starting. 
+Even if a device is faulty it should not block the server from starting.
 
 Once in error state, set the DataValidity flag for that module to faulty and propogate this to all of it‘s output variables. After the exception is cleared and operation returns without a data fault flag, set DataValidity flag to ok. Furthermore, the device must be reinitialised automatically and also recover the values of process variables as the device might have rebooted and the variables have been re-set.
+
+
+<b>Genesis</b>
+
+- When DeviceModule is created it is registered with Application. (Added to a list in Application::registerDeviceModule.)
+- An initailisation handler can be added to the device through constructor. Initialisation handlers are callback function which will be executed after a device recovers from an exception.
+- A list of TransferElements shared pointers is created as writeAfterOpen which is used to write constants after the devcie is opened.
+- A list of TransferElements shared pointers is created as writeRecoveryOpen which is populated in function addRecoveryAccessor in the DeviceModule.
+- ChimeraTK::NDRegisterAccessor is used to access the device variables inside class Application.
+- Class ExceptionHandlingDecorator facilitates ChimeraTK::NDRegisterAccessor in case of exception.
+- Recovery accessor is added for writebale register when ChimeraTK::NDRegisterAccessor is obtianed. These recovery accessors are used to recover the values of variables after the recovery.
+- setOnwer() is used to set the application module or variable group as owner of the (feeding) device which is decorated with and ExceptionHandlingDecorator.
+
+<b>The Flow</b>
+
+- Application has started but the device is not opened
+  - All the writes will be delayed until the device is opened
+  - Constants too will be written only after the device is opened.
+
+  - The device is opened for the first time inside DeviceModule::handleException().
+  - If there is no exception
+    - deviceError.status is set to 0.
+    - Device is initailised iterating over initialisationHandlers list.
+    - Constant feeders are written to the device using writeAfterOpen().
+
+- When a read / write operation ExceptionHandlingDecorator<UserType>::genericTransfer (ChimeraTK::NDRegisterAccessor) on device causes a ChimeraTK::runtime exception, the exception is caught
+  - Inside ExceptionHandlingDecorator
+    - The dataValidity of the DeviceModule is set to faulty using setOwnerValidityFunction(DataValidity::faulty)
+    - incrementDataFaultCounter is set to true
+    - Error is reported to DeviceModule with the exception as DeviceModule::reportException(e.what).
+  - incrementDataFaultCounter is picked up by MetaDataPropagatingDecorator and all the outputs are set faulty.
+
+  - In DeviceModule::reportException
+    - The Error is pushed into an error queue and the deviceError.status is set to 1.
+    - The device is blocked until the error state is resolved i.e., device can be opened again.
+
+  - Exception is handled by DeviceModule::handleException() in a separate thread.
+  - It will keep on trying to open the device until successful.
+  - Once device is opened,
+    - deviceError.status is set to 0.
+    - device is reinitalisied through initialisationHandlers.
+    - process variables are written again through writeRecoveryOpen().
+    - device thread is notified and it no longer remains block.
 
 
 -<b>Add an exception handling and reporting machinsm to the device module (DeviceModule).</b>
@@ -16,10 +59,10 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 Description.
 
 Add  two error state variables.
-- "state" (boolean flag if error occurred) 
-- "message" (string with error message) 
+- "state" (boolean flag if error occurred)
+- "message" (string with error message)
 These variables are automatically connected to the control systen in this format
-- /Devices/{AliasName}/message 
+- /Devices/{AliasName}/message
 - /Devices/{AliasName}/status
 
 Add a thread safe function reportException().
@@ -57,7 +100,7 @@ Implementation.
 
 Description.
 
-To make sure that the server should always start, the initial opening of the device should take place in the DeviceModule itself, inside the exception handling loop so that device can go to the error state right at the beginning and the server can start despite not all its devices are available. 
+To make sure that the server should always start, the initial opening of the device should take place in the DeviceModule itself, inside the exception handling loop so that device can go to the error state right at the beginning and the server can start despite not all its devices are available.
 
 Implementation.
 
