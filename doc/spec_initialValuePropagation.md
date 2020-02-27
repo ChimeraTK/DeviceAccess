@@ -15,7 +15,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 ## High-level requirements ##
 
-- Initial values must be available to all `ApplicationModule`s at the start of the `mainLoop()`. No call to `read()` etc. is required. This implies that the `mainLoop()` is not started until all initial are available, including those coming from devices which might potentially be offline.
+- Initial values must be available to all `ApplicationModule`s at the start of the `mainLoop()`. No call to `read()` etc. is required. This implies that the `mainLoop()` is not started until all initial values are available, including those coming from devices which might potentially be offline.
 - Devices must receive the initial values as soon as possible after the device is opened and after the initialisation sequence is executed, but before anything else gets written to the device.
 - The control system must receivce the initial values as soon as they are available. The initial value is merely the first value the control system receives for a particular process variable - other variables might have received an update already multiple times before the initial value is recieved.
 - Control system variables show the `DataValidity::faulty` flag until they have received the initial value.
