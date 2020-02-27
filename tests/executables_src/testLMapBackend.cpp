@@ -6,6 +6,7 @@ using namespace boost::unit_test_framework;
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
 #include "TransferGroup.h"
+#include "ExceptionDummyBackend.h"
 
 using namespace ChimeraTK;
 
@@ -977,6 +978,26 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   areaScaled.write();
   area.read();
   for(int i = 0; i < 1024; ++i) BOOST_CHECK_EQUAL(area[i], -100 + i);
+}
+
+/********************************************************************************************************************/
+BOOST_AUTO_TEST_CASE(testIsFunctional) {
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  auto exceptionDummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>(
+      BackendFactory::getInstance().createBackend(
+          "(ExceptionDummy:1?map=test3.map)"));
+
+  Device d{"LMAP0"};
+  BOOST_CHECK(d.isFunctional() == true);
+
+  exceptionDummyBackend->throwExceptionRead = true;
+  BOOST_CHECK(d.isFunctional() == false);
+
+  exceptionDummyBackend->throwExceptionRead = false;
+  BOOST_CHECK(d.isFunctional() == true);
+
+  d.close();
+  BOOST_CHECK(d.isFunctional() == false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

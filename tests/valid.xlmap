@@ -1,4 +1,8 @@
 <logicalNameMap>
+    <redirectedRegister name="NotUsed">
+        <targetDevice>EDUMMY</targetDevice>
+        <targetRegister>/FixedPoint/value</targetRegister>
+    </redirectedRegister>
     <redirectedRegister name="SingleWord">
         <targetDevice>PCIE2</targetDevice>
         <targetRegister>BOARD.WORD_USER</targetRegister>
