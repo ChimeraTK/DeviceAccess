@@ -383,26 +383,26 @@ struct Module2 : ctk::ApplicationModule {
 // struct TestApplication3 : ctk::ApplicationModule {
 struct TestApplication3 : ctk::Application {
   /*
- *   CS +---> threaded fanout +------------------+
- *                +                              v
- *                +--------+                   +Device1+
- *                         |                   |       |
- *                         v                +--+       |
- *     CS   <---------+ Module1 <-------+   v          |
- *                 |       ^            +Consuming     |
- *                 |       +---------+    fanout       |
- *                 +----+            +      +          |
- *                      v         Device2   |          |
- *     CS   <---------+ Module2             |          |
- *                                          |          |
- *     CS   <-------------------------------+          |
- *                                                     |
- *                                                     |
- *     CS   <---------+ Trigger <----------------------+
- *                         ^
- *                         |
- *                         +
- *                         CS
+ *   CS +-----> threaded fanout +------------------+
+ *                  +                              v
+ *                  +---------+                   +Device1+
+ *                            |                   |       |
+ *              Feeding       v                   |       |
+ *   CS   <----- fanout --+ Module1 <-----+       v       |
+ *                 |          ^           +Consuming      |
+ *                 |          +--------+    fanout        |
+ *                 +------+            +      +           |
+ *                        v         Device2   |           |
+ *   CS   <-----------+ Module2               |           |
+ *                                            |           |
+ *   CS   <-----------------------------------+           |
+ *                                                        |
+ *                                                        |
+ *   CS   <-----------+ Trigger fanout <------------------+
+ *                           ^
+ *                           |
+ *                           +
+ *                           CS
  */
 
   constexpr static char const* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=testDataValidity1.map)";
