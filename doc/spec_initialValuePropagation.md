@@ -22,13 +22,13 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 ## Detailed requirements ##
 
-1. All `ChimeraTK::NDRegisterAccessor` implementations (including but not limited to the `ChimeraTK::ProcessArray`) must have the `DataValidity::faulty` flag set after construction. This ensures, all data is marked as `faulty` as long as no sensible initial values have been propagated.
+1. All `ChimeraTK::NDRegisterAccessor` implementations (including but not limited to the `ChimeraTK::ProcessArray`) must have the `DataValidity::faulty` flag set after construction for the receiving end. This ensures, all data is marked as `faulty` as long as no sensible initial values have been propagated. The sending end must have `DataValidity::ok`, so that the first written data automatically propagates the ok state. [TBD: What about bidirectional variables?]
 2. All `ChimeraTK::NDRegisterAccessor` implementations must have initially a `ChimeraTK::VersionNumber` constructed with a `nullptr`, which allows to check whether this variable is still at its "first value" or the initial value propagation already took place.
-3. All `ApplicationModules` and similar entities (like `ThreadedFanOut` and `TriggerFanOut`), that store a `DataValidity` directly or indirectly e.g. in form af a counter, must have their internal `DataValidity` flag set to `faulty` after construction. [TBD: What does that mean in case of a counter?]
+3. All `ApplicationModules` and similar entities (like `ThreadedFanOut` and `TriggerFanOut`), that store a `DataValidity` directly or indirectly e.g. in form af a counter, must have their internal `DataValidity` flag set to `ok` after construction.
 4. The initial `DataValidity::faulty` flags must not be propagated actively. The first propagated data must be always `ok` and must have a valid value.
 5. Control system variables:
   1. Variables with the control-system-to-application direction must be written exactly once at application start by the control system adapter with their initial values from the persistency layer and the `DataValidity::ok`. This must be done before `ApplicationBase::run()` is called. [TBD: Is this last sentence a necessary restiction?]
-  2. Initial values of variables with the application-to-control-system direction are written at an undefined time after the `ApplicationBase::run()` has been called. The control system adapter must not expect any specific behaviour.
+  2. Initial values of variables with the application-to-control-system direction are written at an undefined time after the `ApplicationBase::run()` has been called. The control system adapter must not expect any specific behaviour. Entities writing to these variables do not need to take any special precautions, they do not even need to obey the second sentence in 4. In other words: application-to-control-system variables do not have an "initial value" in this particular meaning.
 6. Device variables:
   1. Write accessors need to be written right after the device is opened and the initialisation is done.
   2. Read accessors need to be read after 6.a. [TBD: Is this ordering even possible? It is more like a 'nice to have' and not strictly required.]
@@ -38,21 +38,65 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
   3. Since in `ApplicationModule::prepare()` all devices are still closed, any writes to device variables at this point need to be delayed until the device is open. The actual write is hence performed by the DeviceModule.
 8. Inputs of `ApplicationModule`s:
   1. Initial values are read before start of `mainLoop()`.
-  2. Since not all variables have initial values (see 7.a), the variable model (`VariableNetworkNode`) needs to be checked whether an initial value is present and how it needs to be read. This dependes on the data source type:
+  2. Since not all variables have initial values (see 7.a), the variable model (`VariableNetworkNode`) needs to be checked whether an initial value is present and how it needs to be read. This dependes on the data source type (i.e. the type of the feeder of the VariableNetwork):
     1. control system variable: blocking read
     2. device register without trigger: non-blocking read (even if register is push-type)
     3. device register with trigger (incl. TriggerType::pollingConsumer): blocking read
     4. constant: non-blocking read
     5. application: blocking read only if initial value was provided (see 7.a), otherwise no read
-9. Constants:
+9. `ThreadedFanOut` and `TriggerFanOut` etc.
+  1. Inputs need to behave like described in 8.b
+  2. Outputs connected to devices need to obey 6.a
+  3. Outputs connected to `ApplicationModule`s will pass on the initial value, as the `ApplicationModule` will obey 8.b just like the FanOut input.
+10. Constants:
   1. Values are propagated before the `ApplicationModule` threads are starting.
   2. Special treatment for constants written to devices: They need to be written after the device is opened, see 6.a
 
+### Comments ###
+
+- To 3.: It looks like a conflict with 1., but it is not. Due to 1., all variables will already present itself to the outside as `faulty`. 3. has an impact on the DataValidity of variables written within the module. If a module decides to write a variable even before any inputs are checked, it should be assumed that the written values are valid. Hence the internal validity must start at `ok`.
+- To 4.: It is very important that no wrong data is transported initially. Since the "first value" of all process variables is always 0, this value is basically always wrong. If it gets propagated within the application, modules will process this value (usually even if `DataValidity::faulty` is set), despite the value might present an inconsistent state with other process variables. If it gets propagated to the control system, other applications might act on an again inconsistent state.
+- To 5.: This is the responsibility of each control system adpater implementation.
+- To 5.a: It is important that the initial values are written before `ApplicationBase::run()` to avoid race conditions if `readLatest()` might be used for the initial values (e.g. in ThreadedFanOuts). This can also be solved differently, if in all these places the same logic as in 8. is applied.
+
 ## Implementation ##
+
+### NDRegisterAccessor implementations ###
+
+- 1. must currently be implemented by each NDRegisterAccessor separately. [TBD: Instead of requiring all implementations to be changed, we could also fix this in `Application::createDeviceVariable()`, but this creates an asymetry to the `ProcessArray`...]
+- 2. must currently be implemented by each NDRegisterAccessor separately. All accessors should already have a VersionNumber data member called `currentVersion` or similar, it simply needs to be constructed with a `nullptr` as an argument.
+- The `UnidirectionalProcessArray` uses always a default start value of `DataValidity::ok`, but overwrites this with `DataValidity::faulty` for the receivers in the factory function `createSynchronizedProcessArray()` (both implementations, see UnidirectionalProcessArray.h).
+
+### ApplicationModule ###
+
+- Needs to implement 3.
+- `getDataValidity()` returns `ok` if the `faultCounter` is 0, `faulty` otherwise
+- Hence fault counter starts with 0.
+
+### ThreadedFanOut ###
+
+- Needs to implement 3.
+- Currently just passing on the validity from the input.
+- This is probably going to change when the correct propagation of the validity flag is implemented.
+
+### ThreadedFanOut ###
+
+- Needs to implement 3.
+
+
 
 
 ## Known bugs ##
 
+### NDRegisterAccessor implementations ###
+
+- 1. is not implemented for Device implementations (only the `UnidirectionalProcessArray` is correct at the moment).
+- 2. is not implemented for Device implementations (only the `UnidirectionalProcessArray` is correct at the moment).
+
 ### ExceptionHandlingDecorator ###
 
 - It waits until the device is opened, but not until after the initialisation is done.
+
+### Documentation ###
+
+- Documentation of ControlSystemAdapter should mention that implementations must take care about 5.
