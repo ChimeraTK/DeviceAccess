@@ -140,12 +140,6 @@ Implmentation.
 - ExceptionHandlingDecorator
 - TriggerFanOut
 
-Additional note from code author.
-Note that if the data is distributed through a triggered FanOut (i.e. variables from device is connected to other variables through a trigger, the usual way for poll-type variables) the data read from the receiving end of the variable cannot be considered valid if the DataValidity is faulty.
-Additionaly, a change of to a faulty validity state will signal the availability of new data on those variables, which is to be considered invalid.
-
-
-Bahnhof.Variables which are Constants or outputs of the ConfigReader and are connected to a DeviceModule should be written in an initialisation handler. Currently they are written in ConfigReader::pepare() etc., which might block the application initialisation if an exception occurs in the process of writing these variables.
 
 -<b>8. Initialise the device after recovey.</b>
 
