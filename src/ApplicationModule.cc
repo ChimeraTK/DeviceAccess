@@ -120,26 +120,26 @@ namespace ChimeraTK {
 
   void ApplicationModule::incrementDataFaultCounter() {
     ++dataFaultCounter;
-    // writeAll only once for first incrementDataFaultCounter call -> going with faultCounter from 0 to 1
-//    if (writeAllOutputs && faultCounter == 1)
-//      this->writeAll();
   }
 
   void ApplicationModule::decrementDataFaultCounter() {
     assert(dataFaultCounter > 0);
     --dataFaultCounter;
-//    //writeAll only once for last decrementDataFaultCounter call -> going with faultCounter from 1 to 0
-//    if (writeAllOutputs && faultCounter == 0)
-//      this->writeAll();
   }
 
   void ApplicationModule::incrementExceptionCounter() {
     ++exceptionCounter;
+   // writeAll only once for first incrementExceptionCounter call -> going with exceptionCounter from 0 to 1
+   if (exceptionCounter == 1)
+     this->writeAll();
   }
 
   void ApplicationModule::decrementExceptionCounter() {
     assert(exceptionCounter > 0);
     --exceptionCounter;
+    //writeAll only once for last decrementExceptionCounter call -> going with exceptionCounter from 1 to 0
+    if (exceptionCounter == 0)
+      this->writeAll();
   }
   
 } /* namespace ChimeraTK */

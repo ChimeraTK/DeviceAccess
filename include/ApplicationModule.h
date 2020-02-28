@@ -72,7 +72,7 @@ namespace ChimeraTK {
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
     DataValidity getDataValidity() const override {
-      return dataFaultCounter == 0 ? DataValidity::ok : DataValidity::faulty;
+      return (dataFaultCounter == 0 || exceptionCounter == 0) ? DataValidity::ok : DataValidity::faulty;
     }
 
     void incrementDataFaultCounter() override;
