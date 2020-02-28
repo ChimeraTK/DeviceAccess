@@ -4,7 +4,7 @@
 using namespace boost::unit_test_framework;
 
 #include <ChimeraTK/DummyRegisterAccessor.h>
-#include <ChimeraTK/ExceptionDevice.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
@@ -88,7 +88,7 @@ struct TestApplication : ctk::Application {
 BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
   for(int readMode = 0; readMode < 3; ++readMode) {
     TestApplication app;
-    boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+    boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
     app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
 
 BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   TestApplication app;
-  boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
   app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
 
 BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
   TestApplication app;
-  boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
   app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
