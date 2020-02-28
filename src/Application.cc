@@ -749,8 +749,8 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             auto owningModule = consumer.getOwningModule(); // application module or variable group
             feedingDeviceImpl->setOwner(owningModule);
             // The decorator comes up with data validity faulty, and we have to keep the counting consistent
-            // TODO De we need to handle the exception counter in the same manner?
             owningModule->incrementDataFaultCounter();
+            owningModule->incrementExceptionCounter();
           }
           connectionMade = true;
         }
