@@ -5,7 +5,7 @@
 
 Exceptions must be handled by ApplicationCore in a way that the application developer does not have to care much about it.
 
-In case of a ChimeraTK::runtime_error exception the Application must catch the expection and report it to the DeviceModule. The DeviceModule should handle this exception and block the device until the device can be opened again. As there could many devices make sure only the faulty device is blocked.
+In case of a ChimeraTK::runtime_error exception the framework must catch the expection and report it to the DeviceModule. The DeviceModule should handle this exception and preiodically tries to open the device. As there could many devices make sure only the faulty device is blocked.
 Even if a device is faulty it should not block the server from starting.
 
 Once in error state, set the DataValidity flag for that module to faulty and propogate this to all of it‘s output variables. After the exception is cleared and operation returns without a data fault flag, set DataValidity flag to ok. Furthermore, the device must be reinitialised automatically and also recover the values of process variables as the device might have rebooted and the variables have been re-set.
@@ -14,27 +14,32 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 <b>1. Genesis</b>
 
 - a. When DeviceModule is created it is registered with Application. (Added to a list in Application::registerDeviceModule.)
-- b. An initailisation handler can be added to the device through constructor. Initialisation handlers are callback function which will be executed after a device recovers from an exception.
-- c. A list of TransferElements shared pointers is created as writeAfterOpen which is used to write constants after the devcie is opened.
-- d. A list of TransferElements shared pointers is created as writeRecoveryOpen which is populated in function addRecoveryAccessor in the DeviceModule.
+- b. An initailisation handler can be added to the device through constructor. Initialisation handlers are callback function which will be executed when a device is opened and after a device recovers from an exception.
+- c. Initial values must be correctly propogated after a device is opened. See (link for initial value specs. comes here)
 - e. ChimeraTK::NDRegisterAccessor is used to access the device variables inside class Application.
 - f. Class ExceptionHandlingDecorator facilitates ChimeraTK::NDRegisterAccessor in case of exception
-- g. An ExceptionHandlingDecorator is placed around all NDRegisterAccessors coming from a device used inside ApplicationModule and ThreadedFanOut.
-- h. TriggerFanOut is using a TransferGroup which diables the functionalitly of ExceptionHandlingDecorator hence it has to impelment the exception handling itself.
-- i. Recovery accessor is added for writebale register when ChimeraTK::NDRegisterAccessor is obtianed. These recovery accessors are used to recover the values of variables after the recovery.
-- j. setOnwer() is used to set the application module or variable group as owner of the (feeding) device which is decorated with and ExceptionHandlingDecorator.
+- g. An ExceptionHandlingDecorator is placed around all NDRegisterAccessors connected to a device used inside ApplicationModule and ThreadedFanOut except initial value and recovery accesors.
+- h. TriggerFanOut is using a TransferGroup which bypass the functionalitly of ExceptionHandlingDecorator hence it has to impelment the exception handling itself.
+- i. Recovery accessor is added for device register when it is obtianed. These recovery accessors are used to recover the values of variables after the recovery.
+- j. setOnwer() is used to set the ChimeraTK::ApplicationModule or ChimeraTK::ThreadedFanOut as owner of the (feeding) device which is decorated with an ChimeraTK::ExceptionHandlingDecorator.
+- k. Write should not block in case of an exception for of ThreadedFanOut / TriggerFanOut.
+- l. Application Module should provide a writeDespiteError function so that even in case of exception write should return. [TBD: name]
+
+<b> Definitions <b>
+- writeAfterOpen is a list of TransferElements used for initial value propogation.
+- writeAfterRecovery is a list of TransferElements used after recovery.
 
 <b>2. The Flow</b>
 
-- 2.1. Application always starts with all devices as closed and intial value for deviceError.status is set to 1 (in prepare).
+- 2.1. Application always starts with all devices as closed and intial value for deviceError.status is set to 1 (in ChimeraTK::DeviceModule::prepare).
 
-- 2.2. Until the 2.4 is done (2.4.3), all the read and writes to this device done through ExceptionHandlingDecorator will be delayed.
+- 2.2. Until the 2.4 is done (2.4.3), all the read and writes to this device done through ExceptionHandlingDecorator will be blocked.
 
 - 2.3. DeviceModule::handleException() tries to open the device in a separate asynchronous thread. (This thread is responsible for (try) opening of the device for the first time and (try) re-opening of the device in case of an exception.)
 
 - 2.4. Device is opened successfully for the first time.
 
-  - 2.4.1. Device is initailised iterating over initialisationHandlers list. If there is an exception go back to 2.3.
+  - 2.4.1. Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.3.
 
   - 2.4.2. The pending write operations waiting for device to be opened are written using the list of TransferElements in writeAfterOpen. If there is an exception go back to 2.3.
   
@@ -42,17 +47,18 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 
 - 2.5. When a read / write operation on device (g and h ) causes a ChimeraTK::runtime_error exception, the exception is caught. 
 
-  - 2.5.1. Inside ExceptionHandlingDecorator / TriggerFanOut,
+  - 2.5.1. Inside ExceptionHandlingDecorator , (1.g, 1.h)
 
     - 2.5.1.1. If read operation:
 
-      - 2.5.1.1.1  The dataValidity of the owner is set to faulty using incrementExceptionFaultCounter(). [TBD: name]
+      - 2.5.1.1.1  The dataValidity of the owner is set to faulty using incrementDataInvalidCounter(). [TBD: name]
     
-      - 2.5.1.1.2. The owner will then write all outputs with ChimeraTK::DataValidity::faulty. This write operation must not block even in case of exceptions, but exceptions are reported to the corresponding DeviceModule, and the flag is always written to the corresponding recoveryAccessor. [TBD: Name of new write function.]
-
     - 2.5.1.2. The error is reported to the DeviceModule via ChimeraTK::DeviceModule::reportException().
     
-    - 2.5.1.3. The read/write operation blocks until the device is recovered
+    - 2.5.1.3. Calling operation : 
+              - write : blocks until the device is recovered, 
+              - read : For the first blocking read call returns with invalid data and then remembers that it is in an exception state. The second call will finally block.
+              - readNonBlocking / readLatest: will always return with data invalid flag.
 
   - 2.5.3. The exception is received by DeviceModule::handleException() which has been launched in a separate asynchronous thread.
   
@@ -60,13 +66,13 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 
     - 2.5.3.2 Try re-opening the device until successful. (Although the function is called Open, to reach this point a device must have been opened at least once before, hence re-open.)
 
-    - 2.5.3.3. Device is re-opened successfully.
+    - 2.5.3.3. Device is re-opened successfully and isFunctional() returns true.
 
     - 2.5.3.4. Device is reinitalisied through initialisationHandlers. If exception is thrown go back to 2.5.5. (It won't be reported again.)
 
-    - 2.5.3.5. Process variables are written again using the list of TransferElements in writeAfterRecovery. If exception is thrown go back to 2.5.5. (It won't be reported again.)
+    - 2.5.3.5. Process variables are written again using the list of TransferElements in writeAfterRecovery. Recovery accessor do not write if the register is never written before. If exception is thrown go back to 2.5.5. (It won't be reported again.)
 
-    - 2.5.3.6. Caller thread is notified and it no longer remains blocked. (from 2.5.2.2)
+    - 2.5.3.6. All threads that called DeviceModule::reportException for this device are notified and are no longer remains blocked. (from 2.5.2.2)
     
     - 2.5.3.7. deviceError.status is set to 0.
       
