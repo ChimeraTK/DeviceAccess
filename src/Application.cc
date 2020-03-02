@@ -750,7 +750,6 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             feedingDeviceImpl->setOwner(owningModule);
             // The decorator comes up with data validity faulty, and we have to keep the counting consistent
             owningModule->incrementDataFaultCounter();
-            owningModule->incrementExceptionCounter();
           }
           connectionMade = true;
         }
