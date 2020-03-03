@@ -23,10 +23,10 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 - i. Write should not block in case of an exception for of ThreadedFanOut / TriggerFanOut.
 - j. Application Module should provide a writeDespiteError function so that even in case of exception write should return. [TBD: name]
 
-<b> Definitions </b>
-- ChimeraTK::NDRegisterAccessor is used to access the device variables inside class Application.
-- writeAfterOpen is a list of TransferElements used for initial value propogation.
-- writeAfterRecovery is a list of TransferElements used after recovery.
+<b>1.1. Definitions </b>
+- a. writeAfterOpen is a list of TransferElements used for initial value propogation.
+- b. writeAfterRecovery is a list of TransferElements used after recovery.
+
 
 <b>2. The Flow</b>
 
