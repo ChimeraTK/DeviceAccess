@@ -3,7 +3,6 @@
 
 API documentation:
 - \subpage exceptionHandling
-- \subpage exceptionHandlingDesign
 
 Module documentation:
 - \subpage loggingdoc
@@ -19,5 +18,6 @@ Examples:
 
 Technical specifications:
 - \subpage spec_initialValuePropagation
+- \subpage exceptionHandlingDesign
 
 */
