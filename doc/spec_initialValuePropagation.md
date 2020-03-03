@@ -44,15 +44,15 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
   1. Initial values are read before the start of `ChimeraTK::ApplicationModule::mainLoop()` (but already in the same thread which later executes the `mainLoop()`).
   2. It depends on the data source type (i.e. the type of the feeder of the VariableNetwork) whether a blocking `read()` or non-blocking `readLatest()` needs to be used for the initial value:
     1. *control system variable*: `ChimeraTK::TransferElement::read()`
-    2. *device register without trigger*: `ChimeraTK::TransferElement::readLatest()` (even if register is push-type)
+    2. *device register without trigger*: `ChimeraTK::TransferElement::readLatest()` (even if register is push-type). Special treatment required to block until the device is accessible.
     3. *poll-type device register with trigger (incl. `ChimeraTK::VariableNetwork::TriggerType::pollingConsumer`)*: `ChimeraTK::TransferElement::read()`
     4. *constant*: `ChimeraTK::TransferElement::readLatest()`
     5. *application*: `ChimeraTK::TransferElement::read()`
 9. `ChimeraTK::ThreadedFanOut` and `ChimeraTK::TriggerFanOut` etc. (does not apply to decorator-like fan outs `ChimeraTK::FeedingFanOut` and `ChimeraTK::ConsumingFanOut` etc.)
   1. The FanOuts should have a transparent behaviour, i.e. an entity that receives an initial value through a FanOut should see the same behaviour as if a direct connection would have been realised.
   2. This implies that the inputs need to treated like described in 8.b.
-  3. If an input has an initial value, it will be propagated immediately to the outputs.
-  4. If an output cannot be written at that point (because it writes to a device currently being unavailable), the value propagation to other targets must not be blocked. The write instead must be delayed using the same mechanism as in 7.c.
+  3. The initial value is propagated immediately to the outputs.
+  4. If an output cannot be written at that point (because it writes to a device currently being unavailable), the value propagation to other targets must not be blocked. See recovery mechanism described in @ref exceptionHandlingDesign.
 10. Constants (`ChimeraTK::Application::makeConstant()`):
   1. Values are propagated before the `ChimeraTK::ApplicationModule` threads are starting (just like initial values written in `ChimeraTK::ApplicationModule::prepare()`, see 7.d).
   2. Special treatment for constants written to devices: They need to be written after the device is opened (see 6.a), with the same mechanism as in 7.c.
