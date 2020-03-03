@@ -11,27 +11,30 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 ## Definitions ##
 
-- Initial value: The first value of a process variable. The value is available to the receiving end of the process variable at a well defined point in time at the start. This is a logical concept. It is to be distinguished from the (hardcoded) "first value" of the `ChimeraTK::ProcessArray` or any other `ChimeraTK::NDRegisterAccessor` implementation. The point in time when the value becomes available is defined in the high-level requirements.
+- Initial value: The start value of a process variable. The value is available to the receiving end of the process variable at a well defined point in time at the start. This is a logical concept. It is to be distinguished from the (often hardcoded) "value after construction" of the `ChimeraTK::ProcessArray` or any other `ChimeraTK::NDRegisterAccessor` implementation. The point in time when the value becomes available is well-defined, as described in the high-level requirements.
 
 ## High-level requirements ##
 
 - Initial values must be available to all `ChimeraTK::ApplicationModule`s at the start of the `ChimeraTK::ApplicationModule::mainLoop()`. No call to `ChimeraTK::TransferElement::read()` etc. is required. This implies that the `ChimeraTK::ApplicationModule::mainLoop()` is not started until all initial values are available, including those coming from devices which might potentially be offline.
 - Devices must receive the initial values as soon as possible after the device is opened and after the initialisation sequence is executed, but before anything else gets written to the device.
-- The control system doesn't receive "initial values" as such, the first valid value of a process varialbe is sent to the control system when available. This depends even on external conditions like the availability of devices.
+- The control system doesn't receive "initial values" as such, the first value of a process variable is sent to the control system when available. This depends even on external conditions like the availability of devices.
 - Control system variables show the `ChimeraTK::DataValidity::faulty` flag until they have received the first valid value.
+- For push-type variables from devices, the initial value is the current value at the application start. Since the variable might not get pushed regularly, the application must not wait for the next value to be received.
 
 ## Detailed requirements ##
 
-1. All `ChimeraTK::NDRegisterAccessor` implementations (including but not limited to the `ChimeraTK::ProcessArray`) must have the `ChimeraTK::DataValidity::faulty` flag set after construction for the receiving end. This ensures, all data is marked as `faulty` as long as no sensible initial values have been propagated. The sending end must have `ChimeraTK::DataValidity::ok`, so that the first written data automatically propagates the ok state. [TBD: What about bidirectional variables? -> ideally change NDRegisterAccessor interface to allow separate validities for sending and receiving...]
-2. All `ChimeraTK::NDRegisterAccessor` implementations must have initially a `ChimeraTK::VersionNumber` constructed with a `nullptr`, which allows to check whether this variable is still at its "first value" or the initial value propagation already took place.
-3. All `ChimeraTK::ApplicationModule`s and similar entities (like `ChimeraTK::ThreadedFanOut` and `ChimeraTK::TriggerFanOut`), that store a `ChimeraTK::DataValidity` directly or indirectly e.g. in form af a counter, must have their internal `DataValidity` flag set to `ok` after construction.
-4. The initial `ChimeraTK::DataValidity::faulty` flags must not be propagated actively. The first propagated data must be always `ok` and must have a valid value.
+1. All `ChimeraTK::NDRegisterAccessor` implementations (including but not limited to the `ChimeraTK::ProcessArray`) must have the `ChimeraTK::DataValidity::faulty` flag set after construction for the receiving end. This ensures, all data is marked as `faulty` as long as no sensible initial values have been propagated. The sending end must have `ChimeraTK::DataValidity::ok` after construction, so that the first written data automatically propagates the ok state. For bidirectional variables, this is true for both directions separately.
+2. All `ChimeraTK::NDRegisterAccessor` implementations must have initially a `ChimeraTK::VersionNumber` constructed with a `nullptr`, which allows to check whether this variable is still at its "value after construction" or the initial value propagation already took place.
+3. `ChimeraTK::ApplicationModule` (and `ChimeraTK::ThreadedFanOut`/`ChimeraTK::TriggerFanOut`) need to set the `ChimeraTK::DataValidity` of its outputs according to the state of all inputs after the initial value propagation: If an input has received a `ChimeraTK::DataValidity::faulty` flag or has not recieved an initial value at all, the initial `ChimeraTK::DataValidity` of the outputs is `faulty`. Otherwise the `ChimeraTK::DataValidity` is `ok`.
+  1. `ApplicationModule` implementations might want to check whether all inputs are `ok` before starting the data processing.
+  2. If 3.a. is not implemented, it is possible that the module starts processing with data containing or based on "values after construction". This is particularly the case if the module processes the inital values first before waiting on new incoming data. The output values in this case will be marked as `ChimeraTK::DataValidity::faulty`. Which behaviour is wanted needs to be decided for each module implementation by the application author.
+4. The "value after construction" must not be propagated actively during initial value propagation, not even with the `ChimeraTK::DataValidity::faulty` flag set.
 5. Control system variables:
-  1. Variables with the control-system-to-application direction must be written exactly once at application start by the control system adapter with their initial values from the persistency layer and the `ChimeraTK::DataValidity::ok`. This must be done before `ChimeraTK::ApplicationBase::run()` is called.
-  2. Initial values of variables with the application-to-control-system direction are written at an undefined time after the `ChimeraTK::ApplicationBase::run()` has been called. The control system adapter must not expect any specific behaviour. Entities writing to these variables do not need to take any special precautions, they do not even need to obey the second sentence in 4. In other words: application-to-control-system variables do not have an "initial value" in this particular meaning.
+  1. Variables with the control-system-to-application direction must be written exactly once at application start by the control system adapter with their initial values from the persistency layer. This must be done before `ChimeraTK::ApplicationBase::run()` is called. If the persistency layer can persist the validity, the initial value should have the correct data validity. Otherwise, initial values will always have the `ChimeraTK::DataValidity::ok`.
+  2. The first value of variables with the application-to-control-system direction are written at an undefined time after the `ChimeraTK::ApplicationBase::run()` has been called. The control system adapter must not expect any specific behaviour. Entities writing to these variables do not need to take any special precautions, they do not even need to obey the second sentence in 4. In other words: application-to-control-system variables do not have an "initial value" in this particular meaning.
 6. Device variables:
   1. Write accessors need to be written right after the device is opened and the initialisation is done, if an initial value is present for that variable. Initial values can be present through 5.a or 7.
-  2. Initial values for read accessors must be read after 6.a with `ChimeraTK::TransferElement::readLatest()`.
+  2. Initial values for read accessors must be read after the device is openend and the initialsation is done. The read is performed with `ChimeraTK::TransferElement::readLatest()`.
   3. If initial values are propagated from one device to another, the order defined in 6.b cannot be guaranteed. Hence, initial values which are neccessary for the proper functioning of other registers must not be provided from other devices. This needs to be considered during the design of the application.
 7. Outputs of `ChimeraTK::ApplicationModule`s:
   1. By default, no initial values are propagated.
@@ -40,25 +43,32 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 8. Inputs of `ChimeraTK::ApplicationModule`s:
   1. Initial values are read before start of `ChimeraTK::ApplicationModule::mainLoop()`.
   2. Since not all variables have initial values (see 7.a), the variable model (`ChimeraTK::VariableNetworkNode`) needs to be checked whether an initial value is present and how it needs to be read. This dependes on the data source type (i.e. the type of the feeder of the VariableNetwork):
-    1. *control system variable*: ChimeraTK::TransferElement::read()
-    2. *device register without trigger*: ChimeraTK::TransferElement::readLatest() (even if register is push-type)
-    3. *poll-type device register with trigger (incl. `ChimeraTK::VariableNetwork::TriggerType::pollingConsumer`)*: ChimeraTK::TransferElement::read()
-    4. *constant*: ChimeraTK::TransferElement::readLatest()
-    5. *application*: ChimeraTK::TransferElement::read() only if initial value was provided (see 7.a), otherwise no read
+    1. *control system variable*: `ChimeraTK::TransferElement::read()`
+    2. *device register without trigger*: `ChimeraTK::TransferElement::readLatest()` (even if register is push-type)
+    3. *poll-type device register with trigger (incl. `ChimeraTK::VariableNetwork::TriggerType::pollingConsumer`)*: `ChimeraTK::TransferElement::read()`
+    4. *constant*: `ChimeraTK::TransferElement::readLatest()`
+    5. *application*: `ChimeraTK::TransferElement::read()` only if initial value was provided (see 7.), otherwise no read
 9. `ChimeraTK::ThreadedFanOut` and `ChimeraTK::TriggerFanOut` etc. (does not apply to decorator-like fan outs `ChimeraTK::FeedingFanOut` and `ChimeraTK::ConsumingFanOut` etc.)
-  1. Inputs need to behave like described in 8.b
-  2. Outputs connected to devices need to obey 6.a
-  3. Outputs connected to `ChimeraTK::ApplicationModule`s will pass on the initial value, as the `ChimeraTK::ApplicationModule` will obey 8.b just like the FanOut input.
+  1. The FanOuts should have a transparent behaviour, i.e. an entity that receives an initial value through a FanOut should see the same behaviour as if a direct connection would have been realised.
+  2. This implies that the inputs need to behave like described in 8.b
+  3. If an input has an initial value, it will be propagated immediately.
+`ChimeraTK::ApplicationModule` will obey 8.b just like the FanOut input.
 10. Constants:
   1. Values are propagated before the `ChimeraTK::ApplicationModule` threads are starting.
   2. Special treatment for constants written to devices: They need to be written after the device is opened, see 6.a
+11. Bidirectional variables behave like their unidirectional pendants, i.e. the existence of the return channel is ignored during the initial value propagation.
 
 ### Comments ###
 
-- To 3.: It looks like a conflict with 1., but it is not. Due to 1., all variables will already present itself to the outside as `faulty`. 3. has an impact on the `ChimeraTK::DataValidity` of variables written within the module. If a module decides to write a variable even before any inputs are checked, it should be assumed that the written values are valid. Hence the internal validity must start at `ok`.
-- To 4.: It is very important that no wrong data is transported initially. Since the "first value" of all process variables is always 0, this value is basically always wrong. If it gets propagated within the application, modules will process this value (usually even if `ChimeraTK::DataValidity::faulty` is set), despite the value might present an inconsistent state with other process variables. If it gets propagated to the control system, other applications might act on an again inconsistent state.
+- To 3.a/b.: A seemingly useful alternative were to delay the processing loop until all inputs have a `ChimeraTK::VersionNumber` not equal to `ChimeraTK::VersionNumber(nullptr)`, to ensure all inputs have received values. This might not work as intended, since the input values might be received from other modules which pass on the initial values unconditionally. Hence you still might process data indirectly based on "values after construction" instead of meaningful data.
+- To 4.: It is very important that no wrong data is transported initially. Since the "value after construction" of all process variables is always 0 or so, this value is basically always wrong. If it gets propagated within the application, modules will process this value (usually even if `ChimeraTK::DataValidity::faulty` is set), despite the value might present an inconsistent state with other process variables. If it gets propagated to the control system, other applications might act on an again inconsistent state.
 - To 5.: This is the responsibility of each control system adpater implementation.
-- To 5.a: It is important that the initial values are written before `ChimeraTK::ApplicationBase::run()` to avoid race conditions for variables which are directly connected to devices, cf. 6.a
+- To 8.b: The decision whether to use blocking or non-blocking read for the initial transfer has the following reasons:
+  - 8.b.i.: Blocking reads prevent race condtion especially in cases where a ThreadedFanOut is involved.
+  - 8.b.ii.: `ChimeraTK::TransferElement::readLatest()` fetches current value instead of waiting for a new value - see high-level requirements.
+  - 8.b.iii.: Blocking reads prevent race condtion.
+  - 8.b.iv.: Blocking reads on constants never return, hence the non-blocking read.
+  - 8.b.v.: Type of read actually does not matter, since there cannot be a threaded FanOut between application modules  and the source writes in `ApplicationModule::prepare()`.
 
 ## Implementation ##
 
@@ -79,8 +89,8 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 ### ThreadedFanOut ###
 
 - Needs to implement 3.
-- Currently just passing on the validity from the input.
-- This is probably going to change when the correct propagation of the validity flag is implemented.
+  - Currently just passing on the validity from the input.
+  - This is probably going to change when the correct propagation of the validity flag is implemented.
 - Needs to implement 6.a abd 6.b, realised via `ChimeraTK::VariableNetworkNode::hasInitialValue()`
 - Needs to implement 9:
   - 9.a via `ChimeraTK::VariableNetworkNode::hasInitialValue()` -> already covered with the previous point
@@ -139,3 +149,4 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 ### Documentation ###
 
 - Documentation of ControlSystemAdapter should mention that implementations must take care about 5.
+- Documentation for ApplicationModule should mention 7.
