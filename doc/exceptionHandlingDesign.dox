@@ -42,7 +42,7 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 
 - 2.5. When a read / write operation on the device (1.e and 1.f ) causes a ChimeraTK::runtime_error exception, the exception is caught. 
 
-  - 2.5.1. Inside ExceptionHandlingDecorator / TriggerFanOut,
+  - 2.5.1. Inside ExceptionHandlingDecorator / TriggerFanOut
 
     - 2.5.1.1. If read operation:
 
@@ -54,9 +54,9 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
               - write : blocks until the device is recovered,
               - read : For the first "blocking" read, the call returns with invalid data and then remembers that it is in an exception state. The calling module thread will continue and propagate the data invalid flag. The second call will finally block.
               - readNonBlocking / readLatest: will always return with data invalid flag.
-              - writeWithoutErrorBlocking: only writes to the recovery accessor and returns
+              - writeWithoutErrorBlocking: only writes to the recovery accessor and returns (comment: Writing to the recovery accessor anyway always happens. It has to happen before reporting the exception.)
 
-  - 2.5.3. The exception is received by DeviceModule::handleException() which has been launched in a separate asynchronous thread.
+  - 2.5.3. The exception is received by DeviceModule::handleException() which is running in the DeviceModule thread.
 
     - 2.5.3.1. deviceError.status will be set to 1. From this point on, all write operations must not excecute the actual write any more.
 
@@ -64,7 +64,7 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 
     - 2.5.3.3. Device is re-opened successfully and isFunctional() returns true.
 
-    - 2.5.3.4. Device is reinitalisied through initialisationHandlers. If exception is thrown go back to 2.5.3.2 (It won't be reported again.)
+    - 2.5.3.4. Device is reinitalisied through initialisationHandlers. If exception is thrown go back to 2.5.3.2 (Comment: See comment from 2.5.3.5)
 
     - 2.5.3.5. Process variables are written again using the list of recovery accessors. Recovery accessors are not written to the device if it has not received its initial value yet. If exception is thrown go back to 2.5.3.2. (Comment: Exceptions for recovery will be reported once, but not if it occurs again before the device has completely recovered.)
 
