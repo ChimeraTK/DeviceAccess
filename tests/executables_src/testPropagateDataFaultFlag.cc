@@ -569,7 +569,8 @@ struct Fixture_noTestableMode {
     test.runApplication();
 
     // Making sure the default is written to the device before proceeding.
-    CHECK_EQUAL_TIMEOUT(int(device1DummyBackend->getRawAccessor("m1", "o1")), DEFAULT, 10000);
+    auto m1o1 = device1DummyBackend->getRegisterAccessor<int>("m1/o1", 1, 0, false);
+    CHECK_EQUAL_TIMEOUT((m1o1->read(), m1o1->accessData(0)), DEFAULT, 10000);
   }
 
   ~Fixture_noTestableMode() {
