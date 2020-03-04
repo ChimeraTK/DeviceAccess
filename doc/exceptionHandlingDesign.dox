@@ -16,7 +16,7 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 - b. An initailisation handler can be added to the device through constructor. Initialisation handlers are callback function which will be executed when a device is opened for the first time and after a device recovers from an exception.
 - c. Initial values must be correctly propogated after a device is opened. See <a href='spec_initialValuePropagation.html'>spec_initialValuePropagation</a>.
 - d. Class ChimeraTK::ExceptionHandlingDecorator facilitates ChimeraTK::NDRegisterAccessor to be able to handle exceptions.
-- e. A ChimeraTK::ExceptionHandlingDecorator is placed around all ChimeraTK::NDRegisterAccessors which connect a device to a ChimeraTK::ApplicationModule or fanout. (In addition there can be accessors for initial value proparagtion and recovery accesors for the same variables, which are not decorated. They are not directly seen by the ApplicationModule and the fanouts.)
+- e. A ChimeraTK::ExceptionHandlingDecorator is placed around all ChimeraTK::NDRegisterAccessors which connect a device to a ChimeraTK::ApplicationModule or fanout. (IMPL: In addition there can be recovery accesors for the same variables, which are not decorated. They are not directly seen by the ApplicationModule and the fanouts.)
 - f. ChimeraTK::TriggerFanOut is using a ChimeraTK::TransferGroup which bypasses the functionalitly of ChimeraTK::ExceptionHandlingDecorator. Hence it has to impelment the exception handling itself.
 - g. A recovery accessor is added for each device register when it is obtianed. These recovery accessors are used to correctly set the values of variables when the device is opened for the first time and after a device is recovered from an exception.
 - h. setOnwer() is used to set the ChimeraTK::ApplicationModule or ChimeraTK::ThreadedFanOut as owner of the (feeding) device which is decorated with an ChimeraTK::ExceptionHandlingDecorator.
@@ -42,28 +42,28 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
   - 2.4.1. Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.3.
 
   - 2.4.2. The pending write operations, stored in recovery accessors, are written. If there is an exception go back to 2.3.
-  
+
   - 2.4.3. deviceError.status is set to 0.
 
-- 2.5. When a read / write operation on device (1.e and 1.f ) causes a ChimeraTK::runtime_error exception, the exception is caught. 
+- 2.5. When a read / write operation on device (1.e and 1.f ) causes a ChimeraTK::runtime_error exception, the exception is caught.
 
-  - 2.5.1. Inside ExceptionHandlingDecorator / TriggerFanOut, 
+  - 2.5.1. Inside ExceptionHandlingDecorator / TriggerFanOut,
 
     - 2.5.1.1. If read operation:
 
       - 2.5.1.1.1  The dataValidity of the owner is set to faulty using incrementDataInvalidCounter(). [TBD: name]
-    
+
     - 2.5.1.2. The error is reported to the DeviceModule via ChimeraTK::DeviceModule::reportException().
-    
-    - 2.5.1.3. Calling operation : 
-              - write : blocks until the device is recovered, 
-              - read : For the first blocking read, the call returns with invalid data and then remembers that it is in an exception state. The second call will finally block.
+
+    - 2.5.1.3. Calling operation :
+              - write : blocks until the device is recovered,
+              - read : For the first "blocking" read, the call returns with invalid data and then remembers that it is in an exception state. The calling module thread will continue and propagate the data invalid flag. The second call will finally block.
               - readNonBlocking / readLatest: will always return with data invalid flag.
               - writeWithoutErrorBlocking: only writes to the recovery accessor and returns
 
   - 2.5.3. The exception is received by DeviceModule::handleException() which has been launched in a separate asynchronous thread.
-  
-    - 2.5.3.1. deviceError.status will be set to 1.
+
+    - 2.5.3.1. deviceError.status will be set to 1. From this point on, all write operations must not excecute the actual write any more.
 
     - 2.5.3.2. Try re-opening the device until successful. (IMPL: Although the function is called Open, to reach this point a device must have been opened at least once before, hence re-open.)
 
@@ -74,20 +74,19 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
     - 2.5.3.5. Process variables are written again using the list of TransferElements in writeAfterRecovery. Recovery accessor do not write if the register is never written before. If exception is thrown go back to 2.5.3.2. (It won't be reported again.)
 
     - 2.5.3.6. All threads that were blocked after calling DeviceModule::reportException() for this device are notified. (from 2.5.1.3)
-               Non-blocking writes must not try to attempt writing before this point (IMPL: only update the recovery accessor and re-send the exception)
-    
+               Non-blocking writes and write operations from other accessors must not attempt to write before this point (IMPL: only update the recovery accessor and re-send the exception)
+
     - 2.5.3.7. deviceError.status is set to 0.
-      
-  - 2.5.4. Continue inside ExceptionHandlingDecorator / TriggerFanOut,
-  
+
+  - 2.5.4. Continue blocking functions inside ExceptionHandlingDecorator / TriggerFanOut
+
     - 2.5.4.1. If read operation:
 
       - 2.5.4.1.1  The dataValidity counter of the owner is reduced, using decrementDataFaultCounter(). [TBD: name]
-    
-      - 2.5.4.1.2. The owner will then write all outputs with ChimeraTK::DataValidity::ok. This write operation must not block even in case of exceptions, but exceptions are reported to the corresponding DeviceModule, and the flag is always written to the corresponding recoveryAccessor. [TBD: Name of new write function.]
-    
-    - 2.5.4.2. The original read/write operation is executed. If an exception occurs go back to 2.5.1.
 
+      - 2.5.4.1.2. The original read operation is executed. If an exception occurs go back to 2.5.1.
+
+   - 2.5.4.2. A write operation just returns. The recovery accessor has already taken care that the data was written to the device.
 
 
 
@@ -105,7 +104,7 @@ Once in error state, set the DataValidity flag for that module to faulty and pro
 
 -  Check the documentation of DataValidity. ...'Note that if the data is distributed through a triggered FanOut....'
 
-    
+
 <b>Implmentation Details</b>
 
 <b>4. Exception handling and reporting mechanism to the device module (DeviceModule).</b>
@@ -130,7 +129,7 @@ Description.
 For a device with it's deviceError.status = 0 (see 2.4.3), catch all the ChimeraTK::runtime_error exceptions that could be thrown in read and write operations and feed the error state into the DeviceModule through the function ChimeraTK::DeviceModule::reportException().
 Retry the failed operation after reportException() returns.
 
-For a device that has been opened for the first time but has not reached 2.4.3 i.e., it's deviceError.status != 0, and it throws a ChimeraTK::runtime_error exception see 2.3. 
+For a device that has been opened for the first time but has not reached 2.4.3 i.e., it's deviceError.status != 0, and it throws a ChimeraTK::runtime_error exception see 2.3.
 
 Implementation.
 - Exceptions are caught as explained in 1.e and 1.f.
@@ -162,7 +161,7 @@ Implementation.
 Description.
 
 See 2.5.1.
- 
+
 For initial error propogation see <a href='spec_initialValuePropagation.html'>spec_initialValuePropagation</a>.
 
 Implmentation.
@@ -198,7 +197,7 @@ Implementation.
 - ChimeraTK::DeviceModule
 - ChimeraTK::ExceptionHandlingDecorator
 - A list of ChimeraTK::TransferElements is created as ChimeraTK::DeviceModule::writeRecoveryOpen which is populated in function ChimeraTK::DeviceModule::addRecoveryAccessor().
-ChimeraTK::ExceptionHandlingDecorator is extended by adding second accessor to the same register as the target accessor it is decorating. 
+ChimeraTK::ExceptionHandlingDecorator is extended by adding second accessor to the same register as the target accessor it is decorating.
 <I> Data is copied in doPreWrite(). [TBD: Do we want this behaviour?]</I>
 
 
