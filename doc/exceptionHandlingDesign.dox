@@ -25,64 +25,41 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 
 <b>2. The Flow</b>
 
-- 2.1. The application always starts with all devices as closed and intial value for deviceError.status is set to 1.
+- 2.1. The application always starts with all devices as closed and intial value for deviceError.status is set to 1. The DeviceModule takes care that ExceptionHandlingDecorators do not perform any read or write operations, but block. This must happen before running any prepare() of an ApplicationModule, where the first write calls to ExceptionHandlingDecorators are done.
 
-- 2.2. Until the 2.4 is done (device is available for the first time), all the read operations are blocked (*). Writes behave like 2.5.1.3.
+- 2.2 In ApplicationModule::prepare() some initial values (and constants) are written. As the ExceptionHandlingDecorator must not perform the actual write at this point, it will put the value into the dataRecoveryAccesssor and report an exception to the DeviceModule.
+  - 2.2.3 Although ApplicationModule and fanout threads start after the device module threads, the application is now asyncronous and read or write operations can already take place in the main loops, even if the device is not ready yet (it might actually be broken). All read and write operations are blocked buy the exceptionHandlingDecorators at this point
 
-- 2.3. The DeviceModule tries to open the device in a separate thread. (*)
+- 2.3 The device module thread starts. 
+  - 2.3.1 The DeviceModule tries to open the device until it succeeds.(*)
+  - 2.3.2 Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.2.1.
+  - 2.3.3 The list of reported exceptions is cleared. (*)
+  - 2.3.4 All valid (*) recovery accessors are written. If there is an exception go back to 2.3.1.
+  - 2.3.5 deviceError.status is set to 0.
+  - 2.3.6 DeviceModule allows that ExceptionHandlingDecorators execute reads and writes.
+  - 2.3.7 All blocked read and write operations (from 2.5.3) are notified.(*)
+  - 2.3.8 The DeviceModuleThread waits for the next reported exception.
 
-- 2.4. Device is opened successfully for the first time.
+- 2.4 Device and Application are running normally
+  - 2.4.1 All blocked ExceptionHandlingDecorators continue (*)
+    - 2.4.1.1 write just continues (recovery accessor has done the write)
+    - 2.4.1.2 read/readNonBlocking/readLatest
+      - 2.4.1.2.1 tells the  DataValidityPropagationExecutor that the device error has gone
+      - 2.4.1.2.2 (re-)tries to get the value. In case of an exception go to 2.5
+  - 2.4.2 In the ExceptionHandlingDecorator, all write calls always fill this value into the recovery accessors before trying to execute the real write. Like this, the recovery accessor always has the last value that should have been written to the device. All recovery accessors become valid over time (see comment for 2.3.4).
 
-  - 2.4.1. Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.3.
+- 2.5. When a read / write operation on the device (1.e) causes a ChimeraTK::runtime_error exception, the exception is caught in the ExceptionHandlingDecorator
+  - 2.5.1. If it is a read operation the DataValidityPropagationExecutor is informed that there was a device error. (*)
+  - 2.5.2. The error is reported to the DeviceModule (*)
+  - 2.5.3. Action depending on the calling operation :
+    - write : blocks until the device is recovered.
+    - read : If the accessor has aleady seen its initial value, the first "blocking" read call returns immediately (remember DataValidity is set to faulty). The ExceptionHandlingDecorator remembers that it is in an exception state. The calling module thread will continue and propagate the data invalid flag. The second call will finally block. If there has not been an initial value yet, even the first call will block until it is available.
+    - readNonBlocking / readLatest: will always return with data invalid flag (unless there has not been an initial value yet).
+    - writeWithoutErrorBlocking: just returns (*) 
 
-  - 2.4.2. The pending write operations, stored in recovery accessors, are written. If there is an exception go back to 2.3.
-
-  - 2.4.3. deviceError.status is set to 0.
-
-  - 2.4.4 All blocked read and write operations (from 2.2) are notified and continue.
-
-- 2.5. When a read / write operation on the device (1.e) causes a ChimeraTK::runtime_error exception, the exception is caught. 
-
-  - 2.5.1. Inside ExceptionHandlingDecorator / TriggerFanOut
-
-    - 2.5.1.1. If read operation:
-
-      - 2.5.1.1.1  The DataValidityPropagationExecutor is informed that there was a device error. (*)
-
-    - 2.5.1.2. The error is reported to the DeviceModule (*)
-
-    - 2.5.1.3. Calling operation :
-              - write : blocks until the device is recovered.
-              - read : For the first "blocking" read, the call returns with invalid data and then remembers that it is in an exception state. The calling module thread will continue and propagate the data invalid flag. The second call will finally block.
-              - readNonBlocking / readLatest: will always return with data invalid flag.
-              - writeWithoutErrorBlocking: just returns (*) 
-
-  - 2.5.3. The exception is received by DeviceModule::handleException() which is running in the DeviceModule thread.
-
-    - 2.5.3.1. deviceError.status will be set to 1. From this point on, all write operations must not excecute the actual write any more.
-
-    - 2.5.3.2. Try re-opening the device until successful. (*)
-
-    - 2.5.3.3. Device is re-opened successfully and isFunctional() returns true.
-
-    - 2.5.3.4. Device is reinitalisied through initialisationHandlers. If exception is thrown go back to 2.5.3.2 (*)
-
-    - 2.5.3.5. Process variables are written again using the list of recovery accessors. Recovery accessors are not written to the device if it has not received its initial value yet. If exception is thrown go back to 2.5.3.2. (*)
-
-    - 2.5.3.6. All threads that were blocked after calling DeviceModule::reportException() for this device are notified. (from 2.5.1.3)
-               Non-blocking writes and write operations from other accessors are now allowed to try write attempts (see 2.5.3.1).
-
-    - 2.5.3.7. deviceError.status is set to 0.
-
-  - 2.5.4. Continue blocking functions inside ExceptionHandlingDecorator
-
-    - 2.5.4.1. If read operation:
-
-      - 2.5.4.1.1.  Before unblocking inform the DataValidityPropagationExecutor that the device error has gone.
-
-      - 2.5.4.1.2. The original read operation is executed. If an exception occurs go back to 2.5.1.
-
-    - 2.5.4.2. A write operation just returns. The recovery accessor has already taken care that the data was written to the device.
+- 2.6 The exception is received in the DeviceModule thread
+  - 2.6.1 deviceError.status will be set to 1. From this point on, all ExceptionHandlingDecorators for this device must block all read and write operations (see also 2.2 and 2.3.6).
+  - 2.6.2 The thread goes back to 2.2.1 and tries to re-open the device.
 
 
 <b>3. (*) Comments</b>
@@ -90,6 +67,18 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - 1.e. In addition there can be recovery accesors for the same variables, which are not decorated. They are not directly seen by the ApplicationModule and the fanouts.
 - 1.g. Output accessors can have the option not to have a recovery accessor. This is needed for instance for "trigger registers" which start an operation on the hardware. Also void registers don't have recovery accessors.
 - 1.i. The specification for initial value propagation (\link spec_initialValuePropagation \endlink) also says that writes ApplicationModules don't block before the first successful read in the main loop.
+
+- 2.3.1 Successul opening includes that the device reports isFunctional() as true.
+- 2.3.3 ExceptionHandlingDecorators must always first write the recovery accessor, then report an exception. As the device module clears the exceptions first, then processes the accessors, it is guaranteed that no value is missed. As a side effect it can be that a pending exception triggers an unnecessary recovery loop in the device module.
+- 2.3.4 If a recovery accessors has not seen an initial value yet, it will not be written (see \link spec_initialValuePropagation \endlink).
+- 2.3.7 This is different from 2.2.6 because 2.2.6 affects accessors which want to perform a read or write, while 2.2.7 affects accessors that failed to do so and are waiting for the device to become available again. This is needed for two cases:
+  - 1. A blocking write, where the recovery accessor has already done the job when the device if back to OK.
+  - 2. The first blocking read if the data has not seen the initial value yet, and retrieving it casued the exception.
+- 2.4.1 writeWithoutErrorBlocking is not mentioned because it never blocks. Although blocked by different mechanisms read/readNonBlocking/readLatest behave the same:
+  - read is either the second read call which is expected to deliver the next value, or any of the three are still waiting for the initial value. In any case they have to (re-)try reading.
+
+Old comments (wrong numbers, possibly wrong content):
+
 
 - 2.2. Because no "value after constuction" must be propagated and we have to wait for an initial value, see \link spec_initialValuePropagation \endlink.
 - 2.3. This thread is responsible for (try) opening of the device for the first time and (try) re-opening of the device in case of an exception.
