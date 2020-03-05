@@ -8,7 +8,6 @@
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/NDRegisterAccessor.h>
-#include <ChimeraTK/DummyRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
 #include "Application.h"
@@ -161,8 +160,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
 
-  ChimeraTK::DummyRegisterAccessor<int> readbackDummy1(dummyBackend1.get(), "MyModule", "readBack");
-  ChimeraTK::DummyRegisterAccessor<int> readbackDummy2(dummyBackend2.get(), "MyModule", "readBack");
+  ctk::Device dev1(ExceptionDummyCDD1);
+  ctk::Device dev2(ExceptionDummyCDD2);
 
   // Connect the whole devices into the control system, and use the control system variable /trigger as trigger for
   // both devices. The variable becomes a control system to application variable and writing to it through the test
@@ -191,8 +190,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   readback1.read();
   readback2.read();
 
-  readbackDummy1 = 42;
-  readbackDummy2 = 52;
+  dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 42);
+  dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 52);
 
   // initially there should be no error set
   trigger.write();
@@ -208,8 +207,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   // repeat test a couple of times to make sure it works not only once
   for(size_t i = 0; i < 3; ++i) {
     // enable exception throwing in test device 1
-    readbackDummy1 = 10 + i;
-    readbackDummy2 = 20 + i;
+    dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 10 + i);
+    dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 20 + i);
     dummyBackend1->throwExceptionRead = true;
     trigger.write();
     CHECK_TIMEOUT(message1.readLatest(), 10000);
@@ -226,7 +225,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
 
     // even with device 1 failing the second one must process the data, so send a new trigger
     // before fixing dev1
-    readbackDummy2 = 120 + i;
+    dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 120 + i);
     trigger.write();
     BOOST_CHECK(!readback1.readNonBlocking());                                // we should not have gotten any new data
     BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::faulty); // But the fault flag should still be set
@@ -234,8 +233,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     BOOST_CHECK_EQUAL(readback2, 120 + i);
 
     // Now "cure" the device problem
-    readbackDummy1 = 30 + i;
-    readbackDummy2 = 40 + i;
+    dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 30 + i);
+    dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 40 + i);
     dummyBackend1->throwExceptionRead = false;
     trigger.write();
     CHECK_TIMEOUT(message1.readLatest(), 10000);
@@ -270,8 +269,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
 
-  ChimeraTK::DummyRegisterAccessor<int> actuatorDummy1(dummyBackend1.get(), "MyModule", "actuator");
-  ChimeraTK::DummyRegisterAccessor<int> actuatorDummy2(dummyBackend2.get(), "MyModule", "actuator");
+  ctk::Device dev1(ExceptionDummyCDD1);
+  ctk::Device dev2(ExceptionDummyCDD2);
 
   // Connect the whole devices into the control system, and use the control system variable /trigger as trigger for
   // both devices. The variable becomes a control system to application variable and writing to it through the test
@@ -303,8 +302,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
   actuator2.write();
   BOOST_CHECK(!message1.readLatest());
   BOOST_CHECK(!status1.readLatest());
-  CHECK_TIMEOUT(actuatorDummy1 == 29, 10000);
-  CHECK_TIMEOUT(actuatorDummy2 == 39, 10000);
+  CHECK_TIMEOUT(dev1.read<int>("MyModule/actuator") == 29, 10000);
+  CHECK_TIMEOUT(dev2.read<int>("MyModule/actuator") == 39, 10000);
   BOOST_CHECK(static_cast<std::string>(message1) == "");
   BOOST_CHECK(status1 == 0);
 
@@ -321,22 +320,22 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
     usleep(10000);                                  // 10ms wait time so potential wrong values could have propagated
-    BOOST_CHECK(actuatorDummy1 == int(30 + i - 1)); // write not done for broken device
+    BOOST_CHECK(dev1.read<int>("MyModule/actuator") == int(30 + i - 1)); // write not done for broken device
     // the second device must still be functional
     BOOST_CHECK(!message2.readNonBlocking());
     BOOST_CHECK(!status2.readNonBlocking());
-    CHECK_TIMEOUT(actuatorDummy2 == int(40 + i), 10000); // device 2 still works
+    CHECK_TIMEOUT(dev2.read<int>("MyModule/actuator") == int(40 + i), 10000); // device 2 still works
 
     // even with device 1 failing the second one must process the data, so send a new data before fixing dev1
     actuator2 = 120 + i;
     actuator2.write();
-    CHECK_TIMEOUT(actuatorDummy2 == int(120 + i), 10000); // device 2 still works
+    CHECK_TIMEOUT(dev2.read<int>("MyModule/actuator") == int(120 + i), 10000); // device 2 still works
 
     // Now "cure" the device problem
     dummyBackend1->throwExceptionWrite = false;
     CHECK_TIMEOUT(message1.readLatest(), 10000);
     CHECK_TIMEOUT(status1.readLatest(), 10000);
-    CHECK_TIMEOUT(actuatorDummy1 == int(30 + i), 10000); // write is now complete
+    CHECK_TIMEOUT(dev1.read<int>("MyModule/actuator") == int(30 + i), 10000); // write is now complete
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
   }
@@ -351,8 +350,14 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
 
-  ChimeraTK::DummyRegisterAccessor<int> readbackDummy1(dummyBackend1.get(), "MyModule", "readBack");
-  ChimeraTK::DummyRegisterAccessor<int> readbackDummy2(dummyBackend2.get(), "MyModule", "readBack");
+  ctk::Device dev1(ExceptionDummyCDD1);
+  ctk::Device dev2(ExceptionDummyCDD2);
+  dev1.open();
+  dev2.open();
+  dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 100);
+  dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 110);
+  dev1.close();
+  dev2.close();
 
   // Connect the whole devices into the control system, and use the control system variable /trigger as trigger for
   // both devices. The variable becomes a control system to application variable and writing to it through the test
@@ -378,8 +383,6 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
 
   auto trigger = test.getScalar<int>("trigger");
 
-  readbackDummy1 = 100;
-  readbackDummy2 = 110;
   trigger.write();
   //device 1 is in Error state
   CHECK_TIMEOUT(message1.readLatest(), 10000);
@@ -395,7 +398,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
 
   // even with device 1 failing the second one must process the data, so send a new trigger
   // before fixing dev1
-  readbackDummy2 = 120;
+  dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 120);
   trigger.write();
   CHECK_TIMEOUT(readback2.readNonBlocking(), 10000); // device 2 still works
   BOOST_CHECK_EQUAL(readback2, 120);
@@ -476,6 +479,9 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   TestApplication2 app;
   ctk::TestFacility test(false); // test facility without testable mode
 
+  ctk::Device dev2(ExceptionDummyCDD2);
+  ctk::Device dev3(ExceptionDummyCDD3);
+
   // Non zero defaults set here to avoid race conditions documented in
   // https://github.com/ChimeraTK/ApplicationCore/issues/103
   test.setScalarDefault("/Device2/MyModule/actuator", static_cast<int32_t>(DEFAULT));
@@ -496,19 +502,16 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   app.realisticModule.mainLoopStarted.wait();
 
   // verify defaults have been written to the device
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("MyModule", "actuator") == static_cast<int32_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "signed32") == static_cast<int32_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "unsigned32") == static_cast<uint32_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "signed16") == static_cast<int16_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "unsigned16") == static_cast<uint16_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "signed8") == static_cast<int8_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("Integers", "unsigned8") == static_cast<uint8_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend2->getRawAccessor("FixedPoint", "value") == 14080, 10000);
-  CHECK_TIMEOUT(
-      dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Tests/As", "well") == static_cast<int32_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(
-      dummyBackend2->getRawAccessor("Deep/Hierarchies/Need/Another", "test") == static_cast<int32_t>(DEFAULT), 10000);
-  CHECK_TIMEOUT(dummyBackend3->getRawAccessor("MODULE", "REG4") == static_cast<int32_t>(DEFAULT), 10000);
+  CHECK_TIMEOUT(dev2.read<int32_t>("MyModule/actuator") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<int32_t>("Integers/signed32") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<uint32_t>("Integers/unsigned32") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<int16_t>("Integers/signed16") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<uint16_t>("Integers/unsigned16") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<int8_t>("Integers/signed8") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<uint8_t>("Integers/unsigned8") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<int32_t>("Deep/Hierarchies/Need/Tests/As/well") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev2.read<int32_t>("Deep/Hierarchies/Need/Another/test") == DEFAULT, 10000);
+  CHECK_TIMEOUT(dev3.read<int32_t>("MODULE/REG4") == DEFAULT, 10000);
 
   // Wait for the devices to come up.
   CHECK_EQUAL_TIMEOUT(
