@@ -6,10 +6,10 @@ namespace ChimeraTK {
 class ExceptionDummy : public ChimeraTK::DummyBackend {
 public:
   ExceptionDummy(std::string mapFileName) : DummyBackend(mapFileName) {}
-  bool throwExceptionOpen{ false };
-  bool throwExceptionRead{ false };
-  bool throwExceptionWrite{ false };
-  bool thereHaveBeenExceptions{ false };
+  std::atomic<bool> throwExceptionOpen{false};
+  std::atomic<bool> throwExceptionRead{false};
+  std::atomic<bool> throwExceptionWrite{false};
+  std::atomic<bool> thereHaveBeenExceptions{false};
 
   static boost::shared_ptr<DeviceBackend> createInstance(
       std::string, std::map<std::string, std::string> parameters) {
