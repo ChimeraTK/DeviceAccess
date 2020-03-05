@@ -78,6 +78,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 - Each `ChimeraTK::NDRegisterAccessor` must implement 1. separately.
 - Each `ChimeraTK::NDRegisterAccessor` must implement 2. separately. All accessors should already have a `ChimeraTK::VersionNumber` data member called `currentVersion` or similar, it simply needs to be constructed with a `nullptr` as an argument.
+- `ChimeraTK::NDRegisterAccessor` must throw exceptions *only* in `TransferElement::postRead()` and `TransferElement::postWrite()`. No exceptions may be thrown in `TransferElement::doReadTransfer()` etc. (all transfer implementations). See also @ref exceptionHandlingDesign.
 
 ### ApplicationModule ###
 
@@ -90,35 +91,36 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 - API documentation must contain 7.
 - Implements 8. (hence takes part in 5.a, 6.b, 7 and 10 implicitly):
   - All inputs of the module must be read in the `ChimeraTK::ApplicationModule::mainLoopWrapper()` before the call to `mainLoop()`.
-  - The type of the read decided via `ChimeraTK::VariableNetworkNode::hasInitialValue()`, which implements 8.b. [tbd: new name]
+  - The type of the read decided via `ChimeraTK::VariableNetworkNode::initialValueType()`, which implements 8.b.
 
 ### ThreadedFanOut ###
 
 - Implement 3, implementation will be already covered by normal flag propagation
 - Needs to implement 9. (hence takes part in 5.a, 6, 7 and 10 implicitly):
-  - structure the fan out's "mainLoop" like this:
-    - read initial values (9.a via `ChimeraTK::VariableNetworkNode::hasInitialValue()` [tbd: new name])
+  - structure the fan out's "mainLoop"-equivalent (`ThreadedFanOut::run()`) like this:
+    - read initial values (9.a via `ChimeraTK::VariableNetworkNode::initialValueType()`)
     - begin loop
     - write outputs
     - read input
     - cycle loop
-  - 9.d is covered by the `ChimeraTK::ExceptionHandlingDecorator`.
 
 ### TriggerFanOut ###
 
-- Needs to implement 3, implementation will be already covered by normal flag propagation
+- Implement 3, implementation will be already covered by normal flag propagation
 - Needs to implement 9. (hence takes part in 5.a, 6, 7 and 10 implicitly):
-  - structure the fan out's "mainLoop" like this:
-    - read initial values (9.a via `ChimeraTK::VariableNetworkNode::hasInitialValue()` [tbd: new name])
+  - In contrast to the `ThreadedFanOut`, the `TriggerFanOut` has only poll-type data inputs which are all coming from the same device. Data inputs cannot come from non-devices.
+  - Structure the fan out's "mainLoop"-equivalent (`TriggerFanOut::run()`) like this:
+    - read initial values of trigger input (9.a via `ChimeraTK::VariableNetworkNode::initialValueType()`)
     - begin loop
+    - read inputs via `ChimeraTK::TransferGroup`
     - write outputs
-    - read input
     - cycle loop
-  - 9.d **not** covered by the `ChimeraTK::ExceptionHandlingDecorator` here (as the decorator is not effective with `ChimeraTK::TransferGroup`s), needs to be properly implemented [tbd: if all DeviceAccess backends are obliged to throw exceptions *only* in `postRead()`, the decorator could be effective also for `TransferGroup`s and we would also solve some issues with exceptions during asynchronous transfers and `readAny()`]
+  - 9.d is covered by the `ChimeraTK::ExceptionHandlingDecorator`. It is important that `ChimeraTK::NDRegisterAccessor` throws only in `TransferElement::postRead()` (see implementation section for the `NDRegisterAccessor`), since otherwise the decorator cannot catch the exceptions due to the `TransferGroup`.
 
 ### DeviceModule ###
 
-- All points are also covered by @ref exceptionHandlingDesign.
+All points are also covered by @ref exceptionHandlingDesign.
+
 - Takes part in 6.a:
   - `ChimeraTK::DeviceModule::writeAfterOpen/writeRecoveryOpen` [tbd: new name for unified list] is a list of accessors to be written after the device is opened/recovered.
 - Takes part in 6.b:
@@ -139,11 +141,10 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
   - @ref exceptionHandlingDesign states that non-blocking read operations like `ChimeraTK::TransferElement::readLatest()` should never block due to an exception.
   - Hence a special treatment is required in this case:
   - `ChimeraTK::ExceptionHandlingDecorator::readLatest()` should block until the device is opened and initialised if (and only if) the accessor still has the `ChimeraTK::VersionNumber(nullptr)` - which means it has not yet been read.
-  - Since `readLatest()` is always the first `read`-type function called, it is acceptable if all `read`-type functions implement this behaviour.
 
 ### VariableNetworkNode ###
 
-- Implements the decision tree mentioned in 8.b. in `ChimeraTK::VariableNetworkNode::hasInitialValue()` [tbd: new name]
+- Implements the decision tree mentioned in 8.b. in `ChimeraTK::VariableNetworkNode::initialValueType()`
 
 ### Application ###
 (This section refers to the class `ChimeraTK::Application`, not to the user-defined application.)
@@ -154,6 +155,10 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 - Must implement 5.a
   - Needs to be done in all adapters separately
+
+### Non-memeber functions in ApplicationCore ###
+
+- Convenience function to call the non-blocking write function of the `ChimeraTK::ExceptionHandlingDecorator`, if the accessor is such a decorator. Otherwise the normal write function is called, since might never block due to exception handling anyways.
 
 
 ## Known bugs ##
@@ -166,20 +171,52 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 - 1. is not implemented for Device implementations (only the `UnidirectionalProcessArray` is correct at the moment).
 - 2. is not implemented for Device implementations (only the `UnidirectionalProcessArray` is correct at the moment).
+- Exceptions are currently thrown in the wrong place (see implementation section for the NDRegisterAccessor). A possible implementation to help backends complying with this rule would be:
+  - Introduce non-virtual `TransferElement::readTransfer()` etc, i.e. all functions like `do[...]Transfer[...]()` should have non-virtual pendants without `do`.
+  - These new functions will call the actual `do[...]Transfer[...]()` function, but place a try-catch-block around to catch all ChimeraTK exceptions
+  - The exceptions are stored and operation is continued. In case of boolean return values (`doReadTransferNonBlocking()`, doReadTransferLatest()` and `doWriteTransfer()`), the value for success must be returned (`true` for read and `false` for write), to make sure the corresponding post-action is executed.
+  - With `TransferElement::postRead()` resp. `TransferElement::postWrite()` non-virtual wrappers for the post-actions already exist. In these functions, the stored exception should be thrown.
+  - All decorators and decorator-like accessors must be changed to call always the (new or existing) non-virtual functions in their virtual `do[...]` functions. This applies to both the transfer functions and the pre/post actions (for the latter it should be already the case).
+  - It is advisable to add an assert that no unthrown exception is present before storing a new exception, to prevent that exceptions might get lost due to errors in the business logic.
+
+### ApplicationModule / EntityOwner ###
+
+- 3. is not properly implemented, `faultCounter` starts at 0. The correct implementation should increase the counter in `EntityOwner::registerAccessor()` and decrease it in `EntityOwner::unregisterAccessor()` (sorry for the confusing function names...).
 
 ### TriggerFanOut ###
 
 - 3. is not correctly implemented, it needs to be done on a per-variable level.
+- It currently implements its own exception handling (including the `Device::isOpened()` check), but in a wrong way. After the `NDRegisterAccessor` has been fixed, this needs to be removed.
+
+### DeviceModule ###
+
+Probably all points are duplicates with @ref exceptionHandlingDesign.
+
+- Merge `ChimeraTK::DeviceModule::writeAfterOpen/writeRecoveryOpen` lists.
+- Implement mechanism to block read/write operations in other threads until after the initialsation is done.
 
 ### ExceptionHandlingDecorator ###
 
+Some points are duplicates with @ref exceptionHandlingDesign.
+
 - It waits until the device is opened, but not until after the initialisation is done.
+- Provide non-blocking function.
+- Implement special treatment for first `readLatest()` operation to always block in the very first call until the device is available.
+  - Since `readLatest()` is always the first `read`-type function called, it is acceptable if all `read`-type functions implement this behaviour. Choose whatever is easier to implement, update the implementation section of this specification to match the chosen implementation.
+
+### VariableNetworkNode ###
+
+- Rename `ChimeraTK::VariableNetworkNode::hasInitialValue()` into `ChimeraTK::VariableNetworkNode::initialValueType()`
+- Remove data member storing the presence of an initial value, this is now always the case. Also change `ChimeraTK::VariableNetworkNode::initialValueType()` accordingly.
 
 ### ControlSystemAdapter ###
 
 - EPICS-Adapter might not properly implement 5.a, needs to be checked. Especially it might not be guaranteed that all variables are written (and not only those registered in the autosave plugin).
 - The `ChimeraTK::UnidirectionalProcessArray` uses always a default start value of `DataValidity::ok`, but overwrites this with `DataValidity::faulty` for the receivers in the factory function `ChimeraTK::UnidirectionalProcessArray::createSynchronizedProcessArray()` (both implementations, see UnidirectionalProcessArray.h). This can be solved more elegant after the DeviceAccess interface change described above.
 
+### Non-memeber functions ###
+
+- Implement the missing convenience function
 
 ### Documentation ###
 
