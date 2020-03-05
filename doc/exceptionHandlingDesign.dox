@@ -14,7 +14,7 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 
 - a (removed)
 - b. An initailisation handler can be added to the DeviceModule in the user code. Initialisation handlers are callback function which will be executed when a device is opened for the first time and after a device recovers from an exception, before any process variables are written.
-- c. Initial values must be correctly propogated after a device is opened. See \link spec_initialValuePropagation \endlink.
+- c. Initial values must be correctly propogated after a device is opened. See \link spec_initialValuePropagation \endlink. Especially, no read function (even readNonBlocking/readLatest) must return before an initial value has been received.
 - d. (removed)
 - e. A ChimeraTK::ExceptionHandlingDecorator is placed around all ChimeraTK::NDRegisterAccessors which connect a device to a ChimeraTK::ApplicationModule or fanout. (*)
 - f. (removed)
@@ -28,9 +28,9 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - 2.1. The application always starts with all devices as closed and intial value for deviceError.status is set to 1. The DeviceModule takes care that ExceptionHandlingDecorators do not perform any read or write operations, but block. This must happen before running any prepare() of an ApplicationModule, where the first write calls to ExceptionHandlingDecorators are done.
 
 - 2.2 In ApplicationModule::prepare() some initial values (and constants) are written. As the ExceptionHandlingDecorator must not perform the actual write at this point, it will put the value into the dataRecoveryAccesssor and report an exception to the DeviceModule.
-  - 2.2.3 Although ApplicationModule and fanout threads start after the device module threads, the application is now asyncronous and read or write operations can already take place in the main loops, even if the device is not ready yet (it might actually be broken). All read and write operations are blocked buy the exceptionHandlingDecorators at this point
+  - 2.2.3 Although ApplicationModule and fanout threads start after the device module threads, the application is now asyncronous and read or write operations can already take place in the main loops, even if the device is not ready yet (it might actually be broken). All read and write operations are blocked buy the exceptionHandlingDecorators at this point.
 
-- 2.3 The device module thread starts. 
+- 2.3 The device module thread starts.
   - 2.3.1 The DeviceModule tries to open the device until it succeeds.(*)
   - 2.3.2 Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.2.1.
   - 2.3.3 The list of reported exceptions is cleared. (*)
@@ -46,11 +46,11 @@ If an input variable is in the error state, it sets the DataValidity flag for it
     - 2.4.1.2 read/readNonBlocking/readLatest
       - 2.4.1.2.1 tells the  DataValidityPropagationExecutor that the device error has gone
       - 2.4.1.2.2 (re-)tries to get the value. In case of an exception go to 2.5
-  - 2.4.2 In the ExceptionHandlingDecorator, all write calls always fill this value into the recovery accessors before trying to execute the real write. Like this, the recovery accessor always has the last value that should have been written to the device. All recovery accessors become valid over time (see comment for 2.3.4).
+  - 2.4.2 In the ExceptionHandlingDecorator, all write calls always fill the value into the recovery accessors before trying to execute the real write. Like this, the recovery accessor always has the last value that should have been written to the device. All recovery accessors become valid over time (see comment for 2.3.4).
 
 - 2.5. When a read / write operation on the device (1.e) causes a ChimeraTK::runtime_error exception, the exception is caught in the ExceptionHandlingDecorator
   - 2.5.1. If it is a read operation the DataValidityPropagationExecutor is informed that there was a device error. (*)
-  - 2.5.2. The error is reported to the DeviceModule (*)
+  - 2.5.2. The error is reported to the DeviceModule
   - 2.5.3. Action depending on the calling operation :
     - write : blocks until the device is recovered.
     - read : If the accessor has aleady seen its initial value, the first "blocking" read call returns immediately (remember DataValidity is set to faulty). The ExceptionHandlingDecorator remembers that it is in an exception state. The calling module thread will continue and propagate the data invalid flag. The second call will finally block. If there has not been an initial value yet, even the first call will block until it is available.
@@ -76,17 +76,11 @@ If an input variable is in the error state, it sets the DataValidity flag for it
   - 2. The first blocking read if the data has not seen the initial value yet, and retrieving it casued the exception.
 - 2.4.1 writeWithoutErrorBlocking is not mentioned because it never blocks. Although blocked by different mechanisms read/readNonBlocking/readLatest behave the same:
   - read is either the second read call which is expected to deliver the next value, or any of the three are still waiting for the initial value. In any case they have to (re-)try reading.
+- 2.5.1 incrementDataInvalidCounter() is called. See \link spec_dataValidityPropagation \endlink.
 
-Old comments (wrong numbers, possibly wrong content):
+Old comments (wrong numbers, where do theyu fit in? Especially the second one is importat):
 
 
-- 2.2. Because no "value after constuction" must be propagated and we have to wait for an initial value, see \link spec_initialValuePropagation \endlink.
-- 2.3. This thread is responsible for (try) opening of the device for the first time and (try) re-opening of the device in case of an exception.
-  Before the DeviceModule thead is started, all recovery accessors must be registered at the DeviceModule.
-- 2.5.1.1.1 incrementDataInvalidCounter() is called. See \link spec_dataValidityPropagation \endlink.
-- 2.5.1.2 via ChimeraTK::DeviceModule::reportException()
-- 2.5.1.3 Writing to the recovery accessor has already happened before. It always is done before the acutal read is tried and an exception even is raised.
-- 2.5.3.2 Although the function is called Open, to reach this point a device must have been opened at least once before, hence re-open.
 - 2.5.3.4 and 2.5.3.5 Exceptions for re-initialisation and recovery will be reported once, but not if it occurs again before the device has completely recovered.
 - 2.5.3.6 If a write is not executed because the device is already faulty, the recovery accessor is updated. In this case another exception notification has to be send to the DeviceModule to make sure that the recovery value is not missed (avoid race condition).
 
