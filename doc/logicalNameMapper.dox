@@ -177,4 +177,11 @@ Parameters:
 
 Note that writing to the logical register will block for the full duration of the two target write transfers including
 the delay.
+
+\subsubsection plugins_reference_type_hint_modifier typeHintModifier
+The <code>typeHintModifier</code> is a simple plugin to change the type of the mapped variable in logical name mapper's
+catalogue. It does, however, <strong>NOT</strong> perform any type conversion on its own.
+
+Parameters:
+- <code>type</code>: New type. The same type names as for varibles and constants are supported
 */
