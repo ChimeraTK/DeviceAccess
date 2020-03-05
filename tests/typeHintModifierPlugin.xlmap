@@ -1,0 +1,35 @@
+<logicalNameMap>
+
+  <redirectedRegister name="test">
+    <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
+    <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+    <plugin name="typeHintModifier">
+        <parameter name="type">int32</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="test2">
+    <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
+    <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+    <plugin name="typeHintModifier">
+        <parameter name="type">integer</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="test3">
+    <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
+    <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+    <plugin name="typeHintModifier">
+        <parameter name="type">uint64</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="test4">
+    <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
+    <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+    <plugin name="typeHintModifier">
+        <parameter name="type">float64</parameter>
+    </plugin>
+  </redirectedRegister>
+
+</logicalNameMap>

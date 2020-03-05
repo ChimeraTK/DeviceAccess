@@ -47,7 +47,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  /** Helper class to implement MonostableTriggerPluginPlugin::decorateAccessor (can later be realised with if constexpr) */
+  /** Helper class to implement ForceReadOnlyPlugin::decorateAccessor (can later be realised with if constexpr) */
   template<typename UserType, typename TargetType>
   struct ForceReadOnlyPlugin_Helper {
     static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(

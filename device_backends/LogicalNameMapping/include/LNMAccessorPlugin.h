@@ -177,6 +177,18 @@ namespace ChimeraTK { namespace LNMBackend {
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
   };
 
+  /** TypeHintModifier Plugin: Change the catalog type of the mapped register. No actual type conversion takes place */
+  class TypeHintModifierPlugin : public AccessorPlugin<TypeHintModifierPlugin> {
+   public:
+    TypeHintModifierPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info,
+        const std::map<std::string, std::string>& parameters);
+
+    void updateRegisterInfo() override;
+
+   private:
+    DataType _dataType{DataType::none};
+  };
+
   /********************************************************************************************************************/
   /* Implementations follow here                                                                                      */
   /********************************************************************************************************************/
@@ -188,14 +200,30 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
+  template<typename UserType, typename TargetType>
+  struct AccessorPlugin_Helper {
+    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>&) {
+      assert(false); // When overriding getTargetDataType(), also decorateAccessor()
+                     // must be overridden!
+      return {};
+    }
+  };
+
+  template<typename UserType>
+  struct AccessorPlugin_Helper<UserType, UserType> {
+    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<NDRegisterAccessor<UserType>>& target) {
+      return target;
+    }
+  };
+
   template<typename Derived>
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
-    static_assert(std::is_same<UserType, TargetType>(),
-        "LogicalNameMapper AccessorPlugin: When overriding getTargetDataType(), also decorateAccessor() must be "
-        "overridden!");
-    return target;
+      boost::shared_ptr<LogicalNameMappingBackend>&,
+      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+    return AccessorPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
 
   /********************************************************************************************************************/
