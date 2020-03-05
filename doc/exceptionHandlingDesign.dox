@@ -32,9 +32,9 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 
 - 2.3 The device module thread starts.
   - 2.3.1 The DeviceModule tries to open the device until it succeeds.(*)
-  - 2.3.2 Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.2.1.
+  - 2.3.2 Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.2.1. (*)
   - 2.3.3 The list of reported exceptions is cleared. (*)
-  - 2.3.4 All valid (*) recovery accessors are written. If there is an exception go back to 2.3.1.
+  - 2.3.4 All valid (*) recovery accessors are written. If there is an exception go back to 2.3.1. (*)
   - 2.3.5 deviceError.status is set to 0.
   - 2.3.6 DeviceModule allows that ExceptionHandlingDecorators execute reads and writes.
   - 2.3.7 All blocked read and write operations (from 2.5.3) are notified.(*)
@@ -47,6 +47,8 @@ If an input variable is in the error state, it sets the DataValidity flag for it
       - 2.4.1.2.1 tells the  DataValidityPropagationExecutor that the device error has gone
       - 2.4.1.2.2 (re-)tries to get the value. In case of an exception go to 2.5
   - 2.4.2 In the ExceptionHandlingDecorator, all write calls always fill the value into the recovery accessors before trying to execute the real write. Like this, the recovery accessor always has the last value that should have been written to the device. All recovery accessors become valid over time (see comment for 2.3.4).
+    - 2.4.2.1 If a write is not executed because the device is already faulty (from 2.2 or 2.6.1), the recovery accessor has to take care of this. In this case we always have to send another exception notification to the DeviceModule to make sure that the new recovery value is not missed (avoid race condition). (*)
+
 
 - 2.5. When a read / write operation on the device (1.e) causes a ChimeraTK::runtime_error exception, the exception is caught in the ExceptionHandlingDecorator
   - 2.5.1. If it is a read operation the DataValidityPropagationExecutor is informed that there was a device error. (*)
@@ -69,6 +71,7 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - 1.i. The specification for initial value propagation (\link spec_initialValuePropagation \endlink) also says that writes ApplicationModules don't block before the first successful read in the main loop.
 
 - 2.3.1 Successul opening includes that the device reports isFunctional() as true.
+- 2.3.2 and 2.3.4 Exceptions for re-initialisation and recovery will be reported once, but not if it occurs again before the device has completely recovered.
 - 2.3.3 ExceptionHandlingDecorators must always first write the recovery accessor, then report an exception. As the device module clears the exceptions first, then processes the accessors, it is guaranteed that no value is missed. As a side effect it can be that a pending exception triggers an unnecessary recovery loop in the device module.
 - 2.3.4 If a recovery accessors has not seen an initial value yet, it will not be written (see \link spec_initialValuePropagation \endlink).
 - 2.3.7 This is different from 2.2.6 because 2.2.6 affects accessors which want to perform a read or write, while 2.2.7 affects accessors that failed to do so and are waiting for the device to become available again. This is needed for two cases:
@@ -76,13 +79,9 @@ If an input variable is in the error state, it sets the DataValidity flag for it
   - 2. The first blocking read if the data has not seen the initial value yet, and retrieving it casued the exception.
 - 2.4.1 writeWithoutErrorBlocking is not mentioned because it never blocks. Although blocked by different mechanisms read/readNonBlocking/readLatest behave the same:
   - read is either the second read call which is expected to deliver the next value, or any of the three are still waiting for the initial value. In any case they have to (re-)try reading.
+- 2.4.2.1 Basically after each update of the recovery accessor there has to be a valid write, or an exception has to be reported to the DeviceModule, to make sure the value is seen by the device (unless the recovery accessor is updated before this happens).
 - 2.5.1 incrementDataInvalidCounter() is called. See \link spec_dataValidityPropagation \endlink.
 
-Old comments (wrong numbers, where do theyu fit in? Especially the second one is importat):
-
-
-- 2.5.3.4 and 2.5.3.5 Exceptions for re-initialisation and recovery will be reported once, but not if it occurs again before the device has completely recovered.
-- 2.5.3.6 If a write is not executed because the device is already faulty, the recovery accessor is updated. In this case another exception notification has to be send to the DeviceModule to make sure that the recovery value is not missed (avoid race condition).
 
 <b>Implmentation Details</b>
 
@@ -181,8 +180,8 @@ Implementation.
 - ChimeraTK::ExceptionHandlingDecorator
 - A list of ChimeraTK::TransferElements is created as ChimeraTK::DeviceModule::writeRecoveryOpen which is populated in function ChimeraTK::DeviceModule::addRecoveryAccessor().
 ChimeraTK::ExceptionHandlingDecorator is extended by adding second accessor to the same register as the target accessor it is decorating.
-<I> Data is copied in doPreWrite(). [TBD: Do we want this behaviour?]</I>
-
+<I> Data is copied in doPreWrite(). [TBD: Do we want this behaviour? => Yes, it has to happen before the original accessor's pre-write because this is the last occasion where the data is still guarateed to be in our user buffer. The accessor's pre-write might swap the data out, and it might never be available again (in case of write desrictively).]</I>
+- As the user buffer recovery accessor is written in an AppicationModule or fanout thread, but read in the DeviceModule thread when recovering, it has to be protected by a mutex. For efficiency one single shared mutex is used. All ExceptionHandlingDecorators will accquire a shared lock, as each decorator only touches his own buffer. The DeviceModule, which writes all recovery accessors, uses the unique lock to prevent any ExceptionHandlingDecorator to modify the user buffer while doing so.
 
 <b> ExceptionHandlingDecorator </b>
 
