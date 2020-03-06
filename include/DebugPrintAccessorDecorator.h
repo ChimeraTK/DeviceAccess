@@ -52,7 +52,7 @@ namespace ChimeraTK {
 
     TransferFuture doReadTransferAsync() override {
       std::cout << "doReadTransferAsync() called on '" << _fullyQualifiedName << std::endl;
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::readAsync();
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
     }
 
     void doPreRead() override {
