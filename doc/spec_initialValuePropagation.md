@@ -50,7 +50,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
     5. *application*: `ChimeraTK::TransferElement::read()`
 9. The module-like fan outs `ChimeraTK::ThreadedFanOut` and `ChimeraTK::TriggerFanOut` (does not apply to the accessor-like fan outs `ChimeraTK::FeedingFanOut` and `ChimeraTK::ConsumingFanOut`)
   1. The fan outs should have a transparent behaviour, i.e. an entity that receives an initial value through a fan out should see the same behaviour as if a direct connection would have been realised.
-  2. This implies that the inputs need to treated like described in 8.b.
+  2. This implies that the inputs need to be treated like described in 8.b.
   3. The initial value is propagated immediately to the outputs.
   4. If an output cannot be written at that point (because it writes to a device currently being unavailable), the value propagation to other targets must not be blocked. See recovery mechanism described in @ref exceptionHandlingDesign.
 10. Constants (`ChimeraTK::Application::makeConstant()`):
@@ -60,10 +60,10 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 ### Comments ###
 
-- To 4.: It is very important that no wrong data is transported initially. Since the "value after construction" of all process variables is always 0 or so, this value is basically always wrong. If it gets propagated within the application, modules will process this value (usually even if `ChimeraTK::DataValidity::faulty` is set), despite the value might present an inconsistent state with other process variables. If it gets propagated to the control system, other applications might act on an again inconsistent state.
+- It is very important that no wrong data is transported initially. Since the "value after construction" of all process variables is always 0 or so, this value is basically always wrong. If it gets propagated within the application, modules will process this value (usually even if `ChimeraTK::DataValidity::faulty` is set), despite the value might present an inconsistent state with other process variables. If it gets propagated to the control system, other applications might act on an again inconsistent state.
 - To 5.: This is the responsibility of each control system adpater implementation.
 - To 7. and 10.: An output of a `ChimeraTK::ApplicationModule` with an initial value written in `ChimeraTK::ApplicationModule::prepare()` and later never written again behaves in the same way as a constant.
-- To 7.b.: In future, the specification could be changed to mitigate the issue of blocking `write`s: It could be specified that all `write`s in the `ChimeraTK::ApplicationModule::mainLoop()` are not blocking due to unavailable devices, until the first `read` function has been called.
+- To 7.b.: In future, the specification could be changed to mitigate the issue of blocking `write`s: It could be specified that all `write`s in the `ChimeraTK::ApplicationModule::mainLoop()` are not blocking due to unavailable devices until the first `read` function has been called.
 - To 8.b.: The decision whether to use blocking or non-blocking read for the initial transfer has the following reasons:
   - 8.b.i.: Blocking reads prevent race condtion especially in cases where a ThreadedFanOut is involved.
   - 8.b.ii.: `ChimeraTK::TransferElement::readLatest()` fetches current value instead of waiting for a new value - see high-level requirements.
@@ -122,19 +122,19 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 All points are also covered by @ref exceptionHandlingDesign.
 
 - Takes part in 6.a:
-  - `ChimeraTK::DeviceModule::writeAfterOpen/writeRecoveryOpen` [tbd: new name for unified list] is a list of accessors to be written after the device is opened/recovered.
+  - `ChimeraTK::DeviceModule::writeRecoveryOpen` [tbd: new name for the list] is a list of accessors to be written after the device is opened/recovered.
 - Takes part in 6.b:
   - Initial values are being read from the device by other entities, but these must be blocked until the DeviceModule wakes them up after the device has been opened and initialised. This uses the same mechanism as for blocking read operations during recovery.
-- Needs to implement 10.b, done through `ChimeraTK::DeviceModule::writeAfterOpen/writeRecoveryOpen` -> already covered by first point.
+- Needs to implement 10.b, done through `ChimeraTK::DeviceModule::writeRecoveryOpen` -> already covered by first point.
 
 ### ExceptionHandlingDecorator ###
 
 - Must implement part of 6.a/7.c/9.d/10.b: Provide function which allows to write without blocking in case of an unavailable device:
-  - The list `ChimeraTK::DeviceModule::writeAfterOpen/writeRecoveryOpen` [tbd: new name for unified list] is filled with the "recovery accessor" (a "copy" of the original accessor, created by `ChimeraTK::Application::createDeviceVariable()`). This accessor allows the restoration of the last known value of a register after recovery from an exception by the DeviceModule. See also @ref exceptionHandlingDesign.
+  - The list `ChimeraTK::DeviceModule::writeRecoveryOpen` [tbd: new name for the list] is filled with the "recovery accessor" (a "copy" of the original accessor, created by `ChimeraTK::Application::createDeviceVariable()`). This accessor allows the restoration of the last known value of a register after recovery from an exception by the DeviceModule. See also @ref exceptionHandlingDesign.
   - When a write happens while the device is still unavailable (not opened or initialisation still in progress), the write should not block (in contrast to normal writes in a `ChimeraTK::ApplicationModule::mainLoop()`).
   - The "recovery accessor" is also used in this case to defer the write operation until the device becomes available.
   - The actual write is then performed asynchronously by the `ChimeraTK::DeviceModule`.
-  - This implementation is the same as the implementation for the non-blocking write function [tbd: correct name] which available to `ChimeraTK::ApplicationModule` user implementations.
+  - This implementation is the same as the implementation for the non-blocking write function [tbd: correct name] which is available to `ChimeraTK::ApplicationModule` user implementations.
 
 - Needs to implement 6.b.:
   - The `ChimeraTK::TransferElement::readLatest()` must be delayed until the device is available and initialised.
