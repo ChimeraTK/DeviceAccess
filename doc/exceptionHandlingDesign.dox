@@ -1,7 +1,9 @@
 /**
-\page exceptionHandlingDesign Exception Handling Design
-\section gen_idea General Idea
+\page exceptionHandlingDesign Technical specification: Exception Handling Design
 
+<b>DRAFT VERSION, WRITE-UP IN PROGRESS!</b>
+
+\section gen_idea General Idea
 
 Exceptions must be handled by ApplicationCore in a way that the application developer does not have to care much about it.
 
