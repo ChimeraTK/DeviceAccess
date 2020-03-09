@@ -11,9 +11,7 @@ In case of a ChimeraTK::runtime_error exception the framework must catch the exp
 
 If an input variable is in the error state, it sets the DataValidity flag for its DataValidityProparationExecutor (see \link spec_dataValidityPropagation \endlink) to faulty and the flag is propogated appropriately. After the exception is cleared and operation returns without a data fault flag, set DataValidity flag to ok. Furthermore, the device must be reinitialised automatically and also recover the values of process variables as the device might have rebooted and the variables have been re-set.
 
-
 <b>1. Genesis</b>
-
 - a (removed)
 - b. An initailisation handler can be added to the DeviceModule in the user code. Initialisation handlers are callback function which will be executed when a device is opened for the first time and after a device recovers from an exception, before any process variables are written.
 - c. Initial values must be correctly propogated after a device is opened. See \link spec_initialValuePropagation \endlink. Especially, no read function (even readNonBlocking/readLatest) must return before an initial value has been received.
@@ -24,6 +22,7 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - h. A ChimeraTK::ExceptionHandlingDecorator for an input knows its DataValidityProparationExecutor, which lives in the ApplicationModule or fanout that reads the input. Like this it can propagate the
      dataValidity flag. Outputs do not send DataValidity faulty in case of exceptions (see \link spec_dataValidityPropagation \endlink).
 - i. Write should not block in case of an exception for the outputs of ThreadedFanOut / TriggerFanOut. (*)
+- j. Exception handling and invalid flag propagation has to be implemented such that it is transparent to a module whether it is directly connected to a device, or whether a fanout or another application module is in between.
 
 <b>2. The Flow</b>
 
@@ -34,7 +33,7 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 
 - 2.3 The device module thread starts.
   - 2.3.1 The DeviceModule tries to open the device until it succeeds.(*)
-  - 2.3.2 Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.2.1. (*)
+  - 2.3.2 Device is initailised by iterating initialisationHandlers list. If there is an exception go back to 2.3.1. (*)
   - 2.3.3 The list of reported exceptions is cleared. (*)
   - 2.3.4 All valid (*) recovery accessors are written. If there is an exception go back to 2.3.1. (*)
   - 2.3.5 deviceError.status is set to 0.
@@ -85,46 +84,92 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - 2.5.1 incrementDataInvalidCounter() is called. See \link spec_dataValidityPropagation \endlink.
 
 
-<b>Implmentation Details</b>
+<b>Asyncronous read</b>
+- The transfer future in readAsync() behaves like the normal read:
+  - The first call to hasNewData() returns true if an error occured in the read transfer. <c>wait()</c> will return immediately with DataVality::faulty.
+  - The second call to hasNewData() will return false until the device has recovered and there actually is new data.  <c>wait()</c> will bock until then.
 
-<b>4. Exception handling and reporting mechanism to the device module (DeviceModule).</b>
+\section exception_handling_implmentation Implementation
 
-Description.
+<b>3. DeviceAccess</b>
+
+Requirements to the DeviceAccess interface:
+
+- 3.1  Exceptions are only reported in doPostRead()/doPostWrite()
+  - As the error itself always occurs in the read/write transfer, the TransferElement base class implements a mechanism to catch it and transfer the exception message into the post-read function, where it is re-thrown.
+
+This is required for three reasons:
+
+  - 1. A tranfer must always be complete, i.e. preXxx and postXxx must always be called. This is for instance important in case a user buffer has been swapped out, and has to be swapped back in so the user buffer stays intact in the application. Letting the exception in doXxxTransfer through would break this. (This is DeviceAcces spec.)
+  - 2. The transfer groups calls doXxxTransfer itself on a potentially exchanged hardware accessing element. All code using transfer groups would have to do exception handling itself, and the individual accessors would not behave according to this (ApplicationCore excetion handling) specification when used with a transfer group. By throwing in doPostXxx the ExceptionHandlingDecorator can handle it, and it automatically works with transfer groups.
+  - 3. Asyncronous reads are executing the transfer in a different thread anyway, and have to delay the throwing to postRead.
+
+- Before throwing, each backend must make sure that the actions in doPostRead() are completed such that the user buffer of a calling accessor is intact
+- postRead() and postWrite() take care that the bookkeeping of ongoing transfers is done correctly, even if the called doPostXxx actions throw.
+
+<b>4. The DeviceModule</b>
+
+Interfaces
+
+- External interface
+
+  An error status and the last error message are automatically connected to the control system for each device
+  - /Devices/{AliasName}/message
+  - /Devices/{AliasName}/status
+
+  Implements 2.1, 2.3.5, 2.6.1
+
+- 4.2 Internal interface to the ExceptionHandlingDecorator
+
+  - 4.2.1 A thread safe function ChimeraTK::DeviceModule::reportException() (implements 2.5.2).
+  - 4.2.2 A blocking way to wait for the device to become available after reporting the exception (implements 2.3.7 and 2.4.1)
+  - 4.2.3 A shared mutex to prevent read and write operations before the device has been initialised (implementes 1.b, 2.1, 2.3.6 and 2.6.1)
+  - 4.2.4 A function to add recoveryAccessors (implements 1.g)
+  - 4.2.5 A shared mutext to protect the covery accessors
+
+Comments:
+
+- 4.2.1 A user/application can also report device errors calling DeviceModue::reportException(). This allows to for instance to write a watchdog module which is monitoring a reference regsiter, and puts
+- the whole device into an exception state (incl. automatic message to the CS, propagation of the DataValidity::faulty flag and recovery).
+- 4.2.2 Currently implemented as a condition variable
+- 4.2.3 Read/write operations must hold a shared lock before executing the actual read/write. This is implemented in the ExceptionHandlingDecorator. As the lock is shared, parallel write operations don't block each other inside application core. While recovering, the device module will hold an exclusive lock.
+- 4.2.5 As the recovery accessors are filled in the ApplicationModule threads (or fanouts), but the writing is taking place in the device module thread, the recovery accessor's user buffer must be protected with a mutex. Again, a shared mutex is used so normal write operations can run in parallel and don't interfere with each other (each one only touches its own buffer), and the write, which touches all buffers holds an exlusive lock.
 
 
-These variables are automatically connected to the control systen in this format
-- /Devices/{AliasName}/message
-- /Devices/{AliasName}/status
+<b>5. ExceptionHandlingDecorator</b>
 
-Add a thread safe function ChimeraTK::DeviceModule::reportException().
-A user/application can report an exception by calling reportException of DeviceModule with an exception string. The reportException packs the exception in a queue and the blocks the thread. This queue is processed by an internal function handleException which updates the DeviceError variables (status=1 and message="YourExceptionString") and tries to open the device. Once device can be opened the DeviceError variables are updated (status=0 and message="") and blocking threads are notified to continue. It must be noted that whatever operation which lead to exception e.g., read or write, should be repeated after the exception is handled.
+- 5.1 External interface
 
-Implementation.
-- ChimeraTK::DeviceModule
+  - 5.1.1 Provides a function that does not block writes, even if the device is not available (part of implementation of 1.i) [TBD: name of the function, maybe writeWithoutErrorBlocking() ]
+  - 5.1.2 There is a convenience function that allows to call a this function on any transfer element. If it is has an ExceptionHandlingDecorator, this functionis called. Otherwise the normal
+          write() is executed, which does not block in case of connections inside of ApplicationCore.
+
+- 5.2 Internal interface with other parts of ApplicationCore
+  - 5.2.1  Catches exception thrown in TransferElement::doPostRead()/doPostWrite() (implements 1.e)
+  - 5.2.2  In read operations, it informs it's associated DataValidityPropagationExecutor about device errors (implements 2.4.2.1 and 2.5.1)
+  - 5.2.3  Reports exceptions to the DeviceModule (implements 2.5.2)
+
+- 5.3 Implementation
+  - 5.3.1 Writing
+    - 5.3.1.1 Writes to the recovery accessor before initiating the transfer (implements 2.4.2) in doPreWrite()
+    - 5.3.1.2 Decorates doWriteTransfer to acquire the shared lock described in 4.2.3
+    - 5.3.1.2 Blocking writes wait in doPostWrite() until informed by the DeviceModule that the device has recovered (via 4.2.2, implements 2.5.3 for writing)
+  - 5.3.2 Reading
+    - 5.3.2.1 Decorates doReadTransfer to acquire the shared lock described in 4.2.3
+    - 5.3.2.2 Blocking reads wait in doPostRead() until informed by the DeviceModule that the device has recovered (via 4.2.2, implements 2.5.3 for writing)
+   
+\subsection exception_handling_impl_details Implementation details
+
+<b>6. TriggerFanout and ThreadedFanOut </b>
+
+- 6.1 TriggerFanout
+  Each ChimeraTK::TriggerFanOut reads several poll-type variables when a trigger (push type) is received. If one of the poll-type inputs is in error state, it shall not block the other variables.
+  To implement this, the TriggerFanout uses the non-blocking write provided by ExceptionHandlingDecorator (see 5.1.1). This is possible because TriggerFanOuts are only connected to device variables. (implements 1.i)
+
+- 6.2 ThreadedFanOut
+  If outputs of a ThreadedFanOut also write do devices, the writes must not block the other variables in the fanout. To implement this, the TreadedFanOut uses the non blocking write through the convenience function described in 5.1.2 (implements 1.i)
 
 
-<b>5. Catch ChimeraTK::runtime_error exceptions.</b>
-
-Description.
-
-For a device with it's deviceError.status = 0 (see 2.4.3), catch all the ChimeraTK::runtime_error exceptions that could be thrown in read and write operations and feed the error state into the DeviceModule through the function ChimeraTK::DeviceModule::reportException().
-Retry the failed operation after reportException() returns.
-
-For a device that has been opened for the first time but has not reached 2.4.3 i.e., it's deviceError.status != 0, and it throws a ChimeraTK::runtime_error exception see 2.3.
-
-Implementation.
-- Exceptions are caught as explained in 1.e and 1.f.
-- ChimeraTK::NDRegisterAccessors
-- ChimeraTK::Application
-
-<b>6. Faulty device should not block any other device.</b>
-
-Description.
-
-Each ChimeraTK::TriggerFanOut deals with several variable networks at the same time, which are triggered by the same trigger. Each variable network has its own feeder and one or more consumers. The trigger itself is a variable network, too. One consumer per ChimeraTK::TriggerFanOut is required.
-Implementation.
-
-- ChimeraTK::Application::typedMakeConnection()
 
 <b>7. The server must always start even if a device is in error state.</b>
 
@@ -184,14 +229,6 @@ Implementation.
 ChimeraTK::ExceptionHandlingDecorator is extended by adding second accessor to the same register as the target accessor it is decorating.
 <I> Data is copied in doPreWrite(). [TBD: Do we want this behaviour? => Yes, it has to happen before the original accessor's pre-write because this is the last occasion where the data is still guarateed to be in our user buffer. The accessor's pre-write might swap the data out, and it might never be available again (in case of write desrictively).]</I>
 - As the user buffer recovery accessor is written in an AppicationModule or fanout thread, but read in the DeviceModule thread when recovering, it has to be protected by a mutex. For efficiency one single shared mutex is used. All ExceptionHandlingDecorators will accquire a shared lock, as each decorator only touches his own buffer. The DeviceModule, which writes all recovery accessors, uses the unique lock to prevent any ExceptionHandlingDecorator to modify the user buffer while doing so.
-
-<b> ExceptionHandlingDecorator </b>
-
-- Device accessors must only throw in postRead and postWrite (FIXME: move text from initial value propagation spec)
-- The Decorator only decorates postRead / postWrite (FIXME: conceptually, which one is the correct one?)
-- The decorator provides a writeWithoutErrorBlocking() function so that even in case of exception write should return. [TBD: name of the function]
-
-Like this the decoration also works for transfer groups and asyncronous transfers.
 
 <b>5. Known Bugs.</b>
 
