@@ -37,7 +37,6 @@ namespace ChimeraTK {
         return;
       }
       // block forever
-      isInterrupted = false;
       promise.get_future().wait();
       // if we get here, interrupt() has been called
       throw boost::thread_interrupted();

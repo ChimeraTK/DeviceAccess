@@ -189,12 +189,17 @@ namespace logging {
    private:
     ctk::VariableNetworkNode getAccessorPair(const std::string& sender);
 
-    /** Map key is the feeding module */
-    std::map<std::string, ctk::ScalarPushInput<std::string> > msg_list;
+    struct MessageSource{
+      ctk::ScalarPushInput<std::string> msg;
+      std::string sendingModule;
+      MessageSource(const std::string &moduleName, Module* module):
+        msg{module, moduleName + "Msg", "", ""},sendingModule(moduleName){};
+    };
+    /** List of senders. */
+    std::vector<MessageSource > sources;
 
-    /** Find the Message that was updated.
-     */
-    std::map<std::string, ctk::ScalarPushInput<std::string> >::iterator FindSender(const ChimeraTK::TransferElementID& id);
+    /** Map key is the transfer id of the ScalarPushInput variable pointed to */
+    std::map<ChimeraTK::TransferElementID, MessageSource* > id_list;
 
     /** Number of messages stored in the tail */
     size_t messageCounter;
