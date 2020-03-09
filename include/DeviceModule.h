@@ -270,7 +270,7 @@ namespace ChimeraTK {
     friend struct history::ServerHistory;
     template<typename TRIGGERTYPE>
     friend class MicroDAQ;
-    friend class detail::DeviceModuleProxy;
+    friend struct detail::DeviceModuleProxy;
 
     template<typename T>
     friend class ExceptionHandlingDecorator;
