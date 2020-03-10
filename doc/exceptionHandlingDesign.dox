@@ -224,35 +224,35 @@ As a consequence a copy has to be created whenever the data is written to the de
 
 <b>11. Known Issues</b>
 
--  Step 2.1 The intial value of deviceError is not set to 1.
+- 11.1 In step 2.1: The intial value of deviceError is not set to 1.
 
--  Step 2.2.3 is not correctly fulfilled as we are only waiting for device to be opened and don't wait for it to be correctly initialised. The lock 4.2.3 is not implemented at all.
+- 11.2 In step 2.2.3: is not correctly fulfilled as we are only waiting for device to be opened and don't wait for it to be correctly initialised. The lock 4.2.3 is not implemented at all.
 
--  Step 2.3.5 is currently being set before initialisationHandlers and writeAfterOpen.
+- 11.3 In step 2.3.5: is currently being set before initialisationHandlers and writeAfterOpen.
 
--  Check the documentation of DataValidity. ...'Note that if the data is distributed through a triggered FanOut....'
+- 11.4 Check the documentation of DataValidity. ...'Note that if the data is distributed through a triggered FanOut....'
 
-- Data validity is currently propagated through the "owner", which conceptually does not always work. A DataValidityPropagationExecutor needs to be introduced and used at the correct places.
+- 11.5 Data validity is currently propagated through the "owner", which conceptually does not always work. A DataValidityPropagationExecutor needs to be introduced and used at the correct places.
 
-- Comment to 1.g: recovery accessors are not optional at the moment.
+- 11.6 In comment to 1.g: recovery accessors are not optional at the moment.
 
-- i.c Currently data is transported even if the "value after construction" is still in.
-- 1.i, 6 ThreadedFanout and TriggerFanout do not use non-blocking write because it does not exist yet
-- 1.j, 2.5.3 Not implemented like that. The first read blocks, and a special mechanism to propagate the flags is triggered only in the next module.
+- 11.7 In 1.c: Currently data is transported even if the "value after construction" is still in.
+- 11.8 In 1.i, 6: ThreadedFanout and TriggerFanout do not use non-blocking write because it does not exist yet
+- 11.9 In 1.j, 2.5.3: Not implemented like that. The first read blocks, and a special mechanism to propagate the flags is triggered only in the next module.
 
-- 2.3 The device module has a special "first opening" sequence. This is not necessary any more. The "writeAfterOpen" list is obsolete. You can always use the recovery accessors.
-- 2.3.4 Recovery accessors are always written. It is not checked whether there is valid data (not "value after construction")
-- 2.4.1.1 Write probably re-executed after recovery. This should not happen because the recovery accessor has already done it.
-- 2.5.3 The non-blocking read functions always block on exceptions. They should not (only if there is no initial value).
-- 2.5.2, 5.1 writeWithoutErrorBlocking is not implemented yet
-- Asyncronous reads are not working with the current implementation, incl. readAny.
+- 11.10 In 2.3: The device module has a special "first opening" sequence. This is not necessary any more. The "writeAfterOpen" list is obsolete. You can always use the recovery accessors.
+- 11.11 In 2.3.4: Recovery accessors are always written. It is not checked whether there is valid data (not "value after construction")
+- 11.12 In 2.4.1.1: Write probably re-executed after recovery. This should not happen because the recovery accessor has already done it.
+- 11.13 In 2.5.3: The non-blocking read functions always block on exceptions. They should not (only if there is no initial value).
+- 11.14 In 2.5.2, 5.1: writeWithoutErrorBlocking is not implemented yet
+- 11.15 Asyncronous reads are not working with the current implementation, incl. readAny.
 
-- 3. DeviceAccess : RegisterAccessors throw in doReadTransfer now.
-- 4.2.1 reportException does block (should not)
-- 4.2.2 blocking wait function does not exist (not needed in current implementation as reportException blocks)
+- 11.16 In 3: DeviceAccess : RegisterAccessors throw in doReadTransfer now.
+- 11.17 In 4.2.1: reportException does block (should not)
+- 11.18 In 4.2.2: blocking wait function does not exist (not needed in current implementation as reportException blocks)
 
-- 5.2.1 Exceptions are caught in doXxxTransfer instead of doPostXxx.
-- 5.3.1.2, 5.3.2.1 Decoration of doXxxTransfer does not accquire the lock (which does not even exist yet, see 4.2.3)
+- 11.19 In 5.2.1: Exceptions are caught in doXxxTransfer instead of doPostXxx.
+- 11.20 In 5.3.1.2, 5.3.2.1: Decoration of doXxxTransfer does not accquire the lock (which does not even exist yet, see 4.2.3)
 
 
 
