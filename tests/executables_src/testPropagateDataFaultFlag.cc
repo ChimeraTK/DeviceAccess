@@ -830,7 +830,6 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-
 // Module and Application for test case "testDataValidPropagationOnException"
 struct Module3 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -843,7 +842,7 @@ struct Module3 : ctk::ApplicationModule {
     while(true) {
       pushTypeInputFromCS.read();
       pollInputFromDevice.read();
-      result =  pushTypeInputFromCS + pollInputFromDevice;
+      result = pushTypeInputFromCS + pollInputFromDevice;
       result.write();
     }
   }
@@ -869,12 +868,10 @@ struct TestApplication4 : ctk::Application {
   }
 };
 
-
-
-BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException){
+BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   std::cout << "testDataValidPropagationOnException" << std::endl;
 
-  boost::shared_ptr<ExceptionDummy> device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+  boost::shared_ptr<ctk::ExceptionDummy> device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2)));
 
   TestApplication4 app;
@@ -906,8 +903,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException){
   // Output should be rewritten and the data valditity should be propagated
   CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 1, 10000);
   CHECK_EQUAL_TIMEOUT(result.readNonBlocking(), true, 10000);
-  BOOST_CHECK_EQUAL( result , 11);
+  BOOST_CHECK_EQUAL(result, 11);
   std::cout << "Result is " << result << std::endl;
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
-
 }

@@ -127,10 +127,11 @@ namespace ChimeraTK {
     --dataFaultCounter;
   }
 
-  void ApplicationModule::incrementExceptionCounter() {
+  void ApplicationModule::incrementExceptionCounter(bool writeAllOutputs) {
     ++exceptionCounter;
    // writeAll only once for first incrementExceptionCounter call -> going with exceptionCounter from 0 to 1
-   if (exceptionCounter == 1)
+   // can be inhibited by setting writeAllOutputs to false (in the initialisation phase)
+   if (exceptionCounter == 1 && writeAllOutputs)
      this->writeAll();
   }
 

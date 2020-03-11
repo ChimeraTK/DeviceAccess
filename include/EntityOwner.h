@@ -208,7 +208,8 @@ namespace ChimeraTK {
      *  incrementDataFaultCounter(). */
     virtual void decrementDataFaultCounter() = 0;
 
-    virtual void incrementExceptionCounter() = 0;
+    /** Writing outputs can be disabled in the initialisation phase */
+    virtual void incrementExceptionCounter(bool writeAllOutputs = true) = 0;
 
     virtual void decrementExceptionCounter() = 0;
 

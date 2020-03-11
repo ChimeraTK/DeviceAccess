@@ -44,7 +44,7 @@ namespace ChimeraTK {
     DataValidity getDataValidity() const override { throw; }
     void incrementDataFaultCounter() override { throw; }
     void decrementDataFaultCounter() override { throw; }
-    void incrementExceptionCounter() override { throw; }
+    void incrementExceptionCounter(bool /*writeAllOutputs*/) override { throw; }
     void decrementExceptionCounter() override { throw; }
   };
 

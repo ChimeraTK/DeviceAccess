@@ -20,11 +20,11 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::setOwnerValidity(DataValidity newValidity) {
-    if(newValidity != localValidity) {
-      localValidity = newValidity;
+  void ExceptionHandlingDecorator<UserType>::setOwnerValidity(bool hasExceptionNow) {
+    if(hasExceptionNow != hasSeenException) {
+      hasSeenException = hasExceptionNow;
       if(!_owner) return;
-      if(newValidity == DataValidity::faulty) {
+      if(hasExceptionNow) {
         _owner->incrementExceptionCounter();
       }
       else {
@@ -36,14 +36,13 @@ namespace ChimeraTK {
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::genericTransfer(
       std::function<bool(void)> callable, bool updateOwnerValidityFlag) {
-    std::function<void(DataValidity)> setOwnerValidityFunction{};
+    std::function<void(bool)> setOwnerValidityFunction{};
     if(updateOwnerValidityFlag) {
       setOwnerValidityFunction =
           std::bind(&ExceptionHandlingDecorator<UserType>::setOwnerValidity, this, std::placeholders::_1);
     }
     else {
-      setOwnerValidityFunction = [](DataValidity) {
-      }; // do nothing if user does                                               // not want to invalidate data.
+      setOwnerValidityFunction = [](bool) {}; // do nothing if calling code does not want to invalidate data.
     }
 
     while(true) {
@@ -73,12 +72,13 @@ namespace ChimeraTK {
           continue;
         }
         auto retval = callable();
-        auto delegatedValidity = ChimeraTK::NDRegisterAccessorDecorator<UserType>::dataValidity();
-        setOwnerValidityFunction(delegatedValidity);
+        // We do not have to relay the target's data validity. The MetaDataPropagatingDecorator already takes care of it.
+        // The ExceptionHandling decorator is used in addition, not instead of it.
+        setOwnerValidityFunction(/*hasExceptionNow = */ false);
         return retval;
       }
       catch(ChimeraTK::runtime_error& e) {
-        setOwnerValidityFunction(DataValidity::faulty);
+        setOwnerValidityFunction(/*hasExceptionNow = */ true);
         deviceModule.reportException(e.what());
       }
     }
@@ -160,13 +160,14 @@ namespace ChimeraTK {
 
   template<typename UserType>
   DataValidity ExceptionHandlingDecorator<UserType>::dataValidity() const {
-    // faulty Validity from the decorated class takes precedence over our own
-    auto delegatedValidity = ChimeraTK::NDRegisterAccessorDecorator<UserType>::dataValidity();
-    if(delegatedValidity == DataValidity::faulty) {
-      return delegatedValidity;
+    // If there has been an exception  the data cannot be OK.
+    // This is only considered in read mode.
+    if(this->isReadable() && hasSeenException) {
+      return DataValidity::faulty;
     }
-
-    return localValidity;
+    // no exception, return the data validity of the accessor we are decorating
+    auto delegatedValidity = ChimeraTK::NDRegisterAccessorDecorator<UserType>::dataValidity();
+    return delegatedValidity;
   }
 
   template<typename UserType>
@@ -179,6 +180,10 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
     _owner = owner;
+    if(this->isReadable() && hasSeenException) {
+      _owner->incrementExceptionCounter(false); // do not write. We are still in the setup phase.
+    }
+    
   }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

@@ -77,7 +77,7 @@ namespace ChimeraTK {
 
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
-    void incrementExceptionCounter() override;
+    void incrementExceptionCounter(bool writeAllOutputs) override;
     void decrementExceptionCounter() override;
 
     void setCurrentVersionNumber(VersionNumber versionNumber) override {
