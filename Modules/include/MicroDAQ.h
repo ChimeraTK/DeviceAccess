@@ -66,6 +66,10 @@ namespace ChimeraTK {
     /** Add a Module as a source to this DAQ. */
     void addSource(const Module& source, const RegisterPath& namePrefix = "");
 
+    /**
+     * Overload that calls virtualiseFromCatalog.
+     */
+    void addSource(const DeviceModule& source, const RegisterPath& namePrefix = "");
    protected:
     void mainLoop() override;
 

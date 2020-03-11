@@ -276,8 +276,12 @@ namespace ChimeraTK {
     boost::shared_mutex recoverySharedMutex;
 
     friend class Application;
+    // Access to virtualiseFromCatalog() is needed by ServerHistory
     friend struct history::ServerHistory;
-    friend class detail::DeviceModuleProxy;
+    // Access to virtualiseFromCatalog() is needed by MicroDAQ
+    template<typename TRIGGERTYPE>
+    friend class MicroDAQ;
+    friend struct detail::DeviceModuleProxy;
 
     template<typename T>
     friend class ExceptionHandlingDecorator;

@@ -12,7 +12,7 @@
 #include "TestFacility.h"
 
 #include <ChimeraTK/Device.h>
-#include <ChimeraTK/ExceptionDevice.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
 #include <stdlib.h>
 
 #include "check_timeout.h"
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
 
   // check that accessing an exception triggers a reconnection with re-initialisation
   auto dummyBackend =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
   auto reg2_cs = test.getScalar<int32_t>("/REG2");
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
 
   // cause an exception
   auto dummyBackend =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
   auto reg4_cs = test.getScalar<int32_t>("/REG4");
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   // Make initialisation fail when executed, and then cause an error condition
   throwInInitialisation = true;
   auto dummyBackend =
-      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
   auto reg4_cs = test.getScalar<int32_t>("/REG4");

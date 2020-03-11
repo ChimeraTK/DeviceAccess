@@ -19,7 +19,7 @@
 #include "ModuleGroup.h"
 #include "check_timeout.h"
 
-#include <ChimeraTK/ExceptionDevice.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -428,9 +428,9 @@ struct TestApplication3 : ctk::Application {
 
 struct Fixture_testFacility {
   Fixture_testFacility()
-  : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+  : device1DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
-    device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+    device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
     device1DummyBackend->open();
     device2DummyBackend->open();
@@ -442,8 +442,8 @@ struct Fixture_testFacility {
     device2DummyBackend->throwExceptionWrite = false;
   }
 
-  boost::shared_ptr<ExceptionDummy> device1DummyBackend;
-  boost::shared_ptr<ExceptionDummy> device2DummyBackend;
+  boost::shared_ptr<ctk::ExceptionDummy> device1DummyBackend;
+  boost::shared_ptr<ctk::ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
   ctk::TestFacility test;
 };
@@ -553,9 +553,9 @@ BOOST_AUTO_TEST_SUITE_END()
 
 struct Fixture_noTestableMode {
   Fixture_noTestableMode()
-  : device1DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+  : device1DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
-    device2DummyBackend(boost::dynamic_pointer_cast<ExceptionDummy>(
+    device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
     device1DummyBackend->open();
     device2DummyBackend->open();
@@ -569,7 +569,8 @@ struct Fixture_noTestableMode {
     test.runApplication();
 
     // Making sure the default is written to the device before proceeding.
-    CHECK_EQUAL_TIMEOUT(int(device1DummyBackend->getRawAccessor("m1", "o1")), DEFAULT, 10000);
+    auto m1o1 = device1DummyBackend->getRegisterAccessor<int>("m1/o1", 1, 0, false);
+    CHECK_EQUAL_TIMEOUT((m1o1->read(), m1o1->accessData(0)), DEFAULT, 10000);
   }
 
   ~Fixture_noTestableMode() {
@@ -577,8 +578,8 @@ struct Fixture_noTestableMode {
     device2DummyBackend->throwExceptionWrite = false;
   }
 
-  boost::shared_ptr<ExceptionDummy> device1DummyBackend;
-  boost::shared_ptr<ExceptionDummy> device2DummyBackend;
+  boost::shared_ptr<ctk::ExceptionDummy> device1DummyBackend;
+  boost::shared_ptr<ctk::ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
   ctk::TestFacility test{false};
 };
