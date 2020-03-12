@@ -8,89 +8,81 @@
 
 namespace ChimeraTK {
 
-std::unique_ptr<RebotProtocolImplementor> getProtocolImplementor( boost::shared_ptr<Rebot::Connection>& c);
-uint32_t getProtocolVersion(boost::shared_ptr<Rebot::Connection>& c);
-uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello);
+  std::unique_ptr<RebotProtocolImplementor> getProtocolImplementor(boost::shared_ptr<Rebot::Connection>& c);
+  uint32_t getProtocolVersion(boost::shared_ptr<Rebot::Connection>& c);
+  uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello);
 
-std::unique_ptr<RebotProtocolImplementor> getProtocolImplementor( boost::shared_ptr<Rebot::Connection>& c) {
-  auto serverVersion = getProtocolVersion(c);
-  if (serverVersion == 0) {
-    return std::make_unique<RebotProtocol0>(c);
-  } else if (serverVersion == 1) {
-    return std::make_unique<RebotProtocol1>(c);
-  } else {
-    c->close();
-    std::stringstream errorMessage;
-    errorMessage << "Server protocol version " << serverVersion
-                 << " not supported!";
-    throw ChimeraTK::runtime_error(errorMessage.str());
-  }
-}
-
-uint32_t getProtocolVersion(boost::shared_ptr<Rebot::Connection>& c) {
-  // send a negotiation to the server:
-  // sendClientProtocolVersion
-  std::vector<uint32_t> clientHelloMessage;
-  clientHelloMessage.push_back(Rebot::HELLO_TOKEN);
-  clientHelloMessage.push_back(Rebot::MAGIC_WORD);
-  clientHelloMessage.push_back(Rebot::CLIENT_PROTOCOL_VERSION);
-
-  c->write(clientHelloMessage);
-
-  // Kludge is needed to work around server bug.
-  // We have a bug with the old version were only one word is returned for
-  // multiple unrecognized command. Fetching one word for the 3 words send is a
-  // workaround.
-  auto serverHello = c->read(1);
-
-  if (serverHello.at(0) == static_cast<uint32_t>(Rebot::UNKNOWN_INSTRUCTION)) {
-    return 0; // initial protocol version 0.0
+  std::unique_ptr<RebotProtocolImplementor> getProtocolImplementor(boost::shared_ptr<Rebot::Connection>& c) {
+    auto serverVersion = getProtocolVersion(c);
+    if(serverVersion == 0) {
+      return std::make_unique<RebotProtocol0>(c);
+    }
+    else if(serverVersion == 1) {
+      return std::make_unique<RebotProtocol1>(c);
+    }
+    else {
+      c->close();
+      std::stringstream errorMessage;
+      errorMessage << "Server protocol version " << serverVersion << " not supported!";
+      throw ChimeraTK::runtime_error(errorMessage.str());
+    }
   }
 
-  auto remainingBytesOfAValidServerHello = c->read(Rebot::LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
+  uint32_t getProtocolVersion(boost::shared_ptr<Rebot::Connection>& c) {
+    // send a negotiation to the server:
+    // sendClientProtocolVersion
+    std::vector<uint32_t> clientHelloMessage;
+    clientHelloMessage.push_back(Rebot::HELLO_TOKEN);
+    clientHelloMessage.push_back(Rebot::MAGIC_WORD);
+    clientHelloMessage.push_back(Rebot::CLIENT_PROTOCOL_VERSION);
 
-  serverHello.insert(serverHello.end(),
-                     remainingBytesOfAValidServerHello.begin(),
-                     remainingBytesOfAValidServerHello.end());
-  return parseRxServerHello(serverHello);
-}
+    c->write(clientHelloMessage);
 
-uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello) {
-  // 3 rd element/word is the version word
-  return serverHello.at(2);
-}
+    // Kludge is needed to work around server bug.
+    // We have a bug with the old version were only one word is returned for
+    // multiple unrecognized command. Fetching one word for the 3 words send is a
+    // workaround.
+    auto serverHello = c->read(1);
 
-RebotBackend::RebotBackend(std::string boardAddr, std::string port,
-                           std::string mapFileName,
-                           uint32_t connectionTimeout_sec)
-    : NumericAddressedBackend(mapFileName),
-      _boardAddr(boardAddr),
-      _port(port),
-      _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
-      _connection(boost::make_shared<Rebot::Connection>(_boardAddr, _port,
-                                                        connectionTimeout_sec)),
-      _protocolImplementor(),
-      _lastSendTime(testable_rebot_sleep::now()),
-      _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),
-      _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this,
-                                 _threadInformerMutex)) {}
+    if(serverHello.at(0) == static_cast<uint32_t>(Rebot::UNKNOWN_INSTRUCTION)) {
+      return 0; // initial protocol version 0.0
+    }
 
-RebotBackend::~RebotBackend() {
-  { // extra scope for the lock guard
-    std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+    auto remainingBytesOfAValidServerHello = c->read(Rebot::LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
 
-    // make sure the thread does not access any hardware when it gets the lock
-    _threadInformerMutex->quitThread = true;
+    serverHello.insert(
+        serverHello.end(), remainingBytesOfAValidServerHello.begin(), remainingBytesOfAValidServerHello.end());
+    return parseRxServerHello(serverHello);
+  }
 
-  } // end of the lock guard scope. We have to release the lock before waiting
+  uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello) {
+    // 3 rd element/word is the version word
+    return serverHello.at(2);
+  }
+
+  RebotBackend::RebotBackend(
+      std::string boardAddr, std::string port, std::string mapFileName, uint32_t connectionTimeout_sec)
+  : NumericAddressedBackend(mapFileName), _boardAddr(boardAddr), _port(port),
+    _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
+    _connection(boost::make_shared<Rebot::Connection>(_boardAddr, _port, connectionTimeout_sec)),
+    _protocolImplementor(), _lastSendTime(testable_rebot_sleep::now()),
+    _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),
+    _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex)) {}
+
+  RebotBackend::~RebotBackend() {
+    { // extra scope for the lock guard
+      std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+
+      // make sure the thread does not access any hardware when it gets the lock
+      _threadInformerMutex->quitThread = true;
+
+    } // end of the lock guard scope. We have to release the lock before waiting
     // for the thread to join
-  _heartbeatThread.interrupt();
-  _heartbeatThread.join();
+    _heartbeatThread.interrupt();
+    _heartbeatThread.join();
   }
 
-  bool RebotBackend::isFunctional() const {
-    return _connection->isOpen();
-  }
+  bool RebotBackend::isFunctional() const { return _connection->isOpen(); }
 
   void RebotBackend::open() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
@@ -133,9 +125,8 @@ RebotBackend::~RebotBackend() {
     _protocolImplementor.reset(0);
   }
 
-  boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(std::string /*address*/,
-      std::map<std::string, std::string>
-          parameters) {
+  boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
+      std::string /*address*/, std::map<std::string, std::string> parameters) {
     if(parameters["ip"].size() == 0) {
       throw ChimeraTK::logic_error("TMCB IP address not found in the parameter list");
     }
@@ -149,8 +140,8 @@ RebotBackend::~RebotBackend() {
     uint32_t timeout = RebotBackend::DEFAULT_CONNECTION_TIMEOUT_sec;
 
     auto it = parameters.find("timeout");
-    if( it != parameters.end()){
-        timeout = static_cast<uint32_t>(std::stoul(it->second));
+    if(it != parameters.end()) {
+      timeout = static_cast<uint32_t>(std::stoul(it->second));
     }
     return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber, mapFileName, timeout));
   }
