@@ -753,8 +753,6 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           if(feedingDeviceImpl) {
             auto owningModule = consumer.getOwningModule(); // application module or variable group
             feedingDeviceImpl->setOwner(owningModule);
-            // The decorator comes up with data validity faulty, and we have to keep the counting consistent
-            owningModule->incrementDataFaultCounter();
           }
           connectionMade = true;
         }
