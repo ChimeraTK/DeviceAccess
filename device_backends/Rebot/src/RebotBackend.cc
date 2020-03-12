@@ -151,25 +151,33 @@ namespace ChimeraTK {
       try {
         // only send a heartbeat if the connection was inactive for half of the
         // timeout period
-        if((testable_rebot_sleep::now() - _lastSendTime) > boost::chrono::milliseconds(_connectionTimeout / 2)) {
-          // scope for the lock guard is in the if statement
+
+        //We can only calculate this while holding the lock (because we need _lastSendTime), but we have to use
+        //it when not holding the lock because we are calling sleep. Hence we have to store the next wakekup time in a variable.
+        boost::chrono::steady_clock::time_point wakeupTime;
+
+        { // scope of the lock guard. We must hold it to safely access _lastSendTime, which we need in the if statement
           std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
-          // To handle the race condition that the thread woke up while the
-          // desructor was holding the lock and closes the socket: Check the flag
-          // and quit if set
-          if(threadInformerMutex->quitThread) {
-            break;
+          if((testable_rebot_sleep::now() - _lastSendTime) > boost::chrono::milliseconds(_connectionTimeout / 2)) {
+            // To handle the race condition that the thread woke up while the
+            // desructor was holding the lock and closes the socket: Check the flag
+            // and quit if set
+            if(threadInformerMutex->quitThread) {
+              break;
+            }
+            // always update the last send time. Otherwise the sleep will be
+            // ineffective for a closed connection and go to 100 & CPU load
+            _lastSendTime = testable_rebot_sleep::now();
+            if(_protocolImplementor) {
+              _protocolImplementor->sendHeartbeat();
+            }
           }
-          // always update the last send time. Otherwise the sleep will be
-          // ineffective for a closed connection and go to 100 & CPU load
-          _lastSendTime = testable_rebot_sleep::now();
-          if(_protocolImplementor) {
-            _protocolImplementor->sendHeartbeat();
-          }
-        }
-        // sleep without holding the lock. Sleep for half of the connection
-        // timeout (plus 1 ms)
-        testable_rebot_sleep::sleep_until(_lastSendTime + boost::chrono::milliseconds(_connectionTimeout / 2 + 1));
+          // Sleep for half of the connection timeout (plus 1 ms)
+          wakeupTime = _lastSendTime + boost::chrono::milliseconds(_connectionTimeout / 2 + 1);
+        } //scope of the lock guard
+
+        // sleep without holding the lock.
+        testable_rebot_sleep::sleep_until(wakeupTime);
       }
       catch(ChimeraTK::runtime_error& e) {
         std::cerr << "RebotBackend: Sending heartbeat failed. Caught exception: " << e.what() << std::endl;
