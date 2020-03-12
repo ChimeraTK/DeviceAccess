@@ -936,10 +936,46 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   device2DummyBackend->throwExceptionRead = true;
   pushInput.write();
 
-  // Output should be rewritten and the data valditity should be propagated
+  // Output should be rewritten exactly once and the data valditity should be propagated
   CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 1, 10000);
   result.read();
   BOOST_CHECK(result.readLatest() == false);
+  // FIXME: This is olde behaviour:
+  BOOST_CHECK_EQUAL(result, 11);
+  // According to the new spec the new value for the push input should have been propagated already:
+  //BOOST_CHECK_EQUAL(result, 21);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // triggering once more does not produce any output until the device has recovered
+  pushInput = 30;
+  pushInput.setDataValidity(ctk::DataValidity::ok);
+  pushInput.write();
+  // just a short sleep, waiting for nothing. We will test below that there was nothing when the device recovers
+  sleep(1);
+  BOOST_CHECK(result.readLatest() == false);
+
+  pollRegister = 3;
+  device2DummyBackend->throwExceptionRead = false; // let the device recover
+
+  // the 2 from the poll register is never seen...
+
+  // /////////////////////////// FIXME: old behaviour. This will go away with the new spec
+  // The original data is written again, still with faulty as the push input was faulty as well
+  result.read();
   BOOST_CHECK_EQUAL(result, 11);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+  // The 20 at the push input is propagated (together with its faulty flag). It already sees the new value from the poll type
+  // It's good that this goes away. This combination was never at the souces at the same time.
+  result.read();
+  BOOST_CHECK_EQUAL(result, 23);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // /////////////////////////// END OF FIXME: old behaviour
+
+  // The new, good value arrives
+  result.read();
+  BOOST_CHECK_EQUAL(result, 33);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+  // nothing more in the queue
+  BOOST_CHECK(result.readLatest() == false);
 }
