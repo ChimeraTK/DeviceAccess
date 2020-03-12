@@ -357,8 +357,9 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   }
 
   // use wait_for_new_data mode if push update mode was requested
+  // Feeding to the network means reading from a device to feed it into the network.
   ChimeraTK::AccessModeFlags flags{};
-  if(mode == UpdateMode::push && direction.dir == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
+  if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) flags = {AccessMode::wait_for_new_data};
 
   // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
@@ -374,13 +375,16 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   assert(devmod != nullptr);
 
   // decorate the accessor with a ExceptionHandlingDecorator and return it
-  if(direction.dir == VariableDirection::feeding){
+  // Consuming from the network means writing to the device what you consumed.
+  if(direction.dir == VariableDirection::consuming) {
     // writable registers additionally get a recoveryAccessor
+    // Notice: Don't use the fact that there is a recovery accessor to determine the direction in the ExceptionHandlingDecorator.
+    // There will be write-accessors without recovery accessors in future (intentionally turned off by the application programmer)
     auto recoveryAccessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
-    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, recoveryAccessor);
+    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, direction, recoveryAccessor);
   }
-  else{
-    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod);
+  else {
+    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, direction);
   }
 }
 
@@ -421,7 +425,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
   pvIdMap[pvar->getUniqueId()] = varId;
 
   // Decorate the process variable if testable mode is enabled and this is the
-  // receiving end of the variable. Also don't decorate, if the mode is polling.
+  // receiving end of the variable (feeding to the network). Also don't decorate, if the mode is polling.
   // Instead flag the variable to be polling, so the TestFacility is aware of
   // this.
   if(testableMode && node.getDirection().dir == VariableDirection::feeding) {
@@ -652,12 +656,12 @@ void Application::optimiseConnections() {
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnections(std::ostream& stream) {                                            // LCOV_EXCL_LINE
-  stream << "==== List of all variable connections of the current Application ====" << std::endl;    // LCOV_EXCL_LINE
-  for(auto& network : networkList) {                                                                 // LCOV_EXCL_LINE
-    network.dump("", stream);                                                                        // LCOV_EXCL_LINE
-  }                                                                                                  // LCOV_EXCL_LINE
-  stream << "=====================================================================" << std::endl;    // LCOV_EXCL_LINE
+void Application::dumpConnections(std::ostream& stream) {                                         // LCOV_EXCL_LINE
+  stream << "==== List of all variable connections of the current Application ====" << std::endl; // LCOV_EXCL_LINE
+  for(auto& network : networkList) {                                                              // LCOV_EXCL_LINE
+    network.dump("", stream);                                                                     // LCOV_EXCL_LINE
+  }                                                                                               // LCOV_EXCL_LINE
+  stream << "=====================================================================" << std::endl; // LCOV_EXCL_LINE
 } // LCOV_EXCL_LINE
 
 void Application::dumpConnectionGraph(const std::string& fileName) {
@@ -729,7 +733,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
       if(feeder.getType() == NodeType::Device) {
         feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
-            {VariableDirection::consuming, false}, feeder.getMode(), feeder.getNumberOfElements());
+            {VariableDirection::feeding, false}, feeder.getMode(), feeder.getNumberOfElements());
       }
       else if(feeder.getType() == NodeType::ControlSystem) {
         feedingImpl = createProcessVariable<UserType>(feeder);
@@ -744,8 +748,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         if(consumer.getType() == NodeType::Application) {
           consumer.setAppAccessorImplementation(feedingImpl);
           //check if the feedingImpl is from a device. In this case it has been decorated with an ExceptionHandlingDecorator
-          auto feedingDeviceImpl = boost::dynamic_pointer_cast<ChimeraTK::ExceptionHandlingDecorator<UserType>>(feedingImpl);
-          if (feedingDeviceImpl){
+          auto feedingDeviceImpl =
+              boost::dynamic_pointer_cast<ChimeraTK::ExceptionHandlingDecorator<UserType>>(feedingImpl);
+          if(feedingDeviceImpl) {
             auto owningModule = consumer.getOwningModule(); // application module or variable group
             feedingDeviceImpl->setOwner(owningModule);
             // The decorator comes up with data validity faulty, and we have to keep the counting consistent
@@ -755,7 +760,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         }
         else if(consumer.getType() == NodeType::Device) {
           auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
           // connect the Device with e.g. a ControlSystem node via a
           // ThreadedFanOut
           auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
@@ -856,7 +861,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           }
           else if(consumer.getType() == NodeType::Device) {
             auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-                {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+                {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
             fanOut->addSlave(impl, consumer);
           }
           else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -901,7 +906,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
           feeder.setAppAccessorImplementation<UserType>(impl);
           connectionMade = true;
         }
@@ -944,7 +949,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           }
           else if(consumer.getType() == NodeType::Device) {
             auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-                {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+                {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
             fanOut->addSlave(impl, consumer);
           }
           else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -991,7 +996,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
           // find the right DeviceModule for this alias name
           DeviceModule* devmod = nullptr;

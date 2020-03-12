@@ -160,6 +160,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
 
   TestApplication<T> app;
 
+  // We intentionally use an r/w register here to use it as an input only. Just to test the case
+  // (might only be written in initialication and only read in the server itself)
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   ctk::TestFacility test;
   ChimeraTK::Device dev;

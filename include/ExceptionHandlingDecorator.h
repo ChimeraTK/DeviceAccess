@@ -25,7 +25,8 @@ namespace ChimeraTK {
      * which only read don't specify the third parameter.
      */
     ExceptionHandlingDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
-        DeviceModule& devMod, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor = {nullptr});
+        DeviceModule& devMod, VariableDirection direction,
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor = {nullptr});
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
@@ -57,6 +58,7 @@ namespace ChimeraTK {
     void setOwnerValidity(bool hasExceptionNow);
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
     EntityOwner* _owner = {nullptr};
+    VariableDirection _direction;
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

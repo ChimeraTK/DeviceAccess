@@ -10,8 +10,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod) {
+      VariableDirection direction, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod), _direction(direction) {
     // Register recoveryAccessor at the DeviceModule
     if(recoveryAccessor != nullptr) {
       _recoveryAccessor = recoveryAccessor;
@@ -161,8 +161,8 @@ namespace ChimeraTK {
   template<typename UserType>
   DataValidity ExceptionHandlingDecorator<UserType>::dataValidity() const {
     // If there has been an exception  the data cannot be OK.
-    // This is only considered in read mode.
-    if(this->isReadable() && hasSeenException) {
+    // This is only considered in read mode (=feeding to the connected variable network).
+    if(_direction.dir == VariableDirection::feeding && hasSeenException) {
       return DataValidity::faulty;
     }
     // no exception, return the data validity of the accessor we are decorating
@@ -180,10 +180,9 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
     _owner = owner;
-    if(this->isReadable() && hasSeenException) {
+    if(_direction.dir == VariableDirection::feeding && hasSeenException) {
       _owner->incrementExceptionCounter(false); // do not write. We are still in the setup phase.
     }
-    
   }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
