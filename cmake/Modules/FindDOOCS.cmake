@@ -77,6 +77,14 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";daqreader;")
   set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_daqreader)
 endif()
 
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";eqdaqdatalib;")
+  FIND_PATH(DOOCS_DIR_eqdaqdatalib libDAQsvrutil.so
+    ${DOOCS_DIR}
+  )
+  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DAQsvrutil)
+  set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_eqdaqdatalib)
+endif()
+
 #This is for the transition only. The logic is not bullet proof, but in almost all cases
 #if there is libgul14.so, it means DOOCS brought it and needs it.
 FIND_LIBRARY(LIB_GULOLD libgul.so ${DOOCS_DIR})
