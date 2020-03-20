@@ -241,9 +241,24 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
+      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
+  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", hierarchyModifier, tags),
+    _fileName(fileName), _moduleList(std::make_unique<ModuleList>(this)) {
+    construct(fileName);
+  }
+
+  /*********************************************************************************************************************/
+
+  ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
       const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", false, tags), _fileName(fileName),
-    _moduleList(std::make_unique<ModuleList>(this)) {
+  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", HierarchyModifier::none, tags),
+    _fileName(fileName), _moduleList(std::make_unique<ModuleList>(this)) {
+    construct(fileName);
+  }
+
+  /*********************************************************************************************************************/
+
+  void ConfigReader::construct(const std::string& fileName) {
     auto fillVariableMap = [this](const Variable& var) {
       bool processed{false};
       boost::fusion::for_each(variableMap.table, FunctorFill(this, var.type, var.name, var.value, processed));

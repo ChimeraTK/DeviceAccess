@@ -114,7 +114,11 @@ namespace ChimeraTK {
    */
   struct ConfigReader : ApplicationModule {
     ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
+
+    ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
+        const std::unordered_set<std::string>& tags);
 
     ~ConfigReader() override;
     void mainLoop() override {}
@@ -128,6 +132,9 @@ namespace ChimeraTK {
     const T& get(const std::string& variableName) const;
 
    protected:
+    /** Helper function to avoid code duplication in constructors **/
+    void construct(const std::string& fileName);
+
     /** File name */
     std::string _fileName;
 
