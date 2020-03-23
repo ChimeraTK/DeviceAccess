@@ -247,6 +247,14 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void VariableNetworkNode::removeExternalTrigger() {
+    assert(hasExternalTrigger());
+    pdata->externalTrigger.getOwner().removeNodeToTrigger(*this);
+    pdata->externalTrigger = {nullptr};
+  }
+
+  /*********************************************************************************************************************/
+
   void VariableNetworkNode::dump(std::ostream& stream) const {
     VariableNetworkNodeDumpingVisitor visitor(stream, " ");
     visitor.dispatch(*this);

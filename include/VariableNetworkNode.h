@@ -118,6 +118,9 @@ namespace ChimeraTK {
      * assertion will be raised. */
     VariableNetworkNode getExternalTrigger();
 
+    /** Removes an external trigger */
+    void removeExternalTrigger();
+
     /** Print node information to std::cout */
     void dump(std::ostream& stream = std::cout) const;
 

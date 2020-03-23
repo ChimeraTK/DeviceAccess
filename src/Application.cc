@@ -583,6 +583,19 @@ void Application::finaliseNetworks() {
     }
     network.getFeedingNode().setDirection({VariableDirection::feeding, true});
   }
+
+  // check for networks which have an external trigger but should be triggered by pollling consumer
+  for(auto& network : networkList) {
+    if(network.getTriggerType() == VariableNetwork::TriggerType::external) {
+      size_t pollingComsumers{0};
+      for(auto& consumer : network.getConsumingNodes()) {
+        if(consumer.getMode() == UpdateMode::poll) ++pollingComsumers;
+      }
+      if(pollingComsumers == 1) {
+        network.getFeedingNode().removeExternalTrigger();
+      }
+    }
+  }
 }
 
 /*********************************************************************************************************************/
