@@ -1,5 +1,5 @@
 # CMakeLists.txt for server modules
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.5.1)
 
 include_directories(include)
 aux_source_directory(src library_sources)

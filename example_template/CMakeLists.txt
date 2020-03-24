@@ -1,8 +1,8 @@
 # CMakeLists.txt template for an ApplicationCore-based server
 #
 #
-PROJECT(ChimeraTK-ApplicationCore-TemplateServer)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+project(ChimeraTK-ApplicationCore-TemplateServer)
+cmake_minimum_required(VERSION 3.5.1)
 
 # Use the project template to get the settings required for an application core project
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
@@ -51,11 +51,11 @@ set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${Chim
 target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib ${ChimeraTK-ApplicationCore_LIBRARIES})
 
 # Process tests:
-ENABLE_TESTING()
+enable_testing()
 add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
 
 # Copy the (test) config files to the build directory
-FILE( COPY ${CMAKE_SOURCE_DIR}/config/ DESTINATION ${PROJECT_BINARY_DIR})
+file( COPY ${CMAKE_SOURCE_DIR}/config/ DESTINATION ${PROJECT_BINARY_DIR})
 
 
 # Installation:
