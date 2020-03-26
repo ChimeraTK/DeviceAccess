@@ -45,12 +45,13 @@ namespace ChimeraTK {
    *  needs to identify any StatusMonitor.
    */
   struct StatusMonitor : public ApplicationModule {
-
     StatusMonitor(EntityOwner* owner, const std::string& name, const std::string& description, const std::string& input,
         const std::string& output, HierarchyModifier modifier, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {}, const std::unordered_set<std::string>& tags = {})
     : ApplicationModule(owner, name, description, modifier, tags), _parameterTags(parameterTags), _input(input),
       status(this, output, "", "", outputTags) {}
+
+    StatusMonitor(StatusMonitor&&) = default;
 
     ~StatusMonitor() override {}
     void prepare() override {}
@@ -69,7 +70,6 @@ namespace ChimeraTK {
     ScalarPushInput<int> disable{this, "disable", "", "Disable the status monitor"};
   };
 
-
   /** Common template base class for StatusMonitors
    *
    *  This provides a ScalarPushInput for the variable to be monitored, which
@@ -77,18 +77,19 @@ namespace ChimeraTK {
    */
   template<typename T>
   struct StatusMonitorImpl : public StatusMonitor {
-
     /** Number of convience constructors for ease of use.
      * The input and output variable names can be given by user which
      * should be mapped with the variables of module to be watched.
      */
-    StatusMonitorImpl(EntityOwner* owner, const std::string& name, const std::string& description, const std::string& input,
-        const std::string& output, HierarchyModifier modifier, const std::unordered_set<std::string>& outputTags = {},
+    StatusMonitorImpl(EntityOwner* owner, const std::string& name, const std::string& description,
+        const std::string& input, const std::string& output, HierarchyModifier modifier,
+        const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {}, const std::unordered_set<std::string>& tags = {})
     : StatusMonitor(owner, name, description, input, output, modifier, outputTags, parameterTags, tags),
-      oneUp(this, input){}
+      oneUp(this, input) {}
 
     StatusMonitorImpl() { throw logic_error("Default constructor unusable. Just exists to work around gcc bug."); }
+    StatusMonitorImpl(StatusMonitorImpl&&) = default;
 
     ~StatusMonitorImpl() override {}
     void prepare() override {}
@@ -118,7 +119,7 @@ namespace ChimeraTK {
         // evaluate and publish first, then read and wait. This takes care of the publishing the initial variables
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
-        } 
+        }
         else if(StatusMonitorImpl<T>::oneUp.watch >= error) {
           StatusMonitorImpl<T>::status = ERROR;
         }
@@ -151,7 +152,7 @@ namespace ChimeraTK {
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
-        } 
+        }
         else if(StatusMonitorImpl<T>::oneUp.watch <= error) {
           StatusMonitorImpl<T>::status = ERROR;
         }
@@ -192,12 +193,12 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warningUpperThreshold, warningLowerThreshold,
-          errorUpperThreshold, errorLowerThreshold};
+      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warningUpperThreshold,
+          warningLowerThreshold, errorUpperThreshold, errorLowerThreshold};
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
-        } 
+        }
         // Check for error limits first. Like this they supersede the warning,
         // even if they are stricter then the warning limits (mis-configuration)
         else if(StatusMonitorImpl<T>::oneUp.watch <= errorLowerThreshold ||
@@ -233,7 +234,7 @@ namespace ChimeraTK {
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
-        } 
+        }
         else if(StatusMonitorImpl<T>::oneUp.watch != requiredValue) {
           StatusMonitorImpl<T>::status = ERROR;
         }
@@ -264,7 +265,7 @@ namespace ChimeraTK {
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
-        } 
+        }
         else if(StatusMonitorImpl<T>::oneUp.watch != nominalState) {
           StatusMonitorImpl<T>::status = ERROR;
         }
