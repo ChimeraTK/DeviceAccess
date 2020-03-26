@@ -35,6 +35,9 @@ struct SimulationModule : public ctk::ApplicationModule {
       }
 
       temperature += direction * 1; // one dregree steps
+      setCurrentVersionNumber({}); // We generate data without trigger or other input.
+                                   // So we must update the version number manually.
+                                   // This automatically updates the time stamp as well.
       temperature.write();
       usleep(100000);
     }
