@@ -84,8 +84,8 @@ void ExampleApp::defineConnections() {
    * When connecting the app, the config created the following variables:
    * /Config/TemperatureMonitor/lowerWarningThreshold
    * /Config/TemperatureMonitor/upperWarningThreshold
-   * /Config/TemperatureMonitor/lowerErrorgThreshold
-   * /Config/TemperatureMonitor/upperErrorThreshold
+   * /Config/TemperatureMonitor/lowerFaultThreshold
+   * /Config/TemperatureMonitor/upperFaultThreshold
    */
 
   // Now we connect the parameters of the temperature monitor to the control system, right into the Config directory so the variable names match.

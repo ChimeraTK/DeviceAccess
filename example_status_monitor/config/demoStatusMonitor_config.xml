@@ -1,8 +1,8 @@
 <configuration>
   <module name="TemperatureMonitor">
-    <variable name="lowerErrorThreshold"   type="double" value="-40" />
+    <variable name="lowerFaultThreshold"   type="double" value="-40" />
     <variable name="lowerWarningThreshold" type="double" value="-30" />
     <variable name="upperWarningThreshold" type="double" value="30" />
-    <variable name="upperErrorThreshold"   type="double" value="40" />
+    <variable name="upperFaultThreshold"   type="double" value="40" />
   </module>
 </configuration>

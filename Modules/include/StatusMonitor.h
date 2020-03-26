@@ -10,13 +10,13 @@
  * To monitor a status of a varaible in an appplicaiton this group of
  * modules provides different possiblites.
  * It includes
- *  - MaxMonitor to monitor a value depending upon two MAX thresholds for warning and error.
- *  - MinMonitor to monitor a value depending upon two MIN thresholds for warning and error.
- *  - RangeMonitor to monitor a value depending upon two ranges of thresholds for warning and error.
+ *  - MaxMonitor to monitor a value depending upon two MAX thresholds for warning and fault.
+ *  - MinMonitor to monitor a value depending upon two MIN thresholds for warning and fault.
+ *  - RangeMonitor to monitor a value depending upon two ranges of thresholds for warning and fault.
  *  - ExactMonitor to monitor a value which should be exactly same as required value.
  *  - StateMonitor to monitor On/Off state.
  * Depending upon the value and condition on of the four states are reported.
- *  -  OFF, OK, WARNING, ERROR.
+ *  -  OFF, OK, WARNING, FAULT.
  *
  * Checkout the status monitor example to see in detail how it works.
  * \include demoStatusMonitor.cc
@@ -35,7 +35,7 @@ For more info see \ref statusmonitordoc
 namespace ChimeraTK {
 
   /** There are four states that can be reported*/
-  enum States { OFF, OK, WARNING, ERROR };
+  enum States { OFF, OK, WARNING, FAULT };
 
   /** Common base for StatusMonitors
    *
@@ -108,20 +108,20 @@ namespace ChimeraTK {
     using StatusMonitorImpl<T>::StatusMonitorImpl;
     /** WARNING state to be reported if threshold is reached or exceeded*/
     ScalarPushInput<T> warning{this, "upperWarningThreshold", "", "", StatusMonitor::_parameterTags};
-    /** ERROR state to be reported if threshold is reached or exceeded*/
-    ScalarPushInput<T> error{this, "upperErrorThreshold", "", "", StatusMonitor::_parameterTags};
+    /** FAULT state to be reported if threshold is reached or exceeded*/
+    ScalarPushInput<T> fault{this, "upperFaultThreshold", "", "", StatusMonitor::_parameterTags};
 
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warning, error};
+      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warning, fault};
       while(true) {
         // evaluate and publish first, then read and wait. This takes care of the publishing the initial variables
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
         }
-        else if(StatusMonitorImpl<T>::oneUp.watch >= error) {
-          StatusMonitorImpl<T>::status = ERROR;
+        else if(StatusMonitorImpl<T>::oneUp.watch >= fault) {
+          StatusMonitorImpl<T>::status = FAULT;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch >= warning) {
           StatusMonitorImpl<T>::status = WARNING;
@@ -142,19 +142,19 @@ namespace ChimeraTK {
 
     /** WARNING state to be reported if threshold is crossed*/
     ScalarPushInput<T> warning{this, "lowerWarningThreshold", "", "", StatusMonitor::_parameterTags};
-    /** ERROR state to be reported if threshold is crossed*/
-    ScalarPushInput<T> error{this, "lowerErrorThreshold", "", "", StatusMonitor::_parameterTags};
+    /** FAULT state to be reported if threshold is crossed*/
+    ScalarPushInput<T> fault{this, "lowerFaultThreshold", "", "", StatusMonitor::_parameterTags};
 
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warning, error};
+      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warning, fault};
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
         }
-        else if(StatusMonitorImpl<T>::oneUp.watch <= error) {
-          StatusMonitorImpl<T>::status = ERROR;
+        else if(StatusMonitorImpl<T>::oneUp.watch <= fault) {
+          StatusMonitorImpl<T>::status = FAULT;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch <= warning) {
           StatusMonitorImpl<T>::status = WARNING;
@@ -170,10 +170,10 @@ namespace ChimeraTK {
 
   /** Module for status monitoring depending on range of threshold values.
  * As long as a monitored value is in the range defined by user it goes
- * to error or warning state. If the monitored value exceeds the upper limmit
+ * to fault or warning state. If the monitored value exceeds the upper limmit
  * or goes under the lowerthreshold the state reported will be always OK.
  * IMPORTANT: This module does not check for ill logic, so make sure to
- * set the ranges correctly to issue warning or error.
+ * set the ranges correctly to issue warning or fault.
  */
   template<typename T>
   struct RangeMonitor : public StatusMonitorImpl<T> {
@@ -184,26 +184,26 @@ namespace ChimeraTK {
  */
     ScalarPushInput<T> warningUpperThreshold{this, "upperWarningThreshold", "", "", StatusMonitor::_parameterTags};
     ScalarPushInput<T> warningLowerThreshold{this, "lowerWarningThreshold", "", "", StatusMonitor::_parameterTags};
-    /** ERROR state to be reported if value is in between the upper and
+    /** FAULT state to be reported if value is in between the upper and
  * lower threshold including the start and end of thresholds.
  */
-    ScalarPushInput<T> errorUpperThreshold{this, "upperErrorThreshold", "", "", StatusMonitor::_parameterTags};
-    ScalarPushInput<T> errorLowerThreshold{this, "lowerErrorThreshold", "", "", StatusMonitor::_parameterTags};
+    ScalarPushInput<T> faultUpperThreshold{this, "upperFaultThreshold", "", "", StatusMonitor::_parameterTags};
+    ScalarPushInput<T> faultLowerThreshold{this, "lowerFaultThreshold", "", "", StatusMonitor::_parameterTags};
 
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
       ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warningUpperThreshold,
-          warningLowerThreshold, errorUpperThreshold, errorLowerThreshold};
+          warningLowerThreshold, faultUpperThreshold, faultLowerThreshold};
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
           StatusMonitorImpl<T>::status = OFF;
         }
-        // Check for error limits first. Like this they supersede the warning,
+        // Check for fault limits first. Like this they supersede the warning,
         // even if they are stricter then the warning limits (mis-configuration)
-        else if(StatusMonitorImpl<T>::oneUp.watch <= errorLowerThreshold ||
-            StatusMonitorImpl<T>::oneUp.watch >= errorUpperThreshold) {
-          StatusMonitorImpl<T>::status = ERROR;
+        else if(StatusMonitorImpl<T>::oneUp.watch <= faultLowerThreshold ||
+            StatusMonitorImpl<T>::oneUp.watch >= faultUpperThreshold) {
+          StatusMonitorImpl<T>::status = FAULT;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch <= warningLowerThreshold ||
             StatusMonitorImpl<T>::oneUp.watch >= warningUpperThreshold) {
@@ -219,12 +219,12 @@ namespace ChimeraTK {
   };
 
   /** Module for status monitoring of an exact value.
- * If value monitored is not exactly the same. an error state will be
+ * If value monitored is not exactly the same. an fault state will be
  * reported.*/
   template<typename T>
   struct ExactMonitor : public StatusMonitorImpl<T> {
     using StatusMonitorImpl<T>::StatusMonitorImpl;
-    /**ERROR state if value is not equal to requiredValue*/
+    /**FAULT state if value is not equal to requiredValue*/
     ScalarPushInput<T> requiredValue{this, "requiredValue", "", "", StatusMonitor::_parameterTags};
 
     /**This is where state evaluation is done*/
@@ -236,7 +236,7 @@ namespace ChimeraTK {
           StatusMonitorImpl<T>::status = OFF;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch != requiredValue) {
-          StatusMonitorImpl<T>::status = ERROR;
+          StatusMonitorImpl<T>::status = FAULT;
         }
         else {
           StatusMonitorImpl<T>::status = OK;
@@ -248,7 +248,7 @@ namespace ChimeraTK {
   };
 
   /** Module for On/off status monitoring.
- * If value monitored is different then desired state (on/off) an error
+ * If value monitored is different then desired state (on/off) a fault
  * will be reported, otherwise OFF(0) or OK(1) depending on state.
  */
   template<typename T>
@@ -267,14 +267,14 @@ namespace ChimeraTK {
           StatusMonitorImpl<T>::status = OFF;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch != nominalState) {
-          StatusMonitorImpl<T>::status = ERROR;
+          StatusMonitorImpl<T>::status = FAULT;
         }
         else if(nominalState == OK || nominalState == OFF) {
           StatusMonitorImpl<T>::status = nominalState;
         }
         else {
           //no correct value
-          StatusMonitorImpl<T>::status = ERROR;
+          StatusMonitorImpl<T>::status = FAULT;
         }
         StatusMonitorImpl<T>::status.write();
         group.readAny();
