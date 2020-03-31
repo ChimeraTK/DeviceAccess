@@ -75,10 +75,10 @@ See @ref exceptionHandlingDesign.
 
 * 3.1 The DataFaultCounter is a helper class around the counter variable. It facilitates instantiation and evaluation of the counter.
 * 3.2 The decorators which manipulate the data fault counter are responsible for counting up and down in pairs, such that the counter goes back to 0 if all data is ok, and never becomes negative.
-* 3.3 To 2.1.2 and 2.2.1: Associated means that the MetaDataPropagatingRegisterDecorator or ExceptionHandlingDecorator gets a pointer or reference to the DataFaultCounter. It does not own it. As the calling code of the decorator is executed in the main loop of the module or fan-out which owns the DataFaultCounter, it should be safe to shut down the application.
+* 3.3 To 2.1.2 and 2.2.1: Associated means that the MetaDataPropagatingRegisterDecorator or ExceptionHandlingDecorator gets a pointer to the DataFaultCounter. It does not own it. As the calling code of the decorator is executed in the main loop of the module or fan-out which owns the DataFaultCounter, it should be safe to shut down the application.
 * 3.4 Interface of the DataFaultCounter (implements 2.2)
     * 3.4.1 The counter variable itself is protected. I is increased and decreased through increment() and decrement() functions.
-    * 3.4.2 The counter is a signed integer. The decrement function has an assertions that the counter does not become negative. This simplifies debugging in case the calling code does not execute the increment and decrement in pairs.
+    * 3.4.2 The decrement function has an assertions that the counter does not become negative (or "underflow" because it probably is unsigned). This simplifies debugging in case the calling code does not execute the increment and decrement in pairs.
     * 3.4.3 A conveninece function getDataValidity() checks whether the counter is 0 and returns 'ok' or 'faulty' accordingly. This is just to avoid the if-statement and picking the right return value in all using code.
     * 3.4.4 When instantiated, the counter starts at 0. If associated objects (like the ExceptionHandlingDecorators) are faulty at start it is their responsibility to increment the counter.
 
@@ -88,6 +88,11 @@ See @ref exceptionHandlingDesign.
 * 4.1 The extension v1.1 needs an extension of the accessor interface.
     * 4.1.1 Inputs need a function to query its data validity (implements 1.2.2).
     * 4.1.2 The outputs need a 'setDataValidity()' function. When set to 'faulty', the output stays 'faulty' until it is set back to 'ok' (implements 1.2.1).(*)
+
+* 4.2 There is no DataFaultCounter object (2.2) at the moment. The ApplicationModule itself holds the counter variable and implements the increase, decrease and getDataValidity functions. This prevents 2.4 from being implemented properly.
+* 4.3 The ThreadedFanOut does not propagate the data validity
+* 4.4 The ConsumingFanOut does not propagate the data validity
+* 4.5 The TriggerFanOut does not propagate data validity (not even the way an ApplicationModule does)
 
 ### Comments
 
