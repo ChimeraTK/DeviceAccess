@@ -3,7 +3,7 @@ Technical specification: data validity propagation {#spec_dataValidityPropagatio
 
 > **DRAFT VERSION, WRITE-UP IN PROGRESS!**
 
-Specification version v1.0 and extension v1.1
+Specification version v1.0
 
 1. General idea
 ---------------
@@ -16,11 +16,8 @@ Specification version v1.0 and extension v1.1
 * 1.1.3 If a device is in error state, all variables which are read from it shall be marked as 'faulty'. This flag is then propagated through all the modules (via 1.1.2) so it shows up in the control system.
 * 1.1.4 The user has the possibility to query the data validity of the module
 * 1.1.5 The user has the possibility to set the data validity of the module to 'faulty'. However, the user cannot actively set the module to 'ok' if one of the inputs is 'faulty'.
-
-### 1.2 Extension v1.1
-
-* 1.2.1 The user can decide to flag individual outputs as bad. However, the user cannot actively set an output to 'ok' if the data validity of the module is 'faulty' (to be more precise: if the validity of the corresponding  DataFaultCounter is faulty).
-* 1.2.2 The user can get the data validity flag of its inputs and take special actions in case no invalid data shall be processed.
+* 1.1.6 The user can decide to flag individual outputs as bad. However, the user cannot actively set an output to 'ok' if the data validity of the module is 'faulty' (to be more precise: if the validity of the corresponding  DataFaultCounter is faulty).
+* 1.1.7 The user can get the data validity flag of individual inputs and take special actions.
 
 
 2. Technical implementation
@@ -32,8 +29,7 @@ Specification version v1.0 and extension v1.1
 * 2.1.2 The decorator knows about the DataFaultCounter to which it is associated.
 
 * 2.1.3 **read:** For each read operation it checks the incoming data validity and informs the associated ChimeraTK::DataFaultCounter about the status.
-* 2.1.4 **write: (Version 1.0)** When writing, the decorator is getting the validity flag from the DataFaultCounter and attaches it to the outgoing data.
-* 2.1.5 **write: (Extension 1.1)** When writing, the decorator is checking the validity flags of the DataFaultCounter and the individual flag of the output. Only if both are 'ok' the output validity is 'ok', otherwise the outgoing data is send as 'faulty'.
+* 2.1.5 **write:** When writing, the decorator is checking the validity flags of the DataFaultCounter and the individual flag of the output. Only if both are 'ok' the output validity is 'ok', otherwise the outgoing data is send as 'faulty'.
 
 ### 2.2 DataFaultCounter
 
@@ -85,14 +81,10 @@ See @ref exceptionHandlingDesign.
 4. Known issues
 ---------------
 
-* 4.1 The extension v1.1 needs an extension of the accessor interface.
-    * 4.1.1 Inputs need a function to query its data validity (implements 1.2.2).
-    * 4.1.2 The outputs need a 'setDataValidity()' function. When set to 'faulty', the output stays 'faulty' until it is set back to 'ok' (implements 1.2.1).(*)
-
-* 4.2 There is no DataFaultCounter object (2.2) at the moment. The ApplicationModule itself holds the counter variable and implements the increase, decrease and getDataValidity functions. This prevents 2.4 from being implemented properly.
-* 4.3 The ThreadedFanOut does not propagate the data validity
-* 4.4 The ConsumingFanOut does not propagate the data validity
-* 4.5 The TriggerFanOut does not propagate data validity (not even the way an ApplicationModule does)
+* 4.1 There is no DataFaultCounter object (2.2) at the moment. The ApplicationModule itself holds the counter variable and implements the increase, decrease and getDataValidity functions. This prevents 2.4 from being implemented properly.
+* 4.2 The ThreadedFanOut does not propagate the data validity
+* 4.3 The ConsumingFanOut does not propagate the data validity
+* 4.4 The TriggerFanOut does not propagate data validity (not even the way an ApplicationModule does)
 
 ### Comments
 
