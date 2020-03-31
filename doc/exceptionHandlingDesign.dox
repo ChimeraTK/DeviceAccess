@@ -11,7 +11,7 @@ Exceptions must be handled by ApplicationCore in a way that the application deve
 
 In case of a runtime_error exception the framework must catch the expection and report it to the DeviceModule. The DeviceModule handles this exception and preiodically tries to open the device. In case of several devices only the faulty device is blocked. Even if a device is faulty it should not block the server from starting.
 
-If an input variable is in the error state, it sets the DataValidity flag for its DataValidityProparationExecutor (see \link spec_dataValidityPropagation \endlink) to faulty and the flag is propogated appropriately. After the exception is cleared and operation returns without a data fault flag, set DataValidity flag to ok. Furthermore, the device must be reinitialised automatically and also recover the values of process variables as the device might have rebooted and the variables have been re-set.
+If an input variable is in the error state, it sets the DataValidity flag for its DataValidityCounter (see \link spec_dataValidityPropagation \endlink) to faulty and the flag is propogated appropriately. After the exception is cleared and operation returns without a data fault flag, set DataValidity flag to ok. Furthermore, the device must be reinitialised automatically and also recover the values of process variables as the device might have rebooted and the variables have been re-set.
 
 <b>1. Genesis</b>
 - a (removed)
@@ -21,7 +21,7 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - e. An ExceptionHandlingDecorator is placed around all NDRegisterAccessors which connect a device to a ApplicationModule or fanout. (*)
 - f. (removed)
 - g. By default a recovery accessor is added for each device register when it is obtianed. These recovery accessors are used to correctly set the values of variables when the device is opened for the first time and after a device is recovered from an exception. (*)
-- h. An ExceptionHandlingDecorator for an input knows its DataValidityProparationExecutor, which lives in the ApplicationModule or fanout that reads the input. Like this it can propagate the
+- h. An ExceptionHandlingDecorator for an input knows its DataValidityCounter, which lives in the ApplicationModule or fanout that reads the input. Like this it can propagate the
      dataValidity flag. Outputs do not send DataValidity faulty in case of exceptions (see \link spec_dataValidityPropagation \endlink).
 - i. Write should not block in case of an exception for the outputs of ThreadedFanOut / TriggerFanOut. (*)
 - j. Exception handling and invalid flag propagation has to be implemented such that it is transparent to a module whether it is directly connected to a device, or whether a fanout or another application module is in between.
