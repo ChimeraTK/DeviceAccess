@@ -20,7 +20,8 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 - The "value after construction" must not be propagated automatically during initial value propagation, not even with the `ChimeraTK::DataValidity::faulty` flag set. It must not be visible to user code in the `ChimeraTK::ApplicationModule::mainLoop()`.
 - Since `ChimeraTK::ApplicationModule`s might wait for initial values from other `ChimeraTK::ApplicationModule`s, the modules might end up in a dead lock due to a circular connection. The circular connection is legal, but the dead lock situation needs to be broken by one `ChimeraTK::ApplicationModule` writing its initial value during `ChimeraTK::ApplicationModule::prepare()`.
 - Devices must receive the initial values as soon as possible after the device is opened and after the initialisation sequence is executed. There is no guarantee that other registers of the same device are written or read only after the initial values are written. Hence, any critical registers that need to be written before accessing other registers must be written in the initialisation sequence.
-- The control system doesn't receive "initial values" as such. The first value of a process variable is sent to the control system when available. This may depend even on external conditions like the availability of devices, e.g. the control system interface has to run even if devices are not available and hence cannot send an inital value.
+- The control system does not wait for "initial values" as such. The first value of a process variable is sent to the control system when available. This may depend even on external conditions like the availability of devices, e.g. the control system interface has to run even if devices are not available and hence cannot send an inital value.
+- The first value received by the control system can be an initial value. This is different to ApplicationModules, where an initial value is never seen as a new value that can be read because they are always already there and received when the main loop starts.
 - Control system variables show the `ChimeraTK::DataValidity::faulty` flag until they have received the first valid value.
 - For push-type variables from devices, the initial value is the current value polled at the application start. Since the variable might not get pushed regularly, the application must not wait for a value to get pushed.
 
@@ -32,7 +33,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 4. (removed)
 5. Control system variables:
   1. Variables with the control-system-to-application direction must be written exactly once at application start by the control system adapter with their initial values from the persistency layer. This must be done before `ChimeraTK::ApplicationBase::run()` is called, or soon after (major parts of the application will be blocked until it's done). If the persistency layer can persist the `ChimeraTK::DataValidity`, the initial value should have the correct validity. Otherwise, initial values will always have the `ChimeraTK::DataValidity::ok`.
-  2. Variables with the application-to-control-system direction do not have an "initial value". The first value of these variables are written at an undefined time after the `ChimeraTK::ApplicationBase::run()` has been called. The control system adapter must not expect any specific behaviour. Entities writing to these variables do not need to take any special precautions.
+  2. Variables with the application-to-control-system direction conceptually do not have an "initial value". The control system adapter implementation does not wait for an initial value to show up. The first value of these variables are written at an undefined time after the `ChimeraTK::ApplicationBase::run()` has been called. They might or might not be initial values of other modues. The control system adapter must not expect any specific behaviour. Entities writing to these variables do not need to take any special precautions.
 6. Device variables:
   1. Write accessors need to be written after the device is opened and the initialisation is done, as soon as the initial value is available for that variable. Initial values can be present through 5.a, 6.b or 7.
   2. Initial values for read accessors must be read after the device is openend and the initialsation is done. The read is performed with `ChimeraTK::TransferElement::readLatest()`.
@@ -91,14 +92,14 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 - API documentation must contain 7.
 - Implements 8. (hence takes part in 5.a, 6.b, 7 and 10 implicitly):
   - All inputs of the module must be read in the `ChimeraTK::ApplicationModule::mainLoopWrapper()` before the call to `mainLoop()`.
-  - The type of the read decided via `ChimeraTK::VariableNetworkNode::initialValueType()`, which implements 8.b.
+  - The type of the read is decided via `ChimeraTK::VariableNetworkNode::initialValueUpdateMode()`, which implements 8.b.
 
 ### ThreadedFanOut ###
 
 - Implement 3, implementation will be already covered by normal flag propagation
 - Needs to implement 9. (hence takes part in 5.a, 6, 7 and 10 implicitly):
   - structure the fan out's "mainLoop"-equivalent (`ThreadedFanOut::run()`) like this:
-    - read initial values (9.a via `ChimeraTK::VariableNetworkNode::initialValueType()`)
+    - read initial values (9.a via `ChimeraTK::VariableNetworkNode::initialValueUpdateMode()`)
     - begin loop
     - write outputs
     - read input
@@ -110,10 +111,11 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 - Needs to implement 9. (hence takes part in 5.a, 6, 7 and 10 implicitly):
   - In contrast to the `ThreadedFanOut`, the `TriggerFanOut` has only poll-type data inputs which are all coming from the same device. Data inputs cannot come from non-devices.
   - Structure the fan out's "mainLoop"-equivalent (`TriggerFanOut::run()`) like this:
-    - read initial values of trigger input (9.a via `ChimeraTK::VariableNetworkNode::initialValueType()`)
+    - read initial values of trigger input (9.a via `ChimeraTK::VariableNetworkNode::initialValueUpdateMode()`)
     - begin loop
-    - read inputs via `ChimeraTK::TransferGroup`
+    - read data inputs via `ChimeraTK::TransferGroup`
     - write outputs
+    - read trigger
     - cycle loop
   - 9.d is covered by the `ChimeraTK::ExceptionHandlingDecorator`. It is important that `ChimeraTK::NDRegisterAccessor` throws only in `TransferElement::postRead()` (see implementation section for the `NDRegisterAccessor`), since otherwise the decorator cannot catch the exceptions due to the `TransferGroup`.
 
@@ -181,7 +183,8 @@ All points are also covered by @ref exceptionHandlingDesign.
 
 ### ApplicationModule / EntityOwner ###
 
-- 3. is not properly implemented, `faultCounter` starts at 0. The correct implementation should increase the counter in `EntityOwner::registerAccessor()` and decrease it in `EntityOwner::unregisterAccessor()` (sorry for the confusing function names...).
+- 3. is not properly implemented, the `faultCounter` variable itself is currently part of the EntitiyOwner. It will be moved to a helper class, so multiple instances can be used (needed for the TriggerFanOut).
+It is the responsibility of the decorators which manipulate the DataFaultCounter to increase the counter when they come up with faulty data in the inital state (see @ref spec_dataValidityPropagation).
 
 ### TriggerFanOut ###
 
@@ -206,8 +209,9 @@ Some points are duplicates with @ref exceptionHandlingDesign.
 
 ### VariableNetworkNode ###
 
-- Rename `ChimeraTK::VariableNetworkNode::hasInitialValue()` into `ChimeraTK::VariableNetworkNode::initialValueType()`
-- Remove data member storing the presence of an initial value, this is now always the case. Also change `ChimeraTK::VariableNetworkNode::initialValueType()` accordingly.
+- Rename `ChimeraTK::VariableNetworkNode::hasInitialValue()` into `ChimeraTK::VariableNetworkNode::initialValueUpdateMode()`, and change the return type to `ChimeraTK::UpdateMode`. Remove the InitialValueMode enum.
+- Remove data member storing the presence of an initial value, this is now always the case. Change `ChimeraTK::VariableNetworkNode::initialValueType()` accordingly.
+- Document cleanly that the initialValueUpdateMode is different from the normal update mode as described in 8b.
 
 ### ControlSystemAdapter ###
 
@@ -222,3 +226,4 @@ Some points are duplicates with @ref exceptionHandlingDesign.
 
 - Documentation of ControlSystemAdapter should mention that implementations must take care about 5.
 - Documentation for ApplicationModule should mention 7.
+- Documentation of VariableNetworkNode::initialValueUpdateMode()

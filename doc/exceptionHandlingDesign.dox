@@ -66,7 +66,7 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 
 - 2.6 The exception is received in the DeviceModule thread
   - 2.6.1 deviceError.status will be set to 1. From this point on, all ExceptionHandlingDecorators for this device must block all read and write operations (see also 2.2 and 2.3.6).
-  - 2.6.2 The thread goes back to 2.2.1 and tries to re-open the device.
+  - 2.6.2 The thread goes back to 2.3.1 and tries to re-open the device.
 
 
 <b>3. (*) Comments</b>
