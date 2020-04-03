@@ -63,6 +63,7 @@ See @ref exceptionHandlingDesign.
 
 * to 2.1 The MetaDataPropagatingRegisterDecorator also propagates the version number, not only the data validity flag. Hence it's not called DataValidityPropagatingRegisterDecorator.
 * to 2.3.3 If there would be some outputs which are still valid if a particular input is faulty it means that they are not connected to that input. This usualy is an indicator that the module is doing unrelated things and should be split.
+* to 2.3.3 A change of the data validity in the DataFaultCounter does not automatically change the validity on all outputs. A module might not always write all of its outputs. If the DataFaultCounter reports 'faulty', those outputs which are not written stay valid. This is correct because their calculation was not affected by the faulty data yet. And if an output which has faulty data is not updated when the data validity goes back to 'ok' it also stays 'faulty', which is correct as well.
 
 
 
