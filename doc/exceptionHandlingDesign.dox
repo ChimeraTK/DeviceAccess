@@ -86,9 +86,9 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - 2.4.1 writeWithoutErrorBlocking is not mentioned because it never blocks. Although blocked by different mechanisms read/readNonBlocking/readLatest behave the same:
   - read is either the second read call which is expected to deliver the next value, or any of the three are still waiting for the initial value. In any case they have to (re-)try reading.
 - 2.4.2.1 Basically after each update of the recovery accessor there has to be a valid write, or an exception has to be reported to the DeviceModule, to make sure the value is seen by the device (unless the recovery accessor is updated before this happens).
-- 2.5.1 incrementDataInvalidCounter() is called. See \link spec_dataValidityPropagation \endlink.
+- 2.5.1 increment the DataFaultCounter. See \link spec_dataValidityPropagation \endlink.
 - 2.5.3 The RecoveryAccessor has been updated before the failed write attempt and will write the value once the device has recovered.
-- 2.6.2 The backend has to take care that all operations, also the reads with "waitForNewData", terminate when an exception is thrown, so recovery can take place (see FIXME).
+- 2.6.2 The backend has to take care that all operations, also the reads with "waitForNewData", terminate when an exception is thrown, so recovery can take place (see 3.6).
 
 <b>Asynchronous read</b>
 - The transfer future in readAsync() behaves like the normal read:
@@ -263,6 +263,11 @@ As a consequence a copy has to be created whenever the data is written to the de
 
 - 11.19 In 5.2.1: Exceptions are caught in doXxxTransfer instead of doPostXxx.
 - 11.20 In 5.3.1.2, 5.3.2.1: Decoration of doXxxTransfer does not acquire the lock (which does not even exist yet, see 4.2.3)
+
+- 11.21 In 3.2: Decorators might have to try-catch because they usually can only do their task after calling the delegated postXxx.
+- 11.22 In 3.4: The TransferType is not known. Needs to be implemented in TransferElement
+- 11.23 In 3.5: PostRead is currently skipped if readNonBlocking or readLatest does not have new data
+- 11.24 In 3.6: The waitForNewData calls in the DoocsBackend (using zmq) are currently not interruptible
 
 
 
