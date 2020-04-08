@@ -176,7 +176,11 @@ All points are also covered by @ref exceptionHandlingDesign.
 - Exceptions are currently thrown in the wrong place (see implementation section for the NDRegisterAccessor). A possible implementation to help backends complying with this rule would be:
   - Introduce non-virtual `TransferElement::readTransfer()` etc, i.e. all functions like `do[...]Transfer[...]()` should have non-virtual pendants without `do`.
   - These new functions will call the actual `do[...]Transfer[...]()` function, but place a try-catch-block around to catch all ChimeraTK exceptions
-  - The exceptions are stored and operation is continued. In case of boolean return values (`doReadTransferNonBlocking()`, doReadTransferLatest()` and `doWriteTransfer()`), the value for success must be returned (`true` for read and `false` for write), to make sure the corresponding post-action is executed.
+  - The exceptions are stored and operation is continued. In case of boolean return values correct values must be implemented:
+    - `doReadTransferNonBlocking()`and `doReadTransferLatest()` must return false (there was no new data)
+    - `doWriteTransfer()` shall return true (dataLost), except for the ExceptionHandlingDecorator.
+        It should return true only if the data of the recovery accessor is replaced and the previous value has not been written to the hardware.
+  - `postRead()` and `postWrite()` must always be called. It currently depends on the boolean return value if there is one. Instead this value has to be handed to `postRead()` and  `postWrite()` as an argument. Only the implementation can decide what it has to do and what can be skipped.
   - With `TransferElement::postRead()` resp. `TransferElement::postWrite()` non-virtual wrappers for the post-actions already exist. In these functions, the stored exception should be thrown.
   - All decorators and decorator-like accessors must be changed to call always the (new or existing) non-virtual functions in their virtual `do[...]` functions. This applies to both the transfer functions and the pre/post actions (for the latter it should be already the case).
   - It is advisable to add an assert that no unthrown exception is present before storing a new exception, to prevent that exceptions might get lost due to errors in the business logic.
