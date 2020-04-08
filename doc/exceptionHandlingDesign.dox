@@ -33,7 +33,8 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 - 2.1. The application always starts with all devices as closed and initial value for deviceError.status is set to 1. The DeviceModule takes care that ExceptionHandlingDecorators do not perform any read or write operations, but block. This must happen before running any prepare() of an ApplicationModule, where the first write calls to ExceptionHandlingDecorators are done.
 
 - 2.2 In ApplicationModule::prepare() some initial values (and constants) are written. As the ExceptionHandlingDecorator must not perform the actual write at this point, it will put the value into the dataRecoveryAccesssor and report an exception to the DeviceModule.
-  - 2.2.3 Although ApplicationModule and fanout threads start after the device module threads, the application is now asynchronous and read or write operations can already take place in the main loops, even if the device is not ready yet (it might actually be broken). All read and write operations are blocked buy the ExceptionHandlingDecorators at this point.
+
+- Between 2.2 and 2.3 the application goes into multi-threaded mode. Although ApplicationModule and fanout threads start after the device module threads, the application is now asynchronous and read or write operations can already take place in the main loops, even if the device is not ready yet (it might actually be broken). All read and write operations are blocked buy the ExceptionHandlingDecorators at this point.
 
 - 2.3 The device module thread starts.
   - 2.3.1 The DeviceModule tries to open the device until it succeeds.(*)
