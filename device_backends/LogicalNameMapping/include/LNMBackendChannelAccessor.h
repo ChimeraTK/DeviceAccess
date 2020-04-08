@@ -94,7 +94,10 @@ namespace ChimeraTK {
       return true;
     }
 
-    void doPreRead() override { _accessor->preRead(); }
+    void doPreRead() override {
+      // FIXME
+      _accessor->preRead(TransferType::read);
+    }
 
     void doPostRead() override {
       _accessor->postRead();

@@ -39,7 +39,9 @@ namespace ChimeraTK { namespace LNMBackend {
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
         const std::map<std::string, std::string>& parameters);
 
-    void doPreRead() override { _target->preRead(); }
+    void doPreRead() override { 
+      // FIXME
+      _target->preRead(TransferType::read); }
 
     void doPostRead() override;
 

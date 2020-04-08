@@ -118,7 +118,7 @@ namespace ChimeraTK {
         return;
       }
       this->readTransactionInProgress = false;
-      preRead();
+      preRead(TransferType::read);
       doReadTransfer(TransferType::read);
       postRead();
     }
@@ -145,7 +145,7 @@ namespace ChimeraTK {
         }
       }
       this->readTransactionInProgress = false;
-      preRead();
+      preRead(TransferType::readNonBlocking);
       bool ret = doReadTransferNonBlocking();
       if(ret) postRead();
       return ret;
@@ -167,7 +167,7 @@ namespace ChimeraTK {
         }
       }
       this->readTransactionInProgress = false;
-      preRead();
+      preRead(TransferType::readLatest);
       bool ret2 = doReadTransferLatest();
       if(ret2) postRead();
       return ret || ret2;
@@ -202,7 +202,7 @@ namespace ChimeraTK {
       if(!hasActiveFuture) {
         // call preRead
         this->readTransactionInProgress = false;
-        this->preRead();
+        this->preRead(TransferType::readAsync);
 
         // initiate asynchronous transfer and return future
         activeFuture = doReadTransferAsync();
@@ -318,7 +318,7 @@ namespace ChimeraTK {
      *
      *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly on the
      *  underlying accessor. */
-    void preRead() {
+    void preRead(TransferType type) {
       if(readTransactionInProgress) return;
       doPreRead();
       readTransactionInProgress = true;

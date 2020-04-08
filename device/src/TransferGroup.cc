@@ -20,10 +20,9 @@ namespace ChimeraTK {
 
   void TransferGroup::read() {
     for(auto& elem : highLevelElements) {
-      elem->preRead();
+      elem->preRead(TransferType::read);
     }
     for(auto& elem : lowLevelElements) {
-      // FIXME
       elem->doReadTransfer(TransferType::read);
     }
     for(auto& elem : copyDecorators) {
