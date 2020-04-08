@@ -45,9 +45,14 @@ namespace ChimeraTK {
    * with the last known valid data, for example.
    */
   enum class DataValidity {
-    ok, /// The data is considered valid
+    ok,    /// The data is considered valid
     faulty /// The data is not considered valid
   };
+
+  /**
+   * @brief Used to indicate the applicable opereation on a Transferelement.
+   */
+  enum class TransferType { read, readNonBlocking, readLatest, readAsync, write, writeDestructively };
 
   using ChimeraTK::TransferFuture;
 
