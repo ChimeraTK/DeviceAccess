@@ -10,6 +10,7 @@
 #include "NumericAddressedBackend.h"
 #include "RegisterInfoMap.h"
 #include "SyncNDRegisterAccessor.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -58,15 +59,17 @@ namespace ChimeraTK {
 
     ~NumericAddressedBackendMuxedRegisterAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override;
+    void doReadTransfer(TransferType type) override;
 
     bool doReadTransferNonBlocking() override {
-      doReadTransfer();
+      //FIXME
+      doReadTransfer(TransferType::read);
       return true;
     }
 
     bool doReadTransferLatest() override {
-      doReadTransfer();
+      //FIXME
+      doReadTransfer(TransferType::read);
       return true;
     }
 
@@ -275,7 +278,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransfer() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransfer(TransferType /*type*/) {
     _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
   }
 

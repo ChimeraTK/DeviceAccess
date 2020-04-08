@@ -63,7 +63,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
       return activeFuture;
     }
 
-    void doReadTransfer() override { doReadTransferAsync().wait(); }
+    void doReadTransfer(TransferType) override { doReadTransferAsync().wait(); }
 
     bool doReadTransferNonBlocking() override { return true; }
 

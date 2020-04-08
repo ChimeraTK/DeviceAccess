@@ -13,6 +13,7 @@
 #include "Device.h"
 #include "LogicalNameMappingBackend.h"
 #include "SyncNDRegisterAccessor.h"
+#include "TransferElement.h"
 #include "TwoDRegisterAccessor.h"
 
 namespace ChimeraTK {
@@ -74,7 +75,7 @@ namespace ChimeraTK {
 
     ~LNMBackendChannelAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override { _accessor->doReadTransfer(); }
+    void doReadTransfer(TransferType type) override { _accessor->doReadTransfer(type); }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
       throw ChimeraTK::logic_error("Writing to channel-type registers of logical "
@@ -82,12 +83,14 @@ namespace ChimeraTK {
     }
 
     bool doReadTransferNonBlocking() override {
-      doReadTransfer();
+      // FIXME
+      doReadTransfer(TransferType::read);
       return true;
     }
 
     bool doReadTransferLatest() override {
-      doReadTransfer();
+      // FIXME
+      doReadTransfer(TransferType::read);
       return true;
     }
 

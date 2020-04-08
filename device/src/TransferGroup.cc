@@ -10,6 +10,7 @@
 #include "Exception.h"
 #include "NDRegisterAccessorAbstractor.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 #include "TransferElementAbstractor.h"
 #include <iostream>
 
@@ -22,7 +23,8 @@ namespace ChimeraTK {
       elem->preRead();
     }
     for(auto& elem : lowLevelElements) {
-      elem->doReadTransfer();
+      // FIXME
+      elem->doReadTransfer(TransferType::read);
     }
     for(auto& elem : copyDecorators) {
       elem->postRead();

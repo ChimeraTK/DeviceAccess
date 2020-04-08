@@ -41,7 +41,7 @@ namespace ChimeraTK {
 
     virtual ~NumericAddressedLowLevelTransferElement() {}
 
-    void doReadTransfer() override { _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes); }
+    void doReadTransfer(TransferType) override { _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes); }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
       _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
@@ -50,12 +50,14 @@ namespace ChimeraTK {
     }
 
     bool doReadTransferNonBlocking() override {
-      doReadTransfer();
+      // FIXME
+      doReadTransfer(TransferType::read);
       return true;
     }
 
     bool doReadTransferLatest() override {
-      doReadTransfer();
+      // FIXME
+      doReadTransfer(TransferType::read);
       return true;
     }
 

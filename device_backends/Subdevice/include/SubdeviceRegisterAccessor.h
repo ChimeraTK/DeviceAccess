@@ -27,7 +27,7 @@ namespace ChimeraTK {
 
     ~SubdeviceRegisterAccessor() override;
 
-    void doReadTransfer() override;
+    void doReadTransfer(TransferType type) override;
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 

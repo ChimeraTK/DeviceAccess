@@ -14,6 +14,7 @@
 #include "FixedPointConverter.h"
 #include "LogicalNameMappingBackend.h"
 #include "SyncNDRegisterAccessor.h"
+#include "TransferElement.h"
 #include "TwoDRegisterAccessor.h"
 
 namespace ChimeraTK {
@@ -78,9 +79,9 @@ namespace ChimeraTK {
 
     ~LNMBackendBitAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override {
+    void doReadTransfer(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      _accessor->doReadTransfer();
+      _accessor->doReadTransfer(type);
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
