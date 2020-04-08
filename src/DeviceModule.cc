@@ -380,7 +380,9 @@ namespace ChimeraTK {
           { // scope for the lock guard
             boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
             for(auto& te : writeRecoveryOpen) {
-              te->write();
+              if(te->getVersionNumber() != VersionNumber{nullptr}) {
+                te->write();
+              }
             }
           } // end of scope for the lock guard
         }
