@@ -74,7 +74,7 @@ namespace ChimeraTK {
 
     ~LNMBackendChannelAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override { _accessor->doReadTransfer(); }
+    void doReadTransfer() override { _accessor->readTransfer(); }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
       throw ChimeraTK::logic_error("Writing to channel-type registers of logical "
