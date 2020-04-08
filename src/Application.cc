@@ -1006,8 +1006,13 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           impl->write();
         }
         else if(consumer.getType() == NodeType::Device) {
-          auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+          // we register the required accessor as a recovery accessor. This is just a bare RegisterAccessor without any decorations directly from the backend.
+          if(deviceMap.count(consumer.getDeviceAlias()) == 0) {
+            deviceMap[consumer.getDeviceAlias()] =
+                ChimeraTK::BackendFactory::getInstance().createBackend(consumer.getDeviceAlias());
+          }
+          auto impl = deviceMap[consumer.getDeviceAlias()]->getRegisterAccessor<UserType>(
+              consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
           // find the right DeviceModule for this alias name
           DeviceModule* devmod = nullptr;
@@ -1018,8 +1023,8 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             }
           }
           assert(devmod != nullptr);
-          // register feeder to be written after the device has been opened
-          devmod->writeRecoveryOpen.push_back(impl);
+
+          devmod->addRecoveryAccessor(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
