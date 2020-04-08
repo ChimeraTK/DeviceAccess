@@ -89,9 +89,9 @@ namespace ChimeraTK {
       return _accessor->doWriteTransfer(versionNumber);
     }
 
-    bool doReadTransferNonBlocking() override {
+    bool doReadTransferNonBlocking(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->doReadTransferNonBlocking();
+      return _accessor->doReadTransferNonBlocking(type);
     }
 
     bool doReadTransferLatest() override {

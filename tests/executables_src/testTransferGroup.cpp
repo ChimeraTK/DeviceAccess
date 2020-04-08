@@ -518,9 +518,9 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     NDRegisterAccessorDecorator<T>::doReadTransfer(type);
   }
 
-  bool doReadTransferNonBlocking() override {
+  bool doReadTransferNonBlocking(TransferType type) override {
     nReadNonBlocking++;
-    return NDRegisterAccessorDecorator<T>::doReadTransferNonBlocking();
+    return NDRegisterAccessorDecorator<T>::doReadTransferNonBlocking(type);
   }
 
   bool doReadTransferLatest() override {

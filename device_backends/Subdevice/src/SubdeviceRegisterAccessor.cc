@@ -53,9 +53,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::doReadTransferNonBlocking() {
-    // FIXME
-    doReadTransfer(TransferType::read);
+  bool SubdeviceRegisterAccessor::doReadTransferNonBlocking(TransferType type) {
+    doReadTransfer(type);
     return true;
   }
 

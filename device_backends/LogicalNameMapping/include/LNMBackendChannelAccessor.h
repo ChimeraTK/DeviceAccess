@@ -82,9 +82,8 @@ namespace ChimeraTK {
                                    "name mapping devices is not supported.");
     }
 
-    bool doReadTransferNonBlocking() override {
-      // FIXME
-      doReadTransfer(TransferType::read);
+    bool doReadTransferNonBlocking(TransferType type) override {
+      doReadTransfer(type);
       return true;
     }
 
