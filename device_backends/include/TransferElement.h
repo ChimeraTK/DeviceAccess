@@ -118,17 +118,17 @@ namespace ChimeraTK {
       postRead();
     }
 
-    /** Read the next value, if available in the input buffer.
+    /** 
+     *  Read the next value, if available in the input buffer.
      *
-     *  If AccessMode::wait_for_new_data was set, this function returns
-     * immediately and the return value indicated if a new value was available
-     * (<code>true</code>) or not (<code>false</code>).
+     *  If AccessMode::wait_for_new_data was set, this function returns immediately and the return value indicated if
+     *  a new value was available (<code>true</code>) or not (<code>false</code>).
      *
-     *  If AccessMode::wait_for_new_data was not set, this function is identical
-     * to read(), which will still return quickly. Depending on the actual
-     * transfer implementation, the backend might need to transfer data to obtain
-     *  the current value before returning. Also this function is not guaranteed
-     * to be lock free. The return value will be always true in this mode. */
+     *  If AccessMode::wait_for_new_data was not set, this function is identical to read(), which will still return 
+     *  quickly. Depending on the actual transfer implementation, the backend might need to transfer data to obtain
+     *  the current value before returning. Also this function is not guaranteed to be lock free. The return value will
+     *  be always true in this mode.
+     */
     bool readNonBlocking() {
       if(hasActiveFuture) {
         if(activeFuture.hasNewData()) {
@@ -270,43 +270,94 @@ namespace ChimeraTK {
      * to write and isWriteable() is not true.*/
     virtual bool isWriteable() const = 0;
 
-    /** Read the data from the device but do not fill it into the user buffer of
-     * this TransferElement. Calling this function after preRead() and followed by
-     * postRead() is exactly equivalent to a call to just read().
+   private:
+    /**
+     *  Helper for exception handling in the transfer functions, to avoid code duplication.
+     */
+    template<typename Callable>
+    bool handleTransferException(Callable function) {
+      bool returnValue = false;
+      try {
+        returnValue = function();
+      }
+      catch(ChimeraTK::runtime_error& e) {
+        hasSeenException = true;
+        activeException = e;
+      }
+      return returnValue;
+    }
+
+   public:
+    /** 
+     *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
+     *  must be called after preRead() and before postRead(). If the accessor has the AccessMode::wait_for_new_data
+     *  flag, the function will block until new data has been pushed by the sender.
      *
-     *  Implementation note: This function must return within ~1 second after
-     * boost::thread::interrupt() has been called on the thread calling this
-     * function. */
+     *  This function internally calles doReadTransfer(), which is implemented by the backend. runtime_error exceptions
+     *  thrown in doReadTransfer() are caught and rethrown in postRead().
+     */
+    void readTransfer() {
+      handleTransferException([this] {
+        doReadTransfer();
+        return true; // need to return something, is ignored later
+      });
+    }
+
+   protected:
+    /** 
+     *  Implementation version of readTransfer(). This function must be implemented by the backend.
+     *  
+     *  Implementation notes:
+     *  - This function must return within ~1 second after boost::thread::interrupt() has been called on the thread
+     *    calling this function.
+     *  - Decorators must delegate the call to readTransfer() of the decorated target.
+     */
     virtual void doReadTransfer() = 0;
 
-    /** Read the data from the device without blocking but do not fill it into the
-     * user buffer of this TransferElement. Calling this function after preRead()
-     * and followed by postRead() is exactly equivalent to a call to just
-     * readNonBlocking(). For the return value, see readNonBlocking().
+   public:
+    /** 
+     *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
+     *  must be called after preRead() and before postRead(). Even if the accessor has the AccessMode::wait_for_new_data
+     *  flag, this function will not block if no new data is available. For the meaning of the return value, see
+     *  readNonBlocking().
+     *
+     *  This function internally calles doReadTransfer(), which is implemented by the backend. runtime_error exceptions
+     *  thrown in doReadTransfer() are caught and rethrown in postRead().
+     */
+    bool readTransferNonBlocking() {
+      return handleTransferException([this] { return doReadTransferNonBlocking(); });
+    }
+
+   protected:
+    /** 
+     *  Implementation version of readTransferNonBlocking(). This function must be implemented by the backend.
+     *  
+     *  Implementation notes:
+     *  - Decorators must delegate the call to readTransfer() of the decorated target.
      */
     virtual bool doReadTransferNonBlocking() = 0;
 
     /** Read the latest data from the device without blocking but do not fill it
-     * into the user buffer of this TransferElement. Calling this function after
-     * preRead() and followed by postRead() is exactly equivalent to a call to
-     * just readLatest(). For the return value, see readNonBlocking().
+     *  into the user buffer of this TransferElement. Calling this function after
+     *  preRead() and followed by postRead() is exactly equivalent to a call to
+     *  just readLatest(). For the return value, see readNonBlocking().
      */
     virtual bool doReadTransferLatest() = 0;
 
     /** Start the actual asynchronous read transfer. This function must be
-     * implemented by the backends and will be called inside readAsync(). At that
-     * point, it is guaranteed that there is no unfinished transfer still ongoing
+     *  implemented by the backends and will be called inside readAsync(). At that
+     *  point, it is guaranteed that there is no unfinished transfer still ongoing
      *  (i.e. no still-valid TransferFuture is present) and preRead() has already
-     * been called.
+     *  been called.
      *
      *  The backend must never touch the user buffer (i.e.
-     * NDRegisterAccessor::buffer_2D) inside this function, as it may only be
-     * filled inside postRead(). postRead() will get called by the TransferFuture
-     * when the user calls wait().
+     *  NDRegisterAccessor::buffer_2D) inside this function, as it may only be
+     *  filled inside postRead(). postRead() will get called by the TransferFuture
+     *  when the user calls wait().
      *
      *  Note: The TransferFuture returned by this function must have been
-     * constructed with this TransferElement as the transferElement in the
-     * constructor. Otherwise postRead() will not be properly called! */
+     *  constructed with this TransferElement as the transferElement in the
+     *  constructor. Otherwise postRead() will not be properly called! */
     virtual TransferFuture doReadTransferAsync() = 0;
 
     /** Perform any pre-read tasks if necessary.
@@ -315,6 +366,7 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preRead() {
       if(readTransactionInProgress) return;
+      assert(!hasSeenException);
       doPreRead();
       readTransactionInProgress = true;
     }
@@ -330,12 +382,12 @@ namespace ChimeraTK {
 
    public:
     /** Transfer the data from the device receive buffer into the user buffer,
-     * while converting the data into the user data format if needed.
+     *  while converting the data into the user data format if needed.
      *
      *  Called by read() etc. Also the TransferGroup will call this function after
-     * a read was executed directly on the underlying accessor. This function must
-     * be implemented to extract the read data from the underlying accessor and
-     * expose it to the user. */
+     *  a read was executed directly on the underlying accessor. This function must
+     *  be implemented to extract the read data from the underlying accessor and
+     *  expose it to the user. */
     void postRead() {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
@@ -374,6 +426,7 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preWrite() {
       if(writeTransactionInProgress) return;
+      assert(!hasSeenException);
       doPreWrite();
       writeTransactionInProgress = true;
     }
@@ -591,6 +644,12 @@ namespace ChimeraTK {
     /// last future returned by doReadTransferAsync() (valid if hasActiveFuture ==
     /// true)
     TransferFuture activeFuture;
+
+    /// Flag whether doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
+    bool hasSeenException{false};
+
+    /// Exception to be rethrown in postXXX() in case hasSeenException == true
+    ChimeraTK::runtime_error activeException{"No exception"};
   };
 
 } /* namespace ChimeraTK */
