@@ -9,6 +9,7 @@
 #define CHIMERATK_COPY_REGISTER_DECORATOR_H
 
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -40,7 +41,8 @@ namespace ChimeraTK {
     }
 
     void doPostRead() override {
-      _target->postRead();
+      // FIXME
+      _target->postRead(TransferType::read);
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
     }
 

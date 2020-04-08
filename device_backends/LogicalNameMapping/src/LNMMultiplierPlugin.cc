@@ -3,6 +3,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -59,7 +60,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void MultiplierPluginDecorator<UserType>::doPostRead() {
-    _target->postRead();
+    // FIXME
+    _target->postRead(TransferType::read);
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       for(size_t k = 0; k < _target->getNumberOfSamples(); ++k) {
         buffer_2D[i][k] = numericToUserType<UserType>(_target->accessData(i, k) * _factor);

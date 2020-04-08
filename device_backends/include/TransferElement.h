@@ -120,7 +120,7 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preRead(TransferType::read);
       doReadTransfer(TransferType::read);
-      postRead();
+      postRead(TransferType::read);
     }
 
     /** Read the next value, if available in the input buffer.
@@ -147,7 +147,7 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preRead(TransferType::readNonBlocking);
       bool ret = doReadTransferNonBlocking();
-      if(ret) postRead();
+      if(ret) postRead(TransferType::readNonBlocking);
       return ret;
     }
 
@@ -169,7 +169,7 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preRead(TransferType::readLatest);
       bool ret2 = doReadTransferLatest();
-      if(ret2) postRead();
+      if(ret2) postRead(TransferType::readLatest);
       return ret || ret2;
     }
 
@@ -341,7 +341,7 @@ namespace ChimeraTK {
      * a read was executed directly on the underlying accessor. This function must
      * be implemented to extract the read data from the underlying accessor and
      * expose it to the user. */
-    void postRead() {
+    void postRead(TransferType type) {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
       doPostRead();

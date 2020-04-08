@@ -26,10 +26,10 @@ namespace ChimeraTK {
       elem->doReadTransfer(TransferType::read);
     }
     for(auto& elem : copyDecorators) {
-      elem->postRead();
+      elem->postRead(TransferType::read);
     }
     for(auto& elem : highLevelElements) {
-      elem->postRead();
+      elem->postRead(TransferType::read);
     }
   }
 

@@ -65,7 +65,8 @@ namespace ChimeraTK {
       }
 
       void doPostRead() override {
-        _target->postRead();
+        // FIXME
+        _target->postRead(TransferType::read);
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 

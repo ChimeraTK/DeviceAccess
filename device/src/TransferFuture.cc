@@ -15,7 +15,8 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       goto retry;
     }
-    _transferElement->postRead();
+    // FIXME
+    _transferElement->postRead(TransferType::read);
   }
 
   bool TransferFuture::hasNewData() {

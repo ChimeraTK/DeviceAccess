@@ -184,7 +184,8 @@ namespace ChimeraTK {
       _target->preRead(TransferType::read); }
 
     void doPostRead() override {
-      _target->postRead();
+      // FIXME
+      _target->postRead(TransferType::read);
       for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
         _fixedPointConverter.template vectorToCooked<UserType>(
             _target->accessChannel(i).begin(), _target->accessChannel(i).end(), buffer_2D[i].begin());

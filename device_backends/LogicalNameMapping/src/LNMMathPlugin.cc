@@ -5,6 +5,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -116,7 +117,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void MathPluginDecorator<UserType>::doPostRead() {
-    _target->postRead();
+    // FIXME
+    _target->postRead(TransferType::read);
 
     // update data pointer
     valueView->rebase(_target->accessChannel(0).data());

@@ -100,7 +100,8 @@ namespace ChimeraTK {
     }
 
     void doPostRead() override {
-      _accessor->postRead();
+      // FIXME
+      _accessor->postRead(TransferType::read);
       _accessor->accessChannel(_info->channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
     }
 
