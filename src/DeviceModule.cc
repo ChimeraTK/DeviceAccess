@@ -294,13 +294,16 @@ namespace ChimeraTK {
           }
         }
       }
+
       // The device was successfully opened, try to initialise it
       try {
         for(auto& initHandler : initialisationHandlers) {
           initHandler(this);
         }
-        for(auto& te : writeAfterOpen) {
-          te->write();
+        for(auto& te : writeRecoveryOpen) {
+          if(te->getVersionNumber() != VersionNumber{nullptr}) {
+            te->write();
+          }
         }
       }
       catch(ChimeraTK::runtime_error& e) {

@@ -1019,7 +1019,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           }
           assert(devmod != nullptr);
           // register feeder to be written after the device has been opened
-          devmod->writeAfterOpen.push_back(impl);
+          devmod->writeRecoveryOpen.push_back(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
