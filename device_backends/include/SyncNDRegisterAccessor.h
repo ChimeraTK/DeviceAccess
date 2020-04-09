@@ -57,7 +57,7 @@ namespace ChimeraTK {
       shutdownCalled = true;
     }
 
-    TransferFuture doReadTransferAsync(TransferType type) {
+    TransferFuture doReadTransferAsync() {
       // create future_queue if not already created and continue it to enusre
       // postRead is called (in the user thread, so we use the deferred launch
       // policy)
@@ -68,9 +68,10 @@ namespace ChimeraTK {
       }
 
       // launch doReadTransfer in separate thread
-      readAsyncThread = boost::thread([=] {
+      readAsyncThread = boost::thread([this] {
         try {
-          this->doReadTransfer(type);
+        //FIXME
+          this->doReadTransfer(TransferType::read);
         }
         catch(...) {
           this->notifications.push_exception(std::current_exception());

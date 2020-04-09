@@ -129,7 +129,7 @@ namespace ChimeraTK {
 
     bool doReadTransferLatest(TransferType type) override { return _target->doReadTransferLatest(type); }
 
-    TransferFuture doReadTransferAsync(TransferType) override { return TransferFuture(_target->readAsync(), this); }
+    TransferFuture doReadTransferAsync() override { return TransferFuture(_target->readAsync(), this); }
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
 
