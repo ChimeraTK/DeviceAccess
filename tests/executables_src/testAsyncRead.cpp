@@ -49,7 +49,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
     ~Accessor() override {}
 
-    TransferFuture doReadTransferAsync(TransferType type) override {
+    TransferFuture doReadTransferAsync(TransferType) override {
       // create future_queue if not already created and continue it to enusre
       // postRead is called (in the user thread, so we use the deferred launch
       // policy)
