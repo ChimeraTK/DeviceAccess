@@ -72,7 +72,7 @@ namespace ChimeraTK { namespace LNMBackend {
     void doPreWrite(TransferType) override {}
 
     bool doWriteTransfer(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override;
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
+    bool doWriteTransferDestructively(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override;
 
     void doPostWrite(TransferType) override {}
 
@@ -98,9 +98,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   bool MonostableTriggerPluginDecorator<UserType>::doWriteTransferDestructively(
-      ChimeraTK::VersionNumber versionNumber) {
-    // FIXME
-    return doWriteTransfer(TransferType::read, versionNumber);
+      TransferType type, ChimeraTK::VersionNumber versionNumber) {
+    return doWriteTransfer(type, versionNumber);
   }
 
   /********************************************************************************************************************/
