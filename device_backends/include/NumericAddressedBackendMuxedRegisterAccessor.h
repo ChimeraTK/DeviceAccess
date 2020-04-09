@@ -75,7 +75,7 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override;
 
-    void doPreWrite() override;
+    void doPreWrite(TransferType type) override;
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType>>(other);
@@ -303,7 +303,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite(TransferType) {
     uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
       for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {

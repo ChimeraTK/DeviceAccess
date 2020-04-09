@@ -379,7 +379,7 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preWrite(TransferType type) {
       if(writeTransactionInProgress) return;
-      doPreWrite();
+      doPreWrite(type);
       writeTransactionInProgress = true;
     }
 
@@ -390,7 +390,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPreWrite() {}
+    virtual void doPreWrite(TransferType) {}
 
    public:
     /** Perform any post-write cleanups if necessary. If during preWrite() e.g.

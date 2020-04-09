@@ -40,7 +40,7 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType type) override;
 
-    void doPreWrite() override;
+    void doPreWrite(TransferType type) override;
 
     void doPostWrite() override;
 

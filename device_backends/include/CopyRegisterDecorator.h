@@ -36,7 +36,7 @@ namespace ChimeraTK {
       }
     }
 
-    void doPreWrite() override {
+    void doPreWrite(TransferType) override {
       throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.");
     }
 
