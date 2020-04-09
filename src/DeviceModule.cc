@@ -294,13 +294,16 @@ namespace ChimeraTK {
           }
         }
       }
+
       // The device was successfully opened, try to initialise it
       try {
         for(auto& initHandler : initialisationHandlers) {
           initHandler(this);
         }
-        for(auto& te : writeAfterOpen) {
-          te->write();
+        for(auto& te : writeRecoveryOpen) {
+          if(te->getVersionNumber() != VersionNumber{nullptr}) {
+            te->write();
+          }
         }
       }
       catch(ChimeraTK::runtime_error& e) {
@@ -377,7 +380,9 @@ namespace ChimeraTK {
           { // scope for the lock guard
             boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
             for(auto& te : writeRecoveryOpen) {
-              te->write();
+              if(te->getVersionNumber() != VersionNumber{nullptr}) {
+                te->write();
+              }
             }
           } // end of scope for the lock guard
         }
