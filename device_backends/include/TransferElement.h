@@ -711,6 +711,7 @@ namespace ChimeraTK {
     friend class TransferGroup;
     friend class TransferFuture;
 
+   private:
     /** Flag whether a read transaction is in progress. This flag will be set in
      * preRead() and cleared in postRead() and is used to prevent multiple calls
      * to these functions during a single transfer. It should also be reset before
@@ -719,16 +720,18 @@ namespace ChimeraTK {
     bool readTransactionInProgress{false};
 
     /** Flag whether a write transaction is in progress. This flag is similar to
-     * readTransactionInProgress but affects preWrite() and postWrite(). */
+     *  readTransactionInProgress but affects preWrite() and postWrite(). */
     bool writeTransactionInProgress{false};
 
     /// Flag whether there is a valid activeFuture or not
     bool hasActiveFuture{false};
 
-    /// last future returned by doReadTransferAsync() (valid if hasActiveFuture ==
-    /// true)
+   protected:
+    /// Last future returned by doReadTransferAsync() (valid if hasActiveFuture == true). This is currently used by some
+    /// implementations to store the reused future once created. This logic should be changed, see issue #124.
     TransferFuture activeFuture;
 
+   private:
     /// Flag whether doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
     bool hasSeenException{false};
 
