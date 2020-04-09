@@ -402,7 +402,7 @@ namespace ChimeraTK {
     void postWrite(TransferType type) {
       if(!writeTransactionInProgress) return;
       writeTransactionInProgress = false;
-      doPostWrite();
+      doPostWrite(type);
     }
 
     /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
@@ -412,7 +412,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostWrite() {}
+    virtual void doPostWrite(TransferType) {}
 
    public:
     /** Write the data to device. The return value is true, old data was lost on

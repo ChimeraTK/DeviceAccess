@@ -42,7 +42,7 @@ namespace ChimeraTK {
 
     void doPreWrite(TransferType type) override;
 
-    void doPostWrite() override;
+    void doPostWrite(TransferType type) override;
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override;
 

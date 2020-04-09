@@ -127,10 +127,9 @@ namespace ChimeraTK {
       _accessor->preWrite(type);
     }
 
-    void doPostWrite() override {
+    void doPostWrite(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      // FIXME
-      _accessor->postWrite(TransferType::read);
+      _accessor->postWrite(type);
     }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {

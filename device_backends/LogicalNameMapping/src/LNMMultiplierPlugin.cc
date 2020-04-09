@@ -46,8 +46,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPreWrite(TransferType type) override;
 
-    void doPostWrite() override { // FIXME 
-      _target->postWrite(TransferType::read); }
+    void doPostWrite(TransferType type) override { _target->postWrite(type); }
 
     void interrupt() override { _target->interrupt(); }
 

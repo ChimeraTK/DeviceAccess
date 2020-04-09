@@ -74,7 +74,7 @@ namespace ChimeraTK { namespace LNMBackend {
     bool doWriteTransfer(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override;
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
 
-    void doPostWrite() override {}
+    void doPostWrite(TransferType) override {}
 
     void interrupt() override { _target->interrupt(); }
 

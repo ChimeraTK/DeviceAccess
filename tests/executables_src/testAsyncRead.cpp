@@ -76,7 +76,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
     void doPreWrite(TransferType) override {}
 
-    void doPostWrite() override {}
+    void doPostWrite(TransferType) override {}
 
     void doPreRead(TransferType) override {}
 
