@@ -60,8 +60,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::doReadTransferLatest(TransferType type) {
-    doReadTransfer(type);
+  bool SubdeviceRegisterAccessor::doReadTransferLatest() {
+    // FIXME
+    doReadTransfer(TransferType::read);
     return true;
   }
 

@@ -127,7 +127,7 @@ namespace ChimeraTK {
 
     bool doReadTransferNonBlocking(TransferType type) override { return _target->doReadTransferNonBlocking(type); }
 
-    bool doReadTransferLatest(TransferType type) override { return _target->doReadTransferLatest(type); }
+    bool doReadTransferLatest() override { return _target->doReadTransferLatest(); }
 
     TransferFuture doReadTransferAsync() override { return TransferFuture(_target->readAsync(), this); }
 

@@ -34,7 +34,7 @@ namespace ChimeraTK {
 
     bool doReadTransferNonBlocking(TransferType type) override;
 
-    bool doReadTransferLatest(TransferType type) override;
+    bool doReadTransferLatest() override;
 
     void doPreRead(TransferType type) override;
 
