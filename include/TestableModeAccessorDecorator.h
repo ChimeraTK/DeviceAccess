@@ -44,14 +44,14 @@ namespace ChimeraTK {
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
-      if(!_handleWrite) return _target->doWriteTransfer(versionNumber);
+      if(!_handleWrite) return _target->writeTransfer(versionNumber);
 
       bool dataLost = false;
       if(!Application::testableModeTestLock()) {
         // may happen if first write in thread is done before first blocking read
         Application::testableModeLock("write " + this->getName());
       }
-      dataLost = _target->doWriteTransfer(versionNumber);
+      dataLost = _target->writeTransfer(versionNumber);
       if(!dataLost) {
         ++Application::getInstance().testableMode_counter;
         ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
@@ -74,14 +74,14 @@ namespace ChimeraTK {
     }
 
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
-      if(!_handleWrite) return _target->doWriteTransferDestructively(versionNumber);
+      if(!_handleWrite) return _target->writeTransferDestructively(versionNumber);
 
       bool dataLost = false;
       if(!Application::testableModeTestLock()) {
         // may happen if first write in thread is done before first blocking read
         Application::testableModeLock("write " + this->getName());
       }
-      dataLost = _target->doWriteTransferDestructively(versionNumber);
+      dataLost = _target->writeTransferDestructively(versionNumber);
       if(!dataLost) {
         ++Application::getInstance().testableMode_counter;
         ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
@@ -105,7 +105,7 @@ namespace ChimeraTK {
 
     void doReadTransfer() override {
       if(_handleRead) releaseLock();
-      _target->doReadTransfer();
+      _target->readTransfer();
     }
 
     /** Release the testableModeLock */
@@ -152,13 +152,13 @@ namespace ChimeraTK {
     }
 
     bool doReadTransferNonBlocking() override {
-      bool newData = _target->doReadTransferNonBlocking();
+      bool newData = _target->readTransferNonBlocking();
       if(!newData) return false;
       return true;
     }
 
     bool doReadTransferLatest() override {
-      bool newData = _target->doReadTransferLatest();
+      bool newData = _target->readTransferLatest();
       if(!newData) return false;
 
       // the queue has been emptied, so make sure that the testableMode_counter

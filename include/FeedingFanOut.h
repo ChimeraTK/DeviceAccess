@@ -70,17 +70,17 @@ namespace ChimeraTK {
 
     void doReadTransfer() override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
-      _returnSlave->doReadTransfer();
+      _returnSlave->readTransfer();
     }
 
     bool doReadTransferNonBlocking() override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
-      return _returnSlave->doReadTransferNonBlocking();
+      return _returnSlave->readTransferNonBlocking();
     }
 
     bool doReadTransferLatest() override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
-      return _returnSlave->doReadTransferLatest();
+      return _returnSlave->readTransferLatest();
     }
 
     void doPreRead() override {
@@ -106,7 +106,7 @@ namespace ChimeraTK {
 
     ChimeraTK::TransferFuture doReadTransferAsync() override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
-      return {_returnSlave->doReadTransferAsync(), this};
+      return {_returnSlave->readTransferAsync(), this};
     }
 
     void doPreWrite() override {
@@ -135,10 +135,10 @@ namespace ChimeraTK {
         bool ret;
         if(isFirst) {
           isFirst = false;
-          ret = slave->doWriteTransfer(versionNumber);
+          ret = slave->writeTransfer(versionNumber);
         }
         else {
-          ret = slave->doWriteTransferDestructively(versionNumber);
+          ret = slave->writeTransferDestructively(versionNumber);
         }
         if(ret) dataLost = true;
       }
@@ -148,7 +148,7 @@ namespace ChimeraTK {
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
       bool dataLost = false;
       for(auto& slave : FanOut<UserType>::slaves) {
-        bool ret = slave->doWriteTransferDestructively(versionNumber);
+        bool ret = slave->writeTransferDestructively(versionNumber);
         if(ret) dataLost = true;
       }
       return dataLost;
