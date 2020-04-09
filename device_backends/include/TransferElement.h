@@ -221,7 +221,7 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite();
+      preWrite(TransferType::write);
       bool ret = doWriteTransfer(versionNumber);
       postWrite();
       return ret;
@@ -238,7 +238,7 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite();
+      preWrite(TransferType::writeDestructively);
       bool ret = doWriteTransferDestructively(versionNumber);
       postWrite();
       return ret;
@@ -377,7 +377,7 @@ namespace ChimeraTK {
      * write will be executed directly on the underlying accessor. This function
      * implemented be used to transfer the data to be written into the
      *  underlying accessor. */
-    void preWrite() {
+    void preWrite(TransferType type) {
       if(writeTransactionInProgress) return;
       doPreWrite();
       writeTransactionInProgress = true;

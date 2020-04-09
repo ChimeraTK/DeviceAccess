@@ -40,7 +40,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("TransferGroup::write() called, but the TransferGroup is read-only.");
     }
     for(auto& elem : highLevelElements) {
-      elem->preWrite();
+      elem->preWrite(TransferType::write);
     }
     for(auto& elem : lowLevelElements) {
       elem->doWriteTransfer();

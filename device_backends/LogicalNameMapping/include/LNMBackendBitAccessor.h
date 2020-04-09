@@ -125,7 +125,8 @@ namespace ChimeraTK {
       else {
         _accessor->accessData(0) |= _bitMask;
       }
-      _accessor->preWrite();
+      // FIXME
+      _accessor->preWrite(TransferType::read);
     }
 
     void doPostWrite() override {

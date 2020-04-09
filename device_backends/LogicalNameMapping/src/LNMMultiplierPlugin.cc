@@ -76,7 +76,8 @@ namespace ChimeraTK { namespace LNMBackend {
         _target->accessData(i, k) = userTypeToNumeric<double>(buffer_2D[i][k]) * _factor;
       }
     }
-    _target->preWrite();
+    // FIXME
+    _target->preWrite(TransferType::read);
   }
 
   /********************************************************************************************************************/

@@ -232,7 +232,8 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + this->getName() +
           "': The expression returned " + std::to_string(results.count()) + " results, expect exactly one result.");
     }
-    _target->preWrite();
+    // FIXME
+    _target->preWrite(TransferType::read);
   }
 
   /********************************************************************************************************************/

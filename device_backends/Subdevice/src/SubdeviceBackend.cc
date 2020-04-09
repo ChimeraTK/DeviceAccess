@@ -9,6 +9,7 @@
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "SubdeviceRegisterAccessor.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -198,7 +199,8 @@ namespace ChimeraTK {
           _target->accessChannel(i)[j] = _fixedPointConverter.toRaw<UserType>(buffer_2D[i][j]);
         }
       }
-      _target->preWrite();
+      // FIXME
+      _target->preWrite(TransferType::read);
     }
 
     void doPostWrite() override { _target->postWrite(); }
