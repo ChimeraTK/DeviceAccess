@@ -275,16 +275,15 @@ namespace ChimeraTK {
      *  Helper for exception handling in the transfer functions, to avoid code duplication.
      */
     template<typename ReturnType, typename Callable>
-    ReturnType handleTransferException(Callable function) {
-      ReturnType returnValue = ReturnType();
+    ReturnType handleTransferException(Callable function, ReturnType returnOnException) {
       try {
-        returnValue = function();
+        return function();
       }
       catch(ChimeraTK::runtime_error& e) {
         hasSeenException = true;
         activeException = e;
+        return returnOnException;
       }
-      return returnValue;
     }
 
    public:
@@ -297,10 +296,12 @@ namespace ChimeraTK {
      *  thrown in doReadTransfer() are caught and rethrown in postRead().
      */
     void readTransfer() {
-      handleTransferException<bool>([this] {
-        doReadTransfer();
-        return true; // need to return something, is ignored later
-      });
+      handleTransferException<bool>(
+          [this] {
+            doReadTransfer();
+            return true; // need to return something, is ignored later
+          },
+          false);
     }
 
    protected:
@@ -326,7 +327,7 @@ namespace ChimeraTK {
      *  exceptions thrown in doRedoReadTransferNonBlockingadTransfer() are caught and rethrown in postRead().
      */
     bool readTransferNonBlocking() {
-      return handleTransferException<bool>([this] { return doReadTransferNonBlocking(); });
+      return handleTransferException<bool>([this] { return doReadTransferNonBlocking(); }, false);
     }
 
    protected:
@@ -350,7 +351,7 @@ namespace ChimeraTK {
      *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
      */
     bool readTransferLatest() {
-      return handleTransferException<bool>([this] { return doReadTransferLatest(); });
+      return handleTransferException<bool>([this] { return doReadTransferLatest(); }, false);
     }
 
    protected:
@@ -375,7 +376,7 @@ namespace ChimeraTK {
      *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
      */
     TransferFuture readTransferAsync() {
-      return handleTransferException<TransferFuture>([this] { return doReadTransferAsync(); });
+      return handleTransferException<TransferFuture>([this] { return doReadTransferAsync(); }, {});
     }
 
    protected:
@@ -520,7 +521,7 @@ namespace ChimeraTK {
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
     bool writeTransfer(ChimeraTK::VersionNumber versionNumber = {}) {
-      return handleTransferException<bool>([&] { return doWriteTransfer(versionNumber); });
+      return handleTransferException<bool>([&] { return doWriteTransfer(versionNumber); }, true);
     }
 
    protected:
@@ -546,7 +547,7 @@ namespace ChimeraTK {
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
     bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
-      return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); });
+      return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); }, true);
     }
 
    protected:
