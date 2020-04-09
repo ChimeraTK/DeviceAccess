@@ -9,6 +9,7 @@
 #define CHIMERATK_COPY_REGISTER_DECORATOR_H
 
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -35,12 +36,12 @@ namespace ChimeraTK {
       }
     }
 
-    void doPreWrite() override {
+    void doPreWrite(TransferType) override {
       throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.");
     }
 
-    void doPostRead() override {
-      _target->postRead();
+    void doPostRead(TransferType type) override {
+      _target->postRead(type);
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
     }
 

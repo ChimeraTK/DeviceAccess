@@ -3,6 +3,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -36,11 +37,11 @@ namespace ChimeraTK { namespace LNMBackend {
 
     bool isWriteable() const override { return false; }
 
-    void doPreWrite() override {
+    void doPreWrite(TransferType) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend ForceReadOnlyPlugin: Writing is not allowed.");
     }
 
-    void doPostWrite() override {
+    void doPostWrite(TransferType) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend ForceReadOnlyPlugin: Writing is not allowed.");
     }
   };

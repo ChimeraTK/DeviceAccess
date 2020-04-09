@@ -70,11 +70,11 @@ namespace ChimeraTK {
       return true;
     }
 
-    void doPostRead() override;
+    void doPostRead(TransferType type) override;
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
-    void doPreWrite() override;
+    void doPreWrite(TransferType type) override;
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType>>(other);
@@ -282,12 +282,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead(TransferType type) {
     for(size_t i = 0; i < _converters.size(); ++i) {
       _converters[i].template vectorToCooked<UserType>(_startIterators[i], _endIterators[i], buffer_2D[i].begin());
     }
     currentVersion = {};
-    SyncNDRegisterAccessor<UserType>::doPostRead();
+    SyncNDRegisterAccessor<UserType>::doPostRead(type);
   }
 
   /********************************************************************************************************************/
@@ -302,7 +302,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite(TransferType) {
     uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
       for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {

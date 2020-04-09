@@ -98,14 +98,14 @@ namespace ChimeraTK {
       return _accessor->readTransferLatest();
     }
 
-    void doPreRead() override {
+    void doPreRead(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      _accessor->preRead();
+      _accessor->preRead(type);
     }
 
-    void doPostRead() override {
+    void doPostRead(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      _accessor->postRead();
+      _accessor->postRead(type);
       if(_accessor->accessData(0) & _bitMask) {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(true);
       }
@@ -114,7 +114,7 @@ namespace ChimeraTK {
       }
     }
 
-    void doPreWrite() override {
+    void doPreWrite(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
       if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
         _accessor->accessData(0) &= ~(_bitMask);
@@ -122,12 +122,12 @@ namespace ChimeraTK {
       else {
         _accessor->accessData(0) |= _bitMask;
       }
-      _accessor->preWrite();
+      _accessor->preWrite(type);
     }
 
-    void doPostWrite() override {
+    void doPostWrite(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      _accessor->postWrite();
+      _accessor->postWrite(type);
     }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {

@@ -235,14 +235,14 @@ namespace ChimeraTK {
       return false;
     }
 
-    void doPostRead() override {
+    void doPostRead(TransferType type) override {
       _prePostActionsImplementor.doPostRead();
-      SyncNDRegisterAccessor<UserType>::doPostRead();
+      SyncNDRegisterAccessor<UserType>::doPostRead(type);
     }
 
-    void doPreWrite() override { _prePostActionsImplementor.doPreWrite(); }
+    void doPreWrite(TransferType) override { _prePostActionsImplementor.doPreWrite(); }
 
-    void doPostWrite() override { _prePostActionsImplementor.doPostWrite(); }
+    void doPostWrite(TransferType) override { _prePostActionsImplementor.doPostWrite(); }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<

@@ -492,24 +492,24 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     this->_name = "CD:" + this->_name;
   }
 
-  void doPreRead() override {
+  void doPreRead(TransferType type) override {
     nPreRead++;
-    NDRegisterAccessorDecorator<T>::doPreRead();
+    NDRegisterAccessorDecorator<T>::doPreRead(type);
   }
 
-  void doPostRead() override {
+  void doPostRead(TransferType type) override {
     nPostRead++;
-    NDRegisterAccessorDecorator<T>::doPostRead();
+    NDRegisterAccessorDecorator<T>::doPostRead(type);
   }
 
-  void doPreWrite() override {
+  void doPreWrite(TransferType type) override {
     nPreWrite++;
-    NDRegisterAccessorDecorator<T>::doPreWrite();
+    NDRegisterAccessorDecorator<T>::doPreWrite(type);
   }
 
-  void doPostWrite() override {
+  void doPostWrite(TransferType type) override {
     nPostWrite++;
-    NDRegisterAccessorDecorator<T>::doPostWrite();
+    NDRegisterAccessorDecorator<T>::doPostWrite(type);
   }
 
   void doReadTransfer() override {

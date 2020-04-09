@@ -3,6 +3,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -39,13 +40,13 @@ namespace ChimeraTK { namespace LNMBackend {
     MultiplierPluginDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target, double factor)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, double>(target), _factor(factor) {}
 
-    void doPreRead() override { _target->preRead(); }
+    void doPreRead(TransferType type) override { _target->preRead(type); }
 
-    void doPostRead() override;
+    void doPostRead(TransferType type) override;
 
-    void doPreWrite() override;
+    void doPreWrite(TransferType type) override;
 
-    void doPostWrite() override { _target->postWrite(); }
+    void doPostWrite(TransferType type) override { _target->postWrite(type); }
 
     void interrupt() override { _target->interrupt(); }
 
@@ -57,8 +58,8 @@ namespace ChimeraTK { namespace LNMBackend {
   };
 
   template<typename UserType>
-  void MultiplierPluginDecorator<UserType>::doPostRead() {
-    _target->postRead();
+  void MultiplierPluginDecorator<UserType>::doPostRead(TransferType type) {
+    _target->postRead(type);
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       for(size_t k = 0; k < _target->getNumberOfSamples(); ++k) {
         buffer_2D[i][k] = numericToUserType<UserType>(_target->accessData(i, k) * _factor);
@@ -67,13 +68,13 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
   template<typename UserType>
-  void MultiplierPluginDecorator<UserType>::doPreWrite() {
+  void MultiplierPluginDecorator<UserType>::doPreWrite(TransferType type) {
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       for(size_t k = 0; k < _target->getNumberOfSamples(); ++k) {
         _target->accessData(i, k) = userTypeToNumeric<double>(buffer_2D[i][k]) * _factor;
       }
     }
-    _target->preWrite();
+    _target->preWrite(type);
   }
 
   /********************************************************************************************************************/

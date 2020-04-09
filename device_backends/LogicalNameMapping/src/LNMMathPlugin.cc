@@ -5,6 +5,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -39,13 +40,13 @@ namespace ChimeraTK { namespace LNMBackend {
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
         const std::map<std::string, std::string>& parameters);
 
-    void doPreRead() override { _target->preRead(); }
+    void doPreRead(TransferType type) override { _target->preRead(type); }
 
-    void doPostRead() override;
+    void doPostRead(TransferType type) override;
 
-    void doPreWrite() override;
+    void doPreWrite(TransferType type) override;
 
-    void doPostWrite() override { _target->postWrite(); }
+    void doPostWrite(TransferType type) override { _target->postWrite(type); }
 
     void interrupt() override { _target->interrupt(); }
 
@@ -113,8 +114,8 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void MathPluginDecorator<UserType>::doPostRead() {
-    _target->postRead();
+  void MathPluginDecorator<UserType>::doPostRead(TransferType type) {
+    _target->postRead(type);
 
     // update data pointer
     valueView->rebase(_target->accessChannel(0).data());
@@ -171,7 +172,7 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void MathPluginDecorator<UserType>::doPreWrite() {
+  void MathPluginDecorator<UserType>::doPreWrite(TransferType type) {
     // convert from UserType to double - use the target accessor's buffer as a temporary buffer (this is a bit a hack,
     // but it is safe to overwrite the buffer and we can avoid the need for an additional permanent buffer which might
     // not even be used if the register is never written).
@@ -228,7 +229,7 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + this->getName() +
           "': The expression returned " + std::to_string(results.count()) + " results, expect exactly one result.");
     }
-    _target->preWrite();
+    _target->preWrite(type);
   }
 
   /********************************************************************************************************************/

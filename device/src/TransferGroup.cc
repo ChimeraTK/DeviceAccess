@@ -10,6 +10,7 @@
 #include "Exception.h"
 #include "NDRegisterAccessorAbstractor.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 #include "TransferElementAbstractor.h"
 #include <iostream>
 
@@ -19,16 +20,16 @@ namespace ChimeraTK {
 
   void TransferGroup::read() {
     for(auto& elem : highLevelElements) {
-      elem->preRead();
+      elem->preRead(TransferType::read);
     }
     for(auto& elem : lowLevelElements) {
       elem->readTransfer();
     }
     for(auto& elem : copyDecorators) {
-      elem->postRead();
+      elem->postRead(TransferType::read);
     }
     for(auto& elem : highLevelElements) {
-      elem->postRead();
+      elem->postRead(TransferType::read);
     }
   }
 
@@ -39,13 +40,13 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("TransferGroup::write() called, but the TransferGroup is read-only.");
     }
     for(auto& elem : highLevelElements) {
-      elem->preWrite();
+      elem->preWrite(TransferType::write);
     }
     for(auto& elem : lowLevelElements) {
       elem->writeTransfer();
     }
     for(auto& elem : highLevelElements) {
-      elem->postWrite();
+      elem->postWrite(TransferType::write);
     }
   }
 

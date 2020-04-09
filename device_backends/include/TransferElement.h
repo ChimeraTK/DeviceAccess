@@ -49,6 +49,11 @@ namespace ChimeraTK {
     faulty /// The data is not considered valid
   };
 
+  /**
+   * @brief Used to indicate the applicable opereation on a Transferelement.
+   */
+  enum class TransferType { read, readNonBlocking, readLatest, readAsync, write, writeDestructively };
+
   using ChimeraTK::TransferFuture;
 
   /*******************************************************************************************************************/
@@ -113,9 +118,9 @@ namespace ChimeraTK {
         return;
       }
       this->readTransactionInProgress = false;
-      preRead();
+      preRead(TransferType::read);
       readTransfer();
-      postRead();
+      postRead(TransferType::read);
     }
 
     /** 
@@ -140,9 +145,9 @@ namespace ChimeraTK {
         }
       }
       this->readTransactionInProgress = false;
-      preRead();
+      preRead(TransferType::readNonBlocking);
       bool ret = readTransferNonBlocking();
-      if(ret) postRead();
+      if(ret) postRead(TransferType::readNonBlocking);
       return ret;
     }
 
@@ -162,9 +167,9 @@ namespace ChimeraTK {
         }
       }
       this->readTransactionInProgress = false;
-      preRead();
+      preRead(TransferType::readLatest);
       bool ret2 = readTransferLatest();
-      if(ret2) postRead();
+      if(ret2) postRead(TransferType::readLatest);
       return ret || ret2;
     }
 
@@ -197,7 +202,7 @@ namespace ChimeraTK {
       if(!hasActiveFuture) {
         // call preRead
         this->readTransactionInProgress = false;
-        this->preRead();
+        this->preRead(TransferType::readAsync);
 
         // initiate asynchronous transfer and return future
         activeFuture = readTransferAsync();
@@ -216,9 +221,9 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite();
+      preWrite(TransferType::write);
       bool ret = writeTransfer(versionNumber);
-      postWrite();
+      postWrite(TransferType::write);
       return ret;
     }
 
@@ -233,9 +238,9 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite();
+      preWrite(TransferType::writeDestructively);
       bool ret = writeTransferDestructively(versionNumber);
-      postWrite();
+      postWrite(TransferType::writeDestructively);
       return ret;
     }
 
@@ -403,10 +408,10 @@ namespace ChimeraTK {
      *
      *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly on the
      *  underlying accessor. */
-    void preRead() {
+    void preRead(TransferType type) {
       if(readTransactionInProgress) return;
       assert(!hasSeenException);
-      doPreRead();
+      doPreRead(type);
       readTransactionInProgress = true;
     }
 
@@ -417,7 +422,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPreRead() {}
+    virtual void doPreRead(TransferType) {}
 
    public:
     /** Transfer the data from the device receive buffer into the user buffer,
@@ -427,11 +432,11 @@ namespace ChimeraTK {
      *  a read was executed directly on the underlying accessor. This function must
      *  be implemented to extract the read data from the underlying accessor and
      *  expose it to the user. */
-    void postRead() {
+    void postRead(TransferType type) {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
       hasActiveFuture = false;
-      doPostRead();
+      doPostRead(type);
       // Note: doPostRead can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
       // always, a try-catch block may be necessary.
@@ -448,7 +453,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostRead() {}
+    virtual void doPostRead(TransferType) {}
 
    public:
     /** Function called by the TransferFuture before entering a potentially
@@ -470,10 +475,10 @@ namespace ChimeraTK {
      * write will be executed directly on the underlying accessor. This function
      * implemented be used to transfer the data to be written into the
      *  underlying accessor. */
-    void preWrite() {
+    void preWrite(TransferType type) {
       if(writeTransactionInProgress) return;
       assert(!hasSeenException);
-      doPreWrite();
+      doPreWrite(type);
       writeTransactionInProgress = true;
     }
 
@@ -484,7 +489,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPreWrite() {}
+    virtual void doPreWrite(TransferType) {}
 
    public:
     /** Perform any post-write cleanups if necessary. If during preWrite() e.g.
@@ -493,10 +498,10 @@ namespace ChimeraTK {
      *
      *  Called by write(). Also the TransferGroup will call this function after a
      * write was executed directly on the underlying accessor. */
-    void postWrite() {
+    void postWrite(TransferType type) {
       if(!writeTransactionInProgress) return;
       writeTransactionInProgress = false;
-      doPostWrite();
+      doPostWrite(type);
       // Note: doPostWrite can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostWrite()
       // always, a try-catch block may be necessary.
@@ -513,7 +518,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostWrite() {}
+    virtual void doPostWrite(TransferType) {}
 
    public:
     /** 

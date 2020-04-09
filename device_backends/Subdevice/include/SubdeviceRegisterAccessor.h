@@ -35,13 +35,13 @@ namespace ChimeraTK {
 
     bool doReadTransferLatest() override;
 
-    void doPreRead() override;
+    void doPreRead(TransferType type) override;
 
-    void doPostRead() override;
+    void doPostRead(TransferType type) override;
 
-    void doPreWrite() override;
+    void doPreWrite(TransferType type) override;
 
-    void doPostWrite() override;
+    void doPostWrite(TransferType type) override;
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override;
 

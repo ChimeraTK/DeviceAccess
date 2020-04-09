@@ -9,6 +9,7 @@
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "SubdeviceRegisterAccessor.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -180,26 +181,26 @@ namespace ChimeraTK {
         FixedPointConverter fixedPointConverter)
     : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _fixedPointConverter(fixedPointConverter) {}
 
-    void doPreRead() override { _target->preRead(); }
+    void doPreRead(TransferType type) override { _target->preRead(type); }
 
-    void doPostRead() override {
-      _target->postRead();
+    void doPostRead(TransferType type) override {
+      _target->postRead(type);
       for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
         _fixedPointConverter.template vectorToCooked<UserType>(
             _target->accessChannel(i).begin(), _target->accessChannel(i).end(), buffer_2D[i].begin());
       }
     }
 
-    void doPreWrite() override {
+    void doPreWrite(TransferType type) override {
       for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
         for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
           _target->accessChannel(i)[j] = _fixedPointConverter.toRaw<UserType>(buffer_2D[i][j]);
         }
       }
-      _target->preWrite();
+      _target->preWrite(type);
     }
 
-    void doPostWrite() override { _target->postWrite(); }
+    void doPostWrite(TransferType type) override { _target->postWrite(type); }
 
     bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
       auto casted = boost::dynamic_pointer_cast<FixedPointConvertingDecorator<UserType, TargetUserType> const>(other);

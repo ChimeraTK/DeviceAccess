@@ -30,13 +30,13 @@ namespace ChimeraTK {
      public:
       using NDRegisterAccessor<UserType>::NDRegisterAccessor;
 
-      void doPreRead() override = 0;
+      void doPreRead(TransferType type) override = 0;
 
-      void doPostRead() override = 0;
+      void doPostRead(TransferType type) override = 0;
 
-      void doPreWrite() override = 0;
+      void doPreWrite(TransferType type) override = 0;
 
-      void doPostWrite() override = 0;
+      void doPostWrite(TransferType type) override = 0;
 
       void interrupt() override { _target->interrupt(); }
 
@@ -58,20 +58,20 @@ namespace ChimeraTK {
      public:
       using NDRegisterAccessor<UserType>::NDRegisterAccessor;
 
-      void doPreRead() override { _target->preRead(); }
+      void doPreRead(TransferType type) override { _target->preRead(type); }
 
-      void doPostRead() override {
-        _target->postRead();
+      void doPostRead(TransferType type) override {
+        _target->postRead(type);
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 
-      void doPreWrite() override {
+      void doPreWrite(TransferType type) override {
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
-        _target->preWrite();
+        _target->preWrite(type);
       }
 
-      void doPostWrite() override {
-        _target->postWrite();
+      void doPostWrite(TransferType type) override {
+        _target->postWrite(type);
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 
@@ -130,7 +130,7 @@ namespace ChimeraTK {
 
     TransferFuture doReadTransferAsync() override { return TransferFuture(_target->readTransferAsync(), this); }
 
-    void doPreRead() override { _target->preRead(); }
+    void doPreRead(TransferType type) override { _target->preRead(type); }
 
     void transferFutureWaitCallback() override { _target->transferFutureWaitCallback(); }
 

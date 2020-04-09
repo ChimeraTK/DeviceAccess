@@ -31,13 +31,13 @@ class Accessor : public NDRegisterAccessor<UserType> {
     return true;
   }
 
-  void doPreWrite() override {}
+  void doPreWrite(TransferType) override {}
 
-  void doPostWrite() override {}
+  void doPostWrite(TransferType) override {}
 
-  void doPreRead() override {}
+  void doPreRead(TransferType) override {}
 
-  void doPostRead() override {}
+  void doPostRead(TransferType) override {}
 
   AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
   bool isReadOnly() const override { return false; }

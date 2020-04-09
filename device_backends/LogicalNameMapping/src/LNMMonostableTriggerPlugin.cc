@@ -60,20 +60,20 @@ namespace ChimeraTK { namespace LNMBackend {
 
     bool isReadable() const override { return false; }
 
-    void doPreRead() override {
+    void doPreRead(TransferType) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MonostableTriggerPluginPlugin: Reading is not allowed.");
     }
 
-    void doPostRead() override {
+    void doPostRead(TransferType) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MonostableTriggerPluginPlugin: Reading is not allowed.");
     }
 
-    void doPreWrite() override {}
+    void doPreWrite(TransferType) override {}
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
 
-    void doPostWrite() override {}
+    void doPostWrite(TransferType) override {}
 
     void interrupt() override { _target->interrupt(); }
 

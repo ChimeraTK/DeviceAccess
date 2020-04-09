@@ -10,6 +10,7 @@
 
 #include <ChimeraTK/cppext/future_queue.hpp>
 
+#include "TransferElement.h"
 #include "TransferElementAbstractor.h"
 
 namespace ChimeraTK {
@@ -289,7 +290,7 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       return false;
     }
-    this->transferElement.getHighLevelImplElement()->postRead();
+    this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync);
     return true;
   }
 
