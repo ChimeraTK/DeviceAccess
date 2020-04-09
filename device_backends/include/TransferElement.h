@@ -222,7 +222,7 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::write);
-      bool ret = doWriteTransfer(TransferType::write, versionNumber);
+      bool ret = doWriteTransfer(versionNumber);
       postWrite(TransferType::write);
       return ret;
     }
@@ -421,7 +421,7 @@ namespace ChimeraTK {
      *
      *  Calling this function after preWrite() and followed by postWrite() is
      * exactly equivalent to a call to write(). */
-    virtual bool doWriteTransfer(TransferType, ChimeraTK::VersionNumber versionNumber = {}) = 0;
+    virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) = 0;
 
     /**
      * Just like doWriteTransfer(), but allows the implementation to destroy the content of the user buffer in the
@@ -429,8 +429,7 @@ namespace ChimeraTK {
      * doWriteTransfer().
      */
     virtual bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
-      // FIXME
-      return doWriteTransfer(TransferType::read, versionNumber);
+      return doWriteTransfer(versionNumber);
     }
 
     /**

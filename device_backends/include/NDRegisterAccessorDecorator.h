@@ -115,8 +115,8 @@ namespace ChimeraTK {
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].resize(_target->getNumberOfSamples());
     }
 
-    bool doWriteTransfer(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override {
-      return _target->doWriteTransfer(type, versionNumber);
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+      return _target->doWriteTransfer(versionNumber);
     }
 
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {

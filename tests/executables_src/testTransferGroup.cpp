@@ -528,9 +528,9 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     return NDRegisterAccessorDecorator<T>::doReadTransferLatest(type);
   }
 
-  bool doWriteTransfer(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override {
+  bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
     nWrite++;
-    return NDRegisterAccessorDecorator<T>::doWriteTransfer(type, versionNumber);
+    return NDRegisterAccessorDecorator<T>::doWriteTransfer(versionNumber);
   }
 
   std::vector<boost::shared_ptr<ChimeraTK::TransferElement>> getHardwareAccessingElements() override {

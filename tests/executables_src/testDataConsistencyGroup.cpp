@@ -27,7 +27,7 @@ class Accessor : public NDRegisterAccessor<UserType> {
 
   bool doReadTransferLatest(TransferType) override { return true; }
 
-  bool doWriteTransfer(TransferType, ChimeraTK::VersionNumber versionNumber = {}) override {
+  bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
     currentVersion = versionNumber;
     return true;
   }

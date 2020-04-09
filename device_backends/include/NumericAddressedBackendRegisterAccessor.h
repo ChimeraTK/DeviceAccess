@@ -225,7 +225,7 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool doWriteTransfer(TransferType, ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
       if(TransferElement::isInTransferGroup) {
         throw ChimeraTK::logic_error("Calling read() or write() on an accessor which is part of a "
                                      "TransferGroup is not allowed "
