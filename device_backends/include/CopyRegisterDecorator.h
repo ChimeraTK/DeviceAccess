@@ -40,9 +40,8 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.");
     }
 
-    void doPostRead() override {
-      // FIXME
-      _target->postRead(TransferType::read);
+    void doPostRead(TransferType type) override {
+      _target->postRead(type);
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
     }
 

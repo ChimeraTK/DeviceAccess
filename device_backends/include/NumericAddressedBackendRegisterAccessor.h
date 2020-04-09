@@ -236,9 +236,9 @@ namespace ChimeraTK {
       return false;
     }
 
-    void doPostRead() override {
+    void doPostRead(TransferType type) override {
       _prePostActionsImplementor.doPostRead();
-      SyncNDRegisterAccessor<UserType>::doPostRead();
+      SyncNDRegisterAccessor<UserType>::doPostRead(type);
     }
 
     void doPreWrite() override { _prePostActionsImplementor.doPreWrite(); }

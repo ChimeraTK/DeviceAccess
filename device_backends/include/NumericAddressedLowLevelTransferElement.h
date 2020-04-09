@@ -59,7 +59,7 @@ namespace ChimeraTK {
       return true;
     }
 
-    void doPostRead() override { currentVersion = {}; }
+    void doPostRead(TransferType) override { currentVersion = {}; }
 
     TransferFuture doReadTransferAsync(TransferType) override { // LCOV_EXCL_LINE
       // This function is not needed and will never be called. If readAsync() is

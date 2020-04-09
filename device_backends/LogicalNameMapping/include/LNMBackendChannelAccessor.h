@@ -96,9 +96,8 @@ namespace ChimeraTK {
       _accessor->preRead(type);
     }
 
-    void doPostRead() override {
-      // FIXME
-      _accessor->postRead(TransferType::read);
+    void doPostRead(TransferType type) override {
+      _accessor->postRead(type);
       _accessor->accessChannel(_info->channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
     }
 

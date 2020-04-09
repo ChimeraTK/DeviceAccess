@@ -67,7 +67,8 @@ namespace ChimeraTK {
         }
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
-        doPostRead();
+        // FIXME
+        doPostRead(TransferType::read);
       }
       catch(...) {
         this->shutdown();
@@ -109,7 +110,7 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT; }
 
-    void doPostRead() override {
+    void doPostRead(TransferType) override {
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {

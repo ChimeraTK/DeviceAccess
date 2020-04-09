@@ -344,7 +344,7 @@ namespace ChimeraTK {
     void postRead(TransferType type) {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
-      doPostRead();
+      doPostRead(type);
       hasActiveFuture = false;
     }
 
@@ -355,7 +355,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostRead() {}
+    virtual void doPostRead(TransferType) {}
 
    public:
     /** Function called by the TransferFuture before entering a potentially

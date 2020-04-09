@@ -104,7 +104,7 @@ namespace ChimeraTK {
       _accessor->preRead(type);
     }
 
-    void doPostRead() override {
+    void doPostRead(TransferType) override {
       std::lock_guard<std::mutex> lock(*_mutex);
       // FIXME
       _accessor->postRead(TransferType::read);

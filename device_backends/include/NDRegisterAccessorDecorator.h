@@ -33,7 +33,7 @@ namespace ChimeraTK {
 
       void doPreRead(TransferType type) override = 0;
 
-      void doPostRead() override = 0;
+      void doPostRead(TransferType type) override = 0;
 
       void doPreWrite() override = 0;
 
@@ -61,9 +61,8 @@ namespace ChimeraTK {
 
       void doPreRead(TransferType type) override { _target->preRead(type); }
 
-      void doPostRead() override {
-        // FIXME
-        _target->postRead(TransferType::read);
+      void doPostRead(TransferType type) override {
+        _target->postRead(type);
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 
