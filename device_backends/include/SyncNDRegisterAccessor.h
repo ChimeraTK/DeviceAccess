@@ -74,7 +74,7 @@ namespace ChimeraTK {
         }
         catch(...) {
           this->notifications.push_exception(std::current_exception());
-          throw;
+          return;
         }
         this->notifications.push();
       });
