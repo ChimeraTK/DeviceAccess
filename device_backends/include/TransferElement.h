@@ -114,21 +114,21 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead();
-      doReadTransfer();
+      readTransfer();
       postRead();
     }
 
-    /** Read the next value, if available in the input buffer.
+    /** 
+     *  Read the next value, if available in the input buffer.
      *
-     *  If AccessMode::wait_for_new_data was set, this function returns
-     * immediately and the return value indicated if a new value was available
-     * (<code>true</code>) or not (<code>false</code>).
+     *  If AccessMode::wait_for_new_data was set, this function returns immediately and the return value indicated if
+     *  a new value was available (<code>true</code>) or not (<code>false</code>).
      *
-     *  If AccessMode::wait_for_new_data was not set, this function is identical
-     * to read(), which will still return quickly. Depending on the actual
-     * transfer implementation, the backend might need to transfer data to obtain
-     *  the current value before returning. Also this function is not guaranteed
-     * to be lock free. The return value will be always true in this mode. */
+     *  If AccessMode::wait_for_new_data was not set, this function is identical to read(), which will still return 
+     *  quickly. Depending on the actual transfer implementation, the backend might need to transfer data to obtain
+     *  the current value before returning. Also this function is not guaranteed to be lock free. The return value will
+     *  be always true in this mode.
+     */
     bool readNonBlocking() {
       if(hasActiveFuture) {
         if(activeFuture.hasNewData()) {
@@ -141,7 +141,7 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead();
-      bool ret = doReadTransferNonBlocking();
+      bool ret = readTransferNonBlocking();
       if(ret) postRead();
       return ret;
     }
@@ -163,7 +163,7 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead();
-      bool ret2 = doReadTransferLatest();
+      bool ret2 = readTransferLatest();
       if(ret2) postRead();
       return ret || ret2;
     }
@@ -200,7 +200,7 @@ namespace ChimeraTK {
         this->preRead();
 
         // initiate asynchronous transfer and return future
-        activeFuture = doReadTransferAsync();
+        activeFuture = readTransferAsync();
         hasActiveFuture = true;
       }
       return activeFuture;
@@ -217,7 +217,7 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite();
-      bool ret = doWriteTransfer(versionNumber);
+      bool ret = writeTransfer(versionNumber);
       postWrite();
       return ret;
     }
@@ -234,7 +234,7 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite();
-      bool ret = doWriteTransferDestructively(versionNumber);
+      bool ret = writeTransferDestructively(versionNumber);
       postWrite();
       return ret;
     }
@@ -270,51 +270,138 @@ namespace ChimeraTK {
      * to write and isWriteable() is not true.*/
     virtual bool isWriteable() const = 0;
 
-    /** Read the data from the device but do not fill it into the user buffer of
-     * this TransferElement. Calling this function after preRead() and followed by
-     * postRead() is exactly equivalent to a call to just read().
+   private:
+    /**
+     *  Helper for exception handling in the transfer functions, to avoid code duplication.
+     */
+    template<typename ReturnType, typename Callable>
+    ReturnType handleTransferException(Callable function, ReturnType returnOnException) {
+      try {
+        return function();
+      }
+      catch(ChimeraTK::runtime_error& e) {
+        hasSeenException = true;
+        activeException = e;
+        return returnOnException;
+      }
+    }
+
+   public:
+    /** 
+     *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
+     *  must be called after preRead() and before postRead(). If the accessor has the AccessMode::wait_for_new_data
+     *  flag, the function will block until new data has been pushed by the sender.
      *
-     *  Implementation note: This function must return within ~1 second after
-     * boost::thread::interrupt() has been called on the thread calling this
-     * function. */
+     *  This function internally calles doReadTransfer(), which is implemented by the backend. runtime_error exceptions
+     *  thrown in doReadTransfer() are caught and rethrown in postRead().
+     */
+    void readTransfer() {
+      handleTransferException<bool>(
+          [this] {
+            doReadTransfer();
+            return true; // need to return something, is ignored later
+          },
+          false);
+    }
+
+   protected:
+    /** 
+     *  Implementation version of readTransfer(). This function must be implemented by the backend. For the
+     *  functional description read the documentation of readTransfer().
+     *  
+     *  Implementation notes:
+     *  - This function must return within ~1 second after boost::thread::interrupt() has been called on the thread
+     *    calling this function.
+     *  - Decorators must delegate the call to readTransfer() of the decorated target.
+     */
     virtual void doReadTransfer() = 0;
 
-    /** Read the data from the device without blocking but do not fill it into the
-     * user buffer of this TransferElement. Calling this function after preRead()
-     * and followed by postRead() is exactly equivalent to a call to just
-     * readNonBlocking(). For the return value, see readNonBlocking().
+   public:
+    /** 
+     *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
+     *  must be called after preRead() and before postRead(). Even if the accessor has the AccessMode::wait_for_new_data
+     *  flag, this function will not block if no new data is available. For the meaning of the return value, see
+     *  readNonBlocking().
+     *
+     *  This function internally calles doReadTransferNonBlocking(), which is implemented by the backend. runtime_error
+     *  exceptions thrown in doRedoReadTransferNonBlockingadTransfer() are caught and rethrown in postRead().
+     */
+    bool readTransferNonBlocking() {
+      return handleTransferException<bool>([this] { return doReadTransferNonBlocking(); }, false);
+    }
+
+   protected:
+    /** 
+     *  Implementation version of readTransferNonBlocking(). This function must be implemented by the backend. For the
+     *  functional description read the documentation of readTransferNonBlocking().
+     *  
+     *  Implementation notes:
+     *  - Decorators must delegate the call to readTransferNonBlocking() of the decorated target.
      */
     virtual bool doReadTransferNonBlocking() = 0;
 
-    /** Read the latest data from the device without blocking but do not fill it
-     * into the user buffer of this TransferElement. Calling this function after
-     * preRead() and followed by postRead() is exactly equivalent to a call to
-     * just readLatest(). For the return value, see readNonBlocking().
+   public:
+    /** 
+     *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
+     *  must be called after preRead() and before postRead(). Even if the accessor has the AccessMode::wait_for_new_data
+     *  flag, this function will not block if no new data is available. If data is available, it will read the latest
+     *  value and discard any intermediate values. For the meaning of the return value, see readLatest().
+     *
+     *  This function internally calles doReadTransferLatest(), which is implemented by the backend. runtime_error
+     *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
+     */
+    bool readTransferLatest() {
+      return handleTransferException<bool>([this] { return doReadTransferLatest(); }, false);
+    }
+
+   protected:
+    /** 
+     *  Implementation version of readTransferLatest(). This function must be implemented by the backend. For the
+     *  functional description read the documentation of readTransferLatest().
+     *  
+     *  Implementation notes:
+     *  - Decorators must delegate the call to readTransferLatest() of the decorated target.
      */
     virtual bool doReadTransferLatest() = 0;
 
-    /** Start the actual asynchronous read transfer. This function must be
-     * implemented by the backends and will be called inside readAsync(). At that
-     * point, it is guaranteed that there is no unfinished transfer still ongoing
-     *  (i.e. no still-valid TransferFuture is present) and preRead() has already
-     * been called.
+   public:
+    /** 
+     *  Initiate asynchronous read transfer. This function must be called after preRead() and before postRead(). It is
+     *  being called by readAsync.
      *
-     *  The backend must never touch the user buffer (i.e.
-     * NDRegisterAccessor::buffer_2D) inside this function, as it may only be
-     * filled inside postRead(). postRead() will get called by the TransferFuture
-     * when the user calls wait().
+     *  It is guaranteed that there is no unfinished transfer still ongoing (i.e. no still-valid TransferFuture is 
+     *  present) when this function is called.
      *
-     *  Note: The TransferFuture returned by this function must have been
-     * constructed with this TransferElement as the transferElement in the
-     * constructor. Otherwise postRead() will not be properly called! */
+     *  This function internally calles doReadTransferAsync(), which is implemented by the backend. runtime_error
+     *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
+     */
+    TransferFuture readTransferAsync() {
+      return handleTransferException<TransferFuture>([this] { return doReadTransferAsync(); }, {});
+    }
+
+   protected:
+    /** 
+     *  Implementation version of readTransferAsync(). This function must be implemented by the backend. For the
+     *  functional description read the documentation of readTransferAsync().
+     *  
+     *  Implementation notes:
+     *  - Decorators must delegate the call to readTransferLatest() of the decorated target.
+     *  - The backend must never touch the user buffer (i.e. NDRegisterAccessor::buffer_2D) inside this function, as it
+     *    may only be filled inside postRead(). postRead() will get called by the TransferFuture when the user calls
+     *    wait().
+     *  - The TransferFuture returned by this function must have been constructed with this TransferElement as the
+     *    transferElement in the constructor. Otherwise postRead() will not be properly called!
+     */
     virtual TransferFuture doReadTransferAsync() = 0;
 
+   public:
     /** Perform any pre-read tasks if necessary.
      *
      *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly on the
      *  underlying accessor. */
     void preRead() {
       if(readTransactionInProgress) return;
+      assert(!hasSeenException);
       doPreRead();
       readTransactionInProgress = true;
     }
@@ -330,17 +417,24 @@ namespace ChimeraTK {
 
    public:
     /** Transfer the data from the device receive buffer into the user buffer,
-     * while converting the data into the user data format if needed.
+     *  while converting the data into the user data format if needed.
      *
      *  Called by read() etc. Also the TransferGroup will call this function after
-     * a read was executed directly on the underlying accessor. This function must
-     * be implemented to extract the read data from the underlying accessor and
-     * expose it to the user. */
+     *  a read was executed directly on the underlying accessor. This function must
+     *  be implemented to extract the read data from the underlying accessor and
+     *  expose it to the user. */
     void postRead() {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
-      doPostRead();
       hasActiveFuture = false;
+      doPostRead();
+      // Note: doPostRead can throw an exception, but in that case hasSeenException must be false (we can only have one
+      // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
+      // always, a try-catch block may be necessary.
+      if(hasSeenException) {
+        hasSeenException = false;
+        throw activeException;
+      }
     }
 
     /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
@@ -374,6 +468,7 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preWrite() {
       if(writeTransactionInProgress) return;
+      assert(!hasSeenException);
       doPreWrite();
       writeTransactionInProgress = true;
     }
@@ -398,6 +493,13 @@ namespace ChimeraTK {
       if(!writeTransactionInProgress) return;
       writeTransactionInProgress = false;
       doPostWrite();
+      // Note: doPostWrite can throw an exception, but in that case hasSeenException must be false (we can only have one
+      // exception at a time). In case other code is added here later which needs to be executed after doPostWrite()
+      // always, a try-catch block may be necessary.
+      if(hasSeenException) {
+        hasSeenException = false;
+        throw activeException;
+      }
     }
 
     /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
@@ -410,23 +512,59 @@ namespace ChimeraTK {
     virtual void doPostWrite() {}
 
    public:
-    /** Write the data to device. The return value is true, old data was lost on
-     * the write transfer (e.g. due to an buffer overflow). In case of an
-     * unbuffered write transfer, the return value will always be false.
+    /** 
+     *  Write the data to the device. This function must be called after preWrite() and before postWrite(). If the
+     *  return value is true, old data was lost on the write transfer (e.g. due to an buffer overflow). In case of an
+     *  unbuffered write transfer, the return value will always be false.
      *
-     *  Calling this function after preWrite() and followed by postWrite() is
-     * exactly equivalent to a call to write(). */
-    virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) = 0;
-
-    /**
-     * Just like doWriteTransfer(), but allows the implementation to destroy the content of the user buffer in the
-     * process. This is an optional optimisation, hence there is a default implementation which just calls the normal
-     * doWriteTransfer().
+     *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
+     *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    virtual bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
+    bool writeTransfer(ChimeraTK::VersionNumber versionNumber = {}) {
+      return handleTransferException<bool>([&] { return doWriteTransfer(versionNumber); }, true);
+    }
+
+   protected:
+    /** 
+     *  Implementation version of writeTransfer(). This function must be implemented by the backend. For the
+     *  functional description read the documentation of writeTransfer().
+     *  
+     *  Implementation notes:
+     *  - Decorators must delegate the call to writeTransfer() of the decorated target.
+     */
+    virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) = 0;
+
+   public:
+    /** 
+     *  Write the data to the device. The implementation is allowed to destroy the content of the user buffer in the
+     *  process. This is an optional optimisation, hence the behaviour might be identical to writeTransfer().
+     * 
+     *  This function must be called after preWrite() and before postWrite(). If the
+     *  return value is true, old data was lost on the write transfer (e.g. due to an buffer overflow). In case of an
+     *  unbuffered write transfer, the return value will always be false.
+     *
+     *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
+     *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
+     */
+    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
+      return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); }, true);
+    }
+
+   protected:
+    /**
+     *  Implementation version of writeTransferDestructively(). This function must be implemented by the backend. For
+     *  the functional description read the documentation of writeTransfer().
+     *  
+     *  Implementation notes:
+     *  - Decorators must delegate the call to writeTransfer() of the decorated target.
+     *  - The implementation may destroy the content of the user buffer in the process. This is an optional
+     *    optimisation, hence there is a default implementation which just calls the normal doWriteTransfer().
+     */
+    virtual bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
       return doWriteTransfer(versionNumber);
     }
 
+   public:
     /**
      *  Check whether the TransferElement can be used in places where the
      * TransferElement "other" is currently used, e.g. to merge the two transfers.
@@ -574,6 +712,7 @@ namespace ChimeraTK {
     friend class TransferGroup;
     friend class TransferFuture;
 
+   private:
     /** Flag whether a read transaction is in progress. This flag will be set in
      * preRead() and cleared in postRead() and is used to prevent multiple calls
      * to these functions during a single transfer. It should also be reset before
@@ -582,15 +721,23 @@ namespace ChimeraTK {
     bool readTransactionInProgress{false};
 
     /** Flag whether a write transaction is in progress. This flag is similar to
-     * readTransactionInProgress but affects preWrite() and postWrite(). */
+     *  readTransactionInProgress but affects preWrite() and postWrite(). */
     bool writeTransactionInProgress{false};
 
     /// Flag whether there is a valid activeFuture or not
     bool hasActiveFuture{false};
 
-    /// last future returned by doReadTransferAsync() (valid if hasActiveFuture ==
-    /// true)
+   protected:
+    /// Last future returned by doReadTransferAsync() (valid if hasActiveFuture == true). This is currently used by some
+    /// implementations to store the reused future once created. This logic should be changed, see issue #124.
     TransferFuture activeFuture;
+
+   private:
+    /// Flag whether doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
+    bool hasSeenException{false};
+
+    /// Exception to be rethrown in postXXX() in case hasSeenException == true
+    ChimeraTK::runtime_error activeException{"No exception"};
   };
 
 } /* namespace ChimeraTK */

@@ -42,7 +42,7 @@ namespace ChimeraTK {
       elem->preWrite();
     }
     for(auto& elem : lowLevelElements) {
-      elem->doWriteTransfer();
+      elem->writeTransfer();
     }
     for(auto& elem : highLevelElements) {
       elem->postWrite();

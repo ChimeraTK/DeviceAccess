@@ -115,20 +115,20 @@ namespace ChimeraTK {
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
-      return _target->doWriteTransfer(versionNumber);
+      return _target->writeTransfer(versionNumber);
     }
 
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
-      return _target->doWriteTransferDestructively(versionNumber);
+      return _target->writeTransferDestructively(versionNumber);
     }
 
-    void doReadTransfer() override { _target->doReadTransfer(); }
+    void doReadTransfer() override { _target->readTransfer(); }
 
-    bool doReadTransferNonBlocking() override { return _target->doReadTransferNonBlocking(); }
+    bool doReadTransferNonBlocking() override { return _target->readTransferNonBlocking(); }
 
-    bool doReadTransferLatest() override { return _target->doReadTransferLatest(); }
+    bool doReadTransferLatest() override { return _target->readTransferLatest(); }
 
-    TransferFuture doReadTransferAsync() override { return TransferFuture(_target->readAsync(), this); }
+    TransferFuture doReadTransferAsync() override { return TransferFuture(_target->readTransferAsync(), this); }
 
     void doPreRead() override { _target->preRead(); }
 

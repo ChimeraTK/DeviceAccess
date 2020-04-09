@@ -80,22 +80,22 @@ namespace ChimeraTK {
 
     void doReadTransfer() override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      _accessor->doReadTransfer();
+      _accessor->readTransfer();
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->doWriteTransfer(versionNumber);
+      return _accessor->writeTransfer(versionNumber);
     }
 
     bool doReadTransferNonBlocking() override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->doReadTransferNonBlocking();
+      return _accessor->readTransferNonBlocking();
     }
 
     bool doReadTransferLatest() override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->doReadTransferLatest();
+      return _accessor->readTransferLatest();
     }
 
     void doPreRead() override {
