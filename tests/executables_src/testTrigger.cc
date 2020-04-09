@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToApp, T, test_types) {
 
   // single theaded test
   app.testModule.feedingToDevice = 42;
-  BOOST_CHECK(app.testModule.consumingPush == 1);
+  CHECK_TIMEOUT((app.testModule.consumingPush.readLatest(), app.testModule.consumingPush == 1), 10000);
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
   BOOST_CHECK(app.testModule.consumingPush == 1);
