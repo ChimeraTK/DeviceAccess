@@ -119,8 +119,8 @@ namespace ChimeraTK {
       return _target->doWriteTransfer(type, versionNumber);
     }
 
-    bool doWriteTransferDestructively(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override {
-      return _target->doWriteTransferDestructively(type, versionNumber);
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
+      return _target->doWriteTransferDestructively(versionNumber);
     }
 
     void doReadTransfer(TransferType type) override { _target->doReadTransfer(type); }

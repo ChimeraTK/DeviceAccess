@@ -239,7 +239,7 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::writeDestructively);
-      bool ret = doWriteTransferDestructively(TransferType::writeDestructively, versionNumber);
+      bool ret = doWriteTransferDestructively(versionNumber);
       postWrite(TransferType::writeDestructively);
       return ret;
     }
@@ -428,8 +428,9 @@ namespace ChimeraTK {
      * process. This is an optional optimisation, hence there is a default implementation which just calls the normal
      * doWriteTransfer().
      */
-    virtual bool doWriteTransferDestructively(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) {
-      return doWriteTransfer(type, versionNumber);
+    virtual bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
+      // FIXME
+      return doWriteTransfer(TransferType::read, versionNumber);
     }
 
     /**
