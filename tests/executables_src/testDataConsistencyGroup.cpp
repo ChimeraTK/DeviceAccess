@@ -1,3 +1,4 @@
+#include "TransferElement.h"
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE DataConsistencyGroupTest
 #include <boost/test/unit_test.hpp>
@@ -18,9 +19,9 @@ class Accessor : public NDRegisterAccessor<UserType> {
 
   ~Accessor() override {}
 
-  TransferFuture doReadTransferAsync() override { return {}; }
+  TransferFuture doReadTransferAsync(TransferType) override { return {}; }
 
-  void doReadTransfer(TransferType) override { doReadTransferAsync().wait(); }
+  void doReadTransfer(TransferType type) override { doReadTransferAsync(type).wait(); }
 
   bool doReadTransferNonBlocking(TransferType) override { return true; }
 

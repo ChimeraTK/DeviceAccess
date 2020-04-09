@@ -61,7 +61,7 @@ namespace ChimeraTK {
 
     void doPostRead() override { currentVersion = {}; }
 
-    TransferFuture doReadTransferAsync() override { // LCOV_EXCL_LINE
+    TransferFuture doReadTransferAsync(TransferType) override { // LCOV_EXCL_LINE
       // This function is not needed and will never be called. If readAsync() is
       // called on the high-level accessor, the transfer will be "backgrounded"
       // already on that level.

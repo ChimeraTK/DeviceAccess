@@ -205,7 +205,7 @@ namespace ChimeraTK {
         this->preRead(TransferType::readAsync);
 
         // initiate asynchronous transfer and return future
-        activeFuture = doReadTransferAsync();
+        activeFuture = doReadTransferAsync(TransferType::readAsync);
         hasActiveFuture = true;
       }
       return activeFuture;
@@ -312,7 +312,7 @@ namespace ChimeraTK {
      *  Note: The TransferFuture returned by this function must have been
      * constructed with this TransferElement as the transferElement in the
      * constructor. Otherwise postRead() will not be properly called! */
-    virtual TransferFuture doReadTransferAsync() = 0;
+    virtual TransferFuture doReadTransferAsync(TransferType type) = 0;
 
     /** Perform any pre-read tasks if necessary.
      *
