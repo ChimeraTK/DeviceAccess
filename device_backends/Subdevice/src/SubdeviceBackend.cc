@@ -203,7 +203,8 @@ namespace ChimeraTK {
       _target->preWrite(TransferType::read);
     }
 
-    void doPostWrite() override { _target->postWrite(); }
+    void doPostWrite() override { // FIXME
+      _target->postWrite(TransferType::read); }
 
     bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
       auto casted = boost::dynamic_pointer_cast<FixedPointConvertingDecorator<UserType, TargetUserType> const>(other);

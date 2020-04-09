@@ -223,7 +223,7 @@ namespace ChimeraTK {
       this->writeTransactionInProgress = false;
       preWrite(TransferType::write);
       bool ret = doWriteTransfer(TransferType::write, versionNumber);
-      postWrite();
+      postWrite(TransferType::write);
       return ret;
     }
 
@@ -240,7 +240,7 @@ namespace ChimeraTK {
       this->writeTransactionInProgress = false;
       preWrite(TransferType::writeDestructively);
       bool ret = doWriteTransferDestructively(versionNumber);
-      postWrite();
+      postWrite(TransferType::writeDestructively);
       return ret;
     }
 
@@ -399,7 +399,7 @@ namespace ChimeraTK {
      *
      *  Called by write(). Also the TransferGroup will call this function after a
      * write was executed directly on the underlying accessor. */
-    void postWrite() {
+    void postWrite(TransferType type) {
       if(!writeTransactionInProgress) return;
       writeTransactionInProgress = false;
       doPostWrite();
