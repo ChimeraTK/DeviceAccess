@@ -215,7 +215,7 @@ namespace ChimeraTK {
 
     void doReadTransfer(TransferType) override { _rawAccessor->read(); }
 
-    bool doReadTransferNonBlocking(TransferType) override {
+    bool doReadTransferNonBlocking() override {
       _rawAccessor->read();
       return true;
     }

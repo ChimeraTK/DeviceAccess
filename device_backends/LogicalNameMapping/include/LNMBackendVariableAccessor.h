@@ -81,7 +81,7 @@ namespace ChimeraTK {
 
     void doReadTransfer(TransferType) override {}
 
-    bool doReadTransferNonBlocking(TransferType) override { return true; }
+    bool doReadTransferNonBlocking() override { return true; }
 
     bool doReadTransferLatest() override { return true; }
 

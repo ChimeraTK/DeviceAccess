@@ -13,7 +13,6 @@
 #include "Device.h"
 #include "SubdeviceBackend.h"
 #include "SyncNDRegisterAccessor.h"
-#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -32,7 +31,7 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
-    bool doReadTransferNonBlocking(TransferType type) override;
+    bool doReadTransferNonBlocking() override;
 
     bool doReadTransferLatest() override;
 

@@ -49,8 +49,9 @@ namespace ChimeraTK {
       return false;
     }
 
-    bool doReadTransferNonBlocking(TransferType type) override {
-      doReadTransfer(type);
+    bool doReadTransferNonBlocking() override {
+      // FIXME
+      doReadTransfer(TransferType::read);
       return true;
     }
 

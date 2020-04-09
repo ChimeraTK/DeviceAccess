@@ -146,7 +146,7 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::readNonBlocking);
-      bool ret = doReadTransferNonBlocking(TransferType::readNonBlocking);
+      bool ret = doReadTransferNonBlocking();
       if(ret) postRead(TransferType::readNonBlocking);
       return ret;
     }
@@ -289,7 +289,7 @@ namespace ChimeraTK {
      * and followed by postRead() is exactly equivalent to a call to just
      * readNonBlocking(). For the return value, see readNonBlocking().
      */
-    virtual bool doReadTransferNonBlocking(TransferType type) = 0;
+    virtual bool doReadTransferNonBlocking() = 0;
 
     /** Read the latest data from the device without blocking but do not fill it
      * into the user buffer of this TransferElement. Calling this function after
