@@ -290,8 +290,7 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       return false;
     }
-    // FIXME
-    this->transferElement.getHighLevelImplElement()->postRead(TransferType::read);
+    this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync);
     return true;
   }
 
