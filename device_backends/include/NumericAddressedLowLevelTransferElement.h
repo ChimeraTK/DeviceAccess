@@ -43,7 +43,7 @@ namespace ChimeraTK {
 
     void doReadTransfer(TransferType) override { _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes); }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(TransferType, ChimeraTK::VersionNumber versionNumber = {}) override {
       _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       currentVersion = versionNumber;
       return false;

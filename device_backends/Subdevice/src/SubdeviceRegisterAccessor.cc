@@ -28,7 +28,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
+  bool SubdeviceRegisterAccessor::doWriteTransfer(TransferType, ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
     size_t idx = 0;
     for(size_t adr = _byteOffset; adr < _byteOffset + 4 * _numberOfWords; adr += 4) {

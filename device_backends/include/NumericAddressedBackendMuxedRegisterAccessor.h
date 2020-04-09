@@ -73,7 +73,7 @@ namespace ChimeraTK {
 
     void doPostRead() override;
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
+    bool doWriteTransfer(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override;
 
     void doPreWrite() override;
 
@@ -294,7 +294,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<class UserType>
-  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer( TransferType, ChimeraTK::VersionNumber versionNumber) {
     _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
     currentVersion = versionNumber;
     return false;

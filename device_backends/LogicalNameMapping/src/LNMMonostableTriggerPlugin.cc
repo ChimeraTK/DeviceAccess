@@ -3,6 +3,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -70,7 +71,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPreWrite() override {}
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
+    bool doWriteTransfer(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) override;
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
 
     void doPostWrite() override {}
@@ -86,7 +87,7 @@ namespace ChimeraTK { namespace LNMBackend {
   };
 
   template<typename UserType>
-  bool MonostableTriggerPluginDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+  bool MonostableTriggerPluginDecorator<UserType>::doWriteTransfer(TransferType, ChimeraTK::VersionNumber versionNumber) {
     _target->accessData(0, 0) = _active;
     bool a = _target->write(versionNumber);
     std::this_thread::sleep_for(_delay);
@@ -98,7 +99,8 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   bool MonostableTriggerPluginDecorator<UserType>::doWriteTransferDestructively(
       ChimeraTK::VersionNumber versionNumber) {
-    return doWriteTransfer(versionNumber);
+    // FIXME
+    return doWriteTransfer(TransferType::read, versionNumber);
   }
 
   /********************************************************************************************************************/

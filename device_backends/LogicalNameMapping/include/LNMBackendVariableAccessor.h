@@ -83,7 +83,7 @@ namespace ChimeraTK {
 
     bool doReadTransferLatest(TransferType) override { return true; }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(TransferType, ChimeraTK::VersionNumber versionNumber = {}) override {
       if(isReadOnly()) {
         throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
                                      "is not possible.");
