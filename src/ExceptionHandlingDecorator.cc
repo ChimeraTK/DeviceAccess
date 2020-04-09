@@ -76,7 +76,9 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error& e) {
         setOwnerValidityFunction(/*hasExceptionNow = */ true);
+//        deviceModule.reportException(e.what());
         deviceModule.reportException(e.what());
+        deviceModule.waitForRecovery();
       }
     }
   }

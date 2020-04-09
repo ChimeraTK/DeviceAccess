@@ -220,6 +220,7 @@ namespace ChimeraTK {
     return virtualisedModuleFromCatalog;
   }
 
+
   /*********************************************************************************************************************/
 
   void DeviceModule::reportException(std::string errMsg) {
@@ -248,16 +249,36 @@ namespace ChimeraTK {
         errorLock.unlock();
       }
 
+    }
+    catch(...) {
+      //catch any to notify the waiting thread(s) (exception handling thread), then re-throw
+      errorIsReportedCondVar.notify_all();
+      throw;
+    }
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::waitForRecovery() {
+    try {
+      if(owner->isTestableModeEnabled()) {
+        assert(owner->testableModeTestLock());
+      }
+
+      // see waitForException
+      std::unique_lock<std::mutex> errorLock(errorMutex);
+      errorLock.unlock();
+
       //Wait until the error condition has been cleared by the exception handling thread.
       //We must not hold the testable mode mutex while doing so, otherwise the other thread will never run to fulfill the condition
-      owner->testableModeUnlock("waitForDeviceOK");
-      errorLock.lock();
-      while(deviceHasError) {
-        errorIsResolvedCondVar.wait(errorLock);
-        boost::this_thread::interruption_point();
-      }
-      errorLock.unlock();
-      owner->testableModeLock("continueAfterException");
+            owner->testableModeUnlock("waitForDeviceOK");
+            errorLock.lock();
+            while(deviceHasError) {
+              errorIsResolvedCondVar.wait(errorLock);
+              boost::this_thread::interruption_point();
+            }
+            errorLock.unlock();
+            owner->testableModeLock("continueAfterException");
     }
     catch(...) {
       //catch any to notify the waiting thread(s) (exception handling thread), then re-throw

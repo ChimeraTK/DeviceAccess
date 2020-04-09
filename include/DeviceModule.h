@@ -116,6 +116,7 @@ namespace ChimeraTK {
      * handling is done internally by ApplicationCore.
      * This functions is blocking until the Device reports isFunctional() again.*/
     void reportException(std::string errMsg);
+    void waitForRecovery();
 
     void prepare() override;
 
