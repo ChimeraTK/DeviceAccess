@@ -22,7 +22,7 @@ namespace ChimeraTK {
       elem->preRead();
     }
     for(auto& elem : lowLevelElements) {
-      elem->doReadTransfer();
+      elem->readTransfer();
     }
     for(auto& elem : copyDecorators) {
       elem->postRead();
