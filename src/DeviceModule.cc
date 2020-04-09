@@ -277,57 +277,87 @@ namespace ChimeraTK {
     Application::registerThread("DM_" + getName());
     std::string error;
     owner->testableModeLock("Startup");
+
+    // catch-all required around everything, to prevent any uncaught exception (including the boost thread interruption)
+    // to terminate this thread before waking up other threads waiting on the condition variable.
     try {
-      while(!device.isOpened()) {
-        try {
-          boost::this_thread::interruption_point();
-          usleep(500000);
-          device.open();
-          if(deviceError.status != 0) {
-            deviceError.status = 0;
-            deviceError.message = "";
-            deviceError.setCurrentVersionNumber({});
-            deviceError.writeAll();
-          }
-        }
-        catch(ChimeraTK::runtime_error& e) {
-          if(deviceError.status != 1) {
-            deviceError.status = 1;
-            deviceError.message = e.what();
-            deviceError.setCurrentVersionNumber({});
-            deviceError.writeAll();
-          }
-        }
-      }
-
-      // The device was successfully opened, try to initialise it
-      try {
-        for(auto& initHandler : initialisationHandlers) {
-          initHandler(this);
-        }
-        for(auto& te : writeRecoveryOpen) {
-          if(te->getVersionNumber() != VersionNumber{nullptr}) {
-            te->write();
-          }
-        }
-      }
-      catch(ChimeraTK::runtime_error& e) {
-        // we just report the exception and let the exception handling loop do the rest
-        std::lock_guard<std::mutex> locakGuard(errorMutex);
-        deviceHasError = true;
-        if(errorQueue.push(e.what())) {
-          if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
-        }
-      }
-
       while(true) {
-        // We need one interruption point at the beginning of the loop. It is always executed and is not blocked by a lock (except the testable mode lock)
-        boost::this_thread::interruption_point();
+        //  [Spec: 2.3.1] (Re)-open the device.
+        owner->testableModeUnlock("Open/recover device");
+        do {
+          usleep(500000);
+          boost::this_thread::interruption_point();
+          try {
+            device.open();
+          }
+          catch(ChimeraTK::runtime_error& e) {
+            if(deviceError.status != 1) {
+              // deviceError.status == 0 if the initial open fails (no error yet reported)
+              deviceError.status = 1;
+              deviceError.message = e.what();
+              deviceError.setCurrentVersionNumber({});
+              deviceError.writeAll();
+            }
+            continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
+          }
+        } while(!device.isFunctional());
+        owner->testableModeLock("Initialise device");
+
+        std::unique_lock<std::mutex> errorLock(errorMutex);
+
+        // [Spec: 2.3.2] Run initialisation handlers
+        try {
+          for(auto& initHandler : initialisationHandlers) {
+            initHandler(this);
+          }
+        }
+        catch(ChimeraTK::runtime_error&) {
+          // Jump back to re-opening the device
+          continue;
+        }
+
+        // [Spec: 2.3.3] Empty exception reporting queue.
+        while(errorQueue.pop()) {
+          if(owner->isTestableModeEnabled()) {
+            assert(owner->testableMode_counter > 0);
+            --owner->testableMode_counter;
+          }
+        }
+
+        // [Spec: 2.3.4] Write all recovery accessors
+        try {
+          boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
+          for(auto& te : writeRecoveryOpen) {
+            if(te->getVersionNumber() != VersionNumber{nullptr}) {
+              te->write();
+            }
+          }
+        }
+        catch(ChimeraTK::runtime_error&) {
+          // Jump back to re-opening the device
+          continue;
+        }
+
+        // [Spec: 2.3.5] Reset exception state and wait for the next error to be reported.
+        deviceError.status = 0;
+        deviceError.message = "";
+        deviceError.setCurrentVersionNumber({});
+        deviceError.writeAll();
+
+        deviceHasError = false;
+
+        // [Spec: 2.3.6+2.3.7] send the trigger that the device is available again
+        deviceBecameFunctional.write();
+        errorLock.unlock();
+        errorIsResolvedCondVar.notify_all();
+
+        // [Spec: 2.3.8] Wait for an exception being reported by the ExceptionHandlingDecorators
         // release the testable mode mutex for waiting for the exception.
         owner->testableModeUnlock("Wait for exception");
-        // Do not modify the queue without holding the testable mode lock, because we also consitenly have to modify the counter protected by that mutex.
+        // Do not modify the queue without holding the testable mode lock, because we also consistently have to modify
+        // the counter protected by that mutex.
         // Just check the condition variable.
-        std::unique_lock<std::mutex> errorLock(errorMutex);
+        errorLock.lock();
         while(!deviceHasError) {
           boost::this_thread::interruption_point(); // Make sure not to start waiting for the condition variable if
                                                     // interruption was requested.
@@ -347,82 +377,15 @@ namespace ChimeraTK {
           --owner->testableMode_counter;
         }
 
-        // report exception to the control system
+        // [Spec: 2.6.1] report exception to the control system
         deviceError.status = 1;
         deviceError.message = error;
         deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
 
-        // wait some time until retrying.
-        // Never sleep when holding a lock
-        errorLock.unlock(); // we must not hold the error lock when not having the testable mode mutex
-        owner->testableModeUnlock("Wait for recovery");
+        // TODO Implementation for Spec 2.6.2 goes here.
 
-        do {
-          usleep(500000);
-          boost::this_thread::interruption_point();
-          try {
-            // This triggers a recovery (device is already opened).
-            device.open();
-          }
-          catch(ChimeraTK::runtime_error&) {
-            // Recovery failed. Just catch the exception and retry.
-            continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
-          }
-        } while(!device.isFunctional());
-
-        owner->testableModeLock("Try recovery");
-        errorLock.lock();
-
-        // FIXME: we have to wait here until the device reports that it is functional again.
-        // Otherwise we spam the error reporting with 2 Hz.
-
-        try {
-          // re-initialise the device before continuing
-          for(auto& initHandler : initialisationHandlers) {
-            initHandler(this);
-          }
-          { // scope for the lock guard
-            boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
-            for(auto& te : writeRecoveryOpen) {
-              if(te->getVersionNumber() != VersionNumber{nullptr}) {
-                te->write();
-              }
-            }
-          } // end of scope for the lock guard
-        }
-        catch(ChimeraTK::runtime_error& e) {
-          // Report the error. This puts the exception to the queue and we can continue with waiting for the queue.
-          // It is sure we will enter it again because we just pushed to it, so if  the device recovers we will notice.
-          // Do not use reportError, which would just do the mutext business in addition to pushing to the queue, but we already have the mutex.
-          if(errorQueue.push(e.what())) {
-            if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
-          }
-          continue;
-        }
-
-        // We survived the initialisation (if any). It seems the device is working again.
-        // Empty exception reporting queue.
-        while(errorQueue.pop()) {
-          if(owner->isTestableModeEnabled()) {
-            assert(owner->testableMode_counter > 0);
-            --owner->testableMode_counter;
-          }
-        }
-        // Reset exception state and wait for the next error to be reported.
-        deviceError.status = 0;
-        deviceError.message = "";
-        deviceError.setCurrentVersionNumber({});
-        deviceError.writeAll();
-
-        deviceHasError = false;
-
-        // send the trigger that the device is available again
-        deviceBecameFunctional.write();
-
-        errorLock.unlock();
-        errorIsResolvedCondVar.notify_all();
-      }
+      } // while(true)
     }
     catch(...) {
       // before we leave this thread, we might need to notify other waiting
