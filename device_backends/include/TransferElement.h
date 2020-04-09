@@ -425,8 +425,15 @@ namespace ChimeraTK {
     void postRead() {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
-      doPostRead();
       hasActiveFuture = false;
+      doPostRead();
+      // Note: doPostRead can throw an exception, but in that case hasSeenException must be false (we can only have one
+      // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
+      // always, a try-catch block may be necessary.
+      if(hasSeenException) {
+        hasSeenException = false;
+        throw activeException;
+      }
     }
 
     /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
@@ -485,6 +492,13 @@ namespace ChimeraTK {
       if(!writeTransactionInProgress) return;
       writeTransactionInProgress = false;
       doPostWrite();
+      // Note: doPostWrite can throw an exception, but in that case hasSeenException must be false (we can only have one
+      // exception at a time). In case other code is added here later which needs to be executed after doPostWrite()
+      // always, a try-catch block may be necessary.
+      if(hasSeenException) {
+        hasSeenException = false;
+        throw activeException;
+      }
     }
 
     /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
