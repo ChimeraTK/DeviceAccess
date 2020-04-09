@@ -313,6 +313,7 @@ namespace ChimeraTK {
      *  - This function must return within ~1 second after boost::thread::interrupt() has been called on the thread
      *    calling this function.
      *  - Decorators must delegate the call to readTransfer() of the decorated target.
+     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransferLatest()
      */
     virtual void doReadTransfer() = 0;
 
@@ -337,6 +338,7 @@ namespace ChimeraTK {
      *  
      *  Implementation notes:
      *  - Decorators must delegate the call to readTransferNonBlocking() of the decorated target.
+     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransfer()
      */
     virtual bool doReadTransferNonBlocking() = 0;
 
@@ -361,6 +363,7 @@ namespace ChimeraTK {
      *  
      *  Implementation notes:
      *  - Decorators must delegate the call to readTransferLatest() of the decorated target.
+     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransfer()
      */
     virtual bool doReadTransferLatest() = 0;
 
@@ -386,6 +389,7 @@ namespace ChimeraTK {
      *  
      *  Implementation notes:
      *  - Decorators must delegate the call to readTransferLatest() of the decorated target.
+     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransfer()
      *  - The backend must never touch the user buffer (i.e. NDRegisterAccessor::buffer_2D) inside this function, as it
      *    may only be filled inside postRead(). postRead() will get called by the TransferFuture when the user calls
      *    wait().
@@ -557,6 +561,7 @@ namespace ChimeraTK {
      *  
      *  Implementation notes:
      *  - Decorators must delegate the call to writeTransfer() of the decorated target.
+     *  - Delegations within the same object should go to the "do" version, e.g. to this->doWriteTransfer()
      *  - The implementation may destroy the content of the user buffer in the process. This is an optional
      *    optimisation, hence there is a default implementation which just calls the normal doWriteTransfer().
      */
