@@ -550,7 +550,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
+    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
       return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); }, true);
     }
 
