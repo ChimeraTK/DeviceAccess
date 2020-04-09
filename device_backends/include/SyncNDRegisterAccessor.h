@@ -70,8 +70,7 @@ namespace ChimeraTK {
       // launch doReadTransfer in separate thread
       readAsyncThread = boost::thread([this] {
         try {
-        //FIXME
-          this->doReadTransfer(TransferType::read);
+          this->doReadTransfer();
         }
         catch(...) {
           this->notifications.push_exception(std::current_exception());

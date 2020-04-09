@@ -13,7 +13,6 @@
 #include "IEEE754_SingleConverter.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "SyncNDRegisterAccessor.h"
-#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -213,7 +212,7 @@ namespace ChimeraTK {
 
     virtual ~NumericAddressedBackendRegisterAccessor() { this->shutdown(); }
 
-    void doReadTransfer(TransferType) override { _rawAccessor->read(); }
+    void doReadTransfer() override { _rawAccessor->read(); }
 
     bool doReadTransferNonBlocking() override {
       _rawAccessor->read();

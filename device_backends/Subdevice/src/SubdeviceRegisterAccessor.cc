@@ -1,5 +1,4 @@
 #include "SubdeviceRegisterAccessor.h"
-#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -22,7 +21,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doReadTransfer(TransferType) {
+  void SubdeviceRegisterAccessor::doReadTransfer() {
     throw ChimeraTK::logic_error("Reading this register is not supported.");
   }
 
@@ -54,16 +53,14 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::doReadTransferNonBlocking() {
-    // FIXME
-    doReadTransfer(TransferType::read);
+    doReadTransfer();
     return true;
   }
 
   /*********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::doReadTransferLatest() {
-    // FIXME
-    doReadTransfer(TransferType::read);
+    doReadTransfer();
     return true;
   }
 

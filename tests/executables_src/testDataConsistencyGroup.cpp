@@ -20,7 +20,7 @@ class Accessor : public NDRegisterAccessor<UserType> {
 
   TransferFuture doReadTransferAsync() override { return {}; }
 
-  void doReadTransfer(TransferType) override { doReadTransferAsync().wait(); }
+  void doReadTransfer() override { doReadTransferAsync().wait(); }
 
   bool doReadTransferNonBlocking() override { return true; }
 

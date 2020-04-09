@@ -1,6 +1,5 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
-#include "TransferElement.h"
 #include "boost_dynamic_init_test.h"
 
 #include "BufferingRegisterAccessor.h"
@@ -513,9 +512,9 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     NDRegisterAccessorDecorator<T>::doPostWrite(type);
   }
 
-  void doReadTransfer(TransferType type) override {
+  void doReadTransfer() override {
     nRead++;
-    NDRegisterAccessorDecorator<T>::doReadTransfer(type);
+    NDRegisterAccessorDecorator<T>::doReadTransfer();
   }
 
   bool doReadTransferNonBlocking() override {

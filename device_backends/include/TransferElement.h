@@ -119,7 +119,7 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::read);
-      doReadTransfer(TransferType::read);
+      doReadTransfer();
       postRead(TransferType::read);
     }
 
@@ -282,7 +282,7 @@ namespace ChimeraTK {
      *  Implementation note: This function must return within ~1 second after
      * boost::thread::interrupt() has been called on the thread calling this
      * function. */
-    virtual void doReadTransfer(TransferType /*type*/) = 0;
+    virtual void doReadTransfer() = 0;
 
     /** Read the data from the device without blocking but do not fill it into the
      * user buffer of this TransferElement. Calling this function after preRead()

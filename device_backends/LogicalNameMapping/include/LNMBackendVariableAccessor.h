@@ -16,7 +16,6 @@
 #include "FixedPointConverter.h"
 #include "LogicalNameMappingBackend.h"
 #include "SyncNDRegisterAccessor.h"
-#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -79,7 +78,7 @@ namespace ChimeraTK {
 
     virtual ~LNMBackendVariableAccessor() override { this->shutdown(); }
 
-    void doReadTransfer(TransferType) override {}
+    void doReadTransfer() override {}
 
     bool doReadTransferNonBlocking() override { return true; }
 

@@ -11,7 +11,6 @@
 #include <boost/make_shared.hpp>
 
 #include "NDRegisterAccessor.h"
-#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -123,7 +122,7 @@ namespace ChimeraTK {
       return _target->doWriteTransferDestructively(versionNumber);
     }
 
-    void doReadTransfer(TransferType type) override { _target->doReadTransfer(type); }
+    void doReadTransfer() override { _target->doReadTransfer(); }
 
     bool doReadTransferNonBlocking() override { return _target->doReadTransferNonBlocking(); }
 
