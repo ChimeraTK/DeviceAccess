@@ -220,7 +220,7 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool doReadTransferLatest() override {
+    bool doReadTransferLatest(TransferType) override {
       _rawAccessor->read();
       return true;
     }

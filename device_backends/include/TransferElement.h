@@ -168,7 +168,7 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::readLatest);
-      bool ret2 = doReadTransferLatest();
+      bool ret2 = doReadTransferLatest(TransferType::readLatest);
       if(ret2) postRead(TransferType::readLatest);
       return ret || ret2;
     }
@@ -296,7 +296,7 @@ namespace ChimeraTK {
      * preRead() and followed by postRead() is exactly equivalent to a call to
      * just readLatest(). For the return value, see readNonBlocking().
      */
-    virtual bool doReadTransferLatest() = 0;
+    virtual bool doReadTransferLatest(TransferType type) = 0;
 
     /** Start the actual asynchronous read transfer. This function must be
      * implemented by the backends and will be called inside readAsync(). At that

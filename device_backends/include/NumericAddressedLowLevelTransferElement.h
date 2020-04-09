@@ -54,9 +54,8 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool doReadTransferLatest() override {
-      // FIXME
-      doReadTransfer(TransferType::read);
+    bool doReadTransferLatest(TransferType type) override {
+      doReadTransfer(type);
       return true;
     }
 
