@@ -31,7 +31,7 @@ namespace ChimeraTK {
      public:
       using NDRegisterAccessor<UserType>::NDRegisterAccessor;
 
-      void doPreRead() override = 0;
+      void doPreRead(TransferType type) override = 0;
 
       void doPostRead() override = 0;
 
@@ -59,10 +59,7 @@ namespace ChimeraTK {
      public:
       using NDRegisterAccessor<UserType>::NDRegisterAccessor;
 
-      void doPreRead() override {
-        //FIXME
-        _target->preRead(TransferType::read);
-      }
+      void doPreRead(TransferType type) override { _target->preRead(type); }
 
       void doPostRead() override {
         // FIXME
@@ -137,10 +134,7 @@ namespace ChimeraTK {
 
     TransferFuture doReadTransferAsync(TransferType) override { return TransferFuture(_target->readAsync(), this); }
 
-    void doPreRead() override { 
-      // FIXME
-      _target->preRead(TransferType::read); 
-    }
+    void doPreRead(TransferType type) override { _target->preRead(type); }
 
     void transferFutureWaitCallback() override { _target->transferFutureWaitCallback(); }
 

@@ -493,9 +493,9 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     this->_name = "CD:" + this->_name;
   }
 
-  void doPreRead() override {
+  void doPreRead(TransferType type) override {
     nPreRead++;
-    NDRegisterAccessorDecorator<T>::doPreRead();
+    NDRegisterAccessorDecorator<T>::doPreRead(type);
   }
 
   void doPostRead() override {

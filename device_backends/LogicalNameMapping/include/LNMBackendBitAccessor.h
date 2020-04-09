@@ -99,10 +99,9 @@ namespace ChimeraTK {
       return _accessor->doReadTransferLatest(type);
     }
 
-    void doPreRead() override {
+    void doPreRead(TransferType type) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      // FIXME
-      _accessor->preRead(TransferType::read);
+      _accessor->preRead(type);
     }
 
     void doPostRead() override {

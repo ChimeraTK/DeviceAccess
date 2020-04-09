@@ -40,8 +40,7 @@ namespace ChimeraTK { namespace LNMBackend {
     MultiplierPluginDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target, double factor)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, double>(target), _factor(factor) {}
 
-    void doPreRead() override { // FIXME 
-      _target->preRead(TransferType::read); }
+    void doPreRead(TransferType type) override { _target->preRead(type); }
 
     void doPostRead() override;
 

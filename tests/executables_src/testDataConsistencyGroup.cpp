@@ -36,7 +36,7 @@ class Accessor : public NDRegisterAccessor<UserType> {
 
   void doPostWrite() override {}
 
-  void doPreRead() override {}
+  void doPreRead(TransferType) override {}
 
   void doPostRead() override {}
 

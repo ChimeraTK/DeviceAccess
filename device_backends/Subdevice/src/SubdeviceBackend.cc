@@ -181,8 +181,7 @@ namespace ChimeraTK {
         FixedPointConverter fixedPointConverter)
     : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _fixedPointConverter(fixedPointConverter) {}
 
-    void doPreRead() override { // FIXMW 
-      _target->preRead(TransferType::read); }
+    void doPreRead(TransferType type) override { _target->preRead(type); }
 
     void doPostRead() override {
       // FIXME

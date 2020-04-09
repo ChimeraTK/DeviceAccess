@@ -78,7 +78,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
     void doPostWrite() override {}
 
-    void doPreRead() override {}
+    void doPreRead(TransferType) override {}
 
     void doPostRead() override {
       buffer_2D[0][0] = _backend->registers.at(getName());

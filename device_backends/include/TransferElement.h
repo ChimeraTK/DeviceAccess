@@ -320,7 +320,7 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preRead(TransferType type) {
       if(readTransactionInProgress) return;
-      doPreRead();
+      doPreRead(type);
       readTransactionInProgress = true;
     }
 
@@ -331,7 +331,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPreRead() {}
+    virtual void doPreRead(TransferType) {}
 
    public:
     /** Transfer the data from the device receive buffer into the user buffer,
