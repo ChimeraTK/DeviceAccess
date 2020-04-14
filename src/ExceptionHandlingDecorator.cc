@@ -130,7 +130,7 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPreWrite() {
+  void ExceptionHandlingDecorator<UserType>::doPreWrite(TransferType type) {
     /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
      * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
      * This obtains a shared lock from the DeviceModule, hence, the regular writing happeniin here
@@ -154,7 +154,7 @@ namespace ChimeraTK {
     } // lock guard goes out of scope
 
     // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
-    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
+    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
   }
 
   template<typename UserType>

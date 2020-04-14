@@ -26,8 +26,8 @@ namespace ChimeraTK {
       assert(feedingImpl->isReadable());
     }
 
-    void doPostRead() override {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
+    void doPostRead(TransferType type) override {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type);
       for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
         // do not send copy if no data is expected (e.g. trigger)
         if(slave->getNumberOfSamples() != 0) {

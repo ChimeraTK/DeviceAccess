@@ -4,8 +4,8 @@
 namespace ChimeraTK {
 
   template<typename T>
-  void MetaDataPropagatingRegisterDecorator<T>::doPostRead() {
-    NDRegisterAccessorDecorator<T, T>::doPostRead();
+  void MetaDataPropagatingRegisterDecorator<T>::doPostRead(TransferType type) {
+    NDRegisterAccessorDecorator<T, T>::doPostRead(type);
 
     // update the version number
     if(!isNonblockingRead) {
@@ -24,9 +24,9 @@ namespace ChimeraTK {
   }
 
   template<typename T>
-  void MetaDataPropagatingRegisterDecorator<T>::doPreWrite() {
+  void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type) {
     ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(_owner->getDataValidity());
-    NDRegisterAccessorDecorator<T, T>::doPreWrite();
+    NDRegisterAccessorDecorator<T, T>::doPreWrite(type);
   }
 
 } // namespace ChimeraTK
