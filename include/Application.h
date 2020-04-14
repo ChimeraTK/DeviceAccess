@@ -106,9 +106,11 @@ namespace ChimeraTK {
      **/
     bool isTestableModeEnabled() { return testableMode; }
 
-    /** Resume the application until all application threads are stuck in a
-     * blocking read operation. Works only when the testable mode was enabled. */
-    void stepApplication();
+    /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
+     *  the testable mode was enabled.
+     *  The optional argument controls whether to wait as well for devices to be completely (re-)initialised. Disabling
+     *  this behavior allows to test proper response to runtime exceptions. */
+    void stepApplication(bool waitForDeviceInitialisation = true);
 
     /** Enable some additional (potentially noisy) debug output for the testable
      * mode. Can be useful if tests
@@ -340,6 +342,11 @@ namespace ChimeraTK {
      * finished executing. This value may only be accessed while holding the
      * testableMode_mutex. */
     size_t testableMode_counter{0};
+
+    /** Semaphore counter used in testable mode to check if device initialisation is finished executing. This value may
+     *  only be accessed while holding the testableMode_mutex. This counter is a separate counter from
+     *  testableMode_counter so stepApplication() can be controlled whether to obey this counter. */
+    size_t testableMode_deviceInitialisationCounter{0};
 
     /** Flag if noisy debug output is enabled for the testable mode */
     bool enableDebugTestableMode{false};

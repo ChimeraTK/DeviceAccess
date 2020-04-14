@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(testConstants) {
   auto pleaseWriteToMe = test.getScalar<int32_t>("/PleaseWriteToMe");
   pleaseWriteToMe = 42;
   pleaseWriteToMe.write();
-  test.stepApplication();
+  test.stepApplication(false);
 
   // Check that the error has been seen
   auto deviceStatus = test.getScalar<int32_t>(std::string("/Devices/") + ExceptionDummyCDD1 + "/status");

@@ -93,7 +93,8 @@ namespace ChimeraTK {
       // make sure all initial values have been propagated when in testable mode
       if(Application::getInstance().isTestableModeEnabled()) {
         // call stepApplication() only in testable mode and only if the queues are not empty
-        if(Application::getInstance().testableMode_counter != 0) {
+        if(Application::getInstance().testableMode_counter != 0 ||
+            Application::getInstance().testableMode_deviceInitialisationCounter != 0) {
           stepApplication();
         }
       }
@@ -114,7 +115,9 @@ namespace ChimeraTK {
      * from this function, the result can be checked and new data can be provided
      * to the application. The new data will not be
      *  processed until the next call to step(). */
-    void stepApplication() const { Application::getInstance().stepApplication(); }
+    void stepApplication(bool waitForDeviceInitialisation = true) const {
+      Application::getInstance().stepApplication(waitForDeviceInitialisation);
+    }
 
     /** Obtain a scalar process variable from the application, which is published
      * to the control system. */

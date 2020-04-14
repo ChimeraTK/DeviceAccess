@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
     std::cout << "Checking read mode " << app.module.readMode << "\n";
     dummyBackend1->throwExceptionRead = true;
     app.trigger.sendTrigger();
-    test.stepApplication();
+    test.stepApplication(false);
     BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
 
     // advance to the next read
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
     // Check
     dummyBackend1->throwExceptionWrite = true;
     app.trigger.sendTrigger();
-    test.stepApplication();
+    test.stepApplication(false);
     // write operations failing does not invalidate data
     BOOST_CHECK(app.module.vars.set.dataValidity() == ctk::DataValidity::ok);
 
