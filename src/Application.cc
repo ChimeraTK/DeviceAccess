@@ -1065,17 +1065,18 @@ Application& Application::getInstance() {
 
 /*********************************************************************************************************************/
 
-void Application::stepApplication() {
-  // testableMode_counter must be non-zero, otherwise there is no input for the
-  // application to process
-  if(testableMode_counter == 0) {
+void Application::stepApplication(bool waitForDeviceInitialisation) {
+  // testableMode_counter must be non-zero, otherwise there is no input for the application to process. It is also
+  // sufficient if testableMode_deviceInitialisationCounter is non-zero, if waitForDeviceInitialisation == true. In that
+  // case we only wait for the device initialisation to be completed.
+  if(testableMode_counter == 0 && (!waitForDeviceInitialisation || testableMode_deviceInitialisationCounter == 0)) {
     throw ChimeraTK::logic_error("Application::stepApplication() called despite no input was provided "
                                  "to the application to process!");
   }
   // let the application run until it has processed all data (i.e. the semaphore
   // counter is 0)
   size_t oldCounter = 0;
-  while(testableMode_counter > 0) {
+  while(testableMode_counter > 0 || (waitForDeviceInitialisation && testableMode_deviceInitialisationCounter > 0)) {
     if(enableDebugTestableMode && (oldCounter != testableMode_counter)) { // LCOV_EXCL_LINE (only cout)
       std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter
                 << std::endl;            // LCOV_EXCL_LINE (only cout)

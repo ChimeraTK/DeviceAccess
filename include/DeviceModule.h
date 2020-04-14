@@ -254,7 +254,7 @@ namespace ChimeraTK {
     std::condition_variable errorIsReportedCondVar;
 
     /** The error flag (predicate) for the conditionVariable */
-    bool deviceHasError{false};
+    bool deviceHasError{true};
 
     /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
      *  The function is running an endless loop inside its own thread (moduleThread). */

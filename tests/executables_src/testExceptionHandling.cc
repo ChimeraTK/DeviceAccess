@@ -193,14 +193,25 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 42);
   dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 52);
 
-  // initially there should be no error set
+  // initially, devices are not opened but errors should be cleared once they are opened
   trigger.write();
+
+  do {
+    message1.readLatest();
+    status1.readLatest();
+  } while(status1 != 0 || std::string(message1) != "");
   BOOST_CHECK(!message1.readLatest());
   BOOST_CHECK(!status1.readLatest());
+
+  do {
+    message2.readLatest();
+    status2.readLatest();
+  } while(status2 != 0 || std::string(message2) != "");
+  BOOST_CHECK(!message2.readLatest());
+  BOOST_CHECK(!status2.readLatest());
+
   CHECK_TIMEOUT(readback1.readLatest(), 10000);
   CHECK_TIMEOUT(readback2.readLatest(), 10000);
-  BOOST_CHECK(static_cast<std::string>(message1) == "");
-  BOOST_CHECK(status1 == 0);
   BOOST_CHECK_EQUAL(readback1, 42);
   BOOST_CHECK_EQUAL(readback2, 52);
 
@@ -295,7 +306,21 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
 
   auto trigger = test.getScalar<int>("trigger");
 
-  // initially there should be no error set
+  // initially, devices are not opened but errors should be cleared once they are opened
+  do {
+    message1.readLatest();
+    status1.readLatest();
+  } while(status1 != 0 || std::string(message1) != "");
+  BOOST_CHECK(!message1.readLatest());
+  BOOST_CHECK(!status1.readLatest());
+
+  do {
+    message2.readLatest();
+    status2.readLatest();
+  } while(status2 != 0 || std::string(message2) != "");
+  BOOST_CHECK(!message2.readLatest());
+  BOOST_CHECK(!status2.readLatest());
+
   actuator1 = 29;
   actuator1.write();
   actuator2 = 39;
@@ -443,7 +468,7 @@ BOOST_AUTO_TEST_CASE(testConstants) {
   auto pleaseWriteToMe = test.getScalar<int32_t>("/PleaseWriteToMe");
   pleaseWriteToMe = 42;
   pleaseWriteToMe.write();
-  test.stepApplication();
+  test.stepApplication(false);
 
   // Check that the error has been seen
   auto deviceStatus = test.getScalar<int32_t>(std::string("/Devices/") + ExceptionDummyCDD1 + "/status");

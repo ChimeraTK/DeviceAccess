@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   auto reg2_cs = test.getScalar<int32_t>("/REG2");
   reg2_cs = 19;
   reg2_cs.write();
-  test.stepApplication();
+  test.stepApplication(false);
 
   BOOST_CHECK_EQUAL(var2, 0);
   BOOST_CHECK_EQUAL(var1, 0);
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
   auto reg4_cs = test.getScalar<int32_t>("/REG4");
   reg4_cs = 19;
   reg4_cs.write();
-  test.stepApplication();
+  test.stepApplication(false);
 
   // recover
   dummyBackend->throwExceptionWrite = false;
