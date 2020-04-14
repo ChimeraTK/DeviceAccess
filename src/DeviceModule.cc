@@ -278,6 +278,9 @@ namespace ChimeraTK {
     std::string error;
     owner->testableModeLock("Startup");
 
+    // flag whether the deviceError.message has already been initialised with a sensible value
+    bool firstAttempt = true;
+
     // catch-all required around everything, to prevent any uncaught exception (including the boost thread interruption)
     // to terminate this thread before waking up other threads waiting on the condition variable.
     try {
@@ -295,16 +298,18 @@ namespace ChimeraTK {
             device.open();
           }
           catch(ChimeraTK::runtime_error& e) {
-            if(deviceError.status != 1) {
-              // deviceError.status == 0 if the initial open fails (no error yet reported)
-              deviceError.status = 1;
+            assert(deviceError.status != 0); // any error must already be reported...
+            if(firstAttempt) {
+              // set proper error message in very first attempt to open the device
               deviceError.message = e.what();
               deviceError.setCurrentVersionNumber({});
-              deviceError.writeAll();
+              deviceError.message.write();
+              firstAttempt = false;
             }
             continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
           }
         } while(!device.isFunctional());
+        firstAttempt = false;
         owner->testableModeLock("Initialise device");
 
         // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
@@ -319,7 +324,12 @@ namespace ChimeraTK {
             initHandler(this);
           }
         }
-        catch(ChimeraTK::runtime_error&) {
+        catch(ChimeraTK::runtime_error& e) {
+          assert(deviceError.status != 0); // any error must already be reported...
+          // update error message, since it might have been changed...
+          deviceError.message = e.what();
+          deviceError.setCurrentVersionNumber({});
+          deviceError.message.write();
           // Jump back to re-opening the device
           continue;
         }
@@ -411,6 +421,12 @@ namespace ChimeraTK {
       device = Device(deviceAliasOrURI);
       deviceIsInitialized = true;
     }
+
+    // Set initial status to error
+    deviceError.status = 1;
+    deviceError.message = "Attempting to open device...";
+    deviceError.setCurrentVersionNumber({});
+    deviceError.writeAll();
   }
 
   /*********************************************************************************************************************/
