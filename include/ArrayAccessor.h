@@ -109,7 +109,6 @@ namespace ChimeraTK {
     : ArrayAccessor<UserType>(
           owner, name, {VariableDirection::consuming, false}, unit, nElements, UpdateMode::poll, description, tags) {}
     ArrayPollInput() : ArrayAccessor<UserType>() {}
-    void doReadTransfer() { this->doReadTransferLatest(); }
     void read() { this->readLatest(); }
     using ArrayAccessor<UserType>::operator=;
   };
