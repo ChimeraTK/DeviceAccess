@@ -351,7 +351,11 @@ namespace ChimeraTK {
             }
           }
         }
-        catch(ChimeraTK::runtime_error&) {
+        catch(ChimeraTK::runtime_error& e) {
+          // update error message, since it might have been changed...
+          deviceError.message = e.what();
+          deviceError.setCurrentVersionNumber({});
+          deviceError.message.write();
           // Jump back to re-opening the device
           continue;
         }
