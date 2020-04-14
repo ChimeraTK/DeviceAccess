@@ -41,7 +41,7 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend ForceReadOnlyPlugin: Writing is not allowed.");
     }
 
-    void doPostWrite(TransferType) override {
+    void doPostWrite(TransferType, bool /*dataLost*/) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend ForceReadOnlyPlugin: Writing is not allowed.");
     }
   };

@@ -46,7 +46,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPreWrite(TransferType type) override;
 
-    void doPostWrite(TransferType type) override { _target->postWrite(type); }
+    void doPostWrite(TransferType type, bool dataLost) override { _target->postWrite(type, dataLost); }
 
     void interrupt() override { _target->interrupt(); }
 

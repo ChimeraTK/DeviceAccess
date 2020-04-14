@@ -36,7 +36,7 @@ namespace ChimeraTK {
 
       void doPreWrite(TransferType type) override = 0;
 
-      void doPostWrite(TransferType type) override = 0;
+      void doPostWrite(TransferType type, bool dataLost) override = 0;
 
       void interrupt() override { _target->interrupt(); }
 
@@ -70,8 +70,8 @@ namespace ChimeraTK {
         _target->preWrite(type);
       }
 
-      void doPostWrite(TransferType type) override {
-        _target->postWrite(type);
+      void doPostWrite(TransferType type, bool dataLost) override {
+        _target->postWrite(type, dataLost);
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 

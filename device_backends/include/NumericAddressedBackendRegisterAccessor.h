@@ -242,7 +242,7 @@ namespace ChimeraTK {
 
     void doPreWrite(TransferType) override { _prePostActionsImplementor.doPreWrite(); }
 
-    void doPostWrite(TransferType) override { _prePostActionsImplementor.doPostWrite(); }
+    void doPostWrite(TransferType, bool /*dataLost*/) override { _prePostActionsImplementor.doPostWrite(); }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<

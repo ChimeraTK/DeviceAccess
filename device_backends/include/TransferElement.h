@@ -223,9 +223,9 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::write);
-      bool ret = writeTransfer(versionNumber);
-      postWrite(TransferType::write);
-      return ret;
+      bool dataLost = writeTransfer(versionNumber);
+      postWrite(TransferType::write, dataLost);
+      return dataLost;
     }
 
     /** Just like write(), but allows the implementation to destroy the content of the user buffer in the
@@ -240,9 +240,9 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::writeDestructively);
-      bool ret = writeTransferDestructively(versionNumber);
-      postWrite(TransferType::writeDestructively);
-      return ret;
+      bool dataLost = writeTransferDestructively(versionNumber);
+      postWrite(TransferType::writeDestructively, dataLost);
+      return dataLost;
     }
 
     /**
@@ -499,10 +499,10 @@ namespace ChimeraTK {
      *
      *  Called by write(). Also the TransferGroup will call this function after a
      * write was executed directly on the underlying accessor. */
-    void postWrite(TransferType type) {
+    void postWrite(TransferType type, bool dataLost) {
       if(!writeTransactionInProgress) return;
       writeTransactionInProgress = false;
-      doPostWrite(type);
+      doPostWrite(type, dataLost);
       // Note: doPostWrite can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostWrite()
       // always, a try-catch block may be necessary.
@@ -519,7 +519,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostWrite(TransferType) {}
+    virtual void doPostWrite(TransferType, bool dataLost) {}
 
    public:
     /** 
