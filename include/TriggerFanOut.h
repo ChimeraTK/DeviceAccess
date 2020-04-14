@@ -108,7 +108,6 @@ namespace ChimeraTK {
             lastValidity = DataValidity::faulty;
             boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
           }
-//          _deviceModule.reportException(e.what());
           _deviceModule.reportException(e.what());
           _deviceModule.waitForRecovery();
           goto retry;

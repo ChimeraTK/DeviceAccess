@@ -112,10 +112,12 @@ namespace ChimeraTK {
 
     /** Use this function to report an exception. It should be called whenever a
      * ChimeraTK::runtime_error has been caught when trying to interact with this
-     * device. This function shall not be called by the user, all exception
-     * handling is done internally by ApplicationCore.
-     * This functions is blocking until the Device reports isFunctional() again.*/
+     * device. It is primarily used by the ExceptionHandlingDecorator, but also user modules
+     * can report exception and trigger the recovery mechanism like this. */
     void reportException(std::string errMsg);
+
+    /** This functions is blocking until the device has been opened, initialsed and all recovery accessors
+      * have been written. If the device is not in an error state, the function will return immediately. */
     void waitForRecovery();
 
     void prepare() override;
