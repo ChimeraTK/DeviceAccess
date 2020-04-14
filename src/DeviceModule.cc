@@ -282,7 +282,10 @@ namespace ChimeraTK {
     // to terminate this thread before waking up other threads waiting on the condition variable.
     try {
       while(true) {
-        //  [Spec: 2.3.1] (Re)-open the device.
+        // increment testable mode counter to make sure the initialisation completes within one "application step"
+        ++owner->testableMode_counter; // matched below with a decrement
+
+        // [Spec: 2.3.1] (Re)-open the device.
         owner->testableModeUnlock("Open/recover device");
         do {
           usleep(500000);
@@ -302,6 +305,10 @@ namespace ChimeraTK {
           }
         } while(!device.isFunctional());
         owner->testableModeLock("Initialise device");
+
+        // decrement testable mode counter, was incremented manually above to make sure initialisation completes within
+        // one "application step"
+        --owner->testableMode_counter;
 
         std::unique_lock<std::mutex> errorLock(errorMutex);
 
