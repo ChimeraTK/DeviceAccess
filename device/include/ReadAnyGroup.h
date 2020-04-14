@@ -288,9 +288,9 @@ namespace ChimeraTK {
       detail::getFutureQueueFromTransferFuture(tf).pop_wait();
     }
     catch(detail::DiscardValueException&) {
+      this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync, false);
       return false;
     }
-    // FIXME: Added true just get compilation working. What the appropriate value here?
     this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync, true);
     return true;
   }
