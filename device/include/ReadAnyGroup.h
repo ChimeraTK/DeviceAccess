@@ -288,9 +288,10 @@ namespace ChimeraTK {
       detail::getFutureQueueFromTransferFuture(tf).pop_wait();
     }
     catch(detail::DiscardValueException&) {
+      this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync, false);
       return false;
     }
-    this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync);
+    this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync, true);
     return true;
   }
 

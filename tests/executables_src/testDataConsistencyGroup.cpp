@@ -37,7 +37,7 @@ class Accessor : public NDRegisterAccessor<UserType> {
 
   void doPreRead(TransferType) override {}
 
-  void doPostRead(TransferType) override {}
+  void doPostRead(TransferType, bool /*hasNewData*/) override {}
 
   AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
   bool isReadOnly() const override { return false; }

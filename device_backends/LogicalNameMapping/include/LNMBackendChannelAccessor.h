@@ -95,8 +95,8 @@ namespace ChimeraTK {
       _accessor->preRead(type);
     }
 
-    void doPostRead(TransferType type) override {
-      _accessor->postRead(type);
+    void doPostRead(TransferType type, bool hasNewData) override {
+      _accessor->postRead(type, hasNewData);
       _accessor->accessChannel(_info->channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
     }
 

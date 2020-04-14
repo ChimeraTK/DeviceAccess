@@ -70,7 +70,7 @@ namespace ChimeraTK {
       return true;
     }
 
-    void doPostRead(TransferType type) override;
+    void doPostRead(TransferType type, bool hasNewData) override;
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
@@ -282,12 +282,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead(TransferType type) {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead(TransferType type, bool hasNewData) {
     for(size_t i = 0; i < _converters.size(); ++i) {
       _converters[i].template vectorToCooked<UserType>(_startIterators[i], _endIterators[i], buffer_2D[i].begin());
     }
     currentVersion = {};
-    SyncNDRegisterAccessor<UserType>::doPostRead(type);
+    SyncNDRegisterAccessor<UserType>::doPostRead(type, hasNewData);
   }
 
   /********************************************************************************************************************/
