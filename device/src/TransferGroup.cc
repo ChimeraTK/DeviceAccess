@@ -19,18 +19,56 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void TransferGroup::read() {
+    std::stringstream combinedMessage;
+    bool hadException{false};
+
     for(auto& elem : highLevelElements) {
       elem->preRead(TransferType::read);
     }
+
+    for(auto& elem : copyDecorators) {
+      elem->preRead(TransferType::read);
+    }
+
+    for(auto& elem : lowLevelElements) {
+      elem->preRead(TransferType::read);
+    }
+
     for(auto& elem : lowLevelElements) {
       elem->readTransfer();
     }
+
+    for(auto& elem : lowLevelElements) {
+      try {
+        elem->postRead(TransferType::read, !elem->hasSeenException);
+      }
+      catch(runtime_error& ex) {
+        hadException = true;
+        combinedMessage << ex.what() << "\n";
+      }
+    }
+
     for(auto& elem : copyDecorators) {
+      try {
       elem->postRead(TransferType::read, !elem->hasSeenException);
+      }
+      catch(runtime_error& ex) {
+        hadException = true;
+        combinedMessage << ex.what() << "\n";
+      }
     }
+
     for(auto& elem : highLevelElements) {
+      try {
       elem->postRead(TransferType::read, !elem->hasSeenException);
+      }
+      catch(runtime_error& ex) {
+        hadException = true;
+        combinedMessage << ex.what() << "\n";
+      }
     }
+
+    if(hadException) throw runtime_error(combinedMessage.str());
   }
 
   /*********************************************************************************************************************/

@@ -9,6 +9,7 @@
 #include "TransferGroup.h"
 
 #include "accessPrivateData.h"
+#include "ExceptionDummyBackend.h"
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {
@@ -37,6 +38,7 @@ class TransferGroupTest {
   void testMergeNumericRegistersDifferentTypes();
   void testCallsToPrePostFunctionsInDecorator();
   void testCallsToPrePostFunctionsInLowLevel();
+  void testExceptionHandling();
 };
 
 class TransferGroupTestSuite : public test_suite {
@@ -50,6 +52,7 @@ class TransferGroupTestSuite : public test_suite {
     add(BOOST_CLASS_TEST_CASE(&TransferGroupTest::testMergeNumericRegistersDifferentTypes, transferGroupTest));
     add(BOOST_CLASS_TEST_CASE(&TransferGroupTest::testCallsToPrePostFunctionsInDecorator, transferGroupTest));
     add(BOOST_CLASS_TEST_CASE(&TransferGroupTest::testCallsToPrePostFunctionsInLowLevel, transferGroupTest));
+    add(BOOST_CLASS_TEST_CASE(&TransferGroupTest::testExceptionHandling, transferGroupTest));
   }
 };
 
@@ -58,6 +61,67 @@ bool init_unit_test() {
   framework::master_test_suite().add(new TransferGroupTestSuite());
 
   return true;
+}
+
+void TransferGroupTest::testExceptionHandling() {
+  const std::string EXCEPTION_DUMMY_CDD = "(ExceptionDummy:1?map=test3.map)";
+  BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  ChimeraTK::Device device1;
+  ChimeraTK::Device device2;
+  ChimeraTK::Device device3;
+
+  device1.open("DUMMYD1");
+  auto exceptionDummy = boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend(EXCEPTION_DUMMY_CDD));
+  device2.open(EXCEPTION_DUMMY_CDD);
+  device3.open("DUMMYD2");
+
+  auto accessor1 = device1.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
+  auto accessor1w = device1.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
+  auto accessor2 = device2.getScalarRegisterAccessor<int>("/Integers/signed32");
+  auto accessor2w = device2.getScalarRegisterAccessor<int>("/Integers/signed32");
+  auto accessor3 = device2.getScalarRegisterAccessor<float>("/FixedPoint/value");
+  auto accessor3w = device2.getScalarRegisterAccessor<float>("/FixedPoint/value");
+  auto accessor4 = device3.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
+  auto accessor4w = device3.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
+
+  TransferGroup tg;
+  tg.addAccessor(accessor2);
+  tg.addAccessor(accessor1);
+  tg.addAccessor(accessor3);
+  tg.addAccessor(accessor4);
+
+  accessor1w = 0xdeadcafe;
+  accessor2w = 815;
+  accessor3w = 4711;
+  accessor4w = 0xc01dcafe;
+  accessor1w.write();
+  accessor2w.write();
+  accessor3w.write();
+  accessor4w.write();
+
+  exceptionDummy->throwExceptionRead = true;
+  try {
+    tg.read();
+    BOOST_REQUIRE(false);
+  }
+  catch(runtime_error& ex) {
+    std::stringstream message{ex.what()};
+    int messageCount = 0;
+    while(not message.eof()) {
+      std::string line;
+      std::getline(message, line);
+      messageCount++;
+    }
+    BOOST_CHECK_EQUAL(messageCount, 3);
+  }
+  catch(...) {
+    BOOST_REQUIRE(false);
+  }
+
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor1), 0xdeadcafe);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor4), 0xc01dcafe);
+  // Optional: Check the validity flag of the other two accessors?
 }
 
 void TransferGroupTest::testAdding() {
