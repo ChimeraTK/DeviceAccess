@@ -102,12 +102,12 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 
 Requirements to the DeviceAccess interface:
 
-- 3.1  Exceptions are only reported in doPostRead()/doPostWrite()
+- 3.1  Exceptions are reported in postRead()/postWrite()
   - As the error itself always occurs in the read/write transfer, the TransferElement base class implements a mechanism to catch it and transfer the exception message into the post-read function, where it is re-thrown.
   - This is required for three reasons:
 
     - 1. A transfer must always be complete, i.e. preXxx and postXxx must always be called. This is for instance important in case a user buffer has been swapped out, and has to be swapped back in so the user buffer stays intact in the application. Letting the exception in doXxxTransfer through would break this. (This is DeviceAccess spec.)
-    - 2. The transfer groups calls doXxxTransfer itself on a potentially exchanged hardware accessing element. All code using transfer groups would have to do exception handling itself, and the individual accessors would not behave according to this (ApplicationCore exception handling) specification when used with a transfer group. By throwing in doPostXxx the ExceptionHandlingDecorator can handle it, and it automatically works with transfer groups.
+    - 2. The transfer groups calls xxxTransfer itself on a potentially exchanged hardware accessing element. All code using transfer groups would have to do exception handling itself, and the individual accessors would not behave according to this (ApplicationCore exception handling) specification when used with a transfer group. By throwing in postXxx the ExceptionHandlingDecorator can handle it, and it automatically works with transfer groups.
     - 3. Asynchronous reads are executing the transfer in a different thread anyway, and have to delay the throwing to postRead.
 
 - 3.2 Before throwing, each backend must make sure that the actions in doPostRead() are completed such that the user buffer of a calling accessor is intact
@@ -115,6 +115,7 @@ Requirements to the DeviceAccess interface:
 - 3.4 The TransferType (read, readNonBlocking, readLatest, readAsync, write, writeDestructively) is known in postRead and postWrite, so a decorator or backend can do different actions if required.
 - 3.5 postRead() must always be called, also for failed transfers and for readNonBlocking and readLatest if there was no new data.
 - 3.6 If a backend / doXXXTransfer implementation throws, the backend must make sure that all pending transactions will terminate. Especially transfers which implement reading with watiForNewData must return with an error, because no new data will arrive because the device is broken. These transfers must be interruptible.
+- 3.7 In the level closest to the hardware the exception will be caught in the transfer. postXxx() (without 'do') will raise the exception. In case of the decorator-like pattern, where the call is delegated, the doPostXxx() (with 'do') will throw because it is calls _impl->postXxx(). The postXxx() implementation in TransferElement must make sure that the bookkeeping in each layer is complete. If required it has to catch the exception from doPostXxx(), finish what needs to be done and re-throw.
 
 <b>4. The DeviceModule</b>
 
