@@ -28,13 +28,13 @@ namespace ChimeraTK {
       isNonblockingRead = true;
       return NDRegisterAccessorDecorator<T, T>::doReadTransferLatest();
     }
-    void doPreRead() override {
+    void doPreRead(TransferType type) override {
       isNonblockingRead = false;
-      NDRegisterAccessorDecorator<T, T>::doPreRead();
+      NDRegisterAccessorDecorator<T, T>::doPreRead(type);
     }
 
-    void doPostRead() override;
-    void doPreWrite() override;
+    void doPostRead(TransferType type) override;
+    void doPreWrite(TransferType type) override;
 
    protected:
     EntityOwner* _owner;

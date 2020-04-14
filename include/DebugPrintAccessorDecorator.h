@@ -55,24 +55,24 @@ namespace ChimeraTK {
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
     }
 
-    void doPreRead() override {
+    void doPreRead(TransferType type) override {
       std::cout << "preRead() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead();
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
     }
 
-    void doPostRead() override {
+    void doPostRead(TransferType type) override {
       std::cout << "postRead() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type);
     }
 
-    void doPreWrite() override {
+    void doPreWrite(TransferType type) override {
       std::cout << "preWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
     }
 
-    void doPostWrite() override {
+    void doPostWrite(TransferType type) override {
       std::cout << "postWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite();
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type);
     }
 
    protected:

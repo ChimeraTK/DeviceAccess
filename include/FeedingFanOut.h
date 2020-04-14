@@ -83,16 +83,16 @@ namespace ChimeraTK {
       return _returnSlave->readTransferLatest();
     }
 
-    void doPreRead() override {
+    void doPreRead(TransferType type) override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
-      _returnSlave->preRead();
+      _returnSlave->preRead(type);
     }
 
-    void doPostRead() override {
+    void doPostRead(TransferType type) override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       assert(_hasReturnSlave);
-      _returnSlave->postRead();
+      _returnSlave->postRead(type);
       _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
       // distribute return-channel update to the other slaves
       for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
@@ -109,7 +109,7 @@ namespace ChimeraTK {
       return {_returnSlave->readTransferAsync(), this};
     }
 
-    void doPreWrite() override {
+    void doPreWrite(TransferType type) override {
       for(auto& slave : FanOut<UserType>::slaves) {       // send out copies to slaves
         if(slave->getNumberOfSamples() != 0) {            // do not send copy if no data is expected (e.g. trigger)
           if(slave == FanOut<UserType>::slaves.front()) { // in case of first slave, swap instead of copy
@@ -124,7 +124,7 @@ namespace ChimeraTK {
       // pre write may only be called on the target accessors after we have filled
       // them all, otherwise the first accessor might take us the data away...
       for(auto& slave : FanOut<UserType>::slaves) {
-        slave->preWrite();
+        slave->preWrite(type);
       }
     }
 
@@ -154,9 +154,9 @@ namespace ChimeraTK {
       return dataLost;
     }
 
-    void doPostWrite() override {
+    void doPostWrite(TransferType type) override {
       for(auto& slave : FanOut<UserType>::slaves) {
-        slave->postWrite();
+        slave->postWrite(type);
       }
       FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
     }
