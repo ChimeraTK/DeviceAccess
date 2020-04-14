@@ -290,7 +290,8 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       return false;
     }
-    this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync);
+    // FIXME: Added true just get compilation working. What the appropriate value here?
+    this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync, true);
     return true;
   }
 

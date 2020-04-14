@@ -68,7 +68,8 @@ namespace ChimeraTK {
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
         // FIXME: Read seems to be the closest of what we do here;
         // revise TraferType if incorrect
-        doPostRead(TransferType::read);
+        // FIXME Check hasNewData argument
+        doPostRead(TransferType::read, true);
       }
       catch(...) {
         this->shutdown();
@@ -110,7 +111,7 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT; }
 
-    void doPostRead(TransferType) override {
+    void doPostRead(TransferType, bool /*hasNewData*/) override {
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {

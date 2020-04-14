@@ -15,7 +15,8 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       goto retry;
     }
-    _transferElement->postRead(TransferType::readAsync);
+
+    _transferElement->postRead(TransferType::readAsync, !_transferElement->hasSeenException);
   }
 
   bool TransferFuture::hasNewData() {

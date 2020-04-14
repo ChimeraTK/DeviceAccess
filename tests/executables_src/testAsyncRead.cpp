@@ -80,7 +80,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
     void doPreRead(TransferType) override {}
 
-    void doPostRead(TransferType) override {
+    void doPostRead(TransferType, bool /*hasNewData*/) override {
       buffer_2D[0][0] = _backend->registers.at(getName());
       currentVersion = {};
     }

@@ -120,7 +120,8 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preRead(TransferType::read);
       readTransfer();
-      postRead(TransferType::read);
+
+      postRead(TransferType::read, !hasSeenException);
     }
 
     /** 
@@ -146,9 +147,9 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::readNonBlocking);
-      bool ret = readTransferNonBlocking();
-      if(ret) postRead(TransferType::readNonBlocking);
-      return ret;
+      bool hasNewData = readTransferNonBlocking();
+      postRead(TransferType::readNonBlocking, hasNewData);
+      return hasNewData;
     }
 
     /** Read the latest value, discarding any other update since the last read if
@@ -169,7 +170,7 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preRead(TransferType::readLatest);
       bool ret2 = readTransferLatest();
-      if(ret2) postRead(TransferType::readLatest);
+      postRead(TransferType::readLatest, ret2);
       return ret || ret2;
     }
 
@@ -432,11 +433,11 @@ namespace ChimeraTK {
      *  a read was executed directly on the underlying accessor. This function must
      *  be implemented to extract the read data from the underlying accessor and
      *  expose it to the user. */
-    void postRead(TransferType type) {
+    void postRead(TransferType type, bool hasNewData) {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
       hasActiveFuture = false;
-      doPostRead(type);
+      doPostRead(type, hasNewData);
       // Note: doPostRead can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
       // always, a try-catch block may be necessary.
@@ -453,7 +454,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostRead(TransferType) {}
+    virtual void doPostRead(TransferType, bool) {}
 
    public:
     /** Function called by the TransferFuture before entering a potentially
