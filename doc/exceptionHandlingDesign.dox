@@ -30,18 +30,19 @@ If an input variable is in the error state, it sets the DataValidity flag for it
 
 <b>2. The Flow</b>
 
-- 2.1. The application always starts with all devices as closed and initial value for deviceError.status is set to 1 and  a device.message is send that the device has not been opened yet. The DeviceModule takes care that ExceptionHandlingDecorators do not perform any read or write operations, but block. This must happen before running any prepare() of an ApplicationModule, where the first write calls to ExceptionHandlingDecorators are done.
+- 2.1. The application always starts with all devices as closed. The initial value for deviceError.status is set to 1 and the initial value for deviceError.message is set to an error that the device has not been opened yet (the message will be overwritten with the real error message if the first attempt to open fails, see 2.3.1). The DeviceModule takes care that ExceptionHandlingDecorators do not perform any read or write operations, but block. This must happen before running any prepare() of an ApplicationModule, where the first write calls to ExceptionHandlingDecorators are done.
 
 - 2.2 In ApplicationModule::prepare() some initial values (and constants) are written. As the ExceptionHandlingDecorator must not perform the actual write at this point, it will put the value into the dataRecoveryAccesssor and report an exception to the DeviceModule.
 
 - Between 2.2 and 2.3 the application goes into multi-threaded mode. Although ApplicationModule and fanout threads start after the device module threads, the application is now asynchronous and read or write operations can already take place in the main loops, even if the device is not ready yet (it might actually be broken). All read and write operations are blocked buy the ExceptionHandlingDecorators at this point.
 
 - 2.3 The device module thread starts.
-  - 2.3.1 The DeviceModule tries to open the device until it succeeds.(*)
-  - 2.3.2 Device is initialised by iterating initialisationHandlers list. If there is an exception go back to 2.3.1. (*)
+  - 2.3.1 The DeviceModule tries to open the device until it succeeds. (*)
+    - 2.3.1.1 If the very first attempt to open the device since the application start fails, the error message of the exception is used to overwrite the content of deviceError.message. Otherwise error messages of exceptions thrown by Device::open() are not visible.
+  - 2.3.2 Device is initialised by iterating initialisationHandlers list. If there is an exception, update deviceError.message with the error message and go back to 2.3.1. (*)
   - 2.3.3 The list of reported exceptions is cleared. (*)
-  - 2.3.4 All valid (*) recovery accessors are written. If there is an exception go back to 2.3.1. (*)
-  - 2.3.5 deviceError.status is set to 0.
+  - 2.3.4 All valid (*) recovery accessors are written. If there is an exception, update deviceError.message with the error message and go back to 2.3.1. (*)
+  - 2.3.5 deviceError.status is set to 0 and deviceError.message is set to an empty string.
   - 2.3.6 DeviceModule allows that ExceptionHandlingDecorators execute reads and writes.
   - 2.3.7 All blocked read and write operations (from 2.5.3) are notified.(*)
   - 2.3.8 The DeviceModuleThread waits for the next reported exception.
@@ -66,7 +67,7 @@ If an input variable is in the error state, it sets the DataValidity flag for it
     - writeWithoutErrorBlocking: just returns (*) 
 
 - 2.6 The exception is received in the DeviceModule thread
-  - 2.6.1 deviceError.status will be set to 1. The first received exception message is send to device.message(). From this point on, all ExceptionHandlingDecorators for this device must block new read and write operations from starting (see also 2.2 and 2.3.6).
+  - 2.6.1 deviceError.status is set to 1 and deviceError.message is set to the first received exception message. From this point on, all ExceptionHandlingDecorators for this device must block new read and write operations from starting (see also 2.2 and 2.3.6).
   - 2.6.2 The device module waits until all running read and write operations have ended (*)
   - 2.6.3 The thread goes back to 2.3.1 and tries to re-open the device.
 
