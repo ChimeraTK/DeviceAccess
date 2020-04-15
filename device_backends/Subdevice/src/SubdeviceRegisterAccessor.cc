@@ -70,7 +70,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doPostRead(TransferType, bool /*hasNewData*/) {
+  void SubdeviceRegisterAccessor::doPostRead(TransferType, bool hasNewData) {
+    if(!hasNewData) return;
     assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
   }
