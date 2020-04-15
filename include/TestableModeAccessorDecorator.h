@@ -175,9 +175,9 @@ namespace ChimeraTK {
       return true;
     }
 
-    void doPostRead(TransferType type) override {
+    void doPostRead(TransferType type, bool hasNewData) override {
       if(_handleRead) obtainLockAndDecrementCounter();
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type);
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
     }
 
    protected:

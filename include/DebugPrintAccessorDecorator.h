@@ -60,9 +60,9 @@ namespace ChimeraTK {
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
     }
 
-    void doPostRead(TransferType type) override {
+    void doPostRead(TransferType type, bool hasNewData) override {
       std::cout << "postRead() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type);
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
     }
 
     void doPreWrite(TransferType type) override {
@@ -70,9 +70,9 @@ namespace ChimeraTK {
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
     }
 
-    void doPostWrite(TransferType type) override {
+    void doPostWrite(TransferType type, bool dataLost) override {
       std::cout << "postWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type);
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost);
     }
 
    protected:

@@ -52,7 +52,7 @@ namespace ChimeraTK {
 
     bool doReadTransferLatest() override { return doReadTransferNonBlocking(); }
 
-    void doPostRead(TransferType /*type*/) override { ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value; }
+    void doPostRead(TransferType /*type*/, bool /* hasNewData */) override { ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value; }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override { return true; }
 
