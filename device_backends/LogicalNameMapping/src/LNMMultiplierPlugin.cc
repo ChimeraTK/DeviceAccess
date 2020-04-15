@@ -60,6 +60,7 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   void MultiplierPluginDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     _target->postRead(type, hasNewData);
+    if(!hasNewData) return;
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       for(size_t k = 0; k < _target->getNumberOfSamples(); ++k) {
         buffer_2D[i][k] = numericToUserType<UserType>(_target->accessData(i, k) * _factor);
