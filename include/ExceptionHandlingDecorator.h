@@ -60,7 +60,7 @@ namespace ChimeraTK {
 
     bool previousReadFailed{true};
 
-    bool doGenericPostAction(std::function<bool(void)> callable, bool updateOwnerValidityFlag = true);
+    bool doGenericPostAction(std::function<void(void)> callable, bool updateOwnerValidityFlag = true);
     void setOwnerValidity(bool hasExceptionNow);
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
     EntityOwner* _owner = {nullptr};
