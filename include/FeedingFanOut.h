@@ -89,10 +89,10 @@ namespace ChimeraTK {
       _returnSlave->preRead(type);
     }
 
-    void doPostRead(TransferType type) override {
+    void doPostRead(TransferType type, bool hasNewData) override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       assert(_hasReturnSlave);
-      _returnSlave->postRead(type);
+      _returnSlave->postRead(type, hasNewData);
       _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
       // distribute return-channel update to the other slaves
       for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
@@ -154,9 +154,9 @@ namespace ChimeraTK {
       return dataLost;
     }
 
-    void doPostWrite(TransferType type) override {
+    void doPostWrite(TransferType type, bool dataLost) override {
       for(auto& slave : FanOut<UserType>::slaves) {
-        slave->postWrite(type);
+        slave->postWrite(type, dataLost);
       }
       FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
     }
