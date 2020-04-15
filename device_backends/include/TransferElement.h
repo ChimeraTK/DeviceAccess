@@ -746,8 +746,6 @@ namespace ChimeraTK {
     /// Flag whether doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
     bool hasSeenException{false};
 
-  private:
-
     /// Exception to be rethrown in postXXX() in case hasSeenException == true
     ChimeraTK::runtime_error activeException{"No exception"};
   };
