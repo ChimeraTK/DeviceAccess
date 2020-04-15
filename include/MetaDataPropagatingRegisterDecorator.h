@@ -33,7 +33,7 @@ namespace ChimeraTK {
       NDRegisterAccessorDecorator<T, T>::doPreRead(type);
     }
 
-    void doPostRead(TransferType type) override;
+    void doPostRead(TransferType type, bool hasNewData) override;
     void doPreWrite(TransferType type) override;
 
    protected:
