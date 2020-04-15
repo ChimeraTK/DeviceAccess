@@ -519,7 +519,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostWrite(TransferType, bool dataLost) { (void)dataLost; }
+    virtual void doPostWrite(TransferType, bool) {}
 
    public:
     /** 
