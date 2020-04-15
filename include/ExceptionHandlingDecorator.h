@@ -65,6 +65,8 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
     EntityOwner* _owner = {nullptr};
     VariableDirection _direction;
+
+    bool transferAllowed{false};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
