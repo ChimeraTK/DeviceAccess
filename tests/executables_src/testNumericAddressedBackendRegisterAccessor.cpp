@@ -11,6 +11,7 @@ using namespace boost::unit_test_framework;
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
+#include "unifiedBackendTest.h"
 
 namespace ChimeraTK {
   using namespace ChimeraTK;
@@ -387,45 +388,12 @@ BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
 BOOST_AUTO_TEST_CASE(exceptionHandling) {
   std::string cdd("(ExceptionDummy:1?map=test3.map)");
   auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
-  Device d(cdd);
 
-  auto reg = d.getScalarRegisterAccessor<int32_t>("/Integers/signed32");
-
-  // check "value after construction"
-  BOOST_CHECK_EQUAL(reg, 0);
-  BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
-
-  // repeat the following check for a list of actions
-  std::list<std::function<void(void)>> actionList;
-  actionList.push_back([&] { reg.read(); });
-  actionList.push_back([&] { reg.readNonBlocking(); });
-  actionList.push_back([&] { reg.readLatest(); });
-  actionList.push_back([&] { reg.readAsync().wait(); });
-  actionList.push_back([&] { reg.write(); });
-  actionList.push_back([&] { reg.writeDestructively(); });
-  for(auto action : actionList) {
-    // attempt action
-    BOOST_CHECK_THROW(action(), logic_error);
-
-    // check "value after construction" still there
-    BOOST_CHECK_EQUAL(reg, 0);
-    BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
-  }
-
-  // open the device, let it throw an exception on every read and write operation
-  d.open();
-  exceptionDummy->throwExceptionRead = true;
-  exceptionDummy->throwExceptionWrite = true;
-
-  // repeat the above test, this time a runtime_error is expected
-  for(auto action : actionList) {
-    // attempt action
-    BOOST_CHECK_THROW(action(), runtime_error);
-
-    // check "value after construction" still there
-    BOOST_CHECK_EQUAL(reg, 0);
-    BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
-  }
+  UnifiedBackendTest ubt;
+  ubt.basicExceptionHandling(cdd, "/Integers/signed32", [&] {
+    exceptionDummy->throwExceptionRead = true;
+    exceptionDummy->throwExceptionWrite = true;
+  });
 }
 
 /**********************************************************************************************************************/
