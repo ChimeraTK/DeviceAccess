@@ -26,7 +26,7 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 # add dependencies
 include(cmake/add_dependency.cmake)
 add_dependency(Boost COMPONENTS thread system chrono filesystem REQUIRED)
-add_dependency(ChimeraTK-cppext REQUIRED 01.02)
+add_dependency(ChimeraTK-cppext REQUIRED 01.03)
 add_dependency(exprtk REQUIRED 01.00)
 
 FIND_PACKAGE(PkgConfig REQUIRED)

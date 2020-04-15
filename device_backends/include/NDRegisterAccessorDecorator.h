@@ -10,6 +10,8 @@
 
 #include <boost/make_shared.hpp>
 
+#include <ChimeraTK/cppext/finally.hpp>
+
 #include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
@@ -72,8 +74,11 @@ namespace ChimeraTK {
       }
 
       void doPostWrite(TransferType type, bool dataLost) override {
+        // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
+        auto _ = finally([&] {
+          for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
+        });
         _target->postWrite(type, dataLost);
-        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 
       void interrupt() override { _target->interrupt(); }
