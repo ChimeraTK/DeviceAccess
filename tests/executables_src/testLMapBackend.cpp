@@ -7,7 +7,7 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "TransferGroup.h"
 #include "ExceptionDummyBackend.h"
-#include "unifiedBackendTest.h"
+#include "UnifiedBackendTest.h"
 
 using namespace ChimeraTK;
 

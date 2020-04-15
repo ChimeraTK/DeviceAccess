@@ -11,7 +11,7 @@ using namespace boost::unit_test_framework;
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
-#include "unifiedBackendTest.h"
+#include "UnifiedBackendTest.h"
 
 namespace ChimeraTK {
   using namespace ChimeraTK;
