@@ -7,6 +7,7 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "TransferGroup.h"
 #include "ExceptionDummyBackend.h"
+#include "unifiedBackendTest.h"
 
 using namespace ChimeraTK;
 
@@ -38,6 +39,14 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   BOOST_CHECK(device.isOpened() == false);
   device.close();
   BOOST_CHECK(device.isOpened() == false);
+
+  auto exceptionDummy =
+      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
+  UnifiedBackendTest ubt;
+  ubt.basicExceptionHandling("LMAP1", "/NotUsed0", [&] {
+    exceptionDummy->throwExceptionRead = true;
+    exceptionDummy->throwExceptionWrite = true;
+  });
 }
 
 /********************************************************************************************************************/
