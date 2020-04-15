@@ -177,7 +177,7 @@ namespace ChimeraTK {
     std::vector<int32_t> rawDataBuffer;
 
     /** version number of the last transfer */
-    VersionNumber currentVersion;
+    VersionNumber currentVersion{nullptr};
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
