@@ -748,7 +748,6 @@ namespace ChimeraTK {
     /// implementations to store the reused future once created. This logic should be changed, see issue #124.
     TransferFuture activeFuture;
 
-   private:
     /// Flag whether doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
     bool hasSeenException{false};
 
