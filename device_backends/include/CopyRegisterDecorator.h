@@ -42,7 +42,9 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType type, bool hasNewData) override {
       _target->postRead(type, hasNewData);
-      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
+      if(hasNewData) {
+        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
+      }
     }
 
     bool isReadOnly() const override { return true; }

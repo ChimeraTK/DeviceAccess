@@ -106,6 +106,7 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override {
       std::lock_guard<std::mutex> lock(*_mutex);
       _accessor->postRead(type, hasNewData);
+      if(!hasNewData) return;
       if(_accessor->accessData(0) & _bitMask) {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(true);
       }

@@ -116,6 +116,7 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   void MathPluginDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     _target->postRead(type, hasNewData);
+    if(!hasNewData) return;
 
     // update data pointer
     valueView->rebase(_target->accessChannel(0).data());

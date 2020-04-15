@@ -185,6 +185,7 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType type, bool hasNewData) override {
       _target->postRead(type, hasNewData);
+      if(!hasNewData) return;
       for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
         _fixedPointConverter.template vectorToCooked<UserType>(
             _target->accessChannel(i).begin(), _target->accessChannel(i).end(), buffer_2D[i].begin());
