@@ -45,16 +45,19 @@ namespace ChimeraTK {
       setOwnerValidityFunction = [](bool) {}; // do nothing if calling code does not want to invalidate data.
     }
 
-    try {
-      callable();
-      // We do not have to relay the target's data validity. The MetaDataPropagatingDecorator already takes care of it.
-      // The ExceptionHandling decorator is used in addition, not instead of it.
-      setOwnerValidityFunction(/*hasExceptionNow = */ false);
-    }
-    catch(ChimeraTK::runtime_error& e) {
-      setOwnerValidityFunction(/*hasExceptionNow = */ true);
-      deviceModule.reportException(e.what());
-      deviceModule.waitForRecovery();
+    while(true) {
+      try {
+        callable();
+        // We do not have to relay the target's data validity. The MetaDataPropagatingDecorator already takes care of it.
+        // The ExceptionHandling decorator is used in addition, not instead of it.
+        setOwnerValidityFunction(/*hasExceptionNow = */ false);
+        return;
+      }
+      catch(ChimeraTK::runtime_error& e) {
+        setOwnerValidityFunction(/*hasExceptionNow = */ true);
+        deviceModule.reportException(e.what());
+        deviceModule.waitForRecovery();
+      }
     }
   }
 
