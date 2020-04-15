@@ -10,6 +10,8 @@ using namespace boost::unit_test_framework;
 #include "BackendFactory.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
+#include "ExceptionDummyBackend.h"
+#include "UnifiedBackendTest.h"
 
 namespace ChimeraTK {
   using namespace ChimeraTK;
@@ -379,6 +381,19 @@ BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
   BOOST_CHECK(d.isOpened() == false);
   BOOST_CHECK_NO_THROW(d.open());
   BOOST_CHECK(d.isOpened() == true);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(exceptionHandling) {
+  std::string cdd("(ExceptionDummy:1?map=test3.map)");
+  auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
+
+  UnifiedBackendTest ubt;
+  ubt.basicExceptionHandling(cdd, "/Integers/signed32", [&] {
+    exceptionDummy->throwExceptionRead = true;
+    exceptionDummy->throwExceptionWrite = true;
+  });
 }
 
 /**********************************************************************************************************************/

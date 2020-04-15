@@ -4,10 +4,16 @@
 #include <boost/chrono.hpp>
 #include <boost/ratio.hpp>
 
+#include <ChimeraTK/cppext/finally.hpp>
+
 namespace ChimeraTK {
 
   void TransferFuture::wait() {
     _transferElement->transferFutureWaitCallback();
+
+    auto _ = cppext::finally(
+        [&] { _transferElement->postRead(TransferType::readAsync, !_transferElement->hasSeenException); });
+
   retry:
     try {
       _notifications.pop_wait();
@@ -15,8 +21,6 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       goto retry;
     }
-
-    _transferElement->postRead(TransferType::readAsync, !_transferElement->hasSeenException);
   }
 
   bool TransferFuture::hasNewData() {
