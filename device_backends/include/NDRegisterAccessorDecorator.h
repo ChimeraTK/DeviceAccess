@@ -75,7 +75,7 @@ namespace ChimeraTK {
 
       void doPostWrite(TransferType type, bool dataLost) override {
         // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
-        auto _ = finally([&] {
+        auto _ = cppext::finally([&] {
           for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         });
         _target->postWrite(type, dataLost);
