@@ -452,9 +452,14 @@ namespace ChimeraTK {
      * 
      *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
-     *  no exception is thrown. */
+     *  no exception is thrown.
+     *
+     *  Notes for backend implementations:
+     *  - If the flag hasNewData is false, the user buffer must stay unaltered. This is true also if the backend did
+     *    not throw any exception and did not return false in the doReadTransfer...() call. The flag is also controlled
+     *    by the TransferGroup and will be set to false, if an exception has been seen on any other transfer. */
    protected:
-    virtual void doPostRead(TransferType, bool) {}
+    virtual void doPostRead(TransferType, bool /*hasNewData*/) {}
 
    public:
     /** Function called by the TransferFuture before entering a potentially
