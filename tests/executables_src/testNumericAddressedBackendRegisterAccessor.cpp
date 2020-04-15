@@ -19,6 +19,8 @@ using namespace ChimeraTK;
 // Create a test suite which holds all your tests.
 BOOST_AUTO_TEST_SUITE(NumericAddressedBackendRegisterAccessorTestSuite)
 
+/**********************************************************************************************************************/
+
 // Test the creation by using all possible options in Device
 BOOST_AUTO_TEST_CASE(testCreation) {
   // it is always a 1D-type register (for scalar it's just 1x1)
@@ -62,6 +64,8 @@ BOOST_AUTO_TEST_CASE(testCreation) {
       device.getOneDRegisterAccessor<double>("MODULE1/TEST_AREA", 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testReadWrite) {
   Device device;
   device.open("sdm://./dummy=goodMapFile.map");
@@ -71,6 +75,8 @@ BOOST_AUTO_TEST_CASE(testReadWrite) {
   // FIXME: systematically test reading and writing. Currently is scattered all
   // over the place...
 }
+
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadOnly) {
   Device device;
@@ -83,6 +89,8 @@ BOOST_AUTO_TEST_CASE(testReadOnly) {
 
   BOOST_CHECK_THROW(accToReadOnly.write(), ChimeraTK::logic_error);
 }
+
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRawWrite) {
   Device device;
@@ -121,6 +129,8 @@ BOOST_AUTO_TEST_CASE(testRawWrite) {
     BOOST_CHECK(value == 0x77);
   }
 }
+
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRawWithTransferGroup) {
   Device device;
@@ -243,6 +253,8 @@ BOOST_AUTO_TEST_CASE(testRawWithTransferGroup) {
   BOOST_CHECK(standalone[3] == 0xA4);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testConverterTypes) {
   //After the introduction of the IEEE754 floating point converter we have to test
   //that all possible converters (two at the moment) are created when they should,
@@ -357,6 +369,8 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   BOOST_CHECK_CLOSE(testValue, 16.0, 0.001);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
   Device d("sdm://./dummy=goodMapFile.map");
   auto catalogue = d.getRegisterCatalogue();
@@ -366,6 +380,8 @@ BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
   BOOST_CHECK_NO_THROW(d.open());
   BOOST_CHECK(d.isOpened() == true);
 }
+
+/**********************************************************************************************************************/
 
 // After you finished all test you have to end the test suite.
 BOOST_AUTO_TEST_SUITE_END()
