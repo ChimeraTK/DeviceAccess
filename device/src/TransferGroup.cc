@@ -38,32 +38,39 @@ namespace ChimeraTK {
       elem->readTransfer();
     }
 
+    // check for any "pending" exceptions
+    for(auto& elem : lowLevelElements) {
+      if(elem->hasSeenException) hadException = true;
+    }
+
     for(auto& elem : lowLevelElements) {
       try {
-        elem->postRead(TransferType::read, !elem->hasSeenException);
+        elem->postRead(TransferType::read, !hadException);
       }
       catch(runtime_error& ex) {
-        hadException = true;
+        assert(hadException); // must not receive unexpected exception
         combinedMessage << ex.what() << "\n";
       }
     }
 
     for(auto& elem : copyDecorators) {
+      assert(!elem->hasSeenException); // no readTransfer(), no exception
       try {
-        elem->postRead(TransferType::read, !elem->hasSeenException);
+        elem->postRead(TransferType::read, !hadException);
       }
       catch(runtime_error& ex) {
-        hadException = true;
+        assert(hadException); // must not receive unexpected exception
         combinedMessage << ex.what() << "\n";
       }
     }
 
     for(auto& elem : highLevelElements) {
+      assert(!elem->hasSeenException); // no readTransfer(), no exception
       try {
-        elem->postRead(TransferType::read, !elem->hasSeenException);
+        elem->postRead(TransferType::read, !hadException);
       }
       catch(runtime_error& ex) {
-        hadException = true;
+        assert(hadException); // must not receive unexpected exception
         combinedMessage << ex.what() << "\n";
       }
     }

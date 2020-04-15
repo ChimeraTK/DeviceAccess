@@ -91,6 +91,11 @@ void TransferGroupTest::testExceptionHandling() {
   tg.addAccessor(accessor3);
   tg.addAccessor(accessor4);
 
+  accessor1 = 1;
+  accessor2 = 2;
+  accessor3 = 3;
+  accessor4 = 4;
+
   accessor1w = 0xdeadcafe;
   accessor2w = 815;
   accessor3w = 4711;
@@ -119,9 +124,11 @@ void TransferGroupTest::testExceptionHandling() {
     BOOST_REQUIRE(false);
   }
 
-  BOOST_CHECK_EQUAL(static_cast<int>(accessor1), 0xdeadcafe);
-  BOOST_CHECK_EQUAL(static_cast<int>(accessor4), 0xc01dcafe);
-  // Optional: Check the validity flag of the other two accessors?
+  // even if one transfer fails, none of the user buffers must be changed.
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor1), 1);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor2), 2);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor3), 3);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor4), 4);
 }
 
 void TransferGroupTest::testAdding() {
