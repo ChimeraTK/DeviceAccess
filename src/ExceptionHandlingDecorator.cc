@@ -51,23 +51,23 @@ namespace ChimeraTK {
         callable();
         // We do not have to relay the target's data validity. The MetaDataPropagatingDecorator already takes care of it.
         // The ExceptionHandling decorator is used in addition, not instead of it.
-//        setOwnerValidityFunction(/*hasExceptionNow = */ false);
+        setOwnerValidityFunction(/*hasExceptionNow = */ false);
       }
       catch(ChimeraTK::runtime_error& e) {
-        TransferElement::hasSeenException = true;
-//        setOwnerValidityFunction(/*hasExceptionNow = */ true);
-//        deviceModule.reportException(e.what());
-//        deviceModule.waitForRecovery();
-        TransferElement::activeException=e;
-
-      }
-      setOwnerValidityFunction(TransferElement::hasSeenException);
-
-      if (TransferElement::hasSeenException) {
-        deviceModule.reportException(TransferElement::activeException.what());
-        TransferElement::hasSeenException = false;
+        setOwnerValidityFunction(/*hasExceptionNow = */ true);
+        deviceModule.reportException(e.what());
         deviceModule.waitForRecovery();
+
+//        TransferElement::hasSeenException = true;
+//        TransferElement::activeException=e;
+
       }
+//      setOwnerValidityFunction(TransferElement::hasSeenException);
+//      if (TransferElement::hasSeenException) {
+//        deviceModule.reportException(TransferElement::activeException.what());
+//        TransferElement::hasSeenException = false;
+//        deviceModule.waitForRecovery();
+//      }
     }
   }
 
