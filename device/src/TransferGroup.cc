@@ -50,7 +50,7 @@ namespace ChimeraTK {
 
     for(auto& elem : copyDecorators) {
       try {
-      elem->postRead(TransferType::read, !elem->hasSeenException);
+        elem->postRead(TransferType::read, !elem->hasSeenException);
       }
       catch(runtime_error& ex) {
         hadException = true;
@@ -60,7 +60,7 @@ namespace ChimeraTK {
 
     for(auto& elem : highLevelElements) {
       try {
-      elem->postRead(TransferType::read, !elem->hasSeenException);
+        elem->postRead(TransferType::read, !elem->hasSeenException);
       }
       catch(runtime_error& ex) {
         hadException = true;
