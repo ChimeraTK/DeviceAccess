@@ -21,6 +21,8 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 
+#include <ChimeraTK/cppext/finally.hpp>
+
 #include "AccessMode.h"
 #include "Exception.h"
 #include "TransferElementID.h"
@@ -200,6 +202,12 @@ namespace ChimeraTK {
      * depending on the backend type - a more efficient implementation without
      * launching a thread. */
     TransferFuture& readAsync() {
+      // make sure to cleanup in case of exceptions (logic_error...)
+      auto _ = cppext::finally([&] {
+        hasActiveFuture = false;
+        readTransactionInProgress = false;
+      });
+      // only create new future if none already active
       if(!hasActiveFuture) {
         // call preRead
         this->readTransactionInProgress = false;
