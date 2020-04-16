@@ -96,6 +96,8 @@ class UnifiedBackendTest {
 
 void UnifiedBackendTest::runTests(const std::string& backend) {
   cdd = backend;
+  std::cout << "=== UnifiedBackendTest for " << cdd << std::endl;
+
   // check inputs
   if(forceExceptionsRead.size() == 0) {
     std::cout << "UnifiedBackendTest::forceRuntimeErrorOnRead() not called with a non-empty list." << std::endl;
@@ -109,11 +111,15 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
     std::cout << "UnifiedBackendTest::integerRegister() not called with a non-empty list." << std::endl;
     std::exit(1);
   }
+
+  // run the tests
+  basicExceptionHandling();
 }
 
 /********************************************************************************************************************/
 
 void UnifiedBackendTest::basicExceptionHandling() {
+  std::cout << "--- basicExceptionHandling" << std::endl;
   ctk::Device d(cdd);
 
   for(auto& registerName : regInteger) {
