@@ -67,6 +67,7 @@ namespace ChimeraTK {
     VariableDirection _direction;
 
     bool transferAllowed{false};
+
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

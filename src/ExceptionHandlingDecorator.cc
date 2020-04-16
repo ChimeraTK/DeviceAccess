@@ -108,7 +108,9 @@ namespace ChimeraTK {
   template<typename UserType>
   TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
     TransferFuture future;
-    future = ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
+    if(transferAllowed) {
+      future = ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
+    }
     return future;
   }
 
@@ -180,9 +182,33 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    doGenericPostAction(
-        [this, type, hasNewData]() { ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData); },
-        true);
+//    doGenericPostAction(
+//        [this, type, hasNewData]() { ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData); },
+//        true);
+    bool hasException=false;
+    try {
+      this->_target->postRead(type, hasNewData);
+    }
+    catch(ChimeraTK::runtime_error& e) {
+      deviceModule.reportException(e.what());
+      deviceModule.waitForRecovery();
+      hasException=true;
+    }
+    if(hasException or !transferAllowed) {
+      while(true) {
+        deviceModule.waitForRecovery();
+        bool readSuccess{false};
+        try {
+          this->_target->read();
+          readSuccess=true;
+        } catch(ChimeraTK::runtime_error& e) {
+          readSuccess=false;
+        }
+        if(readSuccess) break;
+      }
+      hasException=false;
+    }
+    setOwnerValidity(hasException);
   }
 
   template<typename UserType>
@@ -199,7 +225,7 @@ namespace ChimeraTK {
     }
     else {
       transferAllowed = true;
-      deviceModule.waitForRecovery();
+//      deviceModule.waitForRecovery();
     }
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
