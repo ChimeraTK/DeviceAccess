@@ -390,10 +390,15 @@ BOOST_AUTO_TEST_CASE(exceptionHandling) {
   auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
 
   UnifiedBackendTest ubt;
-  ubt.basicExceptionHandling(cdd, "/Integers/signed32", [&] {
-    exceptionDummy->throwExceptionRead = true;
-    exceptionDummy->throwExceptionWrite = true;
-  });
+
+  ubt.integerRegister({"/Integers/signed32"});
+
+  ubt.forceRuntimeErrorOnRead(
+      {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
+  ubt.forceRuntimeErrorOnWrite(
+      {{[&] { exceptionDummy->throwExceptionWrite = true; }, [&] { exceptionDummy->throwExceptionWrite = false; }}});
+
+  ubt.runTests(cdd);
 }
 
 /**********************************************************************************************************************/

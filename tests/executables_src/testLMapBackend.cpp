@@ -42,11 +42,17 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
   auto exceptionDummy =
       boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
+
   UnifiedBackendTest ubt;
-  ubt.basicExceptionHandling("LMAP1", "/NotUsed0", [&] {
-    exceptionDummy->throwExceptionRead = true;
-    exceptionDummy->throwExceptionWrite = true;
-  });
+
+  ubt.integerRegister({"/NotUsed0"});
+
+  ubt.forceRuntimeErrorOnRead(
+      {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
+  ubt.forceRuntimeErrorOnWrite(
+      {{[&] { exceptionDummy->throwExceptionWrite = true; }, [&] { exceptionDummy->throwExceptionWrite = false; }}});
+
+  ubt.runTests("LMAP1");
 }
 
 /********************************************************************************************************************/
