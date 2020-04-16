@@ -141,16 +141,10 @@ namespace ChimeraTK {
     // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
 
-    if(Application::getInstance().getLifeCycleState() != LifeCycleState::run) {
-      // If the application has not yet fully started, we cannot wait for the device to open. Instead register
-      // the variable in the DeviceMoule, so the transfer will be performed after the device is opened.
-      assert(_recoveryAccessor != nullptr); // should always be true for writeable registers with this decorator
-      transferAllowed = false;
-    }
-    else {
-      transferAllowed = true;
-      deviceModule.waitForRecovery();
-    }
+    // #138 Phase 1. Change for phase 2
+    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
+    // the waiting is only necessary as a hack for phase 1 because DeviceModule::startTransfer is not there yet
+    if(transferAllowed) deviceModule.waitForRecovery();
   }
 
   template<typename UserType>
@@ -192,7 +186,9 @@ namespace ChimeraTK {
     }
     // #138 Phase 2: change if codition here
     if(hasException) {
-      // try to recover and read until it succeeds
+      // Try to recover and read until it succeeds.
+      // We are already behind the delegated postRead, so the transfer in the target is already complemted.
+      // So we have to use a complete blocking preRead, readTransfer, postRead, i.e. _tagret->read()
       while(true) {
         deviceModule.waitForRecovery();
         /* //#138 Phase 2
@@ -203,14 +199,14 @@ namespace ChimeraTK {
           this->_target->read();
           hasException = false;
           /* //#138 Phase 2
-           * deviceModule->stopTransfer()) continue;
+           * deviceModule->stopTransfer());
            * // end  of #138 Phase 2
            */
           break;
         }
         catch(ChimeraTK::runtime_error&) {
           /* //#138 Phase 2
-           * deviceModule->stopTransfer()) continue;
+           * deviceModule->stopTransfer());
            * // end  of #138 Phase 2
            */
         }
@@ -228,9 +224,11 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
-    /* #138 Phase 1. Remove this for phase 2 */
+    /* #138 Phase 1. Change this for phase 2 */
     transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
-    assert(transferAllowed);
+    /* Hack for phase 1 because DeviceModule::startTransfer is not there yet. Remove for phase 2 */
+    assert(transferAllowed); // not true in phase 2 any more
+    deviceModule.waitForRecovery();
     /* End of remove for phase 2 */
 
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
