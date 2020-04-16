@@ -123,6 +123,7 @@ void UnifiedBackendTest::basicExceptionHandling() {
   ctk::Device d(cdd);
 
   for(auto& registerName : regInteger) {
+    std::cout << "... registerName = " << registerName << std::endl;
     auto reg = d.getScalarRegisterAccessor<int32_t>(registerName);
 
     // check "value after construction"
@@ -130,13 +131,13 @@ void UnifiedBackendTest::basicExceptionHandling() {
     BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
     // repeat the following check for a list of actions
-    std::list<std::function<void(void)>> actionListRead, actionListWrite;
-    actionListRead.push_back([&] { reg.read(); });
-    actionListRead.push_back([&] { reg.readNonBlocking(); });
-    actionListRead.push_back([&] { reg.readLatest(); });
-    actionListRead.push_back([&] { reg.readAsync().wait(); });
-    actionListWrite.push_back([&] { reg.write(); });
-    actionListWrite.push_back([&] { reg.writeDestructively(); });
+    std::list<std::pair<std::string, std::function<void(void)>>> actionListRead, actionListWrite;
+    actionListRead.push_back({"read()", [&] { reg.read(); }});
+    actionListRead.push_back({"readNonBlocking()", [&] { reg.readNonBlocking(); }});
+    actionListRead.push_back({"readLatest()", [&] { reg.readLatest(); }});
+    actionListRead.push_back({"readAsync()", [&] { reg.readAsync().wait(); }});
+    actionListWrite.push_back({"write()", [&] { reg.write(); }});
+    actionListWrite.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
 
     // define lambda for the test to execute repetedly (avoid code duplication)
     auto theTest = [&](auto& theAction, auto expectedExceptionType) {
@@ -150,10 +151,12 @@ void UnifiedBackendTest::basicExceptionHandling() {
 
     // run test for both read and write operations, logic_error is expected
     for(auto action : actionListRead) {
-      theTest(action, ctk::logic_error("only type matters"));
+      std::cout << "    " << action.first << std::endl;
+      theTest(action.second, ctk::logic_error("only type matters"));
     }
     for(auto action : actionListWrite) {
-      theTest(action, ctk::logic_error("only type matters"));
+      std::cout << "    " << action.first << std::endl;
+      theTest(action.second, ctk::logic_error("only type matters"));
     }
 
     // open the device, let it throw an exception on every read and write operation
@@ -165,7 +168,8 @@ void UnifiedBackendTest::basicExceptionHandling() {
 
       // repeat the above test, this time a runtime_error is expected
       for(auto action : actionListRead) {
-        theTest(action, ctk::runtime_error("only type matters"));
+        std::cout << "    " << action.first << std::endl;
+        theTest(action.second, ctk::runtime_error("only type matters"));
       }
 
       // disable exceptions on read
@@ -178,7 +182,8 @@ void UnifiedBackendTest::basicExceptionHandling() {
 
       // repeat the above test, this time a runtime_error is expected
       for(auto action : actionListWrite) {
-        theTest(action, ctk::runtime_error("only type matters"));
+        std::cout << "    " << action.first << std::endl;
+        theTest(action.second, ctk::runtime_error("only type matters"));
       }
 
       // disable exceptions on write
