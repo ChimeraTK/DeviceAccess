@@ -107,11 +107,11 @@ namespace ChimeraTK {
 
   template<typename UserType>
   TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
-    TransferFuture future;
-    if(transferAllowed) {
-      future = ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
+    assert(transferAllowed);
+    if(!transferAllowed) {
+      throw(ChimeraTK::logic_error("You have to implement ApplicationCore #157"));
     }
-    return future;
+    return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
   }
 
   template<typename UserType>
@@ -182,31 +182,39 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
-//    doGenericPostAction(
-//        [this, type, hasNewData]() { ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData); },
-//        true);
-    bool hasException=false;
+    bool hasException = false;
     try {
       this->_target->postRead(type, hasNewData);
     }
     catch(ChimeraTK::runtime_error& e) {
       deviceModule.reportException(e.what());
-      deviceModule.waitForRecovery();
-      hasException=true;
+      hasException = true;
     }
-    if(hasException or !transferAllowed) {
+    // #138 Phase 2: change if codition here
+    if(hasException) {
+      // try to recover and read until it succeeds
       while(true) {
         deviceModule.waitForRecovery();
-        bool readSuccess{false};
+        /* //#138 Phase 2
+         * if (!deviceModule->startTransfer()) continue;
+         * // end  of #138 Phase 2
+         */
         try {
           this->_target->read();
-          readSuccess=true;
-        } catch(ChimeraTK::runtime_error& e) {
-          readSuccess=false;
+          hasException = false;
+          /* //#138 Phase 2
+           * deviceModule->stopTransfer()) continue;
+           * // end  of #138 Phase 2
+           */
+          break;
         }
-        if(readSuccess) break;
+        catch(ChimeraTK::runtime_error&) {
+          /* //#138 Phase 2
+           * deviceModule->stopTransfer()) continue;
+           * // end  of #138 Phase 2
+           */
+        }
       }
-      hasException=false;
     }
     setOwnerValidity(hasException);
   }
@@ -220,13 +228,11 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
-    if(Application::getInstance().getLifeCycleState() != LifeCycleState::run) {
-      transferAllowed = false;
-    }
-    else {
-      transferAllowed = true;
-//      deviceModule.waitForRecovery();
-    }
+    /* #138 Phase 1. Remove this for phase 2 */
+    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
+    assert(transferAllowed);
+    /* End of remove for phase 2 */
+
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
 
