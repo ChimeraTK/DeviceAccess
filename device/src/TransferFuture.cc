@@ -11,9 +11,6 @@ namespace ChimeraTK {
   void TransferFuture::wait() {
     _transferElement->transferFutureWaitCallback();
 
-    auto _ = cppext::finally(
-        [&] { _transferElement->postRead(TransferType::readAsync, !_transferElement->hasSeenException); });
-
   retry:
     try {
       _notifications.pop_wait();
@@ -21,6 +18,11 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       goto retry;
     }
+    catch(ChimeraTK::runtime_error& e) {
+      _transferElement->hasSeenException = true;
+      _transferElement->activeException = e;
+    }
+    _transferElement->postRead(TransferType::readAsync, !_transferElement->hasSeenException);
   }
 
   bool TransferFuture::hasNewData() {
