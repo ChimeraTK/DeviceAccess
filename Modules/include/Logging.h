@@ -99,7 +99,6 @@
 #ifndef MODULES_LOGGING_H_
 #define MODULES_LOGGING_H_
 
-#undef GENERATE_XML
 #include "ApplicationCore.h"
 #include <fstream>
 #include <map>
