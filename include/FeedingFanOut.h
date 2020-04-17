@@ -11,8 +11,42 @@
 #include <ChimeraTK/NDRegisterAccessor.h>
 
 #include "FanOut.h"
+#include <functional>
+#include <sstream>
 
 namespace ChimeraTK {
+
+  /**
+   * @brief The RuntimeErrorCollector struct
+   * Helper class to be used in loops which catches exceptions
+   * stores the reasons and can then throw an exception with a combined reson
+   * afterwards
+   */
+  struct RuntimeErrorCollector {
+    std::stringstream ss;
+    bool hasException{false};
+
+    // Ideally, this would happen in the destructor
+    void unwrap() {
+      if(not hasException) return;
+
+      auto s = ss.str();
+      s.pop_back();
+
+      throw runtime_error(s);
+    }
+
+    bool wrap(std::function<void(void)> f) {
+      try {
+        f();
+        return true;
+      }
+      catch(runtime_error& ex) {
+        ss << ex.what() << "\n";
+        return false;
+      }
+    }
+  };
 
   /**
    * NDRegisterAccessor implementation which distributes values written to this
@@ -92,16 +126,20 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       assert(_hasReturnSlave);
-      _returnSlave->postRead(type, hasNewData);
-      _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
-      // distribute return-channel update to the other slaves
-      for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
-        if(slave == _returnSlave) continue;
-        if(slave->getNumberOfSamples() != 0) { // do not send copy if no data is expected (e.g. trigger)
-          slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
+
+      auto _ = cppext::finally([&]{
+        _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
+        // distribute return-channel update to the other slaves
+        for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
+          if(slave == _returnSlave) continue;
+          if(slave->getNumberOfSamples() != 0) { // do not send copy if no data is expected (e.g. trigger)
+            slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
+          }
+          slave->writeDestructively(_returnSlave->getVersionNumber());
         }
-        slave->writeDestructively(_returnSlave->getVersionNumber());
-      }
+      });
+
+      _returnSlave->postRead(type, hasNewData);
     }
 
     ChimeraTK::TransferFuture doReadTransferAsync() override {
@@ -121,11 +159,15 @@ namespace ChimeraTK {
         }
         slave->setDataValidity(this->dataValidity());
       }
+
       // pre write may only be called on the target accessors after we have filled
       // them all, otherwise the first accessor might take us the data away...
+      RuntimeErrorCollector ec;
       for(auto& slave : FanOut<UserType>::slaves) {
-        slave->preWrite(type);
+        ec.wrap([&] { slave->preWrite(type); })
       }
+
+      ec.unwrap();
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
@@ -155,10 +197,13 @@ namespace ChimeraTK {
     }
 
     void doPostWrite(TransferType type, bool dataLost) override {
+      RuntimeErrorCollector ec;
       for(auto& slave : FanOut<UserType>::slaves) {
-        slave->postWrite(type, dataLost);
+        ec.wrap([&] { slave->postWrite(type, dataLost); });
       }
+
       FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
+      ec.unwrap();
     }
 
     bool mayReplaceOther(const boost::shared_ptr<const ChimeraTK::TransferElement>&) const override {
