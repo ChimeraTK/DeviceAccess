@@ -198,6 +198,7 @@ namespace ChimeraTK {
         try {
           this->_target->read();
           hasException = false;
+          hasNewData = true; // if read() returns there is always new data
           /* //#138 Phase 2
            * deviceModule->stopTransfer());
            * // end  of #138 Phase 2
@@ -213,6 +214,11 @@ namespace ChimeraTK {
       }
     }
     setOwnerValidity(hasException);
+    // only replace the user buffer if there really is new data
+    if(hasNewData) {
+      for(size_t i = 0; i < buffer_2D.size(); ++i)
+        buffer_2D[i].swap(this->_target->accessChannel(static_cast<unsigned int>(i)));
+    }
   }
 
   template<typename UserType>
