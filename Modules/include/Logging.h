@@ -57,7 +57,7 @@
  *  messages (TestModule).
  *  \code
  *  sruct TestModule: public ChimeraTK::ApplicationModule{
- *  Logger logger{this};
+ *  boost::shared_ptr<Logger> logger{new Logger(this)};
  *  ...
  *  };
  *  struct myApp : public ChimeraTK::Application{
@@ -109,14 +109,11 @@ namespace ctk = ChimeraTK;
 
 namespace logging {
 
-  /** Pair of message and messageLevel */
-  using Message = std::pair<ctk::ScalarPushInput<std::string>, ctk::ScalarPollInput<uint>>;
-
   /** Define available logging levels. */
   enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
 
   /** Define stream operator to use the LogLevel in streams, e.g. std::cout */
-  std::ostream& operator<<(std::ostream& os, const LogLevel& level);
+  std::ostream& operator<<(std::ostream& os, const logging::LogLevel& level);
 
   /** Construct a sting containing the current time. */
   std::string getTime();
@@ -147,7 +144,7 @@ namespace logging {
      * needed to allow constructor inheritance of modules owning other modules.
      * This constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    Logger(){};
+    Logger(){}
 
     /**
      * \brief Constructor to be used.
@@ -193,7 +190,7 @@ namespace logging {
       ctk::ScalarPushInput<std::string> msg;
       std::string sendingModule;
       MessageSource(const std::string &moduleName, Module* module):
-        msg{module, moduleName + "Msg", "", ""},sendingModule(moduleName){};
+        msg{module, moduleName + "Msg", "", ""},sendingModule(moduleName){}
     };
     /** List of senders. */
     std::vector<MessageSource > sources;
