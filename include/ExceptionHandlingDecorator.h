@@ -60,14 +60,12 @@ namespace ChimeraTK {
 
     bool previousReadFailed{true};
 
-    void doGenericPostAction(std::function<void(void)> callable, bool updateOwnerValidityFlag = true);
     void setOwnerValidity(bool hasExceptionNow);
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
     EntityOwner* _owner = {nullptr};
     VariableDirection _direction;
 
     bool transferAllowed{false};
-
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

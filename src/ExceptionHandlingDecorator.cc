@@ -34,31 +34,6 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doGenericPostAction(
-      std::function<void(void)> callable, bool updateOwnerValidityFlag) {
-    std::function<void(bool)> setOwnerValidityFunction{};
-    if(updateOwnerValidityFlag) {
-      setOwnerValidityFunction =
-          std::bind(&ExceptionHandlingDecorator<UserType>::setOwnerValidity, this, std::placeholders::_1);
-    }
-    else {
-      setOwnerValidityFunction = [](bool) {}; // do nothing if calling code does not want to invalidate data.
-    }
-
-    try {
-      callable();
-      // We do not have to relay the target's data validity. The MetaDataPropagatingDecorator already takes care of it.
-      // The ExceptionHandling decorator is used in addition, not instead of it.
-      setOwnerValidityFunction(/*hasExceptionNow = */ false);
-    }
-    catch(ChimeraTK::runtime_error& e) {
-      setOwnerValidityFunction(/*hasExceptionNow = */ true);
-      deviceModule.reportException(e.what());
-      deviceModule.waitForRecovery();
-    }
-  }
-
-  template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
     if(transferAllowed) {
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
@@ -224,9 +199,13 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, bool dataLost) {
-    doGenericPostAction(
-        [this, type, dataLost]() { ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost); },
-        false);
+    try {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost);
+    }
+    catch(ChimeraTK::runtime_error& e) {
+      deviceModule.reportException(e.what());
+      deviceModule.waitForRecovery();
+    }
   }
 
   template<typename UserType>
