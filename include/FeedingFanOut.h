@@ -127,7 +127,7 @@ namespace ChimeraTK {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       assert(_hasReturnSlave);
 
-      auto _ = cppext::finally([&]{
+      auto _ = cppext::finally([&] {
         _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
         // distribute return-channel update to the other slaves
         for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
@@ -164,7 +164,7 @@ namespace ChimeraTK {
       // them all, otherwise the first accessor might take us the data away...
       RuntimeErrorCollector ec;
       for(auto& slave : FanOut<UserType>::slaves) {
-        ec.wrap([&] { slave->preWrite(type); })
+        ec.wrap([&] { slave->preWrite(type); });
       }
 
       ec.unwrap();
