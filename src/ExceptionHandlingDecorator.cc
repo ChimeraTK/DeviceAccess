@@ -143,6 +143,7 @@ namespace ChimeraTK {
 
     // #138 Phase 1. Change for phase 2
     transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
+    assert(Application::getInstance().getLifeCycleState() != LifeCycleState::shutdown);
     // the waiting is only necessary as a hack for phase 1 because DeviceModule::startTransfer is not there yet
     if(transferAllowed) deviceModule.waitForRecovery();
   }
@@ -231,11 +232,16 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
     /* #138 Phase 1. Change this for phase 2 */
-    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
-    /* Hack for phase 1 because DeviceModule::startTransfer is not there yet. Remove for phase 2 */
-    assert(transferAllowed); // not true in phase 2 any more
+    /* Hack for phase 1 because DeviceModule::startTransfer is not there yet. */
     deviceModule.waitForRecovery();
-    /* End of remove for phase 2 */
+    transferAllowed = true;
+    //    std::cout << "recovered" << std::endl;
+    //    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
+    //    auto l = Application::getInstance().getLifeCycleState();
+    //    std::cout << "LifeCycleState: "
+    //              << (l == LifeCycleState::run ? "run" : (l == LifeCycleState::initialisation ? "init" : "shutdown"))
+    //              << std::endl;
+    //    assert(transferAllowed); // not true in phase 2 any more
 
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
