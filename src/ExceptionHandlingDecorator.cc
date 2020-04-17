@@ -3,19 +3,19 @@
 
 #include <functional>
 
-constexpr useconds_t DeviceOpenTimeout = 500;
-
 namespace ChimeraTK {
 
   template<typename UserType>
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
-      VariableDirection direction, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod), _direction(direction) {
+      VariableDirection direction, boost::shared_ptr<NDRegisterAccessor<UserType>> recoveryAccessor)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod),
+    _recoveryAccessor(recoveryAccessor), _direction(direction) {
     // Register recoveryAccessor at the DeviceModule
     if(recoveryAccessor != nullptr) {
-      _recoveryAccessor = recoveryAccessor;
-      deviceModule.addRecoveryAccessor(_recoveryAccessor);
+      // version number is still {nullptr} (i.e. invalid)
+      _recoveryHelper = boost::make_shared<RecoveryHelper>(recoveryAccessor, VersionNumber(nullptr));
+      deviceModule.addRecoveryAccessor(_recoveryHelper);
     }
   }
 
@@ -106,6 +106,8 @@ namespace ChimeraTK {
         for(unsigned int ch = 0; ch < _recoveryAccessor->getNumberOfChannels(); ++ch) {
           _recoveryAccessor->accessChannel(ch) = buffer_2D[ch];
         }
+        // FIXME: This should be the version number of the owner, which is not set at the moment
+        _recoveryHelper->versionNumber = {};
       }
       else {
         throw ChimeraTK::logic_error(

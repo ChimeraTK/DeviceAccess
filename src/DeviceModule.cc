@@ -345,9 +345,9 @@ namespace ChimeraTK {
         // [Spec: 2.3.4] Write all recovery accessors
         try {
           boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
-          for(auto& te : writeRecoveryOpen) {
-            if(te->getVersionNumber() != VersionNumber{nullptr}) {
-              te->write();
+          for(auto& recoveryHelper : recoveryHelpers) {
+            if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
+              recoveryHelper->accessor->write(recoveryHelper->versionNumber);
             }
           }
         }
@@ -478,8 +478,8 @@ namespace ChimeraTK {
 
   void DeviceModule::notify() { errorIsResolvedCondVar.notify_all(); }
 
-  void DeviceModule::addRecoveryAccessor(boost::shared_ptr<TransferElement> recoveryAccessor) {
-    writeRecoveryOpen.push_back(recoveryAccessor);
+  void DeviceModule::addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor) {
+    recoveryHelpers.push_back(recoveryAccessor);
   }
 
   boost::shared_lock<boost::shared_mutex> DeviceModule::getRecoverySharedLock() {

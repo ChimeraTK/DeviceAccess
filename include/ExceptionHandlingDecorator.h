@@ -8,6 +8,7 @@
  */
 
 #include <ChimeraTK/NDRegisterAccessorDecorator.h>
+#include "RecoveryHelper.h"
 
 #include "Application.h"
 
@@ -61,7 +62,9 @@ namespace ChimeraTK {
     bool previousReadFailed{true};
 
     void setOwnerValidity(bool hasExceptionNow);
+    boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
+
     EntityOwner* _owner = {nullptr};
     VariableDirection _direction;
 

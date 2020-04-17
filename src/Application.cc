@@ -1024,7 +1024,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           }
           assert(devmod != nullptr);
 
-          devmod->addRecoveryAccessor(impl);
+          // The accessor implementation already has its data in the user buffer. We now just have to add a valid version number
+          // and have a recovery accessors (RecoveryHelper to be excact) which we can register at the DeviceModule.
+          // As this is a constant we don't need to change it later and don't have to store it somewere else.
+          devmod->addRecoveryAccessor(boost::make_shared<RecoveryHelper>(impl, VersionNumber()));
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");

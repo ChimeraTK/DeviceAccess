@@ -14,6 +14,7 @@
 #include "VariableGroup.h"
 #include "VariableNetworkNode.h"
 #include "VirtualModule.h"
+#include "RecoveryHelper.h"
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
 #include <ChimeraTK/Device.h>
@@ -200,7 +201,7 @@ namespace ChimeraTK {
     /** Add a TransferElement to the list DeviceModule::writeRecoveryOpen. This list will be written during a recovery,
      * after the constant accessors DeviceModule::writeAfterOpen are written. This is locked by a unique_lock.
      * You can get a shared_lock with getRecoverySharedLock(). */
-    void addRecoveryAccessor(boost::shared_ptr<TransferElement> recoveryAccessor);
+    void addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor);
 
     /** Returns a shared lock for the DeviceModule::recoverySharedMutex. This locks writing
      * the list DeviceModule::writeRecoveryOpen, during a recovery.*/
@@ -262,7 +263,7 @@ namespace ChimeraTK {
 
     /** List of TransferElements to be written after the device has been recovered.
      *  See function addRecoveryAccessor() for details.*/
-    std::list<boost::shared_ptr<TransferElement>> writeRecoveryOpen;
+    std::list<boost::shared_ptr<RecoveryHelper>> recoveryHelpers;
 
     Application* owner{nullptr};
 
