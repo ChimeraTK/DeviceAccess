@@ -21,8 +21,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwnerValidity(bool hasExceptionNow) {
-    if(hasExceptionNow != hasSeenException) {
-      hasSeenException = hasExceptionNow;
+    if(hasExceptionNow != previousReadFailed) {
+      previousReadFailed = hasExceptionNow;
       if(!_owner) return;
       if(hasExceptionNow) {
         _owner->incrementExceptionCounter();
@@ -34,98 +34,59 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::genericTransfer(
-      std::function<bool(void)> callable, bool updateOwnerValidityFlag) {
-    std::function<void(bool)> setOwnerValidityFunction{};
-    if(updateOwnerValidityFlag) {
-      setOwnerValidityFunction =
-          std::bind(&ExceptionHandlingDecorator<UserType>::setOwnerValidity, this, std::placeholders::_1);
+  bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+    if(transferAllowed) {
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
     }
     else {
-      setOwnerValidityFunction = [](bool) {}; // do nothing if calling code does not want to invalidate data.
+      return true; /* data loss */
     }
-
-    while(true) {
-      try {
-        if(!deviceModule.device.isOpened()) {
-          if(Application::getInstance().getLifeCycleState() != LifeCycleState::run) {
-            // If the application has not yet fully started, we cannot wait for the device to open. Instead register
-            // the variable in the DeviceMoule, so the transfer will be performed after the device is opened.
-            assert(_recoveryAccessor != nullptr); // should always be true for writeable registers with this decorator
-            return false;
-          }
-          // We artificially increase the testabel mode counter so the test does not slip out of testable mode here in case
-          // the queues are empty. At the moment, the exception handling has to be done before you get the lock back in your test.
-          // Exception handling cannot be tested in testable mode at the moment.
-          if(Application::getInstance().isTestableModeEnabled()) {
-            ++Application::getInstance().testableMode_counter;
-            Application::getInstance().testableModeUnlock("waitForDeviceOpen");
-          }
-          boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
-          if(Application::getInstance().isTestableModeEnabled()) {
-            Application::getInstance().testableModeLock("waitForDeviceOpen");
-            --Application::getInstance().testableMode_counter;
-          }
-          continue;
-        }
-        auto retval = callable();
-        // We do not have to relay the target's data validity. The MetaDataPropagatingDecorator already takes care of it.
-        // The ExceptionHandling decorator is used in addition, not instead of it.
-        setOwnerValidityFunction(/*hasExceptionNow = */ false);
-        return retval;
-      }
-      catch(ChimeraTK::runtime_error& e) {
-        setOwnerValidityFunction(/*hasExceptionNow = */ true);
-        deviceModule.reportException(e.what());
-        deviceModule.waitForRecovery();
-      }
-    }
-  }
-
-  template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-    return genericTransfer(
-        [this, versionNumber]() {
-          return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
-        },
-        false);
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
-    return genericTransfer(
-        [this, versionNumber]() {
-          return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
-        },
-        false);
+    if(transferAllowed) {
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
+    }
+    else {
+      return true; /* data loss */
+    }
   }
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doReadTransfer() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer(), true; });
+    if(transferAllowed) {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
+    }
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doReadTransferNonBlocking() {
-    return genericTransfer(
-        [this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking(); });
+    if(transferAllowed) {
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
+    }
+    else {
+      return false; //hasNewData
+    }
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doReadTransferLatest() {
-    return genericTransfer(
-        [this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest(); });
+    if(transferAllowed) {
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
+    }
+    else {
+      return false; //hasNewData
+    }
   }
 
   template<typename UserType>
   TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
-    TransferFuture future;
-    genericTransfer([this, &future]() {
-      future = ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
-      return true;
-    });
-
-    return future;
+    assert(transferAllowed);
+    if(!transferAllowed) {
+      throw(ChimeraTK::logic_error("You have to implement ApplicationCore #157"));
+    }
+    return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
   }
 
   template<typename UserType>
@@ -154,13 +115,19 @@ namespace ChimeraTK {
 
     // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
+
+    // #138 Phase 1. Change for phase 2
+    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
+    assert(Application::getInstance().getLifeCycleState() != LifeCycleState::shutdown);
+    // the waiting is only necessary as a hack for phase 1 because DeviceModule::startTransfer is not there yet
+    if(transferAllowed) deviceModule.waitForRecovery();
   }
 
   template<typename UserType>
   DataValidity ExceptionHandlingDecorator<UserType>::dataValidity() const {
     // If there has been an exception  the data cannot be OK.
     // This is only considered in read mode (=feeding to the connected variable network).
-    if(_direction.dir == VariableDirection::feeding && hasSeenException) {
+    if(_direction.dir == VariableDirection::feeding && previousReadFailed) {
       return DataValidity::faulty;
     }
     // no exception, return the data validity of the accessor we are decorating
@@ -178,9 +145,84 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
     _owner = owner;
-    if(_direction.dir == VariableDirection::feeding && hasSeenException) {
+    if(_direction.dir == VariableDirection::feeding && previousReadFailed) {
       _owner->incrementExceptionCounter(false); // do not write. We are still in the setup phase.
     }
+  }
+
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
+    bool hasException = false;
+    try {
+      this->_target->postRead(type, hasNewData);
+    }
+    catch(ChimeraTK::runtime_error& e) {
+      deviceModule.reportException(e.what());
+      hasException = true;
+    }
+    // #138 Phase 2: change if codition here
+    if(hasException) {
+      // Try to recover and read until it succeeds.
+      // We are already behind the delegated postRead, so the transfer in the target is already complemted.
+      // So we have to use a complete blocking preRead, readTransfer, postRead, i.e. _tagret->read()
+      while(true) {
+        deviceModule.waitForRecovery();
+        /* //#138 Phase 2
+         * if (!deviceModule->startTransfer()) continue;
+         * // end  of #138 Phase 2
+         */
+        try {
+          this->_target->read();
+          hasException = false;
+          hasNewData = true; // if read() returns there is always new data
+          /* //#138 Phase 2
+           * deviceModule->stopTransfer());
+           * // end  of #138 Phase 2
+           */
+          break;
+        }
+        catch(ChimeraTK::runtime_error&) {
+          /* //#138 Phase 2
+           * deviceModule->stopTransfer());
+           * // end  of #138 Phase 2
+           */
+        }
+      }
+    }
+    setOwnerValidity(hasException);
+    // only replace the user buffer if there really is new data
+    if(hasNewData) {
+      for(size_t i = 0; i < buffer_2D.size(); ++i)
+        buffer_2D[i].swap(this->_target->accessChannel(static_cast<unsigned int>(i)));
+    }
+  }
+
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, bool dataLost) {
+    try {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost);
+    }
+    catch(ChimeraTK::runtime_error& e) {
+      deviceModule.reportException(e.what());
+      deviceModule.waitForRecovery();
+    }
+  }
+
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
+    /* #138 Phase 1. Change this for phase 2 */
+    /* Hack for phase 1 because DeviceModule::startTransfer is not there yet. */
+    deviceModule.waitForRecovery();
+    transferAllowed = true;
+    //    std::cout << "recovered" << std::endl;
+    //    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
+    //    auto l = Application::getInstance().getLifeCycleState();
+    //    std::cout << "LifeCycleState: "
+    //              << (l == LifeCycleState::run ? "run" : (l == LifeCycleState::initialisation ? "init" : "shutdown"))
+    //              << std::endl;
+    //    assert(transferAllowed); // not true in phase 2 any more
+
+    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
