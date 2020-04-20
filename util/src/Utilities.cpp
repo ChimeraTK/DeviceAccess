@@ -312,7 +312,7 @@ namespace ChimeraTK {
 
       return listOfDeviceAliases;
     }
-    catch(Exception& e) {
+    catch(ChimeraTK::runtime_error& e) {
       std::cout << e.what() << std::endl;
       return std::vector<std::string>(); // empty list in case of failure
     }
