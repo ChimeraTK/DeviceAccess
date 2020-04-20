@@ -19,8 +19,7 @@ Requirement for backend/decoractor implementations:
 * In the constructor, *only* ChimeraTK::logic_errror must be thrown. No device communication is allowed at that point, as the device may even be closed.
 * In doPreXxx, *only* ChimeraTK::logic_errror must be thrown. No device communication is allowed at this point.
 * In doXxxTransferYyy, *only* ChimeraTK::runtime_error must be thrown
-* In doPostXxx, *only* ChimeraTK::runtime_error which have been delayed from doXxxTransferYyyy must be thrown. No exception must be thrown if doXxxTransferYyy has not been called (because doPreXxx has thrown a ChimeraTK::logic_error). Note that postXxx (without do) may throw a delayed ChimeraTK::logic_error. If doPostXxx delegates to some postXxx implementation, this ChimeraTK::logic_error should be let through. Actively throwing a ChimeraTK::logic_error is not allowed: If the transfer has already been executed the correct exception is the runtime_error, if no transfer was executed the surrounding postXxx will throw.
-
+* In doPostXxx, *only* exceptions that were risen in doPreXxx or doXxxTransferYyy may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls).
 
 ### Decorators including decorator-like implementations ###
 
