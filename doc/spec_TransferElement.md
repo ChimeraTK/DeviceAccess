@@ -21,6 +21,8 @@ Requirement for backend/decoractor implementations:
 * In doXxxTransferYyy, *only* ChimeraTK::runtime_error must be thrown
 * In doPostXxx, *only* exceptions that were risen in doPreXxx or doXxxTransferYyy may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls).
 
+* boost::thread_interrupted may also be thrown in doXxxTransferYyy or doPostXxx functions, if TransferElement::interrupt has been called. This exception will also be delayed and rethrown in doPostXxx by the TransferElement base class.
+
 ### Decorators including decorator-like implementations ###
 
 * All functions doPreXxx, doXxxTransferYyy and doPostXxx must delegate to their non-do counterparts (preXxx, xxxTransferYyy and postXxx). Never delegate to the do... of the target implementation functions directly.

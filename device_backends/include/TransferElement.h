@@ -298,6 +298,11 @@ namespace ChimeraTK {
         activeException = std::current_exception();
         return returnOnException;
       }
+      catch(boost::thread_interrupted&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+        return returnOnException;
+      }
       catch(...) {
         std::cout << "BUG: Wrong exception type thrown in transfer function!" << std::endl;
         throw;
