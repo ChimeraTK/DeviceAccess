@@ -19,12 +19,12 @@ Requirement for backend/decoractor implementations:
 * In the constructor, *only* ChimeraTK::logic_errror must be thrown. No device communication is allowed at that point, as the device may even be closed.
 * In doPreXxx, *only* ChimeraTK::logic_errror must be thrown. No device communication is allowed at this point.
 * In doXxxTransferYyy, *only* ChimeraTK::runtime_error must be thrown
-* In doPostXxx, *only* ChimeraTK::runtime_error must be thrown. No exception must be thrown if doXxxTransferYyy has not been called (because doPreXxx has thrown a ChimeraTK::logic_error). No device communication is allowed at this point, hence only delayed execptions from the transfer may be thrown.
+* In doPostXxx, *only* ChimeraTK::runtime_error must be thrown. No exception must be thrown if doXxxTransferYyy has not been called (because doPreXxx has thrown a ChimeraTK::logic_error). Note that postXxx (without do) may throw a delayed ChimeraTK::logic_error. If doPostXxx delegates to some postXxx implementation, this ChimeraTK::logic_error should be let through. Only actively throwing a ChimeraTK::logic_error is not allowed, because the transfer has already been executed.
 
 
 ### Decorators including decorator-like implementations ###
 
 * All functions doPreXxx, doXxxTransferYyy and doPostXxx must delegate to their non-do counterparts (preXxx, xxxTransferYyy and postXxx). Never delegate to the do... of the target implementation functions directly.
-* If a function of the own implementation should be called, e.g. if doReadTransferLatest should redirect to doReadTransfer, call to do-version of the function. This is merely to avoid code duplication.
+* If a function of the same instance should be called, e.g. if doReadTransferLatest should redirect to doReadTransfer or if doPostRead should call doPostRead of a base class, call to do-version of the function. This is merely to avoid code duplication, hence the surrounding logic of the non-do function is not wanted here.
 * Decorators must merely delegate doXxxTransferYyy, never add any functionalty there. Reason: TransferGroup might effectively bypass the decorator implementation
 
