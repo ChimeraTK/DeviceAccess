@@ -416,7 +416,17 @@ namespace ChimeraTK {
     void preRead(TransferType type) {
       if(readTransactionInProgress) return;
       assert(!hasSeenException);
-      doPreRead(type);
+      try {
+        doPreRead(type);
+      }
+      catch(ChimeraTK::logic_error&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+      }
+      catch(...) {
+        std::cout << "BUG: Wrong exception type thrown in doPreRead()!" << std::endl;
+        throw;
+      }
       readTransactionInProgress = true;
     }
 
@@ -488,7 +498,17 @@ namespace ChimeraTK {
     void preWrite(TransferType type) {
       if(writeTransactionInProgress) return;
       assert(!hasSeenException);
-      doPreWrite(type);
+      try {
+        doPreWrite(type);
+      }
+      catch(ChimeraTK::logic_error&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+      }
+      catch(...) {
+        std::cout << "BUG: Wrong exception type thrown in doPreWrite()!" << std::endl;
+        throw;
+      }
       writeTransactionInProgress = true;
     }
 
