@@ -115,14 +115,17 @@ namespace ChimeraTK {
       }
     } // lock guard goes out of scope
 
-    // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
-    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
-
     // #138 Phase 1. Change for phase 2
     transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
     assert(Application::getInstance().getLifeCycleState() != LifeCycleState::shutdown);
     // the waiting is only necessary as a hack for phase 1 because DeviceModule::startTransfer is not there yet
     if(transferAllowed) deviceModule.waitForRecovery();
+
+    // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
+    // preWrite and postWrite are only delegated if the transfer is allowed.
+    if(transferAllowed) {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
+    }
   }
 
   template<typename UserType>
@@ -156,14 +159,17 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     bool hasException = false;
     try {
-      this->_target->postRead(type, hasNewData);
+      // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
+      if(transferAllowed) {
+        this->_target->postRead(type, hasNewData);
+      }
     }
     catch(ChimeraTK::runtime_error& e) {
       deviceModule.reportException(e.what());
       hasException = true;
     }
     // #138 Phase 2: change if codition here
-    if(hasException) {
+    if(hasException || !transferAllowed) {
       // Try to recover and read until it succeeds.
       // We are already behind the delegated postRead, so the transfer in the target is already complemted.
       // So we have to use a complete blocking preRead, readTransfer, postRead, i.e. _tagret->read()
@@ -202,7 +208,10 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, bool dataLost) {
     try {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost);
+      // preRead has only been delegated if the transfer was allowed. Hence we are only allowed to delegate postRead in this case.
+      if(transferAllowed) {
+        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost);
+      }
     }
     catch(ChimeraTK::runtime_error& e) {
       deviceModule.reportException(e.what());
@@ -224,7 +233,10 @@ namespace ChimeraTK {
     //              << std::endl;
     //    assert(transferAllowed); // not true in phase 2 any more
 
-    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
+    // only delegate preRead and postRead if  the transfer is allowerd
+    if(transferAllowed) {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
+    }
   }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
