@@ -308,7 +308,7 @@ namespace ChimeraTK {
      *  This function internally calles doReadTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doReadTransfer() are caught and rethrown in postRead().
      */
-    void readTransfer() {
+    void readTransfer() noexcept {
       handleTransferException<bool>(
           [this] {
             doReadTransfer();
@@ -340,7 +340,7 @@ namespace ChimeraTK {
      *  This function internally calles doReadTransferNonBlocking(), which is implemented by the backend. runtime_error
      *  exceptions thrown in doRedoReadTransferNonBlockingadTransfer() are caught and rethrown in postRead().
      */
-    bool readTransferNonBlocking() {
+    bool readTransferNonBlocking() noexcept {
       return handleTransferException<bool>([this] { return doReadTransferNonBlocking(); }, false);
     }
 
@@ -365,7 +365,7 @@ namespace ChimeraTK {
      *  This function internally calles doReadTransferLatest(), which is implemented by the backend. runtime_error
      *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
      */
-    bool readTransferLatest() {
+    bool readTransferLatest() noexcept {
       return handleTransferException<bool>([this] { return doReadTransferLatest(); }, false);
     }
 
@@ -391,7 +391,7 @@ namespace ChimeraTK {
      *  This function internally calles doReadTransferAsync(), which is implemented by the backend. runtime_error
      *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
      */
-    TransferFuture readTransferAsync() {
+    TransferFuture readTransferAsync() noexcept {
       return handleTransferException<TransferFuture>([this] { return doReadTransferAsync(); }, {});
     }
 
@@ -416,7 +416,7 @@ namespace ChimeraTK {
      *
      *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly on the
      *  underlying accessor. */
-    void preRead(TransferType type) {
+    void preRead(TransferType type) noexcept {
       if(readTransactionInProgress) return;
       assert(!hasSeenException);
       try {
@@ -498,7 +498,7 @@ namespace ChimeraTK {
      * write will be executed directly on the underlying accessor. This function
      * implemented be used to transfer the data to be written into the
      *  underlying accessor. */
-    void preWrite(TransferType type) {
+    void preWrite(TransferType type) noexcept {
       if(writeTransactionInProgress) return;
       assert(!hasSeenException);
       try {
@@ -562,7 +562,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransfer(ChimeraTK::VersionNumber versionNumber = {}) {
+    bool writeTransfer(ChimeraTK::VersionNumber versionNumber = {}) noexcept {
       return handleTransferException<bool>([&] { return doWriteTransfer(versionNumber); }, true);
     }
 
@@ -588,7 +588,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
+    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) noexcept {
       return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); }, true);
     }
 
