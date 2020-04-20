@@ -108,6 +108,12 @@ namespace ChimeraTK {
     TransferFuture(TransferFuture&& other, ChimeraTK::TransferElement* transferElement)
     : _notifications(std::move(other._notifications)), _transferElement(transferElement) {}
 
+    /** Create ready future. */
+    explicit TransferFuture(ChimeraTK::TransferElement* transferElement)
+    : _notifications(1), _transferElement(transferElement) {
+      _notifications.push();
+    }
+
     /** Copy constructor */
     TransferFuture(const TransferFuture&) = default;
 
