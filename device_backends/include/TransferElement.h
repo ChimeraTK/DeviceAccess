@@ -285,10 +285,14 @@ namespace ChimeraTK {
       try {
         return function();
       }
-      catch(ChimeraTK::runtime_error& e) {
+      catch(ChimeraTK::runtime_error&) {
         hasSeenException = true;
-        activeException = e;
+        activeException = std::current_exception();
         return returnOnException;
+      }
+      catch(...) {
+        std::cout << "BUG: Wrong exception type thrown in transfer function!" << std::endl;
+        throw;
       }
     }
 
@@ -443,7 +447,7 @@ namespace ChimeraTK {
       // always, a try-catch block may be necessary.
       if(hasSeenException) {
         hasSeenException = false;
-        throw activeException;
+        std::rethrow_exception(activeException);
       }
     }
 
@@ -513,7 +517,7 @@ namespace ChimeraTK {
       // always, a try-catch block may be necessary.
       if(hasSeenException) {
         hasSeenException = false;
-        throw activeException;
+        std::rethrow_exception(activeException);
       }
     }
 
@@ -752,7 +756,7 @@ namespace ChimeraTK {
     bool hasSeenException{false};
 
     /// Exception to be rethrown in postXXX() in case hasSeenException == true
-    ChimeraTK::runtime_error activeException{"No exception"};
+    std::exception_ptr activeException{nullptr};
   };
 
 } /* namespace ChimeraTK */

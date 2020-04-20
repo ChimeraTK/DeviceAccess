@@ -18,9 +18,9 @@ namespace ChimeraTK {
     catch(detail::DiscardValueException&) {
       goto retry;
     }
-    catch(ChimeraTK::runtime_error& e) {
+    catch(ChimeraTK::runtime_error&) {
       _transferElement->hasSeenException = true;
-      _transferElement->activeException = e;
+      _transferElement->activeException = std::current_exception();
     }
     _transferElement->postRead(TransferType::readAsync, !_transferElement->hasSeenException);
   }
