@@ -264,6 +264,8 @@ namespace ChimeraTK {
 
     //Wait until the error condition has been cleared by the exception handling thread.
     //We must not hold the testable mode mutex while doing so, otherwise the other thread will never run to fulfill the condition
+    ++owner
+          ->testableMode_deviceInitialisationCounter; // don't drop out of testable mode while trying to recover (unless explicitly requested)
     owner->testableModeUnlock("waitForDeviceOK");
     while(deviceHasError) {
       errorIsResolvedCondVar.wait(errorLock);
@@ -271,6 +273,8 @@ namespace ChimeraTK {
     }
     errorLock.unlock(); // release the error lock. We must not hold it when trying to get the testable mode lock.
     owner->testableModeLock("continueAfterException");
+    --owner
+          ->testableMode_deviceInitialisationCounter; // allow to leave the testable mode. We have detected successful recovery.
   }
 
   /*********************************************************************************************************************/
