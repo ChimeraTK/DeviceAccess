@@ -119,8 +119,7 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::read);
-      readTransfer();
-
+      if(!hasSeenException) readTransfer();
       postRead(TransferType::read, !hasSeenException);
     }
 
@@ -147,7 +146,8 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::readNonBlocking);
-      bool hasNewData = readTransferNonBlocking();
+      bool hasNewData = false;
+      if(!hasSeenException) hasNewData = readTransferNonBlocking();
       postRead(TransferType::readNonBlocking, hasNewData);
       return hasNewData;
     }
@@ -169,7 +169,8 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::readLatest);
-      bool ret2 = readTransferLatest();
+      bool ret2 = false;
+      if(!hasSeenException) ret2 = readTransferLatest();
       postRead(TransferType::readLatest, ret2);
       return ret || ret2;
     }
@@ -223,7 +224,8 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::write);
-      bool dataLost = writeTransfer(versionNumber);
+      bool dataLost;
+      if(!hasSeenException) dataLost = writeTransfer(versionNumber);
       postWrite(TransferType::write, dataLost);
       return dataLost;
     }
@@ -240,7 +242,8 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::writeDestructively);
-      bool dataLost = writeTransferDestructively(versionNumber);
+      bool dataLost;
+      if(!hasSeenException) dataLost = writeTransferDestructively(versionNumber);
       postWrite(TransferType::writeDestructively, dataLost);
       return dataLost;
     }
