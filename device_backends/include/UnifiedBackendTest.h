@@ -135,7 +135,10 @@ void UnifiedBackendTest::basicExceptionHandling() {
     actionListRead.push_back({"read()", [&] { reg.read(); }});
     actionListRead.push_back({"readNonBlocking()", [&] { reg.readNonBlocking(); }});
     actionListRead.push_back({"readLatest()", [&] { reg.readLatest(); }});
-    actionListRead.push_back({"readAsync()", [&] { reg.readAsync().wait(); }});
+    actionListRead.push_back({"readAsync()", [&] {
+                                auto future = reg.readAsync();
+                                future.wait();
+                              }});
     actionListWrite.push_back({"write()", [&] { reg.write(); }});
     actionListWrite.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
 

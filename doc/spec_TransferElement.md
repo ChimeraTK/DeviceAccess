@@ -12,6 +12,7 @@ This currently is just a stub with detail snippets.
 * preXxx and posXxx are called always in pairs. Reason: It might be that the user buffer has to be swapped out during the transfer (while taking away the ownership of the calling code), and this must be restored in the postXxx action.
 * This holds even if exceptions (both logic_error and runtime_error) are thrown.
 * If in preXxx an exception is thrown, the corresponding xxxTransferYyy is not called, instead directly postXxx is called.
+* Exceptions thrown in preXxx or xxxTransferYyy are caught and delayed until postXxx by the framework. This ensures that preXxx and postXxx are always called in pais.
 
 Requirement for backend/decoractor implementations:
 
