@@ -167,6 +167,9 @@ namespace ChimeraTK {
     catch(ChimeraTK::runtime_error& e) {
       deviceModule.reportException(e.what());
       hasException = true;
+      // #138 Phase 1: Remove for phase 2
+      // Inform the owner about the failed read (will be informed again after successful recovery
+      setOwnerValidity(hasException);
     }
     // #138 Phase 2: change if codition here
     if(hasException || !transferAllowed) {
