@@ -258,16 +258,18 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::waitForRecovery() {
+    // we need the error lock before we are allowed to access the predicate
+    std::unique_lock<std::mutex> errorLock(errorMutex);
+    if(!deviceHasError) return;
+
     //Wait until the error condition has been cleared by the exception handling thread.
     //We must not hold the testable mode mutex while doing so, otherwise the other thread will never run to fulfill the condition
     owner->testableModeUnlock("waitForDeviceOK");
-    {
-      std::unique_lock<std::mutex> errorLock(errorMutex);
-      while(deviceHasError) {
-        errorIsResolvedCondVar.wait(errorLock);
-        boost::this_thread::interruption_point();
-      }
-    } // end scope of error lock. We must not hold it when trying to get the testable mode lock.
+    while(deviceHasError) {
+      errorIsResolvedCondVar.wait(errorLock);
+      boost::this_thread::interruption_point();
+    }
+    errorLock.unlock(); // release the error lock. We must not hold it when trying to get the testable mode lock.
     owner->testableModeLock("continueAfterException");
   }
 
