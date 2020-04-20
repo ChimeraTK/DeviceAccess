@@ -77,6 +77,12 @@ namespace ChimeraTK {
     void doReadTransfer() override { _accessor->readTransfer(); }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
+//      throw ChimeraTK::logic_error("Writing to channel-type registers of logical "
+//                                   "name mapping devices is not supported.");
+    }
+
+    void doPreWrite(TransferType type) override {
+      std::ignore = type;
       throw ChimeraTK::logic_error("Writing to channel-type registers of logical "
                                    "name mapping devices is not supported.");
     }
