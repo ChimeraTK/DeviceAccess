@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     CHECK_TIMEOUT(status1.readLatest(), 10000);
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
-    usleep(10000);                                  // 10ms wait time so potential wrong values could have propagated
+    usleep(10000); // 10ms wait time so potential wrong values could have propagated
     BOOST_CHECK(dev1.read<int>("MyModule/actuator") == int(30 + i - 1)); // write not done for broken device
     // the second device must still be functional
     BOOST_CHECK(!message2.readNonBlocking());
@@ -461,8 +461,8 @@ BOOST_AUTO_TEST_CASE(testConstants) {
   // So far this is also tested by testDeviceAccessors. Now cause errors.
   // Take back the value of the constant which was written to the device before making the device fail for further writes.
   dev.write<int32_t>("/MyModule/actuator", 0);
-  auto dummyBackend =
-      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+  auto dummyBackend = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
+      ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
   dummyBackend->throwExceptionWrite = true;
 
   auto pleaseWriteToMe = test.getScalar<int32_t>("/PleaseWriteToMe");
@@ -493,12 +493,12 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   std::cout << "testShutdown" << std::endl;
   static const uint32_t DEFAULT = 55;
 
-  auto dummyBackend1 =
-      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
-  auto dummyBackend2 =
-      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
-  auto dummyBackend3 =
-      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
+  auto dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
+      ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+  auto dummyBackend2 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
+      ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+  auto dummyBackend3 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
+      ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
 
   // Test that the application does shut down with a broken device and blocking accessors
   TestApplication2 app;
@@ -557,14 +557,15 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   // wait for the error to be reported in the control system
   CHECK_EQUAL_TIMEOUT(
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "status"), 1, 10000);
+  // the read message is going through a feeding fanout, which adds a \n to the message
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "message"),
-      "DummyException: read throws by request", 10000);
+      "DummyException: read throws by request\n", 10000);
 
   auto theInt = test.getScalar<int32_t>("/Device2/Integers/signed32");
   theInt.write();
   // the read is the first error we see. The second one is not reported any more for this device.
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "message"),
-      "DummyException: read throws by request", 10000);
+      "DummyException: read throws by request\n", 10000);
 
   // device 2 successfully broken!
 
@@ -578,6 +579,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   // wait for the error to be reported in the control system
   CHECK_EQUAL_TIMEOUT(
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "status"), 1, 10000);
+  // the write message does not have a \n, it is not going though a feeding fanout
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "message"),
       "DummyException: write throws by request", 10000);
 
@@ -596,7 +598,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   CHECK_EQUAL_TIMEOUT(
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "status"), 1, 10000);
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "message"),
-      "DummyException: read throws by request", 10000);
+      "DummyException: read throws by request\n", 10000);
 
   auto reg4 = test.getScalar<int32_t>("/Device3/MODULE/REG4");
   reg4.write();
