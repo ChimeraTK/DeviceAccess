@@ -66,11 +66,6 @@ namespace ChimeraTK {
     std::string _message;
   };
 
-  /**
-   *  Compatibility typedefs for the old Exception classe
-   */
-  typedef ChimeraTK::runtime_error Exception;
-
 } // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_EXCEPTION_H */
