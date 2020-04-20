@@ -393,7 +393,7 @@ namespace ChimeraTK {
      *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
      */
     TransferFuture readTransferAsync() noexcept {
-      return handleTransferException<TransferFuture>([this] { return doReadTransferAsync(); }, {});
+      return handleTransferException<TransferFuture>([this] { return doReadTransferAsync(); }, TransferFuture(this));
     }
 
    protected:
