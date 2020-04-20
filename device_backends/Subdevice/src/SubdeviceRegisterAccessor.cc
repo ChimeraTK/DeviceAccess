@@ -22,7 +22,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void SubdeviceRegisterAccessor::doReadTransfer() {
-    throw ChimeraTK::logic_error("Reading this register is not supported.");
+//    throw ChimeraTK::logic_error("Reading this register is not supported.");
   }
 
   /*********************************************************************************************************************/
@@ -66,7 +66,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doPreRead(TransferType) {}
+  void SubdeviceRegisterAccessor::doPreRead(TransferType) {
+    throw ChimeraTK::logic_error("Reading this register is not supported.");
+  }
 
   /*********************************************************************************************************************/
 
