@@ -206,9 +206,13 @@ namespace ChimeraTK {
         // call preRead
         this->readTransactionInProgress = false;
         this->preRead(TransferType::readAsync);
-
         // initiate asynchronous transfer and return future
-        activeFuture = readTransferAsync();
+        if(!hasSeenException) {
+          activeFuture = readTransferAsync();
+        }
+        else {
+          activeFuture = TransferFuture(this); // in case of exception, return a ready future
+        }
         hasActiveFuture = true;
       }
       return activeFuture;
