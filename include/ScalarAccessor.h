@@ -104,6 +104,7 @@ namespace ChimeraTK {
     : ScalarAccessor<UserType>(
           owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::poll, description, tags) {}
     ScalarPollInput() : ScalarAccessor<UserType>() {}
+    void read() { this->readLatest(); }
     using ScalarAccessor<UserType>::operator=;
   };
 
