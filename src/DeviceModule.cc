@@ -285,10 +285,6 @@ namespace ChimeraTK {
     // to terminate this thread before waking up other threads waiting on the condition variable.
     try {
       while(true) {
-        // increment special testable mode counter to make sure the initialisation completes within one
-        // "application step"
-        ++owner->testableMode_deviceInitialisationCounter; // matched below with a decrement
-
         // [Spec: 2.3.1] (Re)-open the device.
         owner->testableModeUnlock("Open/recover device");
         do {
@@ -311,10 +307,6 @@ namespace ChimeraTK {
         } while(!device.isFunctional());
         firstAttempt = false;
         owner->testableModeLock("Initialise device");
-
-        // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
-        // within one "application step"
-        --owner->testableMode_deviceInitialisationCounter;
 
         std::unique_lock<std::mutex> errorLock(errorMutex);
 
@@ -367,6 +359,9 @@ namespace ChimeraTK {
         deviceError.writeAll();
 
         deviceHasError = false;
+        // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
+        // within one "application step"
+        --owner->testableMode_deviceInitialisationCounter;
 
         // [Spec: 2.3.6+2.3.7] send the trigger that the device is available again
         deviceBecameFunctional.write();
@@ -389,6 +384,10 @@ namespace ChimeraTK {
 
         errorLock.unlock(); // We must not hold the error lock when getting the testable mode mutex to avoid deadlocks!
         owner->testableModeLock("Process exception");
+        // increment special testable mode counter to make sure the initialisation completes within one
+        // "application step"
+        ++owner->testableMode_deviceInitialisationCounter; // matched above with a decrement
+
         errorLock.lock(); // we need both locks to modify the queue, so get it again.
 
         auto popResult = errorQueue.pop(error);
@@ -431,6 +430,11 @@ namespace ChimeraTK {
     deviceError.message = "Attempting to open device...";
     deviceError.setCurrentVersionNumber({});
     deviceError.writeAll();
+
+    // Increment special testable mode counter to make sure the initialisation completes within one
+    // "application step". Start with counter increased (device not initialised yet, wait).
+    // We can to this here without testable mode lock because the application is still single threaded.
+    ++owner->testableMode_deviceInitialisationCounter; // released and increased in handeException loop
   }
 
   /*********************************************************************************************************************/
