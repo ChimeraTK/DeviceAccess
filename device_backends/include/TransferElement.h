@@ -18,6 +18,7 @@
 #include <boost/bind.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -523,6 +524,11 @@ namespace ChimeraTK {
         activeException = std::current_exception();
       }
       catch(boost::thread_interrupted&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+      }
+      // Needed for throwing TypeChangingDecorator. Is this even a good concept?
+      catch(boost::numeric::bad_numeric_cast&) {
         hasSeenException = true;
         activeException = std::current_exception();
       }
