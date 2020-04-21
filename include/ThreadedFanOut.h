@@ -153,7 +153,7 @@ namespace ChimeraTK {
         // if the update came through the return channel, return it to the feeder
         if(var == _returnChannelSlave->getId()) {
           FanOut<UserType>::impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
-          FanOut<UserType>::impl->writeDestructively(_returnChannelSlave->getVersionNumber());
+          FanOut<UserType>::impl->write(_returnChannelSlave->getVersionNumber());
         }
         version = FanOut<UserType>::impl->getVersionNumber();
       }
