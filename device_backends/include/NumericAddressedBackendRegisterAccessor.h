@@ -226,8 +226,7 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
       if(TransferElement::isInTransferGroup) {
-        throw ChimeraTK::logic_error("Calling read() or write() on an accessor which is part of a "
-                                     "TransferGroup is not allowed "
+        assert("Accessor is in TransferGroup. Read or write is not allowed." +
                                      "(Register name: " +
             _registerPathName + "')");
       }

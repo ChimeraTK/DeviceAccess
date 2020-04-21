@@ -69,8 +69,7 @@ namespace ChimeraTK {
       // This function is not needed and will never be called. If readAsync() is
       // called on the high-level accessor, the transfer will be "backgrounded"
       // already on that level.
-      throw ChimeraTK::logic_error("NumericAddressedLowLevelTransferElement::readAsync() is not "
-                                   "implemented"); // LCOV_EXCL_LINE
+      assert("NumericAddressedLowLevelTransferElement::readAsync() is not implemented.");
     }                                              // LCOV_EXCL_LINE
 
     /** Check if the address areas are adjacent and/or overlapping.
