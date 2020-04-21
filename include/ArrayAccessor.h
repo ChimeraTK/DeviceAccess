@@ -67,11 +67,6 @@ namespace ChimeraTK {
       return dataLoss;
     }
 
-    TransferFuture readAsync() {
-      throw ChimeraTK::logic_error("ArrayAccessor::readAsync() is currently not "
-                                   "supported by ApplicationCore!");
-    }
-
    protected:
     friend class InversionOfControlAccessor<ArrayAccessor<UserType>>;
 
