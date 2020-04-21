@@ -116,7 +116,7 @@ namespace ChimeraTK {
 
   void PcieBackend::readInternal(uint8_t bar, uint32_t address, int32_t* data) {
     device_rw l_RW;
-    assert(_opened == false);
+    assert(_opened);
     l_RW.barx_rw = bar;
     l_RW.mode_rw = RW_D32;
     l_RW.offset_rw = address;
@@ -131,8 +131,8 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::directRead(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
-    assert(_opened == false);
-    assert(bar > 5);
+    assert(_opened);
+    assert(bar <= 5);
     loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + address;
 
     if(pread(_deviceID, data, sizeInBytes, virtualOffset) != static_cast<int>(sizeInBytes)) {
@@ -142,7 +142,7 @@ namespace ChimeraTK {
 
   void PcieBackend::writeInternal(uint8_t bar, uint32_t address, int32_t const* data) {
     device_rw l_RW;
-    assert(_opened == false);
+    assert(_opened);
     l_RW.barx_rw = bar;
     l_RW.mode_rw = RW_D32;
     l_RW.offset_rw = address;
@@ -157,8 +157,8 @@ namespace ChimeraTK {
 
   // direct write allows to read areas directly, without a loop in user space
   void PcieBackend::directWrite(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
-    assert(_opened == false);
-    assert(bar > 5);
+    assert(_opened);
+    assert(bar <= 5);
     loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + address;
 
     if(pwrite(_deviceID, data, sizeInBytes, virtualOffset) != static_cast<int>(sizeInBytes)) {
@@ -167,8 +167,8 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::readWithStruct(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
-    assert(_opened == false);
-    assert(sizeInBytes % 4);
+    assert(_opened);
+    assert(sizeInBytes % 4 == 0);
     for(uint32_t i = 0; i < sizeInBytes / 4; i++) {
       readInternal(bar, address + i * 4, data + i);
     }
@@ -184,8 +184,8 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::writeWithStruct(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
-    assert(_opened == false);
-    assert(sizeInBytes % 4);
+    assert(_opened);
+    assert(sizeInBytes % 4 == 0);
     for(uint32_t i = 0; i < sizeInBytes / 4; i++) {
       writeInternal(bar, address + i * 4, (data + i));
     }
@@ -200,7 +200,7 @@ namespace ChimeraTK {
     device_rw l_RW;
     device_rw* pl_RW;
 
-    assert(_opened == false);
+    assert(_opened);
 
     if(sizeInBytes < sizeof(device_rw)) {
       pl_RW = &l_RW;
@@ -226,7 +226,7 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::readDMAViaIoctl(uint8_t /*bar*/, uint32_t address, int32_t* data, size_t sizeInBytes) {
-    assert(_opened == false);
+    assert(_opened);
 
     // prepare the struct
     device_ioctrl_dma DMA_RW;
