@@ -68,6 +68,11 @@ namespace ChimeraTK {
       return dataLoss;
     }
 
+    TransferFuture readAsync() {
+      throw ChimeraTK::logic_error("ScalarAccessor::readAsync() is currently not "
+                                   "supported by ApplicationCore!");
+    }
+
    protected:
     friend class InversionOfControlAccessor<ScalarAccessor<UserType>>;
 
