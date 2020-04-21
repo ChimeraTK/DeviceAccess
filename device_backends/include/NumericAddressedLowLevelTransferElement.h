@@ -69,7 +69,8 @@ namespace ChimeraTK {
       // This function is not needed and will never be called. If readAsync() is
       // called on the high-level accessor, the transfer will be "backgrounded"
       // already on that level.
-      assert("NumericAddressedLowLevelTransferElement::readAsync() is not implemented.");
+      assert(false);
+      std::terminate();
     }                                              // LCOV_EXCL_LINE
 
     /** Check if the address areas are adjacent and/or overlapping.

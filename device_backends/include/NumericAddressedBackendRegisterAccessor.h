@@ -225,11 +225,7 @@ namespace ChimeraTK {
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
-      if(TransferElement::isInTransferGroup) {
-        assert("Accessor is in TransferGroup. Read or write is not allowed." +
-                                     "(Register name: " +
-            _registerPathName + "')");
-      }
+      assert(!TransferElement::isInTransferGroup);
       _rawAccessor->write();
       return false;
     }
