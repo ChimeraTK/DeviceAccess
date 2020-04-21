@@ -80,15 +80,15 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void TransferGroup::write() {
+  void TransferGroup::write(VersionNumber versionNumber) {
     if(isReadOnly()) {
       throw ChimeraTK::logic_error("TransferGroup::write() called, but the TransferGroup is read-only.");
     }
     for(auto& elem : highLevelElements) {
-      elem->preWrite(TransferType::write);
+      elem->preWrite(TransferType::write, versionNumber);
     }
     for(auto& elem : lowLevelElements) {
-      elem->writeTransfer();
+      elem->writeTransfer(versionNumber);
     }
     for(auto& elem : highLevelElements) {
       elem->postWrite(TransferType::write, elem->hasSeenException);

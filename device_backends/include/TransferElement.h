@@ -513,7 +513,7 @@ namespace ChimeraTK {
      * write will be executed directly on the underlying accessor. This function
      * implemented be used to transfer the data to be written into the
      *  underlying accessor. */
-    void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) noexcept {
+    void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) noexcept {
       if(writeTransactionInProgress) return;
       assert(!hasSeenException);
       try {
@@ -590,7 +590,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransfer(ChimeraTK::VersionNumber versionNumber = {}) noexcept {
+    bool writeTransfer(ChimeraTK::VersionNumber versionNumber) noexcept {
       return handleTransferException<bool>([&] { return doWriteTransfer(versionNumber); }, true);
     }
 
@@ -616,7 +616,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) noexcept {
+    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) noexcept {
       return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); }, true);
     }
 

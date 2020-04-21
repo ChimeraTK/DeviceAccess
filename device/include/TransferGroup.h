@@ -54,7 +54,7 @@ namespace ChimeraTK {
     void read();
 
     /** Trigger write transfer for all accessors in the group */
-    void write();
+    void write(VersionNumber versionNumber = {});
 
     /** Check if transfer group is read-only. A transfer group is read-only, if at
      * least one of its transfer elements is read-only. */
