@@ -395,7 +395,7 @@ void PcieBackendTest::testReadRegister() {
    * range. */
   // BOOST_CHECK_THROW( _pcieBackendInstance->readReg(WORD_DUMMY_OFFSET,
   // &dataWord, /*bar*/ 6),
-  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 6, WORD_DUMMY_OFFSET, &dataWord, 4), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(_pcieBackendInstance->getRegisterAccessor<int>("#6/0x3C", 4, 0, {}), ChimeraTK::logic_error);
 }
 
 void PcieBackendTest::testWriteRegister() {
@@ -413,12 +413,6 @@ void PcieBackendTest::testWriteRegister() {
   _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &newUserWord, 4);
 
   BOOST_CHECK_EQUAL(originalUserWord + 1, newUserWord);
-
-  /** There has to be an exception if the bar is wrong. 6 is definitely out of
-   * range. */
-  // BOOST_CHECK_THROW( _pcieBackendInstance->writeReg( /*bar*/ 6,
-  // WORD_DUMMY_OFFSET, newUserWord),
-  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 6, WORD_DUMMY_OFFSET, &newUserWord, 4), ChimeraTK::logic_error);
 }
 
 void PcieBackendTest::testClose() {
