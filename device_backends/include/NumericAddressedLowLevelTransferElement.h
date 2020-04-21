@@ -36,7 +36,7 @@ namespace ChimeraTK {
     NumericAddressedLowLevelTransferElement(
         boost::shared_ptr<NumericAddressedBackend> dev, size_t bar, size_t startAddress, size_t numberOfWords)
     : _dev(dev), _bar(bar), isShared(false) {
-      if(bar > 5) {
+      if(bar > 5 && bar != 13) {
         std::stringstream errorMessage;
         errorMessage << "Invalid bar number: " << bar << std::endl;
         throw ChimeraTK::logic_error(errorMessage.str());
