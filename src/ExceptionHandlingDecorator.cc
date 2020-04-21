@@ -82,10 +82,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
-    assert(transferAllowed);
-    if(!transferAllowed) {
-      throw(ChimeraTK::logic_error("You have to implement ApplicationCore #157"));
-    }
+    assert(transferAllowed); // "You have to implement ApplicationCore #157"
     return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
   }
 
