@@ -84,7 +84,7 @@ namespace ChimeraTK {
 
     bool doReadTransferLatest() override { return true; }
 
-    void doPreWrite(TransferType type) override {
+    void doPreWrite(TransferType type, VersionNumber) override {
       std::ignore = type;
       if(isReadOnly()) {
         throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "

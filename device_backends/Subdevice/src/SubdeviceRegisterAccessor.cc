@@ -80,7 +80,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doPreWrite(TransferType) {
+  void SubdeviceRegisterAccessor::doPreWrite(TransferType, VersionNumber) {
     assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
   }

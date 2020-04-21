@@ -37,7 +37,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     bool isWriteable() const override { return false; }
 
-    void doPreWrite(TransferType) override {
+    void doPreWrite(TransferType, VersionNumber) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend ForceReadOnlyPlugin: Writing is not allowed.");
     }
 

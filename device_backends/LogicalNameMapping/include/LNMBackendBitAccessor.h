@@ -115,7 +115,7 @@ namespace ChimeraTK {
       }
     }
 
-    void doPreWrite(TransferType type) override {
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       std::lock_guard<std::mutex> lock(*_mutex);
       if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
         _accessor->accessData(0) &= ~(_bitMask);
@@ -123,7 +123,7 @@ namespace ChimeraTK {
       else {
         _accessor->accessData(0) |= _bitMask;
       }
-      _accessor->preWrite(type);
+      _accessor->preWrite(type, versionNumber);
     }
 
     void doPostWrite(TransferType type, bool dataLost) override {

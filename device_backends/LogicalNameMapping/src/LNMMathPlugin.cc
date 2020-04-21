@@ -44,7 +44,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
-    void doPreWrite(TransferType type) override;
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
     void doPostWrite(TransferType type, bool dataLost) override { _target->postWrite(type, dataLost); }
 
@@ -173,7 +173,7 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void MathPluginDecorator<UserType>::doPreWrite(TransferType type) {
+  void MathPluginDecorator<UserType>::doPreWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
     // convert from UserType to double - use the target accessor's buffer as a temporary buffer (this is a bit a hack,
     // but it is safe to overwrite the buffer and we can avoid the need for an additional permanent buffer which might
     // not even be used if the register is never written).
@@ -230,7 +230,7 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + this->getName() +
           "': The expression returned " + std::to_string(results.count()) + " results, expect exactly one result.");
     }
-    _target->preWrite(type);
+    _target->preWrite(type, versionNumber);
   }
 
   /********************************************************************************************************************/

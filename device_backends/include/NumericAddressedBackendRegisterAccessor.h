@@ -235,7 +235,7 @@ namespace ChimeraTK {
       _prePostActionsImplementor.doPostRead();
     }
 
-    void doPreWrite(TransferType) override {
+    void doPreWrite(TransferType, VersionNumber) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
       _prePostActionsImplementor.doPreWrite();
     }

@@ -39,7 +39,7 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
-    void doPreWrite(TransferType type) override;
+    void doPreWrite(TransferType type, VersionNumber) override;
 
     void doPostWrite(TransferType type, bool dataLost) override;
 

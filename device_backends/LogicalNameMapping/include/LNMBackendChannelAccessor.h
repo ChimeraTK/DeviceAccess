@@ -81,7 +81,7 @@ namespace ChimeraTK {
 //                                   "name mapping devices is not supported.");
     }
 
-    void doPreWrite(TransferType type) override {
+    void doPreWrite(TransferType type, VersionNumber) override {
       std::ignore = type;
       throw ChimeraTK::logic_error("Writing to channel-type registers of logical "
                                    "name mapping devices is not supported.");

@@ -521,7 +521,7 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error(
               "The version number passed to write() is less than the last version number used.");
         }
-        doPreWrite(type);
+        doPreWrite(type, versionNumber);
       }
       catch(ChimeraTK::logic_error&) {
         hasSeenException = true;
@@ -550,7 +550,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPreWrite(TransferType) {}
+    virtual void doPreWrite(TransferType, VersionNumber) {}
 
    public:
     /** Perform any post-write cleanups if necessary. If during preWrite() e.g.

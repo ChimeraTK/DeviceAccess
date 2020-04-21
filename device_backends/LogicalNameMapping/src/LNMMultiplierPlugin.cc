@@ -44,7 +44,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
-    void doPreWrite(TransferType type) override;
+    void doPreWrite(TransferType type, VersionNumber) override;
 
     void doPostWrite(TransferType type, bool dataLost) override { _target->postWrite(type, dataLost); }
 
@@ -69,13 +69,13 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
   template<typename UserType>
-  void MultiplierPluginDecorator<UserType>::doPreWrite(TransferType type) {
+  void MultiplierPluginDecorator<UserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       for(size_t k = 0; k < _target->getNumberOfSamples(); ++k) {
         _target->accessData(i, k) = userTypeToNumeric<double>(buffer_2D[i][k]) * _factor;
       }
     }
-    _target->preWrite(type);
+    _target->preWrite(type, versionNumber);
   }
 
   /********************************************************************************************************************/

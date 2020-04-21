@@ -74,7 +74,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
       return true;
     }
 
-    void doPreWrite(TransferType) override {}
+    void doPreWrite(TransferType, VersionNumber) override {}
 
     void doPostWrite(TransferType, bool /*dataLost*/) override {}
 
