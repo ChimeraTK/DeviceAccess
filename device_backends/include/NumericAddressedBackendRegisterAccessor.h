@@ -240,7 +240,14 @@ namespace ChimeraTK {
       _prePostActionsImplementor.doPostRead();
     }
 
-    void doPreWrite(TransferType) override { _prePostActionsImplementor.doPreWrite(); }
+    void doPreWrite(TransferType) override {
+      if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+      _prePostActionsImplementor.doPreWrite();
+    }
+
+    void doPreRead(TransferType) override {
+      if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+    }
 
     void doPostWrite(TransferType, bool /*dataLost*/) override { _prePostActionsImplementor.doPostWrite(); }
 
