@@ -29,9 +29,9 @@ namespace ChimeraTK {
         DeviceModule& devMod, VariableDirection direction,
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor = {nullptr});
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
 
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
 
     void doReadTransfer() override;
 
@@ -41,7 +41,7 @@ namespace ChimeraTK {
 
     TransferFuture doReadTransferAsync() override;
 
-    void doPreWrite(TransferType type) override;
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
     DataValidity dataValidity() const override;
 

@@ -24,9 +24,9 @@ namespace ChimeraTK {
   }
 
   template<typename T>
-  void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type) {
+  void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(_owner->getDataValidity());
-    NDRegisterAccessorDecorator<T, T>::doPreWrite(type);
+    NDRegisterAccessorDecorator<T, T>::doPreWrite(type, versionNumber);
   }
 
 } // namespace ChimeraTK
