@@ -63,20 +63,31 @@ namespace ChimeraTK {
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doReadTransferNonBlocking() {
     if(transferAllowed) {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
+      // #138 Phase 1.
+      // Drop the return value of doReadTransferNonBlocking. We must not return "hasNewData" but "willHaveNewData".
+      // This is different because postRead will block and recover, so there will always be new data for the
+      // calling elements to process.
+      // #138 Phase 2.
+      // Return the return value of the transfer in case of (Type == readNonBlocking() || Type == or readLatest()) && wait_for_new_data && !version == {nullptr}.
+      // Else return true because postRead will do a recovery and there will be new data.
+      (void)ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking(); // phase 1
+      return true;                                                                         // phase 1
     }
     else {
-      return false; //hasNewData
+      return true; // phase 1 : will always have new data
+      // phase 2:: Similar decision as above: Return true if the postRead will recover.
     }
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doReadTransferLatest() {
+    // see comment doReadTransferNonBlocking
     if(transferAllowed) {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
+      (void)ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest(); // phase 1
+      return true;
     }
     else {
-      return false; //hasNewData
+      return true; //Phase 1 : will always have new data
     }
   }
 
