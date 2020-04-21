@@ -423,8 +423,10 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer14) {
   device->open(testBackend);
   int32_t adcdata[2];
   size_t dataSizeInBytes = 2 * 4;
-
-  BOOST_CHECK_THROW(device->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes), ChimeraTK::logic_error);
+  // this test checks that small dma transfers are also possible... this wasn't the case before and the test expected
+  // a logic_error, but this would break abstraction.
+  device->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes);
+  // todo check if data properly read?
 }
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer15) {

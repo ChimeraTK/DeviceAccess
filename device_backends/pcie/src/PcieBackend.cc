@@ -256,14 +256,6 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("Device closed");
     }
 
-    // safety check: the requested dma size (size of the data buffer) has to be at
-    // least
-    // the size of the dma struct, because the latter has to be copied into the
-    // data buffer.
-    if(sizeInBytes < sizeof(device_ioctrl_dma)) {
-      throw ChimeraTK::logic_error("Reqested dma size is too small");
-    }
-
     // prepare the struct
     device_ioctrl_dma DMA_RW;
     DMA_RW.dma_cmd = 0;     // FIXME: Why is it 0? => read driver code
@@ -273,12 +265,22 @@ namespace ChimeraTK {
     DMA_RW.dma_reserved1 = 0; // FIXME: is this a correct value?
     DMA_RW.dma_reserved2 = 0; // FIXME: is this a correct value?
 
-    // the ioctrl_dma struct is copied to the beginning of the data buffer,
-    // so the information about size and offset are passed to the driver.
-    memcpy((void*)data, &DMA_RW, sizeof(device_ioctrl_dma));
-    int ret = ioctl(_deviceID, _ioctlDMA, (void*)data);
-    if(ret) {
-      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device "));
+    if(sizeInBytes >= sizeof(device_ioctrl_dma)) {
+      // the ioctrl_dma struct is copied to the beginning of the data buffer,
+      // so the information about size and offset are passed to the driver.
+      memcpy((void*)data, &DMA_RW, sizeof(device_ioctrl_dma));
+      int ret = ioctl(_deviceID, _ioctlDMA, (void*)data);
+      if(ret) {
+        throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device "));
+      }
+    }
+    else {
+      // the ioctrl_dma struct is used as a dma buffer and the read data is later copied out
+      int ret = ioctl(_deviceID, _ioctlDMA, (void*)&DMA_RW);
+      if(ret) {
+        throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device "));
+      }
+      memcpy(&DMA_RW, (void*)data, sizeInBytes);
     }
   }
 
