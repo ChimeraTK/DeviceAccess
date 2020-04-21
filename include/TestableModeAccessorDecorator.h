@@ -118,8 +118,9 @@ namespace ChimeraTK {
 
     /** Obtain the testableModeLock if not owned yet, and decrement the counter.
      */
-    void obtainLockAndDecrementCounter() {
+    void obtainLockAndDecrementCounter(bool hasNewData) {
       if(!Application::testableModeTestLock()) Application::testableModeLock("doReadTransfer " + this->getName());
+      if(!hasNewData) return;
       if(Application::getInstance().testableMode_perVarCounter[_variableIdRead] > 0) {
         assert(Application::getInstance().testableMode_counter > 0);
         --Application::getInstance().testableMode_counter;
@@ -147,7 +148,7 @@ namespace ChimeraTK {
     /** Obtain the testableModeLock if not owned yet, decrement the counter, and
      * release the lock again. */
     void decrementCounter() {
-      obtainLockAndDecrementCounter();
+      obtainLockAndDecrementCounter(true);
       releaseLock();
     }
 
@@ -176,7 +177,7 @@ namespace ChimeraTK {
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
-      if(_handleRead) obtainLockAndDecrementCounter();
+      if(_handleRead) obtainLockAndDecrementCounter(hasNewData);
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
     }
 

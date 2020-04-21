@@ -128,6 +128,7 @@ namespace ChimeraTK {
       assert(_hasReturnSlave);
 
       auto _ = cppext::finally([&] {
+        if(!hasNewData) return;
         _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
         // distribute return-channel update to the other slaves
         for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
