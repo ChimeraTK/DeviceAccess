@@ -46,7 +46,7 @@ namespace ChimeraTK {
    * with the last known valid data, for example.
    */
   enum class DataValidity {
-    ok, /// The data is considered valid
+    ok,    /// The data is considered valid
     faulty /// The data is not considered valid
   };
 
@@ -99,7 +99,7 @@ namespace ChimeraTK {
 
     /** Set the current DataValidity for this TransferElement. Will do nothing if the
      * backend does not support it */
-    virtual void setDataValidity(DataValidity valid = DataValidity::ok) { (void) valid; }
+    virtual void setDataValidity(DataValidity valid = DataValidity::ok) { (void)valid; }
 
     /** Return current validity of the data. Will always return DataValidity::ok if the
      * backend does not support it */
@@ -436,6 +436,10 @@ namespace ChimeraTK {
         hasSeenException = true;
         activeException = std::current_exception();
       }
+      catch(boost::thread_interrupted&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+      }
       catch(...) {
         std::cout << "BUG: Wrong exception type thrown in doPreRead()!" << std::endl;
         throw;
@@ -515,6 +519,10 @@ namespace ChimeraTK {
         doPreWrite(type);
       }
       catch(ChimeraTK::logic_error&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+      }
+      catch(boost::thread_interrupted&) {
         hasSeenException = true;
         activeException = std::current_exception();
       }
