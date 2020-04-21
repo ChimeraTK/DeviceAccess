@@ -103,17 +103,17 @@ namespace ChimeraTK {
     bool isWriteable() const override { return true; }
 
     void doReadTransfer() override {
-      if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+      assert(_withReturn);
       _returnSlave->readTransfer();
     }
 
     bool doReadTransferNonBlocking() override {
-      if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+      assert(_withReturn);
       return _returnSlave->readTransferNonBlocking();
     }
 
     bool doReadTransferLatest() override {
-      if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+      assert(_withReturn);
       return _returnSlave->readTransferLatest();
     }
 
@@ -124,7 +124,7 @@ namespace ChimeraTK {
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
-      if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+      assert(_withReturn);
       assert(_hasReturnSlave);
 
       auto _ = cppext::finally([&] {
@@ -143,7 +143,7 @@ namespace ChimeraTK {
     }
 
     ChimeraTK::TransferFuture doReadTransferAsync() override {
-      if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+      assert(_withReturn);
       return {_returnSlave->readTransferAsync(), this};
     }
 
