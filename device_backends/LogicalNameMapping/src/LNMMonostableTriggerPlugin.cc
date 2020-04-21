@@ -70,8 +70,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPreWrite(TransferType, VersionNumber) override {}
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
 
     void doPostWrite(TransferType, bool /*dataLost*/) override {}
 

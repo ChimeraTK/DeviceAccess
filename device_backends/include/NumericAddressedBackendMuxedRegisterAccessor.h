@@ -72,7 +72,7 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 

@@ -598,7 +598,7 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     return NDRegisterAccessorDecorator<T>::doReadTransferLatest();
   }
 
-  bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+  bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
     nWrite++;
     return NDRegisterAccessorDecorator<T>::doWriteTransfer(versionNumber);
   }

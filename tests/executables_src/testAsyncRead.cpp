@@ -31,10 +31,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   std::string readDeviceInfo() override { return std::string("AsyncTestDummy"); }
 
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string,
-      std::string,
-      std::list<std::string>,
-      std::string) {
+  static boost::shared_ptr<DeviceBackend> createInstance(
+      std::string, std::string, std::list<std::string>, std::string) {
     return boost::shared_ptr<DeviceBackend>(new AsyncTestDummy());
   }
 
@@ -69,7 +67,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
     bool doReadTransferLatest() override { return true; }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       currentVersion = versionNumber;
       return true;
     }
@@ -111,10 +109,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
   };
 
   template<typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
-      size_t numberOfWords,
-      size_t wordOffsetInRegister,
-      AccessModeFlags flags) {
+  boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     assert(numberOfWords == 1);
     assert(wordOffsetInRegister == 0);
     (void)numberOfWords;

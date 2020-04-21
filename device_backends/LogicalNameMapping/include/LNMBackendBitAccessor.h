@@ -83,7 +83,7 @@ namespace ChimeraTK {
       _accessor->readTransfer();
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       std::lock_guard<std::mutex> lock(*_mutex);
       return _accessor->writeTransfer(versionNumber);
     }
