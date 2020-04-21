@@ -229,7 +229,7 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite(TransferType::write);
+      preWrite(TransferType::write, versionNumber);
       bool dataLost;
       if(!hasSeenException) dataLost = writeTransfer(versionNumber);
       postWrite(TransferType::write, dataLost);
@@ -247,7 +247,7 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite(TransferType::writeDestructively);
+      preWrite(TransferType::writeDestructively, versionNumber);
       bool dataLost;
       if(!hasSeenException) dataLost = writeTransferDestructively(versionNumber);
       postWrite(TransferType::writeDestructively, dataLost);
@@ -513,10 +513,14 @@ namespace ChimeraTK {
      * write will be executed directly on the underlying accessor. This function
      * implemented be used to transfer the data to be written into the
      *  underlying accessor. */
-    void preWrite(TransferType type) noexcept {
+    void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) noexcept {
       if(writeTransactionInProgress) return;
       assert(!hasSeenException);
       try {
+        if(versionNumber < getVersionNumber()) {
+          throw ChimeraTK::logic_error(
+              "The version number passed to write() is less than the last version number used.");
+        }
         doPreWrite(type);
       }
       catch(ChimeraTK::logic_error&) {
