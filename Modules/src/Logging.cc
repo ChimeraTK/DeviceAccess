@@ -55,6 +55,8 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
     }
     message = std::to_string(level) + msg + "\n";
     message.write();
+    // set emtpy message to let the LoggingModule know that someone called writeAll() without sending a message
+    message = "";
   }
   else {
     // only use the buffer until ctk initialized the process variables
@@ -108,22 +110,26 @@ void LoggingModule::mainLoop() {
     id_list[module->msg.getId()] = &(*module);
   }
   auto group = readAnyGroup();
-
+  std::string msg;
+  MessageSource* currentSender;
+  LogLevel level;
+  
   while(1) {
     auto id = group.readAny();
     if(id_list.count(id) == 0){
       throw ChimeraTK::logic_error("Cannot find  element id"
                                      "when updating logging variables.");
     }
-    std::string msg;
-    MessageSource* currentSender;
-    LogLevel level;
     try{
       currentSender = id_list.at(id);
       msg = (std::string)(currentSender->msg);
     } catch (std::out_of_range &e){
       throw ChimeraTK::logic_error("Cannot find  element id"
                                            "when updating logging variables.");
+    }
+    // if message is empty assume someone called writeAll() in a module containing the Logger -> ignore
+    if(msg.empty()){
+      continue;
     }
     try{
       level = static_cast<LogLevel>(std::strtoul(&msg.at(0),NULL, 0));
