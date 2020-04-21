@@ -162,9 +162,6 @@ class PcieBackendTestSuite : public test_suite {
 
     test_case* closeTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testClose, pcieBackendTest);
 
-    test_case* failIfBackendClosedTestCase =
-        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testFailIfBackendClosed, pcieBackendTest);
-
     test_case* testConstructor = BOOST_TEST_CASE(&PcieBackendTest::testConstructor);
 
     createBackendTestCase->depends_on(testConstructor);
@@ -177,7 +174,6 @@ class PcieBackendTestSuite : public test_suite {
     writeDMATestCase->depends_on(readDMATestCase);
     readDeviceInfoTestCase->depends_on(writeDMATestCase);
     closeTestCase->depends_on(readDeviceInfoTestCase);
-    failIfBackendClosedTestCase->depends_on(closeTestCase);
 
     add(testConstructor);
 
@@ -196,7 +192,6 @@ class PcieBackendTestSuite : public test_suite {
     add(readDeviceInfoTestCase);
 
     add(closeTestCase);
-    add(failIfBackendClosedTestCase);
   }
 
  private:
@@ -257,38 +252,6 @@ std::string PcieBackendTest::checkDmaValues(std::vector<int32_t> const& dmaBuffe
                << i << " is " << dmaBuffer[i] << std::endl;
 
   return errorMessage.str();
-}
-
-// check that the exception is thrown if the backend is not opened
-void PcieBackendTest::testFailIfBackendClosed() {
-  std::cout << "testFailIfBackendClosed" << std::endl;
-  // FIXME: Change the driver to have the standard register set and adapt this
-  // code
-
-  // We use the  WORD_USER_OFFSET register in bar 0 for all operations. It is
-  // read/write.
-  int32_t dataWord = 0; // Just use one single word, even for dma. nothing
-                        // should be executed anyway.
-
-  _pcieBackendInstance->close();
-  BOOST_CHECK_THROW( // _pcieBackendInstance->readReg(WORD_USER_OFFSET,
-                     // &dataWord, /*bar*/ 0),
-      _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, 4), ChimeraTK::logic_error);
-  // BOOST_CHECK_THROW(  _pcieBackendInstance->read(WORD_USER_OFFSET, &dataWord,
-  // sizeof(dataWord), /*bar*/ 0),
-  BOOST_CHECK_THROW(
-      _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 0, 0, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
-  // BOOST_CHECK_THROW(  _pcieBackendInstance->writeReg(/*bar*/ 0,
-  // WORD_USER_OFFSET, 0),
-  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, 0, 4), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(
-      _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(
-      _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
-
-  // std::string deviceInfo;
-  BOOST_CHECK_THROW(_pcieBackendInstance->readDeviceInfo(), ChimeraTK::logic_error);
 }
 
 void PcieBackendTest::testReadDeviceInfo() {
@@ -421,10 +384,6 @@ void PcieBackendTest::testReadRegister() {
 
   // read the WORD_COMPILATION register in bar 0. It's value is not 0.
   int32_t dataWord = 0; // initialise with 0 so we can check if reading the content works.
-
-  // check that the exception is thrown if the backend is not opened
-  _pcieBackendInstance->close();
-  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4), ChimeraTK::logic_error);
 
   _pcieBackendInstance->open(); // no need to check if this works because we did
                                 // the open test first
