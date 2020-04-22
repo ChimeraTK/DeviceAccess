@@ -148,7 +148,7 @@ namespace ChimeraTK {
       return {_returnSlave->readTransferAsync(), this};
     }
 
-    void doPreWrite(TransferType type) override {
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       for(auto& slave : FanOut<UserType>::slaves) {       // send out copies to slaves
         if(slave->getNumberOfSamples() != 0) {            // do not send copy if no data is expected (e.g. trigger)
           if(slave == FanOut<UserType>::slaves.front()) { // in case of first slave, swap instead of copy
@@ -165,13 +165,13 @@ namespace ChimeraTK {
       // them all, otherwise the first accessor might take us the data away...
       RuntimeErrorCollector ec;
       for(auto& slave : FanOut<UserType>::slaves) {
-        ec.wrap([&] { slave->preWrite(type); });
+        ec.wrap([&] { slave->preWrite(type, versionNumber); });
       }
 
       ec.unwrap();
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       bool dataLost = false;
       bool isFirst = true;
       for(auto& slave : FanOut<UserType>::slaves) {

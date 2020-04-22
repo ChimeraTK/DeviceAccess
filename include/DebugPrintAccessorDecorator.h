@@ -25,12 +25,12 @@ namespace ChimeraTK {
       std::cout << "Enable debug output for variable '" << _fullyQualifiedName << "'." << std::endl;
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       std::cout << "doWriteTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
     }
 
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
       std::cout << "doWriteTransferDestructively() called on '" << _fullyQualifiedName << "'." << std::endl;
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
     }
@@ -65,9 +65,9 @@ namespace ChimeraTK {
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
     }
 
-    void doPreWrite(TransferType type) override {
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       std::cout << "preWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type);
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type, versionNumber);
     }
 
     void doPostWrite(TransferType type, bool dataLost) override {
