@@ -124,8 +124,8 @@ namespace ChimeraTK {
     } // lock guard goes out of scope
 
     // #138 Phase 1. Change for phase 2
+    // Starting a transfer is only allowed if the status is running (not in initialisation or shutdown)
     transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
-    assert(Application::getInstance().getLifeCycleState() != LifeCycleState::shutdown);
     // the waiting is only necessary as a hack for phase 1 because DeviceModule::startTransfer is not there yet
     if(transferAllowed) deviceModule.waitForRecovery();
 
