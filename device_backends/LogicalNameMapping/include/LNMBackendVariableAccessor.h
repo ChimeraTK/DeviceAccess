@@ -84,7 +84,7 @@ namespace ChimeraTK {
 
     bool doReadTransferLatest() override { return true; }
 
-    void doPreWrite(TransferType type) override {
+    void doPreWrite(TransferType type, VersionNumber) override {
       std::ignore = type;
       if(isReadOnly()) {
         throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
@@ -92,11 +92,11 @@ namespace ChimeraTK {
       }
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
-//      if(isReadOnly()) {
-//        throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
-//                                     "is not possible.");
-//      }
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
+      //      if(isReadOnly()) {
+      //        throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
+      //                                     "is not possible.");
+      //      }
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {

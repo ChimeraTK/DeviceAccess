@@ -224,7 +224,7 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/) override {
       assert(!TransferElement::isInTransferGroup);
       _rawAccessor->write();
       return false;
@@ -235,7 +235,7 @@ namespace ChimeraTK {
       _prePostActionsImplementor.doPostRead();
     }
 
-    void doPreWrite(TransferType) override {
+    void doPreWrite(TransferType, VersionNumber) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
       _prePostActionsImplementor.doPreWrite();
     }

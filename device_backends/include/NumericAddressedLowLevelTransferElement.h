@@ -48,7 +48,7 @@ namespace ChimeraTK {
 
     void doReadTransfer() override { _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes); }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       currentVersion = versionNumber;
       return false;
@@ -76,7 +76,7 @@ namespace ChimeraTK {
       // already on that level.
       assert(false);
       std::terminate();
-    }                                              // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
 
     /** Check if the address areas are adjacent and/or overlapping.
      *  NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes

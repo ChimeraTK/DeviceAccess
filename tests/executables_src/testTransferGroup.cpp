@@ -573,9 +573,9 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     NDRegisterAccessorDecorator<T>::doPostRead(type, hasNewData);
   }
 
-  void doPreWrite(TransferType type) override {
+  void doPreWrite(TransferType type, VersionNumber versionNumber) override {
     nPreWrite++;
-    NDRegisterAccessorDecorator<T>::doPreWrite(type);
+    NDRegisterAccessorDecorator<T>::doPreWrite(type, versionNumber);
   }
 
   void doPostWrite(TransferType type, bool dataLost) override {
@@ -598,7 +598,7 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     return NDRegisterAccessorDecorator<T>::doReadTransferLatest();
   }
 
-  bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+  bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
     nWrite++;
     return NDRegisterAccessorDecorator<T>::doWriteTransfer(versionNumber);
   }

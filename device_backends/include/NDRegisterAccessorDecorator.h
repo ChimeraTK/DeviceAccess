@@ -36,7 +36,7 @@ namespace ChimeraTK {
 
       void doPostRead(TransferType type, bool hasNewData) override = 0;
 
-      void doPreWrite(TransferType type) override = 0;
+      void doPreWrite(TransferType type, VersionNumber versionNumber) override = 0;
 
       void doPostWrite(TransferType type, bool dataLost) override = 0;
 
@@ -68,9 +68,9 @@ namespace ChimeraTK {
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 
-      void doPreWrite(TransferType type) override {
+      void doPreWrite(TransferType type, VersionNumber versionNumber) override {
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
-        _target->preWrite(type);
+        _target->preWrite(type, versionNumber);
       }
 
       void doPostWrite(TransferType type, bool dataLost) override {
@@ -120,11 +120,11 @@ namespace ChimeraTK {
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].resize(_target->getNumberOfSamples());
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       return _target->writeTransfer(versionNumber);
     }
 
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
       return _target->writeTransferDestructively(versionNumber);
     }
 

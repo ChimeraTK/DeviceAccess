@@ -192,13 +192,13 @@ namespace ChimeraTK {
       }
     }
 
-    void doPreWrite(TransferType type) override {
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
         for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
           _target->accessChannel(i)[j] = _fixedPointConverter.toRaw<UserType>(buffer_2D[i][j]);
         }
       }
-      _target->preWrite(type);
+      _target->preWrite(type, versionNumber);
     }
 
     void doPostWrite(TransferType type, bool dataLost) override { _target->postWrite(type, dataLost); }

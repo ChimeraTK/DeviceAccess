@@ -513,15 +513,15 @@ namespace ChimeraTK {
      * write will be executed directly on the underlying accessor. This function
      * implemented be used to transfer the data to be written into the
      *  underlying accessor. */
-    void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber = {}) noexcept {
+    void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) noexcept {
       if(writeTransactionInProgress) return;
       assert(!hasSeenException);
       try {
         if(versionNumber < getVersionNumber()) {
           throw ChimeraTK::logic_error(
-              "The version number passed to preWrite() is less than the last version number used.");
+              "The version number passed to write() is less than the last version number used.");
         }
-        doPreWrite(type);
+        doPreWrite(type, versionNumber);
       }
       catch(ChimeraTK::logic_error&) {
         hasSeenException = true;
@@ -550,7 +550,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPreWrite(TransferType) {}
+    virtual void doPreWrite(TransferType, VersionNumber) {}
 
    public:
     /** Perform any post-write cleanups if necessary. If during preWrite() e.g.
@@ -590,7 +590,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransfer(ChimeraTK::VersionNumber versionNumber = {}) noexcept {
+    bool writeTransfer(ChimeraTK::VersionNumber versionNumber) noexcept {
       return handleTransferException<bool>([&] { return doWriteTransfer(versionNumber); }, true);
     }
 
@@ -616,7 +616,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) noexcept {
+    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) noexcept {
       return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); }, true);
     }
 
