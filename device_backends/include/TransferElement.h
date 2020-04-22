@@ -230,7 +230,7 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::write, versionNumber);
-      bool dataLost;
+      bool dataLost = true;
       if(!hasSeenException) dataLost = writeTransfer(versionNumber);
       postWrite(TransferType::write, dataLost);
       return dataLost;
@@ -248,7 +248,7 @@ namespace ChimeraTK {
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::writeDestructively, versionNumber);
-      bool dataLost;
+      bool dataLost = true;
       if(!hasSeenException) dataLost = writeTransferDestructively(versionNumber);
       postWrite(TransferType::writeDestructively, dataLost);
       return dataLost;
