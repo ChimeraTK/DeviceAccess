@@ -67,12 +67,17 @@ namespace ChimeraTK { namespace LNMBackend {
     void doPostRead(TransferType, bool /*hasNewData*/) override {
     }
 
-    void doPreWrite(TransferType, VersionNumber) override {}
+    void doPreWrite(TransferType /*type*/, VersionNumber versionNumber) override {
+      _target->accessData(0, 0) = _active;
+      _target->preWrite(TransferType::write, versionNumber);
+    }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
 
-    void doPostWrite(TransferType, bool /*dataLost*/) override {}
+    void doPostWrite(TransferType, bool /*dataLost*/) override {
+      _target->postWrite(TransferType::write, dataLossInInactivate);
+    }
 
     void interrupt() override { _target->interrupt(); }
 
@@ -81,17 +86,26 @@ namespace ChimeraTK { namespace LNMBackend {
     std::chrono::duration<double, std::milli> _delay;
     uint32_t _active, _inactive;
 
+    bool dataLossInInactivate{false};
+
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint32_t>::_target;
   };
 
   template<typename UserType>
   bool MonostableTriggerPluginDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-    _target->accessData(0, 0) = _active;
-    bool a = _target->write(versionNumber);
+    // Note: since we have called _target->preWrite() in our doPreWrite(), there cannot be a logic_error at this point
+    // any more. This also holds for the second transfer initiated here: if the first transfer is allowed, so is the
+    // second. In case the target backend screws this up, we will run into std::terminate.
+
+    bool a = _target->writeTransfer(versionNumber);
+    _target->postWrite(TransferType::write, a);
+
     std::this_thread::sleep_for(_delay);
+
     _target->accessData(0, 0) = _inactive;
-    bool b = _target->write(versionNumber);
-    return a || b;
+    _target->preWrite(TransferType::write, versionNumber);
+    dataLossInInactivate = _target->writeTransfer(versionNumber);
+    return a || dataLossInInactivate;
   }
 
   template<typename UserType>
