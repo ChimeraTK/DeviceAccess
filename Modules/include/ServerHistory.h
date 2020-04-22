@@ -73,6 +73,11 @@
  *  }
  *
  *  \endcode
+ *
+ *  \remark Before starting the main loop of the server history module \c readAnyGroup() is called.
+ *  This seems to block until all connected variables are written once. So if the history buffers
+ *  are not filled make sure all variables are written. If they are not written in the module main loop,
+ *  write them once before the main loop of the module containing the history variables.
  */
 
 #ifndef MODULES_SERVERHISTORY_H_
