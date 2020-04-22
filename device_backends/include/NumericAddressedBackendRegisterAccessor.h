@@ -224,9 +224,9 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       assert(!TransferElement::isInTransferGroup);
-      _rawAccessor->write();
+      _rawAccessor->write(versionNumber);
       return false;
     }
 
