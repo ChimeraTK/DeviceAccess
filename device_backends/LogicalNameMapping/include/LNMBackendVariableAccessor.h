@@ -66,9 +66,7 @@ namespace ChimeraTK {
         }
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
-
-        // Call doPostRead here to initialize the data buffer
-        doPostRead(TransferType::read, true);
+        fillUserBuffer();
       }
       catch(...) {
         this->shutdown();
@@ -118,7 +116,7 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT; }
 
-    void doPostRead(TransferType, bool /*hasNewData*/) override {
+    void fillUserBuffer() {
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {
@@ -126,6 +124,11 @@ namespace ChimeraTK {
               boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
         });
       }
+    }
+
+    void doPostRead(TransferType, bool hasNewData) override {
+      if(!hasNewData) return;
+      fillUserBuffer();
       currentVersion = {};
     }
 

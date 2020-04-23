@@ -180,6 +180,8 @@ BOOST_AUTO_TEST_CASE(testReadWriteVariable) {
   // test with buffering register accessor
   auto acc = device.getOneDRegisterAccessor<int32_t>("/MyModule/SomeSubmodule/Variable");
   auto acc2 = device.getOneDRegisterAccessor<int32_t>("/MyModule/SomeSubmodule/Variable");
+  BOOST_CHECK(acc.getVersionNumber() == VersionNumber(nullptr));
+  BOOST_CHECK(acc2.getVersionNumber() == VersionNumber(nullptr));
   BOOST_CHECK(acc.getNElements() == 1);
   BOOST_CHECK(acc[0] == 2);
   BOOST_CHECK(acc2[0] == 2);
