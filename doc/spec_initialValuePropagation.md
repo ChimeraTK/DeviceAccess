@@ -177,7 +177,8 @@ All points are also covered by @ref exceptionHandlingDesign.
   - Introduce non-virtual `TransferElement::readTransfer()` etc, i.e. all functions like `do[...]Transfer[...]()` should have non-virtual pendants without `do`.
   - These new functions will call the actual `do[...]Transfer[...]()` function, but place a try-catch-block around to catch all ChimeraTK exceptions
   - The exceptions are stored and operation is continued. In case of boolean return values correct values must be implemented:
-    - `doReadTransferNonBlocking()`and `doReadTransferLatest()` must return false (there was no new data)
+    - `doReadTransferNonBlocking()`and `doReadTransferLatest()` must return false (there was no new data), except for the ExceptionHandlingDecorator which has to return true if it will do
+      a recovery in postRead() and there will be new data.
     - `doWriteTransfer()` shall return true (dataLost), except for the ExceptionHandlingDecorator.
         It should return true only if the data of the recovery accessor is replaced and the previous value has not been written to the hardware.
   - `postRead()` and `postWrite()` must always be called. It currently depends on the boolean return value if there is one. Instead this value has to be handed to `postRead()` and  `postWrite()` as an argument. Only the implementation can decide what it has to do and what can be skipped.
