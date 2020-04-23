@@ -29,6 +29,8 @@ StatusAggregator should be found automatically as follows:
 * **R1.1.3**: If a StatusAggregator is found at some hierarchy level below, the
   search is stopped for that branch of the hierarchy tree, i.e. all variables
   which are already aggregated by that aggregator are not aggregated again
+* **R1.1.4**: The StatusAggregator provides a `disable` input, which
+  deactivates the aggregator and sets the output status to OFF.
 
 ### R1.2 Priorization of status values ###
 
@@ -46,7 +48,9 @@ options exist (highest priority first):
 
 ### Requirements ###
 
-* **R2.1**: The instances need to be aggregated on the `ChimeraTK::VirtualModule` on the aggregator's level
+* **R2.1**: The instances need to be dectected on the `ChimeraTK::VirtualModule` on the aggregator's level
+* **R2.2**: The decteion has to work on instances the are modified by any of
+  the `ChimeraTK::HierarchyModifier`s 
 
 ### Constraints and issues ###
 
@@ -54,15 +58,13 @@ options exist (highest priority first):
   performed in the constructor, later the variable household is fixed and the
   status inputs can not be added anymore 
 
+* `ChimeraTK::StatusMonitor`s on the same level and the StatusAggregator itself
+  must be ignored in the detection. 
+
 
 
 ## Questions & issues ##
 
-* Which HierarchyModifiers should be supported? This questions also holds for
-  the StatusMonitor. 
-  * Which Modifiers exactly cause problems? Probably these are are  bugs and we
+* Which Modifiers exactly cause problems? Probably these are are  bugs and we
     need separate treatment. But we should clarify if this blocks required use
     cases of the aggregator.
-* Do we want a disable for the StatusAggregator, like there is for the
-  monitors?
-
