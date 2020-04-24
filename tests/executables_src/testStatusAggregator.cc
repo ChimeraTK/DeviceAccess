@@ -27,20 +27,20 @@ struct OuterGroup : public ctk::ModuleGroup {
 
     // A Monitor which gets hidden in the hierarchy
     ctk::StateMonitor<uint8_t> innerStateMonitor{this, "innerStateMonitor", "", "stateWatch", "stateStatus",
-        ctk::HierarchyModifier::hideThis, {"INNER_MON_OUTPUT"}, {"INNER_MON_PARAMS"}, {"INNER_MON_INPUT"}};
+        ctk::HierarchyModifier::oneLevelUp, {"INNER_MON_OUTPUT"}, {"INNER_MON_PARAMS"}, {"INNER_MON_INPUT"}};
 
-  } innerGroup{this, "innerModuleGroup", ""};
+  } innerGroup{this, "innerModuleGroup", "", ctk::HierarchyModifier::none};
 
   ctk::StatusAggregator outerStatusAggregator{this, "outerStatusAggregator", "StatusAggregator of OuterGroup",
-      "groupStatus", ctk::HierarchyModifier::hideThis, {"STATUS"}};
+      "groupStatus", ctk::HierarchyModifier::none, {"STATUS"}};
 };
 
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testApp") {}
   ~TestApplication() { shutdown(); }
 
-  OuterGroup outerModuleGroup1{this, "outerModuleGroup1", ""};
-  //OuterGroup outerModuleGroup2{this, "outerModuleGroup2", ""};
+  OuterGroup outerModuleGroup1{this, "outerModuleGroup1", "", ctk::HierarchyModifier::none};
+  //OuterGroup outerModuleGroup2{this, "outerModuleGroup2", "", ctk::HierarchyModifier::hideThis};
 
   ctk::StateMonitor<uint8_t> globalStateMonitor{this, "globalStateMonitor", "", "stateWatch", "stateStatus",
       ctk::HierarchyModifier::none, {"GLOBAL_MON_OUTPUT"}, {"GLOBAL_MON_PARAMS"}, {"GLOBAL_MON_INPUT"}};
@@ -60,6 +60,5 @@ BOOST_AUTO_TEST_CASE(testStatusAggregator) {
 
   ctk::TestFacility test;
   test.runApplication();
-//  app.dump();
-  app.cs.dump();
+  //app.cs.dump();
 }
