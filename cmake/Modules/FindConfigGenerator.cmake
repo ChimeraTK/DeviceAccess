@@ -26,9 +26,10 @@
 SET(ConfigGenerator_FOUND 0)
 
 
-FIND_PATH(ConfigGenerator_DIR ConfigGeneratorConfigVersion.cmake
-  ${CMAKE_CURRENT_LIST_DIR}
-  /usr/share/llrfConfigGenerator*
+file(GLOB ConfigGenerator_SEARCH_PATHS ${CMAKE_CURRENT_LIST_DIR} "/usr/share/ConfigGenerator*")
+FIND_PATH(ConfigGenerator_DIR
+    NAMES ConfigGeneratorConfigVersion.cmake
+    PATHS ${ConfigGenerator_SEARCH_PATHS}
 )
 
 include(${ConfigGenerator_DIR}/ConfigGeneratorConfigVersion.cmake)
