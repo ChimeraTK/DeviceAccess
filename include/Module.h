@@ -157,7 +157,9 @@ namespace ChimeraTK {
     DataValidity getDataValidity() const override { return _owner->getDataValidity(); }
     void incrementDataFaultCounter() override { _owner->incrementDataFaultCounter(); }
     void decrementDataFaultCounter() override { _owner->decrementDataFaultCounter(); }
-    void incrementExceptionCounter(bool writeAllOutputs) override { _owner->incrementExceptionCounter(writeAllOutputs); }
+    void incrementExceptionCounter(bool writeAllOutputs) override {
+      _owner->incrementExceptionCounter(writeAllOutputs);
+    }
     void decrementExceptionCounter() override { _owner->decrementExceptionCounter(); }
 
    protected:

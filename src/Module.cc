@@ -196,14 +196,11 @@ namespace ChimeraTK {
           break;
         case HierarchyModifier::moveToRoot:
           rootReached = true;
-          return virtualQualifiedName;
       }
 
-      if(!rootReached){
+      if(!rootReached) {
         currentLevelModule = dynamic_cast<Module*>(currentLevelModule)->getOwner();
-    }
-
-      //currentLevelModule = dynamic_cast<Module*>(currentLevelModule)->getOwner();
+      }
     } while(!rootReached);
 
     //    std::string fullName = getName();
