@@ -44,24 +44,55 @@ struct OuterGroup : public ctk::ModuleGroup {
 };
 
 struct TestApplication : public ctk::Application {
-  TestApplication() : Application("testApp") {}
+  TestApplication(ctk::HierarchyModifier outerModuleModifier)
+  : Application("testApp"), outerModule{this, "outerModule", "", outerModuleModifier} {}
   ~TestApplication() { shutdown(); }
 
-  OuterGroup outerModuleGroup1{this, "outerModuleGroup", "", ctk::HierarchyModifier::oneUpAndHide};
+  OuterGroup outerModuleGroup1{this, "outerModuleGroup", "", ctk::HierarchyModifier::none};
 
-  TestModule outerModule{this, "outerModule", "", ctk::HierarchyModifier::none};
+  TestModule outerModule;
 
   ctk::ControlSystemModule cs;
 
-  void defineConnections() { findTag(".*").connectTo(cs); }
+  void defineConnections() {
+    findTag(".*").connectTo(cs);
+    cs.dump();
+  }
 };
 
-BOOST_AUTO_TEST_CASE(testStatusAggregator) {
-  std::cout << "testStatusAggregator" << std::endl;
+BOOST_AUTO_TEST_CASE(testIllegalModifiers) {
+  // Just test if the app comes up without without
+  std::cout << "testIllegalModifiers" << std::endl;
 
-  TestApplication app;
+  {
+    std::cout << "Creating TestApplication with outerModuleModifier = none " << std::endl;
+    // Should work
+    TestApplication app(ctk::HierarchyModifier::none);
+    ctk::TestFacility test;
+    std::cout << std::endl;
+  }
 
-  ctk::TestFacility test;
-  test.runApplication();
-  app.cs.dump();
+  {
+    std::cout << "Creating TestApplication with outerModuleModifier = oneLevelUp " << std::endl;
+    TestApplication app(ctk::HierarchyModifier::oneLevelUp);
+    // Should detect usage of oneLevelUp and throw
+    BOOST_CHECK_THROW(ctk::TestFacility test, ctk::logic_error);
+    std::cout << std::endl;
+  }
+
+  // Currently leads to memory access violation, should also throw
+//  {
+//    std::cout << "Creating TestApplication with outerModuleModifier = oneUpAndHide " << std::endl;
+//    TestApplication app(ctk::HierarchyModifier::oneUpAndHide);
+//    ctk::TestFacility test;
+//    std::cout << std::endl;
+//  }
+
+    {
+      std::cout << "Creating TestApplication with outerModuleModifier = moveToRoot " << std::endl;
+      // Should work
+      TestApplication app(ctk::HierarchyModifier::moveToRoot);
+      ctk::TestFacility test;
+      std::cout << std::endl;
+    }
 }
