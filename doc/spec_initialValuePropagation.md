@@ -173,6 +173,7 @@ All points are also covered by @ref exceptionHandlingDesign.
 
 - 1. is not implemented for Device implementations (only the `UnidirectionalProcessArray` is correct at the moment).
 - 2. is not implemented for Device implementations (only the `UnidirectionalProcessArray` is correct at the moment).
+
 - Exceptions are currently thrown in the wrong place (see implementation section for the NDRegisterAccessor). A possible implementation to help backends complying with this rule would be:
   - Introduce non-virtual `TransferElement::readTransfer()` etc, i.e. all functions like `do[...]Transfer[...]()` should have non-virtual pendants without `do`.
   - These new functions will call the actual `do[...]Transfer[...]()` function, but place a try-catch-block around to catch all ChimeraTK exceptions

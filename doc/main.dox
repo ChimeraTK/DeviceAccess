@@ -18,7 +18,7 @@ Examples:
 
 Technical specifications:
 - \subpage spec_initialValuePropagation
-- \subpage exceptionHandlingDesign
+- \subpage spec_execptionHandling
 - \subpage spec_StatusAggregator
 
 */
