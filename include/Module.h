@@ -127,6 +127,8 @@ namespace ChimeraTK {
       return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
     }
 
+    virtual std::string getVirtualQualifiedName() const;
+
     std::string getFullDescription() const override {
       if(_owner == nullptr) return _description;
       auto ownerDescription = _owner->getFullDescription();
