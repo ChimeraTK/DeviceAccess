@@ -15,6 +15,10 @@ This currently is just a stub with detail snippets.
 * Exceptions thrown in preXxx or xxxTransferYyy are caught and delayed until postXxx by the framework. This ensures that preXxx and postXxx are always called in pairs.
 * Other exceptins then ChimeraTK::logic_error, ChimeraTK::runtime_error, also boost::thread_interrupted and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
 
+* Return values of readTransferLatest/readTransferNonBlocking: If an exception is thrown by the corresponding do-function, false must be returned (no new data present). This will be passed on to the postRead() function call.
+* Return values of writeTransfer/writeTransferDestructive:  If an exception is thrown by the corresponding do-function, true must be returned (data lost in transfer). This will be passed on to the postWrte() function call.
+
+
 Requirement for backend/decoractor implementations:
 
 * In the constructor, *only* ChimeraTK::logic_errror must be thrown.
@@ -28,13 +32,13 @@ Requirement for backend/decoractor implementations:
     * no register exists by that name in the catalogue (note: it is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work)
   * in doPreRead(), a logic_error must be thrown if and only if:
     * backend->isOpened() == false
-    * isReadable() == false
+    * isReadable() == false or throws
   * in doPreWrite(), a logic_error must be thrown if and only if:
     * backend->isOpened() == false
-    * isWriteable() == false
+    * isWriteable() == false or throws
   * To comments about how to follow these rules:
     * If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
-    * If a backend cannot decide the existence of a register in the accessor's constructor (because there is no map file or such, and the backend might be closed), it needs to check the presence also e.g. in isReadable() and isWriteable(). TBD: Shall isReadable()/isWriteable() throw in that case or return false?
+    * If a backend cannot decide the existence of a register in the accessor's constructor (because there is no map file or such, and the backend might be closed), it needs to check the presence also e.g. in isReadable(), isWriteable() and isReadOnly(). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
 
 
 ### Decorators including decorator-like implementations ###
