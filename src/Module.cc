@@ -165,13 +165,10 @@ namespace ChimeraTK {
 
   std::string Module::getVirtualQualifiedName() const {
     std::string virtualQualifiedName{""};
-    //    EntityOwner* currentLevelModule = static_cast<EntityOwner*>(this);
-    auto currentLevelModule = (EntityOwner*)this;
-    //EntityOwner* currentLevelModule{this};
+    const EntityOwner* currentLevelModule{this};
 
     bool rootReached{false};
     do {
-      std::cout << "  oo Processing module: " << currentLevelModule->getName() << std::endl;
 
       if(currentLevelModule == &Application::getInstance()) {
         rootReached = true;
@@ -190,16 +187,20 @@ namespace ChimeraTK {
           virtualQualifiedName = "/" + currentLevelModule->getName() + virtualQualifiedName;
           // Need to leave out to next level
           // TODO This needs to catch the case that the mdifier is illegally used on the first level
-          currentLevelModule = dynamic_cast<Module*>(currentLevelModule)->getOwner();
+          currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
           break;
         case HierarchyModifier::oneUpAndHide:
+          // Need to leave out to next level
+          currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
           break;
         case HierarchyModifier::moveToRoot:
+          virtualQualifiedName =
+              "/" + Application::getInstance().getName() + "/" + currentLevelModule->getName() + virtualQualifiedName;
           rootReached = true;
       }
 
       if(!rootReached) {
-        currentLevelModule = dynamic_cast<Module*>(currentLevelModule)->getOwner();
+        currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
       }
     } while(!rootReached);
 
