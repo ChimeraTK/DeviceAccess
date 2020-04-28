@@ -204,9 +204,6 @@ namespace ChimeraTK {
       }
     } while(!rootReached);
 
-    //    std::string fullName = getName();
-    //    fullName  += ", virtual module of owner: " + getOwner()->findTag(".*").getName();
-    //    return fullName;
     return virtualQualifiedName;
   }
 
