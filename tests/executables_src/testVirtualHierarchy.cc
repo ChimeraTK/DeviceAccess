@@ -140,7 +140,6 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModule.getVirtualQualifiedName(),
         "/testApp/outerModuleGroup1/innerModuleGroup/innerModule");
 
-    //FIXME" getVirtualQualifiedName fails here
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleOneUpAndHide.getVirtualQualifiedName(),
         "/testApp/outerModuleGroup1");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleMoveToRoot.getVirtualQualifiedName(),
