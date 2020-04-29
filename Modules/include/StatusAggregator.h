@@ -44,6 +44,8 @@ namespace ChimeraTK {
 
     /// Recursivly search for StatusMonitors and other StatusAggregators
     void populateStatusInput();
+    /// Helper for populateStatusInput
+    void scanAndPopulateFromHierarchyLevel(std::list<VariableNetworkNode> nodes);
 
     /**One of four possible states to be reported*/
     ScalarOutput<uint16_t> status;

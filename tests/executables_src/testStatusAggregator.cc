@@ -16,17 +16,19 @@ struct OuterGroup : public ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
   virtual ~OuterGroup() {}
 
-  ctk::MinMonitor<double_t> outerMinMonitor{this, "outerMinMonitor", "", "watch", "status",
+  ctk::StateMonitor<uint8_t> outerStateMonitor{this, "outerStateMonitor", "", "watch", "status",
       ctk::HierarchyModifier::none, {"OUTER_MON_OUTPUT"}, {"OUTER_MON_PARAMS"}, {"OUTER_MON_INPUT"}};
 
   struct InnerGroup : public ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    ctk::MinMonitor<double_t> innerMinMonitor{this, "innerMinMonitor", "", "minWatch", "minStatus",
+    ctk::StateMonitor<uint8_t> innerStateMonitorNone{this, "innerMinMonitorNone", "", "watch", "status",
         ctk::HierarchyModifier::none, {"INNER_MON_OUTPUT"}, {"INNER_MON_PARAMS"}, {"INNER_MON_INPUT"}};
 
-    // A Monitor which gets hidden in the hierarchy
-    ctk::StateMonitor<uint8_t> innerStateMonitor{this, "innerStateMonitor", "", "stateWatch", "stateStatus",
+    ctk::StateMonitor<uint8_t> innerStateMonitorHideThis{this, "innerStateMonitorHideThis", "", "watch", "status",
+        ctk::HierarchyModifier::hideThis, {"INNER_MON_OUTPUT"}, {"INNER_MON_PARAMS"}, {"INNER_MON_INPUT"}};
+
+    ctk::StateMonitor<uint8_t> innerStateMonitorOneUp{this, "innerStateMonitorOneUp", "", "watch", "status",
         ctk::HierarchyModifier::oneLevelUp, {"INNER_MON_OUTPUT"}, {"INNER_MON_PARAMS"}, {"INNER_MON_INPUT"}};
 
   } innerGroup{this, "innerModuleGroup", "", ctk::HierarchyModifier::none};
