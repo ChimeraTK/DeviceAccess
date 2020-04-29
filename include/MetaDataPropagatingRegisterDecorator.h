@@ -36,11 +36,18 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override;
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
+    void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
+      localValidity = validity;
+      NDRegisterAccessorDecorator<T, T>::setDataValidity(validity);
+    }
+
    protected:
     EntityOwner* _owner;
 
     /** value of validity flag from last read operation */
     DataValidity lastValidity{DataValidity::ok};
+    /** value of validity flag from user */
+    DataValidity localValidity{DataValidity::ok};
 
     bool isNonblockingRead{false};
   };
