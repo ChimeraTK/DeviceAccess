@@ -76,11 +76,3 @@ options exist (highest priority first):
 
 * Related to R1.1.3: If a StatusAggregator is found on a level below, the
   instances of `ChimeraTK::StatusMonitor`s on that level must be ignored. 
-
-
-
-## Questions & issues ##
-
-* Which Modifiers exactly cause problems? Probably these are are  bugs and we
-    need separate treatment. But we should clarify if this blocks required use
-    cases of the aggregator.
