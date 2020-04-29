@@ -44,22 +44,38 @@ options exist (highest priority first):
 3. error - warning - ok or off - mixed state of ok/off results in a warning
 4. off - error - warning - ok
 
+### Constraints and issues ###
+
+* As detection of underlying instances can only be performed in the
+  constructor, the StatusAggregator has to be declared in user code after all
+  instances of `ChimeraTK::StatusMonitor` in a Module.
+* Usage of `HierarchyModifier::moveToRoot` on a StatusAggregator is
+  controversial:
+  * Either: Detection of aggregated instances may take place from the virtual
+    hierarchy level of the original (C++) parent module downwards. The
+    Aggregator and its status output would then appear on the root level.
+  * Or: `HierarchyModifier::moveToRoot` is not allowd on StatusAggregators
+
 ## Implementation ##
 
 ### Requirements ###
 
-* **R2.1**: The instances need to be dectected on the `ChimeraTK::VirtualModule` on the aggregator's level
-* **R2.2**: The decteion has to work on instances the are modified by any of
+* **R2.1**: The detection of instances needs to be performed recursively from the StatusAggregator's virtual parent module on
+* **R2.2**: The detection has to work on instances the are modified by any of
   the `ChimeraTK::HierarchyModifier`s 
 
 ### Constraints and issues ###
 
 * The detection and connection of the instances to be aggregated has to be
   performed in the constructor, later the variable household is fixed and the
-  status inputs can not be added anymore 
+  status inputs can not be added anymore.
 
-* `ChimeraTK::StatusMonitor`s on the same level and the StatusAggregator itself
-  must be ignored in the detection. 
+* As a consequence of the implementation requirements, in order to get the
+  virtual parent module, the entire Application needs to be virtualised and the
+  search algorithm must then navigate to the parent module.
+
+* Related to R1.1.3: If a StatusAggregator is found on a level below, the
+  instances of `ChimeraTK::StatusMonitor`s on that level must be ignored. 
 
 
 
