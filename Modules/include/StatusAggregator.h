@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-namespace ChimeraTK{
+namespace ChimeraTK {
 
   /**
    * The StatusAggregator collects results of multiple StatusMonitor instances
@@ -21,30 +21,31 @@ namespace ChimeraTK{
    * included in the scope (ModuleGroup, Application, ...) of interest.
    */
   class StatusAggregator : public ApplicationModule {
-  public:
-
+   public:
     StatusAggregator(EntityOwner* owner, const std::string& name, const std::string& description,
-                     const std::string& output,
-                     HierarchyModifier modifier, const std::unordered_set<std::string>& tags = {})
-      : ApplicationModule(owner, name, description, modifier, tags), status(this, output, "", "", {})  {
+        const std::string& output, HierarchyModifier modifier, const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, modifier, tags), status(this, output, "", "", {}) {
       populateStatusInput();
     }
 
+    StatusAggregator() = default;
+    StatusAggregator(StatusAggregator&&) = default;
+
     ~StatusAggregator() override {}
 
-  protected:
-
+   protected:
     void mainLoop() override {
-
       std::cout << "Entered StatusAggregator::mainLoop()" << std::endl;
 
-//      while(true){
-//      // Status collection goes here
-//      }
+      //      while(true){
+      //      // Status collection goes here
+      //      }
     }
 
     /// Recursivly search for StatusMonitors and other StatusAggregators
     void populateStatusInput();
+    /// Helper for populateStatusInput
+    void scanAndPopulateFromHierarchyLevel(std::list<VariableNetworkNode> nodes);
 
     /**One of four possible states to be reported*/
     ScalarOutput<uint16_t> status;
@@ -53,11 +54,10 @@ namespace ChimeraTK{
     std::vector<ScalarPushInput<uint16_t>> statusInput;
 
     //TODO Also provide this for the aggregator?
-//    /** Disable the monitor. The status will always be OFF. You don't have to connect this input.
-//     *  When there is no feeder, ApplicationCore will connect it to a constant feeder with value 0, hence the monitor is always enabled.
-//     */
-//    ScalarPushInput<int> disable{this, "disable", "", "Disable the status monitor"};
-
+    //    /** Disable the monitor. The status will always be OFF. You don't have to connect this input.
+    //     *  When there is no feeder, ApplicationCore will connect it to a constant feeder with value 0, hence the monitor is always enabled.
+    //     */
+    //    ScalarPushInput<int> disable{this, "disable", "", "Disable the status monitor"};
   };
 
 } // namespace ChimeraTK
