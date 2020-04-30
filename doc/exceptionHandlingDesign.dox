@@ -99,7 +99,7 @@ When the device is functional, it be (re)initialised by using application-define
       - 1.1.3.2 readNonBlocking / readLatest / read (poll-type inputs): Just return false (no new data). The calling module thread will continue and propagate the DataValidity::faulty flag (cf. 1.1.2).
       - 1.1.3.3 write: Do not block. Write will be later executed by the DeviceModule (cf. 1.2)
 
-  - 1.2 A second, undecorated copy of each writeable device register accessor is used as a so-called recoveryAccessor by the ExceptionHandlingDecorator and the DeviceModule. These recoveryAccessor are used to set the initial values of registers when the device is opened for the first time and to recover the last written values during the recovery procedure. (*)
+  - 1.2 A second, undecorated copy of each writeable device register accessor (*) is used as a so-called recoveryAccessor by the ExceptionHandlingDecorator and the DeviceModule. These recoveryAccessor are used to set the initial values of registers when the device is opened for the first time and to recover the last written values during the recovery procedure.
     - 1.2.1 The recovreryAccessor is stored with additional meta data in a so-called RecoveryHelper data structure, which contains:
       - the recoveryAccessor itself,
       - the VersionNumber of the (potentially unwritten) data stored in the accessor,
@@ -107,7 +107,7 @@ When the device is functional, it be (re)initialised by using application-define
       - a flag which indicates whether the value in the recoveryAccessor has already been written to data. (*)
     - 1.2.2 Ordering can be done per device (*), hence each DeviceModule has one 64-bit atomic counter which is incremented for each write operation and the is value stored in the ordering parameter for the recoveryAccessor.
     - 1.2.3 The RecoveryHelper object may be accessed only under a lock to prevent concurrent access during recovery. The lock shall be shared to allow concurrent write operations of different registers - only the DeviceModule needs to obtain an exclusive lock during recovery. The lock is obained by the ExceptionHandlingDecorators via DeviceModule::getRecoverySharedLock().
-    - 1.2.4 In doPreWrite() the recoveryAccessor with the version number and ordering parameter is updated, and the written flag is cleared/ (*)
+    - 1.2.4 In doPreWrite() the recoveryAccessor with the version number and ordering parameter is updated, and the written flag is cleared.
       - 1.2.4.1 If the written flag was previously not set, the return value of doWriteTransfer() must be forced to true (data lost).
     - 1.2.5 In doPostWrite() the recoveryAccessor's written flag is set if the write was successful (no exception thrown; data lost flag does not matter here). (*)
 
@@ -138,10 +138,10 @@ When the device is functional, it be (re)initialised by using application-define
       - 2.3.1.1 If the very first attempt to open the device after the application start fails, the error message of the exception is used to overwrite the content of Devices/<alias>/message. Otherwise error messages of exceptions thrown by Device::open() are not visible.
     - 2.3.2 Obtain lock for accessing recoveryAccessors.
     - 2.3.3 Device is initialised by iterating initialisationHandlers list.
-      - 2.3.3.1 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1. (*)
+      - 2.3.3.1 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1.
     - 2.3.4 All valid recoveryAccessors are written in the same order they were originally written.
       - 2.3.4.1 A recoveryAccessor is considered "valid", if it has already received a value, i.e. its current version number is not {nullptr} any more.
-      - 2.3.4.2 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1. (*)
+      - 2.3.4.2 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1.
     - 2.3.5 The queue of reported exceptions is cleared. (*)
     - 2.3.6 Devices/<alias>/status is set to 0 and Devices/<alias>/message is set to an empty string.
     - 2.3.7 DeviceModule allows ExceptionHandlingDecorators to execute reads and writes again (cf. 2.3.13)
@@ -176,68 +176,7 @@ When the device is functional, it be (re)initialised by using application-define
 - 2.3.14 The backend has to take care that all operations, also the blocking/asynchronous reads with "waitForNewData", terminate when an exception is thrown, so recovery can take place (see DeviceAccess TransferElement specification).
 
 
-\section spec_execptionHandling_implmentation_details C. Implementation details - OBSOLETE - is being integrated into section B and removed as we go.
-
-
-<b>6. TriggerFanout and ThreadedFanOut </b>
-
-- 6.1 TriggerFanout
-  Each TriggerFanOut reads several poll-type variables when a trigger (push type) is received. If one of the poll-type inputs is in error state, it shall not block the other variables.
-  To implement this, the TriggerFanout uses the write function which does not block on device exceptions (5.1.2), (implements 1.i)
-
-- 6.2 ThreadedFanOut
-  If outputs of a ThreadedFanOut also write do devices, the writes must not block the other variables in the fanout. To implement this, the TreadedFanOut uses the non blocking write through the convenience function described in 5.1.2 (implements 1.i)
-
-
-
-<b>7. The server must always start even if a device is in error state .</b>
-
-Implementation of 1.k. This section extracts some points from 1. and 2. to put the bits and pieces into context.
-
-To make sure that the server always starts, even if some or all devices are in error state, the initial opening of the device takes place in the DeviceModule thread (inside the exception handling loop).
-The device module reports its status and error messages to the control system (see 2.1, 2.3.5, 2.6.1).
-
-Some initial values are already written in prepare(), before the threads are started. Writing these values must be delayed until the device is available. This is done by the same mechanism that is used to re-write the values after recovery. (see 10 and \link spec_initialValuePropagation \endlink)
-
-<b>8. Propagating the DataValidity flag</b>
-
-If a device is in error state, all it's output data is marked as invalid. This invalid flag shall be propagated through the connected modules such that all data that is calculated from these invalid values is also marked invalid (see \link spec_dataValidityPropagation \endlink). The ExceptionHandlingDecorator is informing the DataFaultCounter about the device state (faulty or ok, see 3.6.3  and 2.4.1.2.1)
-
-To propagate the flag, the first blocking read after the device error return the last value. As the DataFaultCounter knows about the device error, the data invalid flag is turned on (2.5.3-read). In order not to prevent unnecessary running of modules with invalid data, the following read call blocks until the device has recovered.
-
-After recovery the DataFaultCounter is informed that the device is OK again, and the received DataValidity of the variable is propagated (usually 'ok', but if 'faulty' is received, the data validity stays faulty).
-
-<b>9. Device initialisation </b>
-
-This partly is specification of the DeviceModule. As it is strongly connected with exception handling, and in fact handled by the same code, it is mentioned here.
-
-- 9.1 The user code can register exception handlers (in the constructor of the DeviceModule or using DeviceModule::addInitialisationHandler). They are executed each time after the device has successfully been opened (*)
-- 9.2 Sometimes it is only possible to write parts of the device after a proper initialisation sequence (for instance reset-registers must be cleared, or communication clocks to sub-devices must be set). Hence no read or write operations must take place until this point, not even writing recovery accessors (implements 1.c, implemented by 4.2.3, 5.3.1.2 and 5.3.2.1). 
-- 9.3 The recovery accessors are written after the initialisation (implements 1.l).
-- 9.4 The lock 4.2.3 is only released after all recovery accessors are written, so ApplicationModules which continue find the same state as before the error when writing or reading.
-
-Comments:
-- 9.1 Successfully opened means open() did not throw, and the device reports isFunctional() as true. 
-
-
-<b>10. Recover accessors</b>
-
-After a device has failed and recovered, it might have re-booted and lost the values of the process variables that live in the server and are written to the device. Hence these values have to be re-written after the device has recovered. The same holds for initial values which have been written before the device thread has started (see 7.), and even normal variables which have been written before the device is available, as several threads start asynchronously.
-
-The writing after the recovery is done in the device thread. The regular register accessors (which are decorated with the ExceptionHandlingDecorator) belong to the ApplicationModule threads (or those of the fanouts), which can modify the user buffer any time. Hence the device thread cannot use these accessors in a thread-safe way. In addition, the device module has to remember the last value which has been written to restore a consistent state. The ApplicationModule might already have modified it's user buffer, but not have written yet. Hence also for logical reasons this buffer cannot be used for recovery.
-
-As a consequence a copy has to be created whenever the data is written to the device. It is implemented by a so called recovery accessor. This is a regular second accessor to the register whose accessor has been decorated with the ExceptionHandlingDecorator, but with the special usage that the data is set in the Application thread, and written in the DeviceModule thread.
-
-- 10.1 The recovery accessor is created together with the normal accessor in the connection code (in  DeviceModule::writeRecoveryOpen), registered at the DeviceModule and given to the recovery accessors.
-
-- 10.2 Data is copied in doPreWrite(), before the original accessor's pre-write is called. This is the last occasion where the data is still guaranteed to be in the original accessors's user buffer. The accessor's pre-write might swap the data out, and it might never be available again (in case of write destructively.
-
-- 10.3 As the user buffer recovery accessor is written in an ApplicationModule or fanout thread, but read in the DeviceModule thread when recovering, it has to be protected by a mutex. For efficiency one single shared mutex is used. All ExceptionHandlingDecorators will acquire a shared lock, as each decorator only touches his own buffer. The DeviceModule, which writes all recovery accessors, uses the unique lock to prevent any ExceptionHandlingDecorator to modify the user buffer while doing so.
-
-- 10.4 All valid recovery accessors are written each time the device has been (re)-opened, after the initialisation handlers have been executed. If a recovery accessor has not seen an initial value yet, the version number is still nullptr, and the accessor is invalid. These accessors are not written. (implements 1.l)
-
-
-\section spec_execptionHandling_known_issues Known issues
+\section spec_execptionHandling_known_issues Known issues - OUTDATED (numbers don't even match)
 
 - 11.1 In step 2.1: The initial value of deviceError is not set to 1.
 
