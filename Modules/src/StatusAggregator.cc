@@ -23,6 +23,7 @@ namespace ChimeraTK {
     std::list<Module*> allSubmodules;
     if(pathWithoutAppAndLeafNode == getName()) {
       // Path to this module, the parent is the Application
+      //FIXME Not using getAccessorListRecursive here, yet, because it crashes
       allAccessors = virtualisedApplication.getAccessorList();
       allSubmodules = virtualisedApplication.getSubmoduleList();
     }
@@ -32,28 +33,39 @@ namespace ChimeraTK {
 
       virtualParent.dump();
 
-      allAccessors = virtualParent.getAccessorList();
+      allAccessors = virtualParent.getAccessorListRecursive();
       allSubmodules = virtualParent.getSubmoduleList();
     }
 
     std::cout << "  Size of allAccessors: " << allAccessors.size() << std::endl;
     std::cout << "  Size of allSubmodules: " << allSubmodules.size() << std::endl;
 
-    // Two approaches to get the modules of interest to feed to scanAndPopulateFromHierarchyLeve:
+    // Approaches to get the modules of interest to feed to scanAndPopulateFromHierarchyLeve:
     // 1. directly call getSubmoduleList on each level: gives VirtualModules and the dynamic_casts below fail
     // 2.use getAccessorList and call getOwningModule() on each Accessor (as done below): Does not find the status outputs right now
-    //   Also, this means more effort to detect and recurse into ModuleGroups
-    //for(auto acc : allAccessors) {
-    //if(acc.getDirection().dir == VariableDirection::feeding) {
-    //std::cout << "      -- Accessor: " << acc.getName() << " of module: " << acc.getOwningModule()->getName()
-    //<< std::endl;
-    //}
+    //   because  Also, this means more effort to detect and recurse into ModuleGroups
+    // 3. Use getAccessorListRecursive to get all underlying accessors and call getOwningModule() on those (see commented code below).
+    //    Works, but makes level-per-level processing harder, e.g, where to stop if we found another aggregator on a branch below
+    //    for(auto acc : virtualisedApplication.getAccessorListRecursive()) {
+    //      if(acc.getDirection().dir == VariableDirection::feeding) {
+    //        std::cout << "      -- Accessor: " << acc.getName() << " of module: " << acc.getOwningModule()->getName()
+    //                  << std::endl;
+    //      }
+    //    }
+    // 4. Combine 1. and 2. to get the non-virtual modules per virtual level, see below:
+    //    for(auto module : allSubmodules) {
+    //      auto accessors = module->getAccessorList();
+    //      for(auto acc : accessors)
+    //        if(acc.getDirection().dir == VariableDirection::feeding) {
+    //          std::cout << "      -- Accessor: " << acc.getName() << " of module: " << acc.getOwningModule()->getName()
+    //                    << std::endl;
+    //        }
+    //    }
 
     scanAndPopulateFromHierarchyLevel(allAccessors);
 
     std::cout << std::endl << std::endl;
   } // poplateStatusInput()*/
-
 
   void StatusAggregator::scanAndPopulateFromHierarchyLevel(std::list<VariableNetworkNode> nodes) {
     if(nodes.empty()) {
@@ -69,19 +81,18 @@ namespace ChimeraTK {
     // 2. Iterate over instancesToBeAggregated and add to statusInput
     for(auto node : nodes) {
       // Only check feeding nodes to test each Module only once on the status output
-      if(node.getDirection().dir != VariableDirection::feeding){
+      if(node.getDirection().dir != VariableDirection::feeding) {
         continue;
       }
       auto module{node.getOwningModule()};
       std::cout << "Scanning Module " << module->getName() << std::endl;
-
 
       if(dynamic_cast<StatusMonitor*>(module)) {
         std::cout << "  Found Monitor " << module->getName() << std::endl;
       }
       else if(dynamic_cast<StatusAggregator*>(module)) {
         std::string moduleName = module->getName();
-        if(statusAggregatorFound){
+        if(statusAggregatorFound) {
           throw ChimeraTK::logic_error("StatusAggregator: A second instance was found on the same hierarchy level.");
         }
         statusAggregatorFound = true;
@@ -96,6 +107,8 @@ namespace ChimeraTK {
         scanAndPopulateFromHierarchyLevel(module->getAccessorList());
       }
       else {
+        //FIXME (wip) Some warning if a module could not be properly classified
+        std::cout << "StatusAggregator WARNING: Module" << module->getName() << " was not detected." << std::endl;
       }
     }
 
