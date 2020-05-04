@@ -42,7 +42,7 @@ When the device is functional, it be (re)initialised by using application-define
   - 1.1 ChimeraTK::logic_error exceptions are left unhandled and will terminate the application. These errors may only occur in the initialisation phase (up to the point where all devices are opened and initialised) and point to a severe configuration error which is not recoverable. (*)
   - 1.2 Exception handling and DataValidity flag propagation is implemented such that it is transparent to a module whether it is directly connected to a device, or whether a fanout or another application module is in between.
 
-- 2. When an exception has been received (thrown by a device register accessor in an ApplicationModule, FanOut etc.):
+- 2. When an exception has been received by the framework (thrown by a device register accessor):
   - 2.1 The exception status is published as a process variable together with an error message.
     - 2.1.1 The variable Devices/<alias>/status contains a boolean flag whether the device is in an error state
     - 2.1.2 The variable Devices/<alias>/message contains an error message, if the device is in an error state, or an empty string otherwise.
