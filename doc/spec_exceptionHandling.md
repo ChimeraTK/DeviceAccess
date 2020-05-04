@@ -91,7 +91,7 @@ Note: This section should be integrated into the TransferElement specification a
 
 - 0.1 readAsync() may only be called if AccessMode::wait_for_new_data is set. It will throw a ChimeraTK::logic_error otherwise.
 - 0.2 If AccessMode::wait_for_new_data is set, the TransferFuture is initialised in the constructor. All read implementations except readLatest() are then using always the TransferFuture.
-- 0.3 readLatest() never uses the TransferFuture. Its implementation is identical to the one read implementation when AccessMode::wait_for_new_data is not set.
+- 0.3 readLatest() never uses the TransferFuture. Its implementation is identical to the one read implementation when AccessMode::wait_for_new_data is not set. The return value of readLatest() is changed to void.
 - 0.4 readTransferAsync() and doReadTransferAsync() are obsolete and hence removed from the interface.
 - 0.5 readAsync() always returns the same TransferFuture in subsequent calls.
 - 0.6 TransferFuture::wait() and TransferFuture::hasNewData(), as well as ReadAnyGroup::waitAny(), call TransferElement::preRead() at the beginning (keep in mind that extra calls to preRead() are ignored) before the transferFutureWaitCallback is called. This makes sure that preRead() and postRead() are always called in pairs.
