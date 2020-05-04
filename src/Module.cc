@@ -169,12 +169,12 @@ namespace ChimeraTK {
 
     bool rootReached{false};
     do {
-
       if(currentLevelModule == &Application::getInstance()) {
         rootReached = true;
       }
 
       auto currentLevelModifier = currentLevelModule->getHierarchyModifier();
+      bool skipNextLevel{false};
 
       switch(currentLevelModifier) {
         case HierarchyModifier::none:
@@ -185,18 +185,25 @@ namespace ChimeraTK {
           break;
         case HierarchyModifier::oneLevelUp:
           virtualQualifiedName = "/" + currentLevelModule->getName() + virtualQualifiedName;
-          // Need to leave out to next level
-          // TODO This needs to catch the case that the mdifier is illegally used on the first level
-          currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
+          skipNextLevel = true;
           break;
         case HierarchyModifier::oneUpAndHide:
-          // Need to leave out to next level
-          currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
+          skipNextLevel = true;
           break;
         case HierarchyModifier::moveToRoot:
           virtualQualifiedName =
               "/" + Application::getInstance().getName() + "/" + currentLevelModule->getName() + virtualQualifiedName;
           rootReached = true;
+      }
+
+      if(skipNextLevel) {
+        auto lastLevelModule = currentLevelModule;
+        currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
+
+        if(currentLevelModule == &Application::getInstance()) {
+          throw logic_error(std::string("Module ") + lastLevelModule->getName() +
+              ": cannot have hierarchy modifier 'oneLevelUp' or oneUpAndHide in root of the application.");
+        }
       }
 
       if(!rootReached) {

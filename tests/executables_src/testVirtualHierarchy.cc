@@ -67,10 +67,10 @@ struct OuterGroup : public ctk::ModuleGroup {
 
 struct TestApplication : public ctk::Application {
   TestApplication(ctk::HierarchyModifier outerModuleModifier,
-      ctk::HierarchyModifier innerGroupModifier = ctk::HierarchyModifier::none)
+      ctk::HierarchyModifier innerGroupModifier = ctk::HierarchyModifier::none, bool skipConnection = false)
   : Application("testApp"), outerModuleGroup1{this, "outerModuleGroup1", "", ctk::HierarchyModifier::none,
                                 innerGroupModifier},
-    outerModule{this, "outerModule", "", outerModuleModifier} {}
+    outerModule{this, "outerModule", "", outerModuleModifier}, _skipConnection{skipConnection} {}
   ~TestApplication() { shutdown(); }
 
   OuterGroup outerModuleGroup1;
@@ -79,9 +79,14 @@ struct TestApplication : public ctk::Application {
   ctk::ControlSystemModule cs;
 
   void defineConnections() {
-    findTag(".*").connectTo(cs);
+    // Tests for getVirtualQualifiedName require that findTag is not used globally,
+    // so it can be disabled
+    if(!_skipConnection) {
+      findTag(".*").connectTo(cs);
+    }
     //cs.dump();
   }
+  bool _skipConnection;
 };
 
 // Check if HierarchyModifiers are properly handled in the call to findTag
@@ -154,6 +159,20 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
 
     //    app.cs.dump();
     BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/testApp");
+  }
+
+  // Modifiers oneLevelUp and oneUpAndHide need to be catched by getVirtualQualifiedName, if used on
+  // the top level og the application. Note: If defineConnections uses findTag on the entire app,
+  // the error is catched there, this is avoided by the boolean constructor arguments below
+  {
+    TestApplication app(ctk::HierarchyModifier::oneLevelUp, ctk::HierarchyModifier::none, true);
+    ctk::TestFacility test;
+    BOOST_CHECK_THROW(app.outerModule.getVirtualQualifiedName(), ctk::logic_error);
+  }
+  {
+    TestApplication app(ctk::HierarchyModifier::oneUpAndHide, ctk::HierarchyModifier::none, true);
+    ctk::TestFacility test;
+    BOOST_CHECK_THROW(app.outerModule.getVirtualQualifiedName(), ctk::logic_error);
   }
 
   {
