@@ -113,7 +113,7 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
   - 1.1.3 The RecoveryHelper object may be accessed only under a lock to prevent concurrent access during recovery. The lock shall be shared to allow concurrent write operations of different registers - only the DeviceModule needs to obtain an exclusive lock during recovery. The lock is obained by the ExceptionHandlingDecorators via DeviceModule::getRecoverySharedLock().
   
 - 1.2 In doPreRead()/doPreWrite(), it is checked whether the fault state already prevails (check DeviceModule::deviceHasError while holding the recovery shared lock).
-  - 1.2.1 If yes, the actual transfer will be skipped. (cf. 2.2 or 2.3.13)
+  - 1.2.1 If yes, the actual transfer will be skipped. (cf. 2.2 or 2.3.14)
   - 1.2.2 If the transfer will not be skipped, atomically increment DeviceModule::activeTransfers while still (!) holding the recovery shared lock.
   - 1.2.3 write: The check for a prevailing fault state has to be done without releasing the lock between the write to the recoveryAccessor and the check. (*)
   - 1.2.4 For skipped transfers, none of the pre/transfer/post functions must be delegated to the target accessor.
@@ -150,6 +150,8 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
     - 1.6.3.1 read (push-type inputs): return immediately (*)
     - 1.6.3.2 readNonBlocking / readLatest / read (poll-type inputs): Just return false (no new data). The calling module thread will continue and propagate the DataValidity::faulty flag (cf. 1.6.2).
     - 1.6.3.3 write: Do not block. Write will be later executed by the DeviceModule (see 1.1)
+    
+- 1.6 In the constructor of the decorator, put the name of the register to DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters depending on the direction the accessor is used.
 
 
 \subsection spec_execptionHandling_high_level_implmentation_deviceModule B.2 DeviceModule
@@ -160,22 +162,26 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
   - 2.3.1 The DeviceModule tries to open the device until it succeeds and isFunctional() returns true.
     - 2.3.1.1 If the very first attempt to open the device after the application start fails, the error message of the exception is used to overwrite the content of Devices/<alias>/message. Otherwise error messages of exceptions thrown by Device::open() are not visible.
   - 2.3.2 Obtain lock for accessing recoveryAccessors.
-  - 2.3.3 Device is initialised by iterating initialisationHandlers list.
-    - 2.3.3.1 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1.
-  - 2.3.4 All valid recoveryAccessors are written in the same order they were originally written.
-    - 2.3.4.1 A recoveryAccessor is considered "valid", if it has already received a value, i.e. its current version number is not {nullptr} any more.
-    - 2.3.4.2 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1.
-  - 2.3.5 The queue of reported exceptions is cleared. (*)
-  - 2.3.6 Devices/<alias>/status is set to 0 and Devices/<alias>/message is set to an empty string.
-  - 2.3.7 DeviceModule allows ExceptionHandlingDecorators to execute reads and writes again (cf. 2.3.13)
-  - 2.3.8 All frozen read operations (cf. 1.4.4) are notified via DeviceModule::errorIsReportedCondVar.
-  - 2.3.9 Release lock for recoveryAccessors.
-  - 2.3.10 The DeviceModuleThread waits for the next reported exception.
-  - 2.3.11 An exception is received.
-  - 2.3.12 Devices/<alias>/status is set to 1 and Devices/<alias>/message is set to the first received exception message.
-  - 2.3.13 Set DeviceModule::deviceHasError = true under exclusive recovery lock (cf. 1.2). From this point on, no new transfers will be started.
-  - 2.3.14 The device module waits until all running read and write operations of ExceptionHandlingDecorators have ended (wait until DeviceModule::activeTransfers == 0). (*)
-  - 2.3.15 The thread goes back to 2.3.1 and tries to re-open the device.
+  - 2.3.3 Check that all registers on DeviceModule::listOfReadRegisters are isReadable() and all registers on DeviceModule::listOfWriteRegisters are isWriteable().
+    - 2.3.3.1 This involves obtaining an accessor for the register first, which is discarded after the check.
+    - 2.3.3.2 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1.
+    - 2.3.3.3 If one of the accessors does not meet this condition, throw a ChimeraTK::logic_error.
+  - 2.3.4 Device is initialised by iterating initialisationHandlers list.
+    - 2.3.4.1 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1.
+  - 2.3.5 All valid recoveryAccessors are written in the same order they were originally written.
+    - 2.3.5.1 A recoveryAccessor is considered "valid", if it has already received a value, i.e. its current version number is not {nullptr} any more.
+    - 2.3.5.2 If there is an exception, update Devices/<alias>/message with the error message, release the lock and go back to 2.3.1.
+  - 2.3.6 The queue of reported exceptions is cleared. (*)
+  - 2.3.7 Devices/<alias>/status is set to 0 and Devices/<alias>/message is set to an empty string.
+  - 2.3.8 DeviceModule allows ExceptionHandlingDecorators to execute reads and writes again (cf. 2.3.14)
+  - 2.3.9 All frozen read operations (cf. 1.4.4) are notified via DeviceModule::errorIsReportedCondVar.
+  - 2.3.10 Release lock for recoveryAccessors.
+  - 2.3.11 The DeviceModuleThread waits for the next reported exception.
+  - 2.3.12 An exception is received.
+  - 2.3.13 Devices/<alias>/status is set to 1 and Devices/<alias>/message is set to the first received exception message.
+  - 2.3.14 Set DeviceModule::deviceHasError = true under exclusive recovery lock (cf. 1.2). From this point on, no new transfers will be started.
+  - 2.3.15 The device module waits until all running read and write operations of ExceptionHandlingDecorators have ended (wait until DeviceModule::activeTransfers == 0). (*)
+  - 2.3.16 The thread goes back to 2.3.1 and tries to re-open the device.
 
 
 \subsection spec_execptionHandling_high_level_implmentation_comments (*) Comments
@@ -194,13 +200,13 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
 
 - 1.5.3 The written flag for the recoveryAccessor is used to report loss of data. If the loss of data is already reported directly, it should not later be reported again. Hence the written flag is set even if there was a loss of data in this context.
 
-- 1.4.3 The order of locks is important here. The recovery lock prevents the DeviceModule from entering the section 2.3.2 to 2.3.9, which includes the notification through the DeviceModule::errorIsReportedCondVar at 2.3.8. The mutex DeviceModule::errorLock is the mutex used for the condition variable. Since the ExceptionHandlingDecorator obtains it before the DeviceModule can start the notification, it is guaranteed that the decorator does not miss the notification. Note that the DeviceModule::errorLock is not a shared lock, so concurrent ExceptionHandlingDecorator::preRead() will mutually exclude, but the mutex is held only for a short time until errorIsReportedCondVar.wait() is called.
+- 1.4.3 The order of locks is important here. The recovery lock prevents the DeviceModule from entering the section 2.3.2 to 2.3.10, which includes the notification through the DeviceModule::errorIsReportedCondVar at 2.3.9. The mutex DeviceModule::errorLock is the mutex used for the condition variable. Since the ExceptionHandlingDecorator obtains it before the DeviceModule can start the notification, it is guaranteed that the decorator does not miss the notification. Note that the DeviceModule::errorLock is not a shared lock, so concurrent ExceptionHandlingDecorator::preRead() will mutually exclude, but the mutex is held only for a short time until errorIsReportedCondVar.wait() is called.
 
-- 1.6.3 The lock excludes that the DeviceModule is between 2.3.2 and 2.3.9. If it is right before, the device is still in fault state and the value written to the recoveryAccessor is guaranteed to be written in 2.3.4. If it is right after, the exception state has already been resolved and the real write transfer will be attempted by the ExceptionHandlingDecorator.
+- 1.6.3 The lock excludes that the DeviceModule is between 2.3.2 and 2.3.10. If it is right before, the device is still in fault state and the value written to the recoveryAccessor is guaranteed to be written in 2.3.5. If it is right after, the exception state has already been resolved and the real write transfer will be attempted by the ExceptionHandlingDecorator.
 
-- 2.3.5 The exact place when this is done does not matter, as long as it is done under the lock for the recoveryAccessors.
+- 2.3.6 The exact place when this is done does not matter, as long as it is done under the lock for the recoveryAccessors.
 
-- 2.3.14 The backend has to take care that all operations, also the blocking/asynchronous reads with "waitForNewData", terminate when an exception is thrown, so recovery can take place (see DeviceAccess TransferElement specification).
+- 2.3.15 The backend has to take care that all operations, also the blocking/asynchronous reads with "waitForNewData", terminate when an exception is thrown, so recovery can take place (see DeviceAccess TransferElement specification).
 
 
 \section spec_execptionHandling_known_issues Known issues - OUTDATED (numbers don't even match)
