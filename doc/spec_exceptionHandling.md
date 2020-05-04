@@ -51,7 +51,7 @@ When the device is functional, it be (re)initialised by using application-define
     - 2.1.2 Blocking read operations will be skipped, if the fault flag has not yet been read once by the same accessor. If the fault flag had already been read previously by the same accessor, the operation is frozen (regardless of the type of the first read). When the frozen operation is finally executed, another exception might be thrown, in which case the previously frozen operation is finally skipped.
     - 2.1.3 Non-blocking read operations (incl. readLatest) will be skipped. The return value will be false (no new data), if the fault flag has been read once already by the same accessor and hence is already propagated (regardless of the type of the first read), true otherwise.
     - 2.1.4 Asynchronous read operations behave analogous to 2.1.2:
-      - A TransferFuture, which was valid while the exception was received, is fulfilled immediately when the exception is received, the DataValidity::faulty is propaated to the owning module and the value is left unchanged (i.e. the underlying operation is effectively skipped).
+      - A TransferFuture, which was valid while the exception was received, is fulfilled immediately when the exception is received, the DataValidity::faulty is propagated to the owning module and the value is left unchanged (i.e. the underlying operation is effectively skipped).
       - The TransferFuture of an asynchronous read operation that is started only after the exception was received will be fulfilled immediately (i.e. the underlying operation is effectively skipped), if no other read operation of (regardless of the type) of the same accessor has read the fault flag once already. Otherwise it will be fulfilled only after the device is recovered (i.e. the underlying operation is effectively frozen).
     - 2.1.5 If the fault state had been resolved in between two read operations (regardless of the type) and the device had become faulty again before the second read is executed, it is not defined whether the second operation will frozen/delayed/skipped (depending on the type) or not. The second operation might behave either like it is a new exception or like the same fault state would still prevail. (*)
   - 2.2 Write operations will be delayed. In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering. The same mechanism as used for 3.1.2 is used here, hence the order of write operations is guaranteed across accessors, but only the latest written value of each accessor prevails. (*)
@@ -88,6 +88,19 @@ When the device is functional, it be (re)initialised by using application-define
 
 \section spec_execptionHandling_high_level_implmentation B. Implementation
 
+\subsection spec_execptionHandling_high_level_implmentation_TransferElement B.0 Requirements to the DeviceAccess TransferElement
+Note: This section should be integrated into the TransferElement specification and then removed here. Requirements which are already met by the TransferElement specifciation are not mentioned here.
+
+- 0.1 readAsync() may only be called if AccessMode::wait_for_new_data is set. It will throw a ChimeraTK::logic_error otherwise.
+- 0.2 If AccessMode::wait_for_new_data is set, the TransferFuture is initialised in the constructor. All read implementations except readLatest() are then using always the TransferFuture.
+- 0.3 readLatest() never uses the TransferFuture. Its implementation is identical to the one read implementation when AccessMode::wait_for_new_data is not set.
+- 0.4 readTransferAsync() and doReadTransferAsync() are obsolete and hence removed from the interface.
+- 0.5 readAsync() always returns the same TransferFuture in subsequent calls.
+- 0.6 TransferFuture::wait() and TransferFuture::hasNewData(), as well as ReadAnyGroup::waitAny(), call TransferElement::preRead() at the beginning (keep in mind that extra calls to preRead() are ignored) before the transferFutureWaitCallback is called. This makes sure that preRead() and postRead() are always called in pairs.
+- 0.7 Due to the nature of asynchronous transfers, backends must not expect preRead() to be called before new data arrives and is filled into the cppext::future_queue. Hence, doPreRead() of asynchronous accessor implementations will usually be empty. The call to preRead() is still necessary also for asynchronous transfers, since decorators might have important tasks to be done there.
+- 0.8 There is no need to call readAsync() for each read transfer again. If the TransferFuture has been obtained once it can simply be used over and over again. Hence, readAsync() will just return the TransferFuture (which had been created in the constructor already) only. It does not call preRead() - this is done by the TransferFuture (see 0.6), and it doesn't have any side effects. (Maybe it should be renamed into getTransferFuture()).
+
+
 \subsection spec_execptionHandling_high_level_implmentation_decorator B.1 ExceptionHandlingDecorator
 
 A so-called ExceptionHandlingDecorator is placed around all device register accessors (used in ApplicationModules and FanOuts). It is responsible for catching the exceptions and implementing most of the behavior described in A.2.
@@ -106,10 +119,10 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
   - 1.2.2 If the transfer will not be skipped, atomically increment DeviceModule::activeTransfers while still (!) holding the recovery shared lock.
   - 1.2.3 write: The check for a prevailing fault state has to be done without releasing the lock between the write to the recoveryAccessor and the check. (*)
   - 1.2.4 For skipped transfers, none of the pre/transfer/post functions must be delegated to the target accessor.
+  - 1.2.5 If an asynchronous read transfer is skipped, a pseudo value needs to be written to the cppext::future_queue of the TransferFuture. This will cause the TransferFuture to be ready immediatly, so postRead() is called (*).
 
 - 1.3 In doPreWrite() the recoveryAccessor with the version number and ordering parameter is updated, and the written flag is cleared.
   - 1.3.1 If the written flag was previously not set, the return value of doWriteTransfer() must be forced to true (data lost).
-
 
 - 1.4 In doPreRead() certain read operations are frozen in case of a fault state (see A.2.1):
   - 1.4.1 Obtain the recovery lock through DeviceModule::getRecoverySharedLock(), to prevent interference with an ongoing recovery procedure.
@@ -118,6 +131,11 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
     - no initial value has been read yet (getCurretVersion() == {nullptr}) and DeviceModule::deviceHasError == true (cf. A.4.2).
   - 1.4.3 Obtain the DeviceModule::errorLock. Only then release the recovery lock. (*)
   - 1.4.4 Wait on DeviceModule::errorIsReportedCondVar.
+  - 1.4.5 When the DeviceModule reports the recovery through the condition variable, delegate preRead() and continue with the transfer normally.
+  - 1.4.6 If an asynchronous read transfer is frozen, instead of 1.4.3 thorugh 1.4.5 the following actions are executed:
+    - 1.4.6.1 Register the asynchronous read transfer with the DeviceModule::asynchronousReadQueue by placing a shared_pointer to this on it.
+    - 1.4.6.2 Do not delegate to preRead() and readTransferAsync() - both functions are called by the DeviceModule instead.
+    
   
 - 1.5 In doPostRead()/doPostWrite():
   - 1.5.1 If there was no exception, set previousReadFailed = false.
@@ -173,6 +191,8 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
 - 1.1.1 The written flag cannot be replaced by comparing the version number of the recoveryAccessor and the version number stored in the RecoveryHelper, because normal writes (without exceptions) would not update the version number of the recoveryAccessor.
 
 - 1.1.2 The ordering guarantee cannot work across DeviceModules anyway. Different devices may go offline and recover at different times. Even in case of two DeviceModules which actually refer to the same hardware device there is no synchronisation mechanism which ensures the recovering procedure is done in a defined order.
+
+- 1.2.5 The cppext::future_queue in the TransferFuture is a notification queue and hence of the type void. So we don't have to "invent" any value. Also this injection of values is legal, since the queue is multi-producer but single-consumer. This means, potentially concurrent injection of values while the actual accessor might also write to the queue is allowed. Also, the application is the only receiver of values of this queue, so injecting values cannot disturb the backend in any way.
 
 - 1.5.3 The written flag for the recoveryAccessor is used to report loss of data. If the loss of data is already reported directly, it should not later be reported again. Hence the written flag is set even if there was a loss of data in this context.
 
