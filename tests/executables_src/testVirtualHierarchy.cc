@@ -101,19 +101,19 @@ BOOST_AUTO_TEST_CASE(testIllegalModifiers) {
     std::cout << "  Creating TestApplication with outerModuleModifier = oneLevelUp " << std::endl;
     TestApplication app(ctk::HierarchyModifier::oneLevelUp);
     // Should detect illegal usage of oneLevelUp on first level below Application and throw
-    BOOST_CHECK_THROW(ctk::TestFacility test, ctk::logic_error)
+    BOOST_CHECK_THROW(ctk::TestFacility test, ctk::logic_error);
     std::cout << std::endl;
   }
 
   // Should detect illegal usage of oneUpAndHide on first level below Application and throw
   // Currently leads to memory access violation, should also throw
   // Bug is described by issue #166.
-//  {
-//    std::cout << "Creating TestApplication with outerModuleModifier = oneUpAndHide " << std::endl;
-//    TestApplication app(ctk::HierarchyModifier::oneUpAndHide);
-//    ctk::TestFacility test;
-//    std::cout << std::endl;
-//  }
+  //  {
+  //    std::cout << "Creating TestApplication with outerModuleModifier = oneUpAndHide " << std::endl;
+  //    TestApplication app(ctk::HierarchyModifier::oneUpAndHide);
+  //    ctk::TestFacility test;
+  //    std::cout << std::endl;
+  //  }
 
   {
     std::cout << "  Creating TestApplication with outerModuleModifier = moveToRoot " << std::endl;
@@ -163,9 +163,8 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     //    app.cs.dump();
     BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/testApp/outerModule");
     auto virtualisedApp = app.findTag(".*");
-    BOOST_CHECK_NO_THROW(/*[[maybe_unused]]*/ ctk::Module& outerModuleRef = virtualisedApp["outerModule"];)
-    BOOST_CHECK_NO_THROW(
-        /*[[maybe_unused]]*/ ctk::Module& innerModuleMoveToRootRef = virtualisedApp["innerModuleMoveToRoot"];)
+    BOOST_CHECK_NO_THROW(virtualisedApp["outerModule"]);
+    BOOST_CHECK_NO_THROW(virtualisedApp["innerModuleMoveToRoot"]);
 
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.getVirtualQualifiedName(), "/testApp/innerModuleGroup");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModule.getVirtualQualifiedName(),
