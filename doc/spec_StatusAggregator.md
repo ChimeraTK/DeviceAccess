@@ -50,19 +50,18 @@ options exist (highest priority first):
   constructor, the StatusAggregator has to be declared in user code after all
   instances of `ChimeraTK::StatusMonitor` in a Module.
 * Usage of `HierarchyModifier::moveToRoot` on a StatusAggregator is
-  controversial:
+  controversial (currently not allowed, see R2.2):
   * Either: Detection of aggregated instances may take place from the virtual
     hierarchy level of the original (C++) parent module downwards. The
     Aggregator and its status output would then appear on the root level.
-  * Or: `HierarchyModifier::moveToRoot` is not allowd on StatusAggregators
+  * Or: `HierarchyModifier::moveToRoot` is not allowed on StatusAggregators
 
 ## Implementation ##
 
 ### Requirements ###
 
 * **R2.1**: The detection of instances needs to be performed recursively from the StatusAggregator's virtual parent module on
-* **R2.2**: The detection has to work on instances the are modified by any of
-  the `ChimeraTK::HierarchyModifier`s 
+* **R2.2**: The detection has to work on instances the are modified by `ChimeraTK::HierarchyModifier`s `none` and `hideThis`. Other modifiers should give a `ChimeraTK::logic_error`
 
 ### Constraints and issues ###
 
