@@ -128,7 +128,7 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
     - read type is blocking and AccessMode::wait_for_new_data is set, previousReadFailed == true, and DeviceModule::deviceHasError == true (cf. A.2.2.4), or
     - no initial value has been read yet (getCurretVersion() == {nullptr}) and DeviceModule::deviceHasError == true (cf. A.4.2).
   - 1.4.3 Obtain the DeviceModule::errorLock. Only then release the recovery lock. (*)
-  - 1.4.4 Wait on DeviceModule::errorIsReportedCondVar.
+  - 1.4.4 Wait on DeviceModule::errorIsResolvedCondVar.
   - 1.4.5 When the DeviceModule reports the recovery through the condition variable, delegate preRead() and continue with the transfer normally.
   - 1.4.6 If an asynchronous read transfer is frozen, instead of 1.4.3 thorugh 1.4.5 the following actions are executed:
     - 1.4.6.1 Register the asynchronous read transfer with the DeviceModule::asynchronousReadQueue by placing a shared_pointer to this on it.
@@ -174,7 +174,7 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
   - 2.3.6 The queue of reported exceptions is cleared. (*)
   - 2.3.7 Devices/<alias>/status is set to 0 and Devices/<alias>/message is set to an empty string.
   - 2.3.8 DeviceModule allows ExceptionHandlingDecorators to execute reads and writes again (cf. 2.3.14)
-  - 2.3.9 All frozen read operations (cf. 1.4.4) are notified via DeviceModule::errorIsReportedCondVar.
+  - 2.3.9 All frozen read operations (cf. 1.4.4) are notified via DeviceModule::errorIsResolvedCondVar.
   - 2.3.10 Release lock for recoveryAccessors.
   - 2.3.11 The DeviceModuleThread waits for the next reported exception.
   - 2.3.12 An exception is received.
@@ -196,13 +196,13 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
 
 - 1.1.2 The ordering guarantee cannot work across DeviceModules anyway. Different devices may go offline and recover at different times. Even in case of two DeviceModules which actually refer to the same hardware device there is no synchronisation mechanism which ensures the recovering procedure is done in a defined order.
 
+- 1.2.3 The lock excludes that the DeviceModule is between 2.3.2 and 2.3.10. If it is right before, the device is still in fault state and the value written to the recoveryAccessor is guaranteed to be written in 2.3.5. If it is right after, the exception state has already been resolved and the real write transfer will be attempted by the ExceptionHandlingDecorator.
+
 - 1.2.5 The cppext::future_queue in the TransferFuture is a notification queue and hence of the type void. So we don't have to "invent" any value. Also this injection of values is legal, since the queue is multi-producer but single-consumer. This means, potentially concurrent injection of values while the actual accessor might also write to the queue is allowed. Also, the application is the only receiver of values of this queue, so injecting values cannot disturb the backend in any way.
 
 - 1.5.3 The written flag for the recoveryAccessor is used to report loss of data. If the loss of data is already reported directly, it should not later be reported again. Hence the written flag is set even if there was a loss of data in this context.
 
-- 1.4.3 The order of locks is important here. The recovery lock prevents the DeviceModule from entering the section 2.3.2 to 2.3.10, which includes the notification through the DeviceModule::errorIsReportedCondVar at 2.3.9. The mutex DeviceModule::errorLock is the mutex used for the condition variable. Since the ExceptionHandlingDecorator obtains it before the DeviceModule can start the notification, it is guaranteed that the decorator does not miss the notification. Note that the DeviceModule::errorLock is not a shared lock, so concurrent ExceptionHandlingDecorator::preRead() will mutually exclude, but the mutex is held only for a short time until errorIsReportedCondVar.wait() is called.
-
-- 1.6.3 The lock excludes that the DeviceModule is between 2.3.2 and 2.3.10. If it is right before, the device is still in fault state and the value written to the recoveryAccessor is guaranteed to be written in 2.3.5. If it is right after, the exception state has already been resolved and the real write transfer will be attempted by the ExceptionHandlingDecorator.
+- 1.4.3 The order of locks is important here. The recovery lock prevents the DeviceModule from entering the section 2.3.2 to 2.3.10, which includes the notification through the DeviceModule::errorIsResolvedCondVar at 2.3.9. The mutex DeviceModule::errorLock is the mutex used for the condition variable. Since the ExceptionHandlingDecorator obtains it before the DeviceModule can start the notification, it is guaranteed that the decorator does not miss the notification. Note that the DeviceModule::errorLock is not a shared lock, so concurrent ExceptionHandlingDecorator::preRead() will mutually exclude, but the mutex is held only for a short time until errorIsResolvedCondVar.wait() is called.
 
 - 2.3.6 The exact place when this is done does not matter, as long as it is done under the lock for the recoveryAccessors.
 
