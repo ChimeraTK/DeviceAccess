@@ -116,7 +116,7 @@ This documnent is currently still **INCOMPLETE**!
   * 7.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
   * 7.2 The backend fills any received values into a queue, from which the read()/readNonBlocking() operations will obtain the value.
     * 7.2.1 If the queue is full, the last written value will be overwritten.
-    * 7.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which will have the same effect as no entry filled to the queue. (*)
+    * 7.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect as if no entry was filled to the queue. (*)
   * 7.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value.
   * 7.4 Due to the asynchronous nature, it is not possible to obtain a valid value before the first device-initiated transfer took place.
     * Hint: Applications may use an accessor without AccessMode::wait_for_new_data to read the initial value after opening the device.
