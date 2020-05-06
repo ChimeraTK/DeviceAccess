@@ -99,9 +99,60 @@ Note: This section should be integrated into the TransferElement specification a
 - 0.8 There is no need to call readAsync() for each read transfer again. If the TransferFuture has been obtained once it can simply be used over and over again. Hence, readAsync() will just return the TransferFuture (which had been created in the constructor already) only. It does not call preRead() - this is done by the TransferFuture (see 0.6), and it doesn't have any side effects. (Maybe it should be renamed into getTransferFuture()).
 
 
+\subsection spec_execptionHandling_high_level_implmentation_locking B.4 Syncronsisation and locking between ExceptionHandlingDecorator and DeviceModule
+
+// fixme: do cyclic re-namimg 2. -> 3., 1. -> 2., 4. -> 1. when done.
+
+A so-called ExceptionHandlingDecorator is placed around all device register accessors (used in ApplicationModules and FanOuts). It is responsible for catching the exceptions and implementing most of the behavior described in A.2. It has to work closely with the DeviceModule and there is a complex syncronsiation and locking scheme, which is described here, together with the according interface functions of the DeviceModule. The sequence executed in
+the DeviceModule is described in \ref spec_execptionHandling_high_level_implmentation_deviceModule.
+
+- 4.1 To ensure that the accessor knows when the device is working or has an error, there is boolean flag \c **deviceHasError** in the DeviceModule.
+  - 4.1.1 The flag is protected by the \c **errorMutex**.
+  - 4.1.2 A conditon variable \c recoveryCondVar allows to wait for a change on this flag in another thread. It is used inside **DeviceModule::waitForRecovery()**, which is called from the ExceptionHandlingDecorator which is running in the ApplicationModule or FanOut thread.
+  - 4.1.3 \c deviceHasErrror is set to \true only from ApplicationModule threads (and in the constructor) (*)
+  - 4.1.4 \c deviceHasError is set to \false at exactly one place in the DeviceModule thread. Afterwars the \c recoveryCondVar condition variable is notified.
+- 4.2 To inform the DeviceModule that there is a new exception, there is a queue of strings where the exeption message can be pushed by the ExceptionHandlingDecorator.
+  - 4.2.1 The function \c **DeviceModule::reportException()** 
+- 4.3 The atomic \c **transferCounter** in the DeviceModule is tracking how many transfers are running. Only when all transfers have finished, the recovery can take place.
+  - 4.3.1  A function \c **startTransfer()** is increasing the counter if the device is not in error state.
+    - 4.3.1.1 As the deviceHasError must only be accessed while holding the errorMutex, also increasing the counter must happen under the mutex to ensure without race condition that no transfer is started while the device is not OK.
+    - 4.3.1.2 If the device is OK and the counter was increased, \c startTransfer() return \c true, otherwise it returns \c false.
+  - 4.3.2 The counter has to be decreased without acquiring the mutex (*). That's why it has to be atomic. This is done in a convenience function \c** stopTransfer()**.
+  - 4.3.3 If \c startTransfer() returned \c true, \c stopTransfer() must be called exactly once. \c stopTransfer() must not be called if startTransfer() returned false.
+- 4.4 The so called recovery accessors and **RecoveryHelpers** (see 1.1) are used by the ExceptionHandlingDecorators and the DeviceModule.
+  - 4.4.1 As accessors and RecoveryHelpers are not thread-safe, they have to be protected by a mutex, the \c **recoveryMutex**.
+  - 4.4.2 The mutex can be a shared mutex for the ExceptionHandlingDecorators. Each ExceptionHandlingDecorator is only setting values of it's recovery helper, so all ExceptionHandlingDecorators can to this in parallel.
+  - 4.4.3 During recovery, there is a *critical recovery section* where the DeviceModule must hold an  *exlusive* lock of the recoveryMutex. There it accesses all recovery helpers and executes accessors' write functions.
+  - 
+ 4.5 Summary 
+  - 4.5.1 errorMutex protects deviceHasError and increasing the transferCounter (starting the transfer)
+  - 4.5.2 recoveryMutex protects RecoveryHelpers, and clearing the exceptions list and resetting deviceHasError
+
+- 4.6 MOVE THIS? The critical recovery section
+  - 4.6.1 It has 3 steps
+    - 4.6.1.1 Write all recovery accessors. If an exception occurs release the exclusive lock and exit the critical section.
+    - 4.6.1.2 Clear the list of reported exceptions.
+    - 4.6.1.3 Reset the \c deviceHasError flag (while holding the \c errorMutex in additon to the \c recoveryMutex)
+  - 4.6.2 Step 2 and step 3 must only be executed if step 1 was successful
+  - 4.6.3 Do not release the \c recoveryMutex between step 2 and 3. Only this guarantees that no value in a recovery accessor is lost.
+  - 4.6.4 If the critical section is left without having cleared the exception list and \c deviceHasError, it must be re-tried later
+  - 4.6.5 
+- 4.7 Interaction of 4.4 and 4.6 to make sure no value in a recovery accessor is skipped
+  - 4.7.1 The ExceptionHandlingDecorator is setting the RecoveryHelper while holdling the shared recovery lock, so the DeviceModule is not in the critical recovery section.
+  - 4.7.2 If the subsequent call to startTransfer() returns false it is guaranteed that the recovery will be executed (because of 4.6.3 and 4.6.4), so the data will eventually be written (unless the recovery helber is later re-filled  before this has happened, but then this data loss is reportet, see 1.3.1).
+  - 4.7.3 If the subsequent call to startTransfer() returns true, the transfer will take place
+    - 4.7.3.1 if there is no exception the data is written successfully
+    - 4.7.3.2 if there is an exception the DeviceModule will be informed and the recovery section will be executed
+
+MOVE COMMENTS TO THE COMMENT SECTION
+
+- 4.1.3 Setting the flag has to be done in the application thread. If you just send a message and let the device module do both setting and clearing of the flag you can have a race condition: A blocking read would inform the DeviceModule about an exception and continue. The next call to the blocking read is supposed to freeze, but pre-read might not detect this because the device module thread has not woken up yet to set the error flag.
+- 4.3.2 The state of \c deviceHasError does not matter here. The counter always MUST be decreased after a transfer, whether the transfer failed or not.
+
+
+
 \subsection spec_execptionHandling_high_level_implmentation_decorator B.1 ExceptionHandlingDecorator
 
-A so-called ExceptionHandlingDecorator is placed around all device register accessors (used in ApplicationModules and FanOuts). It is responsible for catching the exceptions and implementing most of the behavior described in A.2.
 
 - 1.1 A second, undecorated copy of each writeable device register accessor (*) is used as a so-called recoveryAccessor by the ExceptionHandlingDecorator and the DeviceModule. These recoveryAccessor are used to set the initial values of registers when the device is opened for the first time and to recover the last written values during the recovery procedure.
   - 1.1.1 The recoveryAccessor is stored by the DeviceModule with additional meta data in a so-called RecoveryHelper data structure, which contains:
