@@ -282,7 +282,7 @@ MOVE COMMENTS TO THE COMMENT SECTION
 
 - <strike> 1.4.3 The order of locks is important here. The recovery lock prevents the DeviceModule from entering the section 2.3.2 to 2.3.10, which includes the notification through the DeviceModule::errorIsResolvedCondVar at 2.3.9. The mutex DeviceModule::errorLock is the mutex used for the condition variable. Since the ExceptionHandlingDecorator obtains it before the DeviceModule can start the notification, it is guaranteed that the decorator does not miss the notification. Note that the DeviceModule::errorLock is not a shared lock, so concurrent ExceptionHandlingDecorator::preRead() will mutually exclude, but the mutex is held only for a short time until errorIsResolvedCondVar.wait() is called.</strike> See comment on striked out 1.4.3 directly. 
 
-- <strike> 2.3.6 The exact place when this is done does not matter, as long as it is done under the lock for the recoveryAccessors. </strike> Wrong. It has to be exactly as described in 4.6.
+- 2.3.6 The exact place when this is done does not matter, as long as it is done after 2.3.15 (no ongoing transfers).
 
 - 2.3.15 The backend has to take care that all operations, also the blocking/asynchronous reads with "waitForNewData", terminate when an exception is thrown, so recovery can take place (see DeviceAccess TransferElement specification).
 
