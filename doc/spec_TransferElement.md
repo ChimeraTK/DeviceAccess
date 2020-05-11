@@ -165,28 +165,45 @@ This documnent is currently still **INCOMPLETE**!
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
-* Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error, boost::thread_interrupted and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
+* 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error, boost::thread_interrupted and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
+* 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. *only* exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see A.6.3) may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw these exceptions in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls).
 
+* 3. boost::thread_interrupted may be thrown at any stage, if TransferElement::interrupt has been called.
 
-* In the constructor of a TransferElement implementation, *only* ChimeraTK::logic_errror may be thrown.
-* In doPreXxx, *only* ChimeraTK::logic_error may be thrown. In doPreWrite, boost::numeric::bad_numeric_cast can in addition be thrown.
-* In doXxxTransferYyy, *only* ChimeraTK::runtime_error may be thrown
-* In doPostXxx, *only* exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see A.6.3) may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw these exceptions in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls). In doPostRead, boost::numeric::bad_numeric_cast may in addition be thrown (also directly), but only if hasNewData == true.
-* In addition to the above rules, boost::thread_interrupted may be thrown at any stage, if TransferElement::interrupt has been called. This exception will also be delayed and rethrown in doPostXxx by the TransferElement base class.
+* 4. ChimeraTK::runtime_error may only be thrown in 
+  * 4.1 doXxxTransferYyy(). It is the only exception that can occur in this function (except for boost::thread_interrupted)
+  * 4.2 ChimeraTK::TransferElement::isReadable(), ChimeraTK::TransferElement::isWriteable() or ChimeraTK::TransferElement::isReadOnly() if there is not catalogue and it needs to be deterimed from the running device.
 
-* ChimeraTK::logic_errors must follow strict conditions. Any logic_error must be thrown as early as possible. Also logic_erors must always be avoidable by calling the corresponding test functions before executing a potentially failing action. (Note: test functions do not yet exist for everything, this needs to be changed!). In particular:
-  * in the accessor's constructor, a logic_error must only be thrown if:
-    * no register exists by that name in the catalogue (note: it is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work)
-  * in doPreRead(), a logic_error must be thrown if and only if:
-    * ChimeraTK::DeviceBackend::isOpen() == false
-    * ChimeraTK::TransferElement::isReadable() == false or throws
-  * in doPreWrite(), a logic_error must be thrown if and only if:
-    * ChimeraTK::DeviceBackend::isOpen() == false
-    * ChimeraTK::TransferElement::isWriteable() == false or throws
-  * To comments about how to follow these rules:
-    * If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
-    * If a backend cannot decide the existence of a register in the accessor's constructor (because there is no map file or such, and the backend might be closed), it needs to check the presence also e.g. in isReadable(), isWriteable() and isReadOnly(). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
+* 5. boost::numeric::bad_numeric_cast may only be thrown in
+  * 5.1 ChimeraTK::TransferElement::doPreWrite()
+  * 5.2 ChimeraTK::TransferElelemtn::doPostRead(), but only if hasNewData == true
+  * 5.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow. New implementations should avoid throwing this exception if possible. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 6.2.1.4) (*).
 
+* 6. ChimeraTK::logic_error must follow strict conditions.
+  * 6.1 logic_errors must be deterministic. They must always be avoidable by calling the corresponding test functions before executing a potentially failing action (*), and must occur if the logical condition is not fulfilled and the function is called anyway.
+  * 6.2 Any logic_error must be thrown as early as possible. They are only allowed in the following funtction under the mentioned conditions:
+    * 6.2.1 in the accessor's constructor the logic_error is the only allowed exception. It must only be thrown if:
+      * 6.2.1.1 no register exists by that name in the catalogue (*)
+      * 6.2.1.2 the size or dimension of the requested TransferElement is too large (*)
+      * 6.2.1.3 the wrong ChimeraTK::AccessMode flags are provided
+      * 6.2.1.4 the requested user data type is to small to hold the data on the tranport layer without data loss
+    * 6.2.2 in doPreRead(), a logic_error must be thrown if and only if:
+      * 6.2.2.1 ChimeraTK::DeviceBackend::isOpen() == false
+      * 6.2.2.2 ChimeraTK::TransferElement::isReadable() == false or throws
+    * 6.2.3 in doPreWrite(), a logic_error must be thrown if and only if:
+      * 6.2.3.1 ChimeraTK::DeviceBackend::isOpen() == false
+      * 6.2.3.2 ChimeraTK::TransferElement::isWriteable() == false or throws
+    * 6.2.4  in isWriteable(), isReadable() and isReadOnly() only if there is no catalogue and it turns out at run time that the register does not exist (*)
+  * 6.3 Two remarks about how to follow these rules:
+    * 6.3.1 If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
+    * 6.3.2 If a backend cannot decide the existence of a register in the accessor's constructor (because there is no map file or such, and the backend might be closed), it needs to check the presence also e.g. in isReadable(), isWriteable() and isReadOnly(). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
+
+### (*) Comments ###
+* 5.3 If there is no catalogue the matching of data types cannot be done in the constructor. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast
+* 6.1 Test functions do not yet exist for everything. This needs to be changed!
+* 6.2.1.1 It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
+* 6.2.1.2 This also includes that the offset in a one dimensional case is so large that there are not enought elements left to provide the requested data.
+* 6.2.4 If there is a catalogue the check has to be done in the constructor.
 
 ## D. Requirements for full implementations (e.g. in backends) ##
 
