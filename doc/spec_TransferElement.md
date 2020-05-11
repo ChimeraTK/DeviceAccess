@@ -220,52 +220,62 @@ This documnent is currently still **INCOMPLETE**!
 
 ## D. Requirements for full implementations (e.g. in backends) ##
 
-* If ChimeraTK::AccessMode::wait_for_new_data is specified:
-  * ChimeraTK::TransferElement::readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
-  * ChimeraTK::TransferElement::readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push() will tell whether there will be a corresponding call to ChimeraTK::TransferElement::doPostRead() (if the queue is full, there will be no call).
+* 1. If ChimeraTK::AccessMode::wait_for_new_data is specified:
+  * 1.1 ChimeraTK::TransferElement::readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
+  * 1.2 ChimeraTK::TransferElement::readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether there has been discarded (*).
   
-  * In case an exception occurs during an asychronous transfer (after a call to readTransferAsync), the exception must be stored on the cppext::future_queue which has been returned with the TransferFuture by doReadTransferAsync. The TransferFuture will then make sure that the exception is properly stored and rethrown in postRead (just like for synchronous transfers).
+  * 1.3 In case an exception is detected during an asychronous transfer (for instance in a separate thread), the exception must be stored on the ChimeraTK::TransferElement::readQueue. The TransferFuture will then make sure that the exception is properly rethrown in postRead (just like for synchronous transfers).
+
+### (*) Comments ###
+
+1.2 Either the currently pushed data or older data on the queue might be discarded. In any case there will be one call less to ChimeraTK::TransferElement::doPostRead(), because the number of entries in the queue could not be increased because it was full.
 
 ## E. Requirements for decorator-like implementations ##
 
-* If ChimeraTK::AccessMode::wait_for_new_data is specified, ChimeraTK::TransferElement::readQueue is initialised in the constructor with a copy of the readQueue of the target TransferElement. Decorator-like implementations with multiple targets must provide a readQueue e.g. by using cppext::future_queue::when_any() or cppext::future_queue::when_all().
+* 1. If ChimeraTK::AccessMode::wait_for_new_data is specified, ChimeraTK::TransferElement::readQueue is initialised in the constructor with a copy of the readQueue of the target TransferElement.
+  * 1.1 Decorator-like implementations with multiple targets must provide a readQueue e.g. by using cppext::future_queue::when_any() or cppext::future_queue::when_all().
 
-* All functions doPreXxx, doXxxTransferYyy and doPostXxx must delegate to their non-do counterparts (preXxx, xxxTransferYyy and postXxx). Never delegate to the do... of the target implementation functions directly.
+* 2. All functions doPreXxx, doXxxTransferYyy and doPostXxx must delegate to their non-do counterparts (preXxx, xxxTransferYyy and postXxx). Never delegate to the do... of the target implementation functions directly.
 
-* If a function of the same instance should be called, e.g. if doWriteTransferDestructively should redirect to doWriteTransfer or if doPostRead should call doPostRead of a base class, call to do-version of the function. This is merely to avoid code duplication, hence the surrounding logic of the non-do function is not wanted here.
+* 3. If a function of the same instance should be called, e.g. if doWriteTransferDestructively() should redirect to doWriteTransfer(), or if doPostRead() should call doPostRead() of a base class, call to do-version of the function. This is merely to avoid code duplication, hence the surrounding logic of the non-do function is not wanted here.
 
-* Decorators must merely delegate doXxxTransferYyy, never add any functionalty there. Reason: TransferGroup might effectively bypass the decorator implementation of these functions.
+* 4. Decorators must merely delegate doXxxTransferYyy, never add any functionalty there. Reason: TransferGroup might effectively bypass the decorator implementation of these functions.
+
+* 5. All real decorators are in fact decorators of NDRegisterAccessors<USER_TYPE>. Each decoration level contains one NDRegisterAccessors<USER_TYPE>::buffer_2D. The
+     decorator implementation must make sure that its buffer is correctly synchronised with the target's buffer.(*)
+
+### (*) Comments ###
+
+* 5 The NDRegisterAccessorDecorator base class already contains an implementation which does this in doPreXxx() and doPostXxx(). You usually call it from the Decorators implementation, as mentioned in 3.
 
 
 ## F. Implementation in the framework (e.g. class TransferElement itself)
 
 **Note:** This section is biased by the current implementation and mostly lists parts that needs to be changed!
 
-### 1. TransferFuture
+* 1. The TransferFuture will be kept as is for now to provide backwards compatibility and as a helper to the TransferElement implementation.
 
-The TransferFuture will be kept as is for now to provide backwards compatibility and as a helper to the TransferElement implementation.
+* 2. TransferElement
 
-### 2. TransferElement
+  * 2.1 ChimeraTK::TransferElement::readAsync() is deprecated
+  
+  * 2.2 ChimeraTK::TransferElement::activeFuture is created in the first call to read(), readNonBlockig() or readAsync() from ChimeraTK::TransferElement::readQueue if ChimeraTK::AccessMode::wait_for_new_data is set.
+  
+  * 2.3 read(), readNonBlocking() first check whether ChimeraTK::AccessMode::wait_for_new_data is set.
+    * 2.3.1 If no, the sequence of preRead(), readTransfer() and postRead() is executed (cf. 3).
+    * 2.3.1 If yes, implement read() as a sequence of preRead() and activeFuture.wait(), resp. readNonBlocking() as a sequence of preRead(), followed by activeFuture.wait() only if activeFuture.hasNewData() == true.
+  
+  * 2.4 readLatest() is directly calling readNonBlocking() in a loop.
+  
+  * 2.5 Add function ChimeraTK::detail::getFutureQueueFromTransferElement(), replacing ChimeraTK::detail::getFutureQueueFromTransferFuture().
+  
+* 3. ReadAnyGroup
 
-* 2.1 ChimeraTK::TransferElement::readAsync() is deprecated
-
-* 2.2 ChimeraTK::TransferElement::activeFuture is created in the first call to read(), readNonBlockig() or readAsync() from ChimeraTK::TransferElement::readQueue if ChimeraTK::AccessMode::wait_for_new_data is set.
-
-* 2.3 read(), readNonBlocking() first check whether ChimeraTK::AccessMode::wait_for_new_data is set.
-  * 2.3.1 If no, the sequence of preRead(), readTransfer() and postRead() is executed (cf. 3).
-  * 2.3.1 If yes, implement read() as a sequence of preRead() and activeFuture.wait(), resp. readNonBlocking() as a sequence of preRead(), followed by activeFuture.wait() only if activeFuture.hasNewData() == true.
-
-* 2.4 readLatest() is directly calling readNonBlocking() in a loop.
-
-* 2.5 Add function ChimeraTK::detail::getFutureQueueFromTransferElement(), replacing ChimeraTK::detail::getFutureQueueFromTransferFuture().
-
-### 3. ReadAnyGroup
-
-* 3.1 Use the new ChimeraTK::detail::getFutureQueueFromTransferElement().
+  * 3.1 Use the new ChimeraTK::detail::getFutureQueueFromTransferElement().
 
 
-### 4. ApplicationCore
+* 4. ApplicationCore
 
-* 4.1 For the TestableModeAccessorDecorator: TransferElement::transferFutureWaitCallback() does no longer exist. Instead preRead() will now be called. In case of readAny, multiple calls to preRead() on different accessors will be made on the first call to readAny - the decorator has to deal with that properly.
+  * 4.1 For the TestableModeAccessorDecorator: TransferElement::transferFutureWaitCallback() does no longer exist. Instead preRead() will now be called. In case of readAny, multiple calls to preRead() on different accessors will be made on the first call to readAny - the decorator has to deal with that properly.
 
 
