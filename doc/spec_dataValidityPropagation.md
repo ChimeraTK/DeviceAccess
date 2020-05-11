@@ -53,7 +53,7 @@ The TriggerFanOut is special in the sense that it does not compute anything, but
 
 ### 2.5 Interaction with exception handling
 
-See @ref exceptionHandlingDesign.
+See @ref spec_execptionHandling.
 
 * 2.5.1 Like the MetaDataPropagatingRegisterDecorator, also the ExceptionHandlingDecorators of the module inputs are associated with the DataFaultCounter.
 * 2.5.2 If a device accessor throws an exception, the ExceptionHandlingDecorator also increases the data fault counter, and decreases it once the device is available again.

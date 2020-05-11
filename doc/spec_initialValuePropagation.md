@@ -53,7 +53,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
   1. The fan outs should have a transparent behaviour, i.e. an entity that receives an initial value through a fan out should see the same behaviour as if a direct connection would have been realised.
   2. This implies that the inputs need to be treated like described in 8.b.
   3. The initial value is propagated immediately to the outputs.
-  4. If an output cannot be written at that point (because it writes to a device currently being unavailable), the value propagation to other targets must not be blocked. See recovery mechanism described in @ref exceptionHandlingDesign.
+  4. If an output cannot be written at that point (because it writes to a device currently being unavailable), the value propagation to other targets must not be blocked. See recovery mechanism described in @ref spec_execptionHandling.
 10. Constants (`ChimeraTK::Application::makeConstant()`):
   1. Values are propagated before the `ChimeraTK::ApplicationModule` threads are starting (just like initial values written in `ChimeraTK::ApplicationModule::prepare()`).
   2. Special treatment for constants written to devices: They need to be written after the device is opened (see 6.a), with the same mechanism as in 7.c.
@@ -79,7 +79,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 - Each `ChimeraTK::NDRegisterAccessor` must implement 1. separately.
 - Each `ChimeraTK::NDRegisterAccessor` must implement 2. separately. All accessors should already have a `ChimeraTK::VersionNumber` data member called `currentVersion` or similar, it simply needs to be constructed with a `nullptr` as an argument.
-- `ChimeraTK::NDRegisterAccessor` must throw exceptions *only* in `TransferElement::postRead()` and `TransferElement::postWrite()`. No exceptions may be thrown in `TransferElement::doReadTransfer()` etc. (all transfer implementations). See also @ref exceptionHandlingDesign.
+- `ChimeraTK::NDRegisterAccessor` must throw exceptions *only* in `TransferElement::postRead()` and `TransferElement::postWrite()`. No exceptions may be thrown in `TransferElement::doReadTransfer()` etc. (all transfer implementations). See also @ref spec_execptionHandling.
 
 ### ApplicationModule ###
 
@@ -121,7 +121,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 ### DeviceModule ###
 
-All points are also covered by @ref exceptionHandlingDesign.
+All points are also covered by @ref spec_execptionHandling.
 
 - Takes part in 6.a:
   - `ChimeraTK::DeviceModule::writeRecoveryOpen` [tbd: new name for the list] is a list of accessors to be written after the device is opened/recovered.
@@ -132,7 +132,7 @@ All points are also covered by @ref exceptionHandlingDesign.
 ### ExceptionHandlingDecorator ###
 
 - Must implement part of 6.a/7.c/9.d/10.b: Provide function which allows to write without blocking in case of an unavailable device:
-  - The list `ChimeraTK::DeviceModule::writeRecoveryOpen` [tbd: new name for the list] is filled with the "recovery accessor" (a "copy" of the original accessor, created by `ChimeraTK::Application::createDeviceVariable()`). This accessor allows the restoration of the last known value of a register after recovery from an exception by the DeviceModule. See also @ref exceptionHandlingDesign.
+  - The list `ChimeraTK::DeviceModule::writeRecoveryOpen` [tbd: new name for the list] is filled with the "recovery accessor" (a "copy" of the original accessor, created by `ChimeraTK::Application::createDeviceVariable()`). This accessor allows the restoration of the last known value of a register after recovery from an exception by the DeviceModule. See also @ref spec_execptionHandling.
   - When a write happens while the device is still unavailable (not opened or initialisation still in progress), the write should not block (in contrast to normal writes in a `ChimeraTK::ApplicationModule::mainLoop()`).
   - The "recovery accessor" is also used in this case to defer the write operation until the device becomes available.
   - The actual write is then performed asynchronously by the `ChimeraTK::DeviceModule`.
@@ -140,7 +140,7 @@ All points are also covered by @ref exceptionHandlingDesign.
 
 - Needs to implement 6.b.:
   - The `ChimeraTK::TransferElement::readLatest()` must be delayed until the device is available and initialised.
-  - @ref exceptionHandlingDesign states that non-blocking read operations like `ChimeraTK::TransferElement::readLatest()` should never block due to an exception.
+  - @ref spec_execptionHandling states that non-blocking read operations like `ChimeraTK::TransferElement::readLatest()` should never block due to an exception.
   - Hence a special treatment is required in this case:
   - `ChimeraTK::ExceptionHandlingDecorator::readLatest()` should block until the device is opened and initialised if (and only if) the accessor still has the `ChimeraTK::VersionNumber(nullptr)` - which means it has not yet been read.
 
@@ -199,14 +199,14 @@ It is the responsibility of the decorators which manipulate the DataFaultCounter
 
 ### DeviceModule ###
 
-Probably all points are duplicates with @ref exceptionHandlingDesign.
+Probably all points are duplicates with @ref spec_execptionHandling.
 
 - Merge `ChimeraTK::DeviceModule::writeAfterOpen/writeRecoveryOpen` lists.
 - Implement mechanism to block read/write operations in other threads until after the initialsation is done.
 
 ### ExceptionHandlingDecorator ###
 
-Some points are duplicates with @ref exceptionHandlingDesign.
+Some points are duplicates with @ref spec_execptionHandling.
 
 - It waits until the device is opened, but not until after the initialisation is done.
 - Provide non-blocking function.
