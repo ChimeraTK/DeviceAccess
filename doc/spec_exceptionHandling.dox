@@ -9,17 +9,17 @@ namespace ChimeraTK {
 
 Exceptions are handled by ApplicationCore in a way that the application developer does not need to care much about it.
 
-ChimeraTK::runtime_error exceptions are caught by the framework and are reported to the DeviceModule. The DeviceModule handles this exception and periodically tries to open the device. Communication with the faulty device is frozen or delayed until the device is functional again. In case of several devices only the faulty device is frozen. Faulty devices do not prevent the application from starting, only the parts of the application that depend on the fault device are waiting for the device to come up.
+ChimeraTK::runtime_error exceptions are caught by the framework and are reported to the DeviceModule. The DeviceModule handles this exception and periodically tries to reopen the device. Communication with the faulty device is _skipped_, _frozen_ or _delayed_ until the device is functional again. In case of several devices only the faulty device is affected. Faulty devices do not prevent the application from starting, only the parts of the application that depend on the fault device are waiting for the device to come up.
 
-Input variables of ApplicationModules which cannot be read due to a faulty device will set and propagate the DataValidity::faulty flag (see also the \link spec_dataValidityPropagation Technical specification: data validity propagation\endlink).
+Input variables of ApplicationModules, which cannot be read due to a faulty device, will set and propagate the DataValidity::faulty flag (see also the \link spec_dataValidityPropagation Technical specification: data validity propagation\endlink).
 
 When the device is functional, it be (re)initialised by using application-defined initialisation handlers and also recover the last known values of its process variables.
 
 \subsection spec_exceptionHandling_intro_terminology Special terminology used in this document
 
-- An read operation might be "skipped". It means, the operation will not take place at all. Instead, the data is marked as DataValidity::faulty. Note: This term is also used, if the a running operation is interrupted by an exception.
-- An read operation might be "frozen". This means, the function called will not return until the fault state is resolved and the operation is executed. Freezing always happens before the actual operation is executed and hence will always act on pre-existing fault states only.
-- An write operation might be "delayed". This means, the operation will not be executed immediately and the calling thread continues. The operation will be asynchronosuly executed when the fault state is resolved. Note that the VersionNumber specified in the write operation will be retained and also used for the delayed write operation.
+- An read operation might be _skipped_. It means, the operation will not take place at all. Instead, the data is marked as DataValidity::faulty. Note: This term is also used, if the a running operation is interrupted by an exception.
+- An read operation might be _frozen_. This means, the function called will not return until the fault state is resolved and the operation is executed. Freezing always happens before the actual operation is executed and hence will always act on pre-existing fault states only.
+- An write operation might be _delayed_. This means, the operation will not be executed immediately and the calling thread continues. The operation will be asynchronosuly executed when the fault state is resolved. Note that the VersionNumber specified in the write operation will be retained and also used for the delayed write operation.
 - Whenever a write operation or a call to write() is mentioned, destructive writes via writeDestructively() are included. The destructive write optimisation makes no difference for the exception handling.
 
 
@@ -31,35 +31,35 @@ When the device is functional, it be (re)initialised by using application-define
 
 - \anchor a_2 2. When an exception has been received by the framework (thrown by a device register accessor):
   - 2.1 The exception status is published as a process variable together with an error message.
-    - 2.1.1 The variable \c Devices/\<alias\>/status contains a boolean flag whether the device is in an error state
+    - 2.1.1 The variable \c Devices/\<alias\>/status contains a boolean flag whether the device is in an error state.
     - 2.1.2 The variable \c Devices/\<alias\>/message contains an error message, if the device is in an error state, or an empty string otherwise.
   - \anchor a_2_2 2.2 Read operations will propagate the DataValidity::faulty flag to the owning module / fan out (without changing the actual value):
     - 2.2.1 The normal module algorithm code will be continued, to allow this flag to propagate to the outputs in the same way as if it had been received through the process variable itself (cf. \ref a_1_2 "1.2").
     - 2.2.2 The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a DataValidity::faulty flag already set previously for another reason.
-    - \anchor a_2_2_3 2.2.3 Read operations without AccessMode::wait_for_new_data are skipped until the device is fully recovered again (cf. \ref a_3_1 "3.1").
-    - \anchor a_2_2_4 2.2.4 Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking() will return true). In the following:
-      - non-blocking read operations (readNonBlocking() and readLatest()) are skipped and return false, until new data has arrived from the device, and
-      - blocking read operations (read()) will freeze until new data has arrived from the device.
-      - Note: The device may start sending data already before the recovery procedure (cf. \ref a_3_1 "3.1") is complete. If this is not acceptable, a device specific handshake mechanism has to be implemented in the application to control when the device is allowed to send updates again. \ref comment_a_2_2_4 "(*)"
-    - \anchor a_2_2_5 2.2.5 If the fault state had been resolved in between one read operation (regardless of the type) and a second blocking read operation, and the device had become faulty again before the second operation is executed, it is not defined whether the second operation will frozen or skipped. The second operation might in this case behave either like it is a new exception or like the same fault state would still prevail. \ref comment_a_2_2_5 "(*)"
-  - \anchor a_2_3 2.3 Write operations will be delayed until the device is fully recovered again (cf. \ref a_3_1 "3.1"). In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering. The same mechanism as used for \ref a_3_1_2 "3.1.2" is used here, hence the order of write operations is guaranteed across accessors, but only the latest written value of each accessor prevails. \ref comment_a_2_3 "(*)"
+    - \anchor a_2_2_3 2.2.3 Read operations without AccessMode::wait_for_new_data are _skipped_ until the device is fully recovered again (cf. \ref a_3_1 "3.1").
+    - \anchor a_2_2_4 2.2.4 Read operations with AccessMode::wait_for_new_data will be _skipped_ once for each accessor to propagate the DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking() will return true). In the following:
+      - non-blocking read operations (readNonBlocking() and readLatest()) are _skipped_ and return false, until new data has arrived from the device, and
+      - blocking read operations (read()) will be _frozen_ until new data has arrived from the device.
+      - Note: The device may start sending data already before the recovery procedure (cf. \ref a_3_1 "3.1") is complete, hence the application may receive values which originated from a device that had not been fully initialised. If this is not acceptable, a device specific handshake mechanism has to be implemented in the application, to control when the device is allowed to initiate transfers again. \ref comment_a_2_2_4 "(*)"
+    - \anchor a_2_2_5 2.2.5 If the fault state had been resolved in between two read operations (regardless of the type), and the device had become faulty again before the second operation is executed, the behavior of the second operation is not exactly defined: it might behave either like it is a new exception or like the same fault state would still prevail. \ref comment_a_2_2_5 "(*)"
+  - \anchor a_2_3 2.3 Write operations will be _delayed_ until the device is fully recovered again (cf. \ref a_3_1 "3.1"). In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering. The same mechanism as used for \ref a_3_1_2 "3.1.2" is used here, hence the order of write operations is guaranteed across accessors, but only the latest written value of each accessor prevails. \ref comment_a_2_3 "(*)"
     - 2.3.1 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true, if a previously delayed and not-yet written value is discarded in the process, false otherwise.
     - 2.3.2 When the delayed value is finally written to the device during the recovery procedure, it is guaranteed that no data loss happens (writes with data loss will be retried).
     - 2.3.3 It is guaranteed that the write takes place before the device is considered fully recovered again and other transfers are allowed (cf. \ref a_3_1 "3.1").
   - \anchor a_2_4 2.4 In case of exceptions, there is no guaranteed realtime behaviour, not even for "non-blocking" transfers. \ref comment_a_2_4 "(*)"
 
 - 3. The framework tries to resolve an exception state by periodically re-opening the faulty device.
-  - \anchor a_3_1 3.1 After successfully re-opening the device, a recovery procedure is executed before allowing any read/write operations from the AppliactionModules and FanOuts again. This recovery procedure involves:
+  - \anchor a_3_1 3.1 After successfully re-opening the device, a recovery procedure is executed before allowing any read/write operations from the ApplicationModules and FanOuts again. This recovery procedure involves:
     - 3.1.1 the execution of so-called initialisation handlers (see \ref a_3_2 "3.2"), and
     - \anchor a_3_1_2 3.1.2 restoring all registers that have been written since the start of the application with their latest values. The register values are restored in the same order they were written. \ref comment_a_3_1_2 "(*)"
-    - \anchor a_3_1_3 3.1.3 Finally, \c Devices/\<alias\>/deviceBecameFunctional is written to inform any module subscribing this variable about the finished recovery. \ref comment_a_3_1_3 "(*)"
-  - \anchor a_3_2 3.2 Any number of initialisation handlers can be added to the DeviceModule in the user code. Initialisation handlers are callback functions which will be executed when a device is opened for the first time and after a device recovers from an exception, before any process variables are written. See DeviceModule::addInitialisationHandler().
+    - \anchor a_3_1_3 3.1.3 Finally, \c Devices/\<alias\>/deviceBecameFunctional is written to inform any module subscribing to this variable about the finished recovery. \ref comment_a_3_1_3 "(*)"
+  - \anchor a_3_2 3.2 Any number of initialisation handlers can be added to the DeviceModule in the user code. Initialisation handlers are callback functions which will be executed when a device is opened for the first time and after a device recovers from an exception, before any application-initiated transfers are executed (including delayed write transfers). See DeviceModule::addInitialisationHandler().
 
-- 4. The behaviour at application start (when all devices are still closed at first) is similar to the case of a later received exception. The only differences are mentioned in \ref a_4_2 "4.2".
+- 4. The behaviour at application start (at which all devices are still closed at first) is similar to the case of a later received exception. The only differences are mentioned in \ref a_4_2 "4.2".
   - 4.1 Even if some devices are initially in a persisting error state, the part of the application which does not interact with the faulty devices starts and works normally.
-  - \anchor a_4_2 4.2 Initial values are correctly propagated after a device is opened. See the \link spec_initialValuePropagation Technical specification: propagation of initial values\endlink. Especially, all read operations (even readNonBlocking/readLatest) will be frozen until an initial value has been received. \ref comment_a_4_2 "(*)"
+  - \anchor a_4_2 4.2 Initial values are correctly propagated after a device is opened. See the \link spec_initialValuePropagation Technical specification: propagation of initial values\endlink. Especially, all read operations (even readNonBlocking/readLatest) will be _frozen_ until an initial value has been successfully read. \ref comment_a_4_2 "(*)"
 
-- \anchor a_5 5. Any ApplicationModule can explicitly report a problem with the device by calling DeviceModule::reportException(). This allows the reinitialisation of a device e.g. after a reboot of the device which didn't result in a exception (e.g. because it was too quick to be noticed, or rebooting the device takes place without interrupting the communication).
+- \anchor a_5 5. Any ApplicationModule can explicitly report a problem with the device by calling DeviceModule::reportException(). This allows the reinitialisation of a device e.g. after a reboot of the device which didn't result in an exception (e.g. because it was too quick to be noticed, or rebooting the device takes place without interrupting the communication).
 
 
 \subsection spec_execptionHandling_behaviour_comments (*) Comments
@@ -94,8 +94,8 @@ Note: This section defines the internal interface on a low level. Helper functio
     - shared lock allows to read
     - unique lock allows to read and write
 
-- \anchor b_1_2 1.2 The atomic DeviceModule::transferCounter \ref comment_b_1_2 "(*)"
-  - 1.2.1 tracks the number of on-going (synchronous) transfers, and
+- \anchor b_1_2 1.2 The atomic DeviceModule::synchronousTransferCounter \ref comment_b_1_2 "(*)"
+  - 1.2.1 tracks the number of on-going synchronous transfers, and
   - 1.2.2 is used by the DeviceModule to wait until they are all terminated (\ref b_3_3_14 "3.3.14").
 
 - \anchor b_1_3 1.3 The DeviceModule::recoveryHelpers list elements
@@ -109,15 +109,15 @@ Note: This section defines the internal interface on a low level. Helper functio
   
 - 1.5 The following mutexes govern critical sections (besides variable access listed above):
   - \anchor b_1_5_1 1.5.1 DeviceModule::errorMutex protects \ref comment_b_1_5_1 "(*)"
-    - the (positive) decision to start a transfer followed by incrementing the DeviceModule::transferCounter in \ref b_2_3_1 "2.3.1" to \ref b_2_3_3 "2.3.3", against
-    - setting DeviceModule::deviceHasError flag in \ref b_2_6_1 "2.6.1".
+    - the (positive) decision to start a transfer followed by incrementing the DeviceModule::synchronousTransferCounter in \ref b_2_3_3 "2.3.3" to \ref b_2_3_6 "2.3.6", against
+    - setting DeviceModule::deviceHasError flag in \ref b_2_7_1 "2.7.1".
 
   - \anchor b_1_5_2 1.5.2 DeviceModule::recoveryMutex protects \ref comment_b_1_5_2 "(*)"
     - writing the DeviceModule::recoveryHelpers to the device and clearing the DeviceModule::deviceHasError flag in \ref b_3_3_6 "3.3.6" to \ref b_3_3_8 "3.3.8", against
-    - updating the DeviceModule::recoveryHelpers in \ref b_2_2 "2.2".
+    - updating the DeviceModule::recoveryHelpers in \ref b_2_2 "2.2" and deciding whether to skip the write operation in \ref b_2_3 "2.3".
 
   - \anchor b_1_5_3 1.5.3 DeviceModule::initialValueMutex protects \ref comment_b_1_5_3 "(*)"
-    - the start of a read operation in \ref b_2_4_4 "2.4.4", against
+    - the start of a read operation of an initial value in \ref b_2_4_4 "2.4.4", against
     - the setup phase of a device until it has been opened and recovered for the very first time in \ref b_3_1 "3.1" to \ref b_3_3_9 "3.3.9".
 
 - 1.6 DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters
@@ -150,70 +150,78 @@ Note: This section defines the internal interface on a low level. Helper functio
   - 2.1.3 The RecoveryHelper objects may be accessed only under a lock, see \ref b_1_3 "1.3".
   
 - \anchor b_2_2 2.2 In doPreWrite() the RecoveryHelper is updated while holding a shared lock on DeviceModule::recoveryMutex:
-  - \anchor b_2_2_1 2.2.1 These steps needs to be done unconditionally at the very beginning of doPreWrite(), before \ref b_2_3 "2.3" and before delegating to preWrite(). \ref comment_b_2_2_1 "(*)"
+  - \anchor b_2_2_1 2.2.1 These steps need to be done unconditionally at the very beginning of doPreWrite(), before \ref b_2_3 "2.3" and before delegating to preWrite(). \ref comment_b_2_2_1 "(*)"
   - 2.2.2 If the RecoveryHelper::wasWritten flag was previously not set, the return value of doWriteTransfer() must be forced to true (data lost).
   - 2.2.3 Update the value buffer of the RecoveryHelper::accessor, update the RecoveryHelper::versionNumber, set the RecoveryHelper::writeOrder to the DeviceModule::writeCounter after (atomically) incrementing it, and clear the RecoveryHelper::wasWritten flag.
   - \anchor b_2_2_4 2.2.4 The check whether to skip the transfer (cf. \ref b_2_3 "2.3") has to be done without releasing the lock between the update of the RecoveryHelper and the check. \ref comment_b_2_2_4 "(*)"
 
-- \anchor b_2_3 2.3 In doPreRead()/doPreWrite(), it must be decided whether to execute xxxTransferYyy(). This part requires a shared lock on the DeviceModule::errorMutex.
-  - \anchor b_2_3_1 2.3.1 xxxTransferYyy() is <i>not</i> executed, if DeviceModule::deviceHasError == true and either:
-    - it is a write transfer (cf. \ref a_2_3 "A.2.3"), or
-    - it is a read transfer and AccessMode::wait_for_new_data is not set (cf. \ref a_2_2_3 "A.2.2.3"), or
-    - it is a read transfer and AccessMode::wait_for_new_data is set and ExceptionHandlingDecorator::previousReadFailed == false (cf. \ref a_2_2_4 "A.2.2.4", \ref b_2_5_2 "2.5.2" and \ref b_2_6_3_1 "2.6.3.1").
-    Otherwise xxxTransferYyy() is executed (potentially after it is frozen, see \ref b_2_4 "2.4").
-  - 2.3.2 If xxxTransferYyy() is not executed, none of the pre/transfer/post functions must be delegated to the target accessor.
-  - \anchor b_2_3_3 2.3.3 If xxxTransferYyy() is executed, and it is <i>not</i> a read transfer with AccessMode::wait_for_new_data set, the DeviceModule::transferCounter must be incremented.
+- \anchor b_2_3 2.3 In doPreRead()/doPreWrite(), it must be decided whether to delegate to xxxTransferYyy() in doXxxTransferYyy() (cf. \ref b_2_5 "2.5").
+  - \anchor b_2_3_1 2.3.1 This is only applicable to read operations without AccessMode::wait_for_new_data and write operations \ref comment_b_2_3_1 "(*)".
+  - 2.3.2 This part requires a shared lock on the DeviceModule::errorMutex.
+  - \anchor b_2_3_3 2.3.3 xxxTransferYyy() is only delegated to, if DeviceModule::deviceHasError == false (cf. \ref a_2_3 "A.2.3" and \ref a_2_2_3 "A.2.2.3").
+  - 2.3.4 The read operation might be frozen before xxxTransferYyy() is delegated to, see \ref b_2_4 "2.4".
+  - 2.3.5 If xxxTransferYyy() is not delegated to, none of the pre/transfer/post functions must be delegated to the target accessor.
+  - \anchor b_2_3_6 2.3.6 If xxxTransferYyy() is delegated to, the DeviceModule::synchronousTransferCounter must be incremented.
+  - \anchor b_2_3_7 2.3.7 If xxxTransferYyy() is not delegated to and it is a read operation, the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref b_2_6_4 "2.6.4").
 
 - \anchor b_2_4 2.4 In doPreRead() certain read operations are frozen (only \ref a_4_2 "A.4.2";  \ref a_2_2_4 "A.2.2.4" does not require an implementation here \ref comment_b_2_4 "(*)"):
-  - 2.4.1 The shared lock on the DeviceModule::errorMutex acquired in \ref b_2_3 "2.3" is still kept.
+  - 2.4.1 The shared lock on the DeviceModule::errorMutex acquired in \ref b_2_3 "2.3" is still kept, or re-acquire it now.
   - 2.4.2 Decide, whether freezing is done (don't freeze yet). Freezing is done if no initial value has been read yet (getCurretVersion() == {nullptr}) and DeviceModule::deviceHasError == true.
   - 2.4.3 Release the DeviceModule::errorMutex.
   - \anchor b_2_4_4 2.4.4 If the read should be frozen, acquire a shared lock on the DeviceModule::initialValueMutex. \ref comment_b_2_4_4 "(*)"
+  - 2.4.5 After the read operation was frozen, it needs to be executed, i.e. preRead/readTransferSynchronously/postRead need to be delegated to (in the corresponding do functions). This is an exception to the condition stated in \ref b_2_3_3 "2.3.3".
 
-- 2.5 In doPostRead()/doPostWrite():
-  - 2.5.1 Delegate to postRead() / postWrite() (see \ref b_2_6 "2.6")
-  - \anchor b_2_5_2 2.5.2 If there was no exception, set ExceptionHandlingDecorator::previousReadFailed = false (cf. \ref b_2_3_1 "2.3.1" and \ref b_2_6_3_1 "2.6.3.1").
-  - \anchor b_2_5_3 2.5.3 In doPostWrite() the RecoveryHelper::wasWritten flag is set (while holding a shared lock on DeviceModule::recoveryMutex) if the write was successful (no exception thrown; data lost flag does not matter here). \ref comment_b_2_5_3 "(*)"
-  - \anchor b_2_5_4 2.5.4 If the DeviceModule::transferCounter was incremented in \ref b_2_3_3 "2.3.3", decrement it. \ref comment_b_2_5_4 "(*)"
-  - \anchor b_2_5_5 2.5.5 In doPostRead(), if no exception was thrown, end overriding the DataValidity returned by the accessor (cf. \ref b_2_6_2 "2.6.2").
+- \anchor b_2_5 2.5 In doXxxTransferYyy(), delegate to xxxTransferYyy(), if it was so decided in \ref b_2_3 "2.3" or \ref b_2_4 "2.4".
 
-- \anchor b_2_6 2.6 In doPostRead()/doPostWrite(), any runtime_error exception thrown by the delegated postRead()/postWrite() is caught \ref comment_b_2_6 "(*)". The following actions are executed in case of an exception:
-  - \anchor b_2_6_1 2.6.1 The error is reported to the DeviceModule via DeviceModule::reportException() (cf. \ref spec_execptionHandling_high_level_implmentation_reportException "B.4"). This automatically sets DeviceModule::deviceHasError to true. From this point on, no new transfers will be started. \ref comment_b_2_6_1 "(*)"
-  - \anchor b_2_6_2 2.6.2 For readable accessors: the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref b_2_5_5 "2.5.5").
-    - 2.6.2.1 The code instantiating the decorator (Application::createDeviceVariable()) has to make sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so the overriden DataValidity flag in case of an exception is properly propagated to the owning module/fan out.
-  - 2.6.3 Action depending on the calling operation:
-    - \anchor b_2_6_3_1 2.6.3.1 All read operations: The ExceptionHandlingDecorator remembers that it is in an exception state by setting ExceptionHandlingDecorator::previousReadFailed = true (cf. \ref b_2_3_1 "2.3.1" and \ref b_2_5_2 "2.5.2")
-    - \anchor b_2_6_3_2 2.6.3.2 read (push-type inputs): return immediately \ref comment_b_2_6_3_1 "(*)"
-    - 2.6.3.3 readNonBlocking / readLatest / read (poll-type inputs): Just return (true in readLatest() by definition in poll type). The calling module thread will continue and propagate the DataValidity::faulty flag (cf. \ref b_2_6_2 "2.6.2").
-    - 2.6.3.4 write: Write will be later executed by the DeviceModule (see \ref b_2_1 "2.1"), hence just return.
+- 2.6 In doPostRead()/doPostWrite():
+  - 2.6.1 Delegate to postRead() / postWrite() (see \ref b_2_7 "2.7"), if it was so decided in \ref b_2_3 "2.3" or \ref b_2_4 "2.4".
+  - \anchor b_2_6_2 2.6.2 In doPostWrite() the RecoveryHelper::wasWritten flag is set (while holding a shared lock on DeviceModule::recoveryMutex) if the write was successful (no exception thrown; data lost flag does not matter here). \ref comment_b_2_6_2 "(*)"
+  - \anchor b_2_6_3 2.6.3 If the DeviceModule::synchronousTransferCounter was incremented in \ref b_2_3_6 "2.3.6", decrement it. \ref comment_b_2_6_3 "(*)"
+  - \anchor b_2_6_4 2.6.4 In doPostRead(), if no exception was thrown and DeviceModule::deviceHasError == false, end overriding the DataValidity returned by the accessor (cf. \ref b_2_7_2 "2.7.2" and \ref b_2_3_7 "2.3.7").
+
+- \anchor b_2_7 2.7 In doPostRead()/doPostWrite(), any runtime_error exception thrown by the delegated postRead()/postWrite() is caught \ref comment_b_2_7 "(*)". The following actions are executed in case of an exception:
+  - \anchor b_2_7_1 2.7.1 The error is reported to the DeviceModule via DeviceModule::reportException() (cf. \ref spec_execptionHandling_high_level_implmentation_reportException "B.4"). This automatically sets DeviceModule::deviceHasError to true. From this point on, no new transfers will be started. \ref comment_b_2_7_1 "(*)"
+  - \anchor b_2_7_2 2.7.2 For read operations: the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref b_2_6_4 "2.6.4").
     
-- 2.7 In the constructor of the decorator, put the name of the register to DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters depending on the direction the accessor is used.
+- 2.8 The constructor of the decorator
+  - 2.8.1 receives the VariableNetworkNode for the device variable, to enable it to create additional, undecorated copies of the register accessor,
+  - 2.8.2 puts the name of the register (from the VariableNetworkNode) to DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters depending on the direction the accessor is used, and
+  - 2.8.3 creates the recovery accessor and initialises the RecoveryHelper object.
+  - 2.8.4 Note: The alias name of the device can be obtained from the VariableNetworkNode, which allows to obtain the corresponding DeviceModule via Application::deviceModuleList (change the list into a map).
+  - 2.8.5 The code instantiating the decorator (Application::createDeviceVariable()) has to make sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so the overriden DataValidity flag in case of an exception is properly propagated to the owning module/fan out (cf. \ref b_2_7_2 "2.7.2" and \ref b_2_3_7 "2.3.7").
+
+- 2.9 In doPostRead() with AccessMode::wait_for_new_data, the initial value after recovery needs to be obtained:
+  - 2.9.1 For the first successful read after a recovery (DeviceModule::deviceHasError == false and was before true, and no new exception) including the very first successful read after application start, the following steps need to be executed:
+  - 2.9.2 Call readLatest() on the target accessor.
+  - 2.9.3 Swap the user buffer of the target accessor with the buffer of the decorator (as in NDRegisterAccessorDecorator::doPostRead()).
+  - 2.9.4 In case of a new exception thrown by readLatest(), perform same steps as in \ref b_2_7 "2.7".
 
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_comments (*) Comments
 
 - \anchor comment_b_2_1 \ref b_2_1 "2.1" Possible future change: Output accessors can have the option not to have a RecoveryHelper. This is needed for instance for "trigger registers" which start an operation on the hardware. Also void registers don't have a RecoveryHelper (once the void data type is supported by ChimeraTK).
 
-- \anchor comment_b_2_1_1 \ref b_2_1_1 "2.1.1" The written flag cannot be replaced by comparing RecoveryHelper::accessor.getCurrentVersion() and RecoveryHelper::versionNumber, because normal writes (without exceptions) would not update the version number of the RecoveryHelper::accessor. The written flag could also be made atomic to avoid acquiring the shared lock in postWrite(), but since the shared lock will never block there (if acquired before counting down the DeviceModule::transferCounter) is probably no benifit in using an atomic here.
+- \anchor comment_b_2_1_1 \ref b_2_1_1 "2.1.1" The written flag cannot be replaced by comparing RecoveryHelper::accessor.getCurrentVersion() and RecoveryHelper::versionNumber, because normal writes (without exceptions) would not update the version number of the RecoveryHelper::accessor. The written flag could also be made atomic to avoid acquiring the shared lock in postWrite(), but since the shared lock will never block there (if acquired before counting down the DeviceModule::synchronousTransferCounter) is probably no benifit in using an atomic here.
 
 - \anchor comment_b_2_1_2 \ref b_2_1_2 "2.1.2" The ordering guarantee cannot work across DeviceModules anyway. Different devices may go offline and recover at different times. Even in case of two DeviceModules which actually refer to the same hardware device there is no synchronisation mechanism which ensures the recovering procedure is done in a defined order.
 
 - \anchor comment_b_2_2_1 \ref b_2_2_1 "2.2.1" Updating the recoveryHelper first ensures that no data is lost, even if the write operation attempt is concurrent with a recovery. See \ref b_1_5_2 "1.5.2".
 
-- \anchor comment_b_2_2_4 \ref b_2_2_4 "2.2.4" Extending the duration of the lock until the decision whether to skip the transfer will prevent unncessary duplicate writes, which otherwise could occur if the DeviceModule went through the whole critical section \ref b_3_3_5 "3.3.5" to \ref b_3_3_10 "3.3.10" in between.
+- \anchor comment_b_2_2_4 \ref b_2_2_4 "2.2.4" Extending the duration of the lock until the decision whether to skip the transfer will prevent unncessary duplicate writes, which otherwise could occur if the DeviceModule went through the whole critical section \ref b_3_3_5 "3.3.5" to \ref b_3_3_10 "3.3.10" in between. Two mutexes have to be shared-locked in \ref b_2_3 "2.3" then at the same time (DeviceModule::recoveryMutex and DeviceModule::errorMutex, which is acquired second). This does not present any risk of dead locks, since the only place where the DeviceModule::errorMutex is unique-locked (see DeviceModule::reportException()) no other mutex is acquired.
+
+- \anchor comment_b_2_3_1 \ref b_2_3_1 "2.3.1" In case of read operations with AccessMode::wait_for_new_data, there is no doXxxTransferYyy() called by the TransferElement. The requirement in \ref a_2_2_4 "A.2.2.4" is fullfilled by the backend implementations, see the TransferElement specification in DeviceAccess.
+
 
 - \anchor comment_b_2_4 \ref b_2_4 "2.4" In A.2.2.4 it was stated that also in case AccessMode::wait_for_new_data is set blocking read transfers are frozen on the second operation. Nothing is to be implemented for this case, the freezing simply relies on having an empty queue in the accessor. Once the device sends data again, the operation is intrinsically unfrozen.
 
-- \anchor comment_b_2_4_4 \ref b_2_4_4 "2.4.4" The transferCounter is already incremeted at this point. It is acceptable to freeze anyway in this case by waiting on the initialValueMutex, because the DeviceModule release the mutex after the first successful recovery and never obtains it again, and this happens before it waits for the transferCounter to become 0 in \ref b_3_3_14 "3.3.14".
+- \anchor comment_b_2_4_4 \ref b_2_4_4 "2.4.4" The synchronousTransferCounter is already incremeted at this point. It is acceptable to freeze anyway in this case by waiting on the initialValueMutex, because the DeviceModule release the mutex after the first successful recovery and never obtains it again, and this happens before it waits for the synchronousTransferCounter to become 0 in \ref b_3_3_14 "3.3.14".
 
-- \anchor comment_b_2_5_3 \ref b_2_5_3 "2.5.3" The RecoveryHelper::wasWritten flag is used to report loss of data. If the loss of data is already reported directly, it should not later be reported again. Hence the written flag is set even if there was a loss of data in this context. Setting the flag is ideally done before decrementing the DeviceModule::transferCounter in \ref b_2_5_4 "2.5.4", because this eliminates the possibility that acquiring the shared lock on the DeviceModule::recoveryMutex could block (exclusive lock is only acquired during recovery, which cannot start before DeviceModule::transferCounter == 0)
+- \anchor comment_b_2_6_2 \ref b_2_6_2 "2.6.2" The RecoveryHelper::wasWritten flag is used to report loss of data. If the loss of data is already reported directly, it should not later be reported again. Hence the written flag is set even if there was a loss of data in this context. Setting the flag is ideally done before decrementing the DeviceModule::synchronousTransferCounter in \ref b_2_6_3 "2.6.3", because this eliminates the possibility that acquiring the shared lock on the DeviceModule::recoveryMutex could block (exclusive lock is only acquired during recovery, which cannot start before DeviceModule::synchronousTransferCounter == 0)
 
-- \anchor comment_b_2_5_4 \ref b_2_5_4 "2.5.4" The state of DeviceModule::deviceHasError does not matter here. The counter always MUST be decreased after a transfer (if it has been incremented in the corresponding preXxx()), whether the transfer failed or not.
+- \anchor comment_b_2_6_3 \ref b_2_6_3 "2.6.3" The state of DeviceModule::deviceHasError does not matter here. The counter always MUST be decreased after a transfer (if it has been incremented in the corresponding preXxx()), whether the transfer failed or not.
 
-- \anchor comment_b_2_6 \ref b_2_6 "2.6" Remember: exceptions from other phases are redirected to the post phase by the TransferElement base class.
+- \anchor comment_b_2_7 \ref b_2_7 "2.7" Remember: exceptions from other phases are redirected to the post phase by the TransferElement base class.
 
-- \anchor comment_b_2_6_1 \ref b_2_6_1 "2.6.1" No transfers will be started in any of the accessors of the device, including this one. This is important to avoid the race condition described in the comment to \ref b_1_5_1 "1.5.1"
-
-- \anchor comment_b_2_6_3_1 \ref b_2_6_3_2 "2.6.3.2" The freezing is done in doPreRead(), see \ref b_2_4 "2.4".
+- \anchor comment_b_2_7_1 \ref b_2_7_1 "2.7.1" No transfers will be started in any of the accessors of the device, including this one. This is important to avoid the race condition described in the comment to \ref b_1_5_1 "1.5.1"
 
 
 \subsection spec_execptionHandling_high_level_implmentation_deviceModule B.3 DeviceModule
@@ -241,7 +249,7 @@ Note: This section defines the internal interface on a low level. Helper functio
   - \anchor b_3_3_6 3.3.6 Call write() on all valid RecoveryHelper::accessor, in the ascending order of the RecoveryHelper::writeOrder.
     - 3.3.6.1 A RecoveryHelper::accessor is considered "valid", if it has already received a value, i.e. RecoveryHelper::versionNumber != {nullptr}
     - 3.3.6.2 If there is an exception, update \c Devices/\<alias\>/message with the error message, release the lock and go back to \ref b_3_3_1 "3.3.1".
-
+  
   - 3.3.7 \c Devices/\<alias\>/status is set to 0 and \c Devices/\<alias\>/message is set to an empty string. \c Devices/\<alias\>/deviceBecameFunctional is written.
   - \anchor b_3_3_8 3.3.8 Clear the DeviceModule::deviceHasError flag to allow the ExceptionHandlingDecorator to execute read/write operations again (cf. \ref b_3_3_12 "3.3.12")
   - \anchor b_3_3_9 3.3.9 Release the DeviceModule::initialValueMutex, if this point is passed for the very first time (was obtained in \ref b_3_2 "3.2", cf. \ref b_2_4_4 "2.4.4"). 
@@ -263,11 +271,14 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 \subsection spec_execptionHandling_high_level_implmentation_reportException B.4 DeviceModule::reportException()
 
-- 4.1 Acquire unique lock on DeviceModule::errorMutex.
+- 4.1 Acquire unique lock on DeviceModule::errorMutex (keep until function returns).
 - 4.2 Just return, if DeviceModule::deviceHasError is already true.
-- 4.3 Set DeviceModule::deviceHasError to true.
+- \anchor b_4_3 4.3 Set DeviceModule::deviceHasError to true \ref comment_b_4_3 "(*)".
 - 4.4 Write exception message to DeviceModule::errorQueue.
 
+\subsubsection spec_execptionHandling_high_level_implmentation_reportException_comments (*) Comments
+
+- \anchor comment_b_4_3 \ref b_4_3 "4.3" See also comment for \ref comment_b_2_7_1 "2.7.1"
 
 \section spec_execptionHandling_known_issues C. Known issues
 
