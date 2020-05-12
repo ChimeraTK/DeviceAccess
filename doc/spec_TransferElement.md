@@ -142,14 +142,16 @@ This documnent is currently still **INCOMPLETE**!
   * 8.5 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals.
   * 8.6 When open() is called on the backend(*), all accessors with AccessMode::wait_for_new_data must get an initial value via doReadTransferAsync() and treat it as if it would have been received.
     * 8.6.1 An initial value must also be read when a TransferElement is created when the backend is already opened.
-  
-* 9. TransferGroup
-  * 9.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
+
+* 9. If one transfer element of a device has seen an exception, all other transfer elements must also throw exceptions until the backend has been recovered (*). As long a ChimeraTK::DeviceBackend::isFunctional() returns false, all transfer elements shall throw when a read/write operation is called.
+
+* 10. TransferGroup
+  * 10.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
   *  [TODO]
 
-* 10. ReadAnyGroup [TODO]
+* 11. ReadAnyGroup [TODO]
 
-* 11 DataConsistencyGroup [TODO]
+* 12. DataConsistencyGroup [TODO]
 
 
 ### (*) Comments ###
@@ -162,6 +164,7 @@ This documnent is currently still **INCOMPLETE**!
 
 * 8.6 Open can be called again on an already opened backend to start error recovery.
 
+* 9. The backend is usually recovered by calling ChimeraTK::DebiceBackend::open(). But it can also recover itself in the background.
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
@@ -246,7 +249,7 @@ This documnent is currently still **INCOMPLETE**!
 
 ### (*) Comments ###
 
-* 5 The NDRegisterAccessorDecorator base class already contains an implementation which does this in doPreXxx() and doPostXxx(). You usually call it from the Decorators implementation, as mentioned in 3.
+* 5. The NDRegisterAccessorDecorator base class already contains an implementation which does this in doPreXxx() and doPostXxx(). You usually call it from the Decorators implementation, as mentioned in 3.
 
 
 ## F. Implementation in the framework (e.g. class TransferElement itself)
