@@ -32,7 +32,7 @@ This documnent is currently still **INCOMPLETE**!
     * ChimeraTK::TransferElement::getVersionNumber()
     * ChimeraTK::TransferElement::dataValidity()
   * 5.2 If not stated otherwise, the term <i>application buffer</i> refers to **all** components of the buffer.
-  * 5.3 The content of the buffer is in read operations and transferred to the device in write operations.
+  * 5.3 The content of the buffer is filled with data from the device in read operations, and transferred to the device in write operations.
   * 5.4 The content of the buffer can always be modified by the application.(*)
 
 * 6. Placeholders are used to summarise various function names:
@@ -74,7 +74,7 @@ This documnent is currently still **INCOMPLETE**!
 
 ### (*) Comments ###
 
-* 5.4 The buffer is accessed by the operatons and must not be changed at this time. As transfer elements are not thread safe (B.1) this means the application will either perform an operation or otherwise change the buffer ad libitum.
+* 5.4 The buffer is accessed by the read/write operatons and must not be changed at this time. As transfer elements are not thread safe (B.1) this means the application will either perform an operation or otherwise change the buffer ad libitum.
 * 6.5 doReadTransferSynchonously() is currently called doReadTransfer(). This should be renamed.
 
 ## B. Behavioural specification ##
@@ -88,37 +88,37 @@ This documnent is currently still **INCOMPLETE**!
   * 3.1 Read operations:
     * 3.1.1 The flag ChimeraTK::AccessMode::wait_for_new_data determines whether the transfer is initiated by the device side (flag is set) or not.
     * 3.1.2 If ChimeraTK::AccessMode::wait_for_new_data is not set, read operations
-      * obtain the <i>current</i> value of the process variable (if possible/applicable by synchronously communicating with the device),
-      * have no information whether the value has changed, and
-      * behave identical whether read(), readNonBlocking() or readLatest() is called, and readNonBlocking() and readLatest() always return true.
-    * 3.1.3 If ChimeraTK::AccessMode::wait_for_new_data is set,
-      * read() blocks until new data has arrived,
-      * readNonBlocking() does not block and instead returns whether new data has arrived or not, and
-      * readLatest() is merely a convenience function which calls readNonBlocking() until no more new data is available.
+      * 3.1.2.1 obtain the <i>current</i> value of the process variable (if possible/applicable by synchronously communicating with the device),
+      * 3.1.2.2 have no information whether the value has changed,
+      * 3.1.2.3 behave identical whether read(), readNonBlocking() or readLatest() is called,
+      * 3.1.2.4 readNonBlocking() and readLatest() always return true.
+    * 3.1.3 If ChimeraTK::AccessMode::wait_for_new_data is set
+      * 3.1.3.1 read() blocks until new data has arrived,
+      * 3.1.3.2 readNonBlocking() does not block and instead returns whether new data has arrived or not,
+      * 3.1.3.3 readLatest() is merely a convenience function which calls readNonBlocking() until no more new data is available.
       
   * 3.2 Write operations
     * 3.2.1 do not distingish on which end the transfer is initiated. The API allows for application-initiated transfers and is compatible with device-initiated transfers as well.
-      * It is guaranteed that the application buffer is still intact after the write operation.
+      * 3.2.1.2 It is guaranteed that the application buffer is still intact after calling TransferElement::write().
     * 3.2.2 can optionally be "destructively", which allows the implementation to destroy content of the application buffer in the process.
-      * Applications can allow this optimisation by using writeDestructively() instead of write().
-      * The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
+      * 3.2.2.1 Applications can allow this optimisation by using writeDestructively() instead of write().
+      * 3.2.2.2 The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
 
 * 4. Stages of an operation initiated by calling xxxYyy()
   * 4.1 preXxx(): calls doPreXxx() of the implementation to allow preparatory work before the actual transfer. doPreXxx() can be empty if nothing is to be done (*)
-    * 4.1.1 preXxx() is part of the operation, not of the actual transfer. In case of reads with AccessMode::wait_for_new_data the transfer is asynchonousy initiated by the device and not connected to the operation. Hence backend implementations usually have an empty doPreWrite(), but decorator-like implementations still can use it to execute preparatory tasks.
   * 4.2 xxxTransferYyy():
     * 4.2.1 readTransfer()
       * If wait_for_new_data is set, it waits until new data has been received and returns
-      * If wait_for_new_data is not set, it calls doReadTransferAsynchrously()
+      * If wait_for_new_data is not set, it calls doReadTransferSynchrously()
     * 4.2.2 readTransferNonBlocking()
       * If wait_for_new_data is set, it returns immediately with the information whether new data has been received
-      * If wait_for_new_data is not set, it calls doReadTransferAsynchrously() and returns true
+      * If wait_for_new_data is not set, it calls doReadTransferSynchrously() and returns true
     * 4.2.3 writeTransferYyy() calls the corresonding doWriteTransferYyy()
     * Transfer implementations do not change the application buffer
   * 4.3 postXxx(): calls doPostXxx() of the implementation to allow follow-up work after the actual transfer.
     * 4.3.1 doPostRead() is the only place where the application buffer may be changed.
 
-* 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are called always in pairs. (*)
+* 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
   * 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::thread_interrupted and boost::numeric::bad_numeric_cast) are thrown (see 6).
   * 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa.
   
@@ -137,13 +137,19 @@ This documnent is currently still **INCOMPLETE**!
     * 8.2.1 If the queue is full, the last written value will be overwritten.
     * 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*)
   * 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value.
-  * 8.4 Due to the asynchronous nature, it is not possible to obtain a valid value before the first device-initiated transfer took place.
-    * Hint: Applications may use an accessor without AccessMode::wait_for_new_data to read the initial value after opening the device.
-  * 8.5 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals.
-  * 8.6 When open() is called on the backend(*), all accessors with AccessMode::wait_for_new_data must get an initial value via doReadTransferAsync() and treat it as if it would have been received.
-    * 8.6.1 An initial value must also be read when a TransferElement is created when the backend is already opened.
+  * 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals.
+  * 8.5 When open() is successfully called on the backend, all accessors with AccessMode::wait_for_new_data must get an initial value via doReadTransferSynchronously() and treat it as if it would have been received.
+    * 8.5.1 An initial value must also be send when a TransferElement is created while the backend is already opened.
 
-* 9. If one transfer element of a device has seen an exception, all other transfer elements must also throw exceptions until the backend has been recovered (*). As long a ChimeraTK::DeviceBackend::isFunctional() returns false, all transfer elements shall throw when a read/write operation is called.
+* 9. If one transfer element of a device has seen an exception, all other transfer elements of the same device must also be aware of this.
+   * 9.1 As soon as an exception has been seen in a transfer element the backend is informed if necessary (to perform 9.2.1)
+   * 9.2 TransferElements with wait_for_new_data == true
+    * 9.2.1 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data is true
+    * 9.2.2 No further data is pushed into the queue until open() has been called successfully in the backend
+    * 9.2.3 The first data on the queue after the exception is the initial value after re-opening the device as described in 8.5 (*)
+   * 9.3 TransferElements with wait_for_new_data == false
+     * 9.2.1 Each call to doReadTransferSynchonously() will throw a runtime error until open() has been called successfully.
+
 
 * 10. TransferGroup
   * 10.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
@@ -162,14 +168,15 @@ This documnent is currently still **INCOMPLETE**!
 
 * 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
-* 8.6 Open can be called again on an already opened backend to start error recovery.
+* 8.5 Open can be called again on an already opened backend to start error recovery.
 
-* 9. The backend is usually recovered by calling ChimeraTK::DebiceBackend::open(). But it can also recover itself in the background.
+* 9.2.3 As the asynchonous mechanism and the call to doReadTransferSynchronously() are two idependent channels there are potential race condition, depending on the exact protocol.
+  The backend has to avoid this if possible. If it cannot be avoided the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
 * 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error, boost::thread_interrupted and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
-* 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. *Only* exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see A.6.3) may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw these exceptions in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls).
+* 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. *Only* exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw these exceptions in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls).
 
 * 3. boost::thread_interrupted may be thrown at any stage, if TransferElement::interrupt has been called.
 
