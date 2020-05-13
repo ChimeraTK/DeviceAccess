@@ -182,19 +182,13 @@ Note: This section defines the internal interface on a low level. Helper functio
 - \anchor b_2_7 2.7 In doPostRead()/doPostWrite(), any runtime_error exception thrown by the delegated postRead()/postWrite() is caught \ref comment_b_2_7 "(*)". The following actions are executed in case of an exception:
   - \anchor b_2_7_1 2.7.1 The error is reported to the DeviceModule via DeviceModule::reportException() (cf. \ref spec_execptionHandling_high_level_implmentation_reportException "B.4"). This automatically sets DeviceModule::deviceHasError to true. From this point on, no new transfers will be started. \ref comment_b_2_7_1 "(*)"
   - \anchor b_2_7_2 2.7.2 For read operations: the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref b_2_6_4 "2.6.4").
-    
+
 - 2.8 The constructor of the decorator
   - 2.8.1 receives the VariableNetworkNode for the device variable, to enable it to create additional, undecorated copies of the register accessor,
   - 2.8.2 puts the name of the register (from the VariableNetworkNode) to DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters depending on the direction the accessor is used, and
   - 2.8.3 creates the recovery accessor and initialises the RecoveryHelper object.
   - 2.8.4 Note: The alias name of the device can be obtained from the VariableNetworkNode, which allows to obtain the corresponding DeviceModule via Application::deviceModuleList (change the list into a map).
   - 2.8.5 The code instantiating the decorator (Application::createDeviceVariable()) has to make sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so the overriden DataValidity flag in case of an exception is properly propagated to the owning module/fan out (cf. \ref b_2_7_2 "2.7.2" and \ref b_2_3_7 "2.3.7").
-
-- 2.9 In doPostRead() with AccessMode::wait_for_new_data, the initial value after recovery needs to be obtained:
-  - 2.9.1 For the first successful read after a recovery (DeviceModule::deviceHasError == false and was before true, and no new exception) including the very first successful read after application start, the following steps need to be executed:
-  - 2.9.2 Call readLatest() on the target accessor.
-  - 2.9.3 Swap the user buffer of the target accessor with the buffer of the decorator (as in NDRegisterAccessorDecorator::doPostRead()).
-  - 2.9.4 In case of a new exception thrown by readLatest(), perform same steps as in \ref b_2_7 "2.7".
 
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_comments (*) Comments
 
