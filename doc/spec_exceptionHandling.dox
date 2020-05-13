@@ -156,7 +156,7 @@ Note: This section defines the internal interface on a low level. Helper functio
   - \anchor b_2_2_4 2.2.4 The check whether to skip the transfer (cf. \ref b_2_3 "2.3") has to be done without releasing the lock between the update of the RecoveryHelper and the check. \ref comment_b_2_2_4 "(*)"
 
 - \anchor b_2_3 2.3 In doPreRead()/doPreWrite(), it must be decided whether to delegate to xxxTransferYyy() in doXxxTransferYyy() (cf. \ref b_2_5 "2.5").
-  - \anchor b_2_3_1 2.3.1 This is only applicable to read operations without AccessMode::wait_for_new_data and write operations \ref comment_b_2_3_1 "(*)".
+  - \anchor b_2_3_1 2.3.1 This is only applicable to read operations without AccessMode::wait_for_new_data, and to write operations \ref comment_b_2_3_1 "(*)".
   - 2.3.2 This part requires a shared lock on the DeviceModule::errorMutex.
   - \anchor b_2_3_3 2.3.3 xxxTransferYyy() is only delegated to, if DeviceModule::deviceHasError == false (cf. \ref a_2_3 "A.2.3" and \ref a_2_2_3 "A.2.2.3").
   - 2.3.4 The read operation might be frozen before xxxTransferYyy() is delegated to, see \ref b_2_4 "2.4".
