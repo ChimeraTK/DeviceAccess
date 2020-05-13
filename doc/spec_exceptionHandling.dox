@@ -44,7 +44,7 @@ When the device is functional, it be (re)initialised by using application-define
   - \anchor a_2_3 2.3 Write operations will be _delayed_ until the device is fully recovered again (cf. \ref a_3_1 "3.1").
     - 2.3.1 In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering.
     - \anchor a_2_3_2 2.3.2 The same mechanism as used for \ref a_3_1_2 "3.1.2" is used here, hence the order of write operations is guaranteed across accessors, but only the latest written value of each accessor prevails. \ref comment_a_2_3_2 "(*)"
-    - 2.3.3 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true, if a previously delayed and not-yet written value is discarded in the process, false otherwise.
+    - 2.3.3 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true if a previously delayed and not-yet written value is discarded in the process, false otherwise.
     - 2.3.4 When the delayed value is finally written to the device during the recovery procedure, it is guaranteed that no data loss happens (writes with data loss will be retried).
     - 2.3.5 It is guaranteed that the write takes place before the device is considered fully recovered again and other transfers are allowed (cf. \ref a_3_1 "3.1").
   - \anchor a_2_4 2.4 In case of exceptions, there is no guaranteed realtime behaviour, not even for "non-blocking" transfers. \ref comment_a_2_4 "(*)"
@@ -53,13 +53,13 @@ When the device is functional, it be (re)initialised by using application-define
   - \anchor a_3_1 3.1 After successfully re-opening the device, a recovery procedure is executed before allowing any read/write operations from the ApplicationModules and FanOuts again. This recovery procedure involves:
     - 3.1.1 the execution of so-called initialisation handlers (see \ref a_3_2 "3.2"), and
     - \anchor a_3_1_2 3.1.2 restoring all registers that have been written since the start of the application with their latest values. The register values are restored in the same order they were written. \ref comment_a_3_1_2 "(*)"
-    - 3.1.3 The asynchronous read transfers of the device will be (re-)activated by calling Device::activateAsyncReads().
+    - 3.1.3 The asynchronous read transfers of the device are (re-)activated by calling Device::activateAsyncReads().
     - \anchor a_3_1_4 3.1.4 Finally, \c Devices/\<alias\>/deviceBecameFunctional is written to inform any module subscribing to this variable about the finished recovery. \ref comment_a_3_1_4 "(*)"
   - \anchor a_3_2 3.2 Any number of initialisation handlers can be added to the DeviceModule in the user code. Initialisation handlers are callback functions which will be executed when a device is opened for the first time and after a device recovers from an exception, before any application-initiated transfers are executed (including delayed write transfers). See DeviceModule::addInitialisationHandler().
 
 - 4. The behaviour at application start (at which all devices are still closed at first) is similar to the case of a later received exception. The only differences are mentioned in \ref a_4_2 "4.2".
   - 4.1 Even if some devices are initially in a persisting error state, the part of the application which does not interact with the faulty devices starts and works normally.
-  - \anchor a_4_2 4.2 Initial values are correctly propagated after a device is opened. See the \link spec_initialValuePropagation Technical specification: propagation of initial values\endlink. Especially, all read operations (even readNonBlocking/readLatest) will be _frozen_ until an initial value has been successfully read. \ref comment_a_4_2 "(*)"
+  - \anchor a_4_2 4.2 Initial values are correctly propagated after a device is opened. See the \link spec_initialValuePropagation Technical specification: propagation of initial values\endlink. Especially, all read operations (even readNonBlocking/readLatest or without AccessMode::wait_for_new_data) will be _frozen_ until an initial value has been successfully read. \ref comment_a_4_2 "(*)"
 
 - \anchor a_5 5. Any ApplicationModule can explicitly report a problem with the device by calling DeviceModule::reportException(). This allows the reinitialisation of a device e.g. after a reboot of the device which didn't result in an exception (e.g. because it was too quick to be noticed, or rebooting the device takes place without interrupting the communication).
 
