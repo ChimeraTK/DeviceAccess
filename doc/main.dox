@@ -17,8 +17,9 @@ Examples:
 \li \ref statusmonitordoc
 
 Technical specifications:
-- \subpage spec_initialValuePropagation
 - \subpage spec_execptionHandling
+- \subpage spec_initialValuePropagation
+- \subpage spec_dataValidityPropagation
 - \subpage spec_StatusAggregator
 
 */
