@@ -106,23 +106,23 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - 1.4 The cppext::future_queue DeviceModule::errorQueue
   - 1.4.1 is used by the ExceptionHandlingDecorator to inform the DeviceModule about new exceptions.
+
+- 1.5 DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters
+  - 1.5.1 are used to check that all used registers are existing and have the right direction after (re-)opening the device.
+  - 1.5.2 No lock for accessing is required, since the lists are filled in the constructors of the ExceptionHandlingDecorator and in the following only used by the DeviceModule thread.
   
-- 1.5 The following mutexes govern critical sections (besides variable access listed above):
-  - \anchor b_1_5_1 1.5.1 DeviceModule::errorMutex protects \ref comment_b_1_5_1 "(*)"
+- 1.6 The following mutexes govern critical sections (besides variable access listed above):
+  - \anchor b_1_6_1 1.6.1 DeviceModule::errorMutex protects \ref comment_b_1_6_1 "(*)"
     - the (positive) decision to start a transfer followed by incrementing the DeviceModule::synchronousTransferCounter in \ref b_2_3_3 "2.3.3" to \ref b_2_3_6 "2.3.6", against
     - setting DeviceModule::deviceHasError flag in \ref b_2_7_1 "2.7.1".
 
-  - \anchor b_1_5_2 1.5.2 DeviceModule::recoveryMutex protects \ref comment_b_1_5_2 "(*)"
+  - \anchor b_1_6_2 1.6.2 DeviceModule::recoveryMutex protects \ref comment_b_1_6_2 "(*)"
     - writing the DeviceModule::recoveryHelpers to the device and clearing the DeviceModule::deviceHasError flag in \ref b_3_3_6 "3.3.6" to \ref b_3_3_8 "3.3.8", against
     - updating the DeviceModule::recoveryHelpers in \ref b_2_2 "2.2" and deciding whether to skip the write operation in \ref b_2_3 "2.3".
 
-  - \anchor b_1_5_3 1.5.3 DeviceModule::initialValueMutex protects \ref comment_b_1_5_3 "(*)"
+  - \anchor b_1_6_3 1.6.3 DeviceModule::initialValueMutex protects \ref comment_b_1_6_3 "(*)"
     - the start of a read operation of an initial value in \ref b_2_4_4 "2.4.4", against
     - the setup phase of a device until it has been opened and recovered for the very first time in \ref b_3_1 "3.1" to \ref b_3_3_10 "3.3.10".
-
-- 1.6 DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters
-  - 1.6.1 are used to check that all used registers are existing and have the right direction after (re-)opening the device.
-  - 1.6.2 No lock for accessing is required, since the lists are filled in the constructors of the ExceptionHandlingDecorator and in the following only used by the DeviceModule thread.
 
 
 \subsubsection spec_execptionHandling_high_level_implmentation_interface_comments (*) Comments
@@ -131,11 +131,11 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - \anchor comment_b_1_3_2 \ref b_1_3_2 "1.3.2" A shared lock (in contrast to an exclusive lock) is used for the same reasons as in \ref b_1_2 "1.2".
 
-- \anchor comment_b_1_5_1 \ref b_1_5_1 "1.5.1" This prevents a race condition in \ref b_3_3_15 "3.3.15". If a (synchronous) transfer might be started after DeviceModule::deviceHasError has been set, the barrier for new transfers in \ref b_3_3_15 "3.3.15" would not be effective and the transfer might be even executed only after the device has been re-openend (\ref b_3_3_1 "3.3.1") but before the recovery is complete.
+- \anchor comment_b_1_6_1 \ref b_1_6_1 "1.6.1" This prevents a race condition in \ref b_3_3_15 "3.3.15". If a (synchronous) transfer might be started after DeviceModule::deviceHasError has been set, the barrier for new transfers in \ref b_3_3_15 "3.3.15" would not be effective and the transfer might be even executed only after the device has been re-openend (\ref b_3_3_1 "3.3.1") but before the recovery is complete.
 
-- \anchor comment_b_1_5_2 \ref b_1_5_2 "1.5.2" This prevents data loss due to a race condition. If the ExceptionHandlingDecorator would update the corresponding DeviceModule::RecoveryHelpers list entry only after it has been written to the device in \ref b_3_3_6 "3.3.6", but the ExceptionHandlingDecorator would decide not to execute the write operation (\ref b_2_3 "2.3") because the DeviceModule thread is still before \ref b_3_3_8 "3.3.8", the data would not be written to the device at all.
+- \anchor comment_b_1_6_2 \ref b_1_6_2 "1.6.2" This prevents data loss due to a race condition. If the ExceptionHandlingDecorator would update the corresponding DeviceModule::RecoveryHelpers list entry only after it has been written to the device in \ref b_3_3_6 "3.3.6", but the ExceptionHandlingDecorator would decide not to execute the write operation (\ref b_2_3 "2.3") because the DeviceModule thread is still before \ref b_3_3_8 "3.3.8", the data would not be written to the device at all.
 
-- \anchor comment_b_1_5_3 \ref b_1_5_3 "1.5.3" This implements freezing reads until the initial value can be read, cf. \ref a_4_2 "A.4.2".
+- \anchor comment_b_1_6_3 \ref b_1_6_3 "1.6.3" This implements freezing reads until the initial value can be read, cf. \ref a_4_2 "A.4.2".
 
 
 \subsection spec_execptionHandling_high_level_implmentation_decorator B.2 ExceptionHandlingDecorator
@@ -204,7 +204,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - \anchor comment_b_2_1_2 \ref b_2_1_2 "2.1.2" The ordering guarantee cannot work across DeviceModules anyway. Different devices may go offline and recover at different times. Even in case of two DeviceModules which actually refer to the same hardware device there is no synchronisation mechanism which ensures the recovering procedure is done in a defined order.
 
-- \anchor comment_b_2_2_1 \ref b_2_2_1 "2.2.1" Updating the recoveryHelper first ensures that no data is lost, even if the write operation attempt is concurrent with a recovery. See \ref b_1_5_2 "1.5.2".
+- \anchor comment_b_2_2_1 \ref b_2_2_1 "2.2.1" Updating the recoveryHelper first ensures that no data is lost, even if the write operation attempt is concurrent with a recovery. See \ref b_1_6_2 "1.6.2".
 
 - \anchor comment_b_2_2_4 \ref b_2_2_4 "2.2.4" Extending the duration of the lock until the decision whether to skip the transfer will prevent unncessary duplicate writes, which otherwise could occur if the DeviceModule went through the whole critical section \ref b_3_3_5 "3.3.5" to \ref b_3_3_11 "3.3.11" in between. Two mutexes have to be shared-locked in \ref b_2_3 "2.3" then at the same time (DeviceModule::recoveryMutex and DeviceModule::errorMutex, which is acquired second). This does not present any risk of dead locks, since the only place where the DeviceModule::errorMutex is unique-locked (see DeviceModule::reportException()) no other mutex is acquired.
 
@@ -221,7 +221,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - \anchor comment_b_2_7 \ref b_2_7 "2.7" Remember: exceptions from other phases are redirected to the post phase by the TransferElement base class.
 
-- \anchor comment_b_2_7_1 \ref b_2_7_1 "2.7.1" No transfers will be started in any of the accessors of the device, including this one. This is important to avoid the race condition described in the comment to \ref b_1_5_1 "1.5.1"
+- \anchor comment_b_2_7_1 \ref b_2_7_1 "2.7.1" No transfers will be started in any of the accessors of the device, including this one. This is important to avoid the race condition described in the comment to \ref b_1_6_1 "1.6.1"
 
 
 \subsection spec_execptionHandling_high_level_implmentation_deviceModule B.3 DeviceModule
