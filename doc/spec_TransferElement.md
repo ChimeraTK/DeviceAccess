@@ -140,8 +140,8 @@ This documnent is currently still **INCOMPLETE**!
   * 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals.
   * 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend does not fill any
     data into the queue until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are send. We call this *asyncronous read is not activated* for these transfer elements.
-      * 8.5.1 When  Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set.
-      * 8.5.2 When asyncronous read is activated in a transfer elememt, it must get an initial value via doReadTransferSynchronously() and treat it as if it would have been received, i.e. push it to the queue.
+      * 8.5.1 When  Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set (*).
+      * 8.5.2 When asyncronous read is activated in a transfer elememt, it must get an initial value via doReadTransferSynchronously() and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronus sending has been turned on to make sure no update is missed. (*)
       * 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronus read is activated automatically (incl. sending of the initial value). This happens  even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and  Device::activateAsyncRead() has not been called yet.
       * 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect (*).
 
@@ -174,14 +174,14 @@ This documnent is currently still **INCOMPLETE**!
 * 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
 * 8.5 Device::open() does not automatically activate the asyncronous sending because the device might need some initalisation setting to produce valid data (for example setting the correct ADC range). By delaing the activation of asyncronous reads the application has the possibility to do the initialisation before the first data is being send, and can avoid invalid initial values on the process variables.
+* 8.5.1 Conceptually activating an asyncronous read is like subscribing a variable, and deacticating it is like unsubscribing a variable in a publish-subscribe pattern. The actual implementation depends on the details of the protocols.
+* 8.5.2 As the asynchonous mechanism and the call to doReadTransferSynchronously() are two idependent channels there are potential race condition, depending on the exact protocol.
+  The backend has to avoid this if possible. If it cannot be avoided the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
 * 8.5.4 You cannot throw a logic error because a working device might have crashed right before you call the activate function, which can never be avoided. It is not a logic error. There is no need to throw runtime errors. The transfer elements will transport these exceptions.
 
 * 9. It does not matter if the exception occured in an asynchronous or synchronous read, or in a write operation.
 * 9.2.1 If an asynchronous read transfer is the first one to detect the exception the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put onto the queue.
 * 9.2.2 Open can be called again on an already opened backend to start error recovery.
-
-* 9.2.3 As the asynchonous mechanism and the call to doReadTransferSynchronously() are two idependent channels there are potential race condition, depending on the exact protocol.
-  The backend has to avoid this if possible. If it cannot be avoided the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
