@@ -138,17 +138,22 @@ This documnent is currently still **INCOMPLETE**!
     * 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*)
   * 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value.
   * 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals.
-  * 8.5 When open() is successfully called on the backend, all accessors with AccessMode::wait_for_new_data must get an initial value via doReadTransferSynchronously() and treat it as if it would have been received.
-    * 8.5.1 An initial value must also be send when a TransferElement is created while the backend is already opened.
+  * 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend does not fill any
+    data into the queue until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are send. We call this *asyncronous read is not activated* for these transfer elements.
+      * 8.5.1 When  Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set.
+      * 8.5.2 When asyncronous read is activated in a transfer elememt, it must get an initial value via doReadTransferSynchronously() and treat it as if it would have been received, i.e. push it to the queue.
+      * 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronus read is activated automatically (incl. sending of the initial value). This happens  even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and  Device::activateAsyncRead() has not been called yet.
+      * 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect (*).
 
-* 9. If one transfer element of a device has seen an exception, all other transfer elements of the same device must also be aware of this.
-   * 9.1 As soon as an exception has been seen in a transfer element the backend is informed if necessary (to perform 9.2.1)
-   * 9.2 TransferElements with wait_for_new_data == true
-    * 9.2.1 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data is true
-    * 9.2.2 No further data is pushed into the queue until open() has been called successfully in the backend
-    * 9.2.3 The first data on the queue after the exception is the initial value after re-opening the device as described in 8.5 (*)
-   * 9.3 TransferElements with wait_for_new_data == false
-     * 9.2.1 Each call to doReadTransferSynchonously() will throw a runtime error until open() has been called successfully.
+* 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
+   * 9.1 As soon as an exception has been seen in a transfer element, the backend is informed if necessary (to perform 9.2.1 and 9.2.2, and ensure 9.3 and 9.4)
+   * 9.2 TransferElements with wait_for_new_data flag
+    * 9.2.1 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data is true (*).
+    * 9.2.2 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
+    * 9.2.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead().
+   * 9.3 TransferElements without wait_for_new_data
+     * 9.2.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
+   * 9.4 Write operations will throw  a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully.
 
 
 * 10. TransferGroup
@@ -168,7 +173,12 @@ This documnent is currently still **INCOMPLETE**!
 
 * 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
-* 8.5 Open can be called again on an already opened backend to start error recovery.
+* 8.5 Device::open() does not automatically activate the asyncronous sending because the device might need some initalisation setting to produce valid data (for example setting the correct ADC range). By delaing the activation of asyncronous reads the application has the possibility to do the initialisation before the first data is being send, and can avoid invalid initial values on the process variables.
+* 8.5.4 You cannot throw a logic error because a working device might have crashed right before you call the activate function, which can never be avoided. It is not a logic error. There is no need to throw runtime errors. The transfer elements will transport these exceptions.
+
+* 9. It does not matter if the exception occured in an asynchronous or synchronous read, or in a write operation.
+* 9.2.1 If an asynchronous read transfer is the first one to detect the exception the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put onto the queue.
+* 9.2.2 Open can be called again on an already opened backend to start error recovery.
 
 * 9.2.3 As the asynchonous mechanism and the call to doReadTransferSynchronously() are two idependent channels there are potential race condition, depending on the exact protocol.
   The backend has to avoid this if possible. If it cannot be avoided the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
@@ -238,8 +248,7 @@ This documnent is currently still **INCOMPLETE**!
 
 ### (*) Comments ###
 
-1.2 Either the currently pushed data or older data on the queue might be discarded. In any case there will be one call less to ChimeraTK::TransferElement::doPostRead(), because the number of entries in the queue could not be increased because it was full.
-
+1.2 Either the currently pushed data or older data on the queue might be discarded. In any case there will be one call less to ChimeraTK::TransferElement::doPostRead(), because the number of entries in the queue could not be increased because it was full
 ## E. Requirements for decorator-like implementations ##
 
 * 1. If ChimeraTK::AccessMode::wait_for_new_data is specified, ChimeraTK::TransferElement::readQueue is initialised in the constructor with a copy of the readQueue of the target TransferElement.
