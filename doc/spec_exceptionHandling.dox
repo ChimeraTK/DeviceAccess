@@ -257,9 +257,10 @@ Note: This section defines the internal interface on a low level. Helper functio
 
   - \anchor c_3_3_5 3.3.5 Obtain unique lock on DeviceModule::recoveryMutex.
 
-  - \anchor c_3_3_6 3.3.6 Call write() on all valid RecoveryHelper::accessor, in the ascending order of the RecoveryHelper::writeOrder.
+  - \anchor c_3_3_6 3.3.6 Call write() on all valid RecoveryHelper::accessor using RecoveryHelper::versionNumber, in the ascending order of the RecoveryHelper::writeOrder.
     - 3.3.6.1 A RecoveryHelper::accessor is considered "valid", if it has already received a value, i.e. RecoveryHelper::versionNumber != {nullptr}
     - 3.3.6.2 If there is an exception, update \c Devices/\<alias\>/message with the error message, release the lock and go back to \ref c_3_3_1 "3.3.1".
+    - 3.3.6.3 If successful, set RecoveryHelper::wasWritten to true.
   
   - 3.3.7 \c Devices/\<alias\>/status is set to 0 and \c Devices/\<alias\>/message is set to an empty string. \c Devices/\<alias\>/deviceBecameFunctional is written.
   - \anchor c_3_3_8 3.3.8 Clear the DeviceModule::deviceHasError flag to allow the ExceptionHandlingDecorator to execute read/write operations again (cf. \ref c_3_3_13 "3.3.13")
@@ -269,16 +270,16 @@ Note: This section defines the internal interface on a low level. Helper functio
   - 3.3.12 The DeviceModuleThread waits for the next reported exception.
   - \anchor c_3_3_13 3.3.13 An exception is received. The call to reportException (cf. \ref spec_execptionHandling_high_level_implmentation_reportException "C.4") in the other thread has already set deviceHasError to true \ref comment_c_3_3_13 "(*)". From this point on, no new transfers will be started.
   - 3.3.14 \c Devices/\<alias\>/status is set to 1 and \c Devices/\<alias\>/message is set to the first received exception message.
-  - \anchor c_3_3_15 3.3.15 The device module waits until all running read and write operations of ExceptionHandlingDecorators have ended (wait until DeviceModule::activeTransfers == 0). \ref comment_c_3_3_15 "(*)"
+  - \anchor c_3_3_15 3.3.15 The device module waits until all running synchronous read and write operations of ExceptionHandlingDecorators have ended (wait until DeviceModule::synchronousTransferCounter == 0). \ref comment_c_3_3_15 "(*)"
   - 3.3.16 The thread goes back to \ref c_3_3_1 "3.3.1" and tries to re-open the device.
 
 \subsubsection spec_execptionHandling_high_level_implmentation_deviceModule_comments (*) Comments
 
-- \anchor comment_c_3_3_2 \ref c_3_3_2 "3.3.2" The exact place when this is done does not matter, as long as it is done after \ref c_3_3_15 "3.3.15" (no ongoing synchronous transfers) and before \ref c_3_3_8 "3.3.8" (resetting deiveHasError). As soon as deviceHasError is cleared new exceptions can be reported, which would be lost if the list was cleared afterwards. Moving it as early as possible after the device has been reopenend has the (slight) advantage, that exceptions which might be reported by asynchronous transfers during the recovery are not discarded, even if the recovery itself does't catch them for some reason. Since exceptions reported by asynchronous transfers are subject to race conditions with the recovery procedure, there cannot be strict guarantees about the behaviour. The optimal place where to reset the queue (to minimise unnecessary recoveries while minimising the probability of rejecting true errors which then need to be found instead later by other transfers) might need to be found in real-life experiments later.
+- \anchor comment_c_3_3_2 \ref c_3_3_2 "3.3.2" The exact place when this is done does not matter, as long as it is done after \ref c_3_3_15 "3.3.15" (no ongoing synchronous transfers) and before \ref c_3_3_8 "3.3.8" (resetting deciveHasError). As soon as DeviceModule::deviceHasError is cleared, new exceptions can be reported, which would be lost if the list was cleared afterwards. As DeviceModule::reportException() will only write to the exception queue if DeviceModule::deviceHasError is true, and then sets DeviceModule::deviceHasError to true while holding a lock, there will only be one exception in the queue anyway. There are race conditions if exceptions reported by the backend from the same error arrive late. It can trigger a second, unnecessary recovery. But an exception cannot be missed if the error queue is cleared before resetting DeviceModule::deviceHasError.
 
-- \anchor comment_c_3_3_13 \ref c_3_3_13 "3.3.13" Setting the DeviceModule::deviceHasError flag has to be done in the application thread which has caught the exception. If you just send a message and let the device module do both setting and clearing of the flag you can have a race condition: A blocking read would inform the DeviceModule about an exception and continue. The next call to the blocking read is supposed to freeze, but pre-read might not detect this because the device module thread has not woken up yet to set the error flag.
+- \anchor comment_c_3_3_13 \ref c_3_3_13 "3.3.13" Setting the DeviceModule::deviceHasError flag has to be done in the application thread which has caught the exception. If you just send a message and let the device module do both setting and clearing of the flag you can have a race condition: Another accessor can still start a transfer until the DeviceModule has woken up and set the flag, which can be avoided. Note that the original, severe race condition that let to this design (the same thread would not freeze because the desicion to do so was done in pre-read) does not exist any more since the backend has taken over the responsibility not to send any new data to the queue after an exception has been reported.
 
-- \anchor comment_c_3_3_15 \ref c_3_3_15 "3.3.15" The backend has to take care that all operations, also the blocking/asynchronous reads with "waitForNewData", terminate when an exception is thrown, so recovery can take place (see DeviceAccess TransferElement specification).
+- \anchor comment_c_3_3_15 \ref c_3_3_15 "3.3.15" The backend takes care that after an exception all transfer elements with "waitForNewData" will not start new asynchronous transfers until they have been re-activated with Device::activateAsyncReads() (see DeviceAccess TransferElement specification).
 
 
 \subsection spec_execptionHandling_high_level_implmentation_reportException C.4 DeviceModule::reportException()
