@@ -51,13 +51,10 @@ This documnent is currently still **INCOMPLETE**!
   * 6.4 xxxTransferYyy(), private
     * ChimeraTK::TransferElement::readTransfer()
     * ChimeraTK::TransferElement::readTransferNonBlocking()
-    * <strike>ChimeraTK::TransferElement::readTransferLatest()</strike>
     * ChimeraTK::TransferElement::writeTransfer()
     * ChimeraTK::TransferElement::writeTransferDestructively()
   * 6.5 doXxxTransferYyy()
     * ChimeraTK::TransferElement::doReadTransferSynchonously(), pure virtual (*)
-    * <strike>ChimeraTK::TransferElement::doReadTransferNonBlocking()</strike>
-    * <strike>ChimeraTK::TransferElement::doReadTransferLatest()</strike>
     * ChimeraTK::TransferElement::doWriteTransfer(), pure virtual
     * ChimeraTK::TransferElement::doWriteTransferDestructively(), virtual
   * 6.6 postXxx(), private
@@ -116,7 +113,7 @@ This documnent is currently still **INCOMPLETE**!
     * 4.2.3 writeTransferYyy() calls the corresonding doWriteTransferYyy()
     * Transfer implementations do not change the application buffer
   * 4.3 postXxx(): calls doPostXxx() of the implementation to allow follow-up work after the actual transfer.
-    * 4.3.1 doPostRead() is the only place where the application buffer may be changed.
+    * 4.3.1 In read transfers doPostRead() is the only place where the application buffer may be changed (*).
 
 * 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
   * 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::thread_interrupted and boost::numeric::bad_numeric_cast) are thrown (see 6).
@@ -141,17 +138,17 @@ This documnent is currently still **INCOMPLETE**!
   * 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend does not fill any
     data into the queue until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are send. We call this *asyncronous read is not activated* for these transfer elements.
       * 8.5.1 When  Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set (*).
-      * 8.5.2 When asyncronous read is activated in a transfer elememt, it must get an initial value synchronously and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronus sending has been turned on to make sure no update is missed. (*)
-      * 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronus read is activated automatically (incl. sending of the initial value). This happens  even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and  Device::activateAsyncRead() has not been called yet.
+      * 8.5.2 When asyncronous read is activated in a transfer elememt, it must get an initial value synchronously and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronous sending has been turned on to make sure no update is missed. (*)
+      * 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronous read is activated automatically (incl. sending of the initial value). This happens  even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and  Device::activateAsyncRead() has not been called yet.
       * 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
       * 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
 
 * 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    * 9.1 TransferElements with wait_for_new_data flag
     * 9.1.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
-    * 9.1.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data is true (*). This must happen after
+    * 9.1.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after
       9.1.1. to avoid race conditions.
-    * 9.1.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead().
+    * 9.1.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
    * 9.2 TransferElements without wait_for_new_data
      * 9.2.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
    * 9.3 Write operations will throw  a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully.
@@ -169,6 +166,8 @@ This documnent is currently still **INCOMPLETE**!
 
 * 4.1 preXxx() is part of the operation, not of the actual transfer. In case of reads with AccessMode::wait_for_new_data the transfer is asynchonousy initiated by the device and not connected to the operation. Hence backend implementations usually have an empty doPreWrite(), but decorator-like implementations still can use it to execute preparatory tasks.
 
+* 4.3.1 In write operations the buffer might be swapped out in doPreRead() and swapped back in doPostRead() to restore it for non-destructive read operations to avoid copying of large arrays.
+
 * 5. Reason: It might be that the user buffer has to be swapped out during the transfer (while taking away the ownership of the calling code), and this must be restored in the postXxx action.
 
 * 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
@@ -176,11 +175,11 @@ This documnent is currently still **INCOMPLETE**!
 * 8.5 Device::open() does not automatically activate the asyncronous sending because the device might need some initalisation setting to produce valid data (for example setting the correct ADC range). By delaing the activation of asyncronous reads the application has the possibility to do the initialisation before the first data is being send, and can avoid invalid initial values on the process variables.
 * 8.5.1 Conceptually activating an asyncronous read is like subscribing a variable, and deacticating it is like unsubscribing a variable in a publish-subscribe pattern. The actual implementation depends on the details of the protocols.
 * 8.5.2 As the asynchonous mechanism and a synchronous read are two idependent channels there are potential race condition, depending on the exact protocol.
-  The backend has to avoid this if possible. If it cannot be avoided the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
+  The backend has to avoid this if possible. If it cannot be avoided, the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
 
 * 9. It does not matter if the exception occured in an asynchronous or synchronous read, or in a write operation.
 * 9.1.1 Open can be called again on an already opened backend to start error recovery.
-* 9.1.2 If an asynchronous read transfer is the first one to detect the exception the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put onto the queue.
+* 9.1.2 If an asynchronous read transfer is the first one to detect the exception, the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put into the queue.
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
