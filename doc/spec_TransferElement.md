@@ -271,15 +271,15 @@ This documnent is currently still **INCOMPLETE**!
 
 **Note:** This section is biased by the current implementation and mostly lists parts that needs to be changed!
 
-* 1. The TransferFuture will be kept as is for now to provide backwards compatibility and as a helper to the TransferElement implementation.
+* 1. **FIXME: Might be wrong witht the re-introduction of readTransferNonBlocking:** The TransferFuture will be kept as is for now to provide backwards compatibility and as a helper to the TransferElement implementation.
 
 * 2. TransferElement
 
   * 2.1 ChimeraTK::TransferElement::readAsync() is deprecated
   
-  * 2.2 ChimeraTK::TransferElement::activeFuture is created in the first call to read(), readNonBlockig() or readAsync() from ChimeraTK::TransferElement::readQueue if ChimeraTK::AccessMode::wait_for_new_data is set.
+  * 2.2 **FIXME: Might be wrong with the re-introduction of readTransferNonBlocking:** ChimeraTK::TransferElement::activeFuture is created in the first call to read(), readNonBlockig() or readAsync() from ChimeraTK::TransferElement::readQueue if ChimeraTK::AccessMode::wait_for_new_data is set.
   
-  * 2.3 read(), readNonBlocking() first check whether ChimeraTK::AccessMode::wait_for_new_data is set.
+  * 2.3 **FIXME: This is wrong with the re-introduction of readTransferNonBlocking:** read(), readNonBlocking() first check whether ChimeraTK::AccessMode::wait_for_new_data is set.
     * 2.3.1 If no, the sequence of preRead(), readTransfer() and postRead() is executed (cf. 3).
     * 2.3.1 If yes, implement read() as a sequence of preRead() and activeFuture.wait(), resp. readNonBlocking() as a sequence of preRead(), followed by activeFuture.wait() only if activeFuture.hasNewData() == true.
   
