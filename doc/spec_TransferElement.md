@@ -232,7 +232,7 @@ This documnent is currently still **INCOMPLETE**!
 * 6.2 Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
 * 6.2.1.1 It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
 * 6.2.1.2 If a backend cannot decide the existence of a register in the accessor's constructor (because there is no map file or such, and the backend might be closed), it needs to check the presence later. If the information is available in the constructor, the check has to be done there.
-* 6.2.2 This also includes that the offset in a one dimensional case is so large that there are not enought elements left to provide the requested data.
+* 6.2.2 This also includes that the offset in a one dimensional case is so large that there are not enough elements left to provide the requested data.
 * 6.2.4 Some backends currenty throw a boost:::numeric::bad_numeric_cast instead as described in 5.
 * 6.2.5.2 The generic tests if a backend is opened, or if an accessor readable or writeable are intentionally not implemented in TransferElement because they would invovle additional virtual function calls. To avoid these each implementation has to implement the checks in doPreXxx().
 
