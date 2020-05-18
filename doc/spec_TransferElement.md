@@ -137,7 +137,7 @@ This documnent is currently still **INCOMPLETE**!
   * 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals.
   * 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend does not fill any
     data into the queue until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are send. We call this *asyncronous read is not activated* for these transfer elements.
-      * 8.5.1 When  Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set (*).
+      * 8.5.1 When Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set (*).
       * 8.5.2 When asyncronous read is activated in a transfer elememt, it must get an initial value synchronously and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronous sending has been turned on to make sure no update is missed. (*)
       * 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronous read is activated automatically (incl. sending of the initial value). This happens  even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and  Device::activateAsyncRead() has not been called yet.
       * 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
@@ -149,6 +149,7 @@ This documnent is currently still **INCOMPLETE**!
     * 9.1.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after
       9.1.1. to avoid race conditions.
     * 9.1.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
+    * 9.1.4 The backend must maken sure 9.1.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchonous transfers again (*).
    * 9.2 TransferElements without wait_for_new_data
      * 9.2.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
    * 9.3 Write operations will throw  a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully.
@@ -180,6 +181,7 @@ This documnent is currently still **INCOMPLETE**!
 * 9. It does not matter if the exception occured in an asynchronous or synchronous read, or in a write operation.
 * 9.1.1 Open can be called again on an already opened backend to start error recovery.
 * 9.1.2 If an asynchronous read transfer is the first one to detect the exception, the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put into the queue.
+* 9.1.4 Avoid race conditions here. The call to Device::activateAsyncRead() usually is done from a different thread than the transfer which caused the exception.
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
