@@ -12,7 +12,7 @@ This documnent is currently still **INCOMPLETE**!
 
 * 1. A <i>process variable</i> is the logical entity which is accessed through the TransferElement. Outside this document, it is sometimes also called register.
   * 1.1 A process variable can be read-only, write-only or read-write (bidirectional).
-  * 1.2 A process variable as a data type.
+  * 1.2 A process variable has a data type.
   * 1.3 A process variable has a fixed <i>number of elements</i> and a <i>number of channels</i>.
     * 1.3.1 For scalars, both the number of elements and channels are 1.
     * 1.3.2 For 1D arrays, the number of channels is 1.
@@ -138,16 +138,15 @@ This documnent is currently still **INCOMPLETE**!
   * 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend does not fill any
     data into the queue until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are send. We call this *asyncronous read is not activated* for these transfer elements.
       * 8.5.1 When Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set (*).
-      * 8.5.2 When asyncronous read is activated in a transfer elememt, it must get an initial value synchronously and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronous sending has been turned on to make sure no update is missed. (*)
-      * 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronous read is activated automatically (incl. sending of the initial value). This happens  even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and  Device::activateAsyncRead() has not been called yet.
+      * 8.5.2 When asyncronous read is activated in a transfer element, it must get an initial value synchronously and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronous sending has been turned on to make sure no update is missed. (*)
+      * 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronous read is activated automatically (incl. sending of the initial value). This happens even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and Device::activateAsyncRead() has not been called yet.
       * 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
       * 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
 
 * 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    * 9.1 TransferElements with wait_for_new_data flag
     * 9.1.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
-    * 9.1.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after
-      9.1.1. to avoid race conditions.
+    * 9.1.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.1.1. to avoid race conditions.
     * 9.1.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
     * 9.1.4 The backend must maken sure 9.1.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchonous transfers again (*).
    * 9.2 TransferElements without wait_for_new_data
@@ -174,7 +173,7 @@ This documnent is currently still **INCOMPLETE**!
 * 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
 * 8.5 Device::open() does not automatically activate the asyncronous sending because the device might need some initalisation setting to produce valid data (for example setting the correct ADC range). By delaing the activation of asyncronous reads the application has the possibility to do the initialisation before the first data is being send, and can avoid invalid initial values on the process variables.
-* 8.5.1 Conceptually activating an asyncronous read is like subscribing a variable, and deacticating it is like unsubscribing a variable in a publish-subscribe pattern. The actual implementation depends on the details of the protocols.
+* 8.5.1 Conceptually activating an asyncronous read is like subscribing a variable, and deactivating it is like unsubscribing a variable in a publish-subscribe pattern. The actual implementation depends on the details of the protocols.
 * 8.5.2 As the asynchonous mechanism and a synchronous read are two idependent channels there are potential race condition, depending on the exact protocol.
   The backend has to avoid this if possible. If it cannot be avoided, the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
 
