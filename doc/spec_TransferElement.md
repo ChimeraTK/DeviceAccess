@@ -198,6 +198,7 @@ This documnent is currently still **INCOMPLETE**!
 * 5. boost::numeric::bad_numeric_cast may only be thrown in
   * 5.1 ChimeraTK::TransferElement::doPreWrite()
   * 5.2 ChimeraTK::TransferElement::doPostRead(), but only if hasNewData == true
+   * 5.2.1 As the transfer is successful at this point, the currentVersionNumber must be updated as if the whole operation was successful before throwing the exception.
   * 5.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 6.2.4) (*).
 
 * 6. ChimeraTK::logic_error must follow strict conditions.
