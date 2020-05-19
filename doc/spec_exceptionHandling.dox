@@ -36,7 +36,7 @@ namespace ChimeraTK {
   - \anchor b_1_1 1.1 ChimeraTK::logic_error exceptions are left unhandled and will terminate the application. These errors may only occur in the (re-)initialisation phase (up to the point where all devices are opened and initialised) and point to a severe configuration error which is not recoverable. \ref comment_b_1_1 "(*)"
   - \anchor b_1_2 1.2 <b>Exception handling and DataValidity flag propagation is implemented such that it is transparent to a module whether it is directly connected to a device, or whether a fanout or another application module is in between.</b> This is the central requirement from which most other requirements are derived.
 
-- \anchor b_2 2. When an exception has been received by the framework (thrown by a device register accessor):
+- \anchor b_2 2. When a ChimereTK::runtime_error has been received by the framework (thrown by a device register accessor):
   - 2.1 The exception status is published as a process variable together with an error message.
     - 2.1.1 The variable \c Devices/\<alias\>/status contains a boolean flag whether the device is in an error state.
     - 2.1.2 The variable \c Devices/\<alias\>/message contains an error message, if the device is in an error state, or an empty string otherwise.
@@ -71,6 +71,10 @@ namespace ChimeraTK {
 
 - \anchor b_5 5. Any ApplicationModule can explicitly report a problem with the device by calling DeviceModule::reportException(). This allows the reinitialisation of a device e.g. after a reboot of the device which didn't result in an exception (e.g. because it was too quick to be noticed, or rebooting the device takes place without interrupting the communication).
 
+- \anchor b_6 6. If a boost::numeric::bad_numeric_cast is received
+  - 6.1 the exception is not reported to the device.
+  - 6.2 Write operations are skipped because the exception is happening in doPreWrite(). The return value of writeYyy() is true (data was lost).
+  - 6.3 Read operations return with DataValidity::faulty. The data content of the application buffer probably is useless \ref comment_b_6_3 "(*)"
 
 \subsection spec_execptionHandling_behaviour_comments (*) Comments
 
@@ -85,6 +89,8 @@ namespace ChimeraTK {
 - \anchor comment_b_3_1_2 \ref b_3_1_2 "3.1.2" For some applications, the order of writes may be important, e.g. if firmware expects this. Please note that the VersionNumber is insufficient as a sorting criteria, since many writes may have been done with the same VersionNumber (in an ApplicationModule, the VersionNumber used for the writes is determined by the largest VersionNumber of the inputs).
 
 - \anchor comment_b_4_2 \ref b_4_2 "4.2" DataValidity::faulty is initially set by default, so there is no need to propagate this flag initially. To prevent race conditions and undefined behaviour (especially in automated tests), it even needs to be made sure that the flag is not propagated unnecessarily. The behaviour of non-blocking reads presents a slight asymmetry between the initial device opening and a later recovery. This will in particular be visible when restarting a server while a device is offline. If a module only uses readLatest()/readNonBlocking() (= read() for poll-type inputs) for the offline device, the module was still running before the server restart using the last known values for the dysfunctional registers (and flagging all outputs as faulty). After the restart, the module has to wait for the initial value and hence will not run until the device becomes functional again. To make this behaviour symmetric, one would need to persist the values of device inputs. Since this only affects a corner case in which likely no usable output is produced anyway, this slight inconsistency is considered acceptable.
+
+- \anchor comment_b_6_3 \ref b_6_3 "6.3" In contrast to a skipped operation where the it is guaranteed that the previous data content stays intact and only the DataValidity::faulty flag is set.
 
 
 \section spec_execptionHandling_high_level_implmentation C. Implementation
@@ -196,16 +202,21 @@ Note: This section defines the internal interface on a low level. Helper functio
   - \anchor c_2_6_3 2.6.3 If the DeviceModule::synchronousTransferCounter was incremented in \ref c_2_3_6 "2.3.6", decrement it. \ref comment_c_2_6_3 "(*)"
   - \anchor c_2_6_4 2.6.4 In doPostRead(), if no exception was thrown and DeviceModule::deviceHasError == false, end overriding the DataValidity returned by the accessor (cf. \ref c_2_7_2 "2.7.2" and \ref c_2_3_7 "2.3.7").
 
-- \anchor c_2_7 2.7 In doPostRead()/doPostWrite(), any runtime_error exception thrown by the delegated postRead()/postWrite() is caught \ref comment_c_2_7 "(*)". The following actions are executed in case of an exception:
+- \anchor c_2_7 2.7 In doPostRead()/doPostWrite(), any ChimeraTK::runtime_error exception thrown by the delegated postRead()/postWrite() is caught \ref comment_c_2_7 "(*)". The following actions are executed in case of a ChimeraTK::runtime_error:
   - \anchor c_2_7_1 2.7.1 The error is reported to the DeviceModule via DeviceModule::reportException() (cf. \ref spec_execptionHandling_high_level_implmentation_reportException "C.4"). This automatically sets DeviceModule::deviceHasError to true. From this point on, no new transfers will be started. \ref comment_c_2_7_1 "(*)"
   - \anchor c_2_7_2 2.7.2 For read operations: the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref c_2_6_4 "2.6.4"), and the current VersionNumber of the accessor is set to DeviceModule::exceptionVersionNumber.
 
-- 2.8 The constructor of the decorator
-  - 2.8.1 receives the VariableNetworkNode for the device variable, to enable it to create additional, undecorated copies of the register accessor,
-  - 2.8.2 puts the name of the register (from the VariableNetworkNode) to DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters depending on the direction the accessor is used, and
-  - 2.8.3 creates the recovery accessor and initialises the RecoveryHelper object.
-  - 2.8.4 Note: The alias name of the device can be obtained from the VariableNetworkNode, which allows to obtain the corresponding DeviceModule via Application::deviceModuleList (change the list into a map).
-  - 2.8.5 The code instantiating the decorator (Application::createDeviceVariable()) has to make sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so the overriden DataValidity flag in case of an exception is properly propagated to the owning module/fan out (cf. \ref c_2_7_2 "2.7.2" and \ref c_2_3_7 "2.3.7").
+- 2.8 In doPostRead()/doPostWrite() also boost::numeric::bad_numeric_cast exceptions are caught.
+  - 2.8.1 The exception is *not* reported to the DeviceModule (in contrast to \ref c_2_7_1 "2.7.1")
+  - 2.8.1 In doPostWrite(), the exception is just caught, but no further action is required. The transfer itself has been skipped because the original exception occured in doPreWrite(), and dataLost ist already true.
+  - 2.8.2 In doPostRead() the DataValidity returned by the accessor is overridden to faulty until the next successful read operation, and currentVersion is taken from the successful transfer.
+
+- 2.9 The constructor of the decorator
+  - 2.9.1 receives the VariableNetworkNode for the device variable, to enable it to create additional, undecorated copies of the register accessor,
+  - 2.9.2 puts the name of the register (from the VariableNetworkNode) to DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters depending on the direction the accessor is used, and
+  - 2.9.3 creates the recovery accessor and initialises the RecoveryHelper object.
+  - 2.9.4 Note: The alias name of the device can be obtained from the VariableNetworkNode, which allows to obtain the corresponding DeviceModule via Application::deviceModuleList (change the list into a map).
+  - 2.9.5 The code instantiating the decorator (Application::createDeviceVariable()) has to make sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so the overriden DataValidity flag in case of an exception is properly propagated to the owning module/fan out (cf. \ref c_2_7_2 "2.7.2" and \ref c_2_3_7 "2.3.7").
 
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_comments (*) Comments
 
