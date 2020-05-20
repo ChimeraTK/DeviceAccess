@@ -19,7 +19,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 1. Initial values are available to all `ApplicationModule`s at the start of the `ApplicationModule::mainLoop()`. No call to `TransferElement::read()` etc. is required. This implies that the `ApplicationModule::mainLoop()` is not started until all initial values are available, including those coming from devices which might potentially be offline, or from other `ApplicationModule`s.
 2. `ApplicationModule` implementations can either provide initial values for their outputs in `ApplicationModule::prepare()` (if the initial value doesn't depend on any inputs) or right after the start of the `ApplicationModule::mainLoop()` (if the initial value needs to be computed from the incoming initial values of the inputs).
-3. The "value after construction" is not propagated automatically during initial value propagation, not even with the `DataValidity::faulty` flag set. It is not visible to user code in the `ApplicationModule::mainLoop()`.
+3. \anchor C_3 The "value after construction"\ref comment_C_3 "(*)" is not propagated automatically during initial value propagation, not even with the `DataValidity::faulty` flag set. It is not visible to user code in the `ApplicationModule::mainLoop()`.
   1. \anchor C_3_a An partial exception to this rule is the case if a device breaks (i.e. throws an exception) right after it has been successfully opened and initialised. In this case, the value of the variable is the value after construction and the `DataValidity::faulty` flag is set, but the VersionNumber is not `{nullptr}`. \ref comment_C_3_a "(*)"
 4. Since `ApplicationModule`s and devices might wait for initial values from other `ApplicationModule`s and devices, the modules might end up in a dead lock due to a circular connection. The circular connection is legal, but the dead lock situation needs to be broken by one `ApplicationModule` writing its initial value during `ApplicationModule::prepare()`.
   1. In case of such dead lock situation, there will be an error message stating the reason for the dead lock, and the application will be terminated.
@@ -32,7 +32,8 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 ### (*) Comments ###
 
-- \anchor comment_C_3_a \ref C_3_a "3.a." The rule in 3. is mostly important for automated tests and to prevent unnecessary (possible expensive) computations at application start. The exempt case happens rarely in real applications and can be excluded in automated tests, hence it presents an acceptable simplification for the implementation (which otherwise had to retry the read attempt).
+- \anchor comment_C_3 \ref C_3 "3." The value which is set in the constructor of all process variables is determined at compile time and usually is 0, which is basically always wrong. It is very important that no wrong data is transported initially. If it gets propagated within the application, modules will process this value (usually even if `DataValidity::faulty` is set), despite the value might present an inconsistent state with other process variables. If it gets propagated to the control system, other applications might act on an again inconsistent state.
+- \anchor comment_C_3_a \ref C_3_a "3.a." This exempt case happens rarely in real applications and can be excluded in automated tests, hence it presents an acceptable simplification for the implementation (which otherwise had to retry the read attempt). It only occurs if the device was working and then immediately fails again before the initial value could be read.
 
 ## D. Detailed requirements ##
 
@@ -70,7 +71,6 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 
 ### Comments ###
 
-- It is very important that no wrong data is transported initially. Since the "value after construction" of all process variables is always 0 or so, this value is basically always wrong. If it gets propagated within the application, modules will process this value (usually even if `DataValidity::faulty` is set), despite the value might present an inconsistent state with other process variables. If it gets propagated to the control system, other applications might act on an again inconsistent state.
 - To 5.: This is the responsibility of each control system adpater implementation.
 - To 7. and 10.: An output of a `ApplicationModule` with an initial value written in `ApplicationModule::prepare()` and later never written again behaves in the same way as a constant.
 - \anchor initialValue_comment_d_9_3 To \ref initialValue_d_9_3 "9.c": Even if devices connected to outputs are in fault state, the ExceptionHandlingDecorator takes care that the writing is delayed. The fan out is not blocked by this.
