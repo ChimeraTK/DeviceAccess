@@ -21,9 +21,9 @@ namespace ChimeraTK {
 
 \subsection spec_exceptionHandling_intro_terminology A.9 Special terminology used in this document
 
-- 9.1 A read operation might be _skipped_. It means there will be no new data because the operation will not take place at all. Instead, the data is marked as DataValidity::faulty. Note: This term is also used if there is no new data because a running operation is interrupted by an exception.
-- \anchor a_9_2 9.2 A read operation might be _frozen_. This means, the function called will not return until the fault state is resolved and the operation is executed. Freezing only happens on operations with a pre-existing fault state (*).
-- 9.3 A write operation might be _delayed_. This means, the operation will not be executed immediately and the calling thread continues. The operation will be asynchronosuly executed when the fault state is resolved. Note that the VersionNumber specified in the write operation will be retained and also used for the delayed write operation.
+- 9.1 A _read operation_ might be _skipped_. It means there will be no new data because the operation will not take place at all. Instead, the _function called returns immediately_ and data is marked as DataValidity::faulty. Note: This term is also used if there is no new data because a running operation is interrupted by an exception.
+- \anchor a_9_2 9.2 A _read operation_ might be _frozen_. This means, the _function called will not return until the fault state is resolved_ and the operation is executed. Freezing only happens on operations with a pre-existing fault state (*).
+- 9.3 A _write operation_ might be _delayed_. This means, the operation will not be executed immediately and _the calling thread continues_. The operation will be asynchronosuly executed when the fault state is resolved. Note that the VersionNumber specified in the write operation will be retained and also used for the delayed write operation.
 - 9.4 Whenever a write operation or a call to write() is mentioned, destructive writes via writeDestructively() are included. The destructive write optimisation makes no difference for the exception handling.
 
 \subsection spec_exceptionHandling_intro_comments (*) Comments
