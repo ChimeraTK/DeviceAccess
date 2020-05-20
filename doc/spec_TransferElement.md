@@ -99,7 +99,7 @@ This documnent is currently still **INCOMPLETE**!
       * 3.2.1.2 It is guaranteed that the application buffer is still intact after calling TransferElement::write().
     * 3.2.2 can optionally be "destructively", which allows the implementation to destroy content of the application buffer in the process.
       * 3.2.2.1 Applications can allow this optimisation by using writeDestructively() instead of write().
-      * 3.2.2.2 The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
+      * \anchor transferElement_B_3_2_2 3.2.2.2 Applications are not allowed to use the content of the application buffer after writeDestructively().\ref transferElement_comment_B_3_2_2 "(*)"
 
 * 4. Stages of an operation initiated by calling the public high level functions xxxYyy() (see. A.6.1)
   * 4.1 preXxx(): calls doPreXxx() of the implementation to allow preparatory work before the actual transfer. doPreXxx() can be empty if nothing is to be done (*)
@@ -111,7 +111,7 @@ This documnent is currently still **INCOMPLETE**!
       * If wait_for_new_data is set, it returns immediately with the information whether new data has been received
       * If wait_for_new_data is not set, it calls doReadTransferSynchrously() and returns true
     * 4.2.3 writeTransferYyy() calls the corresonding doWriteTransferYyy()
-    * Transfer implementations do not change the application buffer
+    * 4.2.4 Transfer implementations do not change the application buffer
   * 4.3 postXxx(): calls doPostXxx() of the implementation to allow follow-up work after the actual transfer.
     * 4.3.1 In read transfers doPostRead() is the only place where the application buffer may be changed (*).
 
@@ -163,6 +163,8 @@ This documnent is currently still **INCOMPLETE**!
 
 
 ### (*) Comments ###
+* \anchor transferElement_comment_B_3_2_2 \ref transferElement_B_3_2_2 "3.2.2" The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
+
 
 * 4.1 preXxx() is part of the operation, not of the actual transfer. In case of reads with AccessMode::wait_for_new_data the transfer is asynchonousy initiated by the device and not connected to the operation. Hence backend implementations usually have an empty doPreWrite(), but decorator-like implementations still can use it to execute preparatory tasks.
 
