@@ -137,6 +137,8 @@ All points are already covered by @ref spec_execptionHandling.
 
 As ProcessArrays do not have a synchronous read channel which can be used to obtain the "current value", the implementation freezes all read operations (even readNonBlocking() and readLatest()) until a first value has been send. This is consistent with the behaviour of the ExceptionHandlingDecorator, which freezes until the device has become available and the synchronous channel can deliver data.
 
+Comment: The original idea of an extra function readBlocking() only for process arrays does not work, because it breaks abstraction. To use it one would have to dynamic cast a TransferElement to ProcessArray, which does not work when the object is decorated (which it always is).
+
 ## F. Known bugs [OUTDATED!!!] ##
 
 ### DeviceAccess interface ###
