@@ -11,7 +11,8 @@ Specification version v1.0
 ### 1.1 Version v1.0
 
 * 1.1.1 In ApplicationCore each variable has a data validiy flag attached to it. ChimeraTK::DataValidity can be 'ok' or 'faulty'.
-* 1.1.2 This flag is automatically propagated: If one of the inputs of an ApplicationModule is faulty, all outputs of this module will automatically be flagged as faulty.
+* 1.1.2 This flag is automatically propagated: If one of the inputs of an ApplicationModule is faulty, the data validity of the module becomes faulty, which means
+all outputs of this module will automatically be flagged as faulty.
       Fan-outs might be special cases (see 2.4).
 * 1.1.3 If a device is in error state, all variables which are read from it shall be marked as 'faulty'. This flag is then propagated through all the modules (via 1.1.2) so it shows up in the control system.
 * 1.1.4 The user has the possibility to query the data validity of the module
