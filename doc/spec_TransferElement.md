@@ -290,29 +290,26 @@ This documnent is currently still **INCOMPLETE**!
 
 **Note:** This section is biased by the current implementation and mostly lists parts that needs to be changed!
 
-* 1. **FIXME: Might be wrong witht the re-introduction of readTransferNonBlocking:** The TransferFuture will be kept as is for now to provide backwards compatibility and as a helper to the TransferElement implementation.
+* 1. The TransferFuture will be removed. According to D.1.1 all common functionality is implemented with TransferElement::readQueue, so the TransferFuture provides no added value and even complicates the implementation.
 
 * 2. TransferElement
 
-  * 2.1 ChimeraTK::TransferElement::readAsync() is deprecated
+  * 2.1 ChimeraTK::TransferElement::readAsync() will be removed (not deprecated because it would have to return the TransferFuture, which will be removed), (together with readTransferAsync() and doReadTransferAsync()).
+
+  * 2.2 readTransferLatest() and doReadTransferLatest() will be removed.
+
+  * 2.3 doReadTransferNonBlockin() will be removed. The implementation of readTransferNonBlocking will use the TransferElement::readQueue.
   
-  * 2.2 **FIXME: Might be wrong with the re-introduction of readTransferNonBlocking:** ChimeraTK::TransferElement::activeFuture is created in the first call to read(), readNonBlockig() or readAsync() from ChimeraTK::TransferElement::readQueue if ChimeraTK::AccessMode::wait_for_new_data is set.
-  
-  * 2.3 **FIXME: This is wrong with the re-introduction of readTransferNonBlocking:** read(), readNonBlocking() first check whether ChimeraTK::AccessMode::wait_for_new_data is set.
-    * 2.3.1 If no, the sequence of preRead(), readTransfer() and postRead() is executed (cf. 3).
-    * 2.3.1 If yes, implement read() as a sequence of preRead() and activeFuture.wait(), resp. readNonBlocking() as a sequence of preRead(), followed by activeFuture.wait() only if activeFuture.hasNewData() == true.
-  
-  * 2.4 readLatest() is directly calling readNonBlocking() in a loop.
+  * 2.4 readLatest() is directly calling readNonBlocking() in a loop (see B.3.1.4)
   
   * 2.5 Add function ChimeraTK::detail::getFutureQueueFromTransferElement(), replacing ChimeraTK::detail::getFutureQueueFromTransferFuture().
   
 * 3. ReadAnyGroup
 
-  * 3.1 Use the new ChimeraTK::detail::getFutureQueueFromTransferElement().
+  * 3.1 Use the new ChimeraTK::detail::getFutureQueueFromTransferElement() (or make ReadAnyGroup friend of TransferElement?)
 
 
 * 4. ApplicationCore
 
   * 4.1 For the TestableModeAccessorDecorator: TransferElement::transferFutureWaitCallback() does no longer exist. Instead preRead() will now be called. In case of readAny, multiple calls to preRead() on different accessors will be made on the first call to readAny - the decorator has to deal with that properly.
-
 
