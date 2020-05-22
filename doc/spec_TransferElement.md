@@ -144,22 +144,32 @@ This documnent is currently still **INCOMPLETE**!
       * 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
 
 * 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
-   * 9.1 TransferElements with wait_for_new_data flag
-    * 9.1.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
-    * 9.1.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.1.1. to avoid race conditions.
-    * 9.1.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
-    * 9.1.4 The backend must maken sure 9.1.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchonous transfers again (*).
-   * 9.2 TransferElements without wait_for_new_data
-     * 9.2.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
-   * 9.3 Write operations will throw  a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully.
+   * \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1")
+   * \anchor transferElement_B_9_2 9.2 TransferElements with wait_for_new_data flag
+    * 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
+    * 9.2.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.2.1. to avoid race conditions.
+    * 9.2.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
+    * 9.2.4 The backend must make sure 9.2.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchonous transfers again (*).
+   * \anchor transferElement_B_9_3 9.3 TransferElements without wait_for_new_data
+     * 9.3.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
+   * \anchor transferElement_B_9_4 9.4 Write operations will throw  a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully.
 
-* 10. TransferGroup
-  * 10.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
+* 10. DeviceBackends
+  * \anchor transferElement_B_10_1 10.1 DeviceBackend::setException() triggers the actions described in \ref transferElement_B_9_2 "9.2", \ref transferElement_B_9_3 "9.3" and \ref transferElement_B_9_4 "9.4"
+    * \anchor transferElement_B_10_1_1 10.1.1 Meta-backends like the LogicalNameMappingBackend delegate this call to all of their target backends
+    * 10.1.2 Further calls to DeviceBackend::setException() have no effect until Device::open() has successfully been called.
+    * \anchor transferElement_B_10_1_3 10.1.3 Application code can call Device::setException() to trigger the exception state \ref transferElement_comment_B_10_1_3 (*)
+  * \anchor transferElement_B_10_2 10.2 TransferElements know which backend to report exceptions to
+    * 10.2.1 TransferElement::exceptionBackend is set when the TransferElement is created by a backend
+    * 10.2.2 Meta-backends like the LogicalNameMappingBackend can replace the exceptionBackend so the exception reporting is re-directed to the meta-backend.  
+
+* 11. TransferGroup
+  * 11.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
   *  [TODO]
 
-* 11. ReadAnyGroup [TODO]
+* 12. ReadAnyGroup [TODO]
 
-* 12. DataConsistencyGroup [TODO]
+* 13. DataConsistencyGroup [TODO]
 
 
 ### (*) Comments ###
@@ -180,9 +190,14 @@ This documnent is currently still **INCOMPLETE**!
   The backend has to avoid this if possible. If it cannot be avoided, the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
 
 * 9. It does not matter if the exception occured in an asynchronous or synchronous read, or in a write operation.
-* 9.1.1 Open can be called again on an already opened backend to start error recovery.
-* 9.1.2 If an asynchronous read transfer is the first one to detect the exception, the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put into the queue.
-* 9.1.4 Avoid race conditions here. The call to Device::activateAsyncRead() usually is done from a different thread than the transfer which caused the exception.
+* \anchor transferElement_comment_B_9_1 \ref transferElement_B_9_1 "9.1" It depends on the implementation whether the backend already has done 9.2 and 9.3 when the transfer elements
+  first sees the exeption and then reports it back again via DeviceBackend::setException(), or if it only happend in that function. The important part is
+  that meta-backends and the user application can trigger this situation (see \ref transferElement_B_10_1_1 "10.1.1" and \ref transferElement_B_10_1_3 "10.1.3")
+* 9.2.1 Open can be called again on an already opened backend to start error recovery.
+* 9.2.2 If an asynchronous read transfer is the first one to detect the exception, the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put into the queue.
+* 9.2.4 Avoid race conditions here. The call to Device::activateAsyncRead() usually is done from a different thread than the transfer which caused the exception.
+
+* \anchor transferElement_comment_B_10_1_3 \ref transferElement_B_10_1_3 "10.1.3" For instance a watchdog which monitors a reference register to detect firmware reboots that is not seen on the transport layer can trigger the exception state to inhibit asynchronous transfers while running a recovery procedure.
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
@@ -237,7 +252,7 @@ This documnent is currently still **INCOMPLETE**!
 * 6.2.1.1 It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
 * 6.2.1.2 If a backend cannot decide the existence of a register in the accessor's constructor (because there is no map file or such, and the backend might be closed), it needs to check the presence later. If the information is available in the constructor, the check has to be done there.
 * 6.2.2 This also includes that the offset in a one dimensional case is so large that there are not enough elements left to provide the requested data.
-* 6.2.4 Some backends currenty throw a boost:::numeric::bad_numeric_cast instead as described in 5.
+* 6.2.4 Some backends currenty throw a boost::numeric::bad_numeric_cast instead as described in 5.
 * 6.2.5.2 The generic tests if a backend is opened, or if an accessor readable or writeable are intentionally not implemented in TransferElement because they would invovle additional virtual function calls. To avoid these each implementation has to implement the checks in doPreXxx().
 
 ## D. Requirements for full implementations (e.g. in backends) ##
