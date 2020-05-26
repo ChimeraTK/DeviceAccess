@@ -59,7 +59,7 @@ namespace ChimeraTK {
       testableModeReached = true;
 
       ChimeraTK::VersionNumber version{nullptr};
-      readInitialValues();
+      version = readInitialValues();
       while(true) {
         // send out copies to slaves
         Profiler::startMeasurement();
@@ -82,14 +82,17 @@ namespace ChimeraTK {
       }
     }
 
-    void readInitialValues() {
+    VersionNumber readInitialValues() {
       auto hasInitialValue = _network.getFeedingNode().hasInitialValue();
       if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
         FanOut<UserType>::impl->readLatest();
+        return FanOut<UserType>::impl->getVersionNumber();
       }
       else if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
         FanOut<UserType>::impl->read();
+        return FanOut<UserType>::impl->getVersionNumber();
       }
+      return VersionNumber{nullptr};
     }
 
    protected:
@@ -129,7 +132,7 @@ namespace ChimeraTK {
       TransferElementID var;
       ChimeraTK::VersionNumber version{nullptr};
 
-      readInitialValues();
+      version = readInitialValues();
 
       ReadAnyGroup group({FanOut<UserType>::impl, _returnChannelSlave});
       while(true) {
@@ -153,9 +156,14 @@ namespace ChimeraTK {
         // if the update came through the return channel, return it to the feeder
         if(var == _returnChannelSlave->getId()) {
           FanOut<UserType>::impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
-          FanOut<UserType>::impl->write(_returnChannelSlave->getVersionNumber());
+          if(version < _returnChannelSlave->getVersionNumber()) {
+            version = _returnChannelSlave->getVersionNumber();
+          }
+          FanOut<UserType>::impl->write(version);
         }
-        version = FanOut<UserType>::impl->getVersionNumber();
+        else {
+          version = FanOut<UserType>::impl->getVersionNumber();
+        }
       }
     }
 
