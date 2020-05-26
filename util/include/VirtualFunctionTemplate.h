@@ -83,7 +83,7 @@
  * DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro inside the constructor of
  * the derived class. */
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(functionName)                                                            \
-  for_each(this->functionName##_vtable.table, [this](auto& pair) {                                                     \
+  ChimeraTK::for_each(this->functionName##_vtable.table, [this](auto& pair) {                                          \
     typedef typename std::remove_reference<decltype(pair)>::type::first_type VTableFillerUserType;                     \
     pair.second = [this](auto... args) { return this->functionName<VTableFillerUserType>(args...); };                  \
   })

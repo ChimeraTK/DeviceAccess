@@ -493,7 +493,7 @@ namespace ChimeraTK {
     template<typename X>
     class for_each_callable {
      public:
-      for_each_callable(X& fn) : fn_(fn) {}
+      for_each_callable(const X& fn) : fn_(fn) {}
 
       template<typename ARG_TYPE>
       void operator()(ARG_TYPE& argument) const {
@@ -501,7 +501,7 @@ namespace ChimeraTK {
       }
 
      private:
-      X& fn_;
+      const X& fn_;
     };
   } // namespace detail
 
@@ -510,7 +510,7 @@ namespace ChimeraTK {
    * The lambda must have one single argument of the type auto, which will be a
    * boost::fusion::pair<>. */
   template<typename MAPTYPE, typename LAMBDATYPE>
-  void for_each(MAPTYPE& map, LAMBDATYPE& lambda) {
+  void for_each(MAPTYPE& map, const LAMBDATYPE& lambda) {
     boost::fusion::for_each(map, detail::for_each_callable<LAMBDATYPE>(lambda));
   }
 
