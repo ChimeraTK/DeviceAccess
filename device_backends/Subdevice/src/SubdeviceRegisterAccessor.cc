@@ -81,6 +81,21 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void SubdeviceRegisterAccessor::doPreWrite(TransferType, VersionNumber) {
+    if(!_accAddress->isWriteable()) {
+      throw ChimeraTK::logic_error("SubdeviceRegisterAccessor[" + this->getName() + "]: address register '" +
+          _accAddress->getName() + "' is not writeable.");
+    }
+    if(!_accData->isWriteable()) {
+      throw ChimeraTK::logic_error("SubdeviceRegisterAccessor[" + this->getName() + "]: data register '" +
+          _accData->getName() + "' is not writeable.");
+    }
+    if(_backend->type == SubdeviceBackend::Type::threeRegisters) {
+      if(!_accStatus->isReadable()) {
+        throw ChimeraTK::logic_error("SubdeviceRegisterAccessor[" + this->getName() + "]: status register '" +
+            _accStatus->getName() + "' is not readable.");
+      }
+    }
+
     assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
   }
