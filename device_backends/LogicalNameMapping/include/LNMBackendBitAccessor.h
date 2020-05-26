@@ -85,7 +85,11 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->writeTransfer(versionNumber);
+      bool ret = _accessor->writeTransfer(_versionNumberTemp);
+
+      // VersionNumber needs to be decoupled from target accessor, because the target accessor is used by multiple bit accessors!
+      _versionNumber = versionNumber; // fixme: move to doPostWrite
+      return ret;
     }
 
     bool doReadTransferNonBlocking() override {
@@ -113,9 +117,10 @@ namespace ChimeraTK {
       else {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(false);
       }
+      _versionNumber = {}; // VersionNumber needs to be decoupled from target accessor
     }
 
-    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
+    void doPreWrite(TransferType type, VersionNumber) override {
       std::lock_guard<std::mutex> lock(*_mutex);
       if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
         _accessor->accessData(0) &= ~(_bitMask);
@@ -123,7 +128,9 @@ namespace ChimeraTK {
       else {
         _accessor->accessData(0) |= _bitMask;
       }
-      _accessor->preWrite(type, versionNumber);
+
+      _versionNumberTemp = {};
+      _accessor->preWrite(type, _versionNumberTemp);
     }
 
     void doPostWrite(TransferType type, bool dataLost) override {
@@ -159,10 +166,7 @@ namespace ChimeraTK {
       return _accessor->getAccessModeFlags();
     }
 
-    VersionNumber getVersionNumber() const override {
-      std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->getVersionNumber();
-    }
+    VersionNumber getVersionNumber() const override { return _versionNumber; }
 
    protected:
     /// pointer to underlying accessor
@@ -174,6 +178,13 @@ namespace ChimeraTK {
 
     /// register and module name
     RegisterPath _registerPathName;
+
+    /// the current version number of the application buffer
+    VersionNumber _versionNumber{nullptr};
+
+    /// temporary version number passed to the target accessor in write transfers
+    /// The VersionNumber needs to be decoupled from target accessor, because the target accessor is used by multiple bit accessors!
+    VersionNumber _versionNumberTemp{nullptr};
 
     /// backend device
     boost::shared_ptr<LogicalNameMappingBackend> _dev;
