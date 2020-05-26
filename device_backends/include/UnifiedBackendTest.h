@@ -4,6 +4,7 @@
 #include <functional>
 #include <list>
 
+#include <boost/fusion/include/at_key.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include "Device.h"
@@ -65,7 +66,12 @@ class UnifiedBackendTest {
   /**
    *  Set the names of integer registers to be used for the tests
    */
-  void integerRegister(const std::list<std::string>& names) { regInteger = names; }
+  void integerRegister(const std::list<std::string>& names) { setTestRegisters<int>(names); }
+
+  template<typename UserType>
+  void setTestRegisters(const std::list<std::string>& names) {
+    boost::fusion::at_key<int>(registers.table) = names;
+  }
 
  private:
   /**
@@ -80,7 +86,7 @@ class UnifiedBackendTest {
   std::string cdd;
 
   /// Name of integer register used for tests
-  std::list<std::string> regInteger;
+  ctk::FixedUserTypeMap<std::list<std::string>> registers;
 };
 
 /********************************************************************************************************************/
@@ -107,10 +113,15 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
     std::cout << "UnifiedBackendTest::forceRuntimeErrorOnWrite() not called with a non-empty list." << std::endl;
     std::exit(1);
   }
-  if(regInteger.size() == 0) {
-    std::cout << "UnifiedBackendTest::integerRegister() not called with a non-empty list." << std::endl;
+
+  size_t nRegisters = 0;
+  auto lambda = [&nRegisters](auto pair) { nRegisters += pair.second.size(); };
+  ctk::for_each(registers.table, lambda);
+  if(nRegisters == 0) {
+    std::cout << "UnifiedBackendTest: No test registers specified." << std::endl;
     std::exit(1);
   }
+  std::cout << "UnifiedBackendTest: Using  " << nRegisters << " test registers." << std::endl;
 
   // run the tests
   basicExceptionHandling();
@@ -122,77 +133,79 @@ void UnifiedBackendTest::basicExceptionHandling() {
   std::cout << "--- basicExceptionHandling" << std::endl;
   ctk::Device d(cdd);
 
-  for(auto& registerName : regInteger) {
-    std::cout << "... registerName = " << registerName << std::endl;
-    auto reg = d.getScalarRegisterAccessor<int32_t>(registerName);
+  ctk::for_each(registers.table, [&](auto pair) {
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getScalarRegisterAccessor<int32_t>(registerName);
 
-    // check "value after construction"
-    BOOST_CHECK_EQUAL(reg, 0);
-    BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
-
-    // repeat the following check for a list of actions
-    std::list<std::pair<std::string, std::function<void(void)>>> actionListRead, actionListWrite;
-    actionListRead.push_back({"read()", [&] { reg.read(); }});
-    actionListRead.push_back({"readNonBlocking()", [&] { reg.readNonBlocking(); }});
-    actionListRead.push_back({"readLatest()", [&] { reg.readLatest(); }});
-    actionListRead.push_back({"readAsync()", [&] {
-                                auto future = reg.readAsync();
-                                future.wait();
-                              }});
-    actionListWrite.push_back({"write()", [&] { reg.write(); }});
-    actionListWrite.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
-
-    // define lambda for the test to execute repetedly (avoid code duplication)
-    auto theTest = [&](auto& theAction, auto expectedExceptionType) {
-      // attempt action
-      BOOST_CHECK_THROW(theAction(), decltype(expectedExceptionType));
-
-      // check "value after construction" still there
+      // check "value after construction"
       BOOST_CHECK_EQUAL(reg, 0);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
-    };
 
-    // run test for both read and write operations, logic_error is expected
-    for(auto action : actionListRead) {
-      std::cout << "    " << action.first << std::endl;
-      theTest(action.second, ctk::logic_error("only type matters"));
-    }
-    for(auto action : actionListWrite) {
-      std::cout << "    " << action.first << std::endl;
-      theTest(action.second, ctk::logic_error("only type matters"));
-    }
+      // repeat the following check for a list of actions
+      std::list<std::pair<std::string, std::function<void(void)>>> actionListRead, actionListWrite;
+      actionListRead.push_back({"read()", [&] { reg.read(); }});
+      actionListRead.push_back({"readNonBlocking()", [&] { reg.readNonBlocking(); }});
+      actionListRead.push_back({"readLatest()", [&] { reg.readLatest(); }});
+      actionListRead.push_back({"readAsync()", [&] {
+                                  auto future = reg.readAsync();
+                                  future.wait();
+                                }});
+      actionListWrite.push_back({"write()", [&] { reg.write(); }});
+      actionListWrite.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
 
-    // open the device, let it throw an exception on every read and write operation
-    d.open();
+      // define lambda for the test to execute repetedly (avoid code duplication)
+      auto theTest = [&](auto& theAction, auto expectedExceptionType) {
+        // attempt action
+        BOOST_CHECK_THROW(theAction(), decltype(expectedExceptionType));
 
-    for(auto& testCondition : forceExceptionsRead) {
-      // enable exceptions on read
-      testCondition.first();
+        // check "value after construction" still there
+        BOOST_CHECK_EQUAL(reg, 0);
+        BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
+      };
 
-      // repeat the above test, this time a runtime_error is expected
+      // run test for both read and write operations, logic_error is expected
       for(auto action : actionListRead) {
         std::cout << "    " << action.first << std::endl;
-        theTest(action.second, ctk::runtime_error("only type matters"));
+        theTest(action.second, ctk::logic_error("only type matters"));
       }
-
-      // disable exceptions on read
-      testCondition.second();
-    }
-
-    for(auto& testCondition : forceExceptionsWrite) {
-      // enable exceptions on write
-      testCondition.first();
-
-      // repeat the above test, this time a runtime_error is expected
       for(auto action : actionListWrite) {
         std::cout << "    " << action.first << std::endl;
-        theTest(action.second, ctk::runtime_error("only type matters"));
+        theTest(action.second, ctk::logic_error("only type matters"));
       }
 
-      // disable exceptions on write
-      testCondition.second();
+      // open the device, let it throw an exception on every read and write operation
+      d.open();
+
+      for(auto& testCondition : forceExceptionsRead) {
+        // enable exceptions on read
+        testCondition.first();
+
+        // repeat the above test, this time a runtime_error is expected
+        for(auto action : actionListRead) {
+          std::cout << "    " << action.first << std::endl;
+          theTest(action.second, ctk::runtime_error("only type matters"));
+        }
+
+        // disable exceptions on read
+        testCondition.second();
+      }
+
+      for(auto& testCondition : forceExceptionsWrite) {
+        // enable exceptions on write
+        testCondition.first();
+
+        // repeat the above test, this time a runtime_error is expected
+        for(auto action : actionListWrite) {
+          std::cout << "    " << action.first << std::endl;
+          theTest(action.second, ctk::runtime_error("only type matters"));
+        }
+
+        // disable exceptions on write
+        testCondition.second();
+      }
     }
-  }
+  });
 }
 
 /********************************************************************************************************************/
