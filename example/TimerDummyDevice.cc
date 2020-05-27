@@ -54,11 +54,12 @@ class TimerDummyRegisterAccessor : public ChimeraTK::SyncNDRegisterAccessor<User
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0][0] = UserType();
   }
 
-  ~TimerDummyRegisterAccessor() { this->shutdown(); }
+  ~TimerDummyRegisterAccessor() override { this->shutdown(); }
 
   void doReadTransfer() override { usleep(1000000); }
 
-  void doPostRead() override {
+  void doPostRead(ChimeraTK::TransferType, bool hasNewData) override {
+    if(!hasNewData) return;
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
     currentVersion = {};
   }
@@ -91,7 +92,7 @@ class TimerDummyRegisterAccessor : public ChimeraTK::SyncNDRegisterAccessor<User
 };
 
 template<>
-void TimerDummyRegisterAccessor<std::string>::doPostRead() {}
+void TimerDummyRegisterAccessor<std::string>::doPostRead(ChimeraTK::TransferType, bool /*hasNewData*/) {}
 
 template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> TimerDummy::getRegisterAccessor_impl(
