@@ -32,84 +32,63 @@
 
 SET(DOOCS_FOUND 0)
 
+list(APPEND DOOCS_FIND_COMPONENTS doocsapi)
 
-FIND_PATH(DOOCS_DIR libDOOCSapi.so
-  ${CMAKE_CURRENT_LIST_DIR}
-  /export/doocs/lib
-)
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";zmq;")
-  FIND_PATH(DOOCS_DIR_zmq libDOOCSdzmq.so
-    ${DOOCS_DIR}
-  )
-  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSdzmq)
-  set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_zmq)
+  list(APPEND DOOCS_FIND_COMPONENTS doocsdzmq)
+  list(REMOVE_ITEM DOOCS_FIND_COMPONENTS zmq)
 endif()
 
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";dapi;")
-  FIND_PATH(DOOCS_DIR_dapi libDOOCSdapi.so
-    ${DOOCS_DIR}
-  )
-  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSdapi)
-  set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_dapi)
+  list(APPEND DOOCS_FIND_COMPONENTS doocsdapi)
+  list(REMOVE_ITEM DOOCS_FIND_COMPONENTS dapi)
 endif()
 
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
-  FIND_PATH(DOOCS_DIR_server libEqServer.so
-    ${DOOCS_DIR}
-  )
-  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} EqServer)
-  set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_server)
+  list(APPEND DOOCS_FIND_COMPONENTS serverlib)
+  list(REMOVE_ITEM DOOCS_FIND_COMPONENTS server)
 endif()
 
+set(DOOCS_FIND_COMPONENTS_DDAQ false)
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";ddaq;")
+  # This library seems not yet to come with a pkg-config module
+  list(REMOVE_ITEM DOOCS_FIND_COMPONENTS ddaq)
+  set(DOOCS_FIND_COMPONENTS_DDAQ true)
+endif()
+
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";daqreader;")
+  list(APPEND DOOCS_FIND_COMPONENTS daqreaderlib)
+  list(REMOVE_ITEM DOOCS_FIND_COMPONENTS daqreader)
+endif()
+
+# For newer cmake versions, the following foreach() can be replaced by this:
+# list(TRANSFORM DOOCS_FIND_COMPONENTS PREPEND "doocs-")
+foreach(component ${DOOCS_FIND_COMPONENTS})
+  list(APPEND DOOCS_FIND_COMPONENTS_TRANSFORMED "doocs-${component}")
+endforeach()
+set(DOOCS_FIND_COMPONENTS ${DOOCS_FIND_COMPONENTS_TRANSFORMED})
+
+include(FindPkgConfig)
+pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
+
+string(REPLACE ";" " " DOOCS_CFLAGS "${DOOCS_CFLAGS}")
+string(REPLACE ";" " " DOOCS_LDFLAGS "${DOOCS_LDFLAGS}")
+
+set(DOOCS_DIR "${DOOCS_doocs-doocsapi_LIBDIR}")
+set(DOOCS_VERSION "${DOOCS_doocs-doocsapi_VERSION}")
+set(DOOCS_CXX_FLAGS ${DOOCS_CFLAGS})
+set(DOOCS_LINKER_FLAGS ${DOOCS_LDFLAGS})
+set(DOOCS_LINK_FLAGS ${DOOCS_LINKER_FLAGS})
+
+set(COMPONENT_DIRS "")
+if(DOOCS_FIND_COMPONENTS_DDAQ)
+  message("Searching for libDOOCSddaq.so")
   FIND_PATH(DOOCS_DIR_ddaq libDOOCSddaq.so
     ${DOOCS_DIR}
   )
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSddaq timinginfo daqevstat DAQFSM TTF2XML xerces-c BM TTF2evutl)
   set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_ddaq)
 endif()
-
-if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";daqreader;")
-  FIND_PATH(DOOCS_DIR_daqreader libDAQReader.so
-    ${DOOCS_DIR}
-  )
-  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DAQReader)
-  set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_daqreader)
-endif()
-
-if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";eqdaqdatalib;")
-  FIND_PATH(DOOCS_DIR_eqdaqdatalib libDAQsvrutil.so
-    ${DOOCS_DIR}
-  )
-  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DAQsvrutil)
-  set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_eqdaqdatalib)
-endif()
-
-#This is for the transition only. The logic is not bullet proof, but in almost all cases
-#if there is libgul14.so, it means DOOCS brought it and needs it.
-FIND_LIBRARY(LIB_GULOLD libgul.so ${DOOCS_DIR})
-FIND_LIBRARY(LIB_GUL14 libgul14.so ${DOOCS_DIR})
-if ("${LIB_GUL14}" MATCHES "LIB_GUL14-NOTFOUND")
-  set(LIB_GUL "gul")
-else()
-  set(LIB_GUL "gul14")
-endif()
-
-set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap ${LIB_GUL})
-message("DOOCS_LIBRARIES ${DOOCS_LIBRARIES}")
-
-# now set the required variables based on the determined DOOCS_DIR
-set(DOOCS_INCLUDE_DIRS ${DOOCS_DIR}/include)
-set(DOOCS_LIBRARY_DIRS ${DOOCS_DIR}/)
-
-set(DOOCS_CXX_FLAGS "-Wall -fPIC -D_REENTRANT -DLINUX -D__LINUX__ -DDMSG -DTINE_EXPORT=' '")
-set(DOOCS_LINKER_FLAGS "-Wl,--no-as-needed")
-set(DOOCS_LINK_FLAGS "${DOOCS_LINKER_FLAGS}")
-
-# extract DOOCS version from librar so symlink. Note: This is platform dependent and only works
-# if DOOCS was installed from the Debian pagackes. Find a better version detection scheme!
-execute_process(COMMAND bash -c "env LANG=C readelf -d ${DOOCS_DIR}/libDOOCSapi.so | grep SONAME | sed -e 's/^.*Library soname: \\[libDOOCSapi\\.so\\.//' -e 's/\\]$//'"
-                OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE DOOCS_VERSION)
 
 # use a macro provided by CMake to check if all the listed arguments are valid and set DOOCS_FOUND accordingly
 include(FindPackageHandleStandardArgs)
