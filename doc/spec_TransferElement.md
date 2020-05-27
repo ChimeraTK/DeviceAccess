@@ -125,7 +125,7 @@ This documnent is currently still **INCOMPLETE**!
 
 * 7. Return values of xxxTransferYyy():
   * 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
-  * 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, some data was rejected in the process of the transfer. It can be either the data that should have been written in the current transfer, or some older data was overwritten.
+  * \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)"
   * 7.3 The return value is passed on to the postXxx() function call (via hasNewData resp. dataLost), to allow the doPostXxx() implementations to decide the right actions.
   * 7.4 In case of an exception in either preXxx() or xxxTransferYyy(), postXxx() receives instead the information that the transfer didn't sucessfully take place (hasNewData = false resp. dataLost = true).
   
@@ -182,6 +182,8 @@ This documnent is currently still **INCOMPLETE**!
 * 4.3.1 In write operations the buffer might be swapped out in doPreRead() and swapped back in doPostRead() to restore it for non-destructive read operations to avoid copying of large arrays.
 
 * 5. Reason: It might be that the user buffer has to be swapped out during the transfer (while taking away the ownership of the calling code), and this must be restored in the postXxx action.
+
+* \anchor transferElement_comment_B_7_2 \ref transferElement_B_7_2 "7.2" Usually, writes are implemented as synchronous transfers, in which case no previous data can be lost. In case of asynchronous write transfers (as e.g. implemented in the ControlSystemAdapter's ProcessArray), the implementation must ensure the specified behaviour e.g. by using cppext::future_queue::push_overwrite() or a similar functionality.
 
 * 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
