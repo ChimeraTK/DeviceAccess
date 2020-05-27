@@ -27,10 +27,10 @@ This documnent is currently still **INCOMPLETE**!
 * 4. An <i>operation</i> is the action taken by the application to read or write data from or to a device. An operation is related to a transfer, yet it is to be distinguished. The transfer can e.g. be initiated by the device, while the operation is always initiated by the application.
 
 * 5. The <i>application buffer</i> (sometimes also called user buffer outside this document) is referring to the buffer containing the data and meta data, which is accessible to the application.
-  * 5.1 It can be accessed through the following functions:
-    * ChimeraTK::NDRegisterAccessor::accessData() / ChimeraTK::NDRegisterAccessor::accessChannel()
-    * ChimeraTK::TransferElement::getVersionNumber()
-    * ChimeraTK::TransferElement::dataValidity()
+  * 5.1 It can be accessed through the following (non-virtual) functions:
+    * ChimeraTK::NDRegisterAccessor::accessData() / ChimeraTK::NDRegisterAccessor::accessChannel() - gives access to ChimeraTK::NDRegisterAccessor::buffer_2D
+    * ChimeraTK::TransferElement::getVersionNumber() - returns content of ChimeraTK::TransferElement::_versionNumber
+    * ChimeraTK::TransferElement::dataValidity() - returns content of ChimeraTK::TransferElement::_dataValidity
   * 5.2 If not stated otherwise, the term <i>application buffer</i> refers to **all** components of the buffer.
   * 5.3 The content of the buffer is filled with data from the device in read operations, and transferred to the device in write operations.
   * 5.4 The content of the buffer can always be modified by the application.(*)
@@ -113,7 +113,8 @@ This documnent is currently still **INCOMPLETE**!
     * 4.2.3 writeTransferYyy() calls the corresonding doWriteTransferYyy()
     * 4.2.4 Transfer implementations do not change the application buffer
   * 4.3 postXxx(): calls doPostXxx() of the implementation to allow follow-up work after the actual transfer.
-    * 4.3.1 In read transfers doPostRead() is the only place where the application buffer may be changed (*).
+    * 4.3.1 In read transfers, doPostRead() is the only place where the application buffer may be changed (*).
+    * 4.3.2 In write transfers, postWrite() updates the version number of the application buffer TransferElement::_versionNumber to the version number provided to the write() call, if no exception is (re-)thrown in doPostWrite().
 
 * 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
   * 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::thread_interrupted and boost::numeric::bad_numeric_cast) are thrown (see 6).
