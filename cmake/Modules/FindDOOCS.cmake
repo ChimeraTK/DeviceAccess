@@ -69,6 +69,12 @@ endforeach()
 set(DOOCS_FIND_COMPONENTS ${DOOCS_FIND_COMPONENTS_TRANSFORMED})
 
 include(FindPkgConfig)
+
+if(DEFINED DOOCS_DIR)
+  set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:${DOOCS_DIR}/pkgconfig)
+endif()
+set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
+message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
 pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
 
 string(REPLACE ";" " " DOOCS_CFLAGS "${DOOCS_CFLAGS}")
