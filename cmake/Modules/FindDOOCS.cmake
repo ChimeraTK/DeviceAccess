@@ -69,15 +69,24 @@ endforeach()
 set(DOOCS_FIND_COMPONENTS ${DOOCS_FIND_COMPONENTS_TRANSFORMED})
 
 include(FindPkgConfig)
+
+if(DEFINED DOOCS_DIR)
+  set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:${DOOCS_DIR}/pkgconfig)
+endif()
+set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
+message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
 pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
 
 string(REPLACE ";" " " DOOCS_CFLAGS "${DOOCS_CFLAGS}")
 string(REPLACE ";" " " DOOCS_LDFLAGS "${DOOCS_LDFLAGS}")
 
+# thread libraries are required by DOOCS but seem not to be added through pkgconfig...
+find_package(Threads REQUIRED)
+
 set(DOOCS_DIR "${DOOCS_doocs-doocsapi_LIBDIR}")
 set(DOOCS_VERSION "${DOOCS_doocs-doocsapi_VERSION}")
 set(DOOCS_CXX_FLAGS ${DOOCS_CFLAGS})
-set(DOOCS_LIBRARIES ${DOOCS_LDFLAGS})
+set(DOOCS_LIBRARIES ${DOOCS_LDFLAGS} ${CMAKE_THREAD_LIBS_INIT})
 set(DOOCS_LINKER_FLAGS "-Wl,--no-as-needed")
 set(DOOCS_LINK_FLAGS ${DOOCS_LINKER_FLAGS})
 
