@@ -64,14 +64,14 @@ class UnifiedBackendTest {
   void forceRuntimeErrorOnWrite(const ActionList& list) { forceExceptionsWrite = list; }
 
   /**
-   *  Set the names of integer registers to be used for the tests
+   *  Set the names of registers to be used for the tests
    */
-  void integerRegister(const std::list<std::string>& names) { setTestRegisters<int>(names); }
-
   template<typename UserType>
   void setTestRegisters(const std::list<std::string>& names) {
     boost::fusion::at_key<int>(registers.table) = names;
   }
+
+  [[deprecated]] void integerRegister(const std::list<std::string>& names) { setTestRegisters<int>(names); }
 
  private:
   /**

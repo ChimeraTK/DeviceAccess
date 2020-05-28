@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(exceptionHandling) {
 
   UnifiedBackendTest ubt;
 
-  ubt.integerRegister({"/Integers/signed32"});
+  ubt.setTestRegisters<int>({"/Integers/signed32"});
 
   ubt.forceRuntimeErrorOnRead(
       {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
