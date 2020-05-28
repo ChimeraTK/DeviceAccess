@@ -269,7 +269,7 @@ class TransferElementTestBackend : public DeviceBackendImpl {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeNoExceptions) {
-  // This tests the TransferElement specification B.5
+  // This tests the TransferElement specification B.4 and B.5
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
 
@@ -518,7 +518,7 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeNoExceptions) {
-  // This tests the TransferElement specification B.5
+  // This tests the TransferElement specification B.4 and B.5
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
 
@@ -544,7 +544,7 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeNoExceptions) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeWithExceptions) {
-  // This tests the TransferElement specification B.5
+  // This tests the TransferElement specification B.5.1
   // Note: since there is no difference between sync and async mode for logic_errors, only runtime_errors are tested
   //       here.
   TransferElementTestAccessor<int32_t> accessor;
