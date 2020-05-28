@@ -49,7 +49,26 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
   }
 
+  void doReadTransferSynchronously(TransferType expectedType) {
+    // will become an override (remove the argument)
+    BOOST_CHECK(_preRead_counter == 1);
+    BOOST_CHECK(_preWrite_counter == 0);
+    BOOST_CHECK(_readTransfer_counter == 0);
+    BOOST_CHECK(_writeTransfer_counter == 0);
+    BOOST_CHECK(_postRead_counter == 0);
+    BOOST_CHECK(_postWrite_counter == 0);
+    BOOST_CHECK(_transferType == expectedType);
+    ++_readTransfer_counter;
+    if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
+  }
+
   void doReadTransfer() override {
+    // will be replaced by base-class functionality
+    if(!_flags.has(AccessMode::wait_for_new_data)) {
+      doReadTransferSynchronously(TransferType::read);
+      return;
+    }
+
     BOOST_CHECK(_preRead_counter == 1);
     BOOST_CHECK(_preWrite_counter == 0);
     BOOST_CHECK(_readTransfer_counter == 0);
@@ -59,9 +78,16 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_transferType == TransferType::read);
     ++_readTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
+    _readQueue.pop_wait();
   }
 
   bool doReadTransferNonBlocking() override {
+    // will be replaced by base-class functionality
+    if(!_flags.has(AccessMode::wait_for_new_data)) {
+      doReadTransferSynchronously(TransferType::readNonBlocking);
+      return true;
+    }
+
     BOOST_CHECK(_preRead_counter == 1);
     BOOST_CHECK(_preWrite_counter == 0);
     BOOST_CHECK(_readTransfer_counter == 0);
@@ -71,10 +97,17 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_transferType == TransferType::readNonBlocking);
     ++_readTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
+    _hasNewDataOrDatLost = _readQueue.pop();
     return _hasNewDataOrDatLost;
   }
 
   bool doReadTransferLatest() override {
+    // will be replaced by base-class functionality
+    if(!_flags.has(AccessMode::wait_for_new_data)) {
+      doReadTransferSynchronously(TransferType::readLatest);
+      return true;
+    }
+
     BOOST_CHECK(_preRead_counter == 1);
     BOOST_CHECK(_preWrite_counter == 0);
     BOOST_CHECK(_readTransfer_counter == 0);
@@ -84,6 +117,9 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_transferType == TransferType::readLatest);
     ++_readTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
+    do {
+      _hasNewDataOrDatLost = _readQueue.pop();
+    } while(_hasNewDataOrDatLost);
     return _hasNewDataOrDatLost;
   }
 
@@ -162,16 +198,16 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
 
   bool isWriteable() const override { return _writeable; }
 
-  AccessModeFlags getAccessModeFlags() const override {
-    return {}; // this information is not used by the base class...
-  }
+  AccessModeFlags getAccessModeFlags() const override { return _flags; }
 
   VersionNumber getVersionNumber() const override { return _currentVersion; }
   VersionNumber _currentVersion{nullptr};
 
   TransferFuture doReadTransferAsync() override { return _future; }
-  TransferFuture _future;
+  cppext::future_queue<void> _readQueue{3};
+  TransferFuture _future{_readQueue, this};
 
+  AccessModeFlags _flags{};
   bool _writeable{false};
   bool _readable{false};
 
@@ -241,22 +277,12 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeNoExceptions) {
   accessor._writeable = false;
 
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
   accessor.read();
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::read);
 
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
-  ret = accessor.readNonBlocking();
-  BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
-  BOOST_CHECK(ret == false);
-  BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
-  BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
-
-  accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = true;
   ret = accessor.readNonBlocking();
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(ret == true);
@@ -310,7 +336,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 
   // read()
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
   accessor._throwLogicErr = true;
   BOOST_CHECK_THROW(accessor.read(), ChimeraTK::logic_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -319,7 +344,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 
   /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
   accessor._throwOnceRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -328,7 +352,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
   */
 
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
   accessor._throwRuntimeErrInTransfer = true;
   BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -337,7 +360,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 
   // readNonBlocking() with hasNewData == true
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = true;
   accessor._throwLogicErr = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::logic_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -346,7 +368,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 
   /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = true;
   accessor._throwOnceRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -355,7 +376,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
   */
 
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = true;
   accessor._throwRuntimeErrInTransfer = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -364,7 +384,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 
   // readNonBlocking() with hasNewData == false
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
   accessor._throwLogicErr = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::logic_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -373,7 +392,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 
   /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
   accessor._throwOnceRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -382,7 +400,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
   */
 
   accessor.resetCounters();
-  accessor._hasNewDataOrDatLost = false;
   accessor._throwRuntimeErrInTransfer = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
@@ -496,6 +513,69 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
   BOOST_CHECK(accessor._postWrite_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::writeDestructively);
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeNoExceptions) {
+  // This tests the TransferElement specification B.5
+  TransferElementTestAccessor<int32_t> accessor;
+  bool ret;
+
+  accessor._readable = true;
+  accessor._writeable = false;
+
+  accessor.resetCounters();
+  accessor._readQueue.push();
+  accessor.read();
+  BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
+  BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
+  BOOST_CHECK(accessor._transferType == TransferType::read);
+
+  accessor.resetCounters();
+  accessor._readQueue.push();
+  ret = accessor.readNonBlocking();
+  BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
+  BOOST_CHECK(ret == true);
+  BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
+  BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeWithExceptions) {
+  // This tests the TransferElement specification B.5
+  // Note: since there is no difference between sync and async mode for logic_errors, only runtime_errors are tested
+  //       here.
+  TransferElementTestAccessor<int32_t> accessor;
+
+  accessor._readable = true;
+  accessor._writeable = false;
+  accessor._flags = {AccessMode::wait_for_new_data};
+
+  accessor.resetCounters();
+  try {
+    throw ChimeraTK::runtime_error("Test");
+  }
+  catch(...) {
+    accessor._readQueue.push_exception(std::current_exception());
+  }
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
+  BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
+  BOOST_CHECK(accessor._transferType == TransferType::read);
+
+  accessor.resetCounters();
+  try {
+    throw ChimeraTK::runtime_error("Test");
+  }
+  catch(...) {
+    accessor._readQueue.push_exception(std::current_exception());
+  }
+  BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
+  BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
+  BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
 }
 
 /********************************************************************************************************************/
