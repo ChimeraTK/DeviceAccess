@@ -80,7 +80,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::read);
-    ++_readTransfer_counter;
     _readQueue.pop_wait();
   }
 
@@ -98,7 +97,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::readNonBlocking);
-    ++_readTransfer_counter;
     _hasNewDataOrDatLost = _readQueue.pop();
     return _hasNewDataOrDatLost;
   }
@@ -117,7 +115,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::readLatest);
-    ++_readTransfer_counter;
     do {
       _hasNewDataOrDatLost = _readQueue.pop();
     } while(_hasNewDataOrDatLost);
@@ -157,7 +154,12 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_preRead_counter == 1);
     BOOST_CHECK(_preWrite_counter == 0);
     if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwThreadInterruptedInPre) {
-      BOOST_CHECK(_readTransfer_counter == 1);
+      if(!_flags.has(AccessMode::wait_for_new_data)) {
+        BOOST_CHECK(_readTransfer_counter == 1);
+      }
+      else {
+        BOOST_CHECK(_readTransfer_counter == 0);
+      }
     }
     else {
       // This tests the TransferElement specification B.6.1 for read operations
