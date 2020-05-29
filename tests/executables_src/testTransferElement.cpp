@@ -345,14 +345,12 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
   BOOST_CHECK(accessor._transferType == TransferType::read);
 
-  /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
-  accessor._throwOnceRuntimeErrInPre = true;
+  accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
   BOOST_CHECK(accessor._transferType == TransferType::read);
-  */
 
   accessor.resetCounters();
   accessor._throwRuntimeErrInTransfer = true;
@@ -369,14 +367,12 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
   BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
 
-  /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
-  accessor._throwOnceRuntimeErrInPre = true;
+  accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
   BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
-  */
 
   accessor.resetCounters();
   accessor._throwRuntimeErrInTransfer = true;
@@ -393,14 +389,12 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
   BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
 
-  /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
-  accessor._throwOnceRuntimeErrInPre = true;
+  accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
   BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
-  */
 
   accessor.resetCounters();
   accessor._throwRuntimeErrInTransfer = true;
@@ -418,15 +412,13 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::write);
 
-  /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = false;
-  accessor._throwOnceRuntimeErrInPre = true;
+  accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postWrite_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::write);
-  */
 
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = false;
@@ -445,15 +437,13 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::write);
 
-  /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = true;
-  accessor._throwOnceRuntimeErrInPre = true;
+  accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postWrite_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::write);
-  */
 
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = true;
@@ -472,15 +462,13 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::writeDestructively);
 
-  /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = false;
-  accessor._throwOnceRuntimeErrInPre = true;
+  accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postWrite_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::writeDestructively);
-  */
 
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = false;
@@ -499,15 +487,13 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::writeDestructively);
 
-  /* -> is currently not allowed by TE implementation
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = true;
-  accessor._throwOnceRuntimeErrInPre = true;
+  accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postWrite_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::writeDestructively);
-  */
 
   accessor.resetCounters();
   accessor._hasNewDataOrDatLost = true;
@@ -654,7 +640,6 @@ BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
   BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, false), ChimeraTK::logic_error);
   BOOST_CHECK(accessor.getVersionNumber() == v1);
 
-  /* -> is currently not allowed by TE implementation
   // test with runtime error in preWrite
   accessor.resetCounters();
   VersionNumber v3{};
@@ -663,7 +648,6 @@ BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
   BOOST_CHECK(accessor.getVersionNumber() == v1);
   BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, false), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor.getVersionNumber() == v1);
-*/
 
   // test with runtime error in doWriteTransfer
   accessor.resetCounters();

@@ -437,6 +437,10 @@ namespace ChimeraTK {
         hasSeenException = true;
         activeException = std::current_exception();
       }
+      catch(ChimeraTK::runtime_error&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+      }
       catch(boost::thread_interrupted&) {
         hasSeenException = true;
         activeException = std::current_exception();
@@ -524,6 +528,10 @@ namespace ChimeraTK {
         doPreWrite(type, versionNumber);
       }
       catch(ChimeraTK::logic_error&) {
+        hasSeenException = true;
+        activeException = std::current_exception();
+      }
+      catch(ChimeraTK::runtime_error&) {
         hasSeenException = true;
         activeException = std::current_exception();
       }
