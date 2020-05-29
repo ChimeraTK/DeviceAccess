@@ -126,7 +126,7 @@ This documnent is currently still **INCOMPLETE**!
 * 7. Return values of xxxTransferYyy():
   * 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
   * \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)"
-  * 7.3 The return value is passed on to the postXxx() function call (via hasNewData resp. dataLost), to allow the doPostXxx() implementations to decide the right actions.
+  * 7.3 The return value is passed on to the postXxx() function call (via hasNewData resp. dataLost), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), hasNewData is set to true.
   * 7.4 In case of an exception in either preXxx() or xxxTransferYyy(), postXxx() receives instead the information that the transfer didn't sucessfully take place (hasNewData = false resp. dataLost = true).
   
 * 8. Read operations with AccessMode::wait_for_new_data:
