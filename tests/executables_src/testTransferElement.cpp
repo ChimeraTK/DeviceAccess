@@ -80,7 +80,13 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::read);
-    _readQueue.pop_wait();
+  retry:
+    try {
+      _readQueue.pop_wait();
+    }
+    catch(ChimeraTK::detail::DiscardValueException&) {
+      goto retry;
+    }
   }
 
   bool doReadTransferNonBlocking() override {
@@ -97,7 +103,13 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::readNonBlocking);
-    _hasNewDataOrDatLost = _readQueue.pop();
+  retry:
+    try {
+      _hasNewDataOrDatLost = _readQueue.pop();
+    }
+    catch(ChimeraTK::detail::DiscardValueException&) {
+      goto retry;
+    }
     return _hasNewDataOrDatLost;
   }
 
@@ -115,8 +127,14 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::readLatest);
-    _hasNewDataOrDatLost = false;
-    while(_readQueue.pop()) _hasNewDataOrDatLost = true;
+  retry:
+    try {
+      _hasNewDataOrDatLost = false;
+      while(_readQueue.pop()) _hasNewDataOrDatLost = true;
+    }
+    catch(ChimeraTK::detail::DiscardValueException&) {
+      goto retry;
+    }
     return _hasNewDataOrDatLost;
   }
 
@@ -262,10 +280,18 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
   bool _throwThreadInterruptedInTransfer{false};
   bool _throwThreadInterruptedInPost{false};
 
-  // convenience function to put exceptions onto the readQueue
+  // convenience function to put exceptions onto the readQueue (see also interrupt())
   void putRuntimeErrorOnQueue() {
     try {
       throw ChimeraTK::runtime_error("Test");
+    }
+    catch(...) {
+      _readQueue.push_exception(std::current_exception());
+    }
+  }
+  void putDiscardValueOnQueue() {
+    try {
+      throw ChimeraTK::detail::DiscardValueException();
     }
     catch(...) {
       _readQueue.push_exception(std::current_exception());
@@ -834,7 +860,30 @@ BOOST_AUTO_TEST_CASE(testReadLatest) {
 
 BOOST_AUTO_TEST_CASE(testDiscardValueException) {
   // This tests the TransferElement specification B.8.2.2
-  std::cout << "TODO!" << std::endl;
+  TransferElementTestAccessor<int32_t> accessor;
+  bool ret;
+  accessor._flags = {AccessMode::wait_for_new_data};
+
+  // check with readNonBlocking()
+  accessor.resetCounters();
+  accessor.putDiscardValueOnQueue();
+  ret = accessor.readNonBlocking();
+  BOOST_CHECK(ret == false);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+
+  // check with blocking read()
+  accessor.resetCounters();
+  accessor.putDiscardValueOnQueue();
+  std::atomic<bool> readFinished{false};
+  boost::thread t([&] { // laungh read() in another thread, since it will block
+    accessor.read();
+    readFinished = true;
+  });
+  usleep(1000000); // 1 second
+  BOOST_CHECK(readFinished == false);
+  accessor._readQueue.push();
+  t.join();
+  BOOST_CHECK(readFinished == true); // thread was not interrupted
 }
 
 /********************************************************************************************************************/
