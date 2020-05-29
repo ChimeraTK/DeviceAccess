@@ -159,7 +159,7 @@ This documnent is currently still **INCOMPLETE**!
   * \anchor transferElement_B_10_1 10.1 DeviceBackend::setException() triggers the actions described in \ref transferElement_B_9_2 "9.2", \ref transferElement_B_9_3 "9.3" and \ref transferElement_B_9_4 "9.4"
     * \anchor transferElement_B_10_1_1 10.1.1 Meta-backends like the LogicalNameMappingBackend delegate this call to all of their target backends
     * 10.1.2 Further calls to DeviceBackend::setException() have no effect until Device::open() has successfully been called.
-    * \anchor transferElement_B_10_1_3 10.1.3 Application code can call Device::setException() to trigger the exception state \ref transferElement_comment_B_10_1_3 (*)
+    * \anchor transferElement_B_10_1_3 10.1.3 Application code can call Device::setException() to trigger the exception state \ref transferElement_comment_B_10_1_3 "(*)"
   * \anchor transferElement_B_10_2 10.2 TransferElements know which backend to report exceptions to
     * 10.2.1 TransferElement::exceptionBackend is set when the TransferElement is created by a backend
     * 10.2.2 Meta-backends like the LogicalNameMappingBackend can replace the exceptionBackend so the exception reporting is re-directed to the meta-backend.
