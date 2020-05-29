@@ -115,9 +115,8 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::readLatest);
-    do {
-      _hasNewDataOrDatLost = _readQueue.pop();
-    } while(_hasNewDataOrDatLost);
+    _hasNewDataOrDatLost = false;
+    while(_readQueue.pop()) _hasNewDataOrDatLost = true;
     return _hasNewDataOrDatLost;
   }
 
@@ -795,7 +794,40 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
 
 BOOST_AUTO_TEST_CASE(testReadLatest) {
   // This tests the TransferElement specification B.3.1.4
-  std::cout << "TODO!" << std::endl;
+  TransferElementTestAccessor<int32_t> accessor;
+  bool ret;
+
+  // Without AccessMode::wait_for_new_data
+  accessor.resetCounters();
+  accessor.readLatest();
+  BOOST_CHECK(accessor._postRead_counter == 1); // accessor._readTransfer_counter == 1 checked in doPostRead
+
+  // With AccessMode::wait_for_new_data
+  accessor._flags = {AccessMode::wait_for_new_data};
+  accessor.resetCounters();
+  ret = accessor.readLatest();
+  BOOST_CHECK(ret == false);
+  BOOST_CHECK(accessor._postRead_counter == 1); // accessor._readTransfer_counter == 0 checked in doPostRead
+
+  accessor.resetCounters();
+  accessor._readQueue.push();
+  ret = accessor.readLatest();
+  BOOST_CHECK(ret == true);
+  BOOST_CHECK(accessor._postRead_counter == 1); // accessor._readTransfer_counter == 0 checked in doPostRead
+  accessor.resetCounters();
+  ret = accessor.readLatest();
+  BOOST_CHECK(ret == false);
+  BOOST_CHECK(accessor._postRead_counter == 1); // accessor._readTransfer_counter == 0 checked in doPostRead
+
+  accessor.resetCounters();
+  while(accessor._readQueue.push()) continue; // fill the queue
+  ret = accessor.readLatest();
+  BOOST_CHECK(ret == true);
+  BOOST_CHECK(accessor._postRead_counter == 1); // accessor._readTransfer_counter == 0 checked in doPostRead
+  accessor.resetCounters();
+  ret = accessor.readLatest();
+  BOOST_CHECK(ret == false);
+  BOOST_CHECK(accessor._postRead_counter == 1); // accessor._readTransfer_counter == 0 checked in doPostRead
 }
 
 /********************************************************************************************************************/
