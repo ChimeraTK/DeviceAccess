@@ -606,6 +606,8 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
   accessor.postWrite(TransferType::write, false);
   accessor.postWrite(TransferType::write, false);
   BOOST_CHECK(accessor._postWrite_counter == 1); // the other counters are checked in doPostWrite
+
+  // no need to test all read and write types, since the mechanism does not depend on the type.
 }
 
 /********************************************************************************************************************/
