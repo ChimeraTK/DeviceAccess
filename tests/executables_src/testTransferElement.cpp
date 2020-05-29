@@ -628,7 +628,62 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
 
 BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
   // This tests the TransferElement specification B.4.3.2
-  std::cout << "TODO!" << std::endl;
+  std::cout << "FIXME This test case is disabled until functionality is implemented in TransferElement!" << std::endl;
+  return;
+
+  TransferElementTestAccessor<int32_t> accessor;
+
+  // test initial value
+  BOOST_CHECK(accessor.getVersionNumber() == VersionNumber(nullptr));
+
+  // test without exception
+  accessor.resetCounters();
+  VersionNumber v1{};
+  accessor.preWrite(TransferType::write, v1);
+  accessor.writeTransfer(v1);
+  BOOST_CHECK(accessor.getVersionNumber() == VersionNumber(nullptr));
+  accessor.postWrite(TransferType::write, false);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+
+  // test with logic error
+  accessor.resetCounters();
+  VersionNumber v2{};
+  accessor._throwLogicErr = true;
+  accessor.preWrite(TransferType::write, v2);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+  BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, false), ChimeraTK::logic_error);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+
+  /* -> is currently not allowed by TE implementation
+  // test with runtime error in preWrite
+  accessor.resetCounters();
+  VersionNumber v3{};
+  accessor._throwRuntimeErrInPre = true;
+  accessor.preWrite(TransferType::write, v3);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+  BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, false), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+*/
+
+  // test with runtime error in doWriteTransfer
+  accessor.resetCounters();
+  VersionNumber v4{};
+  accessor._throwRuntimeErrInTransfer = true;
+  accessor.preWrite(TransferType::write, v4);
+  accessor.writeTransfer(v4);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+  BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, false), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+
+  // test with runtime error in doWriteTransferDestructively
+  accessor.resetCounters();
+  VersionNumber v5{};
+  accessor._throwRuntimeErrInTransfer = true;
+  accessor.preWrite(TransferType::writeDestructively, v5);
+  accessor.writeTransferDestructively(v5);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+  BOOST_CHECK_THROW(accessor.postWrite(TransferType::writeDestructively, false), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
 }
 
 /********************************************************************************************************************/
