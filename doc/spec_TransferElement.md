@@ -265,9 +265,9 @@ This documnent is currently still **INCOMPLETE**!
 ## D. Requirements for full implementations (e.g. in backends) ##
 
 * 1. If ChimeraTK::AccessMode::wait_for_new_data is specified:
-  * 1.1 The ChimeraTK::TransferElement::readQueue is a cppext::future_queue of type 'void' which exists in each transfer element. For transfer elements with AccessMode::wait_for_new_data it usually is the continuation queue of another future_queue which is transporting the data. The data type is implementation dependent. Common functionality like exception handling and waiting for new data is implemented on ChimeraTK::TransferElement::readQueue.
-  * 1.2 ChimeraTK::TransferElement::readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
-  * 1.3 ChimeraTK::TransferElement::readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether data has been discarded (*).
+  * 1.1 The ChimeraTK::TransferElement::_readQueue is a cppext::future_queue of type 'void' which exists in each transfer element. For transfer elements with AccessMode::wait_for_new_data it usually is the continuation queue of another future_queue which is transporting the data. The data type is implementation dependent. Common functionality like exception handling and waiting for new data is implemented on ChimeraTK::TransferElement::_readQueue.
+  * 1.2 ChimeraTK::TransferElement::_readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
+  * 1.3 ChimeraTK::TransferElement::_readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether data has been discarded (*).
   
   * 1.4 In case an exception is detected during an asychronous transfer (for instance in a separate thread), the exception must be stored on the ChimeraTK::TransferElement::readQueue. The TransferFuture will then make sure that the exception is properly rethrown in postRead (just like for synchronous transfers).
 
