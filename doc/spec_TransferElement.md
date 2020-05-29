@@ -131,7 +131,7 @@ This documnent is currently still **INCOMPLETE**!
   
 * 8. Read operations with AccessMode::wait_for_new_data:
   * 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
-  * 8.2 The backend fills any received values into a queue, from which the read()/readNonBlocking() operations will obtain the value.
+  * 8.2 The backend fills any received values into the ChimeraTK::TransferElement::_readQueue, from which the read()/readNonBlocking() operations will obtain the value.
     * 8.2.1 If the queue is full, the last written value will be overwritten.
     * 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*)
   * 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value.
@@ -147,7 +147,7 @@ This documnent is currently still **INCOMPLETE**!
 * 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    * \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1")
    * \anchor transferElement_B_9_2 9.2 TransferElements with wait_for_new_data flag
-    * \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
+    * \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the ChimeraTK::TransferElement::_readQueue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
     * 9.2.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.2.1. to avoid race conditions.
     * 9.2.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
     * 9.2.4 The backend must make sure 9.2.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchonous transfers again (*).
@@ -162,7 +162,7 @@ This documnent is currently still **INCOMPLETE**!
     * \anchor transferElement_B_10_1_3 10.1.3 Application code can call Device::setException() to trigger the exception state \ref transferElement_comment_B_10_1_3 (*)
   * \anchor transferElement_B_10_2 10.2 TransferElements know which backend to report exceptions to
     * 10.2.1 TransferElement::exceptionBackend is set when the TransferElement is created by a backend
-    * 10.2.2 Meta-backends like the LogicalNameMappingBackend can replace the exceptionBackend so the exception reporting is re-directed to the meta-backend.  
+    * 10.2.2 Meta-backends like the LogicalNameMappingBackend can replace the exceptionBackend so the exception reporting is re-directed to the meta-backend.
 
 * 11. TransferGroup
   * 11.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
