@@ -147,12 +147,12 @@ This documnent is currently still **INCOMPLETE**!
 * 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    * \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1")
    * \anchor transferElement_B_9_2 9.2 TransferElements with wait_for_new_data flag
-    * 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
+    * \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the queue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
     * 9.2.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.2.1. to avoid race conditions.
     * 9.2.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
     * 9.2.4 The backend must make sure 9.2.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchonous transfers again (*).
    * \anchor transferElement_B_9_3 9.3 TransferElements without wait_for_new_data
-     * 9.3.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
+     * \anchor transferElement_B_9_3_1 9.3.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
    * \anchor transferElement_B_9_4 9.4 Write operations will throw  a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully.
 
 * 10. DeviceBackends
@@ -209,10 +209,11 @@ This documnent is currently still **INCOMPLETE**!
 
 * 3. boost::thread_interrupted may be thrown at any stage, if TransferElement::interrupt has been called.
 
-* 4. ChimeraTK::runtime_error in principle are recoverable. A later call to the same function must be able to succeed (for instance if a network outage has been resolved).
-   ChimeraTK::runtime_erro may only be thrown in 
+* 4. ChimeraTK::runtime_error in principle are recoverable. It is thrown, if the device (including the communication link) does not behave as expected. A later call to the same function (after the recovery has been triggered, cf. \ref transferElement_B_9_2_1 "B.9.2.1" resp. \ref transferElement_B_9_3_1 "B.9.3.1") must be able to succeed (for instance if a network outage has been resolved).
+   ChimeraTK::runtime_error may only be thrown in 
   * 4.1 doXxxTransferYyy(). It is the only exception that can occur in this function (except for boost::thread_interrupted)
   * 4.2 ChimeraTK::TransferElement::isReadable(), ChimeraTK::TransferElement::isWriteable() or ChimeraTK::TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
+  * 4.3 doPreXxx(), if the information returned by the functions in 4.2 is not yet available and needs to be determined from the running device.
 
 * 5. boost::numeric::bad_numeric_cast may only be thrown in
   * 5.1 ChimeraTK::TransferElement::doPreWrite()
@@ -220,7 +221,7 @@ This documnent is currently still **INCOMPLETE**!
    * 5.2.1 As the transfer is successful at this point, the currentVersionNumber must be updated as if the whole operation was successful before throwing the exception.
   * 5.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 6.2.4) (*).
 
-* 6. ChimeraTK::logic_error must follow strict conditions.
+* 6. ChimeraTK::logic_error must follow strict conditions. It is thrown, if the application (including its configuration files) does not behave as expected.
   * 6.1 logic_errors must be deterministic. They must always be avoidable by calling the corresponding test functions before executing a potentially failing action (*), and must occur if the logical condition is not fulfilled and the function is called anyway.
   * 6.2 Any logic_error must be thrown as early as possible(*). They are thrown **if and only if** one of the following conditions are met:
     * 6.2.1 A register does not exists my that name
@@ -244,9 +245,11 @@ This documnent is currently still **INCOMPLETE**!
     * 6.2.7 A write operation is executed on a transfer element that cannot be written
       * 6.2.7.1 Check with TransferElement::isWriteable() or TransferElement::isReadOnly()
       * 6.2.7.2 Thrown in doPreWrite()
-  * 6.3 Two remarks about how to follow these rules:
-    * 6.3.1 If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
-    * 6.3.2 isReadable(), isWriteable() and isReadOnly() might have to check for the existance of the register from a running backend (in case there is no map file). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
+  * 6.3 The information mentioned in 6.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant under normal circumstances. Only when open() is called (either for the first time or to recover form a ChimeraTK::runtime_error) the information might change and applications are expected to check it again.
+    * \anchor transferElement_C_6_3_1 6.3.1 If a device is changing this information on its own (e.g. makes a register read-only which was readable before), and the application hence performes an operation which is no longer possible, a ChimeraTK::runtime_error must be thrown (unexpected behaviour of the device). \ref transferElement_comment_C_6_3_1 "(*)"
+  * 6.4 Two remarks about how to follow these rules:
+    * 6.4.1 If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
+    * 6.4.2 isReadable(), isWriteable() and isReadOnly() might have to check for the existance of the register from a running backend (in case there is no map file). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
 
 ### (*) Comments ###
 * 5.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
@@ -257,6 +260,7 @@ This documnent is currently still **INCOMPLETE**!
 * 6.2.2 This also includes that the offset in a one dimensional case is so large that there are not enough elements left to provide the requested data.
 * 6.2.4 Some backends currenty throw a boost::numeric::bad_numeric_cast instead as described in 5.
 * 6.2.5.2 The generic tests if a backend is opened, or if an accessor readable or writeable are intentionally not implemented in TransferElement because they would invovle additional virtual function calls. To avoid these each implementation has to implement the checks in doPreXxx().
+* \anchor transferElement_comment_C_6_3_1 \ref transferElement_C_6_3_1 "6.3.1" To recover from the ChimeraTK::runtime_error, the application must call open(). At that point, the information is allowed to be changed. If the application fails to recheck the information, a retry of the failed operation will result in a ChimeraTK::logic_error. This behaviour follows the requirement to throw logic_errors only in doPreXxx(): if during a transfer the backend discovers that the operation is no longer allowed, a runtime_error must be thrown.
 
 ## D. Requirements for full implementations (e.g. in backends) ##
 
