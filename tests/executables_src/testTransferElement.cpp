@@ -33,6 +33,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     ++_preRead_counter;
     if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
     if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
+    if(_throwThreadInterruptedInPre) throw boost::thread_interrupted();
   }
 
   void doPreWrite(TransferType type, VersionNumber versionNumber) override {
@@ -47,6 +48,8 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     _newVersion = versionNumber;
     if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
     if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
+    if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
+    if(_throwThreadInterruptedInPre) throw boost::thread_interrupted();
   }
 
   void doReadTransferSynchronously(TransferType expectedType) {
@@ -60,6 +63,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_transferType == expectedType);
     ++_readTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
+    if(_throwThreadInterruptedInTransfer) throw boost::thread_interrupted();
   }
 
   void doReadTransfer() override {
@@ -77,7 +81,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::read);
     ++_readTransfer_counter;
-    if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
     _readQueue.pop_wait();
   }
 
@@ -96,7 +99,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::readNonBlocking);
     ++_readTransfer_counter;
-    if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
     _hasNewDataOrDatLost = _readQueue.pop();
     return _hasNewDataOrDatLost;
   }
@@ -116,7 +118,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::readLatest);
     ++_readTransfer_counter;
-    if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
     do {
       _hasNewDataOrDatLost = _readQueue.pop();
     } while(_hasNewDataOrDatLost);
@@ -134,7 +135,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(versionNumber == _newVersion);
     ++_writeTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
-
+    if(_throwThreadInterruptedInTransfer) throw boost::thread_interrupted();
     return _hasNewDataOrDatLost;
   }
 
@@ -149,12 +150,13 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(versionNumber == _newVersion);
     ++_writeTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
+    if(_throwThreadInterruptedInTransfer) throw boost::thread_interrupted();
     return _hasNewDataOrDatLost;
   }
   void doPostRead(TransferType type, bool hasNewData) override {
     BOOST_CHECK(_preRead_counter == 1);
     BOOST_CHECK(_preWrite_counter == 0);
-    if(!_throwLogicErr && !_throwRuntimeErrInPre) {
+    if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwThreadInterruptedInPre) {
       BOOST_CHECK(_readTransfer_counter == 1);
     }
     else {
@@ -167,13 +169,15 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_transferType == type);
     ++_postRead_counter;
     _hasNewDataOrDatLost = hasNewData;
+    if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
+    if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
   }
 
   void doPostWrite(TransferType type, bool dataLost) override {
     BOOST_CHECK(_preRead_counter == 0);
     BOOST_CHECK(_preWrite_counter == 1);
     BOOST_CHECK(_readTransfer_counter == 0);
-    if(!_throwLogicErr && !_throwRuntimeErrInPre) {
+    if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwNumericCast && !_throwThreadInterruptedInPre) {
       BOOST_CHECK(_writeTransfer_counter == 1);
     }
     else {
@@ -185,6 +189,16 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_transferType == type);
     ++_postWrite_counter;
     _hasNewDataOrDatLost = dataLost;
+    if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
+  }
+
+  void interrupt() override {
+    try {
+      throw boost::thread_interrupted();
+    }
+    catch(...) {
+      _readQueue.push_exception(std::current_exception());
+    }
   }
 
   bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override { return false; }
@@ -233,11 +247,29 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     _throwLogicErr = false;
     _throwRuntimeErrInPre = false;
     _throwRuntimeErrInTransfer = false;
+    _throwNumericCast = false;
+    _throwThreadInterruptedInPre = false;
+    _throwThreadInterruptedInTransfer = false;
+    _throwThreadInterruptedInPost = false;
   }
 
-  bool _throwLogicErr{false};
+  bool _throwLogicErr{false}; // always in doPreXxx()
   bool _throwRuntimeErrInTransfer{false};
   bool _throwRuntimeErrInPre{false};
+  bool _throwNumericCast{false}; // in doPreWrite() or doPreRead() depending on operation
+  bool _throwThreadInterruptedInPre{false};
+  bool _throwThreadInterruptedInTransfer{false};
+  bool _throwThreadInterruptedInPost{false};
+
+  // convenience function to put exceptions onto the readQueue
+  void putRuntimeErrorOnQueue() {
+    try {
+      throw ChimeraTK::runtime_error("Test");
+    }
+    catch(...) {
+      _readQueue.push_exception(std::current_exception());
+    }
+  }
 };
 
 #if 0 // currently not needed, maybe later?
@@ -554,24 +586,14 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeWithExceptions) {
   accessor._flags = {AccessMode::wait_for_new_data};
 
   accessor.resetCounters();
-  try {
-    throw ChimeraTK::runtime_error("Test");
-  }
-  catch(...) {
-    accessor._readQueue.push_exception(std::current_exception());
-  }
+  accessor.putRuntimeErrorOnQueue();
   BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
   BOOST_CHECK(accessor._transferType == TransferType::read);
 
   accessor.resetCounters();
-  try {
-    throw ChimeraTK::runtime_error("Test");
-  }
-  catch(...) {
-    accessor._readQueue.push_exception(std::current_exception());
-  }
+  accessor.putRuntimeErrorOnQueue();
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
   BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
@@ -675,7 +697,96 @@ BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
 BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
   // This tests the TransferElement specification B.6 (incl. B.6.1 - which is implicitly tested by the
   // TransferElementTestAccessor counter checks)
-  std::cout << "TODO!" << std::endl;
+
+  TransferElementTestAccessor<int32_t> accessor;
+
+  // test exceptions in preRead
+  accessor.resetCounters();
+  accessor._throwLogicErr = true;
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::logic_error);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+  accessor.resetCounters();
+  accessor._throwThreadInterruptedInPre = true;
+  BOOST_CHECK_THROW(accessor.read(), boost::thread_interrupted);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+
+  // test exceptions in preWrite
+  accessor.resetCounters();
+  accessor._throwLogicErr = true;
+  BOOST_CHECK_THROW(accessor.write(), ChimeraTK::logic_error);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+  accessor.resetCounters();
+  accessor._throwNumericCast = true;
+  BOOST_CHECK_THROW(accessor.write(), boost::numeric::bad_numeric_cast);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+  accessor.resetCounters();
+  accessor._throwThreadInterruptedInPre = true;
+  BOOST_CHECK_THROW(accessor.write(), boost::thread_interrupted);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+
+  // test exceptions in read transfer (without wait_for_new_data)
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+  accessor.resetCounters();
+  accessor._throwThreadInterruptedInTransfer = true;
+  BOOST_CHECK_THROW(accessor.read(), boost::thread_interrupted);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+
+  // test exceptions in read transfer (with wait_for_new_data, exception received through queue)
+  accessor.resetCounters();
+  accessor._flags = {AccessMode::wait_for_new_data};
+  accessor.putRuntimeErrorOnQueue();
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+  accessor.resetCounters();
+  accessor.interrupt();
+  BOOST_CHECK_THROW(accessor.read(), boost::thread_interrupted);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+  accessor._flags = {};
+
+  // test exceptions in write transfer
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+  accessor.resetCounters();
+  accessor._throwThreadInterruptedInTransfer = true;
+  BOOST_CHECK_THROW(accessor.write(), boost::thread_interrupted);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+
+  // test exceptions in destructive write transfer
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+  accessor.resetCounters();
+  accessor._throwThreadInterruptedInTransfer = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), boost::thread_interrupted);
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+
+  // check (at the example of the runtime error) that the exception is thrown by postRead() resp. postWrite() itself
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInTransfer = true;
+  accessor.preRead(TransferType::read);
+  accessor.readTransfer();
+  BOOST_CHECK_THROW(accessor.postRead(TransferType::read, false), ChimeraTK::runtime_error);
+
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInTransfer = true;
+  VersionNumber v{};
+  accessor.preWrite(TransferType::write, v);
+  accessor.writeTransfer(v);
+  BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, true), ChimeraTK::runtime_error);
 }
 
 /********************************************************************************************************************/
@@ -689,6 +800,13 @@ BOOST_AUTO_TEST_CASE(testReadLatest) {
 
 BOOST_AUTO_TEST_CASE(testDiscardValueException) {
   // This tests the TransferElement specification B.8.2.2
+  std::cout << "TODO!" << std::endl;
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDescendingVersionNumber) {
+  // This tests the TransferElement specification SPEC MISSING!
   std::cout << "TODO!" << std::endl;
 }
 
