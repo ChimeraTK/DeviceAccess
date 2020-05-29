@@ -306,7 +306,7 @@ namespace ChimeraTK {
       }
       catch(...) {
         std::cout << "BUG: Wrong exception type thrown in transfer function!" << std::endl;
-        throw;
+        std::terminate();
       }
     }
 
@@ -443,7 +443,7 @@ namespace ChimeraTK {
       }
       catch(...) {
         std::cout << "BUG: Wrong exception type thrown in doPreRead()!" << std::endl;
-        throw;
+        std::terminate();
       }
       readTransactionInProgress = true;
     }
@@ -538,7 +538,7 @@ namespace ChimeraTK {
       }
       catch(...) {
         std::cout << "BUG: Wrong exception type thrown in doPreWrite()!" << std::endl;
-        throw;
+        std::terminate();
       }
       writeTransactionInProgress = true;
     }
