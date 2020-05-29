@@ -158,6 +158,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       BOOST_CHECK(_readTransfer_counter == 1);
     }
     else {
+      // This tests the TransferElement specification B.6.1 for read operations
       BOOST_CHECK(_readTransfer_counter == 0);
     }
     BOOST_CHECK(_writeTransfer_counter == 0);
@@ -176,6 +177,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       BOOST_CHECK(_writeTransfer_counter == 1);
     }
     else {
+      // This tests the TransferElement specification B.6.1 for write operations
       BOOST_CHECK(_writeTransfer_counter == 0);
     }
     BOOST_CHECK(_postRead_counter == 0);
@@ -268,8 +270,9 @@ class TransferElementTestBackend : public DeviceBackendImpl {
 
 /********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeNoExceptions) {
-  // This tests the TransferElement specification B.4 and B.5
+BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeNoExceptions) {
+  // This tests the TransferElement specification B.4 (except B.4.3.2), B.5 (without sub-points) and B.7 (without B.7.4)
+  // for accessors without AccessMode::wait_for_new_data
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
 
@@ -327,8 +330,8 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeNoExceptions) {
 
 /********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
-  // This tests the TransferElement specification B.5.1
+BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
+  // This tests the TransferElement specification B.5.1 and B.7.4 for accessors without AccessMode::wait_for_new_data
   TransferElementTestAccessor<int32_t> accessor;
 
   accessor._readable = true;
@@ -517,13 +520,16 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingSyncModeWithExceptions) {
 
 /********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeNoExceptions) {
-  // This tests the TransferElement specification B.4 and B.5
+BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeNoExceptions) {
+  // This tests the TransferElement specification B.4 (except B.4.3.2), B.5 (without sub-points), B.7 (without B.7.4)
+  // and B.8.2 for accessors with AccessMode::wait_for_new_data and read operations (write operations are not affected
+  // by that flag)
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
 
   accessor._readable = true;
   accessor._writeable = false;
+  accessor._flags = {AccessMode::wait_for_new_data};
 
   accessor.resetCounters();
   accessor._readQueue.push();
@@ -539,12 +545,20 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeNoExceptions) {
   BOOST_CHECK(ret == true);
   BOOST_CHECK(accessor._hasNewDataOrDatLost == true);
   BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
+
+  accessor.resetCounters();
+  ret = accessor.readNonBlocking();
+  BOOST_CHECK(accessor._postRead_counter == 1); // the other counters are checked in doPostRead
+  BOOST_CHECK(ret == false);
+  BOOST_CHECK(accessor._hasNewDataOrDatLost == false);
+  BOOST_CHECK(accessor._transferType == TransferType::readNonBlocking);
 }
 
 /********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testPrePostPairingAsyncModeWithExceptions) {
-  // This tests the TransferElement specification B.5.1
+BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeWithExceptions) {
+  // This tests the TransferElement specification B.5.1, B.7.4 and B.8.3 for accessors with
+  // AccessMode::wait_for_new_data and read operations (write operations are not affected by that flag).
   // Note: since there is no difference between sync and async mode for logic_errors, only runtime_errors are tested
   //       here.
   TransferElementTestAccessor<int32_t> accessor;
@@ -608,6 +622,35 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
   BOOST_CHECK(accessor._postWrite_counter == 1); // the other counters are checked in doPostWrite
 
   // no need to test all read and write types, since the mechanism does not depend on the type.
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
+  // This tests the TransferElement specification B.4.3.2
+  std::cout << "TODO!" << std::endl;
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
+  // This tests the TransferElement specification B.6 (incl. B.6.1 - which is implicitly tested by the
+  // TransferElementTestAccessor counter checks)
+  std::cout << "TODO!" << std::endl;
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReadLatest) {
+  // This tests the TransferElement specification B.3.1.4
+  std::cout << "TODO!" << std::endl;
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDiscardValueException) {
+  // This tests the TransferElement specification B.8.2.2
+  std::cout << "TODO!" << std::endl;
 }
 
 /********************************************************************************************************************/
