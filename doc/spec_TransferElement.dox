@@ -118,8 +118,8 @@ This documnent is currently still **INCOMPLETE**!
     - 4.3.1 In read transfers, doPostRead() is the only place where the application buffer may be changed (*).
     - 4.3.2 In write transfers, postWrite() updates the version number of the application buffer TransferElement::_versionNumber to the version number provided to the write() call, if no exception is (re-)thrown in doPostWrite().
 
-- 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
-  - 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::thread_interrupted and boost::numeric::bad_numeric_cast) are thrown (see 6).
+- \anchor transferElement_B_5 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
+  - 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6).
   - 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa.
   
 - 6. Exceptions thrown in preXxx() or xxxTransferYyy() are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs.
@@ -145,6 +145,12 @@ This documnent is currently still **INCOMPLETE**!
       - 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronous read is activated automatically (incl. sending of the initial value). This happens even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and Device::activateAsyncRead() has not been called yet.
       - 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
       - 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
+  - 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt().
+    - 8.6.1 TransferElement::interrupt() places a boost::thread_interrupted exception into the TransferElement::_readQueue.
+    - 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally.
+    - 8.6.3 The operation receiving the boost::thread_interrupted exception will also obey \ref transferElement_B_5 "5", i.e. postRead() is still called.
+    - 8.6.4 Calling TransferElement::interrupt() does not disturb the subsequent operation of the TransferElement.
+    - 8.6.5 Calling TransferElement::interrupt() without AccessMode::wait_for_new_data will cause a ChimeraTK::logic_error.
 
 - 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    - \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1")
@@ -225,14 +231,14 @@ This documnent is currently still **INCOMPLETE**!
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
-- 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error, boost::thread_interrupted and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
+- 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
 - 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. *Only* exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw these exceptions in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls).
 
-- 3. boost::thread_interrupted may be thrown at any stage, if TransferElement::interrupt has been called.
+- 3. (removed)
 
 - 4. ChimeraTK::runtime_error in principle are recoverable. It is thrown, if the device (including the communication link) does not behave as expected. A later call to the same function (after the recovery has been triggered, cf. \ref transferElement_B_9_2_1 "B.9.2.1" resp. \ref transferElement_B_9_3_1 "B.9.3.1") must be able to succeed (for instance if a network outage has been resolved).
    ChimeraTK::runtime_error may only be thrown in 
-  - 4.1 doXxxTransferYyy(). It is the only exception that can occur in this function (except for boost::thread_interrupted)
+  - 4.1 doXxxTransferYyy(). It is the only exception that can occur in this function
   - 4.2 ChimeraTK::TransferElement::isReadable(), ChimeraTK::TransferElement::isWriteable() or ChimeraTK::TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
   - 4.3 doPreXxx(), if the information returned by the functions in 4.2 is not yet available and needs to be determined from the running device.
 
