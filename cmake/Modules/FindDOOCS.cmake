@@ -96,7 +96,7 @@ if(DOOCS_FIND_COMPONENTS_DDAQ)
   FIND_PATH(DOOCS_DIR_ddaq libDOOCSddaq.so
     ${DOOCS_DIR}
   )
-  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSddaq timinginfo daqevstat DAQFSM TTF2XML xerces-c BM TTF2evutl)
+  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSddaq timinginfo daqevstat DAQFSM TTF2XML xerces-c BM TTF2evutl DAQsvrutil)
   set(COMPONENT_DIRS ${COMPONENT_DIRS} DOOCS_DIR_ddaq)
 endif()
 
