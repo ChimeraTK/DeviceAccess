@@ -116,7 +116,7 @@ This documnent is currently still **INCOMPLETE**!
     - 4.2.4 Transfer implementations do not change the application buffer
   - 4.3 postXxx(): calls doPostXxx() of the implementation to allow follow-up work after the actual transfer.
     - 4.3.1 In read transfers, doPostRead() is the only place where the application buffer may be changed (*).
-    - 4.3.2 In write transfers, postWrite() updates the version number of the application buffer TransferElement::_versionNumber to the version number provided to the write() call, if no exception is (re-)thrown in doPostWrite().
+    - \anchor transferElement_B_4_3_2 4.3.2 In write transfers, postWrite() updates the version number of the application buffer TransferElement::_versionNumber to the version number provided to the write() call, if no exception is (re-)thrown in doPostWrite() (cf. \ref transferElement_B_11_3 "B.11.3").
 
 - \anchor transferElement_B_5 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
   - 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6).
@@ -181,14 +181,12 @@ This documnent is currently still **INCOMPLETE**!
   - 11.2 VersionNumber objects are used
     - 11.2.1 to determine which data is older, as needed e.g. by bidirectional process variable implementations, and
     - 11.2.2 to build a consistent data set from multiple TransferElements (see DataConsistencyGroup). This requires the data sources (e.g. backend implementations) to attach the same VersionNumber to different TransferElements if the data is consistent.
-  - 11.3 The VersionNumber of the last written/read data of a TransferElement can be obtained through TransferElement::getVersionNumber().
+  - \anchor transferElement_B_11_3 11.3 The VersionNumber of the last successfully written/read data of a TransferElement can be obtained through TransferElement::getVersionNumber() (cf. \ref transferElement_B_4_3_2 "B.4.3.2").
   - 11.4 The VersionNumber for a transfer is given as an optional argument to TransferElement::write() resp. TransferElement::writeDestructively(). If the argument is missing, a new VersionNumber is generated.
     - 11.4.1 The VersionNumber passed to the write call must be greater or equal to the one returned by TransferElement::getVersionNumber() of the same TransferElement, otherwise a ChimeraTK::logic_error is thrown by the TransferElement base class. Write calls to different TransferElement do not need to follow this rule.
     - 11.4.2 The VersionNumber is passed on to the TransferElement implementation via the calls TransferElement::doPreWrite(), TransferElement::doWriteTransfer() resp. TransferElement::doWriteTransferDestructively() and TransferElement::doPostWrite(), after the precondition 11.4.1 has been checked.
-  - 11.5 After a successful write transfer (no exception), TransferElement::getVersionNumber() returns the VersionNumber that has been passed to the write call.
-  - 11.6 After a successful read transfer (no exception), TransferElement::getVersionNumber() returns the VersionNumber associated with the read data, which is always greater or equal to the one returned by TransferElement::getVersionNumber().
-  - 11.7 If a transfer was not successful (exception has been thrown), the VersionNumber returned by TransferElement::getVersionNumber() does not change.
-  - 11.8 Before the first successful transfer, TransferElement::getVersionNumber() always returns the {nullptr} constructed VersionNumber.
+  - 11.5 If a transfer was not successful (exception has been thrown), the VersionNumber returned by TransferElement::getVersionNumber() does not change.
+  - 11.6 Before the first successful transfer, TransferElement::getVersionNumber() always returns the {nullptr} constructed VersionNumber.
   
 
 - 12. TransferGroup
