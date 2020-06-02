@@ -219,6 +219,10 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
   }
 
   void interrupt() override {
+    // This functionality will be moved to the base class
+    if(!_flags.has(AccessMode::wait_for_new_data)) {
+      throw ChimeraTK::logic_error("TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
+    }
     try {
       throw boost::thread_interrupted();
     }
@@ -896,7 +900,7 @@ BOOST_AUTO_TEST_CASE(testDiscardValueException) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testVersionNumber) {
-  // This tests the TransferElement specification B.11.4.1, B.11.4.2,and (partially) B.11.6
+  // This tests the TransferElement specification B.11.4.1, B.11.4.2, and (partially) B.11.6
   // B.11.3/B.11.5 is tested in testPostWriteVersionNumberUpdate
   // B.11.6 might be screwed up by implementations and hence needs to be tested in the UnifiedBackendTest as well
   TransferElementTestAccessor<int32_t> accessor;
@@ -916,8 +920,29 @@ BOOST_AUTO_TEST_CASE(testVersionNumber) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testInterrupt) {
-  // This tests the TransferElement specification B.8.6.1, B.8.6.2, B.8.6.3 and B.8.6.5
-  std::cout << "TODO!" << std::endl;
+  // This tests the TransferElement specification B.8.6.1, B.8.6.2, B.8.6.3, B.8.6.5, and (partially) B.8.6.4
+  TransferElementTestAccessor<int32_t> accessor;
+
+  BOOST_CHECK_THROW(accessor.interrupt(), ChimeraTK::logic_error); // B.8.6.5
+
+  accessor._flags = {AccessMode::wait_for_new_data};
+
+  accessor.interrupt();
+  accessor.resetCounters();
+  BOOST_CHECK_THROW(accessor.read(), boost::thread_interrupted); // B.8.6.1/B.8.6.2
+  BOOST_CHECK(accessor._postRead_counter == 1);                  // B.8.6.3
+
+  // B.8.6.4 partially tested in the following (backend-specific tests required as well)
+  accessor.resetCounters();
+  BOOST_CHECK(accessor.readNonBlocking() == false);
+  BOOST_CHECK(accessor._postRead_counter == 1);
+  accessor.resetCounters();
+  accessor.write();
+  BOOST_CHECK(accessor._postWrite_counter == 1);
+  accessor._readQueue.push();
+  accessor.resetCounters();
+  accessor.read();
+  BOOST_CHECK(accessor._postRead_counter == 1);
 }
 
 /********************************************************************************************************************/
