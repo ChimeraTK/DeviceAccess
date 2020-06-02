@@ -895,8 +895,28 @@ BOOST_AUTO_TEST_CASE(testDiscardValueException) {
 
 /********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testDescendingVersionNumber) {
-  // This tests the TransferElement specification SPEC MISSING!
+BOOST_AUTO_TEST_CASE(testVersionNumber) {
+  // This tests the TransferElement specification B.11.4.1, B.11.4.2,and (partially) B.11.6
+  // B.11.3/B.11.5 is tested in testPostWriteVersionNumberUpdate
+  // B.11.6 might be screwed up by implementations and hence needs to be tested in the UnifiedBackendTest as well
+  TransferElementTestAccessor<int32_t> accessor;
+
+  BOOST_CHECK(accessor.getVersionNumber() == VersionNumber{nullptr}); // partial check for B.11.6
+
+  VersionNumber v1;
+  VersionNumber v2;
+  accessor.resetCounters();
+  accessor.write(v2);
+  BOOST_CHECK(accessor._newVersion == v2); // B.11.4.2
+  accessor.resetCounters();
+  BOOST_CHECK_THROW(accessor.write(v1), ChimeraTK::logic_error); // B.11.4.1
+  BOOST_CHECK(accessor._newVersion == v2);                       // B.11.4.2
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testInterrupt) {
+  // This tests the TransferElement specification B.8.6.1, B.8.6.2, B.8.6.3 and B.8.6.5
   std::cout << "TODO!" << std::endl;
 }
 
