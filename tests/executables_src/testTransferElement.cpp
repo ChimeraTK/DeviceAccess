@@ -209,6 +209,13 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     ++_postWrite_counter;
     _hasNewDataOrDatLost = dataLost;
     if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
+
+    // Update version number: this will be moved to the base class!
+    // Remove warning in testPostWriteVersionNumberUpdate once this has been done.
+    if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwNumericCast && !_throwThreadInterruptedInPre &&
+        !_throwRuntimeErrInTransfer && !_throwThreadInterruptedInTransfer) {
+      _currentVersion = _newVersion;
+    }
   }
 
   void interrupt() override {
@@ -662,10 +669,10 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
-  // This tests the TransferElement specification B.4.3.2
-  std::cout << "FIXME This test case is disabled until functionality is implemented in TransferElement!" << std::endl;
-  return;
-
+  // This tests the TransferElement specification B.4.3.2/B.11.3/B.11.5
+  std::cout << "WARNING: This test (testPostWriteVersionNumberUpdate) is currently testing functionality which is part "
+               "of the test implementation, not the base class!"
+            << std::endl;
   TransferElementTestAccessor<int32_t> accessor;
 
   // test initial value
