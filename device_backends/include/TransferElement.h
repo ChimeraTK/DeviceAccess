@@ -525,6 +525,7 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error(
               "The version number passed to write() is less than the last version number used.");
         }
+        writeTransactionInProgress = true; // must not be set, if the logic_error is thrown above due to the old version
         doPreWrite(type, versionNumber);
       }
       catch(ChimeraTK::logic_error&) {
@@ -548,7 +549,6 @@ namespace ChimeraTK {
         std::cout << "BUG: Wrong exception type thrown in doPreWrite()!" << std::endl;
         std::terminate();
       }
-      writeTransactionInProgress = true;
     }
 
     /** Backend specific implementation of preWrite(). preWrite() will call this function, but it will make sure that
@@ -568,12 +568,15 @@ namespace ChimeraTK {
      *  Called by write(). Also the TransferGroup will call this function after a
      * write was executed directly on the underlying accessor. */
     void postWrite(TransferType type, bool dataLost) {
-      if(!writeTransactionInProgress) return;
-      writeTransactionInProgress = false;
-      doPostWrite(type, dataLost);
+      if(writeTransactionInProgress) {
+        writeTransactionInProgress = false;
+        doPostWrite(type, dataLost);
+      }
       // Note: doPostWrite can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostWrite()
       // always, a try-catch block may be necessary.
+      // Another note: If writeTransactionInProgress == false, there can still be an exception, if the version number
+      // used in a write was too old (see preWrite).
       if(hasSeenException) {
         hasSeenException = false;
         std::rethrow_exception(activeException);
