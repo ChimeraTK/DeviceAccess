@@ -167,6 +167,13 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     if(_throwThreadInterruptedInTransfer) throw boost::thread_interrupted();
     return _hasNewDataOrDatLost;
   }
+
+  /** 
+   * This doPostRead() implementation checks partially the TransferElement specification B.4.
+   * 
+   * \anchor testTransferElement_B_6_1_read It also tests specifically the
+   * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for read operations.
+   */
   void doPostRead(TransferType type, bool hasNewData) override {
     BOOST_CHECK(_preRead_counter == 1);
     BOOST_CHECK(_preWrite_counter == 0);
@@ -179,7 +186,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       }
     }
     else {
-      // This tests the TransferElement specification B.6.1 for read operations
+      /* Here B.6.1 is tested for read operations */
       BOOST_CHECK(_readTransfer_counter == 0);
     }
     BOOST_CHECK(_writeTransfer_counter == 0);
@@ -192,6 +199,12 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
   }
 
+  /** 
+   * This doPostWrite() implementation checks partially the TransferElement specification B.4.
+   * 
+   * \anchor testTransferElement_B_6_1_write It also tests specifically the
+   * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for write operations.
+   */
   void doPostWrite(TransferType type, bool dataLost) override {
     BOOST_CHECK(_preRead_counter == 0);
     BOOST_CHECK(_preWrite_counter == 1);
@@ -200,7 +213,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       BOOST_CHECK(_writeTransfer_counter == 1);
     }
     else {
-      // This tests the TransferElement specification B.6.1 for write operations
+      /* Here B.6.1 is tested for write operations */
       BOOST_CHECK(_writeTransfer_counter == 0);
     }
     BOOST_CHECK(_postRead_counter == 0);
@@ -340,9 +353,15 @@ class TransferElementTestBackend : public DeviceBackendImpl {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specification:
+ *  * \anchor testTransferElement_B_4_sync \ref transferElement_B_4 "B.4" (except B.4.3.2),
+ *  * \anchor testTransferElement_B_5_sync \ref transferElement_B_5 "B.5" (without sub-points) and
+ *  * \anchor testTransferElement_B_7_sync \ref transferElement_B_7 "B.7" (without B.7.4)
+ * 
+ *  for accessors without AccessMode::wait_for_new_data
+ */
 BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeNoExceptions) {
-  // This tests the TransferElement specification B.4 (except B.4.3.2), B.5 (without sub-points) and B.7 (without B.7.4)
-  // for accessors without AccessMode::wait_for_new_data
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
 
@@ -400,8 +419,14 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeNoExceptions) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specification:
+ *  * \anchor testTransferElement_B_5_1_sync \ref transferElement_B_5_1 "B.5.1" and
+ *  * \anchor testTransferElement_B_7_4_sync \ref transferElement_B_7_4 "B.7.4"
+ * 
+ *  for accessors without AccessMode::wait_for_new_data
+ */
 BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
-  // This tests the TransferElement specification B.5.1 and B.7.4 for accessors without AccessMode::wait_for_new_data
   TransferElementTestAccessor<int32_t> accessor;
 
   accessor._readable = true;
@@ -576,10 +601,17 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_4_async \ref transferElement_B_4 "B.4" (except B.4.3.2),
+ *  * \anchor testTransferElement_B_5_async \ref transferElement_B_5 "B.5" (without sub-points),
+ *  * \anchor testTransferElement_B_7_async \ref transferElement_B_7 "B.7" (without B.7.4) and
+ *  * \anchor testTransferElement_B_8_2 \ref transferElement_B_8_2 "B.8.2" (without sub-points)
+ * 
+ *  for accessors with AccessMode::wait_for_new_data and read operations (write operations are not affected by that
+ *  flag).
+ */
 BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeNoExceptions) {
-  // This tests the TransferElement specification B.4 (except B.4.3.2), B.5 (without sub-points), B.7 (without B.7.4)
-  // and B.8.2 for accessors with AccessMode::wait_for_new_data and read operations (write operations are not affected
-  // by that flag)
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
 
@@ -612,11 +644,19 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeNoExceptions) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_5_1_async \ref transferElement_B_5_1 "B.5.1",
+ *  * \anchor testTransferElement_B_7_4_async \ref transferElement_B_7_4 "B.7.4" and
+ *  * \anchor testTransferElement_B_8_3 \ref transferElement_B_8_3 "B.8.3" (only second sentence)
+ *
+ *  for accessors with AccessMode::wait_for_new_data and read operations (write operations are not affected by that 
+ *  flag).
+ * 
+ *  Note: since there is no difference between sync and async mode for logic_errors, only runtime_errors are tested
+ *  here.
+ */
 BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeWithExceptions) {
-  // This tests the TransferElement specification B.5.1, B.7.4 and B.8.3 for accessors with
-  // AccessMode::wait_for_new_data and read operations (write operations are not affected by that flag).
-  // Note: since there is no difference between sync and async mode for logic_errors, only runtime_errors are tested
-  //       here.
   TransferElementTestAccessor<int32_t> accessor;
 
   accessor._readable = true;
@@ -640,8 +680,11 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeWithExceptions) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_5_2 \ref transferElement_B_5_2 "B.5.2".
+ */
 BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
-  // This tests the TransferElement specification B.5.2
   TransferElementTestAccessor<int32_t> accessor;
 
   // read()
@@ -672,8 +715,13 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_4_3_2 \ref transferElement_B_4_3_2 "B.4.3.2",
+ *  * \anchor testTransferElement_B_11_3 \ref transferElement_B_11_3 "B.11.3" and
+ *  * \anchor testTransferElement_B_11_5 \ref transferElement_B_11_5 "B.11.5".
+ */
 BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
-  // This tests the TransferElement specification B.4.3.2/B.11.3/B.11.5
   std::cout << "WARNING: This test (testPostWriteVersionNumberUpdate) is currently testing functionality which is part "
                "of the test implementation, not the base class!"
             << std::endl;
@@ -732,10 +780,11 @@ BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_6 \ref transferElement_B_6 "B.6" (sub-point implicitly included)
+ */
 BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
-  // This tests the TransferElement specification B.6 (incl. B.6.1 - which is implicitly tested by the
-  // TransferElementTestAccessor counter checks)
-
   TransferElementTestAccessor<int32_t> accessor;
 
   // test exceptions in preRead
@@ -829,8 +878,11 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_3_1_4 \ref transferElement_B_3_1_4 "B.3.1.4"
+ */
 BOOST_AUTO_TEST_CASE(testReadLatest) {
-  // This tests the TransferElement specification B.3.1.4
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
 
@@ -869,8 +921,11 @@ BOOST_AUTO_TEST_CASE(testReadLatest) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_8_2_2 \ref transferElement_B_8_2_2 "B.8.2.2"
+ */
 BOOST_AUTO_TEST_CASE(testDiscardValueException) {
-  // This tests the TransferElement specification B.8.2.2
   TransferElementTestAccessor<int32_t> accessor;
   bool ret;
   accessor._flags = {AccessMode::wait_for_new_data};
@@ -899,10 +954,17 @@ BOOST_AUTO_TEST_CASE(testDiscardValueException) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_11_4_1 \ref transferElement_B_11_4_1 "B.11.4.1",
+ *  * \anchor testTransferElement_B_11_4_2 \ref transferElement_B_11_4_2 "B.11.4.2" and
+ *  * \anchor testTransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6" (partially).
+ *
+ *  Notes:
+ *  * B.11.3/B.11.5 is already tested in testPostWriteVersionNumberUpdate.
+ *  * B.11.6 might be screwed up by implementations and hence needs to be tested in the UnifiedBackendTest as well.
+ */
 BOOST_AUTO_TEST_CASE(testVersionNumber) {
-  // This tests the TransferElement specification B.11.4.1, B.11.4.2, and (partially) B.11.6
-  // B.11.3/B.11.5 is tested in testPostWriteVersionNumberUpdate
-  // B.11.6 might be screwed up by implementations and hence needs to be tested in the UnifiedBackendTest as well
   TransferElementTestAccessor<int32_t> accessor;
 
   BOOST_CHECK(accessor.getVersionNumber() == VersionNumber{nullptr}); // partial check for B.11.6
@@ -919,8 +981,15 @@ BOOST_AUTO_TEST_CASE(testVersionNumber) {
 
 /********************************************************************************************************************/
 
+/** 
+ *  This tests the TransferElement specifications:
+ *  * \anchor testTransferElement_B_8_6_1 \ref transferElement_B_8_6_1 "B.8.6.1",
+ *  * \anchor testTransferElement_B_8_6_2 \ref transferElement_B_8_6_2 "B.8.6.2",
+ *  * \anchor testTransferElement_B_8_6_3 \ref transferElement_B_8_6_3 "B.8.6.3",
+ *  * \anchor testTransferElement_B_8_6_4 \ref transferElement_B_8_6_4 "B.8.6.4" (base-class part) and
+ *  * \anchor testTransferElement_B_8_6_5 \ref transferElement_B_8_6_5 "B.8.6.5".
+ */
 BOOST_AUTO_TEST_CASE(testInterrupt) {
-  // This tests the TransferElement specification B.8.6.1, B.8.6.2, B.8.6.3, B.8.6.5, and (partially) B.8.6.4
   TransferElementTestAccessor<int32_t> accessor;
 
   BOOST_CHECK_THROW(accessor.interrupt(), ChimeraTK::logic_error); // B.8.6.5
