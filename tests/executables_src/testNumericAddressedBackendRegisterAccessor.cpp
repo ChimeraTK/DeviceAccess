@@ -385,13 +385,14 @@ BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(exceptionHandling) {
+BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   std::string cdd("(ExceptionDummy:1?map=test3.map)");
   auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
 
   UnifiedBackendTest ubt;
 
-  ubt.setTestRegisters<int>({"/Integers/signed32"});
+  ubt.setSyncReadTestRegisters<int>({"/Integers/signed32"});
+  ubt.setWriteTestRegisters<int>({"/Integers/signed32"});
 
   ubt.forceRuntimeErrorOnRead(
       {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});

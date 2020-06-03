@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
   UnifiedBackendTest ubt;
 
-  ubt.setTestRegisters<int>({"/NotUsed0"});
+  ubt.setSyncReadTestRegisters<int>({"/NotUsed0"});
 
   ubt.forceRuntimeErrorOnRead(
       {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
