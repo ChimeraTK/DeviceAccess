@@ -47,7 +47,7 @@ This documnent is currently still **INCOMPLETE**!
   - 6.2 preXxx(), public
     - void TransferElement::preRead(TransferType type)
     - void TransferElement::preWrite(TransferType type, VersionNumber versionNumber)
-  - 6.3 doPreXxx(), private virtual
+  - 6.3 doPreXxx(), protected virtual
     - void TransferElement::doPreRead(TransferType type)
     - void TransferElement::doPreWrite(TransferType type, VersionNumber versionNumber)
   - 6.4 xxxTransferYyy(), public
@@ -55,14 +55,14 @@ This documnent is currently still **INCOMPLETE**!
     - bool TransferElement::readTransferNonBlocking()
     - bool TransferElement::writeTransfer(VersionNumber versionNumber)
     - bool TransferElement::writeTransferDestructively(VersionNumber versionNumber)
-  - 6.5 doXxxTransferYyy()
+  - 6.5 doXxxTransferYyy(), protected
     - void TransferElement::doReadTransferSynchonously(), pure virtual (*)
     - bool TransferElement::doWriteTransfer(VersionNumber versionNumber), pure virtual
     - bool TransferElement::doWriteTransferDestructively(VersionNumber versionNumber), virtual
   - 6.6 postXxx(), public
     - TransferElement::postRead(TransferType type, bool hasNewData)
     - TransferElement::postWrite(TransferType type)
-  - 6.7 doPostXxx(), private virtual
+  - 6.7 doPostXxx(), protected virtual
     - TransferElement::doPostRead(TransferType type, bool hasNewData)
     - TransferElement::doPostWrite(TransferType type)
    
