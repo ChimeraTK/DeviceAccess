@@ -38,19 +38,19 @@ This documnent is currently still **INCOMPLETE**!
   - 5.4 The content of the buffer can always be modified by the application.(*)
 
 - 6. Placeholders are used to summarise various function names:
-  - 6.1 xxxYyy(), public, operations called by the application
+  - 6.1 xxxYyy(), public, operations called by the application (through the TransfeElementAbstractor)
     - ChimeraTK::TransferElement::read()
     - ChimeraTK::TransferElement::readNonBlocking()
     - ChimeraTK::TransferElement::readLatest()
     - ChimeraTK::TransferElement::write()
     - ChimeraTK::TransferElement::writeDestructively()
-  - 6.2 preXxx(), private
+  - 6.2 preXxx(), public
     - ChimeraTK::TransferElement::preRead()
     - ChimeraTK::TransferElement::preWrite()
-  - 6.3 doPreXxx(), virtual
+  - 6.3 doPreXxx(), private virtual
     - ChimeraTK::TransferElement::doPreRead()
     - ChimeraTK::TransferElement::doPreWrite()
-  - 6.4 xxxTransferYyy(), private
+  - 6.4 xxxTransferYyy(), public
     - ChimeraTK::TransferElement::readTransfer()
     - ChimeraTK::TransferElement::readTransferNonBlocking()
     - ChimeraTK::TransferElement::writeTransfer()
@@ -59,10 +59,10 @@ This documnent is currently still **INCOMPLETE**!
     - ChimeraTK::TransferElement::doReadTransferSynchonously(), pure virtual (*)
     - ChimeraTK::TransferElement::doWriteTransfer(), pure virtual
     - ChimeraTK::TransferElement::doWriteTransferDestructively(), virtual
-  - 6.6 postXxx(), private
+  - 6.6 postXxx(), public
     - ChimeraTK::TransferElement::postRead()
     - ChimeraTK::TransferElement::postWrite()
-  - 6.7 doPostXxx(), virtual
+  - 6.7 doPostXxx(), private virtual
     - ChimeraTK::TransferElement::doPostRead()
     - ChimeraTK::TransferElement::doPostWrite()
    
