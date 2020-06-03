@@ -39,32 +39,32 @@ This documnent is currently still **INCOMPLETE**!
 
 - 6. Placeholders are used to summarise various function names:
   - 6.1 xxxYyy(), public, operations called by the application (through the TransfeElementAbstractor)
-    - ChimeraTK::TransferElement::read()
-    - ChimeraTK::TransferElement::readNonBlocking()
-    - ChimeraTK::TransferElement::readLatest()
-    - ChimeraTK::TransferElement::write()
-    - ChimeraTK::TransferElement::writeDestructively()
+    - void TransferElement::read()
+    - bool TransferElement::readNonBlocking()
+    - bool TransferElement::readLatest()
+    - bool TransferElement::write(VersionNumber versionNumber = {})
+    - bool TransferElement::writeDestructively(VersionNumber versionNumber = {})
   - 6.2 preXxx(), public
-    - ChimeraTK::TransferElement::preRead()
-    - ChimeraTK::TransferElement::preWrite()
+    - void TransferElement::preRead(TransferType type)
+    - void TransferElement::preWrite(TransferType type, VersionNumber versionNumber)
   - 6.3 doPreXxx(), private virtual
-    - ChimeraTK::TransferElement::doPreRead()
-    - ChimeraTK::TransferElement::doPreWrite()
+    - void TransferElement::doPreRead(TransferType type)
+    - void TransferElement::doPreWrite(TransferType type, VersionNumber versionNumber)
   - 6.4 xxxTransferYyy(), public
-    - ChimeraTK::TransferElement::readTransfer()
-    - ChimeraTK::TransferElement::readTransferNonBlocking()
-    - ChimeraTK::TransferElement::writeTransfer()
-    - ChimeraTK::TransferElement::writeTransferDestructively()
+    - void TransferElement::readTransfer()
+    - bool TransferElement::readTransferNonBlocking()
+    - bool TransferElement::writeTransfer(VersionNumber versionNumber)
+    - bool TransferElement::writeTransferDestructively(VersionNumber versionNumber)
   - 6.5 doXxxTransferYyy()
-    - ChimeraTK::TransferElement::doReadTransferSynchonously(), pure virtual (*)
-    - ChimeraTK::TransferElement::doWriteTransfer(), pure virtual
-    - ChimeraTK::TransferElement::doWriteTransferDestructively(), virtual
+    - void TransferElement::doReadTransferSynchonously(), pure virtual (*)
+    - bool TransferElement::doWriteTransfer(VersionNumber versionNumber), pure virtual
+    - bool TransferElement::doWriteTransferDestructively(VersionNumber versionNumber), virtual
   - 6.6 postXxx(), public
-    - ChimeraTK::TransferElement::postRead()
-    - ChimeraTK::TransferElement::postWrite()
+    - TransferElement::postRead(TransferType type, bool hasNewData)
+    - TransferElement::postWrite(TransferType type)
   - 6.7 doPostXxx(), private virtual
-    - ChimeraTK::TransferElement::doPostRead()
-    - ChimeraTK::TransferElement::doPostWrite()
+    - TransferElement::doPostRead(TransferType type, bool hasNewData)
+    - TransferElement::doPostWrite(TransferType type)
    
 - 7. Private and virtual functions
   - 7.1 The private functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
@@ -128,8 +128,8 @@ This documnent is currently still **INCOMPLETE**!
 - 7. Return values of xxxTransferYyy():
   - 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
   - \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)"
-  - 7.3 The return value is passed on to the postXxx() function call (via hasNewData resp. dataLost), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), hasNewData is set to true.
-  - 7.4 In case of an exception in either preXxx() or xxxTransferYyy(), postXxx() receives instead the information that the transfer didn't sucessfully take place (hasNewData = false resp. dataLost = true).
+  - 7.3 For read operations, the return value is passed on to postRead() (via hasNewData), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), hasNewData is set to true.
+  - 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() receives instead the information that the transfer didn't sucessfully take place (hasNewData = false).
   
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
