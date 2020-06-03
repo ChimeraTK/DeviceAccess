@@ -192,7 +192,8 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
 
 /**
  * This tests the TransferElement specifications:
- * * B.11.6.
+ * * B.11.6 and
+ * * MISSING SPEC for value after construction of data buffer
  */
 void UnifiedBackendTest::valueAfterConstruction() {
   std::cout << "--- valueAfterConstruction" << std::endl;
@@ -202,10 +203,11 @@ void UnifiedBackendTest::valueAfterConstruction() {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getScalarRegisterAccessor<UserType>(registerName);
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // check "value after construction"
-      BOOST_CHECK_EQUAL(UserType(reg), UserType());
+      std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
+      for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
     }
   });
@@ -221,13 +223,14 @@ void UnifiedBackendTest::exceptionHandlingSyncRead() {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getScalarRegisterAccessor<UserType>(registerName);
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // attempt read while device closed, logic_error is expected.
       BOOST_CHECK_THROW(reg.read(), ChimeraTK::logic_error);
 
       // check "value after construction" still there
-      BOOST_CHECK_EQUAL(UserType(reg), UserType());
+      std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
+      for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
       // open the device, let it throw runtime_error exceptions
@@ -260,13 +263,14 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getScalarRegisterAccessor<UserType>(registerName, 0, {ctk::AccessMode::wait_for_new_data});
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
       // attempt read while device closed, logic_error is expected.
       BOOST_CHECK_THROW(reg.read(), ChimeraTK::logic_error);
 
       // check "value after construction" still there
-      BOOST_CHECK_EQUAL(UserType(reg), UserType());
+      std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
+      for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
       // open the device, let it throw runtime_error exceptions
@@ -298,7 +302,7 @@ void UnifiedBackendTest::exceptionHandlingWrite() {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getScalarRegisterAccessor<UserType>(registerName);
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // repeat the following check for a list of actions
       std::list<std::pair<std::string, std::function<void(void)>>> actionList;
@@ -311,7 +315,8 @@ void UnifiedBackendTest::exceptionHandlingWrite() {
         BOOST_CHECK_THROW(theAction(), decltype(expectedExceptionType));
 
         // check "value after construction" still there
-        BOOST_CHECK_EQUAL(UserType(reg), UserType());
+        std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
+        for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
         BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
       };
 
