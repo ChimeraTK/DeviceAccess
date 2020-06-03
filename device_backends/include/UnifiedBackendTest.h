@@ -64,20 +64,49 @@ class UnifiedBackendTest {
   void forceRuntimeErrorOnWrite(const ActionList& list) { forceExceptionsWrite = list; }
 
   /**
-   *  Set the names of registers to be used for the tests
+   *  Set the names of synchronous read registers to be used for the tests. These registers must *not* support
+   *  AccessMode::wait_for_new_data. The registers must be readable. Registers may not appear in the list set via
+   *  setAsyncReadTestRegisters() as well, but they may appear in the list set through setWriteTestRegisters().
    */
   template<typename UserType>
-  void setTestRegisters(const std::list<std::string>& names) {
-    boost::fusion::at_key<int>(registers.table) = names;
+  void setSyncReadTestRegisters(std::list<std::string> names) {
+    names.sort();
+    boost::fusion::at_key<UserType>(syncReadRegisters.table).merge(std::list<std::string>(names));
+    boost::fusion::at_key<UserType>(readRegisters.table).merge(std::list<std::string>(names));
+    boost::fusion::at_key<UserType>(allRegisters.table).merge(std::list<std::string>(names));
   }
 
-  [[deprecated]] void integerRegister(const std::list<std::string>& names) { setTestRegisters<int>(names); }
+  /**
+   *  Set the names of asynchronous read registers to be used for the tests. These registers must support
+   *  AccessMode::wait_for_new_data. The registers must be readable. Registers may not appear in the list set via
+   *  setSyncReadTestRegisters() as well, but they may appear in the list set through setWriteTestRegisters().
+   */
+  template<typename UserType>
+  void setAsyncReadTestRegisters(std::list<std::string> names) {
+    names.sort();
+    boost::fusion::at_key<UserType>(asyncReadRegisters.table).merge(std::list<std::string>(names));
+    boost::fusion::at_key<UserType>(readRegisters.table).merge(std::list<std::string>(names));
+    boost::fusion::at_key<UserType>(allRegisters.table).merge(std::list<std::string>(names));
+  }
+
+  /**
+   *  Set the names of asynchronous read registers to be used for the tests. These registers must support
+   *  AccessMode::wait_for_new_data. The registers must be readable.
+   */
+  template<typename UserType>
+  void setWriteTestRegisters(std::list<std::string> names) {
+    names.sort();
+    boost::fusion::at_key<UserType>(writeRegisters.table).merge(std::list<std::string>(names));
+    boost::fusion::at_key<UserType>(allRegisters.table).merge(std::list<std::string>(names));
+  }
+
+  [[deprecated]] void integerRegister(const std::list<std::string>& names) { setSyncReadTestRegisters<int>(names); }
 
  private:
-  /**
-   *  Test basic exception handling behavior
-   */
-  void basicExceptionHandling();
+  void valueAfterConstruction();
+  void exceptionHandlingSyncRead();
+  void exceptionHandlingAsyncRead();
+  void exceptionHandlingWrite();
 
   /// Actions for enable exception throwing
   ActionList forceExceptionsRead, forceExceptionsWrite;
@@ -86,7 +115,8 @@ class UnifiedBackendTest {
   std::string cdd;
 
   /// Name of integer register used for tests
-  ctk::FixedUserTypeMap<std::list<std::string>> registers;
+  ctk::FixedUserTypeMap<std::list<std::string>> syncReadRegisters, asyncReadRegisters, readRegisters, writeRegisters,
+      allRegisters;
 };
 
 /********************************************************************************************************************/
@@ -104,6 +134,16 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
   cdd = backend;
   std::cout << "=== UnifiedBackendTest for " << cdd << std::endl;
 
+  auto lambda = [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    boost::fusion::at_key<UserType>(syncReadRegisters.table).unique();
+    boost::fusion::at_key<UserType>(asyncReadRegisters.table).unique();
+    boost::fusion::at_key<UserType>(readRegisters.table).unique();
+    boost::fusion::at_key<UserType>(writeRegisters.table).unique();
+    boost::fusion::at_key<UserType>(allRegisters.table).unique();
+  };
+  ctk::for_each(allRegisters.table, lambda);
+
   // check inputs
   if(forceExceptionsRead.size() == 0) {
     std::cout << "UnifiedBackendTest::forceRuntimeErrorOnRead() not called with a non-empty list." << std::endl;
@@ -114,67 +154,83 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
     std::exit(1);
   }
 
-  size_t nRegisters = 0;
-  auto lambda = [&nRegisters](auto pair) { nRegisters += pair.second.size(); };
-  ctk::for_each(registers.table, lambda);
-  if(nRegisters == 0) {
-    std::cout << "UnifiedBackendTest: No test registers specified." << std::endl;
+  size_t nSyncReadRegisters = 0;
+  auto lambda1 = [&nSyncReadRegisters](auto pair) { nSyncReadRegisters += pair.second.size(); };
+  ctk::for_each(syncReadRegisters.table, lambda1);
+  if(nSyncReadRegisters == 0) {
+    std::cout << "No synchronous read test registers specified." << std::endl;
     std::exit(1);
   }
-  std::cout << "UnifiedBackendTest: Using  " << nRegisters << " test registers." << std::endl;
+  size_t nAsyncReadRegisters = 0;
+  auto lambda2 = [&nAsyncReadRegisters](auto pair) { nAsyncReadRegisters += pair.second.size(); };
+  ctk::for_each(asyncReadRegisters.table, lambda2);
+  size_t nWriteRegisters = 0;
+  auto lambda3 = [&nWriteRegisters](auto pair) { nWriteRegisters += pair.second.size(); };
+  ctk::for_each(writeRegisters.table, lambda3);
+
+  std::cout << "Using " << nSyncReadRegisters << " synchronous and " << nAsyncReadRegisters << " asynchronous read and "
+            << nWriteRegisters << " write test registers." << std::endl;
+
+  if(nAsyncReadRegisters == 0) {
+    std::cout
+        << "WARNING: No asynchronous read test registers specified. This is acceptable only if the backend does not "
+        << "support AccessMode::wait_for_new_data at all." << std::endl;
+  }
+  if(nWriteRegisters == 0) {
+    std::cout << "WARNING: No write test registers specified. This is acceptable only if the backend does not "
+              << "support writing at all." << std::endl;
+  }
 
   // run the tests
-  basicExceptionHandling();
+  exceptionHandlingSyncRead();
+  exceptionHandlingAsyncRead();
+  exceptionHandlingWrite();
+  valueAfterConstruction();
 }
 
 /********************************************************************************************************************/
 
-void UnifiedBackendTest::basicExceptionHandling() {
-  std::cout << "--- basicExceptionHandling" << std::endl;
+/**
+ * This tests the TransferElement specifications:
+ * * B.11.6.
+ */
+void UnifiedBackendTest::valueAfterConstruction() {
+  std::cout << "--- valueAfterConstruction" << std::endl;
   ctk::Device d(cdd);
 
-  ctk::for_each(registers.table, [&](auto pair) {
+  ctk::for_each(allRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getScalarRegisterAccessor<int32_t>(registerName);
+      auto reg = d.getScalarRegisterAccessor<UserType>(registerName);
 
       // check "value after construction"
-      BOOST_CHECK_EQUAL(reg, 0);
+      BOOST_CHECK_EQUAL(UserType(reg), UserType());
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+void UnifiedBackendTest::exceptionHandlingSyncRead() {
+  std::cout << "--- exceptionHandlingSyncRead" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getScalarRegisterAccessor<UserType>(registerName);
+
+      // attempt read while device closed, logic_error is expected.
+      BOOST_CHECK_THROW(reg.read(), ChimeraTK::logic_error);
+
+      // check "value after construction" still there
+      BOOST_CHECK_EQUAL(UserType(reg), UserType());
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
-      // repeat the following check for a list of actions
-      std::list<std::pair<std::string, std::function<void(void)>>> actionListRead, actionListWrite;
-      actionListRead.push_back({"read()", [&] { reg.read(); }});
-      actionListRead.push_back({"readNonBlocking()", [&] { reg.readNonBlocking(); }});
-      actionListRead.push_back({"readLatest()", [&] { reg.readLatest(); }});
-      actionListRead.push_back({"readAsync()", [&] {
-                                  auto future = reg.readAsync();
-                                  future.wait();
-                                }});
-      actionListWrite.push_back({"write()", [&] { reg.write(); }});
-      actionListWrite.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
-
-      // define lambda for the test to execute repetedly (avoid code duplication)
-      auto theTest = [&](auto& theAction, auto expectedExceptionType) {
-        // attempt action
-        BOOST_CHECK_THROW(theAction(), decltype(expectedExceptionType));
-
-        // check "value after construction" still there
-        BOOST_CHECK_EQUAL(reg, 0);
-        BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
-      };
-
-      // run test for both read and write operations, logic_error is expected
-      for(auto action : actionListRead) {
-        std::cout << "    " << action.first << std::endl;
-        theTest(action.second, ctk::logic_error("only type matters"));
-      }
-      for(auto action : actionListWrite) {
-        std::cout << "    " << action.first << std::endl;
-        theTest(action.second, ctk::logic_error("only type matters"));
-      }
-
-      // open the device, let it throw an exception on every read and write operation
+      // open the device, let it throw runtime_error exceptions
       d.open();
 
       for(auto& testCondition : forceExceptionsRead) {
@@ -182,21 +238,98 @@ void UnifiedBackendTest::basicExceptionHandling() {
         testCondition.first();
 
         // repeat the above test, this time a runtime_error is expected
-        for(auto action : actionListRead) {
-          std::cout << "    " << action.first << std::endl;
-          theTest(action.second, ctk::runtime_error("only type matters"));
-        }
+        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
 
         // disable exceptions on read
         testCondition.second();
       }
+
+      // close device again
+      d.close();
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+void UnifiedBackendTest::exceptionHandlingAsyncRead() {
+  std::cout << "--- exceptionHandlingAsyncRead" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getScalarRegisterAccessor<UserType>(registerName, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // attempt read while device closed, logic_error is expected.
+      BOOST_CHECK_THROW(reg.read(), ChimeraTK::logic_error);
+
+      // check "value after construction" still there
+      BOOST_CHECK_EQUAL(UserType(reg), UserType());
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
+
+      // open the device, let it throw runtime_error exceptions
+      d.open();
+
+      for(auto& testCondition : forceExceptionsRead) {
+        // enable exceptions on read
+        testCondition.first();
+
+        // repeat the above test, this time a runtime_error is expected
+        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+
+        // disable exceptions on read
+        testCondition.second();
+      }
+
+      // close device again
+      d.close();
+    }
+  });
+}
+/********************************************************************************************************************/
+
+void UnifiedBackendTest::exceptionHandlingWrite() {
+  std::cout << "--- exceptionHandlingWrite" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getScalarRegisterAccessor<UserType>(registerName);
+
+      // repeat the following check for a list of actions
+      std::list<std::pair<std::string, std::function<void(void)>>> actionList;
+      actionList.push_back({"write()", [&] { reg.write(); }});
+      actionList.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
+
+      // define lambda for the test to execute repetedly (avoid code duplication)
+      auto theTest = [&](auto& theAction, auto expectedExceptionType) {
+        // attempt action
+        BOOST_CHECK_THROW(theAction(), decltype(expectedExceptionType));
+
+        // check "value after construction" still there
+        BOOST_CHECK_EQUAL(UserType(reg), UserType());
+        BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
+      };
+
+      // attempt read while device closed, logic_error is expected.
+      for(auto action : actionList) {
+        std::cout << "    " << action.first << std::endl;
+        theTest(action.second, ctk::logic_error("only type matters"));
+      }
+
+      // open the device, let it throw runtime_error exceptions
+      d.open();
 
       for(auto& testCondition : forceExceptionsWrite) {
         // enable exceptions on write
         testCondition.first();
 
         // repeat the above test, this time a runtime_error is expected
-        for(auto action : actionListWrite) {
+        for(auto action : actionList) {
           std::cout << "    " << action.first << std::endl;
           theTest(action.second, ctk::runtime_error("only type matters"));
         }
@@ -204,6 +337,9 @@ void UnifiedBackendTest::basicExceptionHandling() {
         // disable exceptions on write
         testCondition.second();
       }
+
+      // close device again
+      d.close();
     }
   });
 }
