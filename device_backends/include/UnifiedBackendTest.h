@@ -205,9 +205,11 @@ void UnifiedBackendTest::valueAfterConstruction() {
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
-      // check "value after construction"
+      // check "value after construction" for value buffer
       std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
       for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
+
+      // check "value after construction" for VersionNumber
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
     }
   });
