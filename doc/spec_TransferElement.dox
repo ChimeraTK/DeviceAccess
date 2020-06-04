@@ -66,8 +66,8 @@ This documnent is currently still **INCOMPLETE**!
     - void TransferElement::doPostRead(TransferType type, bool hasNewData)
     - void TransferElement::doPostWrite(TransferType type)
    
-- 7. Private and virtual functions
-  - 7.1 The private functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
+- 7. Virtual and non-virtual functions
+  - 7.1 The non-virtual functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
   - 7.2 They internally call their virtual counterparts which start with 'do'
   - 7.3 The virtual do-functions are the actual implementations of the transfer or pre/post action, which are specific for each backend, decorator etc.
 
