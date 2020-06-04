@@ -30,9 +30,9 @@ This documnent is currently still **INCOMPLETE**!
 
 - 5. The <i>application buffer</i> (sometimes also called user buffer outside this document) is referring to the buffer containing the data and meta data, which is accessible to the application.
   - 5.1 It can be accessed through the following (non-virtual) functions:
-    - ChimeraTK::NDRegisterAccessor::accessData() / ChimeraTK::NDRegisterAccessor::accessChannel() - gives access to ChimeraTK::NDRegisterAccessor::buffer_2D
-    - ChimeraTK::TransferElement::getVersionNumber() - returns content of ChimeraTK::TransferElement::_versionNumber
-    - ChimeraTK::TransferElement::dataValidity() - returns content of ChimeraTK::TransferElement::_dataValidity
+    - NDRegisterAccessor::accessData() / NDRegisterAccessor::accessChannel() - gives access to NDRegisterAccessor::buffer_2D
+    - TransferElement::getVersionNumber() - returns content of TransferElement::_versionNumber
+    - TransferElement::dataValidity() - returns content of TransferElement::_dataValidity
   - 5.2 If not stated otherwise, the term <i>application buffer</i> refers to **all** components of the buffer.
   - 5.3 The content of the buffer is filled with data from the device in read operations, and transferred to the device in write operations.
   - 5.4 The content of the buffer can always be modified by the application.(*)
@@ -85,13 +85,13 @@ This documnent is currently still **INCOMPLETE**!
 - 3. Modes of transfers
 
   - 3.1 Read operations:
-    - 3.1.1 The flag ChimeraTK::AccessMode::wait_for_new_data determines whether the transfer is initiated by the device side (flag is set) or not.
-    - 3.1.2 If ChimeraTK::AccessMode::wait_for_new_data is not set, read operations
+    - 3.1.1 The flag AccessMode::wait_for_new_data determines whether the transfer is initiated by the device side (flag is set) or not.
+    - 3.1.2 If AccessMode::wait_for_new_data is not set, read operations
       - 3.1.2.1 obtain the <i>current</i> value of the process variable (if possible/applicable by synchronously communicating with the device),
       - 3.1.2.2 have no information whether the value has changed,
       - 3.1.2.3 behave identical whether read(), readNonBlocking() or readLatest() is called,
       - 3.1.2.4 readNonBlocking() and readLatest() always return true.
-    - 3.1.3 If ChimeraTK::AccessMode::wait_for_new_data is set
+    - 3.1.3 If AccessMode::wait_for_new_data is set
       - 3.1.3.1 read() blocks until new data has arrived,
       - 3.1.3.2 readNonBlocking() does not block and instead returns whether new data has arrived or not,
     - \anchor transferElement_B_3_1_4 3.1.4 readLatest() is merely a convenience function which calls readNonBlocking() until no more new data is available. [\ref testTransferElement_B_3_1_4 "T"]
@@ -155,7 +155,7 @@ This documnent is currently still **INCOMPLETE**!
 - 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    - \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1")
    - \anchor transferElement_B_9_2 9.2 TransferElements with wait_for_new_data flag
-    - \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the ChimeraTK::TransferElement::_readQueue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
+    - \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the TransferElement::_readQueue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
     - 9.2.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.2.1. to avoid race conditions.
     - 9.2.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
     - 9.2.4 The backend must make sure 9.2.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchronous transfers again (*).
@@ -251,12 +251,12 @@ This documnent is currently still **INCOMPLETE**!
 - 3. ChimeraTK::runtime_error in principle are recoverable. It is thrown, if the device (including the communication link) does not behave as expected. A later call to the same function (after the recovery has been triggered, cf. \ref transferElement_B_9_2_1 "B.9.2.1" resp. \ref transferElement_B_9_3_1 "B.9.3.1") must be able to succeed (for instance if a network outage has been resolved).
    ChimeraTK::runtime_error may only be thrown in 
   - 3.1 doXxxTransferYyy(). It is the only exception that can occur in this function
-  - 3.2 ChimeraTK::TransferElement::isReadable(), ChimeraTK::TransferElement::isWriteable() or ChimeraTK::TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
+  - 3.2 TransferElement::isReadable(), TransferElement::isWriteable() or TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
   - 3.3 doPreXxx(), if the information returned by the functions in 3.2 is not yet available and needs to be determined from the running device.
 
 - 4. boost::numeric::bad_numeric_cast may only be thrown in
-  - 4.1 ChimeraTK::TransferElement::doPreWrite()
-  - 4.2 ChimeraTK::TransferElement::doPostRead(), but only if hasNewData == true
+  - 4.1 TransferElement::doPreWrite()
+  - 4.2 TransferElement::doPostRead(), but only if hasNewData == true
    - 4.2.1 As the transfer is successful at this point, the currentVersionNumber must be updated as if the whole operation was successful before throwing the exception.
   - 4.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 5.2.4) (*).
 
@@ -269,14 +269,14 @@ This documnent is currently still **INCOMPLETE**!
     - 5.2.2 The size or dimension of the requested TransferElement is too large (*)
       - 5.2.2.1 Can be checked in the catalogue.
       - 5.2.2.2 Thrown in the constructor if possible, otherwise in doPreXxx().
-    - 5.2.3 The wrong ChimeraTK::AccessMode flags are provided
+    - 5.2.3 The wrong AccessMode flags are provided
       - 5.2.3.1 Can be checked in the catalogue.
       - 5.2.3.2 Thrown in the constructor if possible, otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly().
-    - 5.2.4 The requested user data type is to small to hold the data without range overflow when reading, or too big when writing (*)
+    - 5.2.4 The requested user data type is too small to hold the data without range overflow when reading, or too big when writing (*)
       - 5.2.4.1 ToDo: cannot be checked in the catalogue to a sufficient degree
       - 5.2.4.2 Thrown in the constructor if possible, otherwise in doPreXxx()
     - 5.2.5 A read/write operation is started while the backend is still closed
-      - 5.2.5.1 Check with ChimeraTK::DeviceBackend::isOpen().
+      - 5.2.5.1 Check with DeviceBackend::isOpen().
       - 5.2.5.2 Thrown in doPreXxx() (*)
     - 5.2.6 A read operation is executed on a transfer element that cannot be read
       - 5.2.6.1 Check with TransferElement::isReadable().
@@ -291,7 +291,7 @@ This documnent is currently still **INCOMPLETE**!
     - 5.4.2 isReadable(), isWriteable() and isReadOnly() might have to check for the existance of the register from a running backend (in case there is no map file). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
 
 ### (*) Comments ###
-- 5.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
+- 4.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
 - 5.1 Test functions do not yet exist for everything. This needs to be changed!
 - 5.2 Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
 - 5.2.1.1 It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
@@ -303,19 +303,19 @@ This documnent is currently still **INCOMPLETE**!
 
 ## D. Requirements for full implementations (e.g. in backends) ##
 
-- 1. If ChimeraTK::AccessMode::wait_for_new_data is specified:
-  - 1.1 The ChimeraTK::TransferElement::_readQueue is a cppext::future_queue of type 'void' which exists in each transfer element. For transfer elements with AccessMode::wait_for_new_data it usually is the continuation queue of another future_queue which is transporting the data. The data type is implementation dependent. Common functionality like exception handling and waiting for new data is implemented on ChimeraTK::TransferElement::_readQueue.
-  - 1.2 ChimeraTK::TransferElement::_readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
-  - 1.3 ChimeraTK::TransferElement::_readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether data has been discarded (*).
+- 1. If AccessMode::wait_for_new_data is specified:
+  - 1.1 The TransferElement::_readQueue is a cppext::future_queue of type 'void' which exists in each transfer element. For transfer elements with AccessMode::wait_for_new_data it usually is the continuation queue of another future_queue which is transporting the data. The data type is implementation dependent. Common functionality like exception handling and waiting for new data is implemented on TransferElement::_readQueue.
+  - 1.2 TransferElement::_readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
+  - 1.3 TransferElement::_readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether data has been discarded (*).
   
-  - 1.4 In case an exception is detected during an asychronous transfer (for instance in a separate thread), the exception must be stored on the ChimeraTK::TransferElement::readQueue. The TransferFuture will then make sure that the exception is properly rethrown in postRead (just like for synchronous transfers).
+  - 1.4 In case an exception is detected during an asychronous transfer (for instance in a separate thread), the exception must be stored on the TransferElement::_readQueue. The TransferFuture will then make sure that the exception is properly rethrown in postRead (just like for synchronous transfers).
 
 ### (*) Comments ###
 
-1.3 Either the currently pushed data or older data on the queue might be discarded. In any case there will be one call less to ChimeraTK::TransferElement::doPostRead(), because the number of entries in the queue could not be increased because it was full
+1.3 Either the currently pushed data or older data on the queue might be discarded. In any case there will be one call less to TransferElement::doPostRead(), because the number of entries in the queue could not be increased because it was full
 ## E. Requirements for decorator-like implementations ##
 
-- 1. If ChimeraTK::AccessMode::wait_for_new_data is specified, ChimeraTK::TransferElement::readQueue is initialised in the constructor with a copy of the readQueue of the target TransferElement.
+- 1. If AccessMode::wait_for_new_data is specified, TransferElement::_readQueue is initialised in the constructor with a copy of the readQueue of the target TransferElement.
   - 1.1 Decorator-like implementations with multiple targets must provide a readQueue e.g. by using cppext::future_queue::when_any() or cppext::future_queue::when_all().
 
 - 2. All functions doPreXxx, doXxxTransferYyy and doPostXxx must delegate to their non-do counterparts (preXxx, xxxTransferYyy and postXxx). Never delegate to the do... of the target implementation functions directly.
@@ -336,15 +336,15 @@ This documnent is currently still **INCOMPLETE**!
 
 **Note:** This section is biased by the current implementation and mostly lists parts that needs to be changed!
 
-- 1. The TransferFuture will be removed. According to D.1.1 all common functionality is implemented with TransferElement::readQueue, so the TransferFuture provides no added value and even complicates the implementation.
+- 1. The TransferFuture will be removed. According to D.1.1 all common functionality is implemented with TransferElement::_readQueue, so the TransferFuture provides no added value and even complicates the implementation.
 
 - 2. TransferElement
 
-  - 2.1 ChimeraTK::TransferElement::readAsync() will be removed (not deprecated because it would have to return the TransferFuture, which will be removed), (together with readTransferAsync() and doReadTransferAsync()).
+  - 2.1 TransferElement::readAsync() will be removed (not deprecated because it would have to return the TransferFuture, which will be removed), (together with readTransferAsync() and doReadTransferAsync()).
 
   - 2.2 readTransferLatest() and doReadTransferLatest() will be removed.
 
-  - 2.3 doReadTransferNonBlockin() will be removed. The implementation of readTransferNonBlocking will use the TransferElement::readQueue.
+  - 2.3 doReadTransferNonBlockin() will be removed. The implementation of readTransferNonBlocking will use the TransferElement::_readQueue.
   
   - 2.4 readLatest() is directly calling readNonBlocking() in a loop (see B.3.1.4)
   
