@@ -178,16 +178,20 @@ This documnent is currently still **INCOMPLETE**!
     - 11.1.2 additionaly contain a std::chrono::system_clock timestamp which allows to weakly order the objects even across applications/processes,
     - 11.1.3 are copyable, and
     - 11.1.4 can be initiallised with a {nullptr} which yields a special instance that sorts before all normal instances. All {nullptr} constructed objects are equal (==).
+    - 11.1.5 The default constructor creates a new VersionNumber which is larger than all previously created VersionNumbers in a thread safe way.
   - 11.2 VersionNumber objects are used
-    - 11.2.1 to determine which data is older, as needed e.g. by bidirectional process variable implementations, and
-    - 11.2.2 to build a consistent data set from multiple TransferElements (see DataConsistencyGroup). This requires the data sources (e.g. backend implementations) to attach the same VersionNumber to different TransferElements if the data is consistent.
+    - \anchor transferElement_B_11_2_1 11.2.1 to determine which data is older \ref transferElement_comment_B_11_2_1 "(*)", as needed e.g. by bidirectional process variable implementations, and
+    - \anchor transferElement_B_11_2_2 11.2.2 to build a consistent data set from multiple TransferElements (see DataConsistencyGroup). This requires the data sources (e.g. backend implementations) to attach the same VersionNumber to different TransferElements if the data is consistent.
+    - 11.2.3 From the previous two points it follows that backend implementations must create a new VersionNumber for all data that is received or read, or associcate a known version number according to \ref transferElement_B_11_2_2 "11.2.2"
   - \anchor transferElement_B_11_3 11.3 The VersionNumber of the last successfully written/read data of a TransferElement can be obtained through TransferElement::getVersionNumber() (cf. \ref transferElement_B_4_3_2 "B.4.3.2"). [\ref testTransferElement_B_11_3 "T"]
   - 11.4 The VersionNumber for a transfer is given as an optional argument to TransferElement::write() resp. TransferElement::writeDestructively(). If the argument is missing, a new VersionNumber is generated.
     - \anchor transferElement_B_11_4_1 11.4.1 The VersionNumber passed to the write call must be greater or equal to the one returned by TransferElement::getVersionNumber() of the same TransferElement, otherwise a ChimeraTK::logic_error is thrown by the TransferElement base class. Write calls on different instances of TransferElement (say `a` and `b`) do not need to follow this rule, i.e. `a->write(v1); b->write(v2);` is allowed even if `v2 < v1` \ref transferElement_comment_B_11_4_1 "(*)". [\ref testTransferElement_B_11_4_1 "T"]
     - \anchor transferElement_B_11_4_2 11.4.2 The VersionNumber is passed on to the TransferElement implementation via the calls TransferElement::doPreWrite(), TransferElement::doWriteTransfer() resp. TransferElement::doWriteTransferDestructively() and TransferElement::doPostWrite(), after the precondition 11.4.1 has been checked. [\ref testTransferElement_B_11_4_2 "T"]
   - \anchor transferElement_B_11_5 11.5 If a transfer was not successful (exception has been thrown), the VersionNumber returned by TransferElement::getVersionNumber() does not change. [\ref testTransferElement_B_11_5 "T"]
   - \anchor transferElement_B_11_6 11.6 Before the first successful transfer, TransferElement::getVersionNumber() always returns the {nullptr} constructed VersionNumber. [\ref testTransferElement_B_11_6 "T"]
-  
+  - \anchor transferElement_B_11_7 11.7 *To be decided if we only allow 11.7.2:* Bi-directional variables
+    - \anchor transferElement_B_11_7_1 11.7.1 *either* do not guarantee that consecutive calls to TransferElement::getVersionNumber() always return a VersionNumber that is equal or greater than the one from the previous call \ref transferElement_comment_B_11_7_1 "(*)"
+    - \anchor transferElement_B_11_7_2 11.7.2 *or* discard values with lower version numbers \ref transferElement_comment_B_11_7_2 "(*)"
 
 - 12. TransferGroup
   - 12.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
@@ -231,7 +235,13 @@ This documnent is currently still **INCOMPLETE**!
 
 - \anchor transferElement_comment_B_10_1_3 \ref transferElement_B_10_1_3 "10.1.3" For instance a watchdog which monitors a reference register to detect firmware reboots that is not seen on the transport layer can trigger the exception state to inhibit asynchronous transfers while running a recovery procedure.
 
+- \anchor transferElement_comment_B_11_2_1 \ref transferElement_B_11_2_1 "11.2.1" This means the version number has to be created as soon as data is received, for instance in the receiver thread of a TransferElement with AccessMode::wait_for_new_data, and not in the doPostRead() of the read() operation.
+
 - \anchor transferElement_comment_B_11_4_1 \ref transferElement_B_11_4_1 "11.4.1" Smaller version numbers on later write calls of a different instance can conceptionally not be avoided if the instances are used by different, unsynchronised threads. Even within the same thread, the information written to different instances can come from different sources and hence might have independent version numbers.
+
+- \anchor transferElement_comment_B_11_7_1 \ref transferElement_B_11_7_1 "11.7.1" If a write call is done there might be older data in the read queue, which results in a lower version number once a read is called.
+- \anchor transferElement_comment_B_11_7_2 \ref transferElement_B_11_7_2 "11.7.2" The BiDirectionalProcessArray is implemented like this.
+
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
