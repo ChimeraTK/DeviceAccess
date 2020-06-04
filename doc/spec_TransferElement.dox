@@ -129,7 +129,7 @@ This documnent is currently still **INCOMPLETE**!
   - 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
   - \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)"
   - 7.3 For read operations, the return value is passed on to postRead() (via hasNewData), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), hasNewData is set to true.
-  - \anchor transferElement_B_7_4 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() receives instead the information that the transfer didn't sucessfully take place (hasNewData = false). [\ref testTransferElement_B_7_4_sync "T", \ref testTransferElement_B_7_4_async "T"]
+  - \anchor transferElement_B_7_4 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() is called with hasNewData = false because there was no successful transfer. [\ref testTransferElement_B_7_4_sync "T", \ref testTransferElement_B_7_4_async "T"]
   
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
