@@ -60,11 +60,11 @@ This documnent is currently still **INCOMPLETE**!
     - bool TransferElement::doWriteTransfer(VersionNumber versionNumber), pure virtual
     - bool TransferElement::doWriteTransferDestructively(VersionNumber versionNumber), virtual
   - 6.6 postXxx(), public
-    - TransferElement::postRead(TransferType type, bool hasNewData)
-    - TransferElement::postWrite(TransferType type)
+    - void TransferElement::postRead(TransferType type, bool hasNewData)
+    - void TransferElement::postWrite(TransferType type)
   - 6.7 doPostXxx(), protected virtual
-    - TransferElement::doPostRead(TransferType type, bool hasNewData)
-    - TransferElement::doPostWrite(TransferType type)
+    - void TransferElement::doPostRead(TransferType type, bool hasNewData)
+    - void TransferElement::doPostWrite(TransferType type)
    
 - 7. Private and virtual functions
   - 7.1 The private functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
