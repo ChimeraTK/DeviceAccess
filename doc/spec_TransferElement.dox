@@ -133,7 +133,7 @@ This documnent is currently still **INCOMPLETE**!
   
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
-  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the ChimeraTK::TransferElement::_readQueue, from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T" (without sub-points)]
+  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the TransferElement::_readQueue \ref transferElement_comment_B_8_2 "(*)", from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T" (without sub-points)]
     - 8.2.1 If the queue is full, the last written value will be overwritten.
     - \anchor transferElement_B_8_2_2 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*) [\ref testTransferElement_B_8_2_2 "T"]
   - \anchor transferElement_B_8_3 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value. [\ref testTransferElement_B_8_3 "T" (only second sentence)]
@@ -211,6 +211,8 @@ This documnent is currently still **INCOMPLETE**!
 -  \anchor transferElement_comment_B_5_1 \ref transferElement_B_5_1 "5.1" The boost::thread_interrupted exception, which is thrown internally as described in \ref transferElement_B_8_6 "8.6", is treated equally.
 
 - \anchor transferElement_comment_B_7_2 \ref transferElement_B_7_2 "7.2" Usually, writes are implemented as synchronous transfers, in which case no previous data can be lost. In case of asynchronous write transfers (as e.g. implemented in the ControlSystemAdapter's ProcessArray), the implementation must ensure the specified behaviour e.g. by using cppext::future_queue::push_overwrite() or a similar functionality. Please keep in mind that the return value of cppext::future_queue::push_overwrite() does not guarantee which data is lost *only* if concurrent push_overwrite() calls are executed in a multi-producer environment. TransferElements are not thread safe anyway, hence push_overwrite() will always overwrite old data in this context.
+
+- \anchor transferElement_comment_B_8_2 \ref transferElement_B_8_2 "8.2" Conceptually. In the current implementation TransferElement::_readQueue is a void queue, which is set up as a continuation of the data transport queue. The important point here that all described actions like exception handling are done on TransferElement::_readQueue.
 
 - 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
