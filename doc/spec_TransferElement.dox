@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC1
+\page spec_TransferElement Technical specification: TransferElement V1.0RC2
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -62,10 +62,10 @@ This documnent is currently still **INCOMPLETE**!
     - bool TransferElement::doWriteTransferDestructively(VersionNumber versionNumber), virtual
   - 6.6 postXxx(), public
     - void TransferElement::postRead(TransferType type, bool hasNewData)
-    - void TransferElement::postWrite(TransferType type)
+    - void TransferElement::postWrite(TransferType type, VersionNumber versionNumber)
   - 6.7 doPostXxx(), protected virtual
     - void TransferElement::doPostRead(TransferType type, bool hasNewData)
-    - void TransferElement::doPostWrite(TransferType type)
+    - void TransferElement::doPostWrite(TransferType type, VersionNumber versionNumber)
    
 - 7. Virtual and non-virtual functions
   - 7.1 The non-virtual functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
