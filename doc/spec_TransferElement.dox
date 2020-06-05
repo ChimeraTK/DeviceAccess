@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC2
+\page spec_TransferElement Technical specification: TransferElement V1.0RC3
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -29,7 +29,7 @@ This documnent is currently still **INCOMPLETE**!
 
 - 4. An <i>operation</i> is the action taken by the application to read or write data from or to a device. An operation is related to a transfer, yet it is to be distinguished. The transfer can e.g. be initiated by the device, while the operation is always initiated by the application.
 
-- 5. The <i>application buffer</i> (sometimes also called user buffer outside this document) is referring to the buffer containing the data and meta data, which is accessible to the application.
+- 5. \anchor transferElement_A_5 The <i>application buffer</i> (sometimes also called user buffer outside this document) is referring to the buffer containing the data and meta data, which is accessible to the application.
   - 5.1 It can be accessed through the following (non-virtual) functions:
     - NDRegisterAccessor::accessData() / NDRegisterAccessor::accessChannel() - gives access to NDRegisterAccessor::buffer_2D
     - TransferElement::getVersionNumber() - returns content of TransferElement::_versionNumber
@@ -202,6 +202,11 @@ This documnent is currently still **INCOMPLETE**!
 
 - 14. DataConsistencyGroup [TODO]
 
+- 15. AccessModeFlags
+  - 15.1 The TransferElement has a protected object TransferElement::_accessModeFlags.
+  - 15.2 It can be read via TransferElement::getAccessModeFlags().
+  - 15.3 It is set through a constructor argument of TransferElement.
+    - 15.3.1 The constructor argument does not have a default value. It must be set correctly by the TransferElement implementation in their constructor.
 
 ### (*) Comments ###
 - \anchor transferElement_comment_B_3_2_2 \ref transferElement_B_3_2_2 "3.2.2" The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
