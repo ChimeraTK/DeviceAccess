@@ -40,8 +40,8 @@ namespace ChimeraTK {
    */
   class TransferGroup {
    public:
-    TransferGroup() : readOnly(false){};
-    ~TransferGroup(){};
+    TransferGroup() : readOnly(false) {}
+    ~TransferGroup() {}
 
     /** Add a register accessor to the group. The register accessor might
      * internally be altered so that accessors accessing the same hardware

@@ -8,7 +8,7 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "CopyRegisterDecorator.h"
 #include "SupportedUserTypes.h"
-
+#if 0
 namespace ChimeraTK { namespace detail {
 
   template<typename T>
@@ -30,5 +30,5 @@ namespace {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> (*ptr)(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>);
   };
   ChimeraTK::TemplateUserTypeMap<CreateCopyDecoratorInstancer> createCopyDecoratorInstancer;
-
 } // namespace
+#endif //0

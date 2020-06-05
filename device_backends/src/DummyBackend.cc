@@ -2,13 +2,13 @@
 #include <boost/lambda/lambda.hpp>
 #include <sstream>
 #include <regex>
-
-#include "BackendFactory.h"
-#include "DummyBackend.h"
-#include "Exception.h"
-#include "MapFileParser.h"
-#include "parserUtilities.h"
-#include "DummyRegisterAccessor.h"
+#if 0
+#  include "BackendFactory.h"
+#  include "DummyBackend.h"
+#  include "Exception.h"
+#  include "MapFileParser.h"
+#  include "parserUtilities.h"
+#  include "DummyRegisterAccessor.h"
 
 namespace ChimeraTK {
   // Valid bar numbers are 0 to 5 , so they must be contained
@@ -201,3 +201,4 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
+#endif //0

@@ -4,7 +4,7 @@
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
-
+#if 0
 namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
@@ -71,3 +71,4 @@ namespace ChimeraTK { namespace LNMBackend {
     return ForceReadOnlyPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
 }} // namespace ChimeraTK::LNMBackend
+#endif //0

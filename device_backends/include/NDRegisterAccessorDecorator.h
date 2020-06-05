@@ -8,11 +8,13 @@
 #ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
 #define CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
 
-#include <boost/make_shared.hpp>
+#if 0
 
-#include <ChimeraTK/cppext/finally.hpp>
+#  include <boost/make_shared.hpp>
 
-#include "NDRegisterAccessor.h"
+#  include <ChimeraTK/cppext/finally.hpp>
+
+#  include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -128,17 +130,9 @@ namespace ChimeraTK {
       return _target->writeTransferDestructively(versionNumber);
     }
 
-    void doReadTransfer() override { _target->readTransfer(); }
-
-    bool doReadTransferNonBlocking() override { return _target->readTransferNonBlocking(); }
-
-    bool doReadTransferLatest() override { return _target->readTransferLatest(); }
-
-    TransferFuture doReadTransferAsync() override { return TransferFuture(_target->readTransferAsync(), this); }
+    void doReadTransferSyncronously() override { _target->readTransfer(); }
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
-
-    void transferFutureWaitCallback() override { _target->transferFutureWaitCallback(); }
 
     bool isReadOnly() const override { return _target->isReadOnly(); }
 
@@ -161,8 +155,6 @@ namespace ChimeraTK {
     }
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
-
-    AccessModeFlags getAccessModeFlags() const override { return _target->getAccessModeFlags(); }
 
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
@@ -197,5 +189,5 @@ void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTr
     _target->replaceTransferElement(newElement);
   }
 }
-
+#endif //0
 #endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H */

@@ -1,9 +1,9 @@
 #include <boost/make_shared.hpp>
-
-#include "LNMBackendRegisterInfo.h"
-#include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessorDecorator.h"
-#include "TransferElement.h"
+#if 0
+#  include "LNMBackendRegisterInfo.h"
+#  include "LNMAccessorPlugin.h"
+#  include "NDRegisterAccessorDecorator.h"
+#  include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -103,3 +103,4 @@ namespace ChimeraTK { namespace LNMBackend {
     return MultiplierPlugin_Helper<UserType, TargetType>::decorateAccessor(target, _factor);
   }
 }} // namespace ChimeraTK::LNMBackend
+#endif //0

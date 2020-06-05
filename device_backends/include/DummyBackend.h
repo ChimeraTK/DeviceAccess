@@ -117,7 +117,6 @@ namespace ChimeraTK {
     /// resynchronisation.
     void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
 
-
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
     static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>>& getInstanceMap() {
@@ -138,7 +137,6 @@ namespace ChimeraTK {
     friend class SharedDummyBackend;
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
-
   };
 
 } // namespace ChimeraTK

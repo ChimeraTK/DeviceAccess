@@ -11,7 +11,7 @@
 #include "NumericAddress.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
-
+#if 0
 namespace ChimeraTK {
 
   NumericAddressedBackend::NumericAddressedBackend(std::string mapFileName) {
@@ -168,3 +168,4 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
+#endif //0

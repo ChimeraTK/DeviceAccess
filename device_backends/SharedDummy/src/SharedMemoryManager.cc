@@ -7,8 +7,8 @@
  *  Created on: Jun 4, 2018
  *      Author: ckampm
  */
-
-#include "SharedDummyBackend.h"
+#if 0
+#  include "SharedDummyBackend.h"
 
 namespace ChimeraTK {
 
@@ -153,3 +153,4 @@ namespace ChimeraTK {
   }
 
 } /* namespace ChimeraTK */
+#endif //0

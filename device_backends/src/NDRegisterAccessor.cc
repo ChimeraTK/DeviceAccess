@@ -1,6 +1,8 @@
 #include "NDRegisterAccessor.h"
 #include "CopyRegisterDecorator.h"
 
+#if 0
+
 namespace ChimeraTK {
 
   template<typename UserType>
@@ -14,3 +16,4 @@ namespace ChimeraTK {
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NDRegisterAccessor);
 
 } /* namespace ChimeraTK */
+#endif //0

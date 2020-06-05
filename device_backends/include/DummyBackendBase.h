@@ -12,18 +12,18 @@
 
 #include <sstream>
 #include <regex>
-
+#if 0
 // macro to avoid code duplication
-#define TRY_REGISTER_ACCESS(COMMAND)                                                                                   \
-  try {                                                                                                                \
-    COMMAND                                                                                                            \
-  }                                                                                                                    \
-  catch(std::out_of_range & outOfRangeException) {                                                                     \
-    std::stringstream errorMessage;                                                                                    \
-    errorMessage << "Invalid address offset " << address << " in bar " << static_cast<int>(bar) << "."                 \
-                 << "Caught out_of_range exception: " << outOfRangeException.what();                                   \
-    throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
-  }
+#  define TRY_REGISTER_ACCESS(COMMAND)                                                                                 \
+    try {                                                                                                              \
+      COMMAND                                                                                                          \
+    }                                                                                                                  \
+    catch(std::out_of_range & outOfRangeException) {                                                                   \
+      std::stringstream errorMessage;                                                                                  \
+      errorMessage << "Invalid address offset " << address << " in bar " << static_cast<int>(bar) << "."               \
+                   << "Caught out_of_range exception: " << outOfRangeException.what();                                 \
+      throw ChimeraTK::logic_error(errorMessage.str());                                                                \
+    }
 
 namespace ChimeraTK {
 
@@ -171,5 +171,5 @@ namespace ChimeraTK {
   }; // class DummyBackendBase
 
 } //namespace ChimeraTK
-
+#endif //0
 #endif // CHIMERA_TK_DUMMY_BACKEND_BASE_H

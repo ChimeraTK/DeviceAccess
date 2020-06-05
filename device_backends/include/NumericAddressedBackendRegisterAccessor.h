@@ -7,12 +7,12 @@
 
 #ifndef CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
 #define CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
-
-#include "FixedPointConverter.h"
-#include "ForwardDeclarations.h"
-#include "IEEE754_SingleConverter.h"
-#include "NumericAddressedLowLevelTransferElement.h"
-#include "SyncNDRegisterAccessor.h"
+#if 0
+#  include "FixedPointConverter.h"
+#  include "ForwardDeclarations.h"
+#  include "IEEE754_SingleConverter.h"
+#  include "NumericAddressedLowLevelTransferElement.h"
+#  include "SyncNDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -413,4 +413,5 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
+#endif //0
 #endif /* CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H */

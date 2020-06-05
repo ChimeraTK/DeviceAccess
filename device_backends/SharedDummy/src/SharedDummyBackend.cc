@@ -5,12 +5,12 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
-
-#include "BackendFactory.h"
-#include "Exception.h"
-#include "MapFileParser.h"
-#include "SharedDummyBackend.h"
-#include "parserUtilities.h"
+#if 0
+#  include "BackendFactory.h"
+#  include "Exception.h"
+#  include "MapFileParser.h"
+#  include "SharedDummyBackend.h"
+#  include "parserUtilities.h"
 
 namespace ChimeraTK {
 
@@ -126,3 +126,4 @@ namespace ChimeraTK {
   }
 
 } // Namespace ChimeraTK
+#endif //0

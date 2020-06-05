@@ -1,6 +1,7 @@
-#include "DummyProtocol1.h"
-#include "RebotDummyServer.h"
-#include <boost/asio.hpp>
+#if 0
+#  include "DummyProtocol1.h"
+#  include "RebotDummyServer.h"
+#  include <boost/asio.hpp>
 
 namespace ChimeraTK {
 
@@ -66,3 +67,4 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
+#endif //0

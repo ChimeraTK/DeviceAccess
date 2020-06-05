@@ -6,7 +6,7 @@
  */
 
 #include "NumericAddressedBackendRegisterAccessor.h"
-
+#if 0
 namespace ChimeraTK {
 
   namespace detail {
@@ -35,3 +35,4 @@ namespace ChimeraTK {
       NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, false);
 
 } /* namespace ChimeraTK */
+#endif //0

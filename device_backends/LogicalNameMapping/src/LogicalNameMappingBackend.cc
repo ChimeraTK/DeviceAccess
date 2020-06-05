@@ -4,12 +4,12 @@
  *  Created on: Feb 8, 2016
  *      Author: Martin Hierholzer
  */
-
-#include "LogicalNameMappingBackend.h"
-#include "LNMBackendBitAccessor.h"
-#include "LNMBackendChannelAccessor.h"
-#include "LNMBackendVariableAccessor.h"
-#include "LogicalNameMapParser.h"
+#if 0
+#  include "LogicalNameMappingBackend.h"
+#  include "LNMBackendBitAccessor.h"
+#  include "LNMBackendChannelAccessor.h"
+#  include "LNMBackendVariableAccessor.h"
+#  include "LogicalNameMapParser.h"
 
 namespace ChimeraTK {
 
@@ -240,3 +240,4 @@ namespace ChimeraTK {
     return true;
   }
 } // namespace ChimeraTK
+#endif //0

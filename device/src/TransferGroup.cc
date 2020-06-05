@@ -13,7 +13,7 @@
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
 #include <iostream>
-
+#if 0
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
@@ -91,7 +91,7 @@ namespace ChimeraTK {
       elem->writeTransfer(versionNumber);
     }
     for(auto& elem : highLevelElements) {
-      elem->postWrite(TransferType::write, elem->_hasSeenException);
+      elem->postWrite(TransferType::write, versionNumber);
     }
   }
 
@@ -199,3 +199,4 @@ namespace ChimeraTK {
   }
 
 } /* namespace ChimeraTK */
+#endif //0
