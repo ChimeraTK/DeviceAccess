@@ -57,15 +57,26 @@ namespace ChimeraTK {
    */
   enum class TransferType { read, readNonBlocking, readLatest, write, writeDestructively };
 
+  namespace detail {
+    /**
+     *  Exception to be thrown by continuations of the _readQueue when a value shall be discarded. This is needed to avoid
+     * notifications of the application if a value should never reach the
+     * application. The exception is caught in readTransferAyncWaitingImpl() and
+     * readTransferAyncNonWaitingImpl() and should never be visible to the application.
+     */
+    class DiscardValueException {};
+  } /* namespace detail */
+
   /*******************************************************************************************************************/
 
   /** Base class for register accessors which can be part of a TransferGroup */
   class TransferElement : public boost::enable_shared_from_this<TransferElement> {
    public:
     /** Creates a transfer element with the specified name. */
-    TransferElement(std::string const& name = std::string(), std::string const& unit = std::string(unitNotSet),
-        std::string const& description = std::string())
-    : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
+    TransferElement(std::string const& name, AccessModeFlags accessModeFlags,
+        std::string const& unit = std::string(unitNotSet), std::string const& description = std::string())
+    : _name(name), _unit(unit), _description(description), _isInTransferGroup(false),
+      _accessModeFlags(accessModeFlags) {}
 
     /** Copying and moving is not allowed */
     TransferElement(const TransferElement& other) = delete;
@@ -95,7 +106,7 @@ namespace ChimeraTK {
     virtual const std::type_info& getValueType() const = 0;
 
     /** Return the AccessModeFlags for this TransferElement. */
-    virtual AccessModeFlags getAccessModeFlags() const = 0;
+    AccessModeFlags getAccessModeFlags() const { return _accessModeFlags; }
 
     /** Set the current DataValidity for this TransferElement. Will do nothing if the
      * backend does not support it */
@@ -112,14 +123,10 @@ namespace ChimeraTK {
      * this function will block until new data has arrived. Otherwise it still
      * might block for a short time until the data transfer was complete. */
     void read() {
-      if(TransferElement::isInTransferGroup) {
+      if(TransferElement::_isInTransferGroup) {
         throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
                                      "which is part of a TransferGroup "
                                      "is not allowed.");
-      }
-      if(hasActiveFuture) {
-        activeFuture.wait();
-        return;
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::read);
@@ -139,19 +146,12 @@ namespace ChimeraTK {
      *  be always true in this mode.
      */
     bool readNonBlocking() {
-      if(hasActiveFuture) {
-        if(activeFuture.hasNewData()) {
-          activeFuture.wait();
-          return true;
-        }
-        else {
-          return false;
-        }
-      }
       this->readTransactionInProgress = false;
       preRead(TransferType::readNonBlocking);
       bool hasNewData = false;
-      if(!_hasSeenException) hasNewData = readTransferNonBlocking();
+      if(!_hasSeenException) {
+        hasNewData = readTransferNonBlocking();
+      }
       postRead(TransferType::readNonBlocking, hasNewData);
       return hasNewData;
     }
@@ -161,39 +161,33 @@ namespace ChimeraTK {
      * will never wait for new values and it will return whether a new value was
      * available if AccessMode::wait_for_new_data is set. */
     bool readLatest() {
-      bool ret = false;
-      if(hasActiveFuture) {
-        if(activeFuture.hasNewData()) {
-          activeFuture.wait();
-          ret = true;
-        }
-        else {
-          return false;
-        }
+      bool hasNewData = false;
+      // Call readNonBlocking until there is no new data to be read any more
+      while(readNonBlocking()) {
+        // remember whether we have new data
+        hasNewData = true;
       }
-      this->readTransactionInProgress = false;
-      preRead(TransferType::readLatest);
-      bool ret2 = false;
-      if(!_hasSeenException) ret2 = readTransferLatest();
-      postRead(TransferType::readLatest, ret2);
-      return ret || ret2;
+      return hasNewData;
     }
 
     /** Write the data to device. The return value is true, old data was lost on
      * the write transfer (e.g. due to an buffer overflow). In case of an
      * unbuffered write transfer, the return value will always be false. */
     bool write(ChimeraTK::VersionNumber versionNumber = {}) {
-      if(TransferElement::isInTransferGroup) {
+      if(TransferElement::_isInTransferGroup) {
         throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
                                      "which is part of a TransferGroup "
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::write, versionNumber);
-      bool dataLost = true;
-      if(!_hasSeenException) dataLost = writeTransfer(versionNumber);
-      postWrite(TransferType::write, dataLost);
-      return dataLost;
+      bool previousDataLost =
+          true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
+      if(!_hasSeenException) {
+        previousDataLost = writeTransfer(versionNumber);
+      }
+      postWrite(TransferType::write, versionNumber);
+      return previousDataLost;
     }
 
     /** Just like write(), but allows the implementation to destroy the content of the user buffer in the
@@ -201,17 +195,20 @@ namespace ChimeraTK {
      *  doWriteTransfer(). In any case, the application must expect the user buffer of the TransferElement to contain
      *  undefined data after calling this function. */
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
-      if(TransferElement::isInTransferGroup) {
+      if(TransferElement::_isInTransferGroup) {
         throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
                                      "which is part of a TransferGroup "
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
       preWrite(TransferType::writeDestructively, versionNumber);
-      bool dataLost = true;
-      if(!_hasSeenException) dataLost = writeTransferDestructively(versionNumber);
-      postWrite(TransferType::writeDestructively, dataLost);
-      return dataLost;
+      bool previousDataLost =
+          true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
+      if(!_hasSeenException) {
+        previousDataLost = writeTransferDestructively(versionNumber);
+      }
+      postWrite(TransferType::writeDestructively, versionNumber);
+      return previousDataLost;
     }
 
     /**
@@ -270,8 +267,21 @@ namespace ChimeraTK {
       }
     }
 
+   private:
+    // helper function that just gets rid of the DiscardValueException and otherwise does a pop_wait on the _readQueue.
+    // It does not deal with other exceptions. This is done in handleTransferException.
+    void readTransferAsyncWaitingImpl() {
+    retry:
+      try {
+        _readQueue.pop_wait();
+      }
+      catch(detail::DiscardValueException&) {
+        goto retry;
+      }
+    }
+
    public:
-    /** 
+    /**
      *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
      *  must be called after preRead() and before postRead(). If the accessor has the AccessMode::wait_for_new_data
      *  flag, the function will block until new data has been pushed by the sender.
@@ -282,14 +292,19 @@ namespace ChimeraTK {
     void readTransfer() noexcept {
       handleTransferException<bool>(
           [this] {
-            doReadTransfer();
+            if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+              readTransferAsyncWaitingImpl();
+            }
+            else {
+              doReadTransferSynchronously();
+            }
             return true; // need to return something, is ignored later
           },
           false);
     }
 
    protected:
-    /** 
+    /**
      *  Implementation version of readTransfer(). This function must be implemented by the backend. For the
      *  functional description read the documentation of readTransfer().
      *  
@@ -301,8 +316,21 @@ namespace ChimeraTK {
      */
     virtual void doReadTransferSynchronously() = 0;
 
+   private:
+    // helper function that just gets rid of the DiscardValueException and otherwise does a pop on the _readQueue.
+    // It does not deal with other exceptions. This is done in handleTransferException.
+    bool readTransferAsyncNonWaitingImpl() {
+    retry:
+      try {
+        return _readQueue.pop();
+      }
+      catch(detail::DiscardValueException&) {
+        goto retry;
+      }
+    }
+
    public:
-    /** 
+    /**
      *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
      *  must be called after preRead() and before postRead(). Even if the accessor has the AccessMode::wait_for_new_data
      *  flag, this function will not block if no new data is available. For the meaning of the return value, see
@@ -312,7 +340,17 @@ namespace ChimeraTK {
      *  exceptions thrown in doRedoReadTransferNonBlockingadTransfer() are caught and rethrown in postRead().
      */
     bool readTransferNonBlocking() noexcept {
-      return handleTransferException<bool>([this] { return doReadTransferNonBlocking(); }, false);
+      return handleTransferException<bool>(
+          [this]() {
+            if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+              return readTransferAsyncNonWaitingImpl();
+            }
+            else {
+              doReadTransferSynchronously();
+              return true;
+            }
+          },
+          false);
     }
 
    public:
@@ -365,7 +403,6 @@ namespace ChimeraTK {
     void postRead(TransferType type, bool hasNewData) {
       if(!readTransactionInProgress) return;
       readTransactionInProgress = false;
-      hasActiveFuture = false;
       doPostRead(type, hasNewData);
       // Note: doPostRead can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
@@ -478,7 +515,7 @@ namespace ChimeraTK {
     virtual void doPostWrite(TransferType, VersionNumber) {}
 
    public:
-    /** 
+    /**
      *  Write the data to the device. This function must be called after preWrite() and before postWrite(). If the
      *  return value is true, old data was lost on the write transfer (e.g. due to an buffer overflow). In case of an
      *  unbuffered write transfer, the return value will always be false.
@@ -491,7 +528,7 @@ namespace ChimeraTK {
     }
 
    protected:
-    /** 
+    /**
      *  Implementation version of writeTransfer(). This function must be implemented by the backend. For the
      *  functional description read the documentation of writeTransfer().
      *  
@@ -501,7 +538,7 @@ namespace ChimeraTK {
     virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) = 0;
 
    public:
-    /** 
+    /**
      *  Write the data to the device. The implementation is allowed to destroy the content of the user buffer in the
      *  process. This is an optional optimisation, hence the behaviour might be identical to writeTransfer().
      * 
@@ -674,7 +711,10 @@ namespace ChimeraTK {
 
     /** Flag whether this TransferElement has been added to a TransferGroup or not
      */
-    bool isInTransferGroup;
+    bool _isInTransferGroup;
+
+    /** The access mode flags for this transfer element.*/
+    AccessModeFlags _accessModeFlags;
 
     friend class TransferGroup;
     friend class TransferFuture;
@@ -707,7 +747,7 @@ namespace ChimeraTK {
 
     /// Exception to be rethrown in postXXX() in case hasSeenException == true
     std::exception_ptr _activeException{nullptr};
-  };
+  }; // namespace ChimeraTK
 
 } /* namespace ChimeraTK */
 namespace std {

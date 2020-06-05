@@ -103,13 +103,13 @@ namespace ChimeraTK {
 
   void TransferGroup::addAccessor(TransferElementAbstractor& accessor) {
     // check if accessor is already in a transfer group
-    if(accessor.getHighLevelImplElement()->isInTransferGroup) {
+    if(accessor.getHighLevelImplElement()->_isInTransferGroup) {
       throw ChimeraTK::logic_error("The given accessor is already in a TransferGroup and cannot be added "
                                    "to another.");
     }
 
     // set flag on the accessors that it is now in a transfer group
-    accessor.getHighLevelImplElement()->isInTransferGroup = true;
+    accessor.getHighLevelImplElement()->_isInTransferGroup = true;
 
     auto highLevelElementsWithNewAccessor = highLevelElements;
     highLevelElementsWithNewAccessor.insert(accessor.getHighLevelImplElement());
