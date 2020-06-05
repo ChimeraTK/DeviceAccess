@@ -26,9 +26,10 @@ namespace ChimeraTK {
    public:
     /** Creates an NDRegisterAccessor with the specified name (passed on to the
      *  transfer element). */
-    NDRegisterAccessor(std::string const& name, std::string const& unit = std::string(TransferElement::unitNotSet),
+    NDRegisterAccessor(std::string const& name, AccessModeFlags accessModeFlags,
+        std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string())
-    : TransferElement(name, unit, description) {
+    : TransferElement(name, accessModeFlags, unit, description) {
       TransferElement::makeUniqueId();
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
