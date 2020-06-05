@@ -6,7 +6,7 @@
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the MULTIPLEXED_SEQUENCE_PREFIX constant
-#if 0
+
 namespace ChimeraTK {
 
   RegisterInfoMapPointer MapFileParser::parse(const std::string& file_name) {
@@ -266,4 +266,3 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
-#endif //0

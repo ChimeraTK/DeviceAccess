@@ -16,16 +16,20 @@
 
 namespace ChimeraTK {
 
-  /** NDRegisterAccessor for backends with only synchronous transfers (so
-   * readAsync() must be implemented with a thread). This class just provides a
-   * default implementation of readAsync() for those backends. */
+  /** NDRegisterAccessor for backends with only synchronous transfers. It checks that AccessMode::wait_for_new_data
+   * is not set and throws a ChimeraTK::logic_error in the constructor if it is set. */
   template<typename UserType>
   class SyncNDRegisterAccessor : public NDRegisterAccessor<UserType> {
    public:
-    SyncNDRegisterAccessor(std::string const& name,
+    SyncNDRegisterAccessor(std::string const& name, AccessModeFlags accessModeFlags,
         std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string())
-    : NDRegisterAccessor<UserType>(name, unit, description) {}
+    : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description) {
+      if(accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        throw ChimeraTK::logic_error(
+            "TransferElement for " + name + " does not support AccessMode::wait_for_new_data.");
+      }
+    }
 
     ~SyncNDRegisterAccessor() {
       // This is a requirement to all implementations: call shutdown() in the
@@ -49,54 +53,11 @@ namespace ChimeraTK {
      * which do not override readAsync() actually call it, the function call is
      * enforced for all implementations in the destructor with an assert.
      */
-    void shutdown() {
-      if(readAsyncThread.joinable()) {
-        readAsyncThread.interrupt();
-        readAsyncThread.join();
-      }
-      shutdownCalled = true;
-    }
-
-    TransferFuture doReadTransferAsync() {
-      // create future_queue if not already created and continue it to enusre
-      // postRead is called (in the user thread, so we use the deferred launch
-      // policy)
-      if(!futureCreated) {
-        notifications = cppext::future_queue<void>(2);
-        activeFuture = TransferFuture(notifications, this);
-        futureCreated = true;
-      }
-
-      // launch doReadTransfer in separate thread
-      readAsyncThread = boost::thread([this] {
-        try {
-          this->doReadTransfer();
-        }
-        catch(...) {
-          this->notifications.push_exception(std::current_exception());
-          return;
-        }
-        this->notifications.push();
-      });
-
-      // return the TransferFuture
-      return activeFuture;
-    }
+    void shutdown() { shutdownCalled = true; }
 
    private:
-    /// Thread which might be launched in readAsync()
-    boost::thread readAsyncThread;
-
-    /// future_queue used to notify the TransferFuture about completed transfers
-    cppext::future_queue<void> notifications;
-
-    /// Flag whether TransferFuture has been created
-    bool futureCreated{false};
-
     /// Flag whether shutdown() has been called or not
     bool shutdownCalled{false};
-
-    using TransferElement::activeFuture;
   };
 
 } // namespace ChimeraTK

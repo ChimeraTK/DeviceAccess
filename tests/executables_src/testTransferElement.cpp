@@ -132,7 +132,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
    * \anchor testTransferElement_B_6_1_write It also tests specifically the
    * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for write operations.
    */
-  void doPostWrite(TransferType type, VersionNumber) override {
+  void doPostWrite(TransferType type, VersionNumber versionNumber) override {
     BOOST_CHECK(_preRead_counter == 0);
     BOOST_CHECK(_preWrite_counter == 1);
     BOOST_CHECK(_readTransfer_counter == 0);
@@ -143,18 +143,12 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       /* Here B.6.1 is tested for write operations */
       BOOST_CHECK(_writeTransfer_counter == 0);
     }
+    BOOST_CHECK(versionNumber == _newVersion);
     BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == type);
     ++_postWrite_counter;
     if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
-
-    // Update version number: this will be moved to the base class!
-    // Remove warning in testPostWriteVersionNumberUpdate once this has been done.
-    if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwNumericCast && !_throwThreadInterruptedInPre &&
-        !_throwRuntimeErrInTransfer && !_throwThreadInterruptedInTransfer) {
-      _currentVersion = _newVersion;
-    }
   }
 
   void interrupt() override {
@@ -182,9 +176,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
   bool isReadable() const override { return _readable; }
 
   bool isWriteable() const override { return _writeable; }
-
-  VersionNumber getVersionNumber() const override { return _currentVersion; }
-  VersionNumber _currentVersion{nullptr};
 
   cppext::future_queue<void> _readQueue{3};
 
@@ -644,9 +635,6 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
  *  * \anchor testTransferElement_B_11_5 \ref transferElement_B_11_5 "B.11.5".
  */
 BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
-  std::cout << "WARNING: This test (testPostWriteVersionNumberUpdate) is currently testing functionality which is part "
-               "of the test implementation, not the base class!"
-            << std::endl;
   TransferElementTestAccessor<int32_t> accessor;
 
   // test initial value

@@ -8,13 +8,11 @@
 #ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
 #define CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
 
-#if 0
+#include <boost/make_shared.hpp>
 
-#  include <boost/make_shared.hpp>
+#include <ChimeraTK/cppext/finally.hpp>
 
-#  include <ChimeraTK/cppext/finally.hpp>
-
-#  include "NDRegisterAccessor.h"
+#include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -68,30 +66,33 @@ namespace ChimeraTK {
         _target->postRead(type, hasNewData);
         if(!hasNewData) return;
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
+        this->_dataValidity = _target->dataValidity();
+        this->_versionNumber = _target->getVersionNumber();
       }
 
       void doPreWrite(TransferType type, VersionNumber versionNumber) override {
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
+        _target->setDataValidity(this->_dataValidity);
         _target->preWrite(type, versionNumber);
       }
 
-      void doPostWrite(TransferType type, bool dataLost) override {
+      void doPostWrite(TransferType type, VersionNumber versionNumber) override {
         // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
         auto _ = cppext::finally([&] {
           for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         });
-        _target->postWrite(type, dataLost);
+        _target->postWrite(type, versionNumber);
       }
 
       void interrupt() override { _target->interrupt(); }
 
-      ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
+      // FIXME Code cleanup : remove ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
 
-      ChimeraTK::DataValidity dataValidity() const override { return _target->dataValidity(); }
+      // FIXME Code cleanup : remove ChimeraTK::DataValidity dataValidity() const override { return _target->dataValidity(); }
 
-      void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
-        _target->setDataValidity(validity);
-      }
+      // FIXME Code cleanup : remove void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
+      //  _target->setDataValidity(validity);
+      //}
 
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
@@ -111,7 +112,7 @@ namespace ChimeraTK {
    public:
     NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
     : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
-          target->getName(), target->getUnit(), target->getDescription()) {
+          target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
       _target = target;
 
       // set ID to match the decorated accessor
@@ -130,7 +131,7 @@ namespace ChimeraTK {
       return _target->writeTransferDestructively(versionNumber);
     }
 
-    void doReadTransferSyncronously() override { _target->readTransfer(); }
+    void doReadTransferSynchronously() override { _target->readTransfer(); }
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
 
@@ -189,5 +190,5 @@ void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTr
     _target->replaceTransferElement(newElement);
   }
 }
-#endif //0
+
 #endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H */

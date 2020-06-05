@@ -218,17 +218,15 @@ namespace ChimeraTK {
      *
      *  Implementation notes:
      *
-     *  Accessors with direct hardware access need to implement this function by
-     * returning the value of a member. The member needs to be set to a new
-     * version number in doPostRead() by assigning a default-constructed
-     * ChimeraTK::VersionNumber. Also the argument of doWriteTransfer() needs to
-     * be assigned to this member if the transfer was successful. This ensures
-     * correct tracking of the version number.
-     *
-     *  Accessors which rely on other accessors to obtain their data should pass
-     * through the function call to the target accessor.
+     * Reading accessors have to update the TransferElement _versionNumber variable in
+     * their doPostRead function. For TransferElements with AccessMode::wait_for_new_data
+     * it has to be created already when the data is received. It must be stored
+     * together with the payload data and only written to the application buffer (which _versionNumber is a part of)
+     * in postWrite.
+     * Accessors which rely on other accessors to obtain their data update the value from their target
+     * after a successful transfer.
      */
-    virtual ChimeraTK::VersionNumber getVersionNumber() const = 0;
+    ChimeraTK::VersionNumber getVersionNumber() const { return _versionNumber; }
 
     /** Check if transfer element is read only, i\.e\. it is readable but not
      * writeable. */

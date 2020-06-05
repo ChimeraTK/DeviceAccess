@@ -10,7 +10,7 @@
 
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
-#if 0
+
 namespace ChimeraTK {
 
   /** Runtime type trait to identify CopyRegisterDecorators independent of their
@@ -56,5 +56,5 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-#endif //0
+
 #endif /* CHIMERATK_COPY_REGISTER_DECORATOR_H */
