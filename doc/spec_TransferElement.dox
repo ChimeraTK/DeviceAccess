@@ -1,10 +1,11 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement
+\page spec_TransferElement Technical specification: TransferElement V1.0RC2
 
-> **DRAFT VERSION, WRITE-UP IN PROGRESS!**
+> **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
+> **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
 ## Introduction ##
 
@@ -30,9 +31,9 @@ This documnent is currently still **INCOMPLETE**!
 
 - 5. The <i>application buffer</i> (sometimes also called user buffer outside this document) is referring to the buffer containing the data and meta data, which is accessible to the application.
   - 5.1 It can be accessed through the following (non-virtual) functions:
-    - ChimeraTK::NDRegisterAccessor::accessData() / ChimeraTK::NDRegisterAccessor::accessChannel() - gives access to ChimeraTK::NDRegisterAccessor::buffer_2D
-    - ChimeraTK::TransferElement::getVersionNumber() - returns content of ChimeraTK::TransferElement::_versionNumber
-    - ChimeraTK::TransferElement::dataValidity() - returns content of ChimeraTK::TransferElement::_dataValidity
+    - NDRegisterAccessor::accessData() / NDRegisterAccessor::accessChannel() - gives access to NDRegisterAccessor::buffer_2D
+    - TransferElement::getVersionNumber() - returns content of TransferElement::_versionNumber
+    - TransferElement::dataValidity() - returns content of TransferElement::_dataValidity
   - 5.2 If not stated otherwise, the term <i>application buffer</i> refers to **all** components of the buffer.
   - 5.3 The content of the buffer is filled with data from the device in read operations, and transferred to the device in write operations.
   - 5.4 The content of the buffer can always be modified by the application.(*)
@@ -60,14 +61,14 @@ This documnent is currently still **INCOMPLETE**!
     - bool TransferElement::doWriteTransfer(VersionNumber versionNumber), pure virtual
     - bool TransferElement::doWriteTransferDestructively(VersionNumber versionNumber), virtual
   - 6.6 postXxx(), public
-    - TransferElement::postRead(TransferType type, bool hasNewData)
-    - TransferElement::postWrite(TransferType type)
+    - void TransferElement::postRead(TransferType type, bool hasNewData)
+    - void TransferElement::postWrite(TransferType type, VersionNumber versionNumber)
   - 6.7 doPostXxx(), protected virtual
-    - TransferElement::doPostRead(TransferType type, bool hasNewData)
-    - TransferElement::doPostWrite(TransferType type)
+    - void TransferElement::doPostRead(TransferType type, bool hasNewData)
+    - void TransferElement::doPostWrite(TransferType type, VersionNumber versionNumber)
    
-- 7. Private and virtual functions
-  - 7.1 The private functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
+- 7. Virtual and non-virtual functions
+  - 7.1 The non-virtual functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
   - 7.2 They internally call their virtual counterparts which start with 'do'
   - 7.3 The virtual do-functions are the actual implementations of the transfer or pre/post action, which are specific for each backend, decorator etc.
 
@@ -85,13 +86,13 @@ This documnent is currently still **INCOMPLETE**!
 - 3. Modes of transfers
 
   - 3.1 Read operations:
-    - 3.1.1 The flag ChimeraTK::AccessMode::wait_for_new_data determines whether the transfer is initiated by the device side (flag is set) or not.
-    - 3.1.2 If ChimeraTK::AccessMode::wait_for_new_data is not set, read operations
+    - 3.1.1 The flag AccessMode::wait_for_new_data determines whether the transfer is initiated by the device side (flag is set) or not.
+    - 3.1.2 If AccessMode::wait_for_new_data is not set, read operations
       - 3.1.2.1 obtain the <i>current</i> value of the process variable (if possible/applicable by synchronously communicating with the device),
       - 3.1.2.2 have no information whether the value has changed,
       - 3.1.2.3 behave identical whether read(), readNonBlocking() or readLatest() is called,
       - 3.1.2.4 readNonBlocking() and readLatest() always return true.
-    - 3.1.3 If ChimeraTK::AccessMode::wait_for_new_data is set
+    - 3.1.3 If AccessMode::wait_for_new_data is set
       - 3.1.3.1 read() blocks until new data has arrived,
       - 3.1.3.2 readNonBlocking() does not block and instead returns whether new data has arrived or not,
     - \anchor transferElement_B_3_1_4 3.1.4 readLatest() is merely a convenience function which calls readNonBlocking() until no more new data is available. [\ref testTransferElement_B_3_1_4 "T"]
@@ -119,7 +120,7 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_4_3_2 4.3.2 In write transfers, postWrite() updates the version number of the application buffer TransferElement::_versionNumber to the version number provided to the write() call, if no exception is (re-)thrown in doPostWrite() (cf. \ref transferElement_B_11_3 "B.11.3"). [\ref testTransferElement_B_4_3_2 "T"]
 
 - \anchor transferElement_B_5 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*) [\ref testTransferElement_B_5_sync "T", \ref testTransferElement_B_5_async "T" (both without sub-points)]
-  - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). [\ref testTransferElement_B_5_1_sync "T", \ref testTransferElement_B_5_1_async "T"]
+  - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1_sync "T", \ref testTransferElement_B_5_1_async "T"]
   - \anchor transferElement_B_5_2 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa. [\ref testTransferElement_B_5_2 "T"]
   
 - \anchor transferElement_B_6 6. Exceptions thrown in preXxx() or xxxTransferYyy() are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6 "T"]
@@ -129,11 +130,11 @@ This documnent is currently still **INCOMPLETE**!
   - 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
   - \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)"
   - 7.3 For read operations, the return value is passed on to postRead() (via hasNewData), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), hasNewData is set to true.
-  - \anchor transferElement_B_7_4 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() receives instead the information that the transfer didn't sucessfully take place (hasNewData = false). [\ref testTransferElement_B_7_4_sync "T", \ref testTransferElement_B_7_4_async "T"]
+  - \anchor transferElement_B_7_4 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() is called with hasNewData = false because there was no successful transfer. [\ref testTransferElement_B_7_4_sync "T", \ref testTransferElement_B_7_4_async "T"]
   
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
-  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the ChimeraTK::TransferElement::_readQueue, from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T" (without sub-points)]
+  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the TransferElement::_readQueue \ref transferElement_comment_B_8_2 "(*)", from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T" (without sub-points)]
     - 8.2.1 If the queue is full, the last written value will be overwritten.
     - \anchor transferElement_B_8_2_2 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*) [\ref testTransferElement_B_8_2_2 "T"]
   - \anchor transferElement_B_8_3 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value. [\ref testTransferElement_B_8_3 "T" (only second sentence)]
@@ -145,7 +146,7 @@ This documnent is currently still **INCOMPLETE**!
       - 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronous read is activated automatically (incl. sending of the initial value). This happens even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and Device::activateAsyncRead() has not been called yet.
       - 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
       - 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
-  - 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt().
+  - \anchor transferElement_B_8_6 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt().
     - \anchor transferElement_B_8_6_1 8.6.1 TransferElement::interrupt() places a boost::thread_interrupted exception into the TransferElement::_readQueue. [\ref testTransferElement_B_8_6_1 "T"]
     - \anchor transferElement_B_8_6_2 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally. [\ref testTransferElement_B_8_6_2 "T"]
     - \anchor transferElement_B_8_6_3 8.6.3 The operation receiving the boost::thread_interrupted exception will also obey \ref transferElement_B_5 "5", i.e. postRead() is still called. [\ref testTransferElement_B_8_6_3 "T"]
@@ -155,10 +156,10 @@ This documnent is currently still **INCOMPLETE**!
 - 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    - \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1")
    - \anchor transferElement_B_9_2 9.2 TransferElements with wait_for_new_data flag
-    - \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the ChimeraTK::TransferElement::_readQueue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
+    - \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the TransferElement::_readQueue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called
     - 9.2.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.2.1. to avoid race conditions.
     - 9.2.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
-    - 9.2.4 The backend must make sure 9.2.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchonous transfers again (*).
+    - 9.2.4 The backend must make sure 9.2.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchronous transfers again (*).
    - \anchor transferElement_B_9_3 9.3 TransferElements without wait_for_new_data
      - \anchor transferElement_B_9_3_1 9.3.1 Each call to doReadTransferSynchonously() will throw a ChimeraTK::runtime error until open() has been called successfully.
    - \anchor transferElement_B_9_4 9.4 Write operations will throw  a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully.
@@ -178,16 +179,20 @@ This documnent is currently still **INCOMPLETE**!
     - 11.1.2 additionaly contain a std::chrono::system_clock timestamp which allows to weakly order the objects even across applications/processes,
     - 11.1.3 are copyable, and
     - 11.1.4 can be initiallised with a {nullptr} which yields a special instance that sorts before all normal instances. All {nullptr} constructed objects are equal (==).
+    - 11.1.5 The default constructor creates a new VersionNumber which is larger than all previously created VersionNumbers in a thread safe way.
   - 11.2 VersionNumber objects are used
-    - 11.2.1 to determine which data is older, as needed e.g. by bidirectional process variable implementations, and
-    - 11.2.2 to build a consistent data set from multiple TransferElements (see DataConsistencyGroup). This requires the data sources (e.g. backend implementations) to attach the same VersionNumber to different TransferElements if the data is consistent.
+    - \anchor transferElement_B_11_2_1 11.2.1 to determine which data is older \ref transferElement_comment_B_11_2_1 "(*)", as needed e.g. by bidirectional process variable implementations, and
+    - \anchor transferElement_B_11_2_2 11.2.2 to build a consistent data set from multiple TransferElements (see DataConsistencyGroup). This requires the data sources (e.g. backend implementations) to attach the same VersionNumber to different TransferElements if the data is consistent.
+    - 11.2.3 From the previous two points it follows that backend implementations must create a new VersionNumber for all data that is received or read, or associcate a known version number according to \ref transferElement_B_11_2_2 "11.2.2"
   - \anchor transferElement_B_11_3 11.3 The VersionNumber of the last successfully written/read data of a TransferElement can be obtained through TransferElement::getVersionNumber() (cf. \ref transferElement_B_4_3_2 "B.4.3.2"). [\ref testTransferElement_B_11_3 "T"]
   - 11.4 The VersionNumber for a transfer is given as an optional argument to TransferElement::write() resp. TransferElement::writeDestructively(). If the argument is missing, a new VersionNumber is generated.
     - \anchor transferElement_B_11_4_1 11.4.1 The VersionNumber passed to the write call must be greater or equal to the one returned by TransferElement::getVersionNumber() of the same TransferElement, otherwise a ChimeraTK::logic_error is thrown by the TransferElement base class. Write calls on different instances of TransferElement (say `a` and `b`) do not need to follow this rule, i.e. `a->write(v1); b->write(v2);` is allowed even if `v2 < v1` \ref transferElement_comment_B_11_4_1 "(*)". [\ref testTransferElement_B_11_4_1 "T"]
     - \anchor transferElement_B_11_4_2 11.4.2 The VersionNumber is passed on to the TransferElement implementation via the calls TransferElement::doPreWrite(), TransferElement::doWriteTransfer() resp. TransferElement::doWriteTransferDestructively() and TransferElement::doPostWrite(), after the precondition 11.4.1 has been checked. [\ref testTransferElement_B_11_4_2 "T"]
   - \anchor transferElement_B_11_5 11.5 If a transfer was not successful (exception has been thrown), the VersionNumber returned by TransferElement::getVersionNumber() does not change. [\ref testTransferElement_B_11_5 "T"]
   - \anchor transferElement_B_11_6 11.6 Before the first successful transfer, TransferElement::getVersionNumber() always returns the {nullptr} constructed VersionNumber. [\ref testTransferElement_B_11_6 "T"]
-  
+  - \anchor transferElement_B_11_7 11.7 *To be decided if we only allow 11.7.2:* Bi-directional variables
+    - \anchor transferElement_B_11_7_1 11.7.1 *either* do not guarantee that consecutive calls to TransferElement::getVersionNumber() always return a VersionNumber that is equal or greater than the one from the previous call \ref transferElement_comment_B_11_7_1 "(*)"
+    - \anchor transferElement_B_11_7_2 11.7.2 *or* discard values with lower version numbers \ref transferElement_comment_B_11_7_2 "(*)"
 
 - 12. TransferGroup
   - 12.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
@@ -202,13 +207,17 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_B_3_2_2 \ref transferElement_B_3_2_2 "3.2.2" The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
 
 
-- 4.1 preXxx() is part of the operation, not of the actual transfer. In case of reads with AccessMode::wait_for_new_data the transfer is asynchonousy initiated by the device and not connected to the operation. Hence backend implementations usually have an empty doPreWrite(), but decorator-like implementations still can use it to execute preparatory tasks.
+- 4.1 preXxx() is part of the operation, not of the actual transfer. In case of reads with AccessMode::wait_for_new_data the transfer is asynchronously initiated by the device and not connected to the operation. Hence backend implementations usually have an empty doPreWrite(), but decorator-like implementations still can use it to execute preparatory tasks.
 
 - 4.3.1 In write operations the buffer might be swapped out in doPreRead() and swapped back in doPostRead() to restore it for non-destructive read operations to avoid copying of large arrays.
 
 - 5. Reason: It might be that the user buffer has to be swapped out during the transfer (while taking away the ownership of the calling code), and this must be restored in the postXxx action.
 
+-  \anchor transferElement_comment_B_5_1 \ref transferElement_B_5_1 "5.1" The boost::thread_interrupted exception, which is thrown internally as described in \ref transferElement_B_8_6 "8.6", is treated equally.
+
 - \anchor transferElement_comment_B_7_2 \ref transferElement_B_7_2 "7.2" Usually, writes are implemented as synchronous transfers, in which case no previous data can be lost. In case of asynchronous write transfers (as e.g. implemented in the ControlSystemAdapter's ProcessArray), the implementation must ensure the specified behaviour e.g. by using cppext::future_queue::push_overwrite() or a similar functionality. Please keep in mind that the return value of cppext::future_queue::push_overwrite() does not guarantee which data is lost *only* if concurrent push_overwrite() calls are executed in a multi-producer environment. TransferElements are not thread safe anyway, hence push_overwrite() will always overwrite old data in this context.
+
+- \anchor transferElement_comment_B_8_2 \ref transferElement_B_8_2 "8.2" Conceptually. In the current implementation TransferElement::_readQueue is a void queue, which is set up as a continuation of the data transport queue. The important point here that all described actions like exception handling are done on TransferElement::_readQueue.
 
 - 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
@@ -227,7 +236,13 @@ This documnent is currently still **INCOMPLETE**!
 
 - \anchor transferElement_comment_B_10_1_3 \ref transferElement_B_10_1_3 "10.1.3" For instance a watchdog which monitors a reference register to detect firmware reboots that is not seen on the transport layer can trigger the exception state to inhibit asynchronous transfers while running a recovery procedure.
 
+- \anchor transferElement_comment_B_11_2_1 \ref transferElement_B_11_2_1 "11.2.1" This means the version number has to be created as soon as data is received, for instance in the receiver thread of a TransferElement with AccessMode::wait_for_new_data, and not in the doPostRead() of the read() operation.
+
 - \anchor transferElement_comment_B_11_4_1 \ref transferElement_B_11_4_1 "11.4.1" Smaller version numbers on later write calls of a different instance can conceptionally not be avoided if the instances are used by different, unsynchronised threads. Even within the same thread, the information written to different instances can come from different sources and hence might have independent version numbers.
+
+- \anchor transferElement_comment_B_11_7_1 \ref transferElement_B_11_7_1 "11.7.1" If a write call is done there might be older data in the read queue, which results in a lower version number once a read is called.
+- \anchor transferElement_comment_B_11_7_2 \ref transferElement_B_11_7_2 "11.7.2" The BiDirectionalProcessArray is implemented like this.
+
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
@@ -237,12 +252,12 @@ This documnent is currently still **INCOMPLETE**!
 - 3. ChimeraTK::runtime_error in principle are recoverable. It is thrown, if the device (including the communication link) does not behave as expected. A later call to the same function (after the recovery has been triggered, cf. \ref transferElement_B_9_2_1 "B.9.2.1" resp. \ref transferElement_B_9_3_1 "B.9.3.1") must be able to succeed (for instance if a network outage has been resolved).
    ChimeraTK::runtime_error may only be thrown in 
   - 3.1 doXxxTransferYyy(). It is the only exception that can occur in this function
-  - 3.2 ChimeraTK::TransferElement::isReadable(), ChimeraTK::TransferElement::isWriteable() or ChimeraTK::TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
+  - 3.2 TransferElement::isReadable(), TransferElement::isWriteable() or TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
   - 3.3 doPreXxx(), if the information returned by the functions in 3.2 is not yet available and needs to be determined from the running device.
 
 - 4. boost::numeric::bad_numeric_cast may only be thrown in
-  - 4.1 ChimeraTK::TransferElement::doPreWrite()
-  - 4.2 ChimeraTK::TransferElement::doPostRead(), but only if hasNewData == true
+  - 4.1 TransferElement::doPreWrite()
+  - 4.2 TransferElement::doPostRead(), but only if hasNewData == true
    - 4.2.1 As the transfer is successful at this point, the currentVersionNumber must be updated as if the whole operation was successful before throwing the exception.
   - 4.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 5.2.4) (*).
 
@@ -255,14 +270,14 @@ This documnent is currently still **INCOMPLETE**!
     - 5.2.2 The size or dimension of the requested TransferElement is too large (*)
       - 5.2.2.1 Can be checked in the catalogue.
       - 5.2.2.2 Thrown in the constructor if possible, otherwise in doPreXxx().
-    - 5.2.3 The wrong ChimeraTK::AccessMode flags are provided
+    - 5.2.3 The wrong AccessMode flags are provided
       - 5.2.3.1 Can be checked in the catalogue.
       - 5.2.3.2 Thrown in the constructor if possible, otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly().
-    - 5.2.4 The requested user data type is to small to hold the data without range overflow when reading, or too big when writing (*)
+    - 5.2.4 The requested user data type is too small to hold the data without range overflow when reading, or too big when writing (*)
       - 5.2.4.1 ToDo: cannot be checked in the catalogue to a sufficient degree
       - 5.2.4.2 Thrown in the constructor if possible, otherwise in doPreXxx()
     - 5.2.5 A read/write operation is started while the backend is still closed
-      - 5.2.5.1 Check with ChimeraTK::DeviceBackend::isOpen().
+      - 5.2.5.1 Check with DeviceBackend::isOpen().
       - 5.2.5.2 Thrown in doPreXxx() (*)
     - 5.2.6 A read operation is executed on a transfer element that cannot be read
       - 5.2.6.1 Check with TransferElement::isReadable().
@@ -277,7 +292,7 @@ This documnent is currently still **INCOMPLETE**!
     - 5.4.2 isReadable(), isWriteable() and isReadOnly() might have to check for the existance of the register from a running backend (in case there is no map file). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
 
 ### (*) Comments ###
-- 5.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
+- 4.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
 - 5.1 Test functions do not yet exist for everything. This needs to be changed!
 - 5.2 Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
 - 5.2.1.1 It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
@@ -289,19 +304,19 @@ This documnent is currently still **INCOMPLETE**!
 
 ## D. Requirements for full implementations (e.g. in backends) ##
 
-- 1. If ChimeraTK::AccessMode::wait_for_new_data is specified:
-  - 1.1 The ChimeraTK::TransferElement::_readQueue is a cppext::future_queue of type 'void' which exists in each transfer element. For transfer elements with AccessMode::wait_for_new_data it usually is the continuation queue of another future_queue which is transporting the data. The data type is implementation dependent. Common functionality like exception handling and waiting for new data is implemented on ChimeraTK::TransferElement::_readQueue.
-  - 1.2 ChimeraTK::TransferElement::_readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
-  - 1.3 ChimeraTK::TransferElement::_readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether data has been discarded (*).
+- 1. If AccessMode::wait_for_new_data is specified:
+  - 1.1 The TransferElement::_readQueue is a cppext::future_queue of type 'void' which exists in each transfer element. For transfer elements with AccessMode::wait_for_new_data it usually is the continuation queue of another future_queue which is transporting the data. The data type is implementation dependent. Common functionality like exception handling and waiting for new data is implemented on TransferElement::_readQueue.
+  - 1.2 TransferElement::_readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
+  - 1.3 TransferElement::_readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether data has been discarded (*).
   
-  - 1.4 In case an exception is detected during an asychronous transfer (for instance in a separate thread), the exception must be stored on the ChimeraTK::TransferElement::readQueue. The TransferFuture will then make sure that the exception is properly rethrown in postRead (just like for synchronous transfers).
+  - 1.4 In case an exception is detected during an asychronous transfer (for instance in a separate thread), the exception must be stored on the TransferElement::_readQueue. The TransferFuture will then make sure that the exception is properly rethrown in postRead (just like for synchronous transfers).
 
 ### (*) Comments ###
 
-1.3 Either the currently pushed data or older data on the queue might be discarded. In any case there will be one call less to ChimeraTK::TransferElement::doPostRead(), because the number of entries in the queue could not be increased because it was full
+1.3 Either the currently pushed data or older data on the queue might be discarded. In any case there will be one call less to TransferElement::doPostRead(), because the number of entries in the queue could not be increased because it was full
 ## E. Requirements for decorator-like implementations ##
 
-- 1. If ChimeraTK::AccessMode::wait_for_new_data is specified, ChimeraTK::TransferElement::readQueue is initialised in the constructor with a copy of the readQueue of the target TransferElement.
+- 1. If AccessMode::wait_for_new_data is specified, TransferElement::_readQueue is initialised in the constructor with a copy of the readQueue of the target TransferElement.
   - 1.1 Decorator-like implementations with multiple targets must provide a readQueue e.g. by using cppext::future_queue::when_any() or cppext::future_queue::when_all().
 
 - 2. All functions doPreXxx, doXxxTransferYyy and doPostXxx must delegate to their non-do counterparts (preXxx, xxxTransferYyy and postXxx). Never delegate to the do... of the target implementation functions directly.
@@ -322,15 +337,15 @@ This documnent is currently still **INCOMPLETE**!
 
 **Note:** This section is biased by the current implementation and mostly lists parts that needs to be changed!
 
-- 1. The TransferFuture will be removed. According to D.1.1 all common functionality is implemented with TransferElement::readQueue, so the TransferFuture provides no added value and even complicates the implementation.
+- 1. The TransferFuture will be removed. According to D.1.1 all common functionality is implemented with TransferElement::_readQueue, so the TransferFuture provides no added value and even complicates the implementation.
 
 - 2. TransferElement
 
-  - 2.1 ChimeraTK::TransferElement::readAsync() will be removed (not deprecated because it would have to return the TransferFuture, which will be removed), (together with readTransferAsync() and doReadTransferAsync()).
+  - 2.1 TransferElement::readAsync() will be removed (not deprecated because it would have to return the TransferFuture, which will be removed), (together with readTransferAsync() and doReadTransferAsync()).
 
   - 2.2 readTransferLatest() and doReadTransferLatest() will be removed.
 
-  - 2.3 doReadTransferNonBlockin() will be removed. The implementation of readTransferNonBlocking will use the TransferElement::readQueue.
+  - 2.3 doReadTransferNonBlockin() will be removed. The implementation of readTransferNonBlocking will use the TransferElement::_readQueue.
   
   - 2.4 readLatest() is directly calling readNonBlocking() in a loop (see B.3.1.4)
   
