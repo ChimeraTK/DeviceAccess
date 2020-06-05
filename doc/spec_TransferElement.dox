@@ -1,10 +1,11 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement
+\page spec_TransferElement Technical specification: TransferElement V1.0RC1
 
-> **DRAFT VERSION, WRITE-UP IN PROGRESS!**
+> **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
+> **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
 ## Introduction ##
 
