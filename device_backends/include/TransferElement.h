@@ -23,10 +23,11 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 
+#include <ChimeraTK/cppext/future_queue.hpp>
+
 #include "AccessMode.h"
 #include "Exception.h"
 #include "TransferElementID.h"
-#include "TransferFuture.h"
 #include "VersionNumber.h"
 
 namespace ChimeraTK {
@@ -54,9 +55,7 @@ namespace ChimeraTK {
   /**
    * @brief Used to indicate the applicable opereation on a Transferelement.
    */
-  enum class TransferType { read, readNonBlocking, readLatest, readAsync, write, writeDestructively };
-
-  using ChimeraTK::TransferFuture;
+  enum class TransferType { read, readNonBlocking, readLatest, write, writeDestructively };
 
   /*******************************************************************************************************************/
 
@@ -100,11 +99,14 @@ namespace ChimeraTK {
 
     /** Set the current DataValidity for this TransferElement. Will do nothing if the
      * backend does not support it */
-    virtual void setDataValidity(DataValidity valid = DataValidity::ok) { (void)valid; }
+    void setDataValidity(DataValidity validity = DataValidity::ok) {
+      assert(isWriteable());
+      _dataValidity = validity;
+    }
 
     /** Return current validity of the data. Will always return DataValidity::ok if the
      * backend does not support it */
-    virtual DataValidity dataValidity() const { return DataValidity::ok; }
+    DataValidity dataValidity() const { return _dataValidity; }
 
     /** Read the data from the device. If AccessMode::wait_for_new_data was set,
      * this function will block until new data has arrived. Otherwise it still
@@ -121,8 +123,8 @@ namespace ChimeraTK {
       }
       this->readTransactionInProgress = false;
       preRead(TransferType::read);
-      if(!hasSeenException) readTransfer();
-      postRead(TransferType::read, !hasSeenException);
+      if(!_hasSeenException) readTransfer();
+      postRead(TransferType::read, !_hasSeenException);
     }
 
     /** 
@@ -149,7 +151,7 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preRead(TransferType::readNonBlocking);
       bool hasNewData = false;
-      if(!hasSeenException) hasNewData = readTransferNonBlocking();
+      if(!_hasSeenException) hasNewData = readTransferNonBlocking();
       postRead(TransferType::readNonBlocking, hasNewData);
       return hasNewData;
     }
@@ -172,51 +174,9 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preRead(TransferType::readLatest);
       bool ret2 = false;
-      if(!hasSeenException) ret2 = readTransferLatest();
+      if(!_hasSeenException) ret2 = readTransferLatest();
       postRead(TransferType::readLatest, ret2);
       return ret || ret2;
-    }
-
-    /** Read data from the device in the background and return a future which will
-     * be fulfilled when the data is ready. When the future is fulfilled, the
-     * transfer element will already contain the new data, there is no need to
-     * call read() or readNonBlocking() (which would trigger another data
-     * transfer).
-     *
-     *  It is allowed to call this function multiple times, which will return the
-     * same (shared) future until it is fulfilled. If other read functions (like
-     * read() or readNonBlocking()) are called before the future previously
-     * returned by this function was fulfilled, that call will be equivalent to
-     * the respective call on the future (i.e. TransferFuture::wait() resp.
-     * TransferFuture::hasNewData()) and thus the future will hae been used
-     * afterwards.
-     *
-     *  The future will be fulfilled at the time when normally read() would
-     * return. A call to this function is roughly logically equivalent to:
-     *    boost::async( boost::bind(&TransferElement::read, this) );
-     *  (Although such implementation would disallow accessing the user data
-     * buffer until the future is fulfilled, which is not the case for this
-     * function.)
-     *
-     *  Design note: A special type of future has to be returned to allow an
-     * abstraction from the implementation details of the backend. This allows -
-     * depending on the backend type - a more efficient implementation without
-     * launching a thread. */
-    TransferFuture& readAsync() {
-      if(!hasActiveFuture) {
-        // call preRead
-        this->readTransactionInProgress = false;
-        this->preRead(TransferType::readAsync);
-        // initiate asynchronous transfer and return future
-        if(!hasSeenException) {
-          activeFuture = readTransferAsync();
-        }
-        else {
-          activeFuture = TransferFuture(this); // in case of exception, return a ready future
-        }
-        hasActiveFuture = true;
-      }
-      return activeFuture;
     }
 
     /** Write the data to device. The return value is true, old data was lost on
@@ -231,7 +191,7 @@ namespace ChimeraTK {
       this->writeTransactionInProgress = false;
       preWrite(TransferType::write, versionNumber);
       bool dataLost = true;
-      if(!hasSeenException) dataLost = writeTransfer(versionNumber);
+      if(!_hasSeenException) dataLost = writeTransfer(versionNumber);
       postWrite(TransferType::write, dataLost);
       return dataLost;
     }
@@ -249,7 +209,7 @@ namespace ChimeraTK {
       this->writeTransactionInProgress = false;
       preWrite(TransferType::writeDestructively, versionNumber);
       bool dataLost = true;
-      if(!hasSeenException) dataLost = writeTransferDestructively(versionNumber);
+      if(!_hasSeenException) dataLost = writeTransferDestructively(versionNumber);
       postWrite(TransferType::writeDestructively, dataLost);
       return dataLost;
     }
@@ -295,13 +255,13 @@ namespace ChimeraTK {
         return function();
       }
       catch(ChimeraTK::runtime_error&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
         return returnOnException;
       }
       catch(boost::thread_interrupted&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
         return returnOnException;
       }
       catch(...) {
@@ -339,7 +299,7 @@ namespace ChimeraTK {
      *  - Decorators must delegate the call to readTransfer() of the decorated target.
      *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransferLatest()
      */
-    virtual void doReadTransfer() = 0;
+    virtual void doReadTransferSynchronously() = 0;
 
    public:
     /** 
@@ -355,73 +315,6 @@ namespace ChimeraTK {
       return handleTransferException<bool>([this] { return doReadTransferNonBlocking(); }, false);
     }
 
-   protected:
-    /** 
-     *  Implementation version of readTransferNonBlocking(). This function must be implemented by the backend. For the
-     *  functional description read the documentation of readTransferNonBlocking().
-     *  
-     *  Implementation notes:
-     *  - Decorators must delegate the call to readTransferNonBlocking() of the decorated target.
-     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransfer()
-     */
-    virtual bool doReadTransferNonBlocking() = 0;
-
-   public:
-    /** 
-     *  Read the data from the device but do not fill it into the user buffer of this TransferElement. This function
-     *  must be called after preRead() and before postRead(). Even if the accessor has the AccessMode::wait_for_new_data
-     *  flag, this function will not block if no new data is available. If data is available, it will read the latest
-     *  value and discard any intermediate values. For the meaning of the return value, see readLatest().
-     *
-     *  This function internally calles doReadTransferLatest(), which is implemented by the backend. runtime_error
-     *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
-     */
-    bool readTransferLatest() noexcept {
-      return handleTransferException<bool>([this] { return doReadTransferLatest(); }, false);
-    }
-
-   protected:
-    /** 
-     *  Implementation version of readTransferLatest(). This function must be implemented by the backend. For the
-     *  functional description read the documentation of readTransferLatest().
-     *  
-     *  Implementation notes:
-     *  - Decorators must delegate the call to readTransferLatest() of the decorated target.
-     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransfer()
-     */
-    virtual bool doReadTransferLatest() = 0;
-
-   public:
-    /** 
-     *  Initiate asynchronous read transfer. This function must be called after preRead() and before postRead(). It is
-     *  being called by readAsync.
-     *
-     *  It is guaranteed that there is no unfinished transfer still ongoing (i.e. no still-valid TransferFuture is 
-     *  present) when this function is called.
-     *
-     *  This function internally calles doReadTransferAsync(), which is implemented by the backend. runtime_error
-     *  exceptions thrown in doReadTransferLatest() are caught and rethrown in postRead().
-     */
-    TransferFuture readTransferAsync() noexcept {
-      return handleTransferException<TransferFuture>([this] { return doReadTransferAsync(); }, TransferFuture(this));
-    }
-
-   protected:
-    /** 
-     *  Implementation version of readTransferAsync(). This function must be implemented by the backend. For the
-     *  functional description read the documentation of readTransferAsync().
-     *  
-     *  Implementation notes:
-     *  - Decorators must delegate the call to readTransferLatest() of the decorated target.
-     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransfer()
-     *  - The backend must never touch the user buffer (i.e. NDRegisterAccessor::buffer_2D) inside this function, as it
-     *    may only be filled inside postRead(). postRead() will get called by the TransferFuture when the user calls
-     *    wait().
-     *  - The TransferFuture returned by this function must have been constructed with this TransferElement as the
-     *    transferElement in the constructor. Otherwise postRead() will not be properly called!
-     */
-    virtual TransferFuture doReadTransferAsync() = 0;
-
    public:
     /** Perform any pre-read tasks if necessary.
      *
@@ -429,21 +322,21 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preRead(TransferType type) noexcept {
       if(readTransactionInProgress) return;
-      assert(!hasSeenException);
+      assert(!_hasSeenException);
       try {
         doPreRead(type);
       }
       catch(ChimeraTK::logic_error&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
       }
       catch(ChimeraTK::runtime_error&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
       }
       catch(boost::thread_interrupted&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
       }
       catch(...) {
         std::cout << "BUG: Wrong exception type thrown in doPreRead()!" << std::endl;
@@ -477,9 +370,9 @@ namespace ChimeraTK {
       // Note: doPostRead can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
       // always, a try-catch block may be necessary.
-      if(hasSeenException) {
-        hasSeenException = false;
-        std::rethrow_exception(activeException);
+      if(_hasSeenException) {
+        _hasSeenException = false;
+        std::rethrow_exception(_activeException);
       }
     }
 
@@ -498,18 +391,6 @@ namespace ChimeraTK {
     virtual void doPostRead(TransferType, bool /*hasNewData*/) {}
 
    public:
-    /** Function called by the TransferFuture before entering a potentially
-     * blocking wait(). In contrast to a wait callback of a boost::future/promise,
-     * this function is not called when just checking whether the result is ready
-     * or not. Usually it is not necessary to implement this function, but
-     * decorators should pass it on. One use case is the ApplicationCore
-     * TestDecoratorRegisterAccessor, which needs to be informed before blocking
-     *  the thread execution.
-     *  Note: The ReadAnyGroup will trigger a call to this function of the first
-     * TransferElement with AccessMode::wait_for_new_data in the group before
-     * potentially blocking. */
-    virtual void transferFutureWaitCallback() {}
-
     /** Transfer the data from the user buffer into the device send buffer, while
      * converting the data from then user data format if needed.
      *
@@ -519,7 +400,7 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) noexcept {
       if(writeTransactionInProgress) return;
-      assert(!hasSeenException);
+      assert(!_hasSeenException);
       try {
         if(versionNumber < getVersionNumber()) {
           throw ChimeraTK::logic_error(
@@ -529,21 +410,21 @@ namespace ChimeraTK {
         doPreWrite(type, versionNumber);
       }
       catch(ChimeraTK::logic_error&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
       }
       catch(ChimeraTK::runtime_error&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
       }
       catch(boost::thread_interrupted&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
       }
       // Needed for throwing TypeChangingDecorator. Is this even a good concept?
       catch(boost::numeric::bad_numeric_cast&) {
-        hasSeenException = true;
-        activeException = std::current_exception();
+        _hasSeenException = true;
+        _activeException = std::current_exception();
       }
       catch(...) {
         std::cout << "BUG: Wrong exception type thrown in doPreWrite()!" << std::endl;
@@ -567,20 +448,24 @@ namespace ChimeraTK {
      *
      *  Called by write(). Also the TransferGroup will call this function after a
      * write was executed directly on the underlying accessor. */
-    void postWrite(TransferType type, bool dataLost) {
+    void postWrite(TransferType type, VersionNumber versionNumber) {
       if(writeTransactionInProgress) {
         writeTransactionInProgress = false;
-        doPostWrite(type, dataLost);
+        doPostWrite(type, versionNumber);
       }
+
       // Note: doPostWrite can throw an exception, but in that case hasSeenException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostWrite()
       // always, a try-catch block may be necessary.
       // Another note: If writeTransactionInProgress == false, there can still be an exception, if the version number
       // used in a write was too old (see preWrite).
-      if(hasSeenException) {
-        hasSeenException = false;
-        std::rethrow_exception(activeException);
+      if(_hasSeenException) {
+        _hasSeenException = false;
+        std::rethrow_exception(_activeException);
       }
+
+      // only after a successful write the version number is updated
+      _versionNumber = versionNumber;
     }
 
     /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
@@ -590,7 +475,7 @@ namespace ChimeraTK {
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
    protected:
-    virtual void doPostWrite(TransferType, bool) {}
+    virtual void doPostWrite(TransferType, VersionNumber) {}
 
    public:
     /** 
@@ -806,19 +691,22 @@ namespace ChimeraTK {
      *  readTransactionInProgress but affects preWrite() and postWrite(). */
     bool writeTransactionInProgress{false};
 
-    /// Flag whether there is a valid activeFuture or not
-    bool hasActiveFuture{false};
-
    protected:
-    /// Last future returned by doReadTransferAsync() (valid if hasActiveFuture == true). This is currently used by some
-    /// implementations to store the reused future once created. This logic should be changed, see issue #124.
-    TransferFuture activeFuture;
+    /// The queue for asyncronous read transfers. This is the void queue which is a continuation of the actial data transport queue,
+    /// which is implementation dependent. With _readQueue the exception propagation and waiting for new data is implemented in TransferElement.
+    cppext::future_queue<void> _readQueue;
 
-    /// Flag whether doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
-    bool hasSeenException{false};
+    /// The version number of the last successful transfer. Part of the application buffer \ref transferElement_A_5 "(see TransferElement specification A.5)"
+    VersionNumber _versionNumber{nullptr};
+
+    /// The validity of the data in the application buffer. Part of the application buffer \ref transferElement_A_5 "(see TransferElement specification A.5)"
+    DataValidity _dataValidity{DataValidity::ok};
+
+    /// Flag whether doPreXxx() or doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
+    bool _hasSeenException{false};
 
     /// Exception to be rethrown in postXXX() in case hasSeenException == true
-    std::exception_ptr activeException{nullptr};
+    std::exception_ptr _activeException{nullptr};
   };
 
 } /* namespace ChimeraTK */

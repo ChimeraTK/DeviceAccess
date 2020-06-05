@@ -19,10 +19,10 @@ namespace ChimeraTK {
       goto retry;
     }
     catch(ChimeraTK::runtime_error&) {
-      _transferElement->hasSeenException = true;
-      _transferElement->activeException = std::current_exception();
+      _transferElement->_hasSeenException = true;
+      _transferElement->_activeException = std::current_exception();
     }
-    _transferElement->postRead(TransferType::readAsync, !_transferElement->hasSeenException);
+    _transferElement->postRead(TransferType::readAsync, !_transferElement->_hasSeenException);
   }
 
   bool TransferFuture::hasNewData() {

@@ -40,7 +40,7 @@ namespace ChimeraTK {
 
     // check for any "pending" exceptions
     for(auto& elem : lowLevelElements) {
-      if(elem->hasSeenException) hadException = true;
+      if(elem->_hasSeenException) hadException = true;
     }
 
     for(auto& elem : lowLevelElements) {
@@ -54,7 +54,7 @@ namespace ChimeraTK {
     }
 
     for(auto& elem : copyDecorators) {
-      assert(!elem->hasSeenException); // no readTransfer(), no exception
+      assert(!elem->_hasSeenException); // no readTransfer(), no exception
       try {
         elem->postRead(TransferType::read, !hadException);
       }
@@ -65,7 +65,7 @@ namespace ChimeraTK {
     }
 
     for(auto& elem : highLevelElements) {
-      assert(!elem->hasSeenException); // no readTransfer(), no exception
+      assert(!elem->_hasSeenException); // no readTransfer(), no exception
       try {
         elem->postRead(TransferType::read, !hadException);
       }
@@ -91,7 +91,7 @@ namespace ChimeraTK {
       elem->writeTransfer(versionNumber);
     }
     for(auto& elem : highLevelElements) {
-      elem->postWrite(TransferType::write, elem->hasSeenException);
+      elem->postWrite(TransferType::write, elem->_hasSeenException);
     }
   }
 
