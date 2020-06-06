@@ -4,12 +4,12 @@
  *  Created on: Feb 8, 2016
  *      Author: Martin Hierholzer
  */
-#if 0
-#  include "LogicalNameMappingBackend.h"
-#  include "LNMBackendBitAccessor.h"
-#  include "LNMBackendChannelAccessor.h"
-#  include "LNMBackendVariableAccessor.h"
-#  include "LogicalNameMapParser.h"
+
+#include "LogicalNameMappingBackend.h"
+#include "LNMBackendBitAccessor.h"
+#include "LNMBackendChannelAccessor.h"
+#include "LNMBackendVariableAccessor.h"
+#include "LogicalNameMapParser.h"
 
 namespace ChimeraTK {
 
@@ -228,16 +228,15 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   bool LogicalNameMappingBackend::isFunctional() const {
-    if (not _opened) {
+    if(not _opened) {
       return false;
     }
 
-    for (auto& e : _devices) {
-      if (not e.second->isFunctional()) {
+    for(auto& e : _devices) {
+      if(not e.second->isFunctional()) {
         return false;
       }
     }
     return true;
   }
 } // namespace ChimeraTK
-#endif //0

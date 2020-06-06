@@ -8,10 +8,8 @@
 #ifndef CHIMERA_TK_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H
 #define CHIMERA_TK_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H
 
-#if 0
-
-#  include "NumericAddressedBackend.h"
-#  include "TransferElement.h"
+#include "NumericAddressedBackend.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -37,7 +35,7 @@ namespace ChimeraTK {
    public:
     NumericAddressedLowLevelTransferElement(
         boost::shared_ptr<NumericAddressedBackend> dev, size_t bar, size_t startAddress, size_t numberOfWords)
-    : _dev(dev), _bar(bar), isShared(false) {
+    : TransferElement("", {AccessMode::raw}), _dev(dev), _bar(bar), isShared(false) {
       if(bar > 5 && bar != 13) {
         std::stringstream errorMessage;
         errorMessage << "Invalid bar number: " << bar << std::endl;
@@ -48,37 +46,21 @@ namespace ChimeraTK {
 
     virtual ~NumericAddressedLowLevelTransferElement() {}
 
-    void doReadTransfer() override { _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes); }
+    void doReadTransferSynchronously() override {
+      _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
+    }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
       _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
-      currentVersion = versionNumber;
       return false;
-    }
-
-    bool doReadTransferNonBlocking() override {
-      doReadTransfer();
-      return true;
-    }
-
-    bool doReadTransferLatest() override {
-      doReadTransfer();
-      return true;
     }
 
     void doPostRead(TransferType, bool hasNewData) override {
       if(hasNewData) {
-        currentVersion = {};
+        // it is aceptable to create a new version numerber only in doPostRead because the LowLevelTransferElement never has wait_for_new_data.
+        _versionNumber = {};
       }
     }
-
-    TransferFuture doReadTransferAsync() override { // LCOV_EXCL_LINE
-      // This function is not needed and will never be called. If readAsync() is
-      // called on the high-level accessor, the transfer will be "backgrounded"
-      // already on that level.
-      assert(false);
-      std::terminate();
-    } // LCOV_EXCL_LINE
 
     /** Check if the address areas are adjacent and/or overlapping.
      *  NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes
@@ -139,10 +121,6 @@ namespace ChimeraTK {
                                    "is not implemented"); // LCOV_EXCL_LINE
     }                                                     // LCOV_EXCL_LINE
 
-    AccessModeFlags getAccessModeFlags() const override { return {AccessMode::raw}; }
-
-    VersionNumber getVersionNumber() const override { return currentVersion; }
-
    protected:
     /** Set the start address (inside the bar given in the constructor) and number
      * of words of this accessor. */
@@ -183,9 +161,6 @@ namespace ChimeraTK {
     /** raw buffer */
     std::vector<int32_t> rawDataBuffer;
 
-    /** version number of the last transfer */
-    VersionNumber currentVersion{nullptr};
-
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
     }
@@ -202,5 +177,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif //0
 #endif /* CHIMERA_TK_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H */

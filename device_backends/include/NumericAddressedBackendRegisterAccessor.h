@@ -7,12 +7,12 @@
 
 #ifndef CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
 #define CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
-#if 0
-#  include "FixedPointConverter.h"
-#  include "ForwardDeclarations.h"
-#  include "IEEE754_SingleConverter.h"
-#  include "NumericAddressedLowLevelTransferElement.h"
-#  include "SyncNDRegisterAccessor.h"
+
+#include "FixedPointConverter.h"
+#include "ForwardDeclarations.h"
+#include "IEEE754_SingleConverter.h"
+#include "NumericAddressedLowLevelTransferElement.h"
+#include "SyncNDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -139,7 +139,7 @@ namespace ChimeraTK {
    public:
     NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : SyncNDRegisterAccessor<UserType>(registerPathName), _dataConverter(registerPathName),
+    : SyncNDRegisterAccessor<UserType>(registerPathName, flags), _dataConverter(registerPathName),
       _registerPathName(registerPathName), _numberOfWords(numberOfWords),
       _prePostActionsImplementor(
           NDRegisterAccessor<UserType>::buffer_2D, _rawAccessor, _startAddress, _dataConverter, _isNotWriteable) {
@@ -212,17 +212,7 @@ namespace ChimeraTK {
 
     virtual ~NumericAddressedBackendRegisterAccessor() { this->shutdown(); }
 
-    void doReadTransfer() override { _rawAccessor->read(); }
-
-    bool doReadTransferNonBlocking() override {
-      _rawAccessor->read();
-      return true;
-    }
-
-    bool doReadTransferLatest() override {
-      _rawAccessor->read();
-      return true;
-    }
+    void doReadTransferSynchronously() override { _rawAccessor->read(); }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       assert(!TransferElement::_isInTransferGroup);
@@ -233,18 +223,24 @@ namespace ChimeraTK {
     void doPostRead(TransferType, bool hasNewData) override {
       if(!hasNewData) return;
       _prePostActionsImplementor.doPostRead();
+      // we don't put the setting of the version number into the PrePostActionImplementor
+      // because it does not need template specialisation, and the implementor does not
+      // know about _versionNumber. It's just easier here.
+      this->_versionNumber = _rawAccessor->getVersionNumber();
+      this->_dataValidity = _rawAccessor->dataValidity();
     }
 
     void doPreWrite(TransferType, VersionNumber) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
       _prePostActionsImplementor.doPreWrite();
+      _rawAccessor->setDataValidity(this->_dataValidity);
     }
 
     void doPreRead(TransferType) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
     }
 
-    void doPostWrite(TransferType, bool /*dataLost*/) override { _prePostActionsImplementor.doPostWrite(); }
+    void doPostWrite(TransferType, VersionNumber) override { _prePostActionsImplementor.doPostWrite(); }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<
@@ -279,13 +275,6 @@ namespace ChimeraTK {
 
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, setAsCooked_impl, 3);
-
-    AccessModeFlags getAccessModeFlags() const override {
-      if(isRaw) return {AccessMode::raw};
-      return {};
-    }
-
-    VersionNumber getVersionNumber() const override { return _rawAccessor->getVersionNumber(); }
 
    protected:
     /** Address, size and fixed-point representation information of the register
@@ -413,5 +402,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif //0
 #endif /* CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H */
