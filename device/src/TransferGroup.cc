@@ -13,7 +13,7 @@
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
 #include <iostream>
-#if 0
+
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
@@ -199,4 +199,3 @@ namespace ChimeraTK {
   }
 
 } /* namespace ChimeraTK */
-#endif //0

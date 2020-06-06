@@ -1,19 +1,19 @@
 
-#if 0
-#  include "RebotDummyServer.h"
-#  include "DummyProtocol1.h" // the latest version includes all predecessors in the include
-#  include <boost/asio.hpp>
-#  include <boost/bind.hpp>
-#  include <iostream>
-#  include <stdexcept>
+#include "RebotDummyServer.h"
+#include "DummyProtocol1.h" // the latest version includes all predecessors in the include
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <iostream>
+#include <stdexcept>
 
 namespace ChimeraTK {
 
   std::atomic<bool> stop_rebot_server(false);
 
-  RebotDummySession::RebotDummySession(unsigned int protocolVersion, ip::tcp::socket socket, std::shared_ptr<DummyBackend> registerSpace)
+  RebotDummySession::RebotDummySession(
+      unsigned int protocolVersion, ip::tcp::socket socket, std::shared_ptr<DummyBackend> registerSpace)
   : _state(ACCEPT_NEW_COMMAND), _heartbeatCount(0), _helloCount(0), _dont_answer(false), _registerSpace(registerSpace),
-        _protocolVersion(protocolVersion), _currentClientConnection(std::move(socket))  {
+    _protocolVersion(protocolVersion), _currentClientConnection(std::move(socket)) {
     if(protocolVersion == 0) {
       _protocolImplementor.reset(new DummyProtocol0(*this));
     }
@@ -27,9 +27,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void RebotDummySession::start() {
-    doRead();
-  }
+  void RebotDummySession::start() { doRead(); }
 
   void RebotDummySession::doRead() {
     auto self(shared_from_this());
@@ -37,36 +35,34 @@ namespace ChimeraTK {
     buffer.reset(new std::vector<uint32_t>(RebotDummySession::BUFFER_SIZE_IN_WORDS));
 
     _currentClientConnection.async_read_some(
-      boost::asio::buffer(*buffer),
-      [this, self, buffer](boost::system::error_code ec, std::size_t) {
-        if (ec) {
-          _currentClientConnection.close();
-        } else {
-          processReceivedPackage(*buffer);
-        }
-      }
-    );
+        boost::asio::buffer(*buffer), [this, self, buffer](boost::system::error_code ec, std::size_t) {
+          if(ec) {
+            _currentClientConnection.close();
+          }
+          else {
+            processReceivedPackage(*buffer);
+          }
+        });
   }
 
   void RebotDummySession::doWrite() {
-      if (_dataBuffer.empty()) {
-        doRead();
-        return;
-      }
+    if(_dataBuffer.empty()) {
+      doRead();
+      return;
+    }
 
-      auto self(shared_from_this());
-      _currentClientConnection.async_write_some(
-        boost::asio::buffer(_dataBuffer),
-        [this, self](boost::system::error_code ec, std::size_t) {
-          if (not ec) {
+    auto self(shared_from_this());
+    _currentClientConnection.async_write_some(
+        boost::asio::buffer(_dataBuffer), [this, self](boost::system::error_code ec, std::size_t) {
+          if(not ec) {
             _dataBuffer.clear();
-          } else {
-              std::cerr << ec << std::endl;
-              _currentClientConnection.close();
+          }
+          else {
+            std::cerr << ec << std::endl;
+            _currentClientConnection.close();
           }
           doRead();
-        }
-      );
+        });
   }
 
   /********************************************************************************************************************/
@@ -86,24 +82,24 @@ namespace ChimeraTK {
 
     uint32_t requestedAction = buffer.at(0);
     switch(requestedAction) {
-    case SINGLE_WORD_WRITE:
+      case SINGLE_WORD_WRITE:
         _protocolImplementor->singleWordWrite(buffer);
         break;
-    case MULTI_WORD_WRITE:
+      case MULTI_WORD_WRITE:
         _state = _protocolImplementor->multiWordWrite(buffer);
         break;
-    case MULTI_WORD_READ:
+      case MULTI_WORD_READ:
         _protocolImplementor->multiWordRead(buffer);
         break;
-    case HELLO:
+      case HELLO:
         ++_helloCount;
         _protocolImplementor->hello(buffer);
         break;
-    case PING:
+      case PING:
         ++_heartbeatCount;
         _protocolImplementor->ping(buffer);
         break;
-    default:
+      default:
         std::cout << "Instruction unknown in all protocol versions " << requestedAction << std::endl;
         sendSingleWord(UNKNOWN_INSTRUCTION);
     }
@@ -150,9 +146,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void RebotDummySession::sendSingleWord(int32_t response) {
-    _dataBuffer.push_back(response);
-  }
+  void RebotDummySession::sendSingleWord(int32_t response) { _dataBuffer.push_back(response); }
 
   /********************************************************************************************************************/
 
@@ -165,9 +159,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   RebotDummyServer::RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion)
-      : _protocolVersion(protocolVersion), _io(),
-        _connectionAcceptor(_io, ip::tcp::endpoint(ip::tcp::v4(), portNumber)), _socket(_io),
-        _registerSpace(std::make_shared<DummyBackend>(mapFile)) {
+  : _protocolVersion(protocolVersion), _io(), _connectionAcceptor(_io, ip::tcp::endpoint(ip::tcp::v4(), portNumber)),
+    _socket(_io), _registerSpace(std::make_shared<DummyBackend>(mapFile)) {
     // The first address of the register space is set to a reference value. This
     // would be used to test the rebot client.
     uint32_t registerAddress = 0x04;
@@ -179,22 +172,20 @@ namespace ChimeraTK {
   }
 
   void RebotDummyServer::do_accept() {
-    _connectionAcceptor.async_accept(
-      _socket,
-      [this](boost::system::error_code ec) {
-        if (not ec) {
-          if (_currentSession.expired()) {
-            auto newSession = std::make_shared<RebotDummySession>(_protocolVersion, std::move(_socket), _registerSpace);
-            _currentSession = newSession;
-            newSession->start();
-          } else {
-            auto code = boost::system::errc::make_error_code(boost::system::errc::connection_refused);
-            _socket.close(code);
-          }
+    _connectionAcceptor.async_accept(_socket, [this](boost::system::error_code ec) {
+      if(not ec) {
+        if(_currentSession.expired()) {
+          auto newSession = std::make_shared<RebotDummySession>(_protocolVersion, std::move(_socket), _registerSpace);
+          _currentSession = newSession;
+          newSession->start();
         }
-        do_accept();
+        else {
+          auto code = boost::system::errc::make_error_code(boost::system::errc::connection_refused);
+          _socket.close(code);
+        }
       }
-    );
+      do_accept();
+    });
   }
 
   void RebotDummyServer::start() {
@@ -202,13 +193,8 @@ namespace ChimeraTK {
     _io.run();
   }
 
-  void RebotDummyServer::stop() {
-    _io.stop();
-  }
+  void RebotDummyServer::stop() { _io.stop(); }
 
-  bool RebotDummyServer::is_running() {
-    return not _io.stopped();
-  }
+  bool RebotDummyServer::is_running() { return not _io.stopped(); }
 
 } /* namespace ChimeraTK */
-#endif //0

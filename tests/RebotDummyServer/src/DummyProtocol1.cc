@@ -1,7 +1,7 @@
-#if 0
-#  include "DummyProtocol1.h"
-#  include "RebotDummyServer.h"
-#  include <boost/asio.hpp>
+
+#include "DummyProtocol1.h"
+#include "RebotDummyServer.h"
+#include <boost/asio.hpp>
 
 namespace ChimeraTK {
 
@@ -14,8 +14,7 @@ namespace ChimeraTK {
     // currently there is no check that the buffer is correct
     // from protocol 2 magic work will be checked, and maybe client version
 
-    _parent.write({
-        RebotDummySession::HELLO, RebotDummySession::REBOT_MAGIC_WORD, protocolVersion()});
+    _parent.write({RebotDummySession::HELLO, RebotDummySession::REBOT_MAGIC_WORD, protocolVersion()});
   }
 
   uint32_t DummyProtocol1::multiWordWrite(std::vector<uint32_t>& buffer) {
@@ -67,4 +66,3 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
-#endif //0
