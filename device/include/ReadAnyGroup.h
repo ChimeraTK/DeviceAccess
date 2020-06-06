@@ -284,14 +284,15 @@ namespace ChimeraTK {
     }
     this->accepted = true;
     try {
-      auto tf = this->transferElement.readAsync();
-      detail::getFutureQueueFromTransferFuture(tf).pop_wait();
+      this->transferElement.getHighLevelImplElement()->_readQueue.pop_wait();
     }
     catch(detail::DiscardValueException&) {
-      this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync, false);
+      // FIXME : Does transferType::read together with hasNewData == false violate the spec?
+      // In normal operation the implementation would retry here. Don't know if this works with the wait_any mechanism, because there was notification.
+      this->transferElement.getHighLevelImplElement()->postRead(TransferType::read, false);
       return false;
     }
-    this->transferElement.getHighLevelImplElement()->postRead(TransferType::readAsync, true);
+    this->transferElement.getHighLevelImplElement()->postRead(TransferType::read, true);
     return true;
   }
 
@@ -389,8 +390,7 @@ namespace ChimeraTK {
     std::vector<cppext::future_queue<void>> queueList;
     bool groupEmpty = true;
     for(auto& e : push_elements) {
-      auto tf = e.readAsync();
-      queueList.push_back(detail::getFutureQueueFromTransferFuture(tf));
+      queueList.push_back(e.getHighLevelImplElement()->_readQueue);
       groupEmpty = false;
     }
     if(groupEmpty) {
@@ -421,7 +421,9 @@ namespace ChimeraTK {
     // here, as we call it for the first element in the group. It is used in
     // ApplicationCore testable mode, where it doesn't matter which callback
     // within the same group is called.
-    push_elements[0].transferFutureWaitCallback();
+    //FIXME: This hack does not work any more. Find a proper solution.
+    assert(false);
+    //push_elements[0].transferFutureWaitCallback();
 
     // Wait for notification
     std::size_t index;

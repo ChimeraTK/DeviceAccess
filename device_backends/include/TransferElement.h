@@ -715,7 +715,7 @@ namespace ChimeraTK {
     AccessModeFlags _accessModeFlags;
 
     friend class TransferGroup;
-    friend class TransferFuture;
+    friend class ReadAnyGroup;
 
    private:
     /** Flag whether a read transaction is in progress. This flag will be set in
