@@ -38,17 +38,9 @@ namespace ChimeraTK {
 
       void doPreWrite(TransferType type, VersionNumber versionNumber) override = 0;
 
-      void doPostWrite(TransferType type, bool dataLost) override = 0;
+      void doPostWrite(TransferType type, VersionNumber versionNumber) override = 0;
 
       void interrupt() override { _target->interrupt(); }
-
-      ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
-
-      ChimeraTK::DataValidity dataValidity() const override { return _target->dataValidity(); }
-
-      void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
-        _target->setDataValidity(validity);
-      }
 
      protected:
       /// The accessor to be decorated

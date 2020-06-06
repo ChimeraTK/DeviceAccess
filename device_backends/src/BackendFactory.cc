@@ -6,24 +6,24 @@
  */
 
 #include <boost/algorithm/string.hpp>
-#if 0
-#  include "BackendFactory.h"
-#  include "MapFileParser.h"
-#  include "RebotBackend.h"
-#  include "Utilities.h"
-#  ifdef CHIMERATK_HAVE_PCIE_BACKEND
-#    include "PcieBackend.h"
-#  endif
-#  include "DMapFileParser.h"
-#  include "DeviceAccessVersion.h"
-#  include "DummyBackend.h"
-#  include "Exception.h"
-#  include "LogicalNameMappingBackend.h"
-#  include "SharedDummyBackend.h"
-#  include "SubdeviceBackend.h"
-#  include <boost/bind.hpp>
-#  include <boost/function.hpp>
-#  include <dlfcn.h>
+
+#include "BackendFactory.h"
+#include "MapFileParser.h"
+#include "RebotBackend.h"
+#include "Utilities.h"
+#ifdef CHIMERATK_HAVE_PCIE_BACKEND
+#  include "PcieBackend.h"
+#endif
+#include "DMapFileParser.h"
+#include "DeviceAccessVersion.h"
+#include "DummyBackend.h"
+#include "Exception.h"
+#include "LogicalNameMappingBackend.h"
+#include "SharedDummyBackend.h"
+#include "SubdeviceBackend.h"
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <dlfcn.h>
 
 namespace ChimeraTK {
 
@@ -33,9 +33,9 @@ namespace ChimeraTK {
       boost::shared_ptr<DeviceBackend> (*creatorFunction)(
           std::string address, std::map<std::string, std::string> parameters),
       std::vector<std::string> sdmParameterNames, std::string version) {
-#  ifdef _DEBUG
+#ifdef _DEBUG
     std::cout << "adding:" << backendType << std::endl << std::flush;
-#  endif
+#endif
     called_registerBackendType = true;
 
     if(creatorMap.find(backendType) != creatorMap.end()) {
@@ -93,9 +93,9 @@ namespace ChimeraTK {
       boost::shared_ptr<DeviceBackend> (*creatorFunction)(
           std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName),
       std::string version) {
-#  ifdef _DEBUG
+#ifdef _DEBUG
     std::cout << "adding:" << interface << std::endl << std::flush;
-#  endif
+#endif
     called_registerBackendType = true;
     if(version != CHIMERATK_DEVICEACCESS_VERSION) {
       // Register a function that throws an exception with the message when trying
@@ -136,9 +136,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   BackendFactory::BackendFactory() {
-#  ifdef CHIMERATK_HAVE_PCIE_BACKEND
+#ifdef CHIMERATK_HAVE_PCIE_BACKEND
     registerBackendType("pci", &PcieBackend::createInstance, {"map"});
-#  endif
+#endif
     registerBackendType("dummy", &DummyBackend::createInstance, {"map"});
     registerBackendType("rebot", &RebotBackend::createInstance, {"ip", "port", "map", "timeout"});
     registerBackendType("logicalNameMap", &LogicalNameMappingBackend::createInstance, {"map"});
@@ -148,9 +148,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   BackendFactory& BackendFactory::getInstance() {
-#  ifdef _DEBUG
+#ifdef _DEBUG
     std::cout << "getInstance" << std::endl << std::flush;
-#  endif
+#endif
     static BackendFactory factoryInstance; /** Thread safe in C++11*/
     return factoryInstance;
   }
@@ -179,10 +179,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(const DeviceInfoMap::DeviceInfo& deviceInfo) {
-#  ifdef _DEBUG
+#ifdef _DEBUG
     std::cout << "uri to parse" << deviceInfo.uri << std::endl;
     std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
-#  endif
+#endif
 
     // Check if backend already exists
     auto iterator = _existingBackends.find(deviceInfo.uri);
@@ -224,7 +224,7 @@ namespace ChimeraTK {
       // Using the device node in a dmap file is deprecated. Please change to sdm
       // if applicable."<<std::endl;
     }
-#  ifdef _DEBUG
+#ifdef _DEBUG
     std::cout << "sdm._Host:" << sdm._Host << std::endl;
     std::cout << "sdm.Interface:" << sdm._Interface << std::endl;
     std::cout << "sdm.Instance:" << sdm._Instance << std::endl;
@@ -233,11 +233,11 @@ namespace ChimeraTK {
     for(std::list<std::string>::iterator it = sdm._Parameters.begin(); it != sdm._Parameters.end(); ++it) {
       std::cout << *it << std::endl;
     }
-#  endif
+#endif
     for(auto iter = creatorMap_compat.begin(); iter != creatorMap_compat.end(); ++iter) {
-#  ifdef _DEBUG
+#ifdef _DEBUG
       std::cout << "Pair:" << iter->first.first << "+" << iter->first.second << std::endl;
-#  endif
+#endif
       if((iter->first.first == sdm._Interface)) {
         auto backend = (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
         boost::weak_ptr<DeviceBackend> weakBackend = backend;
@@ -304,4 +304,3 @@ namespace ChimeraTK {
     throw ChimeraTK::logic_error(exception_what);
   }
 } // namespace ChimeraTK
-#endif //0

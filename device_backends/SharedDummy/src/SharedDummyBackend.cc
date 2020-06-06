@@ -5,12 +5,12 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
-#if 0
-#  include "BackendFactory.h"
-#  include "Exception.h"
-#  include "MapFileParser.h"
-#  include "SharedDummyBackend.h"
-#  include "parserUtilities.h"
+
+#include "BackendFactory.h"
+#include "Exception.h"
+#include "MapFileParser.h"
+#include "SharedDummyBackend.h"
+#include "parserUtilities.h"
 
 namespace ChimeraTK {
 
@@ -36,7 +36,7 @@ namespace ChimeraTK {
         std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
       }
-      catch(boost::interprocess::bad_alloc& e) {
+      catch(boost::interprocess::bad_alloc&) {
         // Clean up
         sharedMemoryManager.~SharedMemoryManager();
 
@@ -126,4 +126,3 @@ namespace ChimeraTK {
   }
 
 } // Namespace ChimeraTK
-#endif //0

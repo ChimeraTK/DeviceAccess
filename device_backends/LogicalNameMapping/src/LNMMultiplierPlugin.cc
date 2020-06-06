@@ -1,9 +1,9 @@
 #include <boost/make_shared.hpp>
-#if 0
-#  include "LNMBackendRegisterInfo.h"
-#  include "LNMAccessorPlugin.h"
-#  include "NDRegisterAccessorDecorator.h"
-#  include "TransferElement.h"
+
+#include "LNMBackendRegisterInfo.h"
+#include "LNMAccessorPlugin.h"
+#include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -46,11 +46,9 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPreWrite(TransferType type, VersionNumber) override;
 
-    void doPostWrite(TransferType type, bool dataLost) override { _target->postWrite(type, dataLost); }
+    void doPostWrite(TransferType type, VersionNumber dataLost) override { _target->postWrite(type, dataLost); }
 
     void interrupt() override { _target->interrupt(); }
-
-    ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
 
     double _factor;
 
@@ -66,6 +64,8 @@ namespace ChimeraTK { namespace LNMBackend {
         buffer_2D[i][k] = numericToUserType<UserType>(_target->accessData(i, k) * _factor);
       }
     }
+    this->_versionNumber = _target->getVersionNumber();
+    this->_dataValidity = _target->dataValidity();
   }
 
   template<typename UserType>
@@ -75,6 +75,7 @@ namespace ChimeraTK { namespace LNMBackend {
         _target->accessData(i, k) = userTypeToNumeric<double>(buffer_2D[i][k]) * _factor;
       }
     }
+    _target->setDataValidity(this->_dataValidity);
     _target->preWrite(type, versionNumber);
   }
 
@@ -103,4 +104,3 @@ namespace ChimeraTK { namespace LNMBackend {
     return MultiplierPlugin_Helper<UserType, TargetType>::decorateAccessor(target, _factor);
   }
 }} // namespace ChimeraTK::LNMBackend
-#endif //0

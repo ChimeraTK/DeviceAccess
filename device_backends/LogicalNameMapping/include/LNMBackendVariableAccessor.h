@@ -87,11 +87,7 @@ namespace ChimeraTK {
       _valueTableDataValidity = this->_dataValidity;
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
-      //      if(isReadOnly()) {
-      //        throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
-      //                                     "is not possible.");
-      //      }
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {

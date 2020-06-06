@@ -140,7 +140,7 @@ namespace ChimeraTK {
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
       const RegisterPath& registerPathName, size_t numberOfElements, size_t elementsOffset,
       boost::shared_ptr<DeviceBackend> _backend)
-  : SyncNDRegisterAccessor<UserType>(registerPathName),
+  : SyncNDRegisterAccessor<UserType>(registerPathName, {}),
     _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _registerPathName(registerPathName),
     _numberOfElements(numberOfElements), _elementsOffset(elementsOffset) {
     try {
@@ -272,13 +272,15 @@ namespace ChimeraTK {
       }
       // it is acceptable to create the version number in post read because this accessor does not have wait_for_new_data. It is basically synchronous.
       this->_versionNumber = {};
+      this->_dataValidity =
+          DataValidity::ok; // we just read good data. Set validity back to ok if someone marked it faulty for writing.
     }
   }
 
   /********************************************************************************************************************/
 
   template<class UserType>
-  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(VersionNumber) {
     _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
     return false;
   }
