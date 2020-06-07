@@ -27,11 +27,21 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
 
   void doPreRead(TransferType type) override {
     _transferType = type;
-    BOOST_CHECK(_preRead_counter == 0);
+    if(this->_accessModeFlags.has(AccessMode::wait_for_new_data) && type == TransferType::readNonBlocking) {
+      // if the access mode has wait_for_new_data then readNonBlocking can be called multiple times by readLatest,
+      // without the test re-setting the counter. In this case just check that the number of calls is smaller or euqal the queue size
+      // i.e. called maximum size + 1 times.
+      BOOST_CHECK(_preRead_counter <= (this->_readQueue.size()));
+    }
+    else {
+      // in all other pre-read must be called exactly once
+      BOOST_CHECK_EQUAL(_preRead_counter, 0);
+    }
+    // in all cases, doPreRead and doPostRead must be called in pairs
+    BOOST_CHECK_EQUAL(_preRead_counter, _postRead_counter);
     BOOST_CHECK(_preWrite_counter == 0);
     BOOST_CHECK_EQUAL(_readTransfer_counter, 0);
     BOOST_CHECK(_writeTransfer_counter == 0);
-    BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     ++_preRead_counter;
     if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
@@ -107,7 +117,9 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
    * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for read operations.
    */
   void doPostRead(TransferType type, bool hasNewData) override {
-    BOOST_CHECK(_preRead_counter == 1);
+    // doPreRead and doPortRead must always be called in pairs.
+    // This can happen multiple times in readLatest. The absolute counting is done in doPreRead()
+    BOOST_CHECK_EQUAL(_preRead_counter, _postRead_counter + 1);
     BOOST_CHECK(_preWrite_counter == 0);
     if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwThreadInterruptedInPre) {
       if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
@@ -122,7 +134,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       BOOST_CHECK_EQUAL(_readTransfer_counter, 0);
     }
     BOOST_CHECK(_writeTransfer_counter == 0);
-    BOOST_CHECK(_postRead_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == type);
     ++_postRead_counter;
@@ -798,21 +809,20 @@ BOOST_AUTO_TEST_CASE(testReadLatest) {
   asyncAccessor.resetCounters();
   asyncAccessor.push();
   ret = asyncAccessor.readLatest();
-  return;
   BOOST_CHECK(ret == true);
-  BOOST_CHECK(asyncAccessor._postRead_counter == 1); // asyncAccessor._readTransfer_counter == 0 checked in doPostRead
-  return;
+  BOOST_CHECK_EQUAL(asyncAccessor._postRead_counter,
+      2); // readLatests  performs 2 complete read operations (until the queue is empty)
   asyncAccessor.resetCounters();
   ret = asyncAccessor.readLatest();
   BOOST_CHECK(ret == false);
   BOOST_CHECK(asyncAccessor._postRead_counter == 1); // asyncAccessor._readTransfer_counter == 0 checked in doPostRead
-  return;
+
   asyncAccessor.resetCounters();
-  //  while(asyncAccessor.push()) continue; // fill the queue
-  for(int i = 0; i < 10; ++i) asyncAccessor.push(); // fill the queue
+  while(asyncAccessor.push()) continue; // fill the queue
   ret = asyncAccessor.readLatest();
   BOOST_CHECK(ret == true);
-  BOOST_CHECK(asyncAccessor._postRead_counter == 1); // asyncAccessor._readTransfer_counter == 0 checked in doPostRead
+  BOOST_CHECK_EQUAL(
+      asyncAccessor._postRead_counter, 4); // readLatests  performs _readQueue.size() + 1 complete read operations
   asyncAccessor.resetCounters();
   ret = asyncAccessor.readLatest();
   BOOST_CHECK(ret == false);
