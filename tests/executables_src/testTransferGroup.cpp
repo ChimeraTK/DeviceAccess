@@ -96,10 +96,10 @@ void TransferGroupTest::testExceptionHandling() {
   accessor3 = 3;
   accessor4 = 4;
 
-  accessor1w = 0xdeadcafe;
+  accessor1w = int(0xdeadcafe);
   accessor2w = 815;
   accessor3w = 4711;
-  accessor4w = 0xc01dcafe;
+  accessor4w = int(0xc01dcafe);
   accessor1w.write();
   accessor2w.write();
   accessor3w.write();
@@ -283,7 +283,7 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   t1[0] = 120;
   t1.write();
   for(unsigned int i = 0; i < t2.getNElements(); i++) {
-    t2[i] = 67890 + 66 * (signed)i;
+    t2[i] = 67890 + 66 * signed(i);
   }
   t2.write();
 
@@ -294,12 +294,12 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
 
   BOOST_CHECK(t2.getNElements() == a[1].getNElements());
   for(unsigned int i = 0; i < t2.getNElements(); i++) {
-    BOOST_CHECK(a[1][i] == 67890 + 66 * (signed)i);
+    BOOST_CHECK(a[1][i] == 67890 + 66 * signed(i));
   }
 
   BOOST_CHECK(a[2].getNElements() == 20);
   for(unsigned int i = 0; i < a[2].getNElements(); i++) {
-    BOOST_CHECK(a[2][i] == 67890 + 66 * (signed)(i + 10));
+    BOOST_CHECK(a[2][i] == 67890 + 66 * signed(i + 10));
   }
 
   BOOST_CHECK(a[5][0] == 42);
@@ -307,7 +307,7 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   // write something to the multiplexed 2d register
   for(unsigned int i = 0; i < t3.getNChannels(); i++) {
     for(unsigned int k = 0; k < t3[i].size(); k++) {
-      t3[i][k] = (signed)(i * 10 + k);
+      t3[i][k] = signed(i * 10 + k);
     }
   }
   t3.write();
@@ -317,12 +317,12 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
 
   BOOST_CHECK(a[3].getNElements() == t3[3].size());
   for(unsigned int i = 0; i < a[3].getNElements(); i++) {
-    BOOST_CHECK(a[3][i] == 3 * 10 + (signed)i);
+    BOOST_CHECK(a[3][i] == 3 * 10 + signed(i));
   }
 
   BOOST_CHECK(a[4].getNElements() == t3[4].size());
   for(unsigned int i = 0; i < a[4].getNElements(); i++) {
-    BOOST_CHECK(a[4][i] == 4 * 10 + (signed)i);
+    BOOST_CHECK(a[4][i] == 4 * 10 + signed(i));
   }
 
   // check that writing to the group fails (has read-only elements)
@@ -578,24 +578,14 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     NDRegisterAccessorDecorator<T>::doPreWrite(type, versionNumber);
   }
 
-  void doPostWrite(TransferType type, bool dataLost) override {
+  void doPostWrite(TransferType type, VersionNumber versionNumber) override {
     nPostWrite++;
-    NDRegisterAccessorDecorator<T>::doPostWrite(type, dataLost);
+    NDRegisterAccessorDecorator<T>::doPostWrite(type, versionNumber);
   }
 
-  void doReadTransfer() override {
+  void doReadTransferSynchronously() override {
     nRead++;
-    NDRegisterAccessorDecorator<T>::doReadTransfer();
-  }
-
-  bool doReadTransferNonBlocking() override {
-    nReadNonBlocking++;
-    return NDRegisterAccessorDecorator<T>::doReadTransferNonBlocking();
-  }
-
-  bool doReadTransferLatest() override {
-    nReadLatest++;
-    return NDRegisterAccessorDecorator<T>::doReadTransferLatest();
+    NDRegisterAccessorDecorator<T>::doReadTransferSynchronously();
   }
 
   bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
@@ -722,8 +712,8 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
   // read through transfer group
   group.read();
 
-  BOOST_CHECK_EQUAL((int)mux0, 18);
-  BOOST_CHECK_EQUAL((int)mux0_2, 18);
+  BOOST_CHECK_EQUAL(int(mux0), 18);
+  BOOST_CHECK_EQUAL(int(mux0_2), 18);
 
   // we don't know which of the accessors has been eliminated (and this is
   // actually a random choice at runtime)
@@ -751,7 +741,7 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
   BOOST_CHECK_EQUAL(mux0_2d->nReadLatest, 0);
   BOOST_CHECK_EQUAL(mux0_2d->nWrite, 0);
 
-  BOOST_CHECK_EQUAL((int)mux2, 22);
+  BOOST_CHECK_EQUAL(int(mux2), 22);
   BOOST_CHECK_EQUAL(mux2d->nPreRead, 1);
   BOOST_CHECK_EQUAL(mux2d->nPostRead, 1);
   BOOST_CHECK_EQUAL(mux2d->nPreWrite, 0);
@@ -761,7 +751,7 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
   BOOST_CHECK_EQUAL(mux2d->nReadLatest, 0);
   BOOST_CHECK_EQUAL(mux2d->nWrite, 0);
 
-  BOOST_CHECK_EQUAL((int)mux3, 23);
+  BOOST_CHECK_EQUAL(int(mux3), 23);
   BOOST_CHECK_EQUAL(mux3d->nPreRead, 1);
   BOOST_CHECK_EQUAL(mux3d->nPostRead, 1);
   BOOST_CHECK_EQUAL(mux3d->nPreWrite, 0);
@@ -851,8 +841,8 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
   // read through transfer group
   group.read();
 
-  BOOST_CHECK_EQUAL((int)mux0, 18);
-  BOOST_CHECK_EQUAL((int)mux0_2, 18);
+  BOOST_CHECK_EQUAL(int(mux0), 18);
+  BOOST_CHECK_EQUAL(int(mux0_2), 18);
 
   // we don't know which of the accessors has been eliminated (and this is
   // actually a random choice at runtime)
@@ -880,7 +870,7 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
   BOOST_CHECK_EQUAL(mux0_2d->nReadLatest, 0);
   BOOST_CHECK_EQUAL(mux0_2d->nWrite, 0);
 
-  BOOST_CHECK_EQUAL((int)mux2, 22);
+  BOOST_CHECK_EQUAL(int(mux2), 22);
   BOOST_CHECK_EQUAL(mux2d->nPreRead, 1);
   BOOST_CHECK_EQUAL(mux2d->nPostRead, 1);
   BOOST_CHECK_EQUAL(mux2d->nPreWrite, 0);
@@ -890,7 +880,7 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
   BOOST_CHECK_EQUAL(mux2d->nReadLatest, 0);
   BOOST_CHECK_EQUAL(mux2d->nWrite, 0);
 
-  BOOST_CHECK_EQUAL((int)mux3, 23);
+  BOOST_CHECK_EQUAL(int(mux3), 23);
   BOOST_CHECK_EQUAL(mux3d->nPreRead, 1);
   BOOST_CHECK_EQUAL(mux3d->nPostRead, 1);
   BOOST_CHECK_EQUAL(mux3d->nPreWrite, 0);
