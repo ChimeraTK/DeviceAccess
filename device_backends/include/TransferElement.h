@@ -161,13 +161,21 @@ namespace ChimeraTK {
      * will never wait for new values and it will return whether a new value was
      * available if AccessMode::wait_for_new_data is set. */
     bool readLatest() {
-      bool hasNewData = false;
-      // Call readNonBlocking until there is no new data to be read any more
-      while(readNonBlocking()) {
-        // remember whether we have new data
-        hasNewData = true;
+      if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        bool hasNewData = false;
+        // Call readNonBlocking until there is no new data to be read any more
+        while(readNonBlocking()) {
+          // remember whether we have new data
+          hasNewData = true;
+        }
+        return hasNewData;
       }
-      return hasNewData;
+      else {
+        // Without wait_for_new_data readNonBlocking always returns true, and the while loop above would never end.
+        // Hence we just call the (synchronous) read and return true;
+        read();
+        return true;
+      }
     }
 
     /** Write the data to device. The return value is true, old data was lost on
