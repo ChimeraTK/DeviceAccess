@@ -106,6 +106,8 @@ namespace ChimeraTK {
     : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
           target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
       _target = target;
+      // FIXME: does not compile, _readQueue is protected
+      //this->_readQueue = _target->_readQueue;
 
       // set ID to match the decorated accessor
       this->_id = _target->getId();

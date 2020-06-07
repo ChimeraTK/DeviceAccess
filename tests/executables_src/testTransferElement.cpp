@@ -7,7 +7,10 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include <boost/make_shared.hpp>
+
 #include "NDRegisterAccessor.h"
+#include "NDRegisterAccessorDecorator.h"
 #include "DeviceBackendImpl.h"
 
 using namespace ChimeraTK;
@@ -75,6 +78,10 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(this->_accessModeFlags.has(AccessMode::wait_for_new_data) == false);
     BOOST_CHECK((_transferType == TransferType::read) || (_transferType == TransferType::readNonBlocking) ||
         (_transferType == TransferType::readLatest));
+    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre) {
+      BOOST_CHECK_MESSAGE(
+          false, "doReadTransferSynchronously() must not be called if doPreRead() has thrown an exception.");
+    }
     ++_readTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
     if(_throwThreadInterruptedInTransfer) throw boost::thread_interrupted();
@@ -89,6 +96,9 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::write);
     BOOST_CHECK(versionNumber == _newVersion);
+    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwNumericCast) {
+      BOOST_CHECK_MESSAGE(false, "doWriteTransfer() must not be called if doPreWrite() has thrown an exception.");
+    }
     ++_writeTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
     if(_throwThreadInterruptedInTransfer) throw boost::thread_interrupted();
@@ -104,6 +114,10 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::writeDestructively);
     BOOST_CHECK(versionNumber == _newVersion);
+    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwNumericCast) {
+      BOOST_CHECK_MESSAGE(
+          false, "doWriteTransferDestructively() must not be called if doPreWrite() has thrown an exception.");
+    }
     ++_writeTransfer_counter;
     if(_throwRuntimeErrInTransfer) throw ChimeraTK::runtime_error("Test");
     if(_throwThreadInterruptedInTransfer) throw boost::thread_interrupted();
@@ -114,7 +128,8 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
    * This doPostRead() implementation checks partially the TransferElement specification B.4.
    * 
    * \anchor testTransferElement_B_6_1_read It also tests specifically the
-   * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for read operations.
+   * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for read operations,
+   * and \ref transferElement_B_7_4 "TransferElement specification B.7.4"
    */
   void doPostRead(TransferType type, bool hasNewData) override {
     // doPreRead and doPortRead must always be called in pairs.
@@ -132,6 +147,10 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     else {
       /* Here B.6.1 is tested for read operations */
       BOOST_CHECK_EQUAL(_readTransfer_counter, 0);
+    }
+    /* Check B.7.4 */
+    if(this->_hasSeenException) {
+      BOOST_CHECK(hasNewData == false);
     }
     BOOST_CHECK(_writeTransfer_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
@@ -193,8 +212,8 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
 
   bool isWriteable() const override { return _writeable; }
 
-  bool _writeable{false};
-  bool _readable{false};
+  bool _writeable{true};
+  bool _readable{true};
 
   TransferType _transferType;
   bool _hasNewData; // hasNewData as seen in postRead() (set there)
@@ -283,7 +302,7 @@ class TransferElementTestBackend : public DeviceBackendImpl {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specification:
  *  * \anchor testTransferElement_B_4_sync \ref transferElement_B_4 "B.4" (except B.4.3.2),
  *  * \anchor testTransferElement_B_5_sync \ref transferElement_B_5 "B.5" (without sub-points) and
@@ -345,7 +364,7 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeNoExceptions) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specification:
  *  * \anchor testTransferElement_B_5_1_sync \ref transferElement_B_5_1 "B.5.1" and
  *  * \anchor testTransferElement_B_7_4_sync \ref transferElement_B_7_4 "B.7.4"
@@ -515,7 +534,7 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeWithExceptions) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_4_async \ref transferElement_B_4 "B.4" (except B.4.3.2),
  *  * \anchor testTransferElement_B_5_async \ref transferElement_B_5 "B.5" (without sub-points),
@@ -557,7 +576,7 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeNoExceptions) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_5_1_async \ref transferElement_B_5_1 "B.5.1",
  *  * \anchor testTransferElement_B_7_4_async \ref transferElement_B_7_4 "B.7.4" and
@@ -592,7 +611,7 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeWithExceptions) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_5_2 \ref transferElement_B_5_2 "B.5.2".
  */
@@ -627,7 +646,7 @@ BOOST_AUTO_TEST_CASE(testPrePostPairingDuplicateCalls) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_4_3_2 \ref transferElement_B_4_3_2 "B.4.3.2",
  *  * \anchor testTransferElement_B_11_3 \ref transferElement_B_11_3 "B.11.3" and
@@ -689,7 +708,7 @@ BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_6 \ref transferElement_B_6 "B.6" (sub-point implicitly included)
  */
@@ -785,7 +804,7 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_3_1_4 \ref transferElement_B_3_1_4 "B.3.1.4"
  */
@@ -831,7 +850,7 @@ BOOST_AUTO_TEST_CASE(testReadLatest) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_8_2_2 \ref transferElement_B_8_2_2 "B.8.2.2"
  */
@@ -863,7 +882,7 @@ BOOST_AUTO_TEST_CASE(testDiscardValueException) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_11_4_1 \ref transferElement_B_11_4_1 "B.11.4.1",
  *  * \anchor testTransferElement_B_11_4_2 \ref transferElement_B_11_4_2 "B.11.4.2" and
@@ -890,7 +909,7 @@ BOOST_AUTO_TEST_CASE(testVersionNumber) {
 
 /********************************************************************************************************************/
 
-/** 
+/**
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_8_6_1 \ref transferElement_B_8_6_1 "B.8.6.1",
  *  * \anchor testTransferElement_B_8_6_2 \ref transferElement_B_8_6_2 "B.8.6.2",
@@ -921,6 +940,81 @@ BOOST_AUTO_TEST_CASE(testInterrupt) {
   accessor.resetCounters();
   accessor.read();
   BOOST_CHECK(accessor._postRead_counter == 1);
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  This tests the TransferElement specifications when working with decorators:
+ *  * \anchor testTransferElement_decorator_B_6_1 \ref transferElement_B_6_1 "B.6.1",
+ *  * \anchor testTransferElement_decorator_B_7_4 \ref transferElement_B_7_4 "B.7.4",
+ */
+BOOST_AUTO_TEST_CASE(testWithDecorator) {
+  auto targetAccessor = boost::make_shared<TransferElementTestAccessor<int32_t>>(AccessModeFlags({}));
+  // an empty decorator is sufficient for the test we want to make with TransferElement.
+  ChimeraTK::NDRegisterAccessorDecorator<int32_t> accessor(targetAccessor);
+
+  targetAccessor->resetCounters();
+  targetAccessor->_throwLogicErr = true;
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::logic_error);
+  // tests for B.6.1. and B.7.4 are done in doPostRead()
+  targetAccessor->resetCounters();
+  targetAccessor->_throwLogicErr = true;
+  BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::logic_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwLogicErr = true;
+  BOOST_CHECK_THROW(accessor.write(), ChimeraTK::logic_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwLogicErr = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::logic_error);
+
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error);
+
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInPre = true;
+  BOOST_CHECK_THROW(accessor.read(), boost::thread_interrupted);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInPre = true;
+  BOOST_CHECK_THROW(accessor.readNonBlocking(), boost::thread_interrupted);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInPre = true;
+  BOOST_CHECK_THROW(accessor.write(), boost::thread_interrupted);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInPre = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), boost::thread_interrupted);
+
+  targetAccessor->resetCounters();
+  targetAccessor->_throwNumericCast = true;
+  BOOST_CHECK_THROW(accessor.write(), boost::numeric::bad_numeric_cast);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwNumericCast = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), boost::numeric::bad_numeric_cast);
+
+  // tests only for B.7.4 (exception thrown in read transfer)
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
+
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInTransfer = true;
+  BOOST_CHECK_THROW(accessor.read(), boost::thread_interrupted);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInTransfer = true;
+  BOOST_CHECK_THROW(accessor.readNonBlocking(), boost::thread_interrupted);
 }
 
 /********************************************************************************************************************/

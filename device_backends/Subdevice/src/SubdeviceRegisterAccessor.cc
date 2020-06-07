@@ -22,7 +22,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doReadTransferSynchronously() {}
+  void SubdeviceRegisterAccessor::doReadTransferSynchronously() {
+    assert(false); // must never be called due to exception in doPreRead
+  }
 
   /*********************************************************************************************************************/
 
