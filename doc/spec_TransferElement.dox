@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC2
+\page spec_TransferElement Technical specification: TransferElement V1.0RC4
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -327,6 +327,11 @@ This documnent is currently still **INCOMPLETE**!
 
 - 5. All real decorators are in fact decorators of NDRegisterAccessors<USER_TYPE>. Each decoration level contains one NDRegisterAccessors<USER_TYPE>::buffer_2D. The
      decorator implementation must make sure that its buffer is correctly synchronised with the target's buffer.(*)
+
+- 6. TransferElement::_versionNumber and  TransferElement::_dataValitiy are also part of the applicaton buffer. They also must be synchronised together with NDRegisterAccessors<USER_TYPE>::buffer_2D.
+  - 6.1 When reading, TransferElement::_versionNumber and  TransferElement::_dataValidity have to be copied over in doPostRead(), after a delegating to the target postRead() and only if there has been no exception.
+  - 6.2 When writing, TransferElement::_dataValidity has to be copied to the target in doPreWrite() before delegating. Do **not** manually synchonise the version number. This is done by the TransferElement base
+     class in postWrite according to  \ref transferElement_B_4_3_2 "B.4.3.2".
 
 ### (*) Comments ###
 
