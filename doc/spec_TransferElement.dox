@@ -124,8 +124,10 @@ This documnent is currently still **INCOMPLETE**!
   - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1_sync "T", \ref testTransferElement_B_5_1_async "T"]
   - \anchor transferElement_B_5_2 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa. [\ref testTransferElement_B_5_2 "T"]
   
-- \anchor transferElement_B_6 6. Exceptions thrown in preXxx() or xxxTransferYyy() are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6 "T"]
+- \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6 "T"]
   - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1_read "T", \ref testTransferElement_B_6_1_write "T"]
+  - 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers.
+  - 6.3 To ensure that the ApplicationCore ExeptionHandlingDecorator works in combination with other decorators, each decorator has to pass the stored exception to its target, and it has to be re-thrown in the doPostRead() of the layer where the exception originated (see \ref transferElement_C_2 "C.2")
 
 - \anchor transferElement_B_7 7. Return values of xxxTransferYyy(): [\ref testTransferElement_B_7_sync "T", \ref testTransferElement_B_7_async "T" (both except 7.4)]
   - 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
@@ -253,7 +255,12 @@ This documnent is currently still **INCOMPLETE**!
 ## C. Requirements for all implementations (full and decorator-like) ##
 
 - 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
-- 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. *Only* exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) may be rethrown. This is done by the TransferElement base class in postXxx, so implementations should never actively throw these exceptions in doPostXxx (but decorators must expect exceptions to be thrown by delegated calls).
+- \anchor transferElement_C_2 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
+  - 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException.
+  - 2.2 Each doPostXxx() implementation must handle TransferElement::_activeException
+    - 2.2.1 Full implementations (e.g. backends) must re-throw it if TransferElement::_activeException is not nullptr
+    - \anchor transferElement_C_2_2_2 2.2.2 Decorators must swap the _activeException with its target before delegating to the target's postXxx(). \ref transferElement_comment_C_2_2_2 "(*)"
+    - 2.2.3 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), must remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not swap the exception into the target, do not delegate to postXxx() and rethrow the exception.
 
 - 3. ChimeraTK::runtime_error in principle are recoverable. It is thrown, if the device (including the communication link) does not behave as expected. A later call to the same function (after the recovery has been triggered, cf. \ref transferElement_B_9_2_1 "B.9.2.1" resp. \ref transferElement_B_9_3_1 "B.9.3.1") must be able to succeed (for instance if a network outage has been resolved).
    ChimeraTK::runtime_error may only be thrown in 
@@ -298,6 +305,8 @@ This documnent is currently still **INCOMPLETE**!
     - 5.4.2 isReadable(), isWriteable() and isReadOnly() might have to check for the existance of the register from a running backend (in case there is no map file). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
 
 ### (*) Comments ###
+- \anchor transferElement_comment_C_2 \ref transferElement_C_2 "2." This concerns all exceptions that were caught, not only ChimeraTK::runtime_error and ChimeraTK::logic_error.
+- \anchor transferElement_comment_C_2_2_2 \ref transferElement_C_2_2_2 "2.2.2" This will usually swap in a nullptr. It now is the target's responsibility to re-throw or to delegate further.
 - 4.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
 - 5.1 Test functions do not yet exist for everything. This needs to be changed!
 - 5.2 Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
