@@ -128,6 +128,7 @@ This documnent is currently still **INCOMPLETE**!
   - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1_read "T", \ref testTransferElement_B_6_1_write "T"]
   - 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers.
   - 6.3 To ensure that the ApplicationCore ExeptionHandlingDecorator works in combination with other decorators, each decorator has to pass the stored exception to its target, and it has to be re-thrown in the doPostRead() of the layer where the exception originated (see \ref transferElement_C_2 "C.2")
+  - \anchor transferElement_B_6_4 6.4 When an exception is finally thrown by a TransferElement, the application buffer must still be unchanged. \ref  transferElement_comment_B_6_4 "(*)"
 
 - \anchor transferElement_B_7 7. Return values of xxxTransferYyy(): [\ref testTransferElement_B_7_sync "T", \ref testTransferElement_B_7_async "T" (both except 7.4)]
   - 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
@@ -224,6 +225,8 @@ This documnent is currently still **INCOMPLETE**!
 - 5. Reason: It might be that the user buffer has to be swapped out during the transfer (while taking away the ownership of the calling code), and this must be restored in the postXxx action.
 
 -  \anchor transferElement_comment_B_5_1 \ref transferElement_B_5_1 "5.1" The boost::thread_interrupted exception, which is thrown internally as described in \ref transferElement_B_8_6 "8.6", is treated equally.
+
+- \anchor transferElement_comment_B_6_4 \ref transferElement_B_6_4 "6.4" This means that implementations which raise boost::numeric::bad_numeric_cast in their doPostRead() implementation must make sure that the data buffer is either not toched as long as exceptions can occur, or that it is restored in case of an exception.
 
 - \anchor transferElement_comment_B_7_2 \ref transferElement_B_7_2 "7.2" Usually, writes are implemented as synchronous transfers, in which case no previous data can be lost. In case of asynchronous write transfers (as e.g. implemented in the ControlSystemAdapter's ProcessArray), the implementation must ensure the specified behaviour e.g. by using cppext::future_queue::push_overwrite() or a similar functionality. Please keep in mind that the return value of cppext::future_queue::push_overwrite() does not guarantee which data is lost *only* if concurrent push_overwrite() calls are executed in a multi-producer environment. TransferElements are not thread safe anyway, hence push_overwrite() will always overwrite old data in this context.
 
