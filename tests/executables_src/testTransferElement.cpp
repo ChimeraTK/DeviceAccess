@@ -671,38 +671,28 @@ BOOST_AUTO_TEST_CASE(testPostWriteVersionNumberUpdate) {
   accessor.resetCounters();
   VersionNumber v2{};
   accessor._throwLogicErr = true;
-  accessor.preWrite(TransferType::write, v2);
-  BOOST_CHECK(accessor.getVersionNumber() == v1);
-  BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, v2), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(accessor.write(v2), ChimeraTK::logic_error);
   BOOST_CHECK(accessor.getVersionNumber() == v1);
 
   // test with runtime error in preWrite
   accessor.resetCounters();
   VersionNumber v3{};
   accessor._throwRuntimeErrInPre = true;
-  accessor.preWrite(TransferType::write, v3);
-  BOOST_CHECK(accessor.getVersionNumber() == v1);
-  BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, v3), ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(accessor.write(v3), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor.getVersionNumber() == v1);
 
   // test with runtime error in doWriteTransfer
   accessor.resetCounters();
   VersionNumber v4{};
   accessor._throwRuntimeErrInTransfer = true;
-  accessor.preWrite(TransferType::write, v4);
-  accessor.writeTransfer(v4);
-  BOOST_CHECK(accessor.getVersionNumber() == v1);
-  BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, v4), ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(accessor.write(v4), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor.getVersionNumber() == v1);
 
   // test with runtime error in doWriteTransferDestructively
   accessor.resetCounters();
   VersionNumber v5{};
   accessor._throwRuntimeErrInTransfer = true;
-  accessor.preWrite(TransferType::writeDestructively, v5);
-  accessor.writeTransferDestructively(v5);
-  BOOST_CHECK(accessor.getVersionNumber() == v1);
-  BOOST_CHECK_THROW(accessor.postWrite(TransferType::writeDestructively, v5), ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(accessor.writeDestructively(v5), ChimeraTK::runtime_error);
   BOOST_CHECK(accessor.getVersionNumber() == v1);
 }
 
