@@ -781,14 +781,31 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
   accessor.resetCounters();
   accessor._throwRuntimeErrInTransfer = true;
   accessor.preRead(TransferType::read);
-  accessor.readTransfer();
+  std::exception_ptr myException{nullptr};
+  try {
+    accessor.readTransfer();
+  }
+  catch(ChimeraTK::runtime_error&) {
+    myException = std::current_exception();
+  }
+  // now put  the exeption into the accessor like a decorator would do it
+  accessor._activeException.swap(myException);
+  accessor._hasSeenException = true;
   BOOST_CHECK_THROW(accessor.postRead(TransferType::read, false), ChimeraTK::runtime_error);
 
   accessor.resetCounters();
   accessor._throwRuntimeErrInTransfer = true;
   VersionNumber v{};
   accessor.preWrite(TransferType::write, v);
-  accessor.writeTransfer(v);
+  try {
+    accessor.writeTransfer(v);
+  }
+  catch(ChimeraTK::runtime_error&) {
+    myException = std::current_exception();
+  }
+  // now put  the exeption into the accessor like a decorator would do it
+  accessor._activeException.swap(myException);
+  accessor._hasSeenException = true;
   BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, v), ChimeraTK::runtime_error);
 }
 

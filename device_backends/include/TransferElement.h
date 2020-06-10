@@ -762,10 +762,13 @@ namespace ChimeraTK {
     /// The validity of the data in the application buffer. Part of the application buffer \ref transferElement_A_5 "(see TransferElement specification A.5)"
     DataValidity _dataValidity{DataValidity::ok};
 
-    /// Flag whether doPreXxx() or doXXXTransferYYY() has thrown an exception (which should be rethrown in postXXX()).
+   public:
+    /// FIXME: This flag will go away. Checking that _activeException is nullptr will replace it. As long as its there it has to be public
+    /// because _activeException also is. Both have to be updated together.
     bool _hasSeenException{false};
 
     /// Exception to be rethrown in postXXX() in case hasSeenException == true
+    /// Needs to be public so decorators can swap it.
     std::exception_ptr _activeException{nullptr};
   }; // namespace ChimeraTK
 
