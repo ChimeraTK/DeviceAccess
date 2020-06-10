@@ -129,8 +129,12 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->readTransactionInProgress = false;
-      preRead(TransferType::read);
-      if(!_hasSeenException) readTransfer();
+
+      preReadAndHandleExceptions(TransferType::read);
+      if(!_hasSeenException) {
+        handleTransferException([&] { readTransfer(); });
+      }
+
       postRead(TransferType::read, !_hasSeenException);
     }
 
@@ -146,14 +150,20 @@ namespace ChimeraTK {
      *  be always true in this mode.
      */
     bool readNonBlocking() {
-      this->readTransactionInProgress = false;
-      preRead(TransferType::readNonBlocking);
-      bool hasNewData = false;
-      if(!_hasSeenException) {
-        hasNewData = readTransferNonBlocking();
+      if(TransferElement::_isInTransferGroup) {
+        throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
+                                     "which is part of a TransferGroup "
+                                     "is not allowed.");
       }
-      postRead(TransferType::readNonBlocking, hasNewData);
-      return hasNewData;
+      this->readTransactionInProgress = false;
+      preReadAndHandleExceptions(TransferType::readNonBlocking);
+      bool updateDataBuffer = false;
+      if(!_hasSeenException) {
+        handleTransferException([&] { updateDataBuffer = readTransferNonBlocking(); });
+      }
+
+      postRead(TransferType::readNonBlocking, updateDataBuffer);
+      return updateDataBuffer;
     }
 
     /** Read the latest value, discarding any other update since the last read if
@@ -162,13 +172,13 @@ namespace ChimeraTK {
      * available if AccessMode::wait_for_new_data is set. */
     bool readLatest() {
       if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-        bool hasNewData = false;
+        bool updateDataBuffer = false;
         // Call readNonBlocking until there is no new data to be read any more
         while(readNonBlocking()) {
           // remember whether we have new data
-          hasNewData = true;
+          updateDataBuffer = true;
         }
-        return hasNewData;
+        return updateDataBuffer;
       }
       else {
         // Without wait_for_new_data readNonBlocking always returns true, and the while loop above would never end.
@@ -188,12 +198,14 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite(TransferType::write, versionNumber);
       bool previousDataLost =
           true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
+
+      preWriteAndHandleExceptions(TransferType::write, versionNumber);
       if(!_hasSeenException) {
-        previousDataLost = writeTransfer(versionNumber);
+        handleTransferException([&] { previousDataLost = writeTransfer(versionNumber); });
       }
+
       postWrite(TransferType::write, versionNumber);
       return previousDataLost;
     }
@@ -209,12 +221,14 @@ namespace ChimeraTK {
                                      "is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      preWrite(TransferType::writeDestructively, versionNumber);
+
+      preWriteAndHandleExceptions(TransferType::writeDestructively, versionNumber);
       bool previousDataLost =
           true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
       if(!_hasSeenException) {
-        previousDataLost = writeTransferDestructively(versionNumber);
+        handleTransferException([&] { previousDataLost = writeTransferDestructively(versionNumber); });
       }
+
       postWrite(TransferType::writeDestructively, versionNumber);
       return previousDataLost;
     }
@@ -252,23 +266,21 @@ namespace ChimeraTK {
     /**
      *  Helper for exception handling in the transfer functions, to avoid code duplication.
      */
-    template<typename ReturnType, typename Callable>
-    ReturnType handleTransferException(Callable function, ReturnType returnOnException) {
+    template<typename Callable>
+    void handleTransferException(Callable function) noexcept {
       try {
-        return function();
+        function();
       }
       catch(ChimeraTK::runtime_error&) {
         _hasSeenException = true;
         _activeException = std::current_exception();
-        return returnOnException;
       }
       catch(boost::thread_interrupted&) {
         _hasSeenException = true;
         _activeException = std::current_exception();
-        return returnOnException;
       }
       catch(...) {
-        std::cout << "BUG: Wrong exception type thrown in transfer function!" << std::endl;
+        std::cout << "BUG: Wrong exception type thrown in transfer function or doPreXxx()!" << std::endl;
         std::terminate();
       }
     }
@@ -295,18 +307,13 @@ namespace ChimeraTK {
      *  This function internally calles doReadTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doReadTransfer() are caught and rethrown in postRead().
      */
-    void readTransfer() noexcept {
-      handleTransferException<bool>(
-          [this] {
-            if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-              readTransferAsyncWaitingImpl();
-            }
-            else {
-              doReadTransferSynchronously();
-            }
-            return true; // need to return something, is ignored later
-          },
-          false);
+    void readTransfer() {
+      if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        readTransferAsyncWaitingImpl();
+      }
+      else {
+        doReadTransferSynchronously();
+      }
     }
 
    protected:
@@ -345,30 +352,21 @@ namespace ChimeraTK {
      *  This function internally calles doReadTransferNonBlocking(), which is implemented by the backend. runtime_error
      *  exceptions thrown in doRedoReadTransferNonBlockingadTransfer() are caught and rethrown in postRead().
      */
-    bool readTransferNonBlocking() noexcept {
-      return handleTransferException<bool>(
-          [this]() {
-            if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-              return readTransferAsyncNonWaitingImpl();
-            }
-            else {
-              doReadTransferSynchronously();
-              return true;
-            }
-          },
-          false);
+    bool readTransferNonBlocking() {
+      if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        return readTransferAsyncNonWaitingImpl();
+      }
+      else {
+        doReadTransferSynchronously();
+        return true;
+      }
     }
 
-   public:
-    /** Perform any pre-read tasks if necessary.
-     *
-     *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly on the
-     *  underlying accessor. */
-    void preRead(TransferType type) noexcept {
-      if(readTransactionInProgress) return;
-      assert(!_hasSeenException);
+   private:
+    /** Helper function to catch the exceptions. Avoids code duplication.*/
+    void preReadAndHandleExceptions(TransferType type) noexcept {
       try {
-        doPreRead(type);
+        preRead(type);
       }
       catch(ChimeraTK::logic_error&) {
         _hasSeenException = true;
@@ -386,7 +384,20 @@ namespace ChimeraTK {
         std::cout << "BUG: Wrong exception type thrown in doPreRead()!" << std::endl;
         std::terminate();
       }
-      readTransactionInProgress = true;
+    }
+
+   public:
+    /** Perform any pre-read tasks if necessary.
+     *
+     *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly on the
+     *  underlying accessor. */
+    void preRead(TransferType type) {
+      if(readTransactionInProgress) return;
+      assert(!_hasSeenException);
+
+      readTransactionInProgress =
+          true; // remember that doPreRead has been called. It might throw, so we remember before we call it
+      doPreRead(type);
     }
 
     /** Backend specific implementation of preRead(). preRead() will call this function, but it will make sure that
@@ -433,24 +444,11 @@ namespace ChimeraTK {
    protected:
     virtual void doPostRead(TransferType, bool /*hasNewData*/) {}
 
-   public:
-    /** Transfer the data from the user buffer into the device send buffer, while
-     * converting the data from then user data format if needed.
-     *
-     *  Called by write(). Also the TransferGroup will call this function before a
-     * write will be executed directly on the underlying accessor. This function
-     * implemented be used to transfer the data to be written into the
-     *  underlying accessor. */
-    void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) noexcept {
-      if(writeTransactionInProgress) return;
-      assert(!_hasSeenException);
+   private:
+    /** helper functions to avoid code duplication */
+    void preWriteAndHandleExceptions(TransferType type, ChimeraTK::VersionNumber versionNumber) noexcept {
       try {
-        if(versionNumber < getVersionNumber()) {
-          throw ChimeraTK::logic_error(
-              "The version number passed to write() is less than the last version number used.");
-        }
-        writeTransactionInProgress = true; // must not be set, if the logic_error is thrown above due to the old version
-        doPreWrite(type, versionNumber);
+        preWrite(type, versionNumber);
       }
       catch(ChimeraTK::logic_error&) {
         _hasSeenException = true;
@@ -473,6 +471,24 @@ namespace ChimeraTK {
         std::cout << "BUG: Wrong exception type thrown in doPreWrite()!" << std::endl;
         std::terminate();
       }
+    }
+
+   public:
+    /** Transfer the data from the user buffer into the device send buffer, while
+     * converting the data from then user data format if needed.
+     *
+     *  Called by write(). Also the TransferGroup will call this function before a
+     * write will be executed directly on the underlying accessor. This function
+     * implemented be used to transfer the data to be written into the
+     *  underlying accessor. */
+    void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+      if(writeTransactionInProgress) return;
+      assert(!_hasSeenException);
+      if(versionNumber < getVersionNumber()) {
+        throw ChimeraTK::logic_error("The version number passed to write() is less than the last version number used.");
+      }
+      writeTransactionInProgress = true; // must not be set, if the logic_error is thrown above due to the old version
+      doPreWrite(type, versionNumber);
     }
 
     /** Backend specific implementation of preWrite(). preWrite() will call this function, but it will make sure that
@@ -529,9 +545,7 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransfer(ChimeraTK::VersionNumber versionNumber) noexcept {
-      return handleTransferException<bool>([&] { return doWriteTransfer(versionNumber); }, true);
-    }
+    bool writeTransfer(ChimeraTK::VersionNumber versionNumber) { return doWriteTransfer(versionNumber); }
 
    protected:
     /**
@@ -555,8 +569,8 @@ namespace ChimeraTK {
      *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
-    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) noexcept {
-      return handleTransferException<bool>([&] { return doWriteTransferDestructively(versionNumber); }, true);
+    bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
+      return doWriteTransferDestructively(versionNumber);
     }
 
    protected:
