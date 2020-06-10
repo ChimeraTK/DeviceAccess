@@ -119,9 +119,12 @@ namespace ChimeraTK {
     if(push_elements.find(transferElementID) == push_elements.end()) {
       return false;
     }
-    auto getVNFromElemenst = push_elements[transferElementID].getVersionNumber();
-    if(versionNumberToBeConsistentTo != getVNFromElemenst) {
-      versionNumberToBeConsistentTo = getVNFromElemenst;
+    auto getVNFromElement = push_elements[transferElementID].getVersionNumber();
+    if(getVNFromElement < versionNumberToBeConsistentTo){
+      return false;
+    }
+    if(versionNumberToBeConsistentTo != getVNFromElement) {
+      versionNumberToBeConsistentTo = getVNFromElement;
       consistentElements.clear();
     }
     consistentElements.insert(transferElementID);

@@ -142,6 +142,31 @@ BOOST_AUTO_TEST_CASE(testMultipleDataConsistencyGroup) {
   BOOST_CHECK(dcgroup_2.update(acc_2->getId()) == false); //ignored
 }
 
+BOOST_AUTO_TEST_CASE(testVersionNumberChange) {
+  VersionNumber v1{};
+  VersionNumber v2{};
+  VersionNumber v3{};
+
+  boost::shared_ptr<Accessor<int>> acc_1 = boost::make_shared<Accessor<int>>();
+  boost::shared_ptr<Accessor<int>> acc_2 = boost::make_shared<Accessor<int>>();
+
+  DataConsistencyGroup dcgroup_1({acc_1, acc_2});
+
+  acc_2->write(v2);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_2->getId()), false);
+
+  acc_1->write(v1);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_1->getId()), false);
+
+  acc_1->write(v2);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_1->getId()), true);
+
+  acc_1->write(v3);
+  acc_2->write(v3);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_1->getId()), false);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_2->getId()), true);
+}
+
 BOOST_AUTO_TEST_CASE(testException) {
   Device dev;
   dev.open("(dummy?map=registerAccess.map)");
