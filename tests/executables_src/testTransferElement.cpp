@@ -129,6 +129,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
    * 
    * \anchor testTransferElement_B_6_1_read It also tests specifically the
    * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for read operations,
+   * \anchor testTransferElement_B_6_3_read \ref transferElement_B_6_3 "TransferElement specification B.6.3" for read operations,
    * and \ref transferElement_B_7_4 "TransferElement specification B.7.4"
    */
   void doPostRead(TransferType type, bool hasNewData) override {
@@ -148,6 +149,10 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       /* Here B.6.1 is tested for read operations */
       BOOST_CHECK_EQUAL(_readTransfer_counter, 0);
     }
+    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwRuntimeErrInTransfer ||
+        _throwThreadInterruptedInTransfer) {
+      BOOST_CHECK(this->_activeException != nullptr);
+    }
     /* Check B.7.4 */
     if(this->_hasSeenException) {
       BOOST_CHECK(hasNewData == false);
@@ -166,6 +171,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
    * 
    * \anchor testTransferElement_B_6_1_write It also tests specifically the
    * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for write operations.
+   * \anchor testTransferElement_B_6_3_write \ref transferElement_B_6_3 "TransferElement specification B.6.3" for write operations.
    */
   void doPostWrite(TransferType type, VersionNumber versionNumber) override {
     BOOST_CHECK(_preRead_counter == 0);
@@ -177,6 +183,11 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     else {
       /* Here B.6.1 is tested for write operations */
       BOOST_CHECK(_writeTransfer_counter == 0);
+    }
+    // Exceptions must be passed on to the level which is throwing it (B.6.3 This actually tests the NDRegisterAccessorDecorator)
+    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwRuntimeErrInTransfer ||
+        _throwThreadInterruptedInTransfer || _throwNumericCast) {
+      BOOST_CHECK(this->_activeException != nullptr);
     }
     BOOST_CHECK(versionNumber == _newVersion);
     BOOST_CHECK(_postRead_counter == 0);
@@ -955,6 +966,8 @@ BOOST_AUTO_TEST_CASE(testInterrupt) {
  *  This tests the TransferElement specifications when working with decorators:
  *  * \anchor testTransferElement_decorator_B_6_1 \ref transferElement_B_6_1 "B.6.1",
  *  * \anchor testTransferElement_decorator_B_7_4 \ref transferElement_B_7_4 "B.7.4",
+ *  * \anchor testTransferElement_B_6_3 \ref transferElement_B_6_3 "TransferElement specification B.6.3" through the
+ *    tests in \ref testTransferElement_B_6_3_write "doPostWrite()" and \ref testTransferElement_B_6_3_write "doPostRead()"
  */
 BOOST_AUTO_TEST_CASE(testWithDecorator) {
   auto targetAccessor = boost::make_shared<TransferElementTestAccessor<int32_t>>(AccessModeFlags({}));
