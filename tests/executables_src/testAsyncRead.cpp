@@ -45,6 +45,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
     : NDRegisterAccessor<UserType>(registerPathName, flags), _backend(backend) {
       buffer_2D.resize(1);
       buffer_2D[0].resize(1);
+      this->_readQueue = {3}; // this accessor is using a queue length of 3
       _backend->notificationQueue[getName()] = this->_readQueue;
     }
 

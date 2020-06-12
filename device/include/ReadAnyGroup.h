@@ -416,14 +416,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::Notification ReadAnyGroup::waitAny() {
-    // We might block here until we receive an update, so call the
-    // transferFutureWaitCallback. Note this is a slightly ugly approximation
-    // here, as we call it for the first element in the group. It is used in
-    // ApplicationCore testable mode, where it doesn't matter which callback
-    // within the same group is called.
-    //FIXME: This hack does not work any more. Find a proper solution.
-    assert(false);
-    //push_elements[0].transferFutureWaitCallback();
+    // preRead() and postRead() must be called in pairs. Hence we call all preReads here before waiting for transfers to finish.
+    // postRead() will be called when accepting the notification.
+    // We can call preRead() repeatedly on the same element, even if no transfer and call to postRead() have happened. It is just ignored
+    // (see Transfer element spec B.5.2). So we just always call all preReads.
+
+    // Notice : This has the side effect that decorators can block here, for instance for the setup phase. This is used by ApplicationCore in testable mode.
+    for(auto& elem : push_elements) {
+      elem.getHighLevelImplElement()->preRead(TransferType::read);
+    }
 
     // Wait for notification
     std::size_t index;
