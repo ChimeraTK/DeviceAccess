@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC5
+\page spec_TransferElement Technical specification: TransferElement V1.0RC6
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -263,7 +263,7 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_C_2 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
   - 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException.
   - 2.2 postXxx() is re-throwing the exception after delegating to doPostXxx().
-  - \anchor transferElement_C_2_3 2.3 Decorators must swap the _activeException with its target before delegating to the target's postXxx(). This swaps the
+  - \anchor transferElement_C_2_3 2.3 If and only if _activeException == true, decorators must swap the _activeException with its target before delegating to the target's postXxx(). This swaps the
     active exception into the target, which is now responsible for handling it, and swaps in a nullptr from the target, so the decorator level does not throw any more \ref transferElement_comment_C_2_3a "(*)". \ref transferElement_comment_C_2_3b "(*)"
     - 2.3.1 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), must remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not swap the exception into the target and do not delegate to postXxx(). The exception is then re-thrown by the decorator's postXxx().
 
@@ -310,7 +310,7 @@ This documnent is currently still **INCOMPLETE**!
 
 ### (*) Comments ###
 - \anchor transferElement_comment_C_2 \ref transferElement_C_2 "2." This concerns all exceptions that were caught, not only ChimeraTK::runtime_error and ChimeraTK::logic_error.
-- \anchor transferElement_comment_C_2_3a \ref transferElement_C_2_3 "2.3" Swapping in a nullptr is required by the ApplicationCore::ExceptionHandlingDecorator. It suppresses the exception and then the outer layers must not throw any more.
+- \anchor transferElement_comment_C_2_3a \ref transferElement_C_2_3 "2.3" Swapping a nullptr from the target is required for instance if the target is the ApplicationCore::ExceptionHandlingDecorator. It suppresses the exception and then the outer layers must not throw any more. Decorators must not swap a nullptr into the target because you could swap an active exception out of it. This would mean it is thrown too late (only after the decorator has left its doPostXxx(), not inside doPostXxx() when delegating to target->postXxx()), and code that should be skipped could be executed.
 - \anchor transferElement_comment_C_2_3b \ref transferElement_C_2_3 "2.3" This behaviour is implemented in doPostXxx() of the NDRegisterAccessorDecorator base class, which is usually called by decorator implementations.
 - 4.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
 - 5.1 Test functions do not yet exist for everything. This needs to be changed!
