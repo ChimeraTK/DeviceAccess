@@ -14,6 +14,8 @@
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "SyncNDRegisterAccessor.h"
 
+#include <ChimeraTK/cppext/finally.hpp>
+
 namespace ChimeraTK {
 
   // Forward declarations
@@ -210,7 +212,7 @@ namespace ChimeraTK {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
     }
 
-    virtual ~NumericAddressedBackendRegisterAccessor() { this->shutdown(); }
+    ~NumericAddressedBackendRegisterAccessor() override { this->shutdown(); }
 
     void doReadTransferSynchronously() override { _rawAccessor->read(); }
 
@@ -220,7 +222,9 @@ namespace ChimeraTK {
       return false;
     }
 
-    void doPostRead(TransferType, bool hasNewData) override {
+    void doPostRead(TransferType type, bool hasNewData) override {
+      _rawAccessor->postRead(type, hasNewData);
+
       if(!hasNewData) return;
       _prePostActionsImplementor.doPostRead();
       // we don't put the setting of the version number into the PrePostActionImplementor
@@ -230,17 +234,24 @@ namespace ChimeraTK {
       this->_dataValidity = _rawAccessor->dataValidity();
     }
 
-    void doPreWrite(TransferType, VersionNumber) override {
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
       _prePostActionsImplementor.doPreWrite();
       _rawAccessor->setDataValidity(this->_dataValidity);
+      _rawAccessor->preWrite(type, versionNumber);
     }
 
-    void doPreRead(TransferType) override {
+    void doPreRead(TransferType type) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+      _rawAccessor->preRead(type);
     }
 
-    void doPostWrite(TransferType, VersionNumber) override { _prePostActionsImplementor.doPostWrite(); }
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
+      // execute the implementor's doPostWrite unconditionally (swaps back the buffers) at the end of
+      // this functnion, even if the delegated postWrite() throws.
+      auto _ = cppext::finally([&] { _prePostActionsImplementor.doPostWrite(); });
+      _rawAccessor->postWrite(type, versionNumber);
+    }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<

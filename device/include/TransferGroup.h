@@ -66,8 +66,8 @@ namespace ChimeraTK {
 
    protected:
     /** List of low-level TransferElements in this group, which are directly
-     * responsible for the hardware access */
-    std::set<boost::shared_ptr<TransferElement>> lowLevelElements;
+     * responsible for the hardware access, and a flag whether there has been an exception in pre-pread */
+    std::map<boost::shared_ptr<TransferElement>, bool /*hasSeenException*/> lowLevelElementsAndExceptionFlags;
 
     /** List of all CopyRegisterDecorators in the group. On these elements,
      * postRead() has to be executed before all other elements. */
@@ -79,6 +79,16 @@ namespace ChimeraTK {
 
     /** Flag if group is read-only */
     bool readOnly;
+
+    struct ExceptionHandlingResult {
+      bool hasSeenException{false};
+      std::stringstream combinedMessage;
+      bool hasSeenThreadInterrupted{false};
+    };
+
+    // helper function to avoid code duplication
+    // return whether there has been an exception
+    ExceptionHandlingResult handlePostExceptions(std::set<boost::shared_ptr<TransferElement>>& elements);
   };
 
 } /* namespace ChimeraTK */
