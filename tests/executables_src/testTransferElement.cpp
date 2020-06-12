@@ -961,11 +961,14 @@ BOOST_AUTO_TEST_CASE(testInterrupt) {
 /********************************************************************************************************************/
 
 /**
- *  This tests the TransferElement specifications when working with decorators:
+ *  This tests the TransferElement implementation when working with decorators:
  *  * \anchor testTransferElement_decorator_B_6_1 \ref transferElement_B_6_1 "B.6.1",
  *  * \anchor testTransferElement_decorator_B_7_4 \ref transferElement_B_7_4 "B.7.4",
  *  * \anchor testTransferElement_B_6_3 \ref transferElement_B_6_3 "TransferElement specification B.6.3" through the
  *    tests in \ref testTransferElement_B_6_3_write "doPostWrite()" and \ref testTransferElement_B_6_3_write "doPostRead()"
+ *
+ *  FIXME: This also requires a working decorator. Should this be move to a separe test for NDRegisterAccessorDecorator, which
+ *  needs more testing that are not correlated with the TransferElement base class?
  */
 BOOST_AUTO_TEST_CASE(testWithDecorator) {
   auto targetAccessor = boost::make_shared<TransferElementTestAccessor<int32_t>>(AccessModeFlags({}));
@@ -1019,13 +1022,19 @@ BOOST_AUTO_TEST_CASE(testWithDecorator) {
   targetAccessor->_throwNumericCast = true;
   BOOST_CHECK_THROW(accessor.writeDestructively(), boost::numeric::bad_numeric_cast);
 
-  // tests only for B.7.4 (exception thrown in read transfer)
+  // tests B.7.4 (exception thrown in read transfer), and B.6.3 (active exception is seen in the layer which raised it)
   targetAccessor->resetCounters();
   targetAccessor->_throwRuntimeErrInTransfer = true;
   BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error);
   targetAccessor->resetCounters();
   targetAccessor->_throwRuntimeErrInTransfer = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error);
 
   targetAccessor->resetCounters();
   targetAccessor->_throwThreadInterruptedInTransfer = true;
@@ -1033,6 +1042,12 @@ BOOST_AUTO_TEST_CASE(testWithDecorator) {
   targetAccessor->resetCounters();
   targetAccessor->_throwThreadInterruptedInTransfer = true;
   BOOST_CHECK_THROW(accessor.readNonBlocking(), boost::thread_interrupted);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInTransfer = true;
+  BOOST_CHECK_THROW(accessor.write(), boost::thread_interrupted);
+  targetAccessor->resetCounters();
+  targetAccessor->_throwThreadInterruptedInTransfer = true;
+  BOOST_CHECK_THROW(accessor.writeDestructively(), boost::thread_interrupted);
 }
 
 /********************************************************************************************************************/
