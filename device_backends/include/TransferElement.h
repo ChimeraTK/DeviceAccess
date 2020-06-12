@@ -131,11 +131,11 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
 
       preReadAndHandleExceptions(TransferType::read);
-      if(!_hasSeenException) {
+      if(!_activeException) {
         handleTransferException([&] { readTransfer(); });
       }
 
-      postRead(TransferType::read, !_hasSeenException);
+      postRead(TransferType::read, !_activeException);
     }
 
     /** 
@@ -158,7 +158,7 @@ namespace ChimeraTK {
       this->readTransactionInProgress = false;
       preReadAndHandleExceptions(TransferType::readNonBlocking);
       bool updateDataBuffer = false;
-      if(!_hasSeenException) {
+      if(!_activeException) {
         handleTransferException([&] { updateDataBuffer = readTransferNonBlocking(); });
       }
 
@@ -202,7 +202,7 @@ namespace ChimeraTK {
           true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
 
       preWriteAndHandleExceptions(TransferType::write, versionNumber);
-      if(!_hasSeenException) {
+      if(!_activeException) {
         handleTransferException([&] { previousDataLost = writeTransfer(versionNumber); });
       }
 
@@ -225,7 +225,7 @@ namespace ChimeraTK {
       preWriteAndHandleExceptions(TransferType::writeDestructively, versionNumber);
       bool previousDataLost =
           true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
-      if(!_hasSeenException) {
+      if(!_activeException) {
         handleTransferException([&] { previousDataLost = writeTransferDestructively(versionNumber); });
       }
 
@@ -272,11 +272,9 @@ namespace ChimeraTK {
         function();
       }
       catch(ChimeraTK::runtime_error&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(boost::thread_interrupted&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(...) {
@@ -369,15 +367,12 @@ namespace ChimeraTK {
         preRead(type);
       }
       catch(ChimeraTK::logic_error&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(ChimeraTK::runtime_error&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(boost::thread_interrupted&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(...) {
@@ -393,7 +388,7 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preRead(TransferType type) {
       if(readTransactionInProgress) return;
-      assert(!_hasSeenException);
+      _activeException = {nullptr};
 
       readTransactionInProgress =
           true; // remember that doPreRead has been called. It might throw, so we remember before we call it
@@ -417,15 +412,19 @@ namespace ChimeraTK {
      *  a read was executed directly on the underlying accessor. This function must
      *  be implemented to extract the read data from the underlying accessor and
      *  expose it to the user. */
-    void postRead(TransferType type, bool hasNewData) {
-      if(!readTransactionInProgress) return;
-      readTransactionInProgress = false;
-      doPostRead(type, hasNewData);
-      // Note: doPostRead can throw an exception, but in that case hasSeenException must be false (we can only have one
+    void postRead(TransferType type, bool updateDataBuffer) {
+      // only delegate to doPostRead() the first time postRead() is called in a row.
+      if(readTransactionInProgress) {
+        readTransactionInProgress = false;
+        doPostRead(type, updateDataBuffer);
+      }
+
+      // Throw on each call of postRead(). All high-level elements for a shared low-level transfer element must see the exception.
+      // Note: doPostRead can throw an exception, but in that case _activeException must be false (we can only have one
       // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
       // always, a try-catch block may be necessary.
-      if(_hasSeenException) {
-        _hasSeenException = false;
+      if(_activeException) {
+        // don't clear the active connection. This is done in preRead().
         std::rethrow_exception(_activeException);
       }
     }
@@ -451,20 +450,16 @@ namespace ChimeraTK {
         preWrite(type, versionNumber);
       }
       catch(ChimeraTK::logic_error&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(ChimeraTK::runtime_error&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(boost::thread_interrupted&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       // Needed for throwing TypeChangingDecorator. Is this even a good concept?
       catch(boost::numeric::bad_numeric_cast&) {
-        _hasSeenException = true;
         _activeException = std::current_exception();
       }
       catch(...) {
@@ -483,7 +478,8 @@ namespace ChimeraTK {
      *  underlying accessor. */
     void preWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
       if(writeTransactionInProgress) return;
-      assert(!_hasSeenException);
+
+      _activeException = {};
       if(versionNumber < getVersionNumber()) {
         throw ChimeraTK::logic_error("The version number passed to write() is less than the last version number used.");
       }
@@ -518,8 +514,7 @@ namespace ChimeraTK {
       // always, a try-catch block may be necessary.
       // Another note: If writeTransactionInProgress == false, there can still be an exception, if the version number
       // used in a write was too old (see preWrite).
-      if(_hasSeenException) {
-        _hasSeenException = false;
+      if(_activeException) {
         std::rethrow_exception(_activeException);
       }
 
@@ -763,10 +758,6 @@ namespace ChimeraTK {
     DataValidity _dataValidity{DataValidity::ok};
 
    public:
-    /// FIXME: This flag will go away. Checking that _activeException is nullptr will replace it. As long as its there it has to be public
-    /// because _activeException also is. Both have to be updated together.
-    bool _hasSeenException{false};
-
     /// Exception to be rethrown in postXXX() in case hasSeenException == true
     /// Needs to be public so decorators can swap it.
     std::exception_ptr _activeException{nullptr};

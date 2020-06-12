@@ -26,7 +26,7 @@ namespace ChimeraTK {
       bool updateUserBuffer{true}; // local variable if this element had an exception, to pass on to postRead();
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
-        if(lowLevelElem->_hasSeenException) {
+        if(lowLevelElem->_activeException) {
           updateUserBuffer = false;
         }
       }
@@ -69,7 +69,7 @@ namespace ChimeraTK {
 
     for(auto& elem : highLevelElements) {
       elem->preReadAndHandleExceptions(TransferType::read);
-      if(elem->_hasSeenException) {
+      if(elem->_activeException) {
         for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
           lowLevelElementsAndExceptionFlags[lowLevelElem] = true;
         }
@@ -78,7 +78,7 @@ namespace ChimeraTK {
 
     for(auto& elem : copyDecorators) {
       elem->preReadAndHandleExceptions(TransferType::read);
-      if(elem->_hasSeenException) {
+      if(elem->_activeException) {
         for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
           lowLevelElementsAndExceptionFlags[lowLevelElem] = true;
         }
@@ -111,7 +111,7 @@ namespace ChimeraTK {
 
     for(auto& elem : highLevelElements) {
       elem->preWriteAndHandleExceptions(TransferType::write, versionNumber);
-      if(elem->_hasSeenException) {
+      if(elem->_activeException) {
         for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
           lowLevelElementsAndExceptionFlags[lowLevelElem] = true;
         }

@@ -132,7 +132,7 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
    * \anchor testTransferElement_B_6_3_read \ref transferElement_B_6_3 "TransferElement specification B.6.3" for read operations,
    * and \ref transferElement_B_7_4 "TransferElement specification B.7.4"
    */
-  void doPostRead(TransferType type, bool hasNewData) override {
+  void doPostRead(TransferType type, bool updateDataBuffer) override {
     // doPreRead and doPortRead must always be called in pairs.
     // This can happen multiple times in readLatest. The absolute counting is done in doPreRead()
     BOOST_CHECK_EQUAL(_preRead_counter, _postRead_counter + 1);
@@ -154,14 +154,14 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
       BOOST_CHECK(this->_activeException != nullptr);
     }
     /* Check B.7.4 */
-    if(this->_hasSeenException) {
-      BOOST_CHECK(hasNewData == false);
+    if(this->_activeException) {
+      BOOST_CHECK(updateDataBuffer == false);
     }
     BOOST_CHECK(_writeTransfer_counter == 0);
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == type);
     ++_postRead_counter;
-    _hasNewData = hasNewData;
+    _hasNewData = updateDataBuffer;
     if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
     if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
   }
@@ -801,7 +801,6 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
   }
   // now put  the exeption into the accessor like a decorator would do it
   accessor._activeException.swap(myException);
-  accessor._hasSeenException = true;
   BOOST_CHECK_THROW(accessor.postRead(TransferType::read, false), ChimeraTK::runtime_error);
 
   accessor.resetCounters();
@@ -816,7 +815,6 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
   }
   // now put  the exeption into the accessor like a decorator would do it
   accessor._activeException.swap(myException);
-  accessor._hasSeenException = true;
   BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, v), ChimeraTK::runtime_error);
 }
 

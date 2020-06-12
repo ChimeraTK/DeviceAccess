@@ -99,7 +99,7 @@ void TransferGroupTest::testExceptionHandling() {
   accessor2 = 2;
   accessor3 = 3;
   accessor4 = 4;
-  accessor4 = 5;
+  accessor5 = 5;
 
   accessor1w = int(0xdeadcafe);
   accessor2w = 815;
