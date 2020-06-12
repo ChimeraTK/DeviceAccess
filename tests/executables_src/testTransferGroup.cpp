@@ -78,32 +78,39 @@ void TransferGroupTest::testExceptionHandling() {
 
   auto accessor1 = device1.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
   auto accessor1w = device1.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
+  // accessors 2 and 3 will be merged to a single low level transfer element
   auto accessor2 = device2.getScalarRegisterAccessor<int>("/Integers/signed32");
   auto accessor2w = device2.getScalarRegisterAccessor<int>("/Integers/signed32");
-  auto accessor3 = device2.getScalarRegisterAccessor<float>("/FixedPoint/value");
-  auto accessor3w = device2.getScalarRegisterAccessor<float>("/FixedPoint/value");
-  auto accessor4 = device3.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
-  auto accessor4w = device3.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
+  auto accessor3 = device2.getScalarRegisterAccessor<uint32_t>("/Integers/unsigned32");
+  auto accessor3w = device2.getScalarRegisterAccessor<uint32_t>("/Integers/unsigned32");
+  auto accessor4 = device2.getScalarRegisterAccessor<float>("/FixedPoint/value");
+  auto accessor4w = device2.getScalarRegisterAccessor<float>("/FixedPoint/value");
+  auto accessor5 = device3.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
+  auto accessor5w = device3.getScalarRegisterAccessor<int>("/BOARD/WORD_FIRMWARE");
 
   TransferGroup tg;
   tg.addAccessor(accessor2);
-  tg.addAccessor(accessor1);
   tg.addAccessor(accessor3);
+  tg.addAccessor(accessor1);
   tg.addAccessor(accessor4);
+  tg.addAccessor(accessor5);
 
   accessor1 = 1;
   accessor2 = 2;
   accessor3 = 3;
   accessor4 = 4;
+  accessor4 = 5;
 
   accessor1w = int(0xdeadcafe);
   accessor2w = 815;
   accessor3w = 4711;
-  accessor4w = int(0xc01dcafe);
+  accessor4w = 10101010;
+  accessor5w = int(0xc01dcafe);
   accessor1w.write();
   accessor2w.write();
   accessor3w.write();
   accessor4w.write();
+  accessor5w.write();
 
   exceptionDummy->throwExceptionRead = true;
   try {
@@ -118,8 +125,7 @@ void TransferGroupTest::testExceptionHandling() {
       std::getline(message, line);
       messageCount++;
     }
-    // two exceptions messages from accessor 2 and 3,
-    // plus an empty line resulting from the newline after the second message
+    // three exceptions messages from accessor 2, 3 and 4,
     BOOST_CHECK_EQUAL(messageCount, 3);
   }
   catch(...) {
@@ -135,13 +141,15 @@ void TransferGroupTest::testExceptionHandling() {
   // BOOST_CHECK_EQUAL(static_cast<int>(accessor2), 2);
   // BOOST_CHECK_EQUAL(static_cast<int>(accessor3), 3);
   // BOOST_CHECK_EQUAL(static_cast<int>(accessor4), 4);
+  // BOOST_CHECK_EQUAL(static_cast<int>(accessor5), 5);
 
   // Currently implemented which is according to spec to my understanding:
   // Only the devices which have seen exceptions have untouched buffers. The other operations go through
   BOOST_CHECK_EQUAL(static_cast<int>(accessor1), accessor1w);
   BOOST_CHECK_EQUAL(static_cast<int>(accessor2), 2);
   BOOST_CHECK_EQUAL(static_cast<int>(accessor3), 3);
-  BOOST_CHECK_EQUAL(static_cast<int>(accessor4), accessor4w);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor4), 4);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor5), accessor5w);
 }
 
 void TransferGroupTest::testAdding() {
