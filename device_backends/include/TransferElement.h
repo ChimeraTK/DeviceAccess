@@ -280,7 +280,7 @@ namespace ChimeraTK {
         _activeException = std::current_exception();
       }
       catch(...) {
-        std::cout << "BUG: Wrong exception type thrown in transfer function or doPreXxx()!" << std::endl;
+        std::cout << "BUG: Wrong exception type thrown in transfer function!" << std::endl;
         std::terminate();
       }
     }

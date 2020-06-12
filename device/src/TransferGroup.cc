@@ -18,39 +18,47 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  TransferGroup::ExceptionHandlingResult TransferGroup::handlePostExceptions(
+  TransferGroup::ExceptionHandlingResult TransferGroup::runPostReads(
       std::set<boost::shared_ptr<TransferElement>>& elements) {
     ExceptionHandlingResult result;
 
     for(auto& elem : elements) {
-      bool hadException{false}; // local variable if this element had an exception, to pass on to postRead();
+      bool updateUserBuffer{true}; // local variable if this element had an exception, to pass on to postRead();
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
         if(lowLevelElem->_hasSeenException) {
-          hadException = true;
-          result.hasSeenException = true;
+          updateUserBuffer = false;
         }
       }
-      try {
-        elem->postRead(TransferType::read, !hadException);
-      }
-      catch(ChimeraTK::runtime_error& ex) {
-        assert(hadException); // must not receive unexpected exception
-        result.combinedMessage << ex.what() << "\n";
-      }
-      catch(ChimeraTK::logic_error& ex) {
-        assert(hadException); // must not receive unexpected exception
-        result.combinedMessage << ex.what() << "\n";
-      }
-      catch(boost::numeric::bad_numeric_cast& ex) {
-        assert(hadException); // must not receive unexpected exception
-        result.combinedMessage << ex.what() << "\n";
-      }
-      catch(boost::thread_interrupted&) {
-        result.hasSeenThreadInterrupted = true;
-      }
+
+      result += handlePostExceptions([&] { elem->postRead(TransferType::read, updateUserBuffer); });
     }
+
     return result;
+  }
+
+  template<typename Callable>
+  TransferGroup::ExceptionHandlingResult TransferGroup::handlePostExceptions(Callable function) {
+    try {
+      function();
+    }
+    catch(ChimeraTK::runtime_error& ex) {
+      return ExceptionHandlingResult(true, ex.what());
+    }
+    catch(ChimeraTK::logic_error& ex) {
+      return ExceptionHandlingResult(true, ex.what());
+    }
+    catch(boost::numeric::bad_numeric_cast& ex) {
+      return ExceptionHandlingResult(true, ex.what());
+    }
+    catch(boost::thread_interrupted&) {
+      return ExceptionHandlingResult(true, {}, true); // report that we have seen a thread_interrupted exception
+    }
+    catch(...) {
+      std::cout << "BUG: Wrong exception type thrown in doPostRead() or doPostWrite()!" << std::endl;
+      std::terminate();
+    }
+    return ExceptionHandlingResult(); // result without exceptions
   }
 
   void TransferGroup::read() {
@@ -85,24 +93,10 @@ namespace ChimeraTK {
       }
     }
 
-    bool groupHadException{false};
-    std::stringstream combinedMessage;
-    bool hasSeenThreadInterrupted{false};
+    auto exceptionHandlingResult = runPostReads(copyDecorators);
+    exceptionHandlingResult += runPostReads(highLevelElements);
 
-    auto postReadResponse = handlePostExceptions(copyDecorators);
-
-    groupHadException = postReadResponse.hasSeenException;
-    hasSeenThreadInterrupted = postReadResponse.hasSeenThreadInterrupted;
-    combinedMessage << postReadResponse.combinedMessage.str();
-
-    postReadResponse = handlePostExceptions(highLevelElements);
-
-    groupHadException |= postReadResponse.hasSeenException;
-    hasSeenThreadInterrupted |= postReadResponse.hasSeenThreadInterrupted;
-    combinedMessage << postReadResponse.combinedMessage.str();
-
-    if(hasSeenThreadInterrupted) throw boost::thread_interrupted();
-    if(groupHadException) throw runtime_error(combinedMessage.str());
+    exceptionHandlingResult.reThrow();
   }
 
   /*********************************************************************************************************************/
@@ -132,9 +126,12 @@ namespace ChimeraTK {
       }
     }
 
+    ExceptionHandlingResult exceptionHandlingResult;
     for(auto& elem : highLevelElements) {
-      elem->postWrite(TransferType::write, versionNumber);
+      exceptionHandlingResult = handlePostExceptions([&] { elem->postWrite(TransferType::write, versionNumber); });
     }
+
+    exceptionHandlingResult.reThrow();
   }
 
   /*********************************************************************************************************************/
