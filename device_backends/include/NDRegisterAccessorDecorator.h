@@ -55,11 +55,7 @@ namespace ChimeraTK {
       void doPreRead(TransferType type) override { _target->preRead(type); }
 
       void doPostRead(TransferType type, bool hasNewData) override {
-        // if we have an active exception here, swap it to the lower level
-        // (but don't swap down a nullptr and swap up an active exception)
-        if(this->_activeException) {
-          _target->setActiveException(this->_activeException);
-        }
+        _target->setActiveException(this->_activeException);
         _target->postRead(type, hasNewData);
         if(!hasNewData) return;
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
@@ -78,11 +74,7 @@ namespace ChimeraTK {
         auto _ = cppext::finally([&] {
           for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         });
-        // if we have an active exception here, swap it to the lower level
-        // (but don't swap down a nullptr and swap up an active exception)
-        if(this->_activeException) {
-          _target->setActiveException(this->_activeException);
-        }
+        _target->setActiveException(this->_activeException);
         _target->postWrite(type, versionNumber);
       }
 

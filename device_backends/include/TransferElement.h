@@ -268,9 +268,10 @@ namespace ChimeraTK {
      *  This function must not be called with nullptr (see spec FIXME).
      */
     void setActiveException(std::exception_ptr& setThisException) {
-      assert(setThisException); // must not be nullptr.
-      _activeException = setThisException;
-      setThisException = nullptr;
+      if(setThisException) {
+        _activeException = setThisException;
+        setThisException = nullptr;
+      }
     }
 
    private:
