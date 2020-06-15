@@ -40,7 +40,7 @@ class UnifiedBackendTest {
   /**
    *  "Strong typedef" for list of pairs of functors for enabling and disbaling a test condition.
    */
-  class ActionList : public std::list<std::pair<std::function<void(void)>, std::function<void(void)>>> {
+  class EnableDisableActionList : public std::list<std::pair<std::function<void(void)>, std::function<void(void)>>> {
    public:
     using std::list<std::pair<std::function<void(void)>, std::function<void(void)>>>::list;
   };
@@ -52,16 +52,70 @@ class UnifiedBackendTest {
   void runTests(const std::string& cdd);
 
   /**
+   *  Set functor to set values in remote registers. The test will call this functor e.g. before reading the register
+   *  through the backend, then verify the read value through checkRemoteValue().
+   * 
+   *  The first argument of the functor is the register name. The second argument is an index used to identify the
+   *  value. The functor shall generate a quasi-unique value which is a member of the set of possible values the
+   *  register can have, and assign the remote register to that value. If the functor is called again with the same
+   *  index, the same value is supposed to be set. If it is called with a different index, a different value shall be
+   *  used.
+   */
+  void setRemoteValue(std::function<void(const std::string&, size_t)> functor) { _setRemoteValue = functor; }
+
+  /**
+   *  Set functor to check values in remote registers. The test will call this functor e.g. after reading the register
+   *  through the backend, to compare the result with the value previously set via setRemoteValue().
+   * 
+   *  The first argument (const std::string&) of the functor is the register name. The second argument (size_t) is an
+   *  index used to identify the value. The same value has been passed previously to setRemoteValue() (note that this
+   *  was not necessarily the last call to setRemoteValue(), hence the index is required to find the expected value).
+   *  The third argument (auto -> will be std::vector<std::vector<UserType>>&) is the value which has been read
+   *  through the accessor.
+   * 
+   *  The functor needs to convert the expected value into the given type of the 3rd argument. Then the comparison shall
+   *  be performed with BOOST_CHECK_EQUAL for non-float, resp. BOOST_CHECK_CLOSE for float types.
+   * 
+   *  For the conversion, ChimeraTK::numericToUserType() should be used for convenience. The conversion should be done
+   *  in the direction as described here (from original type into given UserType), so the information loss which might
+   *  take place during conversion is the same as in the read operation.
+   * 
+   *  Note: If the original data type is a string there will never be any conversion expected, the 3rd argument will
+   *  always be of the type std::string.
+   */
+  template<typename LAMBDA>
+  void checkRemoteValue(LAMBDA lambda) {
+    // store function pointer for each type
+    ChimeraTK::for_each(_checkRemoteValue.table, [&](auto pair) {
+      typedef typename decltype(pair)::first_type UserType;
+      pair.second = _checkRemoteValue_functor<UserType>(lambda);
+    });
+  }
+
+  /**
    *  Set list of enable/disable actions for the following test condition: Communication is broken, all reads fail with
    *  a runtime_error.
    */
-  void forceRuntimeErrorOnRead(const ActionList& list) { forceExceptionsRead = list; }
+  void forceRuntimeErrorOnRead(const EnableDisableActionList& list) { forceExceptionsRead = list; }
 
   /**
    *  Set functor, which will do whatever necessary that the backend will throw a ChimeraTK::runtime_error for any write
    *  operation.
    */
-  void forceRuntimeErrorOnWrite(const ActionList& list) { forceExceptionsWrite = list; }
+  void forceRuntimeErrorOnWrite(const EnableDisableActionList& list) { forceExceptionsWrite = list; }
+
+  /**
+   *  Quirk hook: Call this functor after each call to activateAsyncRead().
+   * 
+   *  Note: When any quirk hook needs to be used to pass the test, the backend is *not* complying to the specifications.
+   *        Hence, use quirk hooks *only* when it is impossible to implement the backed to fully comply to the
+   *        specifications, because the implemented protocol is broken.
+   */
+  void quirkHookActivateAsyncRead(std::function<void(void)> hook) {
+    std::cout << "WARNING: quirkHookActivateAsyncRead() has been used. The tested backend hence does NOT fully comply "
+              << "to the specifications!" << std::endl;
+    quirk_activateAsyncRead = hook;
+  }
 
   /**
    *  Set the names of synchronous read registers to be used for the tests. These registers must *not* support
@@ -108,8 +162,27 @@ class UnifiedBackendTest {
   void exceptionHandlingAsyncRead();
   void exceptionHandlingWrite();
 
+  /// Utility functions for recurring tasks
+  void recoverDevice(ChimeraTK::Device& d);
+
   /// Actions for enable exception throwing
-  ActionList forceExceptionsRead, forceExceptionsWrite;
+  EnableDisableActionList forceExceptionsRead, forceExceptionsWrite;
+
+  /// Functor to set and remote values
+  std::function<void(const std::string&, size_t)> _setRemoteValue;
+
+  /// "Typedef" of a templated functor type for use in _checkRemoteValue
+  template<typename UserType>
+  class _checkRemoteValue_functor
+  : public std::function<void(const std::string&, size_t, std::vector<std::vector<UserType>>&)> {
+    using std::function<void(const std::string&, size_t, std::vector<std::vector<UserType>>&)>::function;
+  };
+
+  /// Functors to check remote values
+  ctk::TemplateUserTypeMap<_checkRemoteValue_functor> _checkRemoteValue;
+
+  /// Quirk hook: called right after each call to activateAsyncRead()
+  std::function<void(void)> quirk_activateAsyncRead{[] {}};
 
   /// CDD for backend to test
   std::string cdd;
@@ -182,10 +255,28 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
   }
 
   // run the tests
+  valueAfterConstruction();
   exceptionHandlingSyncRead();
   exceptionHandlingAsyncRead();
   exceptionHandlingWrite();
-  valueAfterConstruction();
+}
+
+/********************************************************************************************************************/
+
+void UnifiedBackendTest::recoverDevice(ChimeraTK::Device& d) {
+  for(size_t i = 0;; ++i) {
+    try {
+      d.open();
+      break;
+    }
+    catch(ChimeraTK::runtime_error&) {
+      usleep(10000); // 10ms
+      if(i > 6000) {
+        BOOST_ERROR("Device did not recover within 60 seconds after forced ChimeraTK::runtime_error.");
+      }
+    }
+    continue;
+  }
 }
 
 /********************************************************************************************************************/
@@ -242,7 +333,22 @@ void UnifiedBackendTest::exceptionHandlingSyncRead() {
         // enable exceptions on read
         testCondition.first();
 
-        // repeat the above test, this time a runtime_error is expected
+        // repeat the above test, a runtime_error is expected
+        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+
+        // disable exceptions on read
+        testCondition.second();
+
+        // recover
+        this->recoverDevice(d);
+
+        // make a successful read to make sure the exception state is gone
+        reg.read();
+
+        // re-enable exceptions on read
+        testCondition.first();
+
+        // repeat the above test, a runtime_error should be expected again
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
 
         // disable exceptions on read
@@ -265,7 +371,9 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       std::cout << "... registerName = " << registerName << std::endl;
+      d.open();
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      d.close();
 
       // attempt read while device closed, logic_error is expected.
       BOOST_CHECK_THROW(reg.read(), ChimeraTK::logic_error);
@@ -277,12 +385,33 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
 
       // open the device, let it throw runtime_error exceptions
       d.open();
+      //d.activateAsyncRead();
+      quirk_activateAsyncRead();
 
       for(auto& testCondition : forceExceptionsRead) {
         // enable exceptions on read
         testCondition.first();
 
-        // repeat the above test, this time a runtime_error is expected
+        // repeat the above test, a runtime_error is expected
+        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+
+        // disable exceptions on read
+        testCondition.second();
+
+        // recover
+        this->recoverDevice(d);
+        //d.activateAsyncRead();
+        quirk_activateAsyncRead();
+
+        // make a successful read to make sure the exception state is gone
+        _setRemoteValue(registerName, 0);
+        reg.read();
+        BOOST_CHECK(reg.readNonBlocking() == false);
+
+        // re-enable exceptions on read
+        testCondition.first();
+
+        // repeat the above test, a runtime_error should be expected again
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
 
         // disable exceptions on read
