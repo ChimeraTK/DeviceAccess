@@ -263,7 +263,7 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_C_2 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
   - 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException.
   - 2.2 postXxx() is re-throwing the exception after delegating to doPostXxx().
-  - \anchor transferElement_C_2_3 2.3 Decorators must delegate the TransferElement::_activeException to their target using DeviceBackend::setActiveException(). If the delegated exception is not nullptr,
+  - \anchor transferElement_C_2_3 2.3 Decorators must delegate the TransferElement::_activeException to their target using TransferElement::setActiveException(). If the delegated exception is not nullptr,
   the targets _active exception will be replaced by it, and the delegated exeption, which is handed by reference, is set to nullptr \ref transferElement_comment_C_2_3a "(*)". The target is now responsible for handling the exception. If the delegated exception already is nullptr, setActiveException() has no effect. It does not overwrite an active exception in the target. \ref transferElement_comment_C_2_3b "(*)"
     - 2.3.1 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), must remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not swap the exception into the target and do not delegate to postXxx(). The exception is then re-thrown by the decorator's postXxx().
 
