@@ -67,7 +67,7 @@ This documnent is currently still **INCOMPLETE**!
   - 6.7 doPostXxx(), protected virtual
     - void TransferElement::doPostRead(TransferType type, bool updateDataBuffer)
     - void TransferElement::doPostWrite(TransferType type, VersionNumber versionNumber)
-   
+
 - 7. Virtual and non-virtual functions
   - 7.1 The non-virtual functions preXxx(), xxxTransferYyy(), and postXxx() implement common, decorating functionality like exception handling in the TransferElement base class
   - 7.2 They internally call their virtual counterparts which start with 'do'
@@ -97,7 +97,7 @@ This documnent is currently still **INCOMPLETE**!
       - 3.1.3.1 read() blocks until new data has arrived,
       - 3.1.3.2 readNonBlocking() does not block and instead returns whether new data has arrived or not,
     - \anchor transferElement_B_3_1_4 3.1.4 readLatest() is merely a convenience function which calls readNonBlocking() until no more new data is available. [\ref testTransferElement_B_3_1_4 "T"]
-      
+
   - 3.2 Write operations
     - 3.2.1 do not distingish on which end the transfer is initiated. The API allows for application-initiated transfers and is compatible with device-initiated transfers as well.
       - 3.2.1.2 It is guaranteed that the application buffer is still intact after calling TransferElement::write().
@@ -123,7 +123,7 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_B_5 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*) [\ref testTransferElement_B_5_sync "T", \ref testTransferElement_B_5_async "T" (both without sub-points)]
   - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1_sync "T", \ref testTransferElement_B_5_1_async "T"]
   - \anchor transferElement_B_5_2 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa. [\ref testTransferElement_B_5_2 "T"]
-  
+
 - \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6 "T"]
   - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1_read "T", \ref testTransferElement_B_6_1_write "T"]
   - 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers.
@@ -135,7 +135,7 @@ This documnent is currently still **INCOMPLETE**!
   - \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)"
   - 7.3 For read operations, the return value is passed on to postRead() (via updateDataBuffer), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), updateDataBuffer is set to true.
   - \anchor transferElement_B_7_4 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() is called with updateDataBuffer = false because there was no successful transfer. [\ref testTransferElement_B_7_4_sync "T", \ref testTransferElement_B_7_4_async "T"]
-  
+
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
   - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the TransferElement::_readQueue \ref transferElement_comment_B_8_2 "(*)", from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T" (without sub-points)]
@@ -143,8 +143,7 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_8_2_2 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*) [\ref testTransferElement_B_8_2_2 "T"]
   - \anchor transferElement_B_8_3 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value. [\ref testTransferElement_B_8_3 "T" (only second sentence)]
   - 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals.
-  - 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend does not fill any
-    data into the queue until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are send. We call this *asyncronous read is not activated* for these transfer elements.
+  - \anchor transferElement_B_8_5 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend does not fill any data into the queue until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are send. We call this *asyncronous read is not activated* for these transfer elements.
       - 8.5.1 When Device::activateAsyncRead() is called, it activates asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set (*).
       - 8.5.2 In case the device does not send an initial value after the subscription, the accessor implementation must get an initial value synchronously and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronous sending has been turned on to make sure no update is missed. (*)
       - 8.5.3 If a transfer element is created while the device is opened and functional, the asynchronous read is activated automatically (incl. sending of the initial value). This happens even if there are other transfer elements which have the asynchronous read deactivated because they have been created before opening the device and Device::activateAsyncRead() has not been called yet.
@@ -268,7 +267,7 @@ This documnent is currently still **INCOMPLETE**!
     - 2.3.1 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), must remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not swap the exception into the target and do not delegate to postXxx(). The exception is then re-thrown by the decorator's postXxx().
 
 - 3. ChimeraTK::runtime_error in principle are recoverable. It is thrown, if the device (including the communication link) does not behave as expected. A later call to the same function (after the recovery has been triggered, cf. \ref transferElement_B_9_2_1 "B.9.2.1" resp. \ref transferElement_B_9_3_1 "B.9.3.1") must be able to succeed (for instance if a network outage has been resolved).
-   ChimeraTK::runtime_error may only be thrown in 
+   ChimeraTK::runtime_error may only be thrown in
   - 3.1 doXxxTransferYyy(). It is the only exception that can occur in this function
   - 3.2 TransferElement::isReadable(), TransferElement::isWriteable() or TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
   - 3.3 doPreXxx(), if the information returned by the functions in 3.2 is not yet available and needs to be determined from the running device.
@@ -328,7 +327,7 @@ This documnent is currently still **INCOMPLETE**!
   - 1.1 The TransferElement::_readQueue is a cppext::future_queue of type 'void' which exists in each transfer element. For transfer elements with AccessMode::wait_for_new_data it usually is the continuation queue of another future_queue which is transporting the data. The data type is implementation dependent. Common functionality like exception handling and waiting for new data is implemented on TransferElement::_readQueue.
   - 1.2 TransferElement::_readQueue is initialised in the constructor. [TBD: Allow setting the queue length through the public API?]
   - 1.3 TransferElement::_readQueue is pushed whenever new data has arrived. If important for the implementation, the return value of cppext::future_queue::push_overwirte() will tell whether data has been discarded (*).
-  
+
   - 1.4 In case an exception is detected during an asychronous transfer (for instance in a separate thread), the exception must be stored on the TransferElement::_readQueue. The TransferElement implementation will then make sure that the exception is properly rethrown in postRead (just like for synchronous transfers).
 - 2. In doPostRead() the whole application buffer (data buffer and meta data) must be updated together if updateDataBuffer is true and there was no exception, or not at all in all other cases.
 
@@ -374,11 +373,11 @@ This documnent is currently still **INCOMPLETE**!
   - 2.2 readTransferLatest() and doReadTransferLatest() will be removed.
 
   - 2.3 doReadTransferNonBlockin() will be removed. The implementation of readTransferNonBlocking will use the TransferElement::_readQueue.
-  
+
   - 2.4 readLatest() is directly calling readNonBlocking() in a loop (see B.3.1.4)
-  
+
   - 2.5 Add function ChimeraTK::detail::getFutureQueueFromTransferElement(), replacing ChimeraTK::detail::getFutureQueueFromTransferFuture().
-  
+
 - 3. ReadAnyGroup
 
   - 3.1 Use the new ChimeraTK::detail::getFutureQueueFromTransferElement() (or make ReadAnyGroup friend of TransferElement?)
