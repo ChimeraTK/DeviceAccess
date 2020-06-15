@@ -184,7 +184,7 @@ Note: This section defines the internal interface on a low level. Helper functio
   - \anchor c_2_2_4 2.2.4 The check whether to skip the transfer (cf. \ref c_2_4 "2.4") has to be done without releasing the lock between the update of the RecoveryHelper and the check. \ref comment_c_2_2_4 "(*)"
 
 - \anchor c_2_3 2.3 In doPreRead() it is checked if the transfer element has seen an initial value by checking whether the current version number is still {nullptr} (cf. \ref b_4_2 "B.4.2")
-   - 2.3.1 This is done as the first thing unconditionally for all read types, as no read must return with the "value after constuction". (For further details, see the "intial value propagation specfication")
+   - 2.3.1 This is done as the first thing unconditionally for all read types, as no read must return with the "value after constuction". (For further details, see the \ref spec_initialValuePropagation "intial value propagation specfication")
    - \anchor c_2_3_2 2.3.2 If there has not been an initial value yet, the read is frozen by acquiring a shared lock on the DeviceModule::initialValueMutex. \ref comment_c_2_3_2 "(*)"
    - \anchor c_2_3_3 2.3.3 As soon as the lock has been acquired it can be released immediately. The device should now be functional and an initial value can be read. \ref comment_c_2_3_3 "(*)"
    - 2.3.4 A check whether to freeze for a recovery of asynchronous transfers as rescribed in \ref b_2_2_4 "B.2.2.4"  is not done in doPreRead(). The backend takes care of
