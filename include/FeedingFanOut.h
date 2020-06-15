@@ -102,21 +102,6 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return true; }
 
-    void doReadTransfer() override {
-      assert(_withReturn);
-      _returnSlave->readTransfer();
-    }
-
-    bool doReadTransferNonBlocking() override {
-      assert(_withReturn);
-      return _returnSlave->readTransferNonBlocking();
-    }
-
-    bool doReadTransferLatest() override {
-      assert(_withReturn);
-      return _returnSlave->readTransferLatest();
-    }
-
     void doPreRead(TransferType type) override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
@@ -141,11 +126,6 @@ namespace ChimeraTK {
       });
 
       _returnSlave->postRead(type, hasNewData);
-    }
-
-    ChimeraTK::TransferFuture doReadTransferAsync() override {
-      assert(_withReturn);
-      return {_returnSlave->readTransferAsync(), this};
     }
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {

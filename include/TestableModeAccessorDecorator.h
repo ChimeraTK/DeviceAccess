@@ -103,10 +103,6 @@ namespace ChimeraTK {
       return dataLost;
     }
 
-    void doReadTransfer() override {
-      if(_handleRead) releaseLock();
-      _target->readTransfer();
-    }
 
     /** Release the testableModeLock */
     void releaseLock() {
@@ -114,7 +110,8 @@ namespace ChimeraTK {
     }
 
     /** Implement callback called by TransferFuture before it blocks in wait() */
-    void transferFutureWaitCallback() override { releaseLock(); }
+    // TODO Removed in TE spec. Call preRead isntead, see F.4
+    //void transferFutureWaitCallback() override { releaseLock(); }
 
     /** Obtain the testableModeLock if not owned yet, and decrement the counter.
      */
@@ -150,30 +147,6 @@ namespace ChimeraTK {
     void decrementCounter() {
       obtainLockAndDecrementCounter(true);
       releaseLock();
-    }
-
-    bool doReadTransferNonBlocking() override {
-      bool newData = _target->readTransferNonBlocking();
-      if(!newData) return false;
-      return true;
-    }
-
-    bool doReadTransferLatest() override {
-      bool newData = _target->readTransferLatest();
-      if(!newData) return false;
-
-      // the queue has been emptied, so make sure that the testableMode_counter
-      // reflects this we only reduce the counter to 1, since it will be
-      // decremented in postRead().
-      if(_handleRead) {
-        auto& app = Application::getInstance();
-        assert(Application::testableModeTestLock());
-        if(app.testableMode_perVarCounter[_variableIdRead] > 1) {
-          app.testableMode_counter -= app.testableMode_perVarCounter[_variableIdRead] - 1;
-          app.testableMode_perVarCounter[_variableIdRead] = 1;
-        }
-      }
-      return true;
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
