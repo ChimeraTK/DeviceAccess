@@ -385,7 +385,7 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
 
       // open the device, let it throw runtime_error exceptions
       d.open();
-      //d.activateAsyncRead();
+      d.activateAsyncRead();
       quirk_activateAsyncRead();
 
       for(auto& testCondition : forceExceptionsRead) {
@@ -400,7 +400,7 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
 
         // recover
         this->recoverDevice(d);
-        //d.activateAsyncRead();
+        d.activateAsyncRead();
         quirk_activateAsyncRead();
 
         // make a successful read to make sure the exception state is gone
