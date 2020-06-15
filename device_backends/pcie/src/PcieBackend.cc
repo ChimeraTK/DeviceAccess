@@ -40,6 +40,7 @@ namespace ChimeraTK {
     determineDriverAndConfigureIoctl();
 
     _opened = true;
+    _hasActiveException = false;
   }
 
   void PcieBackend::determineDriverAndConfigureIoctl() {
@@ -175,6 +176,9 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    }
     if(bar != 0xD) {
       _readFunction(bar, address, data, sizeInBytes);
     }
@@ -192,6 +196,9 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    }
     _writeFunction(bar, address, data, sizeInBytes);
   }
 

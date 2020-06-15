@@ -71,6 +71,12 @@ namespace ChimeraTK {
      * information from it programmatically. */
     virtual std::string readDeviceInfo() = 0;
 
+    /** Set the backend into an exception state.
+     *  All backends must remember this, turn off asyncronous reads and all accessors will throw a ChimeraTK::runtime_error on read and write operations,
+     *  saying that there is a "previous, unrecovered fault", until open() has been called successfully.
+     */
+    virtual void setException() = 0;
+
     /** DEPRECATED
      *
      *  \deprecated {

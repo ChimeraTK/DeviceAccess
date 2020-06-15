@@ -80,6 +80,8 @@ namespace ChimeraTK {
      */
     DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
 
+    void setException() override { _hasActiveException = true; }
+
    protected:
     struct AddressRange {
       const uint32_t offset;
@@ -99,6 +101,8 @@ namespace ChimeraTK {
     std::set<uint64_t> _readOnlyAddresses;
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
     std::mutex mutex;
+
+    bool _hasActiveException{false};
 
     void resizeBarContents();
 

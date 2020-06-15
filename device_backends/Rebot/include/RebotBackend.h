@@ -21,9 +21,9 @@
 #include <vector>
 
 namespace ChimeraTK {
-namespace Rebot {
-  class Connection;
-}
+  namespace Rebot {
+    class Connection;
+  }
 
   struct RebotProtocolImplementor;
 
@@ -54,34 +54,31 @@ namespace Rebot {
     boost::chrono::steady_clock::time_point _lastSendTime;
     unsigned int _connectionTimeout;
 
-
    public:
-     RebotBackend(std::string boardAddr, std::string port,
-                  std::string mapFileName = "",
-                  uint32_t connectionTimeout_sec = DEFAULT_CONNECTION_TIMEOUT_sec);
-     ~RebotBackend();
-     /// The function opens the connection to the device
-     void open() override;
-     void close() override;
-     void read(uint8_t bar, uint32_t addressInBytes, int32_t* data,
-               size_t sizeInBytes) override;
-     void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data,
-                size_t sizeInBytes) override;
-     std::string readDeviceInfo() override {
-       return std::string("RebotDevice"); }
+    RebotBackend(std::string boardAddr, std::string port, std::string mapFileName = "",
+        uint32_t connectionTimeout_sec = DEFAULT_CONNECTION_TIMEOUT_sec);
+    ~RebotBackend();
+    /// The function opens the connection to the device
+    void open() override;
+    void close() override;
+    void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
+    void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
+    std::string readDeviceInfo() override { return std::string("RebotDevice"); }
 
-    static boost::shared_ptr<DeviceBackend> createInstance(std::string address,
-        std::map<std::string, std::string>
-            parameters);
+    static boost::shared_ptr<DeviceBackend> createInstance(
+        std::string address, std::map<std::string, std::string> parameters);
 
     bool isFunctional() const override;
 
-   protected:
+    void setException() override { _hasActiveException = true; }
 
+   protected:
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
     boost::thread _heartbeatThread;
 
     const static uint32_t DEFAULT_CONNECTION_TIMEOUT_sec{5};
+
+    bool _hasActiveException{false};
   };
 
 } // namespace ChimeraTK

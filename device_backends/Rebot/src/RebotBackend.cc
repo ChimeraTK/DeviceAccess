@@ -93,6 +93,7 @@ namespace ChimeraTK {
     _protocolImplementor = getProtocolImplementor(_connection);
 
     _opened = true;
+    _hasActiveException = false;
   }
 
   void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) {
@@ -100,6 +101,9 @@ namespace ChimeraTK {
 
     if(!isOpen()) {
       throw ChimeraTK::logic_error("Device is closed");
+    }
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
 
     _lastSendTime = testable_rebot_sleep::now();
@@ -111,6 +115,9 @@ namespace ChimeraTK {
 
     if(!isOpen()) {
       throw ChimeraTK::logic_error("Device is closed");
+    }
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
 
     _lastSendTime = testable_rebot_sleep::now();

@@ -547,4 +547,9 @@ namespace ChimeraTK {
     }
   }
 
+  void SubdeviceBackend::setException() {
+    obtainTargetBackend();
+    targetDevice->setException();
+  }
+
 } // namespace ChimeraTK

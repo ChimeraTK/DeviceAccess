@@ -94,7 +94,10 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(AsyncTestDummy, getRegisterAccessor_impl, 4);
 
-  void open() override { _opened = true; }
+  void open() override {
+    _opened = true;
+    _hasActiveException = false;
+  }
 
   void close() override { _opened = false; }
 
@@ -102,6 +105,13 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   std::map<std::string, cppext::future_queue<void>> notificationQueue;
   std::map<std::string, size_t> registers;
+
+  void setException() override {
+    _hasActiveException = true;
+    // FIXME !!!!
+    assert(false); // Wrong implementation. All notification queues must see an exception.
+  }
+  bool _hasActiveException{false};
 };
 
 AsyncTestDummy::~AsyncTestDummy() {}
