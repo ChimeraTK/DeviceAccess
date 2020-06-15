@@ -26,7 +26,7 @@ namespace ChimeraTK {
    public:
     LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : SyncNDRegisterAccessor<UserType>(registerPathName), _registerPathName(registerPathName),
+    : SyncNDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
       _wordOffsetInRegister(wordOffsetInRegister), _fixedPointConverter(registerPathName, 32, 0, 1) {
       try {
         // cast device
@@ -76,11 +76,7 @@ namespace ChimeraTK {
 
     virtual ~LNMBackendVariableAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override {}
-
-    bool doReadTransferNonBlocking() override { return true; }
-
-    bool doReadTransferLatest() override { return true; }
+    void doReadTransferSynchronously() override {}
 
     void doPreWrite(TransferType type, VersionNumber) override {
       std::ignore = type;
@@ -88,13 +84,10 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
                                      "is not possible.");
       }
+      _valueTableDataValidity = this->_dataValidity;
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
-      //      if(isReadOnly()) {
-      //        throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
-      //                                     "is not possible.");
-      //      }
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {
@@ -102,7 +95,6 @@ namespace ChimeraTK {
               userTypeToUserType<decltype(arg)>(this->buffer_2D[0][i]);
         });
       }
-      currentVersion = versionNumber;
       return false;
     }
 
@@ -129,12 +121,9 @@ namespace ChimeraTK {
     void doPostRead(TransferType, bool hasNewData) override {
       if(!hasNewData) return;
       fillUserBuffer();
-      currentVersion = {};
+      this->_versionNumber = {};
+      this->_dataValidity = _valueTableDataValidity;
     }
-
-    AccessModeFlags getAccessModeFlags() const override { return {}; }
-
-    VersionNumber getVersionNumber() const override { return currentVersion; }
 
    protected:
     /// register and module name
@@ -147,6 +136,9 @@ namespace ChimeraTK {
     /// RegisterInfo inside the map, since we need to modify the value in it (in
     /// case of a writeable variable register)
     boost::shared_ptr<LNMBackendRegisterInfo> _info;
+
+    /// The validity of the data in the value table of _info.
+    DataValidity _valueTableDataValidity{DataValidity::ok};
 
     /// Word offset when reading
     size_t _wordOffsetInRegister;

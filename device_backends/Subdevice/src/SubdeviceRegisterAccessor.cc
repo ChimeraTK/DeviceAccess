@@ -1,3 +1,4 @@
+
 #include "SubdeviceRegisterAccessor.h"
 
 namespace ChimeraTK {
@@ -8,8 +9,8 @@ namespace ChimeraTK {
       const std::string& registerPathName, boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
       boost::shared_ptr<NDRegisterAccessor<int32_t>> accData, boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
       size_t byteOffset, size_t numberOfWords)
-  : SyncNDRegisterAccessor<int32_t>(registerPathName), _backend(backend), _accAddress(accAddress), _accData(accData),
-    _accStatus(accStatus), _byteOffset(byteOffset), _numberOfWords(numberOfWords) {
+  : SyncNDRegisterAccessor<int32_t>(registerPathName, {AccessMode::raw}), _backend(backend), _accAddress(accAddress),
+    _accData(accData), _accStatus(accStatus), _byteOffset(byteOffset), _numberOfWords(numberOfWords) {
     NDRegisterAccessor<int32_t>::buffer_2D.resize(1);
     NDRegisterAccessor<int32_t>::buffer_2D[0].resize(numberOfWords);
     _buffer.resize(numberOfWords);
@@ -21,8 +22,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doReadTransfer() {
-//    throw ChimeraTK::logic_error("Reading this register is not supported.");
+  void SubdeviceRegisterAccessor::doReadTransferSynchronously() {
+    assert(false); // must never be called due to exception in doPreRead
   }
 
   /*********************************************************************************************************************/
@@ -52,20 +53,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::doReadTransferNonBlocking() {
-    doReadTransfer();
-    return true;
-  }
-
-  /*********************************************************************************************************************/
-
-  bool SubdeviceRegisterAccessor::doReadTransferLatest() {
-    doReadTransfer();
-    return true;
-  }
-
-  /*********************************************************************************************************************/
-
   void SubdeviceRegisterAccessor::doPreRead(TransferType) {
     throw ChimeraTK::logic_error("Reading this register is not supported.");
   }
@@ -73,9 +60,12 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void SubdeviceRegisterAccessor::doPostRead(TransferType, bool hasNewData) {
+    assert(!hasNewData);
     if(!hasNewData) return;
+    // FIXME: Code cleanup. This following code is never executed:
     assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
+    // dont't care about version number or data validity. This code is nerver executed  anyway.
   }
 
   /*********************************************************************************************************************/
@@ -98,11 +88,14 @@ namespace ChimeraTK {
 
     assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
+    _accData->setDataValidity(this->_dataValidity);
   }
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doPostWrite(TransferType, bool /*dataLost*/) { NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer); }
+  void SubdeviceRegisterAccessor::doPostWrite(TransferType, VersionNumber) {
+    NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
+  }
 
   /*********************************************************************************************************************/
 
@@ -121,10 +114,6 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::isWriteable() const { return true; }
-
-  /*********************************************************************************************************************/
-
-  AccessModeFlags SubdeviceRegisterAccessor::getAccessModeFlags() const { return {AccessMode::raw}; }
 
   /*********************************************************************************************************************/
 

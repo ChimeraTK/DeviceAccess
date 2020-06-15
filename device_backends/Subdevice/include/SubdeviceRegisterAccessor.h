@@ -27,13 +27,9 @@ namespace ChimeraTK {
 
     ~SubdeviceRegisterAccessor() override;
 
-    void doReadTransfer() override;
+    void doReadTransferSynchronously() override;
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
-
-    bool doReadTransferNonBlocking() override;
-
-    bool doReadTransferLatest() override;
 
     void doPreRead(TransferType type) override;
 
@@ -41,7 +37,7 @@ namespace ChimeraTK {
 
     void doPreWrite(TransferType type, VersionNumber) override;
 
-    void doPostWrite(TransferType type, bool dataLost) override;
+    void doPostWrite(TransferType type, VersionNumber) override;
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override;
 
@@ -50,10 +46,6 @@ namespace ChimeraTK {
     bool isReadable() const override;
 
     bool isWriteable() const override;
-
-    AccessModeFlags getAccessModeFlags() const override;
-
-    VersionNumber getVersionNumber() const override { return _accData->getVersionNumber(); }
 
    protected:
     /// Pointer to the backend

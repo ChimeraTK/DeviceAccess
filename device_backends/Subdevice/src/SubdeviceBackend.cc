@@ -94,7 +94,7 @@ namespace ChimeraTK {
       targetControl = parameters["status"];
       if(!parameters["sleep"].empty()) {
         try {
-          sleepTime = std::stoi(parameters["sleep"]);
+          sleepTime = std::stoul(parameters["sleep"]);
         }
         catch(std::exception& e) {
           throw ChimeraTK::logic_error(
@@ -123,7 +123,7 @@ namespace ChimeraTK {
       targetAddress = parameters["address"];
       targetData = parameters["data"];
       try {
-        sleepTime = std::stoi(parameters["sleep"]);
+        sleepTime = std::stoul(parameters["sleep"]);
       }
       catch(std::exception& e) {
         throw ChimeraTK::logic_error(
@@ -190,6 +190,8 @@ namespace ChimeraTK {
         _fixedPointConverter.template vectorToCooked<UserType>(
             _target->accessChannel(i).begin(), _target->accessChannel(i).end(), buffer_2D[i].begin());
       }
+      this->_dataValidity = _target->dataValidity();
+      this->_versionNumber = _target->getVersionNumber();
     }
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {
@@ -198,10 +200,13 @@ namespace ChimeraTK {
           _target->accessChannel(i)[j] = _fixedPointConverter.toRaw<UserType>(buffer_2D[i][j]);
         }
       }
+      _target->setDataValidity(this->_dataValidity);
       _target->preWrite(type, versionNumber);
     }
 
-    void doPostWrite(TransferType type, bool dataLost) override { _target->postWrite(type, dataLost); }
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
+      _target->postWrite(type, versionNumber);
+    }
 
     bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
       auto casted = boost::dynamic_pointer_cast<FixedPointConvertingDecorator<UserType, TargetUserType> const>(other);
@@ -290,10 +295,10 @@ namespace ChimeraTK {
 
     // check that the bar is 0
     if(info->bar != 0) {
-//       throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
-//           registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
-      std::cout << "SubdeviceBackend: WARNING: BAR others then 0 detected. BAR 0 will be used instead. Register " <<  registerPathName << " is in BAR " << std::to_string(info->bar) << "." << std::endl;
-      
+      //       throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
+      //           registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
+      std::cout << "SubdeviceBackend: WARNING: BAR others then 0 detected. BAR 0 will be used instead. Register "
+                << registerPathName << " is in BAR " << std::to_string(info->bar) << "." << std::endl;
     }
 
     // check that the register is not a 2D multiplexed register, which is not yet
@@ -540,6 +545,11 @@ namespace ChimeraTK {
       return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(
           rawAcc, FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag));
     }
+  }
+
+  void SubdeviceBackend::setException() {
+    obtainTargetBackend();
+    targetDevice->setException();
   }
 
 } // namespace ChimeraTK

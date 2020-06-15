@@ -38,17 +38,9 @@ namespace ChimeraTK {
 
       void doPreWrite(TransferType type, VersionNumber versionNumber) override = 0;
 
-      void doPostWrite(TransferType type, bool dataLost) override = 0;
+      void doPostWrite(TransferType type, VersionNumber versionNumber) override = 0;
 
       void interrupt() override { _target->interrupt(); }
-
-      ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
-
-      ChimeraTK::DataValidity dataValidity() const override { return _target->dataValidity(); }
-
-      void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
-        _target->setDataValidity(validity);
-      }
 
      protected:
       /// The accessor to be decorated
@@ -63,33 +55,38 @@ namespace ChimeraTK {
       void doPreRead(TransferType type) override { _target->preRead(type); }
 
       void doPostRead(TransferType type, bool hasNewData) override {
+        // if we have an active exception here, swap it to the lower level
+        // (but don't swap down a nullptr and swap up an active exception)
+        if(this->_activeException) {
+          _target->_activeException.swap(this->_activeException);
+        }
         _target->postRead(type, hasNewData);
         if(!hasNewData) return;
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
+        this->_dataValidity = _target->dataValidity();
+        this->_versionNumber = _target->getVersionNumber();
       }
 
       void doPreWrite(TransferType type, VersionNumber versionNumber) override {
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
+        _target->setDataValidity(this->_dataValidity);
         _target->preWrite(type, versionNumber);
       }
 
-      void doPostWrite(TransferType type, bool dataLost) override {
+      void doPostWrite(TransferType type, VersionNumber versionNumber) override {
         // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
         auto _ = cppext::finally([&] {
           for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         });
-        _target->postWrite(type, dataLost);
+        // if we have an active exception here, swap it to the lower level
+        // (but don't swap down a nullptr and swap up an active exception)
+        if(this->_activeException) {
+          _target->_activeException.swap(this->_activeException);
+        }
+        _target->postWrite(type, versionNumber);
       }
 
       void interrupt() override { _target->interrupt(); }
-
-      ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
-
-      ChimeraTK::DataValidity dataValidity() const override { return _target->dataValidity(); }
-
-      void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
-        _target->setDataValidity(validity);
-      }
 
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
@@ -109,8 +106,10 @@ namespace ChimeraTK {
    public:
     NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
     : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
-          target->getName(), target->getUnit(), target->getDescription()) {
+          target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
       _target = target;
+      // FIXME: does not compile, _readQueue is protected
+      //this->_readQueue = _target->_readQueue;
 
       // set ID to match the decorated accessor
       this->_id = _target->getId();
@@ -128,17 +127,9 @@ namespace ChimeraTK {
       return _target->writeTransferDestructively(versionNumber);
     }
 
-    void doReadTransfer() override { _target->readTransfer(); }
-
-    bool doReadTransferNonBlocking() override { return _target->readTransferNonBlocking(); }
-
-    bool doReadTransferLatest() override { return _target->readTransferLatest(); }
-
-    TransferFuture doReadTransferAsync() override { return TransferFuture(_target->readTransferAsync(), this); }
+    void doReadTransferSynchronously() override { _target->readTransfer(); }
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
-
-    void transferFutureWaitCallback() override { _target->transferFutureWaitCallback(); }
 
     bool isReadOnly() const override { return _target->isReadOnly(); }
 
@@ -161,8 +152,6 @@ namespace ChimeraTK {
     }
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
-
-    AccessModeFlags getAccessModeFlags() const override { return _target->getAccessModeFlags(); }
 
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;

@@ -46,11 +46,11 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
-    void doPostWrite(TransferType type, bool dataLost) override { _target->postWrite(type, dataLost); }
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
+      _target->postWrite(type, versionNumber);
+    }
 
     void interrupt() override { _target->interrupt(); }
-
-    ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
 
     exprtk::expression<double> expression;
     exprtk::symbol_table<double> symbols;
@@ -162,6 +162,8 @@ namespace ChimeraTK { namespace LNMBackend {
       for(size_t k = 0; k < view.size(); ++k) {
         buffer_2D[0][k] = numericToUserType<UserType>(view[k]);
       }
+      this->_versionNumber = _target->getVersionNumber();
+      this->_dataValidity = _target->dataValidity();
     }
     else {
       // multiple results in return statement are unexpected
@@ -230,6 +232,7 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + this->getName() +
           "': The expression returned " + std::to_string(results.count()) + " results, expect exactly one result.");
     }
+    _target->setDataValidity(this->_dataValidity);
     _target->preWrite(type, versionNumber);
   }
 

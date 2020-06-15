@@ -24,7 +24,7 @@ namespace ChimeraTK {
    public:
     LNMBackendChannelAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : SyncNDRegisterAccessor<UserType>(registerPathName), _registerPathName(registerPathName) {
+    : SyncNDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName) {
       try {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});
@@ -74,7 +74,7 @@ namespace ChimeraTK {
 
     ~LNMBackendChannelAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override { _accessor->readTransfer(); }
+    void doReadTransferSynchronously() override { _accessor->readTransfer(); }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/) override {
       assert(false); // writing not allowed
@@ -87,22 +87,14 @@ namespace ChimeraTK {
                                    "name mapping devices is not supported.");
     }
 
-    bool doReadTransferNonBlocking() override {
-      doReadTransfer();
-      return true;
-    }
-
-    bool doReadTransferLatest() override {
-      doReadTransfer();
-      return true;
-    }
-
     void doPreRead(TransferType type) override { _accessor->preRead(type); }
 
     void doPostRead(TransferType type, bool hasNewData) override {
       _accessor->postRead(type, hasNewData);
       if(!hasNewData) return;
       _accessor->accessChannel(_info->channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
+      this->_versionNumber = _accessor->getVersionNumber();
+      this->_dataValidity = _accessor->dataValidity();
     }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
@@ -118,10 +110,6 @@ namespace ChimeraTK {
     bool isReadable() const override { return true; }
 
     bool isWriteable() const override { return false; }
-
-    AccessModeFlags getAccessModeFlags() const override { return _accessor->getAccessModeFlags(); }
-
-    VersionNumber getVersionNumber() const override { return _accessor->getVersionNumber(); }
 
    protected:
     /// pointer to underlying accessor

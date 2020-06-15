@@ -54,7 +54,7 @@ namespace ChimeraTK {
      *  application. The exception is caught in TransferFuture::wait() and
      * TransferFuture::hasNewData() and should never be visible to the application.
      */
-    class DiscardValueException {};
+    //    class DiscardValueException {};
 
   } /* namespace detail */
 

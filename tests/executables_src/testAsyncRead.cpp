@@ -5,7 +5,9 @@ using namespace boost::unit_test_framework;
 
 #include <algorithm>
 #include <atomic>
+#include <future>
 #include <thread>
+#include <chrono>
 
 #include <boost/thread.hpp>
 
@@ -40,51 +42,31 @@ class AsyncTestDummy : public DeviceBackendImpl {
   class Accessor : public NDRegisterAccessor<UserType> {
    public:
     Accessor(AsyncTestDummy* backend, const RegisterPath& registerPathName, AccessModeFlags& flags)
-    : NDRegisterAccessor<UserType>(registerPathName), _backend(backend), _flags(flags) {
+    : NDRegisterAccessor<UserType>(registerPathName, flags), _backend(backend) {
       buffer_2D.resize(1);
       buffer_2D[0].resize(1);
+      this->_readQueue = {3}; // this accessor is using a queue length of 3
+      _backend->notificationQueue[getName()] = this->_readQueue;
     }
 
     ~Accessor() override {}
 
-    TransferFuture doReadTransferAsync() override {
-      // create future_queue if not already created and continue it to enusre
-      // postRead is called (in the user thread, so we use the deferred launch
-      // policy)
-      if(!futureCreated) {
-        _backend->notificationQueue[getName()] = cppext::future_queue<void>(2);
-        activeFuture = TransferFuture(_backend->notificationQueue[getName()], this);
-        futureCreated = true;
-      }
+    void doReadTransferSynchronously() override {}
 
-      // return the TransferFuture
-      return activeFuture;
-    }
-
-    void doReadTransfer() override { doReadTransferAsync().wait(); }
-
-    bool doReadTransferNonBlocking() override { return true; }
-
-    bool doReadTransferLatest() override { return true; }
-
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
-      currentVersion = versionNumber;
-      return true;
-    }
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override { return false; }
 
     void doPreWrite(TransferType, VersionNumber) override {}
 
-    void doPostWrite(TransferType, bool /*dataLost*/) override {}
+    void doPostWrite(TransferType, VersionNumber) override {}
 
     void doPreRead(TransferType) override {}
 
     void doPostRead(TransferType, bool hasNewData) override {
       if(!hasNewData) return;
       buffer_2D[0][0] = _backend->registers.at(getName());
-      currentVersion = {};
+      this->_versionNumber = {};
     }
 
-    AccessModeFlags getAccessModeFlags() const override { return _flags; }
     bool isReadOnly() const override { return false; }
     bool isReadable() const override { return true; }
     bool isWriteable() const override { return true; }
@@ -94,18 +76,10 @@ class AsyncTestDummy : public DeviceBackendImpl {
     }
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
-    bool futureCreated{false};
-
-    VersionNumber getVersionNumber() const override { return currentVersion; }
-
    protected:
     AsyncTestDummy* _backend;
-    AccessModeFlags _flags;
     using NDRegisterAccessor<UserType>::getName;
     using NDRegisterAccessor<UserType>::buffer_2D;
-    using TransferElement::activeFuture;
-
-    VersionNumber currentVersion;
   };
 
   template<typename UserType>
@@ -120,7 +94,10 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(AsyncTestDummy, getRegisterAccessor_impl, 4);
 
-  void open() override { _opened = true; }
+  void open() override {
+    _opened = true;
+    _hasActiveException = false;
+  }
 
   void close() override { _opened = false; }
 
@@ -128,6 +105,13 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   std::map<std::string, cppext::future_queue<void>> notificationQueue;
   std::map<std::string, size_t> registers;
+
+  void setException() override {
+    _hasActiveException = true;
+    // FIXME !!!!
+    assert(false); // Wrong implementation. All notification queues must see an exception.
+  }
+  bool _hasActiveException{false};
 };
 
 AsyncTestDummy::~AsyncTestDummy() {}
@@ -160,63 +144,26 @@ BOOST_AUTO_TEST_CASE(testAsyncRead) {
     // simple reading through readAsync without actual need
     TransferFuture future;
     backend->registers["/REG"] = 5;
-    future = accessor.readAsync();
+
+    auto waitForRead = std::async(std::launch::async, [&accessor] { accessor.read(); });
+    auto waitStatus = waitForRead.wait_for(std::chrono::seconds(1));
+    BOOST_CHECK(waitStatus != std::future_status::ready); // future not ready yet, i.e. read() not fninished.
+
     backend->notificationQueue["/REG"].push(); // trigger transfer
-    future.wait();
+    waitForRead.wait();                        // wait for the read to finish
+
     BOOST_CHECK(accessor == 5);
     BOOST_CHECK(backend->notificationQueue["/REG"].empty());
 
     backend->registers["/REG"] = 6;
-    TransferFuture future2 = accessor.readAsync();
+    waitForRead = std::async(std::launch::async, [&accessor] { accessor.read(); });
+    waitStatus = waitForRead.wait_for(std::chrono::seconds(1));
+    BOOST_CHECK(waitStatus != std::future_status::ready); // future not ready yet, i.e. read() not fninished.
+
     backend->notificationQueue["/REG"].push(); // trigger transfer
-    future2.wait();
+    waitForRead.wait();
+
     BOOST_CHECK(accessor == 6);
-    BOOST_CHECK(backend->notificationQueue["/REG"].empty());
-
-    // check that future's wait() function won't return before the read is
-    // complete
-    for(int i = 0; i < 5; ++i) {
-      backend->registers["/REG"] = 42 + i;
-      future = accessor.readAsync();
-      std::atomic<bool> flag;
-      flag = false;
-      std::thread thread([&future, &flag] {
-        future.wait();
-        flag = true;
-      });
-      usleep(100000);
-      BOOST_CHECK(flag == false);
-      backend->notificationQueue["/REG"].push(); // trigger transfer
-      thread.join();
-      BOOST_CHECK(accessor == 42 + i);
-      BOOST_CHECK(backend->notificationQueue["/REG"].empty());
-    }
-
-    // check that obtaining the same future multiple times works properly
-    backend->registers["/REG"] = 666;
-    for(int i = 0; i < 5; ++i) {
-      future = accessor.readAsync();
-      BOOST_CHECK(accessor == 46); // still the old value from the last test part
-    }
-    backend->notificationQueue["/REG"].push(); // trigger transfer
-    future.wait();
-    BOOST_CHECK(accessor == 666);
-    BOOST_CHECK(backend->notificationQueue["/REG"].empty());
-
-    // now try another asynchronous transfer
-    backend->registers["/REG"] = 999;
-    future = accessor.readAsync();
-    std::atomic<bool> flag;
-    flag = false;
-    std::thread thread([&future, &flag] {
-      future.wait();
-      flag = true;
-    });
-    usleep(100000);
-    BOOST_CHECK(flag == false);
-    backend->notificationQueue["/REG"].push(); // trigger transfer
-    thread.join();
-    BOOST_CHECK(accessor == 999);
     BOOST_CHECK(backend->notificationQueue["/REG"].empty());
 
     device.close();
@@ -283,9 +230,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a3 == 3);
       BOOST_CHECK(a4 == 4);
       BOOST_CHECK(id == a1.getId());
-
-      // retrigger the transfer
-      a1.readAsync();
     }
 
     // register 3
@@ -309,9 +253,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a3 == 120);
       BOOST_CHECK(a4 == 4);
       BOOST_CHECK(id == a3.getId());
-
-      // retrigger the transfer
-      a3.readAsync();
     }
 
     // register 3 again
@@ -336,9 +277,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a3 == 121);
       BOOST_CHECK(a4 == 4);
       BOOST_CHECK(id == a3.getId());
-
-      // retrigger the transfer
-      a3.readAsync();
     }
 
     // register 2
@@ -362,9 +300,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a3 == 121);
       BOOST_CHECK(a4 == 4);
       BOOST_CHECK(id == a2.getId());
-
-      // retrigger the transfer
-      a2.readAsync();
     }
 
     // register 4
@@ -388,9 +323,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a3 == 121);
       BOOST_CHECK(a4 == 345);
       BOOST_CHECK(id == a4.getId());
-
-      // retrigger the transfer
-      a4.readAsync();
     }
 
     // register 4 again
@@ -414,9 +346,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a3 == 121);
       BOOST_CHECK(a4 == 345);
       BOOST_CHECK(id == a4.getId());
-
-      // retrigger the transfer
-      a4.readAsync();
     }
 
     // register 3 a 3rd time
@@ -441,9 +370,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a3 == 122);
       BOOST_CHECK(a4 == 345);
       BOOST_CHECK(id == a3.getId());
-
-      // retrigger the transfer
-      a3.readAsync();
     }
 
     // register 1 and then register 2 (order should be guaranteed)
@@ -469,10 +395,6 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
       BOOST_CHECK(a2.getId() == r);
       BOOST_CHECK(a1 == 55);
       BOOST_CHECK(a2 == 66);
-
-      // retrigger the transfers
-      a1.readAsync();
-      a2.readAsync();
     }
 
     // registers in order: 4, 2, 3 and 1
@@ -587,9 +509,6 @@ BOOST_AUTO_TEST_CASE(testReadAnyWithPoll) {
       BOOST_CHECK(a3 == 120);
       BOOST_CHECK(a4 == 345);
       BOOST_CHECK(id == a1.getId());
-
-      // retrigger the transfer
-      a1.readAsync();
     }
 
     backend->registers["/a3"] = 121;
@@ -616,9 +535,6 @@ BOOST_AUTO_TEST_CASE(testReadAnyWithPoll) {
       BOOST_CHECK(a3 == 121);
       BOOST_CHECK(a4 == 346);
       BOOST_CHECK(id == a2.getId());
-
-      // retrigger the transfer
-      a2.readAsync();
     }
 
     device.close();
@@ -695,9 +611,6 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
       BOOST_CHECK(a2 == 2);
       BOOST_CHECK(a3 == 120);
       BOOST_CHECK(a4 == 345);
-
-      // retrigger the transfer
-      a1.readAsync();
     }
 
     backend->registers["/a3"] = 121;
@@ -730,9 +643,6 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
       BOOST_CHECK(a2 == 123);
       BOOST_CHECK(a3 == 121);
       BOOST_CHECK(a4 == 346);
-
-      // retrigger the transfer
-      a2.readAsync();
     }
 
     device.close();

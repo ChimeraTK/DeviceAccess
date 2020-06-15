@@ -11,35 +11,27 @@ using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(DataConsistencyGroupTestSuite)
 
+// notice: you cannot read from this accessor. It will block forever because there is nobody to write into the _readQueue.
 template<typename UserType>
 class Accessor : public NDRegisterAccessor<UserType> {
  public:
-  Accessor() : NDRegisterAccessor<UserType>("") {}
+  Accessor() : NDRegisterAccessor<UserType>("", {AccessMode::wait_for_new_data}) {}
 
   ~Accessor() override {}
 
-  TransferFuture doReadTransferAsync() override { return {}; }
+  void doReadTransferSynchronously() override {}
 
-  void doReadTransfer() override { doReadTransferAsync().wait(); }
-
-  bool doReadTransferNonBlocking() override { return true; }
-
-  bool doReadTransferLatest() override { return true; }
-
-  bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
-    currentVersion = versionNumber;
-    return true;
-  }
+  bool doWriteTransfer(ChimeraTK::VersionNumber) override { return true; }
 
   void doPreWrite(TransferType, VersionNumber) override {}
 
-  void doPostWrite(TransferType, bool /*dataLost*/) override {}
+  void doPostWrite(TransferType, VersionNumber) override {}
 
   void doPreRead(TransferType) override {}
 
   void doPostRead(TransferType, bool /*hasNewData*/) override {}
 
-  AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
+  //AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
   bool isReadOnly() const override { return false; }
   bool isReadable() const override { return true; }
   bool isWriteable() const override { return true; }
@@ -49,9 +41,9 @@ class Accessor : public NDRegisterAccessor<UserType> {
   }
   std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
-  VersionNumber getVersionNumber() const override { return currentVersion; }
+  //  VersionNumber getVersionNumber() const override { return currentVersion; }
 
-  VersionNumber currentVersion;
+  //  VersionNumber currentVersion;
 };
 
 BOOST_AUTO_TEST_CASE(testDataConsistencyGroup) {
@@ -60,11 +52,17 @@ BOOST_AUTO_TEST_CASE(testDataConsistencyGroup) {
 
   DataConsistencyGroup dcgroup({acc_1, acc_2});
 
+  //until now all versions are {nullptr}
+  // prepare the version numbers in the dcgroup by writing (which set new version numbers)
+  acc_1->write();
+  acc_2->write();
+
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == false);
 
   BOOST_CHECK(dcgroup.update(acc_2->getId()) == false);
 
-  acc_1->currentVersion = acc_2->currentVersion;
+  // now update acc_1 with the newer version number from acc_2
+  acc_1->write(acc_2->getVersionNumber());
 
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == true);
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == true);
@@ -81,28 +79,31 @@ BOOST_AUTO_TEST_CASE(testMoreDataConsistencyGroup) {
 
   DataConsistencyGroup dcgroup({acc_1, acc_2, acc_3, acc_4});
   // 4 different version numbers
+  acc_1->write();
+  acc_2->write();
+  acc_3->write();
+  acc_4->write();
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_2->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_3->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_4->getId()) == false);
 
   // 3 different version numbers, acc_1 and acc_2 are the same
-  acc_1->currentVersion = acc_2->currentVersion;
+  VersionNumber v; // a new version number
+  acc_1->write(v);
+  acc_2->write(v);
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_2->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_3->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_4->getId()) == false);
 
-  acc_1->currentVersion = acc_2->currentVersion;
-  acc_3->currentVersion = acc_2->currentVersion;
+  acc_3->write(v);
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_2->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_3->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_4->getId()) == false);
 
-  acc_1->currentVersion = acc_2->currentVersion;
-  acc_3->currentVersion = acc_2->currentVersion;
-  acc_4->currentVersion = acc_2->currentVersion;
+  acc_4->write(v);
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_2->getId()) == false);
   BOOST_CHECK(dcgroup.update(acc_3->getId()) == false);
@@ -112,8 +113,9 @@ BOOST_AUTO_TEST_CASE(testMoreDataConsistencyGroup) {
   BOOST_CHECK(dcgroup.update(acc_3->getId()) == true);
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == true);
 
-  // push a version number into update, that does not belong to DataConsistencyGroup, should be ignored
+  // push an accessor that does not belong to DataConsistencyGroup, should be ignored, although it hat the same version number
   boost::shared_ptr<Accessor<int>> acc_5 = boost::make_shared<Accessor<int>>();
+  acc_5->write(v);
   BOOST_CHECK(dcgroup.update(acc_5->getId()) == false);
 }
 
@@ -125,17 +127,44 @@ BOOST_AUTO_TEST_CASE(testMultipleDataConsistencyGroup) {
   boost::shared_ptr<Accessor<int>> acc_4 = boost::make_shared<Accessor<int>>();
   DataConsistencyGroup dcgroup_1({acc_1, acc_2, acc_3});
   DataConsistencyGroup dcgroup_2({acc_1, acc_3, acc_4});
-  acc_1->currentVersion = acc_2->currentVersion;
-  acc_3->currentVersion = acc_2->currentVersion;
-  acc_4->currentVersion = acc_2->currentVersion;
+  VersionNumber v;
+  acc_1->write(v);
+  acc_2->write(v);
+  acc_3->write(v);
+  acc_4->write(v);
   BOOST_CHECK(dcgroup_1.update(acc_1->getId()) == false);
   BOOST_CHECK(dcgroup_1.update(acc_2->getId()) == false);
   BOOST_CHECK(dcgroup_1.update(acc_3->getId()) == true);
   BOOST_CHECK(dcgroup_1.update(acc_4->getId()) == false); //ignored
   BOOST_CHECK(dcgroup_2.update(acc_1->getId()) == false);
-  BOOST_CHECK(dcgroup_2.update(acc_2->getId()) == false); //ignored
   BOOST_CHECK(dcgroup_2.update(acc_3->getId()) == false);
   BOOST_CHECK(dcgroup_2.update(acc_4->getId()) == true);
+  BOOST_CHECK(dcgroup_2.update(acc_2->getId()) == false); //ignored
+}
+
+BOOST_AUTO_TEST_CASE(testVersionNumberChange) {
+  VersionNumber v1{};
+  VersionNumber v2{};
+  VersionNumber v3{};
+
+  boost::shared_ptr<Accessor<int>> acc_1 = boost::make_shared<Accessor<int>>();
+  boost::shared_ptr<Accessor<int>> acc_2 = boost::make_shared<Accessor<int>>();
+
+  DataConsistencyGroup dcgroup_1({acc_1, acc_2});
+
+  acc_2->write(v2);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_2->getId()), false);
+
+  acc_1->write(v1);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_1->getId()), false);
+
+  acc_1->write(v2);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_1->getId()), true);
+
+  acc_1->write(v3);
+  acc_2->write(v3);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_1->getId()), false);
+  BOOST_CHECK_EQUAL(dcgroup_1.update(acc_2->getId()), true);
 }
 
 BOOST_AUTO_TEST_CASE(testException) {

@@ -58,17 +58,7 @@ namespace ChimeraTK {
 
     ~NumericAddressedBackendMuxedRegisterAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override;
-
-    bool doReadTransferNonBlocking() override {
-      doReadTransfer();
-      return true;
-    }
-
-    bool doReadTransferLatest() override {
-      doReadTransfer();
-      return true;
-    }
+    void doReadTransferSynchronously() override;
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
@@ -96,10 +86,6 @@ namespace ChimeraTK {
     }
 
     bool isWriteable() const override { return !_isNotWriteable; }
-
-    AccessModeFlags getAccessModeFlags() const override { return {}; }
-
-    VersionNumber getVersionNumber() const override { return currentVersion; }
 
     void makeWriteable() { _isNotWriteable = false; }
 
@@ -137,9 +123,6 @@ namespace ChimeraTK {
     /** cache for negated writeable status to avoid repeated evaluation */
     bool _isNotWriteable;
 
-    /// Version number of last transfer
-    VersionNumber currentVersion{nullptr};
-
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
     }
@@ -157,7 +140,7 @@ namespace ChimeraTK {
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
       const RegisterPath& registerPathName, size_t numberOfElements, size_t elementsOffset,
       boost::shared_ptr<DeviceBackend> _backend)
-  : SyncNDRegisterAccessor<UserType>(registerPathName),
+  : SyncNDRegisterAccessor<UserType>(registerPathName, {}),
     _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _registerPathName(registerPathName),
     _numberOfElements(numberOfElements), _elementsOffset(elementsOffset) {
     try {
@@ -275,7 +258,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransfer() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransferSynchronously() {
     _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
   }
 
@@ -287,16 +270,18 @@ namespace ChimeraTK {
       for(size_t i = 0; i < _converters.size(); ++i) {
         _converters[i].template vectorToCooked<UserType>(_startIterators[i], _endIterators[i], buffer_2D[i].begin());
       }
-      currentVersion = {};
+      // it is acceptable to create the version number in post read because this accessor does not have wait_for_new_data. It is basically synchronous.
+      this->_versionNumber = {};
+      this->_dataValidity =
+          DataValidity::ok; // we just read good data. Set validity back to ok if someone marked it faulty for writing.
     }
   }
 
   /********************************************************************************************************************/
 
   template<class UserType>
-  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(VersionNumber) {
     _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
-    currentVersion = versionNumber;
     return false;
   }
 

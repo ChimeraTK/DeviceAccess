@@ -28,6 +28,7 @@ namespace ChimeraTK {
   void DummyBackend::open() {
     std::lock_guard<std::mutex> lock(mutex);
     _opened = true;
+    _hasActiveException = false;
   }
 
   void DummyBackend::resizeBarContents() {
@@ -59,6 +60,9 @@ namespace ChimeraTK {
     if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
     }
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    }
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     unsigned int wordBaseIndex = address / sizeof(int32_t);
     TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
@@ -70,6 +74,9 @@ namespace ChimeraTK {
       std::lock_guard<std::mutex> lock(mutex);
       if(!_opened) {
         throw ChimeraTK::logic_error("Device is closed.");
+      }
+      if(_hasActiveException) {
+        throw ChimeraTK::runtime_error("previous, unrecovered fault");
       }
       checkSizeIsMultipleOfWordSize(sizeInBytes);
       unsigned int wordBaseIndex = address / sizeof(int32_t);

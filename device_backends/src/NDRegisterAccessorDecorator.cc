@@ -30,5 +30,4 @@ namespace {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> (*ptr)(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>);
   };
   ChimeraTK::TemplateUserTypeMap<CreateCopyDecoratorInstancer> createCopyDecoratorInstancer;
-
 } // namespace

@@ -28,7 +28,7 @@ namespace ChimeraTK {
 
     void close() override;
 
-    bool isFunctional() const override; 
+    bool isFunctional() const override;
 
     std::string readDeviceInfo() override { return std::string("Logical name mapping file: ") + _lmapFileName; }
 
@@ -36,6 +36,12 @@ namespace ChimeraTK {
         std::string address, std::map<std::string, std::string> parameters);
 
     const RegisterCatalogue& getRegisterCatalogue() const override;
+
+    void setException() override {
+      // FIXME !!!
+      std::cout << "LogicalNameMappingBacken::setException is not implemented yet. Fix this!" << std::endl;
+      assert(false);
+    }
 
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,

@@ -64,24 +64,22 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MonostableTriggerPluginPlugin: Reading is not allowed.");
     }
 
-    void doPostRead(TransferType, bool /*hasNewData*/) override {
-    }
+    void doPostRead(TransferType, bool /*hasNewData*/) override {}
 
     void doPreWrite(TransferType /*type*/, VersionNumber versionNumber) override {
       _target->accessData(0, 0) = _active;
+      _target->setDataValidity(this->_dataValidity);
       _target->preWrite(TransferType::write, versionNumber);
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
 
-    void doPostWrite(TransferType, bool /*dataLost*/) override {
-      _target->postWrite(TransferType::write, dataLossInInactivate);
+    void doPostWrite(TransferType, VersionNumber versionNumber) override {
+      _target->postWrite(TransferType::write, versionNumber);
     }
 
     void interrupt() override { _target->interrupt(); }
-
-    ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
 
     std::chrono::duration<double, std::milli> _delay;
     uint32_t _active, _inactive;
@@ -98,7 +96,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // second. In case the target backend screws this up, we will run into std::terminate.
 
     bool a = _target->writeTransfer(versionNumber);
-    _target->postWrite(TransferType::write, a);
+    _target->postWrite(TransferType::write, versionNumber);
 
     std::this_thread::sleep_for(_delay);
 

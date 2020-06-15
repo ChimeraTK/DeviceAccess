@@ -228,12 +228,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   bool LogicalNameMappingBackend::isFunctional() const {
-    if (not _opened) {
+    if(not _opened) {
       return false;
     }
 
-    for (auto& e : _devices) {
-      if (not e.second->isFunctional()) {
+    for(auto& e : _devices) {
+      if(not e.second->isFunctional()) {
         return false;
       }
     }

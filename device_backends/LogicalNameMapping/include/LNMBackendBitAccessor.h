@@ -25,7 +25,7 @@ namespace ChimeraTK {
    public:
     LNMBackendBitAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : SyncNDRegisterAccessor<UserType>(registerPathName), _registerPathName(registerPathName),
+    : SyncNDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
       _fixedPointConverter(registerPathName, 32, 0, 1) {
       try {
         // check for unknown flags
@@ -78,28 +78,14 @@ namespace ChimeraTK {
 
     ~LNMBackendBitAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override {
+    void doReadTransferSynchronously() override {
       std::lock_guard<std::mutex> lock(*_mutex);
       _accessor->readTransfer();
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      bool ret = _accessor->writeTransfer(_versionNumberTemp);
-
-      // VersionNumber needs to be decoupled from target accessor, because the target accessor is used by multiple bit accessors!
-      _versionNumber = versionNumber; // fixme: move to doPostWrite
-      return ret;
-    }
-
-    bool doReadTransferNonBlocking() override {
-      std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->readTransferNonBlocking();
-    }
-
-    bool doReadTransferLatest() override {
-      std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->readTransferLatest();
+      return _accessor->writeTransfer(_versionNumberTemp);
     }
 
     void doPreRead(TransferType type) override {
@@ -117,7 +103,8 @@ namespace ChimeraTK {
       else {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(false);
       }
-      _versionNumber = {}; // VersionNumber needs to be decoupled from target accessor
+      this->_versionNumber = {}; // VersionNumber needs to be decoupled from target accessor
+      this->_dataValidity = _accessor->dataValidity();
     }
 
     void doPreWrite(TransferType type, VersionNumber) override {
@@ -130,12 +117,13 @@ namespace ChimeraTK {
       }
 
       _versionNumberTemp = {};
+      _accessor->setDataValidity(this->_dataValidity);
       _accessor->preWrite(type, _versionNumberTemp);
     }
 
-    void doPostWrite(TransferType type, bool dataLost) override {
+    void doPostWrite(TransferType type, VersionNumber) override {
       std::lock_guard<std::mutex> lock(*_mutex);
-      _accessor->postWrite(type, dataLost);
+      _accessor->postWrite(type, _versionNumberTemp);
     }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
@@ -161,13 +149,6 @@ namespace ChimeraTK {
       return _accessor->isWriteable();
     }
 
-    AccessModeFlags getAccessModeFlags() const override {
-      std::lock_guard<std::mutex> lock(*_mutex);
-      return _accessor->getAccessModeFlags();
-    }
-
-    VersionNumber getVersionNumber() const override { return _versionNumber; }
-
    protected:
     /// pointer to underlying accessor
     boost::shared_ptr<NDRegisterAccessor<uint64_t>> _accessor;
@@ -178,9 +159,6 @@ namespace ChimeraTK {
 
     /// register and module name
     RegisterPath _registerPathName;
-
-    /// the current version number of the application buffer
-    VersionNumber _versionNumber{nullptr};
 
     /// temporary version number passed to the target accessor in write transfers
     /// The VersionNumber needs to be decoupled from target accessor, because the target accessor is used by multiple bit accessors!

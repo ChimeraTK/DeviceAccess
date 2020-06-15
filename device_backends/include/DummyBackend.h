@@ -80,6 +80,8 @@ namespace ChimeraTK {
      */
     DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
 
+    void setException() override { _hasActiveException = true; }
+
    protected:
     struct AddressRange {
       const uint32_t offset;
@@ -100,6 +102,8 @@ namespace ChimeraTK {
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
     std::mutex mutex;
 
+    bool _hasActiveException{false};
+
     void resizeBarContents();
 
     void runWriteCallbackFunctionsForAddressRange(AddressRange addressRange);
@@ -116,7 +120,6 @@ namespace ChimeraTK {
     /// the callback function so it can be used inside a callback function for
     /// resynchronisation.
     void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
-
 
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
@@ -138,7 +141,6 @@ namespace ChimeraTK {
     friend class SharedDummyBackend;
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
-
   };
 
 } // namespace ChimeraTK

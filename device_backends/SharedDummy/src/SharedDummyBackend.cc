@@ -36,7 +36,7 @@ namespace ChimeraTK {
         std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
       }
-      catch(boost::interprocess::bad_alloc& e) {
+      catch(boost::interprocess::bad_alloc&) {
         // Clean up
         sharedMemoryManager.~SharedMemoryManager();
 
@@ -48,13 +48,19 @@ namespace ChimeraTK {
     } /* for(barSizesInBytesIter) */
   }
 
-  void SharedDummyBackend::open() { _opened = true; }
+  void SharedDummyBackend::open() {
+    _opened = true;
+    _hasActiveException = false;
+  }
 
   void SharedDummyBackend::close() { _opened = false; }
 
   void SharedDummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
     if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
+    }
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     unsigned int wordBaseIndex = address / sizeof(int32_t);
@@ -69,6 +75,9 @@ namespace ChimeraTK {
   void SharedDummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
     if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
+    }
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     unsigned int wordBaseIndex = address / sizeof(int32_t);

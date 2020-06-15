@@ -89,45 +89,6 @@ namespace ChimeraTK {
      * available if AccessMode::wait_for_new_data is set. */
     bool readLatest() { return _impl->readLatest(); }
 
-    /** Read data from the device in the background and return a future which will
-     * be fulfilled when the data is ready. When the future is fulfilled, the
-     * transfer element will already contain the new data, there is no need to
-     * call read() or readNonBlocking() (which would trigger another data
-     * transfer).
-     *
-     *  It is allowed to call this function multiple times, which will return the
-     * same (shared) future until it is fulfilled. If other read functions (like
-     * read() or readNonBlocking()) are called before the future previously
-     * returned by this function was fulfilled, that call will be equivalent to
-     * the respective call on the future (i.e. TransferFuture::wait() resp.
-     * TransferFuture::hasNewData()) and thus the future will hae been used
-     * afterwards.
-     *
-     *  The future will be fulfilled at the time when normally read() would
-     * return. A call to this function is roughly logically equivalent to:
-     *    boost::async( boost::bind(&TransferElement::read, this) );
-     *  (Although such implementation would disallow accessing the user data
-     * buffer until the future is fulfilled, which is not the case for this
-     * function.)
-     *
-     *  Design note: A special type of future has to be returned to allow an
-     * abstraction from the implementation details of the backend. This allows -
-     * depending on the backend type - a more efficient implementation without
-     * launching a thread.
-     *
-     *  Note for implementations: Inside this function and before launching the
-     * actual transfer, the flag readTransactionInProgress must be cleared, then
-     * preRead() has to be called. Otherwise postRead() will not get executed
-     * after the transfer. postRead() on the other hand must not be called inside
-     * this function, since this would update the user buffer, which should only
-     * happen when waiting on the TransferFuture. TransferFuture::wait() will
-     * automatically call postRead() before returning. Decorators must also call
-     *  preRead() in their implementations of readAsync()!
-     *
-     *  Note: This feature is still experimental. Expect API changes without
-     * notice! */
-    TransferFuture readAsync() { return _impl->readAsync(); }
-
     /**
      * Returns the version number that is associated with the last transfer (i.e.
      * last read or write). See ChimeraTK::VersionNumber for details.
@@ -267,18 +228,6 @@ namespace ChimeraTK {
      * accessing the very same register.
      */
     TransferElementID getId() const { return _impl->getId(); }
-
-    /** Function called by the TransferFuture before entering a potentially
-     * blocking wait(). In contrast to a wait callback of a boost::future/promise,
-     * this function is not called when just checking whether the result is ready
-     * or not. Usually it is not necessary to implement this function, but
-     * decorators should pass it on. One use case is the ApplicationCore
-     * TestDecoratorRegisterAccessor, which needs to be informed before blocking
-     *  the thread execution.
-     *  Note: The ReadAnyGroup will trigger a call to this function of the first
-     * TransferElement with AccessMode::wait_for_new_data in the group before
-     * potentially blocking. */
-    void transferFutureWaitCallback() { _impl->transferFutureWaitCallback(); }
 
     /** Set the current DataValidity for this TransferElement. Will do nothing if the
      * backend does not support it */
