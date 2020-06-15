@@ -79,7 +79,7 @@ namespace ChimeraTK {
 - \anchor b_6 6. If a boost::numeric::bad_numeric_cast is received
   - 6.1 the exception is not reported to the device.
   - 6.2 Write operations are skipped because the exception is happening in doPreWrite(). The return value of writeYyy() is true (data was lost).
-  - \anchor b_6_3 6.3 Read operations return with DataValidity::faulty. The data content of the application buffer probably is useless \ref comment_b_6_3 "(*)"
+  - \anchor b_6_3 6.3 Read operations return with DataValidity::faulty.
 
 \subsection spec_execptionHandling_behaviour_comments (*) Comments
 
@@ -96,9 +96,6 @@ namespace ChimeraTK {
 - \anchor comment_b_3_1_2 \ref b_3_1_2 "3.1.2" For some applications, the order of writes may be important, e.g. if firmware expects this. Please note that the VersionNumber is insufficient as a sorting criteria, since many writes may have been done with the same VersionNumber (in an ApplicationModule, the VersionNumber used for the writes is determined by the largest VersionNumber of the inputs).
 
 - \anchor comment_b_4_2 \ref b_4_2 "4.2" DataValidity::faulty is initially set by default, so there is no need to propagate this flag initially. To prevent race conditions and undefined behaviour (especially in automated tests), it even needs to be made sure that the flag is not propagated unnecessarily. The behaviour of non-blocking reads presents a slight asymmetry between the initial device opening and a later recovery. This will in particular be visible when restarting a server while a device is offline. If a module only uses readLatest()/readNonBlocking() (= read() for poll-type inputs) for the offline device, the module was still running before the server restart using the last known values for the dysfunctional registers (and flagging all outputs as faulty). After the restart, the module has to wait for the initial value and hence will not run until the device becomes functional again. To make this behaviour symmetric, one would need to persist the values of device inputs. Since this only affects a corner case in which likely no usable output is produced anyway, this slight inconsistency is considered acceptable.
-
-- \anchor comment_b_6_3 \ref b_6_3 "6.3" In contrast to a skipped operation where the it is guaranteed that the previous data content stays intact and only the DataValidity::faulty flag is set.
-
 
 \section spec_execptionHandling_high_level_implmentation C. Implementation
 
