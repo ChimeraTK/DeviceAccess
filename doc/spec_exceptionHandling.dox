@@ -36,7 +36,8 @@ namespace ChimeraTK {
   - \anchor b_1_1 1.1 ChimeraTK::logic_error exceptions are left unhandled and will terminate the application. These errors may only occur in the (re-)initialisation phase (up to the point where all devices are opened and initialised) and point to a severe configuration error which is not recoverable. \ref comment_b_1_1 "(*)"
   - \anchor b_1_2 1.2 <b>Exception handling and DataValidity flag propagation is implemented such that it is transparent to a module whether it is directly connected to a device, or whether a fanout or another application module is in between.</b> This is the central requirement from which most other requirements are derived.
 
-- \anchor b_2 2. When a ChimereTK::runtime_error has been received by the framework (thrown by a device register accessor):
+\subsubsection spec_exceptionHandling_behaviour_runtime_errors Runtime error handling
+- \anchor b_2 2. When a ChimeraTK::runtime_error has been received by the framework (thrown by a device register accessor):
   - 2.1 The exception status is published as a process variable together with an error message.
     - 2.1.1 The variable \c Devices/\<alias\>/status contains a boolean flag whether the device is in an error state.
     - 2.1.2 The variable \c Devices/\<alias\>/message contains an error message, if the device is in an error state, or an empty string otherwise.
@@ -57,6 +58,7 @@ namespace ChimeraTK {
     - 2.3.5 It is guaranteed that the write takes place before the device is considered fully recovered again and other transfers are allowed (cf. \ref b_3_1 "3.1").
   - \anchor b_2_4 2.4 In case of exceptions, there is no guaranteed realtime behaviour, not even for "non-blocking" transfers. \ref comment_b_2_4 "(*)"
 
+\subsubsection spec_execptionHandling_behaviour_recovery Recovery
 - 3. The framework tries to resolve an exception state by periodically re-opening the faulty device.
   - \anchor b_3_1 3.1 After successfully re-opening the device, a recovery procedure is executed before allowing any read/write operations from the ApplicationModules and FanOuts again. This recovery procedure involves:
     - 3.1.1 the execution of so-called initialisation handlers (see \ref b_3_2 "3.2"), and
@@ -65,12 +67,15 @@ namespace ChimeraTK {
     - \anchor b_3_1_4 3.1.4 Finally, \c Devices/\<alias\>/deviceBecameFunctional is written to inform any module subscribing to this variable about the finished recovery. \ref comment_b_3_1_4 "(*)"
   - \anchor b_3_2 3.2 Any number of initialisation handlers can be added to the DeviceModule in the user code. Initialisation handlers are callback functions which will be executed when a device is opened for the first time and after a device recovers from an exception, before any application-initiated transfers are executed (including delayed write transfers). See DeviceModule::addInitialisationHandler().
 
+\subsubsection spec_execptionHandling_behaviour_startup Startup
 - 4. The behaviour at application start (at which all devices are still closed at first) is similar to the case of a later received exception. The only differences are mentioned in \ref b_4_2 "4.2".
   - 4.1 Even if some devices are initially in a persisting error state, the part of the application which does not interact with the faulty devices starts and works normally.
   - \anchor b_4_2 4.2 Initial values are correctly propagated after a device is opened. See the \link spec_initialValuePropagation Technical specification: propagation of initial values\endlink. Especially, all read operations (even readNonBlocking/readLatest or without AccessMode::wait_for_new_data) will be _frozen_ until an initial value has been successfully read. \ref comment_b_4_2 "(*)"
 
+\subsubsection spec_execptionHandling_behaviour_forced_recovery Forced Recovery
 - \anchor b_5 5. Any ApplicationModule can explicitly report a problem with the device by calling DeviceModule::reportException(). This allows the reinitialisation of a device e.g. after a reboot of the device which didn't result in an exception (e.g. because it was too quick to be noticed, or rebooting the device takes place without interrupting the communication).
 
+\subsubsection spec_exceptionHandling_behaviour_numeric_cast_errors Numeric cast error handling
 - \anchor b_6 6. If a boost::numeric::bad_numeric_cast is received
   - 6.1 the exception is not reported to the device.
   - 6.2 Write operations are skipped because the exception is happening in doPreWrite(). The return value of writeYyy() is true (data was lost).
@@ -164,7 +169,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 
 \subsection spec_execptionHandling_high_level_implmentation_decorator C.2 ExceptionHandlingDecorator
-
+\subsubsection spec_execptionHandling_high_level_implmentation_decorator_structure Structure
 - \anchor c_2_1 2.1 A second, undecorated copy of each writeable device register accessor \ref comment_c_2_1 "(*)", the so-called recovery accessor, is stored in the DeviceModule::recoveryHelpers. These recoveryHelpers are used to set the initial values of registers when the device is opened for the first time and to recover the last written values during the recovery procedure.
   - \anchor c_2_1_1 2.1.1 The DeviceModule::recoveryHelpers is a list of RecoveryHelper objects, which each contain:
     - RecoveryHelper::accessor, the recovery accessor itself,
@@ -174,6 +179,7 @@ Note: This section defines the internal interface on a low level. Helper functio
   - \anchor c_2_1_2 2.1.2 Ordering can be done per device \ref comment_c_2_1_2 "(*)", hence each DeviceModule has one 64-bit atomic counter DeviceModule::writeCounter which is incremented for each write operation and the value is stored in RecoveryHelper::writeOrder.
   - 2.1.3 The RecoveryHelper objects may be accessed only under a lock, see \ref c_1_3 "1.3".
   
+\subsubsection spec_execptionHandling_high_level_implmentation_decorator_behaviour Behaviour
 - \anchor c_2_2 2.2 In doPreWrite() the RecoveryHelper is updated while holding a shared lock on DeviceModule::recoveryMutex:
   - \anchor c_2_2_1 2.2.1 These steps need to be done unconditionally at the very beginning of doPreWrite(), before \ref c_2_4 "2.4" and before delegating to preWrite(). \ref comment_c_2_2_1 "(*)"
   - 2.2.2 If the RecoveryHelper::wasWritten flag was previously not set, the return value of doWriteTransfer() must be forced to true (data lost).
