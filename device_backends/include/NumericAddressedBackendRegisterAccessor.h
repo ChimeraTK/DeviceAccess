@@ -223,6 +223,9 @@ namespace ChimeraTK {
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
+      if(this->_activeException) {
+        _rawAccessor->setActiveException(this->_activeException);
+      }
       _rawAccessor->postRead(type, hasNewData);
 
       if(!hasNewData) return;
@@ -250,6 +253,9 @@ namespace ChimeraTK {
       // execute the implementor's doPostWrite unconditionally (swaps back the buffers) at the end of
       // this functnion, even if the delegated postWrite() throws.
       auto _ = cppext::finally([&] { _prePostActionsImplementor.doPostWrite(); });
+      if(this->_activeException) {
+        _rawAccessor->setActiveException(this->_activeException);
+      }
       _rawAccessor->postWrite(type, versionNumber);
     }
 
