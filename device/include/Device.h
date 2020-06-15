@@ -171,6 +171,16 @@ namespace ChimeraTK {
      */
     bool isFunctional() const;
 
+    /**
+     *  Activate asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set.
+     *  If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no
+     *  effect. If it is called when no deactivated transfer element exists, this call also has no effect. When
+     *  Device::activateAsyncRead() returns, it is not guaranteed that all initial values have been received already.
+     * 
+     *  For more details, see \ref transferElement_B_8_5 "Technical specification: TransferElement B.8.5".
+     */
+    void activateAsyncRead() noexcept;
+
     /** \brief <b>Inefficient convenience function</b> to read a single-word
      * register without obtaining an accessor.
      *
