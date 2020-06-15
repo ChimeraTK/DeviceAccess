@@ -180,17 +180,17 @@ Note: This section defines the internal interface on a low level. Helper functio
 - \anchor c_2_2 2.2 In doPreWrite() the RecoveryHelper is updated while holding a shared lock on DeviceModule::recoveryMutex:
   - \anchor c_2_2_1 2.2.1 These steps need to be done unconditionally at the very beginning of doPreWrite(), before \ref c_2_4 "2.4" and before delegating to preWrite(). \ref comment_c_2_2_1 "(*)"
   - 2.2.2 If the RecoveryHelper::wasWritten flag was previously not set, the return value of doWriteTransfer() must be forced to true (data lost).
-  - 2.2.3 Update the value buffer of the RecoveryHelper::accessor, update the RecoveryHelper::versionNumber, set the RecoveryHelper::writeOrder to the DeviceModule::writeCounter after (atomically) incrementing it, and clear the RecoveryHelper::wasWritten flag.
+  - 2.2.3 Update the value buffer of the RecoveryHelper::accessor, update the RecoveryHelper::versionNumber, set the RecoveryHelper::writeOrder to the DeviceModule::writeCounter after (atomically) incrementing it, and clear the RecoveryHelper::wasWritten flag. (cf. \ref b_2_3)
   - \anchor c_2_2_4 2.2.4 The check whether to skip the transfer (cf. \ref c_2_4 "2.4") has to be done without releasing the lock between the update of the RecoveryHelper and the check. \ref comment_c_2_2_4 "(*)"
 
 - \anchor c_2_3 2.3 In doPreRead() it is checked if the transfer element has seen an initial value by checking whether the current version number is still {nullptr} (cf. \ref b_4_2 "B.4.2")
-   - 2.3.1 This is done as the first thing unconditionally for all read types, as no read must return with the "value after constuction".
+   - 2.3.1 This is done as the first thing unconditionally for all read types, as no read must return with the "value after constuction". (For further details, see the "intial value propagation specfication")
    - \anchor c_2_3_2 2.3.2 If there has not been an initial value yet, the read is frozen by acquiring a shared lock on the DeviceModule::initialValueMutex. \ref comment_c_2_3_2 "(*)"
    - \anchor c_2_3_3 2.3.3 As soon as the lock has been acquired it can be released immediately. The device should now be functional and an initial value can be read. \ref comment_c_2_3_3 "(*)"
    - 2.3.4 A check whether to freeze for a recovery of asynchronous transfers as rescribed in \ref b_2_2_4 "B.2.2.4"  is not done in doPreRead(). The backend takes care of
      this and the operation automatically freezes when waiting for data from the decorated transfer element, and resumes once the backend starts sending data again.
      There is nothing extra to do for the ExceptionHandlingDecorator in this case.
-   - \anchor c_2_3_5 2.3.5 The lock on the DeviceModule::errorMutex must not be held in this step. \ref comment_c_2_3_5 "(*)"
+   - \anchor c_2_3_5 2.3.5 The lock on the DeviceModule::errorMutex must not be held in this step to prevent dead-lock with the DeviceModule::initialValueMutex. \ref comment_c_2_3_5 "(*)"
 
 - \anchor c_2_4 2.4 In doPreRead()/doPreWrite(), it must be decided whether to delegate to the target's xxxTransferYyy() in doXxxTransferYyy() (cf. \ref c_2_5 "2.5").
   - \anchor c_2_4_1 2.4.1 This is only applicable to read operations without AccessMode::wait_for_new_data, and to write operations \ref comment_c_2_4_1 "(*)".
@@ -198,7 +198,7 @@ Note: This section defines the internal interface on a low level. Helper functio
   - \anchor c_2_4_3 2.4.3 xxxTransferYyy() is only delegated to, if DeviceModule::deviceHasError == false (cf. \ref b_2_3 "B.2.3" and \ref b_2_2_3 "B.2.2.3").
   - 2.4.4 If xxxTransferYyy() is not delegated to, none of the pre/transfer/post functions must be delegated to the target accessor.
   - \anchor c_2_4_5 2.4.5 If xxxTransferYyy() is delegated to, the DeviceModule::synchronousTransferCounter must be incremented.
-  - \anchor c_2_4_6 2.4.6 If xxxTransferYyy() is not delegated to and it is a read operation, the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref c_2_6_4 "2.6.4"), and the current VersionNumber of the accessor is set to DeviceModule::exceptionVersionNumber.
+  - \anchor c_2_4_6 2.4.6 If xxxTransferYyy() is not delegated to and it is a read operation, the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref c_2_6_4 "2.6.4"), and the current VersionNumber of the accessor is set to DeviceModule::exceptionVersionNumber. (cf. \ref b_2_3 "B.2.3")
 
 - \anchor c_2_5 2.5 In doXxxTransferYyy(), delegate to xxxTransferYyy(), if it was so decided in \ref c_2_4 "2.4".
 
@@ -214,8 +214,8 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - 2.8 In doPostRead()/doPostWrite() also boost::numeric::bad_numeric_cast exceptions are caught.
   - 2.8.1 The exception is *not* reported to the DeviceModule (in contrast to \ref c_2_7_1 "2.7.1")
-  - 2.8.1 In doPostWrite(), the exception is just caught, but no further action is required. The transfer itself has been skipped because the original exception occured in doPreWrite(), and dataLost ist already true.
-  - 2.8.2 In doPostRead() the DataValidity returned by the accessor is overridden to faulty until the next successful read operation, and currentVersion is taken from the successful transfer.
+  - 2.8.2 In doPostWrite(), the exception is just caught, but no further action is required. The transfer itself has been skipped because the original exception occured in doPreWrite(), and dataLost ist already true. (cf. \ref b_6 "B.6")
+  - 2.8.3 In doPostRead() the DataValidity returned by the accessor is overridden to faulty until the next successful read operation, and currentVersion is taken from the successful transfer.
 
 - 2.9 The constructor of the decorator
   - 2.9.1 receives the VariableNetworkNode for the device variable, to enable it to create additional, undecorated copies of the register accessor,
