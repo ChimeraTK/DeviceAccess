@@ -262,6 +262,17 @@ namespace ChimeraTK {
      * to write and isWriteable() is not true.*/
     virtual bool isWriteable() const = 0;
 
+    /** Set an actice exception. This function is called by all decorator-like TransferElements
+     *  to propagate exceptions to their target.
+     *  The argument is passed by reference. After returning from this function, it is {nullptr}.
+     *  This function must not be called with nullptr (see spec FIXME).
+     */
+    void setActiveException(std::exception_ptr& setThisException) {
+      assert(setThisException); // must not be nullptr.
+      _activeException = setThisException;
+      setThisException = nullptr;
+    }
+
    private:
     /**
      *  Helper for exception handling in the transfer functions, to avoid code duplication.
@@ -757,9 +768,8 @@ namespace ChimeraTK {
     /// The validity of the data in the application buffer. Part of the application buffer \ref transferElement_A_5 "(see TransferElement specification A.5)"
     DataValidity _dataValidity{DataValidity::ok};
 
-   public:
     /// Exception to be rethrown in postXXX() in case hasSeenException == true
-    /// Needs to be public so decorators can swap it.
+    /// Can be set via setActiveException().
     std::exception_ptr _activeException{nullptr};
   }; // namespace ChimeraTK
 

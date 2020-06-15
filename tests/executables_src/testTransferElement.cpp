@@ -800,7 +800,7 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
     myException = std::current_exception();
   }
   // now put  the exeption into the accessor like a decorator would do it
-  accessor._activeException.swap(myException);
+  accessor.setActiveException(myException);
   BOOST_CHECK_THROW(accessor.postRead(TransferType::read, false), ChimeraTK::runtime_error);
 
   accessor.resetCounters();
@@ -814,7 +814,7 @@ BOOST_AUTO_TEST_CASE(testExceptionDelaying) {
     myException = std::current_exception();
   }
   // now put  the exeption into the accessor like a decorator would do it
-  accessor._activeException.swap(myException);
+  accessor.setActiveException(myException);
   BOOST_CHECK_THROW(accessor.postWrite(TransferType::write, v), ChimeraTK::runtime_error);
 }
 

@@ -58,7 +58,7 @@ namespace ChimeraTK {
         // if we have an active exception here, swap it to the lower level
         // (but don't swap down a nullptr and swap up an active exception)
         if(this->_activeException) {
-          _target->_activeException.swap(this->_activeException);
+          _target->setActiveException(this->_activeException);
         }
         _target->postRead(type, hasNewData);
         if(!hasNewData) return;
@@ -81,7 +81,7 @@ namespace ChimeraTK {
         // if we have an active exception here, swap it to the lower level
         // (but don't swap down a nullptr and swap up an active exception)
         if(this->_activeException) {
-          _target->_activeException.swap(this->_activeException);
+          _target->setActiveException(this->_activeException);
         }
         _target->postWrite(type, versionNumber);
       }
