@@ -181,6 +181,14 @@ namespace ChimeraTK {
      */
     void activateAsyncRead() noexcept;
 
+    /** Set the device into an exception state.
+     *
+     * * All asynchronous reads will be deactivated. Transfer elements with asynchronous read will reveice a ChimeraTK::runtime_error.
+     * * All write and synchronous read operations will see a ChimeraTK::runtime_error.
+     * * The exception state stays until open() has successfully been called again.
+     */
+    void setException();
+
     /** \brief <b>Inefficient convenience function</b> to read a single-word
      * register without obtaining an accessor.
      *
