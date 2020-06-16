@@ -82,7 +82,7 @@ namespace ChimeraTK {
     _heartbeatThread.join();
   }
 
-  bool RebotBackend::isFunctional() const { return _connection->isOpen(); }
+  bool RebotBackend::isFunctional() const { return (_connection->isOpen() && !_hasActiveException); }
 
   void RebotBackend::open() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);

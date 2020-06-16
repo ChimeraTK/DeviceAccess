@@ -38,9 +38,10 @@ namespace ChimeraTK {
     const RegisterCatalogue& getRegisterCatalogue() const override;
 
     void setException() override {
-      // FIXME !!!
-      std::cout << "LogicalNameMappingBacken::setException is not implemented yet. Fix this!" << std::endl;
-      assert(false);
+      /// FIXME: This only delegates to the target devices. It does not work for constants and variables that only line in the logical name mapping
+      for(auto& d : _devices) {
+        d.second->setException();
+      }
     }
 
     template<typename UserType>

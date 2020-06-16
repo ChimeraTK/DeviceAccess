@@ -237,7 +237,7 @@ namespace ChimeraTK {
     if(not _opened) {
       return false;
     }
-
+    // FIXME: once the LNM backend remember an active exception to be reported by the variables and constants, it also has to be checked here.
     for(auto& e : _devices) {
       if(not e.second->isFunctional()) {
         return false;

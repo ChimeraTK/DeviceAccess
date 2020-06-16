@@ -492,10 +492,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer17) {
 
 struct DysfunctDummy : public ChimeraTK::DummyBackend {
   std::atomic<bool> _hasErrors = {false};
-  bool isFunctional() const override { return _opened && !_hasErrors; }
-  DysfunctDummy (std::string mapFileName) : DummyBackend(mapFileName){
-    _hasErrors = true;
-  }
+  bool isFunctional() const override { return _opened && !_hasErrors && !_hasActiveException; }
+  DysfunctDummy(std::string mapFileName) : DummyBackend(mapFileName) { _hasErrors = true; }
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new DysfunctDummy(parameters["map"]));
   }

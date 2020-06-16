@@ -96,6 +96,7 @@ namespace ChimeraTK {
 
   bool PcieBackend::isFunctional() const {
     if(!_opened) return false;
+    if(_hasActiveException) return false;
 
     // Note: This expects byte 0 of bar 0 to be readable. This is currently guaranteed by our firmware framework. If
     // other firmware needs to be supported, this should be made configurable (via CDD). If a map file is used, we could
