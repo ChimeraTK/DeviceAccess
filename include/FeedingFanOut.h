@@ -177,10 +177,10 @@ namespace ChimeraTK {
       return dataLost;
     }
 
-    void doPostWrite(TransferType type, bool dataLost) override {
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
       RuntimeErrorCollector ec;
       for(auto& slave : FanOut<UserType>::slaves) {
-        ec.wrap([&] { slave->postWrite(type, dataLost); });
+        ec.wrap([&] { slave->postWrite(type, versionNumber); });
       }
 
       FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
@@ -205,15 +205,7 @@ namespace ChimeraTK {
       /// @todo implement properly?
     }
 
-    AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
-
-    VersionNumber getVersionNumber() const override { return FanOut<UserType>::slaves.front()->getVersionNumber(); }
-
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getReturnSlave() { return _returnSlave; }
-
-    void setDataValidity(DataValidity valid = DataValidity::ok) override { validity = valid; }
-
-    DataValidity dataValidity() const override { return validity; }
 
     void interrupt() override {
       // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
