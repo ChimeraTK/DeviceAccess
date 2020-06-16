@@ -31,7 +31,7 @@ namespace ChimeraTK {
 
     ~ConstantAccessor() { this->shutdown(); }
 
-    void doReadTransfer() override {
+    void doReadTransferSynchronously() override {
       if(firstRead) {
         firstRead = false;
         return;
@@ -42,17 +42,9 @@ namespace ChimeraTK {
       throw boost::thread_interrupted();
     }
 
-    bool doReadTransferNonBlocking() override {
-      if(firstRead) {
-        firstRead = false;
-        return true;
-      }
-      return false;
+    void doPostRead(TransferType /*type*/, bool /* hasNewData */) override {
+      ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
     }
-
-    bool doReadTransferLatest() override { return doReadTransferNonBlocking(); }
-
-    void doPostRead(TransferType /*type*/, bool /* hasNewData */) override { ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value; }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override { return true; }
 
@@ -72,15 +64,11 @@ namespace ChimeraTK {
 
     std::list<boost::shared_ptr<ChimeraTK::TransferElement>> getInternalElements() override { return {}; }
 
-    AccessModeFlags getAccessModeFlags() const override { return {}; }
-
     void interrupt() override {
       if(isInterrupted) return;
       promise.set_value();
       isInterrupted = true;
     }
-
-    VersionNumber getVersionNumber() const override { return versionNumber; }
 
    protected:
     std::vector<UserType> _value;
