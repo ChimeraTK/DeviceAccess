@@ -289,6 +289,11 @@ namespace ChimeraTK {
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, setAsCooked_impl, 3);
 
+    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) {
+      this->_exceptionBackend = exceptionBackend;
+      _rawAccessor->setExceptionBackend(exceptionBackend);
+    }
+
    protected:
     /** Address, size and fixed-point representation information of the register
      * from the map file */
@@ -338,6 +343,7 @@ namespace ChimeraTK {
         casted->changeAddress(newStartAddress, newNumberOfWords);
         _rawAccessor = casted;
       }
+      _rawAccessor->setExceptionBackend(this->_exceptionBackend);
     }
 
     /** A helper class to implement template specialisation on certain functions.

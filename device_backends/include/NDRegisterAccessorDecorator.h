@@ -101,6 +101,7 @@ namespace ChimeraTK {
           target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
       _target = target;
       this->_readQueue = _target->getReadQueue();
+      this->_exceptionBackend = _target->getExceptionBackend();
 
       // set ID to match the decorated accessor
       this->_id = _target->getId();
@@ -144,6 +145,11 @@ namespace ChimeraTK {
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
 
+    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
+      this->_exceptionBackend = exceptionBackend;
+      _target->setExceptionBackend(exceptionBackend);
+    }
+
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
@@ -176,6 +182,7 @@ void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTr
   else {
     _target->replaceTransferElement(newElement);
   }
+  _target->setExceptionBackend(this->_exceptionBackend);
 }
 
 #endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H */

@@ -111,6 +111,11 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return false; }
 
+    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
+      this->_exceptionBackend = exceptionBackend;
+      _accessor->setExceptionBackend(exceptionBackend);
+    }
+
    protected:
     /// pointer to underlying accessor
     boost::shared_ptr<NDRegisterAccessor<UserType>> _accessor;
@@ -142,6 +147,7 @@ namespace ChimeraTK {
       else {
         _accessor->replaceTransferElement(newElement);
       }
+      _accessor->setExceptionBackend(this->_exceptionBackend);
     }
   };
 

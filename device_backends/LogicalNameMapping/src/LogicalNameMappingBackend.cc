@@ -146,6 +146,8 @@ namespace ChimeraTK {
           registerPathName + ").");
     }
 
+    ptr->setExceptionBackend(shared_from_this());
+
     return ptr;
   }
 

@@ -274,13 +274,19 @@ namespace ChimeraTK {
   boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_impl(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     obtainTargetBackend();
+    boost::shared_ptr<NDRegisterAccessor<UserType>> returnValue;
     if(type == Type::area) {
-      return getRegisterAccessor_area<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+      returnValue = getRegisterAccessor_area<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
     else if(type == Type::threeRegisters || type == Type::twoRegisters) {
-      return getRegisterAccessor_3regs<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+      returnValue = getRegisterAccessor_3regs<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
-    throw ChimeraTK::logic_error("Unknown type");
+    if(!returnValue) {
+      throw ChimeraTK::logic_error("Unknown type");
+    }
+    returnValue->setExceptionBackend(shared_from_this());
+
+    return returnValue;
   }
 
   /********************************************************************************************************************/

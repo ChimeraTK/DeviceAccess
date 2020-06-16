@@ -58,6 +58,8 @@ namespace ChimeraTK { namespace LNMBackend {
     std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::_target;
+
+    void setExceptionBackend(boost::shared_ptr<DeviceBackend>) override;
   };
 
   /********************************************************************************************************************/
@@ -73,6 +75,10 @@ namespace ChimeraTK { namespace LNMBackend {
           "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: " +
           this->getName());
     }
+
+    // Although this is a decorator we do not use the exceptions backend from the target because this decorator is given out by a backend
+    target->setExceptionBackend(backend);
+    this->_exceptionBackend = backend;
 
     // create exprtk parser
     exprtk::parser<double> parser;
@@ -91,6 +97,7 @@ namespace ChimeraTK { namespace LNMBackend {
     for(auto& parpair : parameters) {
       if(parpair.first == "formula") continue;
       auto acc = backend->getRegisterAccessor<double>(parpair.second, 0, 0, {});
+      acc->setExceptionBackend(backend);
       if(acc->getNumberOfChannels() != 1) {
         throw ChimeraTK::logic_error(
             "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: '" +
@@ -234,6 +241,18 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     _target->setDataValidity(this->_dataValidity);
     _target->preWrite(type, versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void MathPluginDecorator<UserType>::setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) {
+    this->_exceptionBackend = exceptionBackend;
+    _target->setExceptionBackend(exceptionBackend);
+    // params is a map with NDRegisterAccessors as key
+    for(auto& p : params) {
+      p.first->setExceptionBackend(exceptionBackend);
+    }
   }
 
   /********************************************************************************************************************/
