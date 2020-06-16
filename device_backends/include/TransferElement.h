@@ -66,6 +66,7 @@ namespace ChimeraTK {
      * readTransferAyncNonWaitingImpl() and should never be visible to the application.
      */
     class DiscardValueException {};
+
   } /* namespace detail */
 
   /*******************************************************************************************************************/
@@ -291,6 +292,11 @@ namespace ChimeraTK {
     /** Return the exception backend. Needed by decorators to set their _exceptionBackend to the target's.
      */
     boost::shared_ptr<DeviceBackend> getExceptionBackend() { return _exceptionBackend; }
+
+    /** Function to get a copy of the read queue. This functions should only be used by decorators to initialise their
+     *  TransferElement::_readQueue() member.
+     */
+    cppext::future_queue<void> getReadQueue() { return _readQueue; }
 
    protected:
     /** The backend to which the runtime_errors are reported via DeviceBackend::setEception().
