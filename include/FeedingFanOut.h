@@ -58,7 +58,8 @@ namespace ChimeraTK {
     FeedingFanOut(std::string const& name, std::string const& unit, std::string const& description,
         size_t numberOfElements, bool withReturn)
     : FanOut<UserType>(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>()),
-      ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:" + name, unit, description), _withReturn(withReturn) {
+      ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:" + name, AccessModeFlags{}, unit, description),
+      _withReturn(withReturn) {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
     }
