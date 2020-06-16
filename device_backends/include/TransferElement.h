@@ -29,6 +29,7 @@
 #include "Exception.h"
 #include "TransferElementID.h"
 #include "VersionNumber.h"
+#include "DeviceBackend.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -274,6 +275,29 @@ namespace ChimeraTK {
       }
     }
 
+    /** Set the backend to which the exception has to be reported.
+     *  Each backend has to do this when creating TransferElements. However, not
+     *  all TransferElements will have it set, for instance ProcessArrays in the ControlSystemAdapter and Application core,#
+     *  which don't have backends at all.
+     *  This function is only to be called inside of DeviceBackend::getRegisterAccessor()!
+     *
+     *  It is virtual because some accessor implementations like NumericAddressedBackendRegisterAccessor have an inner layer (LowLevelTransferElement),
+     *  and all layers need to know the exception backend.Hence the functions needs to be overridden in this case.
+     */
+    virtual void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) {
+      _exceptionBackend = exceptionBackend;
+    }
+
+    /** Return the exception backend. Needed by decorators to set their _exceptionBackend to the target's.
+     */
+    boost::shared_ptr<DeviceBackend> getExceptionBackend() { return _exceptionBackend; }
+
+   protected:
+    /** The backend to which the runtime_errors are reported via DeviceBackend::setEception().
+     *  Creating backends set it in DeviceBackend::getRegisterAccessor(). Devorators have to set it in the constructor from their target.
+     */
+    boost::shared_ptr<DeviceBackend> _exceptionBackend;
+
    private:
     /**
      *  Helper for exception handling in the transfer functions, to avoid code duplication.
@@ -285,6 +309,9 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error&) {
         _activeException = std::current_exception();
+        if(_exceptionBackend) {
+          _exceptionBackend->setException();
+        }
       }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
@@ -383,6 +410,9 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error&) {
         _activeException = std::current_exception();
+        if(_exceptionBackend) {
+          _exceptionBackend->setException();
+        }
       }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
@@ -466,6 +496,9 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error&) {
         _activeException = std::current_exception();
+        if(_exceptionBackend) {
+          _exceptionBackend->setException();
+        }
       }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
