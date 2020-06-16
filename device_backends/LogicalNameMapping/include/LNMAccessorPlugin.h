@@ -180,8 +180,8 @@ namespace ChimeraTK { namespace LNMBackend {
   /** TypeHintModifier Plugin: Change the catalog type of the mapped register. No actual type conversion takes place */
   class TypeHintModifierPlugin : public AccessorPlugin<TypeHintModifierPlugin> {
    public:
-    TypeHintModifierPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info,
-        const std::map<std::string, std::string>& parameters);
+    TypeHintModifierPlugin(
+        boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
 
     void updateRegisterInfo() override;
 
@@ -221,8 +221,7 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename Derived>
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>&,
-      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
     return AccessorPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
 
@@ -243,6 +242,8 @@ namespace ChimeraTK { namespace LNMBackend {
           _info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
       decorated = static_cast<const Derived*>(this)->template decorateAccessor<UserType>(backend, target);
     });
+
+    decorated->setExceptionBackend(backend);
     return decorated;
   }
 

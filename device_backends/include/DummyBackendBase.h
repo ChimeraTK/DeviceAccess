@@ -128,6 +128,7 @@ namespace ChimeraTK {
         }
       }
 
+      accessor->setExceptionBackend(shared_from_this());
       return accessor;
     }
 

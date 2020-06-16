@@ -89,7 +89,10 @@ class AsyncTestDummy : public DeviceBackendImpl {
     assert(wordOffsetInRegister == 0);
     (void)numberOfWords;
     (void)wordOffsetInRegister;
-    return boost::make_shared<Accessor<UserType>>(this, registerPathName, flags);
+    boost::shared_ptr<NDRegisterAccessor<UserType>> retval =
+        boost::make_shared<Accessor<UserType>>(this, registerPathName, flags);
+    retval->setExceptionBackend(shared_from_this());
+    return retval;
   }
 
   DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(AsyncTestDummy, getRegisterAccessor_impl, 4);
@@ -101,7 +104,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   void close() override { _opened = false; }
 
-  bool isFunctional() const override { return _opened; }
+  bool isFunctional() const override { return (_opened && !_hasActiveException); }
 
   std::map<std::string, cppext::future_queue<void>> notificationQueue;
   std::map<std::string, size_t> registers;

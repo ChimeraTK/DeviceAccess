@@ -84,16 +84,22 @@ namespace ChimeraTK {
       size_t omitPlugins) {
     parse();
     // check if accessor plugin present
+    boost::shared_ptr<NDRegisterAccessor<UserType>> returnValue;
     auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue_mutable.getRegister(registerPathName));
     if(info->plugins.size() <= omitPlugins) {
       // no plugin: directly return the accessor
-      return getRegisterAccessor_internal<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+      returnValue =
+          getRegisterAccessor_internal<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
     else {
-      return info->plugins[omitPlugins]->getAccessor<UserType>(
+      returnValue = info->plugins[omitPlugins]->getAccessor<UserType>(
           boost::static_pointer_cast<LogicalNameMappingBackend>(shared_from_this()), numberOfWords,
           wordOffsetInRegister, flags, omitPlugins);
     }
+
+    returnValue->setExceptionBackend(shared_from_this());
+
+    return returnValue;
   }
 
   /********************************************************************************************************************/
@@ -145,8 +151,6 @@ namespace ChimeraTK {
                                    "of logical register: " +
           registerPathName + ").");
     }
-
-    ptr->setExceptionBackend(shared_from_this());
 
     return ptr;
   }

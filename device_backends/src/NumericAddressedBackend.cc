@@ -164,6 +164,8 @@ namespace ChimeraTK {
           boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendMuxedRegisterAccessor<UserType>(
               registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
     }
+
+    accessor->setExceptionBackend(shared_from_this());
     return accessor;
   }
 
