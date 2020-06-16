@@ -102,6 +102,11 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return true; }
 
+    void doReadTransferSynchronously() override {
+      assert(_withReturn);
+      _returnSlave->readTransfer();
+    }
+
     void doPreRead(TransferType type) override {
       if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);

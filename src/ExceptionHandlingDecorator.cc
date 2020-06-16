@@ -34,6 +34,13 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::doReadTransferSynchronously() {
+    if(transferAllowed) {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
+    }
+  }
+
+  template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
     if(transferAllowed) {
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);

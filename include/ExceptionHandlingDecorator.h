@@ -33,6 +33,8 @@ namespace ChimeraTK {
 
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
 
+    void doReadTransferSynchronously() override;
+
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
     void interrupt() override;
