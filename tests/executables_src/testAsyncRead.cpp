@@ -145,7 +145,6 @@ BOOST_AUTO_TEST_CASE(testAsyncRead) {
     auto accessor = device.getScalarRegisterAccessor<int>("REG", 0, {AccessMode::wait_for_new_data});
 
     // simple reading through readAsync without actual need
-    TransferFuture future;
     backend->registers["/REG"] = 5;
 
     auto waitForRead = std::async(std::launch::async, [&accessor] { accessor.read(); });

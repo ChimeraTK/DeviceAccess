@@ -24,7 +24,6 @@
 #include "Exception.h"
 #include "TransferElement.h"
 #include "TransferElementID.h"
-#include "TransferFuture.h"
 #include "VersionNumber.h"
 
 namespace ChimeraTK {
@@ -34,8 +33,6 @@ namespace ChimeraTK {
 namespace ChimeraTK {
 
   class TransferGroup;
-
-  using ChimeraTK::TransferFuture;
 
   /*******************************************************************************************************************/
 
