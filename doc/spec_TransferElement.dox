@@ -364,24 +364,6 @@ This documnent is currently still **INCOMPLETE**!
 
 **Note:** This section is biased by the current implementation and mostly lists parts that needs to be changed!
 
-- 1. The TransferFuture will be removed. According to D.1.1 all common functionality is implemented with TransferElement::_readQueue, so the TransferFuture provides no added value and even complicates the implementation.
-
-- 2. TransferElement
-
-  - 2.1 TransferElement::readAsync() will be removed (not deprecated because it would have to return the TransferFuture, which will be removed), (together with readTransferAsync() and doReadTransferAsync()).
-
-  - 2.2 readTransferLatest() and doReadTransferLatest() will be removed.
-
-  - 2.3 doReadTransferNonBlockin() will be removed. The implementation of readTransferNonBlocking will use the TransferElement::_readQueue.
-
-  - 2.4 readLatest() is directly calling readNonBlocking() in a loop (see B.3.1.4)
-
-  - 2.5 Add function ChimeraTK::detail::getFutureQueueFromTransferElement(), replacing ChimeraTK::detail::getFutureQueueFromTransferFuture().
-
-- 3. ReadAnyGroup
-
-  - 3.1 Use the new ChimeraTK::detail::getFutureQueueFromTransferElement() (or make ReadAnyGroup friend of TransferElement?)
-
 
 - 4. ApplicationCore
 

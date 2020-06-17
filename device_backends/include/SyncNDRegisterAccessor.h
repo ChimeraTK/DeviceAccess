@@ -43,15 +43,8 @@ namespace ChimeraTK {
      * exception (hint: put catch-all block around the entired constructor, call
      * shutdown() there and then rethrow the exception).
      *
-     * Implementation note: This function call is necessary to ensure that a
-     * potentially still-running thread launched in readAsync() is properly
-     * terminated before destroying the accessor object. Since this thread
-     * accesses virtual functions like doReadTransfer(), the full accessor object
-     * must still be alive, thus shutting down the thread in the base class
-     * destructor is too late. Technically, implementations overriding readAsync()
-     * would not need to call this function, but to make sure all implementations
-     * which do not override readAsync() actually call it, the function call is
-     * enforced for all implementations in the destructor with an assert.
+     * FIXME: This function was introduced to cleanly shut down the thread in readAsync.
+     * This has been removed, so probably this function and this whole class are obsolete now.
      */
     void shutdown() { shutdownCalled = true; }
 

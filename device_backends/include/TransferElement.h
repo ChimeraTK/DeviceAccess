@@ -347,8 +347,9 @@ namespace ChimeraTK {
      *  must be called after preRead() and before postRead(). If the accessor has the AccessMode::wait_for_new_data
      *  flag, the function will block until new data has been pushed by the sender.
      *
-     *  This function internally calles doReadTransfer(), which is implemented by the backend. runtime_error exceptions
-     *  thrown in doReadTransfer() are caught and rethrown in postRead().
+     *  This function internally calls doReadTransferSynchonously(), which is implemented by the backend, or waits
+     *  for data on the _readQueue, depening whether AccessMode::wait_for_new_data is set.
+     *  runtime_error exceptions thrown in the transfer are caught and rethrown in postRead().
      */
     void readTransfer() {
       if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
@@ -361,14 +362,14 @@ namespace ChimeraTK {
 
    protected:
     /**
-     *  Implementation version of readTransfer(). This function must be implemented by the backend. For the
+     *  Implementation version of readTransfer() for synchronous reads. This function must be implemented by the backend. For the
      *  functional description read the documentation of readTransfer().
      *  
      *  Implementation notes:
      *  - This function must return within ~1 second after boost::thread::interrupt() has been called on the thread
      *    calling this function.
      *  - Decorators must delegate the call to readTransfer() of the decorated target.
-     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransferLatest()
+     *  - Delegations within the same object should go to the "do" version, e.g. to BaseClass::doReadTransferSynchronously()
      */
     virtual void doReadTransferSynchronously() = 0;
 
@@ -392,8 +393,9 @@ namespace ChimeraTK {
      *  flag, this function will not block if no new data is available. For the meaning of the return value, see
      *  readNonBlocking().
      *
-     *  This function internally calles doReadTransferNonBlocking(), which is implemented by the backend. runtime_error
-     *  exceptions thrown in doRedoReadTransferNonBlockingadTransfer() are caught and rethrown in postRead().
+     *  For TransferElements with AccessMode::wait_for_new_data this function checks whether there is new data on the _readQueue.
+     *  Without AccessMode::wait_for_new_data it calls doReadTransferSynchronously, which is implemented by the backend.
+     *  runtime_error exceptions thrown in the transfer are caught and rethrown in postRead().
      */
     bool readTransferNonBlocking() {
       if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
@@ -485,11 +487,12 @@ namespace ChimeraTK {
      *  no exception is thrown.
      *
      *  Notes for backend implementations:
-     *  - If the flag hasNewData is false, the user buffer must stay unaltered. This is true also if the backend did
-     *    not throw any exception and did not return false in the doReadTransfer...() call. The flag is also controlled
-     *    by the TransferGroup and will be set to false, if an exception has been seen on any other transfer. */
+     *  - If the flag updateDataBuffer is false, the data buffer must stay unaltered. Full implementations (backends) must
+     *    also leave the meta data (version number and data validity) unchanged. Decorators are allowed to change the meta data (for instance
+     *    set the DataValidity::faulty).
+     */
    protected:
-    virtual void doPostRead(TransferType, bool /*hasNewData*/) {}
+    virtual void doPostRead(TransferType, bool /*updateDataBuffer*/) {}
 
    private:
     /** helper functions to avoid code duplication */
