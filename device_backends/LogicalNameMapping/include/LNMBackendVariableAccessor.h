@@ -15,66 +15,58 @@
 #include "Device.h"
 #include "FixedPointConverter.h"
 #include "LogicalNameMappingBackend.h"
-#include "SyncNDRegisterAccessor.h"
+#include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
   template<typename UserType>
-  class LNMBackendVariableAccessor : public SyncNDRegisterAccessor<UserType> {
+  class LNMBackendVariableAccessor : public NDRegisterAccessor<UserType> {
    public:
     LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : SyncNDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
+    : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
       _wordOffsetInRegister(wordOffsetInRegister), _fixedPointConverter(registerPathName, 32, 0, 1) {
-      try {
-        // cast device
-        _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
-        // check for unknown flags
-        flags.checkForUnknownFlags({AccessMode::raw});
-        // obtain the register info
-        _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
-            _dev->getRegisterCatalogue().getRegister(_registerPathName));
-        if(numberOfWords == 0) numberOfWords = _info->length;
-        // check for illegal parameter combinations
-        if(wordOffsetInRegister + numberOfWords > _info->length) {
-          throw ChimeraTK::logic_error("Requested number of words and/or offset "
-                                       "exceeds length of register '" +
-              registerPathName + "'.");
-        }
-        if(flags.has(AccessMode::raw)) {
-          if(typeid(UserType) != typeid(int32_t)) {
-            throw ChimeraTK::logic_error("Given UserType when obtaining the "
-                                         "LNMBackendBufferingVariableAccessor in"
-                                         " raw mode does not match the expected "
-                                         "type. Use an int32_t instead!");
-          }
-          std::cout << "WARNING: You are using AccessMode::raw on a "
-                       "variable/constant-type register in a logical "
-                       "name mapping device. This is DEPRECATED and support for "
-                       "it will be removed soon!"
-                    << std::endl;
-        }
-        // check for incorrect usage of this accessor
-        if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
-            _info->targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
-          throw ChimeraTK::logic_error("LNMBackendVariableAccessor used for "
-                                       "wrong register type."); // LCOV_EXCL_LINE
-                                                                // (impossible to
-                                                                // test...)
-        }
-        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
-        fillUserBuffer();
+      // cast device
+      _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
+      // check for unknown flags
+      flags.checkForUnknownFlags({AccessMode::raw});
+      // obtain the register info
+      _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
+          _dev->getRegisterCatalogue().getRegister(_registerPathName));
+      if(numberOfWords == 0) numberOfWords = _info->length;
+      // check for illegal parameter combinations
+      if(wordOffsetInRegister + numberOfWords > _info->length) {
+        throw ChimeraTK::logic_error("Requested number of words and/or offset "
+                                     "exceeds length of register '" +
+            registerPathName + "'.");
       }
-      catch(...) {
-        this->shutdown();
-        throw;
+      if(flags.has(AccessMode::raw)) {
+        if(typeid(UserType) != typeid(int32_t)) {
+          throw ChimeraTK::logic_error("Given UserType when obtaining the "
+                                       "LNMBackendBufferingVariableAccessor in"
+                                       " raw mode does not match the expected "
+                                       "type. Use an int32_t instead!");
+        }
+        std::cout << "WARNING: You are using AccessMode::raw on a "
+                     "variable/constant-type register in a logical "
+                     "name mapping device. This is DEPRECATED and support for "
+                     "it will be removed soon!"
+                  << std::endl;
       }
+      // check for incorrect usage of this accessor
+      if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
+          _info->targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
+        throw ChimeraTK::logic_error("LNMBackendVariableAccessor used for "
+                                     "wrong register type."); // LCOV_EXCL_LINE
+                                                              // (impossible to
+                                                              // test...)
+      }
+      NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+      NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
+      fillUserBuffer();
     }
-
-    virtual ~LNMBackendVariableAccessor() override { this->shutdown(); }
 
     void doReadTransferSynchronously() override {}
 

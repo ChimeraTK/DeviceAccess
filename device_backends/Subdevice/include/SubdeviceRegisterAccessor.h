@@ -12,20 +12,18 @@
 
 #include "Device.h"
 #include "SubdeviceBackend.h"
-#include "SyncNDRegisterAccessor.h"
+#include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  class SubdeviceRegisterAccessor : public SyncNDRegisterAccessor<int32_t> {
+  class SubdeviceRegisterAccessor : public NDRegisterAccessor<int32_t> {
    public:
     SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
         boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
         boost::shared_ptr<NDRegisterAccessor<int32_t>> accData,
         boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus, size_t byteOffset, size_t numberOfWords);
-
-    ~SubdeviceRegisterAccessor() override;
 
     void doReadTransferSynchronously() override;
 

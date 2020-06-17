@@ -9,7 +9,7 @@
 #include "MapFileParser.h"
 #include "NumericAddressedBackend.h"
 #include "RegisterInfoMap.h"
-#include "SyncNDRegisterAccessor.h"
+#include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -51,12 +51,10 @@ namespace ChimeraTK {
    * multiplexd 2D registers
    */
   template<class UserType>
-  class NumericAddressedBackendMuxedRegisterAccessor : public SyncNDRegisterAccessor<UserType> {
+  class NumericAddressedBackendMuxedRegisterAccessor : public NDRegisterAccessor<UserType> {
    public:
     NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath& registerPathName, size_t numberOfElements,
         size_t elementsOffset, boost::shared_ptr<DeviceBackend> _backend);
-
-    ~NumericAddressedBackendMuxedRegisterAccessor() override { this->shutdown(); }
 
     void doReadTransferSynchronously() override;
 
@@ -140,118 +138,112 @@ namespace ChimeraTK {
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
       const RegisterPath& registerPathName, size_t numberOfElements, size_t elementsOffset,
       boost::shared_ptr<DeviceBackend> _backend)
-  : SyncNDRegisterAccessor<UserType>(registerPathName, {}),
+  : NDRegisterAccessor<UserType>(registerPathName, {}),
     _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _registerPathName(registerPathName),
     _numberOfElements(numberOfElements), _elementsOffset(elementsOffset) {
-    try {
-      // re-split register and module after merging names by the last dot (to
-      // allow module.register in the register name)
-      _registerPathName.setAltSeparator(".");
-      auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());
-      _moduleName = moduleAndRegister.first;
-      _registerName = moduleAndRegister.second;
+    // re-split register and module after merging names by the last dot (to
+    // allow module.register in the register name)
+    _registerPathName.setAltSeparator(".");
+    auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());
+    _moduleName = moduleAndRegister.first;
+    _registerName = moduleAndRegister.second;
 
-      // build name of area as written in the map file
-      std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX + _registerName;
+    // build name of area as written in the map file
+    std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX + _registerName;
 
-      // Obtain information about the area
-      auto registerMapping = _ioDevice->getRegisterMap();
-      registerMapping->getRegisterInfo(areaName, _areaInfo, _moduleName);
+    // Obtain information about the area
+    auto registerMapping = _ioDevice->getRegisterMap();
+    registerMapping->getRegisterInfo(areaName, _areaInfo, _moduleName);
 
-      // Cache writeability
-      _isNotWriteable = (_areaInfo.registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
+    // Cache writeability
+    _isNotWriteable = (_areaInfo.registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
 
-      // Obtain information for each sequence (= channel) in the area:
-      // Create a fixed point converter for each sequence and store the sequence
-      // information in a vector
-      size_t iSeq = 0;
-      while(true) {
-        // build name of the next sequence as written in the map file
-        RegisterInfoMap::RegisterInfo sequenceInfo;
-        std::stringstream sequenceNameStream;
-        sequenceNameStream << SEQUENCE_PREFIX << _registerName << "_" << iSeq++;
+    // Obtain information for each sequence (= channel) in the area:
+    // Create a fixed point converter for each sequence and store the sequence
+    // information in a vector
+    size_t iSeq = 0;
+    while(true) {
+      // build name of the next sequence as written in the map file
+      RegisterInfoMap::RegisterInfo sequenceInfo;
+      std::stringstream sequenceNameStream;
+      sequenceNameStream << SEQUENCE_PREFIX << _registerName << "_" << iSeq++;
 
-        // try to find sequence
-        try {
-          registerMapping->getRegisterInfo(sequenceNameStream.str(), sequenceInfo, _moduleName);
-        }
-        catch(ChimeraTK::logic_error&) {
-          // no sequence found: we are done
-          break;
-        }
-
-        // check consistency
-        if(sequenceInfo.nElements != 1) {
-          throw ChimeraTK::logic_error("Sequence words must have exactly one element");
-        }
-
-        // store sequence info and fixed point converter
-        if(sequenceInfo.width > sequenceInfo.nBytes * 8) sequenceInfo.width = sequenceInfo.nBytes * 8;
-        _sequenceInfos.push_back(sequenceInfo);
-        _converters.push_back(FixedPointConverter(
-            registerPathName, sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag));
+      // try to find sequence
+      try {
+        registerMapping->getRegisterInfo(sequenceNameStream.str(), sequenceInfo, _moduleName);
+      }
+      catch(ChimeraTK::logic_error&) {
+        // no sequence found: we are done
+        break;
       }
 
-      // check if no sequences were found
-      if(_converters.empty()) {
-        throw ChimeraTK::logic_error("No sequences found for name \"" + _registerName + "\".");
+      // check consistency
+      if(sequenceInfo.nElements != 1) {
+        throw ChimeraTK::logic_error("Sequence words must have exactly one element");
       }
 
-      // compute size of one block in bytes (one sample for all channels)
-      bytesPerBlock = 0;
-      for(unsigned int i = 0; i < _converters.size(); i++) {
-        uint32_t nbt = _sequenceInfos[i].nBytes;
-        bytesPerBlock += nbt;
-        if(nbt != 1 && nbt != 2 && nbt != 4) {
-          throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
-        }
-      }
+      // store sequence info and fixed point converter
+      if(sequenceInfo.width > sequenceInfo.nBytes * 8) sequenceInfo.width = sequenceInfo.nBytes * 8;
+      _sequenceInfos.push_back(sequenceInfo);
+      _converters.push_back(FixedPointConverter(
+          registerPathName, sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag));
+    }
 
-      // compute number of blocks (number of samples for each channel)
-      _nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
+    // check if no sequences were found
+    if(_converters.empty()) {
+      throw ChimeraTK::logic_error("No sequences found for name \"" + _registerName + "\".");
+    }
 
-      // check number of words
-      if(_elementsOffset >= _nBlocks) {
-        throw ChimeraTK::logic_error("Requested element offset exceeds the size of the register!");
-      }
-      if(_numberOfElements == 0) {
-        _numberOfElements = _nBlocks - _elementsOffset;
-      }
-      if(_numberOfElements + _elementsOffset > _nBlocks) {
-        throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register!");
-      }
-
-      // compute the address taking into account the selected area of interest
-      _bar = _areaInfo.bar;
-      _address = _areaInfo.address + bytesPerBlock * _elementsOffset;
-      _nBytes = bytesPerBlock * _numberOfElements;
-      if(_nBytes % sizeof(int32_t) > 0) _nBytes += 4 - _nBytes % sizeof(int32_t); // round up to the next multiple of 4
-      if(_nBytes > _areaInfo.nBytes) {
-        throw ChimeraTK::logic_error(
-            "Requested number of elements exceeds the size of the register (late, redundant safety check)!");
-      }
-      _nBlocks = _numberOfElements;
-
-      // allocate the buffer for the converted data
-      NDRegisterAccessor<UserType>::buffer_2D.resize(_converters.size());
-      for(size_t i = 0; i < _converters.size(); ++i) {
-        NDRegisterAccessor<UserType>::buffer_2D[i].resize(_nBlocks);
-      }
-
-      // allocate the raw io buffer. Make it one element larger to make sure we can access the last byte via int32_t*
-      _ioBuffer.resize(_nBytes / sizeof(int32_t) + 1);
-
-      // compute pitched iterators for accessing the channels
-      uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-        _startIterators.push_back(detail::pitched_iterator<int32_t>(standOfMyioBuffer, bytesPerBlock));
-        _endIterators.push_back(_startIterators.back() + _nBlocks);
-        standOfMyioBuffer += _sequenceInfos[sequenceIndex].nBytes;
+    // compute size of one block in bytes (one sample for all channels)
+    bytesPerBlock = 0;
+    for(unsigned int i = 0; i < _converters.size(); i++) {
+      uint32_t nbt = _sequenceInfos[i].nBytes;
+      bytesPerBlock += nbt;
+      if(nbt != 1 && nbt != 2 && nbt != 4) {
+        throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
       }
     }
-    catch(...) {
-      this->shutdown();
-      throw;
+
+    // compute number of blocks (number of samples for each channel)
+    _nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
+
+    // check number of words
+    if(_elementsOffset >= _nBlocks) {
+      throw ChimeraTK::logic_error("Requested element offset exceeds the size of the register!");
+    }
+    if(_numberOfElements == 0) {
+      _numberOfElements = _nBlocks - _elementsOffset;
+    }
+    if(_numberOfElements + _elementsOffset > _nBlocks) {
+      throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register!");
+    }
+
+    // compute the address taking into account the selected area of interest
+    _bar = _areaInfo.bar;
+    _address = _areaInfo.address + bytesPerBlock * _elementsOffset;
+    _nBytes = bytesPerBlock * _numberOfElements;
+    if(_nBytes % sizeof(int32_t) > 0) _nBytes += 4 - _nBytes % sizeof(int32_t); // round up to the next multiple of 4
+    if(_nBytes > _areaInfo.nBytes) {
+      throw ChimeraTK::logic_error(
+          "Requested number of elements exceeds the size of the register (late, redundant safety check)!");
+    }
+    _nBlocks = _numberOfElements;
+
+    // allocate the buffer for the converted data
+    NDRegisterAccessor<UserType>::buffer_2D.resize(_converters.size());
+    for(size_t i = 0; i < _converters.size(); ++i) {
+      NDRegisterAccessor<UserType>::buffer_2D[i].resize(_nBlocks);
+    }
+
+    // allocate the raw io buffer. Make it one element larger to make sure we can access the last byte via int32_t*
+    _ioBuffer.resize(_nBytes / sizeof(int32_t) + 1);
+
+    // compute pitched iterators for accessing the channels
+    uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
+    for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
+      _startIterators.push_back(detail::pitched_iterator<int32_t>(standOfMyioBuffer, bytesPerBlock));
+      _endIterators.push_back(_startIterators.back() + _nBlocks);
+      standOfMyioBuffer += _sequenceInfos[sequenceIndex].nBytes;
     }
   }
 

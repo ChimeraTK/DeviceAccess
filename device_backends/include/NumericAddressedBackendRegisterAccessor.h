@@ -12,7 +12,7 @@
 #include "ForwardDeclarations.h"
 #include "IEEE754_SingleConverter.h"
 #include "NumericAddressedLowLevelTransferElement.h"
-#include "SyncNDRegisterAccessor.h"
+#include "NDRegisterAccessor.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -137,82 +137,74 @@ namespace ChimeraTK {
    * scalar and 1D registers.
    */
   template<typename UserType, typename DataConverterType, bool isRaw>
-  class NumericAddressedBackendRegisterAccessor : public SyncNDRegisterAccessor<UserType> {
+  class NumericAddressedBackendRegisterAccessor : public NDRegisterAccessor<UserType> {
    public:
     NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : SyncNDRegisterAccessor<UserType>(registerPathName, flags), _dataConverter(registerPathName),
+    : NDRegisterAccessor<UserType>(registerPathName, flags), _dataConverter(registerPathName),
       _registerPathName(registerPathName), _numberOfWords(numberOfWords),
       _prePostActionsImplementor(
           NDRegisterAccessor<UserType>::buffer_2D, _rawAccessor, _startAddress, _dataConverter, _isNotWriteable) {
-      try {
-        // check for unknown flags
-        flags.checkForUnknownFlags({AccessMode::raw});
+      // check for unknown flags
+      flags.checkForUnknownFlags({AccessMode::raw});
 
-        // check device backend
-        _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
-        if(!_dev) {
-          throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor "
-                                       "is used with a backend which is not "
-                                       "a NumericAddressedBackend.");
-        }
-
-        // obtain register information
-        boost::shared_ptr<RegisterInfo> info = _dev->getRegisterInfo(registerPathName);
-        _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
-        _bar = _registerInfo->bar;
-        _startAddress = _registerInfo->address + wordOffsetInRegister * sizeof(int32_t);
-
-        // check number of words
-        if(_numberOfWords == 0) {
-          _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
-        }
-        if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
-          throw ChimeraTK::logic_error(
-              "Requested number of words exceeds the size of the register '" + _registerPathName + "'!");
-        }
-        if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
-          throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + _registerPathName + "'!");
-        }
-
-        // Cache writeability
-        _isNotWriteable = (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
-
-        // create low-level transfer element handling the actual data transfer to
-        // the hardware with raw data
-        _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev, _bar, _startAddress, _numberOfWords));
-
-        // allocated the buffers
-        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
-
-        // We don't have to fill it in a special way if the accessor is raw
-        // because we have an overloaded, more efficient implementation
-        // in this case. So we can use it in setAsCooked() and getAsCooked()
-        _dataConverter = detail::createDataConverter<DataConverterType>(_registerInfo);
-
-        if(flags.has(AccessMode::raw)) {
-          if(typeid(UserType) != typeid(int32_t)) {
-            throw ChimeraTK::logic_error("Given UserType when obtaining the "
-                                         "NumericAddressedBackendRegisterAccessor in raw mode does not "
-                                         "match the expected type. Use an int32_t instead! (Register "
-                                         "name: " +
-                _registerPathName + "')");
-          }
-          // FIXME: this has to move to the creation
-          //isRaw = true;
-        }
+      // check device backend
+      _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
+      if(!_dev) {
+        throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor "
+                                     "is used with a backend which is not "
+                                     "a NumericAddressedBackend.");
       }
-      catch(...) {
-        this->shutdown();
-        throw;
+
+      // obtain register information
+      boost::shared_ptr<RegisterInfo> info = _dev->getRegisterInfo(registerPathName);
+      _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      _bar = _registerInfo->bar;
+      _startAddress = _registerInfo->address + wordOffsetInRegister * sizeof(int32_t);
+
+      // check number of words
+      if(_numberOfWords == 0) {
+        _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
+      }
+      if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
+        throw ChimeraTK::logic_error(
+            "Requested number of words exceeds the size of the register '" + _registerPathName + "'!");
+      }
+      if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
+        throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + _registerPathName + "'!");
+      }
+
+      // Cache writeability
+      _isNotWriteable = (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
+
+      // create low-level transfer element handling the actual data transfer to
+      // the hardware with raw data
+      _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev, _bar, _startAddress, _numberOfWords));
+
+      // allocated the buffers
+      NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+      NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
+
+      // We don't have to fill it in a special way if the accessor is raw
+      // because we have an overloaded, more efficient implementation
+      // in this case. So we can use it in setAsCooked() and getAsCooked()
+      _dataConverter = detail::createDataConverter<DataConverterType>(_registerInfo);
+
+      if(flags.has(AccessMode::raw)) {
+        if(typeid(UserType) != typeid(int32_t)) {
+          throw ChimeraTK::logic_error("Given UserType when obtaining the "
+                                       "NumericAddressedBackendRegisterAccessor in raw mode does not "
+                                       "match the expected type. Use an int32_t instead! (Register "
+                                       "name: " +
+              _registerPathName + "')");
+        }
+        // FIXME: this has to move to the creation
+        //isRaw = true;
       }
 
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
     }
-
-    ~NumericAddressedBackendRegisterAccessor() override { this->shutdown(); }
 
     void doReadTransferSynchronously() override { _rawAccessor->read(); }
 
@@ -375,7 +367,7 @@ namespace ChimeraTK {
     template<typename DerivedBackendType>
     friend class DummyBackendBase;
     void makeWriteable() { _isNotWriteable = false; }
-  };
+  }; // namespace ChimeraTK
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
