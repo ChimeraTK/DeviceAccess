@@ -40,9 +40,9 @@ namespace ChimeraTK {
   void LogicalNameMappingBackend::open() {
     parse();
 
-    // open all referenced devices
+    // open all referenced devices (unconditionally, open() is also used for recovery)
     for(auto device = _devices.begin(); device != _devices.end(); ++device) {
-      if(!device->second->isOpen()) device->second->open();
+      device->second->open();
     }
 
     // flag as opened
