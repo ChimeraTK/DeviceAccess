@@ -230,6 +230,8 @@ struct PollingTestApplication : public ctk::Application {
 /* test that no TestableModeAccessorDecorator is used if the testable mode is
  * not enabled */
 
+#if 0
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
   std::cout << "***************************************************************"
                "******************************************************"
@@ -256,6 +258,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
   auto hloutput = app.blockingReadTestModule.someOutput.getHighLevelImplElement();
   BOOST_CHECK(boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hloutput) == nullptr);
 }
+
+#endif
 
 /*********************************************************************************************************************/
 /* test blocking read in test mode */
@@ -294,6 +298,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testBlockingRead, T, test_types) {
 
 /*********************************************************************************************************************/
 /* test async read in test mode */
+
+#if 0
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(testAsyncRead, T, test_types) {
   std::cout << "***************************************************************"
@@ -1070,3 +1076,5 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPolling, T, test_types) {
   BOOST_CHECK_EQUAL((T)pv_valuePush, 24);
   BOOST_CHECK_EQUAL((T)pv_state, 3);
 }
+
+#endif
