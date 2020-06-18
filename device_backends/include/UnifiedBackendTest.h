@@ -493,9 +493,8 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
         // recover
         this->recoverDevice(d);
 
-        // No data received before device async read transfers are re-activated (B.9.2.1)
-        usleep(100000); // give potential race conditions a chance to pop up more easily...
-        BOOST_CHECK(reg.readNonBlocking() == false);
+        // measure time until first data arrives, required for testing B.9.2.1 later
+        auto t0 = std::chrono::steady_clock::now();
 
         // reactivate async read transfers
         d.activateAsyncRead();
@@ -503,6 +502,7 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
 
         // make a successful read (initial value) to make sure the exception state is gone
         reg.read();
+        auto t1 = std::chrono::steady_clock::now();
         BOOST_CHECK(reg.readNonBlocking() == false);
 
         // check that the application buffer is now changed (without implying assumptions about the value)
@@ -527,6 +527,23 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
 
         // disable exceptions on read
         testCondition.second();
+
+        // recover
+        this->recoverDevice(d);
+
+        // wait twice as long as it took above until first data arrived after recovery+reactivation
+        // note: if this sleep is too short, the following BOOST_CHECK is insensitive against bugs.
+        std::this_thread::sleep_for((t1 - t0) * 2);
+
+        // No data received before device async read transfers are re-activated (B.9.2.1)
+        BOOST_CHECK(reg.readNonBlocking() == false);
+
+        // reactivate async read transfers
+        d.activateAsyncRead();
+        quirk_activateAsyncRead();
+
+        // await initial value (to be in same state again as at the beginning of the loop)
+        reg.read();
       }
 
       // close device again
