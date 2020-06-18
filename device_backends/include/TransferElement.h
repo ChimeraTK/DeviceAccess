@@ -763,7 +763,7 @@ namespace ChimeraTK {
      *
      * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      */
-    virtual void interrupt() {
+    void interrupt() {
       if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error(
             "TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");

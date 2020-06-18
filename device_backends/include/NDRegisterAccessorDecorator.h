@@ -40,8 +40,6 @@ namespace ChimeraTK {
 
       void doPostWrite(TransferType type, VersionNumber versionNumber) override = 0;
 
-      void interrupt() override { _target->interrupt(); }
-
      protected:
       /// The accessor to be decorated
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> _target;
@@ -77,8 +75,6 @@ namespace ChimeraTK {
         _target->setActiveException(this->_activeException);
         _target->postWrite(type, versionNumber);
       }
-
-      void interrupt() override { _target->interrupt(); }
 
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;

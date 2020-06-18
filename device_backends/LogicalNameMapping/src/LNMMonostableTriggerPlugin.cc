@@ -79,8 +79,6 @@ namespace ChimeraTK { namespace LNMBackend {
       _target->postWrite(TransferType::write, versionNumber);
     }
 
-    void interrupt() override { _target->interrupt(); }
-
     std::chrono::duration<double, std::milli> _delay;
     uint32_t _active, _inactive;
 

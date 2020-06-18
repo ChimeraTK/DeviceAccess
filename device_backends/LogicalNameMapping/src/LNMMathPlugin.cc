@@ -50,8 +50,6 @@ namespace ChimeraTK { namespace LNMBackend {
       _target->postWrite(type, versionNumber);
     }
 
-    void interrupt() override { _target->interrupt(); }
-
     exprtk::expression<double> expression;
     exprtk::symbol_table<double> symbols;
     std::unique_ptr<exprtk::vector_view<double>> valueView;
