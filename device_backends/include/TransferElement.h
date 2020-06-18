@@ -747,20 +747,34 @@ namespace ChimeraTK {
     TransferElementID getId() const { return _id; }
 
     /**
-     *  Cancel any pending transfer and throw boost::thread_interrupted in its
-     * postRead. This function can be used to shutdown a thread waiting on the
-     * transfer to complete (which might never happen due to the sending part of
-     *  the application already shut down).
+     * Return from a blocking read immediately and throw boost::thread_interrupted.
+     * This function can be used to shutdown a thread waiting on data to arrive,
+     * which might never happen because the sending part of the application is already shut down,
+     * or there is no new data at the moment.
      *
-     *  Note: there is no guarantee that the exception is actually thrown if no
-     * transfer is currently running or if the transfer completes while this
-     * function is called. Also for transfer elements which never block for an
-     *  extended period of time this function may just do nothing. To really shut
-     * down the receiving thread, a interrupt request should be sent to the thread
-     * and boost::this_thread::interruption_point() shall be called after each
-     * transfer.
+     * This function can only be used for TransferElements with AccessMode::wait_for_new_data. Otherwise it
+     * will throw a ChimeraTK::logic_error.
+     *
+     * Note that this function does not stop the sending thread. It just places a boost::thread_interrupted exception on the
+     * _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data
+     * is put into the queue just before the exception, this is received first. Hence it is not guaranteed
+     * that the read call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that
+     * it returns immediately. An it is guarantted that eventually the boost::thread_interrupted exception will be received.
+     *
+     * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      */
-    virtual void interrupt() {}
+    virtual void interrupt() {
+      if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        throw ChimeraTK::logic_error(
+            "TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
+      }
+      try {
+        throw boost::thread_interrupted();
+      }
+      catch(...) {
+        this->_readQueue.push_exception(std::current_exception());
+      }
+    }
 
    protected:
     /** Identifier uniquely identifying the TransferElement */
