@@ -55,9 +55,10 @@ namespace ChimeraTK {
   template<typename UserType>
   class FeedingFanOut : public FanOut<UserType>, public ChimeraTK::NDRegisterAccessor<UserType> {
    public:
-    FeedingFanOut(std::string const& name, std::string const& unit, std::string const& description,
-        size_t numberOfElements, bool withReturn)
+    FeedingFanOut(std::string const& name, std::string const& unit,
+        std::string const& description, size_t numberOfElements, bool withReturn)
     : FanOut<UserType>(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>()),
+      // We pass default-constructed, empty AccessModeFlags, they may later be determined from _returnSlave
       ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:" + name, AccessModeFlags{}, unit, description),
       _withReturn(withReturn) {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
@@ -90,6 +91,11 @@ namespace ChimeraTK {
           }
           _hasReturnSlave = true;
           _returnSlave = slave;
+
+          // Determine the AccessModeFlags from the return slave
+          // As this becomes the implemention of the feeding output, the flags are determined by that slave accessor
+          // In other cases, the information is not relevant because the feeding node is on output which is never read
+          ChimeraTK::NDRegisterAccessor<UserType>::_accessModeFlags = _returnSlave->getAccessModeFlags();
         }
       }
 

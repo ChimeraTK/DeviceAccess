@@ -17,8 +17,8 @@ namespace ChimeraTK {
   template<typename UserType>
   class ConstantAccessor : public ChimeraTK::SyncNDRegisterAccessor<UserType> {
    public:
-    ConstantAccessor(UserType value = 0, size_t length = 1)
-    : ChimeraTK::SyncNDRegisterAccessor<UserType>("UnnamedConstantAccessor", AccessModeFlags{}), _value(length, value) {
+    ConstantAccessor(UserType value = 0, size_t length = 1, AccessModeFlags accessModeFlags = AccessModeFlags{})
+    : ChimeraTK::SyncNDRegisterAccessor<UserType>("UnnamedConstantAccessor", accessModeFlags), _value(length, value) {
       try {
         ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
