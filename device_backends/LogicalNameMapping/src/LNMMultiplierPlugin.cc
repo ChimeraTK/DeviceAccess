@@ -48,8 +48,6 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPostWrite(TransferType type, VersionNumber dataLost) override { _target->postWrite(type, dataLost); }
 
-    void interrupt() override { _target->interrupt(); }
-
     double _factor;
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::_target;

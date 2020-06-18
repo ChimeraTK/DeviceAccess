@@ -347,8 +347,9 @@ namespace ChimeraTK {
      *  must be called after preRead() and before postRead(). If the accessor has the AccessMode::wait_for_new_data
      *  flag, the function will block until new data has been pushed by the sender.
      *
-     *  This function internally calles doReadTransfer(), which is implemented by the backend. runtime_error exceptions
-     *  thrown in doReadTransfer() are caught and rethrown in postRead().
+     *  This function internally calls doReadTransferSynchonously(), which is implemented by the backend, or waits
+     *  for data on the _readQueue, depening whether AccessMode::wait_for_new_data is set.
+     *  runtime_error exceptions thrown in the transfer are caught and rethrown in postRead().
      */
     void readTransfer() {
       if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
@@ -361,14 +362,14 @@ namespace ChimeraTK {
 
    protected:
     /**
-     *  Implementation version of readTransfer(). This function must be implemented by the backend. For the
+     *  Implementation version of readTransfer() for synchronous reads. This function must be implemented by the backend. For the
      *  functional description read the documentation of readTransfer().
      *  
      *  Implementation notes:
      *  - This function must return within ~1 second after boost::thread::interrupt() has been called on the thread
      *    calling this function.
      *  - Decorators must delegate the call to readTransfer() of the decorated target.
-     *  - Delegations within the same object should go to the "do" version, e.g. to this->doReadTransferLatest()
+     *  - Delegations within the same object should go to the "do" version, e.g. to BaseClass::doReadTransferSynchronously()
      */
     virtual void doReadTransferSynchronously() = 0;
 
@@ -392,8 +393,9 @@ namespace ChimeraTK {
      *  flag, this function will not block if no new data is available. For the meaning of the return value, see
      *  readNonBlocking().
      *
-     *  This function internally calles doReadTransferNonBlocking(), which is implemented by the backend. runtime_error
-     *  exceptions thrown in doRedoReadTransferNonBlockingadTransfer() are caught and rethrown in postRead().
+     *  For TransferElements with AccessMode::wait_for_new_data this function checks whether there is new data on the _readQueue.
+     *  Without AccessMode::wait_for_new_data it calls doReadTransferSynchronously, which is implemented by the backend.
+     *  runtime_error exceptions thrown in the transfer are caught and rethrown in postRead().
      */
     bool readTransferNonBlocking() {
       if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
@@ -485,11 +487,12 @@ namespace ChimeraTK {
      *  no exception is thrown.
      *
      *  Notes for backend implementations:
-     *  - If the flag hasNewData is false, the user buffer must stay unaltered. This is true also if the backend did
-     *    not throw any exception and did not return false in the doReadTransfer...() call. The flag is also controlled
-     *    by the TransferGroup and will be set to false, if an exception has been seen on any other transfer. */
+     *  - If the flag updateDataBuffer is false, the data buffer must stay unaltered. Full implementations (backends) must
+     *    also leave the meta data (version number and data validity) unchanged. Decorators are allowed to change the meta data (for instance
+     *    set the DataValidity::faulty).
+     */
    protected:
-    virtual void doPostRead(TransferType, bool /*hasNewData*/) {}
+    virtual void doPostRead(TransferType, bool /*updateDataBuffer*/) {}
 
    private:
     /** helper functions to avoid code duplication */
@@ -744,20 +747,34 @@ namespace ChimeraTK {
     TransferElementID getId() const { return _id; }
 
     /**
-     *  Cancel any pending transfer and throw boost::thread_interrupted in its
-     * postRead. This function can be used to shutdown a thread waiting on the
-     * transfer to complete (which might never happen due to the sending part of
-     *  the application already shut down).
+     * Return from a blocking read immediately and throw boost::thread_interrupted.
+     * This function can be used to shutdown a thread waiting on data to arrive,
+     * which might never happen because the sending part of the application is already shut down,
+     * or there is no new data at the moment.
      *
-     *  Note: there is no guarantee that the exception is actually thrown if no
-     * transfer is currently running or if the transfer completes while this
-     * function is called. Also for transfer elements which never block for an
-     *  extended period of time this function may just do nothing. To really shut
-     * down the receiving thread, a interrupt request should be sent to the thread
-     * and boost::this_thread::interruption_point() shall be called after each
-     * transfer.
+     * This function can only be used for TransferElements with AccessMode::wait_for_new_data. Otherwise it
+     * will throw a ChimeraTK::logic_error.
+     *
+     * Note that this function does not stop the sending thread. It just places a boost::thread_interrupted exception on the
+     * _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data
+     * is put into the queue just before the exception, this is received first. Hence it is not guaranteed
+     * that the read call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that
+     * it returns immediately. An it is guarantted that eventually the boost::thread_interrupted exception will be received.
+     *
+     * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      */
-    virtual void interrupt() {}
+    void interrupt() {
+      if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        throw ChimeraTK::logic_error(
+            "TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
+      }
+      try {
+        throw boost::thread_interrupted();
+      }
+      catch(...) {
+        this->_readQueue.push_exception(std::current_exception());
+      }
+    }
 
    protected:
     /** Identifier uniquely identifying the TransferElement */

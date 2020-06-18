@@ -197,19 +197,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
     if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
   }
 
-  void interrupt() override {
-    // This functionality will be moved to the base class
-    if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-      throw ChimeraTK::logic_error("TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
-    }
-    try {
-      throw boost::thread_interrupted();
-    }
-    catch(...) {
-      this->_readQueue.push_exception(std::current_exception());
-    }
-  }
-
   bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override { return false; }
   std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
     return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
