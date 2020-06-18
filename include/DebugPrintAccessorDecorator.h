@@ -35,24 +35,9 @@ namespace ChimeraTK {
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
     }
 
-    void doReadTransfer() override {
-      std::cout << "doReadTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
-    }
-
-    bool doReadTransferNonBlocking() override {
-      std::cout << "doReadTransferNonBlocking() called on '" << _fullyQualifiedName << "'." << std::endl;
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
-    }
-
-    bool doReadTransferLatest() override {
-      std::cout << "doReadTransferLatest() called on '" << _fullyQualifiedName << "'." << std::endl;
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
-    }
-
-    TransferFuture doReadTransferAsync() override {
-      std::cout << "doReadTransferAsync() called on '" << _fullyQualifiedName << std::endl;
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
+    void doReadTransferSynchronously() override {
+      std::cout << "doReadTransferSynchronously() called on '" << _fullyQualifiedName << "'." << std::endl;
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
     }
 
     void doPreRead(TransferType type) override {
@@ -70,9 +55,9 @@ namespace ChimeraTK {
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type, versionNumber);
     }
 
-    void doPostWrite(TransferType type, bool dataLost) override {
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
       std::cout << "postWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost);
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
     }
 
    protected:

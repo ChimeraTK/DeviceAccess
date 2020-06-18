@@ -59,9 +59,6 @@ struct TestApplication : ctk::Application {
           case 1:
             vars.read.readLatest();
             break;
-          case 2:
-            vars.read.readAsync().wait();
-            break;
           case 3:
             vars.read.read();
             break;

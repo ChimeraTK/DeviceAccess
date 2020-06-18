@@ -58,7 +58,8 @@ namespace ChimeraTK {
     FeedingFanOut(std::string const& name, std::string const& unit, std::string const& description,
         size_t numberOfElements, bool withReturn)
     : FanOut<UserType>(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>()),
-      ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:" + name, unit, description), _withReturn(withReturn) {
+      ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:" + name, AccessModeFlags{}, unit, description),
+      _withReturn(withReturn) {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
     }
@@ -102,19 +103,9 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return true; }
 
-    void doReadTransfer() override {
+    void doReadTransferSynchronously() override {
       assert(_withReturn);
       _returnSlave->readTransfer();
-    }
-
-    bool doReadTransferNonBlocking() override {
-      assert(_withReturn);
-      return _returnSlave->readTransferNonBlocking();
-    }
-
-    bool doReadTransferLatest() override {
-      assert(_withReturn);
-      return _returnSlave->readTransferLatest();
     }
 
     void doPreRead(TransferType type) override {
@@ -141,11 +132,6 @@ namespace ChimeraTK {
       });
 
       _returnSlave->postRead(type, hasNewData);
-    }
-
-    ChimeraTK::TransferFuture doReadTransferAsync() override {
-      assert(_withReturn);
-      return {_returnSlave->readTransferAsync(), this};
     }
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {
@@ -197,10 +183,10 @@ namespace ChimeraTK {
       return dataLost;
     }
 
-    void doPostWrite(TransferType type, bool dataLost) override {
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
       RuntimeErrorCollector ec;
       for(auto& slave : FanOut<UserType>::slaves) {
-        ec.wrap([&] { slave->postWrite(type, dataLost); });
+        ec.wrap([&] { slave->postWrite(type, versionNumber); });
       }
 
       FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
@@ -225,15 +211,7 @@ namespace ChimeraTK {
       /// @todo implement properly?
     }
 
-    AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
-
-    VersionNumber getVersionNumber() const override { return FanOut<UserType>::slaves.front()->getVersionNumber(); }
-
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getReturnSlave() { return _returnSlave; }
-
-    void setDataValidity(DataValidity valid = DataValidity::ok) override { validity = valid; }
-
-    DataValidity dataValidity() const override { return validity; }
 
     void interrupt() override {
       // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor

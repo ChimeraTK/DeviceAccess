@@ -33,25 +33,15 @@ namespace ChimeraTK {
 
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
 
-    void doReadTransfer() override;
-
-    bool doReadTransferNonBlocking() override;
-
-    bool doReadTransferLatest() override;
-
-    TransferFuture doReadTransferAsync() override;
+    void doReadTransferSynchronously() override;
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
-
-    DataValidity dataValidity() const override;
 
     void interrupt() override;
 
     void setOwner(EntityOwner* owner);
 
     void doPostRead(TransferType type, bool hasNewData) override;
-
-    void doPostWrite(TransferType type, bool dataLost) override;
 
     void doPreRead(TransferType type) override;
 

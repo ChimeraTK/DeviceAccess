@@ -34,6 +34,13 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::doReadTransferSynchronously() {
+    if(transferAllowed) {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
+    }
+  }
+
+  template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
     if(transferAllowed) {
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
@@ -51,50 +58,6 @@ namespace ChimeraTK {
     else {
       return true; /* data loss */
     }
-  }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doReadTransfer() {
-    if(transferAllowed) {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
-    }
-  }
-
-  template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::doReadTransferNonBlocking() {
-    if(transferAllowed) {
-      // #138 Phase 1.
-      // Drop the return value of doReadTransferNonBlocking. We must not return "hasNewData" but "willHaveNewData".
-      // This is different because postRead will block and recover, so there will always be new data for the
-      // calling elements to process.
-      // #138 Phase 2.
-      // Return the return value of the transfer in case of (Type == readNonBlocking() || Type == or readLatest()) && wait_for_new_data && !version == {nullptr}.
-      // Else return true because postRead will do a recovery and there will be new data.
-      (void)ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking(); // phase 1
-      return true;                                                                         // phase 1
-    }
-    else {
-      return true; // phase 1 : will always have new data
-      // phase 2:: Similar decision as above: Return true if the postRead will recover.
-    }
-  }
-
-  template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::doReadTransferLatest() {
-    // see comment doReadTransferNonBlocking
-    if(transferAllowed) {
-      (void)ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest(); // phase 1
-      return true;
-    }
-    else {
-      return true; //Phase 1 : will always have new data
-    }
-  }
-
-  template<typename UserType>
-  TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
-    assert(transferAllowed); // "You have to implement ApplicationCore #157"
-    return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
   }
 
   template<typename UserType>
@@ -134,18 +97,6 @@ namespace ChimeraTK {
     if(transferAllowed) {
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type, versionNumber);
     }
-  }
-
-  template<typename UserType>
-  DataValidity ExceptionHandlingDecorator<UserType>::dataValidity() const {
-    // If there has been an exception  the data cannot be OK.
-    // This is only considered in read mode (=feeding to the connected variable network).
-    if(_direction.dir == VariableDirection::feeding && previousReadFailed) {
-      return DataValidity::faulty;
-    }
-    // no exception, return the data validity of the accessor we are decorating
-    auto delegatedValidity = ChimeraTK::NDRegisterAccessorDecorator<UserType>::dataValidity();
-    return delegatedValidity;
   }
 
   template<typename UserType>
@@ -213,20 +164,6 @@ namespace ChimeraTK {
     if(hasNewData) {
       for(size_t i = 0; i < buffer_2D.size(); ++i)
         buffer_2D[i].swap(this->_target->accessChannel(static_cast<unsigned int>(i)));
-    }
-  }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, bool dataLost) {
-    try {
-      // preRead has only been delegated if the transfer was allowed. Hence we are only allowed to delegate postRead in this case.
-      if(transferAllowed) {
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, dataLost);
-      }
-    }
-    catch(ChimeraTK::runtime_error& e) {
-      deviceModule.reportException(e.what());
-      deviceModule.waitForRecovery();
     }
   }
 
