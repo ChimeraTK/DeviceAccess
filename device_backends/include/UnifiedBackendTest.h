@@ -156,7 +156,7 @@ class UnifiedBackendTest {
 
   [[deprecated]] void integerRegister(const std::list<std::string>& names) { setSyncReadTestRegisters<int>(names); }
 
- private:
+ protected:
   void valueAfterConstruction();
   void exceptionHandlingSyncRead();
   void exceptionHandlingAsyncRead();
@@ -282,9 +282,11 @@ void UnifiedBackendTest::recoverDevice(ChimeraTK::Device& d) {
 /********************************************************************************************************************/
 
 /**
- * This tests the TransferElement specifications:
- * * B.11.6 and
- * * MISSING SPEC for value after construction of data buffer
+ *  Test the content of the application buffer after construction.
+ * 
+ *  This tests verifies that the implementation complies to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6", and
+ *  * MISSING SPEC for value after construction of value buffer
  */
 void UnifiedBackendTest::valueAfterConstruction() {
   std::cout << "--- valueAfterConstruction" << std::endl;
@@ -308,6 +310,18 @@ void UnifiedBackendTest::valueAfterConstruction() {
 
 /********************************************************************************************************************/
 
+/**
+ *  Test exception handling for synchronous read operations.
+ * 
+ *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
+ *  implementation complies for synchronous read operations to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_6_4_syncRead \ref transferElement_B_6_4 "B.6.4", and
+ *  * \anchor UnifiedTest_TransferElement_B_9_3 \ref transferElement_B_9_3 "B.9.3", and
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_5_syncRead \ref transferElement_C_5_2_5 "C.5.2.5".
+ * 
+ *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
+ *  runtime_error handling only.
+ */
 void UnifiedBackendTest::exceptionHandlingSyncRead() {
   std::cout << "--- exceptionHandlingSyncRead" << std::endl;
   ctk::Device d(cdd);
@@ -315,41 +329,77 @@ void UnifiedBackendTest::exceptionHandlingSyncRead() {
   ctk::for_each(readRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
+      int someNumber = 42;
+      ctk::VersionNumber someVersion{nullptr};
+
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
-      // attempt read while device closed, logic_error is expected.
-      BOOST_CHECK_THROW(reg.read(), ChimeraTK::logic_error);
+      // alter the application buffer to make sure it is not changed under exception
+      reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
+      reg.setDataValidity(ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr)); // cannot be changed
 
-      // check "value after construction" still there
-      std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
-      for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
+      // attempt read while device closed, logic_error is expected. (C.5.2.5)
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+
+      // check that the application buffer has not changed after exception (B.6.4)
+      BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
-      // open the device, let it throw runtime_error exceptions
+      // open the device, then let it throw runtime_error exceptions
       d.open();
 
       for(auto& testCondition : forceExceptionsRead) {
         // enable exceptions on read
         testCondition.first();
 
-        // repeat the above test, a runtime_error is expected
-        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+        // alter application buffer
+        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
+        reg.setDataValidity(ctk::DataValidity::faulty);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+
+        // Check for runtime_error where it is now expected
+        BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
+
+        // check that the application buffer has not changed after exception (B.6.4)
+        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::faulty);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion);
 
         // disable exceptions on read
         testCondition.second();
+
+        // check that exception is still thrown (device not yet recovered) (B.9.3)
+        usleep(100000); // give potential race conditions a chance to pop up more easily...
+        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
 
         // recover
         this->recoverDevice(d);
 
         // make a successful read to make sure the exception state is gone
-        reg.read();
+        BOOST_CHECK_NO_THROW(reg.read());
+
+        // check that the application buffer is now changed (without implying assumptions about the value)
+        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        someVersion = reg.getVersionNumber();
 
         // re-enable exceptions on read
         testCondition.first();
 
+        // alter application buffer
+        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
+        reg.setDataValidity(ctk::DataValidity::faulty);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+
         // repeat the above test, a runtime_error should be expected again
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+
+        // check that the application buffer has not changed after exception (B.6.4)
+        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::faulty);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion);
 
         // disable exceptions on read
         testCondition.second();
@@ -363,6 +413,19 @@ void UnifiedBackendTest::exceptionHandlingSyncRead() {
 
 /********************************************************************************************************************/
 
+/**
+ *  Test exception handling for asynchronous read operations.
+ * 
+ *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
+ *  implementation complies for asynchronous read operations to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_6_4_asyncRead \ref transferElement_B_6_4 "B.6.4",
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_5_asyncRead \ref transferElement_C_5_2_5 "C.5.2.5",
+ *  * \anchor UnifiedTest_TransferElement_B_9_2_1_single \ref transferElement_B_9_2_1 "B.9.2.1" (only single accessor), and
+ *  * \anchor UnifiedTest_TransferElement_B_9_2_2_single \ref transferElement_B_9_2_2 "B.9.2.2" (only single accessor).
+ * 
+ *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
+ *  runtime_error handling only.
+ */
 void UnifiedBackendTest::exceptionHandlingAsyncRead() {
   std::cout << "--- exceptionHandlingAsyncRead" << std::endl;
   ctk::Device d(cdd);
@@ -370,17 +433,23 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
+      int someNumber = 42;
+      ctk::VersionNumber someVersion{nullptr};
+
       std::cout << "... registerName = " << registerName << std::endl;
-      d.open();
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-      d.close();
 
-      // attempt read while device closed, logic_error is expected.
-      BOOST_CHECK_THROW(reg.read(), ChimeraTK::logic_error);
+      // alter the application buffer to make sure it is not changed under exception
+      reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
+      reg.setDataValidity(ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr)); // cannot be changed
 
-      // check "value after construction" still there
-      std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
-      for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
+      // attempt read while device closed, logic_error is expected. (C.5.2.5)
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+
+      // check that the application buffer has not changed after exception (B.6.4)
+      BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
       // open the device, let it throw runtime_error exceptions
@@ -388,31 +457,73 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
       d.activateAsyncRead();
       quirk_activateAsyncRead();
 
+      // read initial value
+      reg.read();
+
+      // check that the application buffer is now changed (without implying assumptions about the value)
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // make sure no additional value arrives
+      usleep(10000);
+      BOOST_CHECK(reg.readNonBlocking() == false);
+      BOOST_CHECK(reg.getVersionNumber() == someVersion);
+
       for(auto& testCondition : forceExceptionsRead) {
         // enable exceptions on read
         testCondition.first();
 
-        // repeat the above test, a runtime_error is expected
+        // alter application buffer
+        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
+        reg.setDataValidity(ctk::DataValidity::faulty);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+
+        // Check for runtime_error where it is now expected (B.9.2.1/B.9.2.2)
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+        usleep(10000);
+        BOOST_CHECK(reg.readNonBlocking() == false);
 
         // disable exceptions on read
         testCondition.second();
 
+        // No data received before device is recovered and async read transfers are re-activated (B.9.2.1)
+        usleep(100000); // give potential race conditions a chance to pop up more easily...
+        BOOST_CHECK(reg.readNonBlocking() == false);
+
         // recover
         this->recoverDevice(d);
+
+        // No data received before device async read transfers are re-activated (B.9.2.1)
+        usleep(100000); // give potential race conditions a chance to pop up more easily...
+        BOOST_CHECK(reg.readNonBlocking() == false);
+
+        // reactivate async read transfers
         d.activateAsyncRead();
         quirk_activateAsyncRead();
 
-        // make a successful read to make sure the exception state is gone
-        _setRemoteValue(registerName, 0);
+        // make a successful read (initial value) to make sure the exception state is gone
         reg.read();
         BOOST_CHECK(reg.readNonBlocking() == false);
+
+        // check that the application buffer is now changed (without implying assumptions about the value)
+        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        someVersion = reg.getVersionNumber();
 
         // re-enable exceptions on read
         testCondition.first();
 
+        // alter application buffer
+        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
+        reg.setDataValidity(ctk::DataValidity::faulty);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+
         // repeat the above test, a runtime_error should be expected again
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+
+        // check that the application buffer has not changed after exception (B.6.4)
+        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::faulty);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion);
 
         // disable exceptions on read
         testCondition.second();
@@ -423,8 +534,21 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
     }
   });
 }
+
 /********************************************************************************************************************/
 
+/**
+ *  Test exception handling for write operations.
+ * 
+ *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
+ *  implementation complies for write operations to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_6_4_write \ref transferElement_B_6_4 "B.6.4",
+ *  * \anchor UnifiedTest_TransferElement_B_9_4_single \ref transferElement_B_9_4 "B.9.4" (only single accessor),
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_5_write \ref transferElement_C_5_2_5 "C.5.2.5",
+ * 
+ *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
+ *  runtime_error handling only.
+ */
 void UnifiedBackendTest::exceptionHandlingWrite() {
   std::cout << "--- exceptionHandlingWrite" << std::endl;
   ctk::Device d(cdd);
@@ -432,6 +556,9 @@ void UnifiedBackendTest::exceptionHandlingWrite() {
   ctk::for_each(writeRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
+      int someNumber = 42;
+      ctk::VersionNumber someVersion{nullptr};
+
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -440,38 +567,70 @@ void UnifiedBackendTest::exceptionHandlingWrite() {
       actionList.push_back({"write()", [&] { reg.write(); }});
       actionList.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
 
-      // define lambda for the test to execute repetedly (avoid code duplication)
-      auto theTest = [&](auto& theAction, auto expectedExceptionType) {
-        // attempt action
-        BOOST_CHECK_THROW(theAction(), decltype(expectedExceptionType));
-
-        // check "value after construction" still there
-        std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
-        for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
-        BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
-      };
-
-      // attempt read while device closed, logic_error is expected.
+      // attempt write while device closed, logic_error is expected (C.5.2.5).
       for(auto action : actionList) {
         std::cout << "    " << action.first << std::endl;
-        theTest(action.second, ctk::logic_error("only type matters"));
+        auto theAction = action.second;
+
+        // alter the application buffer to make sure it is not changed under exception
+        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
+        reg.setDataValidity(ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+
+        // check for runtime_error where it is now expected
+        BOOST_CHECK_THROW(theAction(), ChimeraTK::logic_error);
+
+        // check that the application buffer has not changed after exception (B.6.4)
+        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion);
       }
 
       // open the device, let it throw runtime_error exceptions
       d.open();
 
       for(auto& testCondition : forceExceptionsWrite) {
-        // enable exceptions on write
-        testCondition.first();
-
-        // repeat the above test, this time a runtime_error is expected
         for(auto action : actionList) {
           std::cout << "    " << action.first << std::endl;
-          theTest(action.second, ctk::runtime_error("only type matters"));
-        }
+          auto theAction = action.second;
 
-        // disable exceptions on write
-        testCondition.second();
+          // enable exceptions on write
+          testCondition.first();
+
+          // alter the application buffer to make sure it is not changed under exception
+          reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
+          reg.setDataValidity(ctk::DataValidity::ok);
+          BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+
+          // check for runtime_error where it is now expected
+          BOOST_CHECK_THROW(theAction(), ChimeraTK::runtime_error);
+
+          // check that the application buffer has not changed after exception (B.6.4)
+          BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+          BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+          BOOST_CHECK(reg.getVersionNumber() == someVersion);
+
+          // disable exceptions on write
+          testCondition.second();
+
+          // check that exception is still thrown (device not yet recovered) (B.9.4)
+          usleep(100000); // give potential race conditions a chance to pop up more easily...
+          BOOST_CHECK_THROW(theAction(), ChimeraTK::runtime_error);
+
+          // recover the device
+          this->recoverDevice(d);
+
+          // alter the application buffer in preparation of a write
+          reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
+          reg.setDataValidity(ctk::DataValidity::faulty);
+
+          // execute a successful write
+          BOOST_CHECK_NO_THROW(theAction());
+
+          // new version number must have been generated (B.11.3 - guaranteed by the base class)
+          BOOST_CHECK(reg.getVersionNumber() > someVersion);
+          someVersion = reg.getVersionNumber();
+        }
       }
 
       // close device again
