@@ -64,12 +64,6 @@ namespace ChimeraTK {
 
     std::list<boost::shared_ptr<ChimeraTK::TransferElement>> getInternalElements() override { return {}; }
 
-    void interrupt() override {
-      if(isInterrupted) return;
-      promise.set_value();
-      isInterrupted = true;
-    }
-
    protected:
     std::vector<UserType> _value;
 

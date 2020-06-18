@@ -100,13 +100,6 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::interrupt() {
-    // notify the condition variable waiting in reportException of the genericTransfer
-    deviceModule.notify();
-    ChimeraTK::NDRegisterAccessorDecorator<UserType>::interrupt();
-  }
-
-  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
     _owner = owner;
     if(_direction.dir == VariableDirection::feeding && previousReadFailed) {
