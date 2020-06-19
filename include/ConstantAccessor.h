@@ -8,28 +8,22 @@
 #ifndef CHIMERATK_CONSTANT_ACCESSOR_H
 #define CHIMERATK_CONSTANT_ACCESSOR_H
 
-#include <ChimeraTK/SyncNDRegisterAccessor.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 namespace ChimeraTK {
 
   /** Implementation of the NDRegisterAccessor which delivers always the same
    * value and ignors any write operations */
   template<typename UserType>
-  class ConstantAccessor : public ChimeraTK::SyncNDRegisterAccessor<UserType> {
+  class ConstantAccessor : public ChimeraTK::NDRegisterAccessor<UserType> {
    public:
     ConstantAccessor(UserType value = 0, size_t length = 1, AccessModeFlags accessModeFlags = AccessModeFlags{})
-    : ChimeraTK::SyncNDRegisterAccessor<UserType>("UnnamedConstantAccessor", accessModeFlags), _value(length, value) {
-      try {
-        ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
-      }
-      catch(...) {
-        this->shutdown();
-        throw;
-      }
+    : ChimeraTK::NDRegisterAccessor<UserType>("UnnamedConstantAccessor", accessModeFlags), _value(length, value) {
+      ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+      ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
     }
 
-    ~ConstantAccessor() { this->shutdown(); }
+    ~ConstantAccessor() {}
 
     void doReadTransferSynchronously() override {
       if(firstRead) {
