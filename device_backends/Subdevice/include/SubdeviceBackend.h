@@ -124,6 +124,8 @@ namespace ChimeraTK {
     bool isFunctional() const override { return _opened && targetDevice->isFunctional(); }
 
     void setException() override;
+
+    void activateAsyncRead() noexcept override;
   };
 
 } // namespace ChimeraTK

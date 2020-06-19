@@ -37,12 +37,9 @@ namespace ChimeraTK {
 
     const RegisterCatalogue& getRegisterCatalogue() const override;
 
-    void setException() override {
-      /// FIXME: This only delegates to the target devices. It does not work for constants and variables that only line in the logical name mapping
-      for(auto& d : _devices) {
-        d.second->setException();
-      }
-    }
+    void setException() override;
+
+    void activateAsyncRead() noexcept override;
 
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,

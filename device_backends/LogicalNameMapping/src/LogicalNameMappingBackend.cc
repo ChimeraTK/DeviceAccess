@@ -245,4 +245,21 @@ namespace ChimeraTK {
     }
     return true;
   }
+
+  /********************************************************************************************************************/
+  void LogicalNameMappingBackend::setException() {
+    /// FIXME: This only delegates to the target devices. It does not work for constants and variables that only line in the logical name mapping
+    for(auto& d : _devices) {
+      d.second->setException();
+    }
+  }
+
+  /********************************************************************************************************************/
+  void LogicalNameMappingBackend::activateAsyncRead() noexcept {
+    // the logical name mapping itself does not have asynchronous read, but some target devices might have
+    for(auto& d : _devices) {
+      d.second->activateAsyncRead();
+    }
+  }
+
 } // namespace ChimeraTK

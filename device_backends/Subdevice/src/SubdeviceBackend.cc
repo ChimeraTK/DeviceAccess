@@ -553,9 +553,18 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   void SubdeviceBackend::setException() {
     obtainTargetBackend();
     targetDevice->setException();
+  }
+
+  /********************************************************************************************************************/
+
+  void SubdeviceBackend::activateAsyncRead() noexcept {
+    obtainTargetBackend();
+    targetDevice->activateAsyncRead();
   }
 
 } // namespace ChimeraTK
