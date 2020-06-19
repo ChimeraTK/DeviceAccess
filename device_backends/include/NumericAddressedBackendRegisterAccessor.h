@@ -281,7 +281,7 @@ namespace ChimeraTK {
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, setAsCooked_impl, 3);
 
-    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) {
+    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
       this->_exceptionBackend = exceptionBackend;
       _rawAccessor->setExceptionBackend(exceptionBackend);
     }
