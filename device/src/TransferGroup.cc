@@ -147,6 +147,12 @@ namespace ChimeraTK {
                                    "to another.");
     }
 
+    // Only accessors without wait_for_new_data can be used in a transfer group.
+    if(accessor.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+      throw ChimeraTK::logic_error(
+          "A TransferGroup can only be used with transfer elements that don't have aAccessMode::wait_for_new_data.");
+    }
+
     // set flag on the accessors that it is now in a transfer group
     accessor.getHighLevelImplElement()->_isInTransferGroup = true;
 
