@@ -43,7 +43,8 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   auto exceptionDummy =
       boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
 
-  UnifiedBackendTest ubt;
+  auto ubt = makeUnifiedBackendTest(
+      [](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> { return {}; });
 
   ubt.setSyncReadTestRegisters<int>({"/NotUsed0"});
 

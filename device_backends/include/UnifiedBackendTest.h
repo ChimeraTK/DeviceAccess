@@ -32,11 +32,18 @@ namespace ctk = ChimeraTK;
  *  In the same way as for the actions, names of registers etc. are provided as lists, so all test can be repeated for
  *  different registers, if required for full coverage.
  * 
+ *  See factory function makeUnifiedBackendTest() how to generate instances.
+ * 
  *  Note: This is work in progress. Tests are by far not yet complete. Interface changes of the test class are also
  *  likely.
  */
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
 class UnifiedBackendTest {
  public:
+  /** See factory function makeUnifiedBackendTest() how to generate instances. */
+  UnifiedBackendTest(SET_REMOTE_VALUE_CALLABLE_T setRemoteValueCallable)
+  : _setRemoteValueCallable(setRemoteValueCallable) {}
+
   /**
    *  "Strong typedef" for list of pairs of functors for enabling and disbaling a test condition.
    */
@@ -50,47 +57,6 @@ class UnifiedBackendTest {
    *  The tests are executed for the backend identified by the given CDD.
    */
   void runTests(const std::string& cdd);
-
-  /**
-   *  Set functor to set values in remote registers. The test will call this functor e.g. before reading the register
-   *  through the backend, then verify the read value through checkRemoteValue().
-   * 
-   *  The first argument of the functor is the register name. The second argument is an index used to identify the
-   *  value. The functor shall generate a quasi-unique value which is a member of the set of possible values the
-   *  register can have, and assign the remote register to that value. If the functor is called again with the same
-   *  index, the same value is supposed to be set. If it is called with a different index, a different value shall be
-   *  used.
-   */
-  void setRemoteValue(std::function<void(const std::string&, size_t)> functor) { _setRemoteValue = functor; }
-
-  /**
-   *  Set functor to check values in remote registers. The test will call this functor e.g. after reading the register
-   *  through the backend, to compare the result with the value previously set via setRemoteValue().
-   * 
-   *  The first argument (const std::string&) of the functor is the register name. The second argument (size_t) is an
-   *  index used to identify the value. The same value has been passed previously to setRemoteValue() (note that this
-   *  was not necessarily the last call to setRemoteValue(), hence the index is required to find the expected value).
-   *  The third argument (auto -> will be std::vector<std::vector<UserType>>&) is the value which has been read
-   *  through the accessor.
-   * 
-   *  The functor needs to convert the expected value into the given type of the 3rd argument. Then the comparison shall
-   *  be performed with BOOST_CHECK_EQUAL for non-float, resp. BOOST_CHECK_CLOSE for float types.
-   * 
-   *  For the conversion, ChimeraTK::numericToUserType() should be used for convenience. The conversion should be done
-   *  in the direction as described here (from original type into given UserType), so the information loss which might
-   *  take place during conversion is the same as in the read operation.
-   * 
-   *  Note: If the original data type is a string there will never be any conversion expected, the 3rd argument will
-   *  always be of the type std::string.
-   */
-  template<typename LAMBDA>
-  void checkRemoteValue(LAMBDA lambda) {
-    // store function pointer for each type
-    ChimeraTK::for_each(_checkRemoteValue.table, [&](auto pair) {
-      typedef typename decltype(pair)::first_type UserType;
-      pair.second = _checkRemoteValue_functor<UserType>(lambda);
-    });
-  }
 
   /**
    *  Set list of enable/disable actions for the following test condition: Communication is broken, all reads fail with
@@ -161,6 +127,7 @@ class UnifiedBackendTest {
   void exceptionHandlingSyncRead();
   void exceptionHandlingAsyncRead();
   void exceptionHandlingWrite();
+  void syncRead();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
@@ -168,29 +135,47 @@ class UnifiedBackendTest {
   /// Actions for enable exception throwing
   EnableDisableActionList forceExceptionsRead, forceExceptionsWrite;
 
-  /// Functor to set and remote values
-  std::function<void(const std::string&, size_t)> _setRemoteValue;
-
-  /// "Typedef" of a templated functor type for use in _checkRemoteValue
-  template<typename UserType>
-  class _checkRemoteValue_functor
-  : public std::function<void(const std::string&, size_t, std::vector<std::vector<UserType>>&)> {
-    using std::function<void(const std::string&, size_t, std::vector<std::vector<UserType>>&)>::function;
-  };
-
-  /// Functors to check remote values
-  ctk::TemplateUserTypeMap<_checkRemoteValue_functor> _checkRemoteValue;
-
   /// Quirk hook: called right after each call to activateAsyncRead()
   std::function<void(void)> quirk_activateAsyncRead{[] {}};
 
   /// CDD for backend to test
   std::string cdd;
 
+  /// See constructor description.
+  SET_REMOTE_VALUE_CALLABLE_T _setRemoteValueCallable;
+
   /// Name of integer register used for tests
   ctk::FixedUserTypeMap<std::list<std::string>> syncReadRegisters, asyncReadRegisters, readRegisters, writeRegisters,
       allRegisters;
 };
+
+/** 
+   *  Construct new UnifiedBackendTest object.
+   * 
+   *  The argument setRemoteValueCallable must be a lambda with the following signature:
+   *  [] (std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> { ... }
+   *  
+   *  The dummy argument is merely used as a work-around for the lack of templated lambdas in the available C++ 17
+   *  standard. It has no meaningful value, only the type is relevant.
+   * 
+   *  The setRemoteValueCallable shall execute the following actions:
+   *   * Generate a new, distinct value which is possible value (in range and matching precision) for the specified
+   *     register,
+   *   * load the value into the register of the dummy device used for the test,
+   *   * if the register supports AccessMode::wait_for_new_data, send out (publish) the new value,
+   *   * convert the value into the decltype(dummy), e.g. using NumericToUserType(), and
+   *   * store the converted value into a vector of vectors in the same arrangement as it is supposed to appear in the
+   *     register accessor and return it.
+   * 
+   *   The type specified through decltype(dummy) will be one of the ChimeraTK-supported UserTypes, which is equal or
+   *   bigger than the template argument in the corresponding setSyncReadTestRegisters()/setAsyncReadTestRegisters()
+   *   call.
+   */
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T> makeUnifiedBackendTest(
+    SET_REMOTE_VALUE_CALLABLE_T setRemoteValueCallable) {
+  return UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>(setRemoteValueCallable);
+}
 
 /********************************************************************************************************************/
 /********************************************************************************************************************/
@@ -201,9 +186,60 @@ class UnifiedBackendTest {
  * runtime library, or to introduce another library shipped with DeviceAccess just for this class.
  */
 /********************************************************************************************************************/
+
 /********************************************************************************************************************/
 
-void UnifiedBackendTest::runTests(const std::string& backend) {
+// Helper template function to compare values appropriately for the type
+template<typename UserType>
+bool comparHelper(UserType a, UserType b) {
+  bool isFloat = std::is_floating_point<decltype(a)>::value;
+  if(isFloat) {
+    return std::abs(a - b) < (std::max(a, b) / 1e6);
+  }
+  else {
+    return a == b;
+  }
+}
+
+template<>
+bool comparHelper<std::string>(std::string a, std::string b) {
+  return a == b;
+}
+
+namespace std {
+  std::string to_string(const std::string& v) { return v; }
+} // namespace std
+
+/********************************************************************************************************************/
+
+// Helper macro to compare the value on an accessor and the expected 2D value
+// Note: we use a macro and not a function, so BOOST_ERROR prints us the line number of the actual test!
+#define CHECK_EQUALITY(accessor, expectedValue)                                                                        \
+  {                                                                                                                    \
+    std::string fail = "";                                                                                             \
+    BOOST_REQUIRE(accessor.getNChannels() == expectedValue.size());                                                    \
+    BOOST_REQUIRE(accessor.getNElementsPerChannel() == expectedValue[0].size());                                       \
+    for(size_t i = 0; i < expectedValue.size(); ++i) {                                                                 \
+      for(size_t k = 0; k < expectedValue.size(); ++k) {                                                               \
+        if(!comparHelper(accessor[i][k], expectedValue[i][k])) {                                                       \
+          if(fail.size() == 0) {                                                                                       \
+            fail = "Accessor content differs from expected value. First difference at index [" + std::to_string(i) +   \
+                "][" + std::to_string(k) + "]: " + std::to_string(accessor[i][k]) +                                    \
+                " != " + std::to_string(expectedValue[i][k]);                                                          \
+          }                                                                                                            \
+        }                                                                                                              \
+      }                                                                                                                \
+    }                                                                                                                  \
+    if(fail != "") {                                                                                                   \
+      BOOST_ERROR(fail);                                                                                               \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  (void)(0)
+
+/********************************************************************************************************************/
+
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string& backend) {
   cdd = backend;
   std::cout << "=== UnifiedBackendTest for " << cdd << std::endl;
 
@@ -255,6 +291,7 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
   }
 
   // run the tests
+  syncRead();
   valueAfterConstruction();
   exceptionHandlingSyncRead();
   exceptionHandlingAsyncRead();
@@ -263,7 +300,8 @@ void UnifiedBackendTest::runTests(const std::string& backend) {
 
 /********************************************************************************************************************/
 
-void UnifiedBackendTest::recoverDevice(ChimeraTK::Device& d) {
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::recoverDevice(ChimeraTK::Device& d) {
   for(size_t i = 0;; ++i) {
     try {
       d.open();
@@ -288,7 +326,8 @@ void UnifiedBackendTest::recoverDevice(ChimeraTK::Device& d) {
  *  * \anchor UnifiedTest_TransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6", and
  *  * MISSING SPEC for value after construction of value buffer
  */
-void UnifiedBackendTest::valueAfterConstruction() {
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::valueAfterConstruction() {
   std::cout << "--- valueAfterConstruction" << std::endl;
   ctk::Device d(cdd);
 
@@ -322,7 +361,8 @@ void UnifiedBackendTest::valueAfterConstruction() {
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
  */
-void UnifiedBackendTest::exceptionHandlingSyncRead() {
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingSyncRead() {
   std::cout << "--- exceptionHandlingSyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -427,7 +467,8 @@ void UnifiedBackendTest::exceptionHandlingSyncRead() {
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
  */
-void UnifiedBackendTest::exceptionHandlingAsyncRead() {
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead() {
   std::cout << "--- exceptionHandlingAsyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -567,7 +608,8 @@ void UnifiedBackendTest::exceptionHandlingAsyncRead() {
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
  */
-void UnifiedBackendTest::exceptionHandlingWrite() {
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingWrite() {
   std::cout << "--- exceptionHandlingWrite" << std::endl;
   ctk::Device d(cdd);
 
@@ -666,6 +708,46 @@ void UnifiedBackendTest::exceptionHandlingWrite() {
  *  implementation complies for synchronous read operations to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1",
  */
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::syncRead() {
+  std::cout << "--- syncRead" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    size_t valueId = 0;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // Set remote value to be read.
+      auto v1 = _setRemoteValueCallable(registerName, UserType());
+
+      // open the device
+      d.open();
+
+      // Read value
+      reg.read();
+
+      // Check value
+      CHECK_EQUALITY(reg, v1);
+
+      // Set another remote value to be read.
+      auto v2 = _setRemoteValueCallable(registerName, UserType());
+
+      // Read second value
+      reg.read();
+
+      // Check second value
+      CHECK_EQUALITY(reg, v2);
+
+      // close device again
+      d.close();
+    }
+  });
+}
 
 /********************************************************************************************************************/
 
