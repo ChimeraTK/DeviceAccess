@@ -420,6 +420,7 @@ void UnifiedBackendTest::exceptionHandlingSyncRead() {
  *  implementation complies for asynchronous read operations to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_6_4_asyncRead \ref transferElement_B_6_4 "B.6.4",
  *  * \anchor UnifiedTest_TransferElement_C_5_2_5_asyncRead \ref transferElement_C_5_2_5 "C.5.2.5",
+ *  * \anchor UnifiedTest_TransferElement_B_8_3 \ref transferElement_B_8_3 "B.8.3" (only first sentence),
  *  * \anchor UnifiedTest_TransferElement_B_9_2_1_single \ref transferElement_B_9_2_1 "B.9.2.1" (only single accessor), and
  *  * \anchor UnifiedTest_TransferElement_B_9_2_2_single \ref transferElement_B_9_2_2 "B.9.2.2" (only single accessor).
  * 
@@ -655,5 +656,83 @@ void UnifiedBackendTest::exceptionHandlingWrite() {
     }
   });
 }
+
+/********************************************************************************************************************/
+
+/**
+ *  Test synchronous read.
+ * 
+ *  This tests that the correct values are read in synchronous read operations, and it verifies that the
+ *  implementation complies for synchronous read operations to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1",
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test asynchronous read.
+ * 
+ *  This tests that the correct values are read in asynchronous read operations, and it verifies that the
+ *  implementation complies for asynchronous read operations to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_3_1_3 \ref transferElement_B_3_1_3 "B.3.1.3",
+ *  * \anchor UnifiedTest_TransferElement_B_8_2 \ref transferElement_B_8_2 "B.8.2",
+ *  * \anchor UnifiedTest_TransferElement_B_8_2_1 \ref transferElement_B_8_2_1 "B.8.2.1",
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_1 \ref transferElement_B_8_5_1 "B.8.5.1",
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_2 \ref transferElement_B_8_5_2 "B.8.5.2",
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_3 \ref transferElement_B_8_5_3 "B.8.5.3",
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test write.
+ * 
+ *  This tests that the correct values are written in write operations (non-destructive and destructive), and it
+ *  verifies that the implementation complies for write operations to the following TransferElement
+ *  specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2",
+ *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_1_2 "B.3.2.2",
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test data loss in write.
+ * 
+ *  This tests if data loss in writes is correctly reported, and it verifies that the implementation complies to the
+ *  following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_7_2 \ref transferElement_B_7_2 "B.7.2"
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test async read consistency heartbeat
+ * 
+ *  This tests if data consistency is checked and corrected periodically for async reads (if necessary), and it verifies
+ *  that the implementation complies to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_8_4 \ref transferElement_B_8_4 "B.8.4"
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test exception reporting to exceptionBackend
+ * 
+ *  This tests if exceptions are reported to the exceptionBachend, and it verifies that the implementation complies to
+ *  the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_9 \ref transferElement_B_9 "B.9" (with all sub-points)
+ *  * \anchor UnifiedTest_TransferElement_B_10 \ref transferElement_B_10 "B.10" (with all sub-points)
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test small getter functions of accessors
+ * 
+ *  This tests if small getter functions of accessors work as expected, and it verifies that the implementation complies
+ *  for to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_15_2 \ref transferElement_B_15_2 "B.15.2"
+ */
 
 /********************************************************************************************************************/
