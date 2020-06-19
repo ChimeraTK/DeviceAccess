@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC6
+\page spec_TransferElement Technical specification: TransferElement V1.0RC8WIP !! Based on RC6. Changes from RC7 still missing !!
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -212,6 +212,11 @@ This documnent is currently still **INCOMPLETE**!
   - 15.2 It can be read via TransferElement::getAccessModeFlags().
   - 15.3 It is set through a constructor argument of TransferElement.
     - 15.3.1 The constructor argument does not have a default value. It must be set correctly by the TransferElement implementation in their constructor.
+
+### New sections in RC 08 !! UNREVIEWED EXTENSION TO THE SPEC !!###
+
+- \anchor transferElement_B_10_3 10.3 DeviceBackend::activateAsyncRead() activates the sending of data through the TransferElement::_readQueue() as described in \ref transferElement_B_8_5 "8.5"
+  - \anchor transferElement_B_10_3_1 10.3.1  Meta-backends like the LogicalNameMappingBackend delegate this call to all of their target backends
 
 ### (*) Comments ###
 - \anchor transferElement_comment_B_3_2_2 \ref transferElement_B_3_2_2 "3.2.2" The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
