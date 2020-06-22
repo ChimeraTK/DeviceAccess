@@ -63,6 +63,8 @@ namespace ChimeraTK {
       _withReturn(withReturn) {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
+
+      TransferElement::_readQueue = cppext::future_queue<void>(1);
     }
 
     /** Add a slave to the FanOut. Only sending end-points of a consuming node may
@@ -96,6 +98,8 @@ namespace ChimeraTK {
           // As this becomes the implemention of the feeding output, the flags are determined by that slave accessor
           // In other cases, the information is not relevant because the feeding node is on output which is never read
           ChimeraTK::NDRegisterAccessor<UserType>::_accessModeFlags = _returnSlave->getAccessModeFlags();
+
+          TransferElement::_readQueue = _returnSlave->getReadQueue();
         }
       }
 
