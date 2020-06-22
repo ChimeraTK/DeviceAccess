@@ -124,10 +124,11 @@ class UnifiedBackendTest {
 
  protected:
   void valueAfterConstruction();
+  void syncRead();
+  void asyncRead();
   void exceptionHandlingSyncRead();
   void exceptionHandlingAsyncRead();
   void exceptionHandlingWrite();
-  void syncRead();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
@@ -295,8 +296,9 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   }
 
   // run the tests
-  syncRead();
   valueAfterConstruction();
+  syncRead();
+  asyncRead();
   exceptionHandlingSyncRead();
   exceptionHandlingAsyncRead();
   exceptionHandlingWrite();
@@ -350,6 +352,203 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::valueAfterConstruction() {
     }
   });
 }
+
+/********************************************************************************************************************/
+
+/**
+ *  Test synchronous read.
+ * 
+ *  This tests that the correct values are read in synchronous read operations, and it verifies that the
+ *  implementation complies for synchronous read operations to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1",
+ *  * \anchor UnifiedTest_TransferElement_B_11_2_1_syncRead \ref transferElement_B_11_2_1 "B.11.2.1",
+ */
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::syncRead() {
+  std::cout << "--- syncRead" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    size_t valueId = 0;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // Set remote value to be read.
+      auto v1 = _setRemoteValueCallable(registerName, UserType());
+
+      // open the device
+      d.open();
+
+      // Read value
+      reg.read();
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, v1);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Set an intermediate remote value to be overwritten next
+      _setRemoteValueCallable(registerName, UserType());
+      usleep(100000); // give potential race conditions a chance to pop up more easily...
+
+      // Set another remote value to be read.
+      auto v2 = _setRemoteValueCallable(registerName, UserType());
+
+      // Read second value
+      reg.read();
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, v2);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // close device again
+      d.close();
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test asynchronous read.
+ * 
+ *  This tests that the correct values are read in asynchronous read operations, and it verifies that the
+ *  implementation complies for asynchronous read operations to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_3_1_3 \ref transferElement_B_3_1_3 "B.3.1.3" (with sub-points),
+ *  * \anchor UnifiedTest_TransferElement_B_8_2 \ref transferElement_B_8_2 "B.8.2",
+ *  * \anchor UnifiedTest_TransferElement_B_8_2_1 \ref transferElement_B_8_2_1 "B.8.2.1",
+ *  * \anchor UnifiedTest_TransferElement_B_8_5 \ref transferElement_B_8_5_1 "B.8.5" (without sub-points),
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_1 \ref transferElement_B_8_5_1 "B.8.5.1",
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_2 \ref transferElement_B_8_5_2 "B.8.5.2",
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_3 \ref transferElement_B_8_5_3 "B.8.5.3",
+ *  * \anchor UnifiedTest_TransferElement_B_11_2_2_sameRegister \ref transferElement_B_11_2_2 "B.11.2.2" (same register
+ *    only),
+ */
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::asyncRead() {
+  std::cout << "--- asyncRead" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    size_t valueId = 0;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Set remote value to be read.
+      auto v1 = _setRemoteValueCallable(registerName, UserType());
+
+      // open the device
+      d.open();
+
+      // Check no value arrives before activateAsyncRead(). This is more precisely tested again in
+      // exceptionHandlingAsyncRead() below. (B.8.5)
+      usleep(100000); // give potential race conditions a chance to pop up more easily...
+      BOOST_CHECK(reg.readNonBlocking() == false);
+
+      // Activate async read (B.8.5.1)
+      d.activateAsyncRead();
+      quirk_activateAsyncRead();
+
+      // Read initial value (B.8.5.2)
+      reg.read();
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, v1);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Set multiple remote values in a row - they will be queued
+      auto v2 = _setRemoteValueCallable(registerName, UserType());
+      auto v3 = _setRemoteValueCallable(registerName, UserType());
+      auto v4 = _setRemoteValueCallable(registerName, UserType());
+      std::cout << v2[0][0] << " " << v3[0][0] << " " << v4[0][0] << std::endl;
+
+      // Read and check second value
+      reg.read();
+      CHECK_EQUALITY(reg, v2);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Read and check third value, this time with non blocking read (B.3.1.3.2 with data available)
+      BOOST_CHECK(reg.readNonBlocking() == true);
+      CHECK_EQUALITY(reg, v3);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Read and check fourth value
+      reg.read();
+      CHECK_EQUALITY(reg, v4);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // No more data available, tested with non blocking read (B.3.1.3.2 without data available)
+      BOOST_CHECK(reg.readNonBlocking() == false);
+      CHECK_EQUALITY(reg, v4); // application buffer is unchanged
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() == someVersion);
+
+      // Provoke queue overflow by filling many values. We are only interested in the last one.
+      for(size_t i = 0; i < 10; ++i) {
+        _setRemoteValueCallable(registerName, UserType());
+      }
+      auto v5 = _setRemoteValueCallable(registerName, UserType());
+
+      // Read last written value (B.8.2.1)
+      BOOST_CHECK(reg.readLatest() == true);
+      CHECK_EQUALITY(reg, v5);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Obtain a second accessor, which should receive data right away since the device is open already (B.8.5.3)
+      auto reg2 = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      auto v6 = _setRemoteValueCallable(registerName, UserType());
+      reg2.read();
+      CHECK_EQUALITY(reg2, v6);
+      BOOST_CHECK(reg2.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg2.getVersionNumber() != ctk::VersionNumber(nullptr));
+
+      // The value must be seen by the first accessor as well
+      reg.read();
+      CHECK_EQUALITY(reg, v6);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+
+      // Since the data is the same, it is consistent and hence must have the same VersionNumber (B.11.2.2)
+      BOOST_CHECK(reg.getVersionNumber() == reg2.getVersionNumber());
+
+      // close device again
+      d.close();
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test write.
+ * 
+ *  This tests that the correct values are written in write operations (non-destructive and destructive), and it
+ *  verifies that the implementation complies for write operations to the following TransferElement
+ *  specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2",
+ *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_2 "B.3.2.2",
+ */
 
 /********************************************************************************************************************/
 
@@ -479,11 +678,17 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
-      int someNumber = 42;
       ctk::VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Set remove value (so we know it)
+      auto v1 = _setRemoteValueCallable(registerName, UserType());
+
+      // Generate a number which is for sure different that the current value and fits into every data type
+      int someNumber = 42;
+      if(ctk::userTypeToNumeric<int>(v1[0][0]) == 42) someNumber = 43;
 
       // alter the application buffer to make sure it is not changed under exception
       reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
@@ -498,6 +703,9 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead
       BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
+      // Change remove value, will be seen as initial value after recovery
+      auto v2 = _setRemoteValueCallable(registerName, UserType());
+
       // open the device, let it throw runtime_error exceptions
       d.open();
       d.activateAsyncRead();
@@ -506,7 +714,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead
       // read initial value
       reg.read();
 
-      // check that the application buffer is now changed (without implying assumptions about the value)
+      // check that the application buffer is now changed
+      CHECK_EQUALITY(reg, v2);
       BOOST_CHECK(reg.getVersionNumber() > someVersion);
       someVersion = reg.getVersionNumber();
 
@@ -542,6 +751,9 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead
         // measure time until first data arrives, required for testing B.9.2.1 later
         auto t0 = std::chrono::steady_clock::now();
 
+        // change value (will be initial value)
+        auto v3 = _setRemoteValueCallable(registerName, UserType());
+
         // reactivate async read transfers
         d.activateAsyncRead();
         quirk_activateAsyncRead();
@@ -551,7 +763,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead
         auto t1 = std::chrono::steady_clock::now();
         BOOST_CHECK(reg.readNonBlocking() == false);
 
-        // check that the application buffer is now changed (without implying assumptions about the value)
+        // check that the application buffer is now changed
+        CHECK_EQUALITY(reg, v3);
         BOOST_CHECK(reg.getVersionNumber() > someVersion);
         someVersion = reg.getVersionNumber();
 
@@ -588,7 +801,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead
         d.activateAsyncRead();
         quirk_activateAsyncRead();
 
-        // await initial value (to be in same state again as at the beginning of the loop)
+        // await initial value (no checks, just to be in same state again as at the beginning of the loop)
         reg.read();
       }
 
@@ -702,83 +915,6 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingWrite() {
     }
   });
 }
-
-/********************************************************************************************************************/
-
-/**
- *  Test synchronous read.
- * 
- *  This tests that the correct values are read in synchronous read operations, and it verifies that the
- *  implementation complies for synchronous read operations to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1",
- */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::syncRead() {
-  std::cout << "--- syncRead" << std::endl;
-  ctk::Device d(cdd);
-
-  ctk::for_each(readRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    size_t valueId = 0;
-    for(auto& registerName : pair.second) {
-      ctk::VersionNumber someVersion{nullptr};
-
-      std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-
-      // Set remote value to be read.
-      auto v1 = _setRemoteValueCallable(registerName, UserType());
-
-      // open the device
-      d.open();
-
-      // Read value
-      reg.read();
-
-      // Check value
-      CHECK_EQUALITY(reg, v1);
-
-      // Set another remote value to be read.
-      auto v2 = _setRemoteValueCallable(registerName, UserType());
-
-      // Read second value
-      reg.read();
-
-      // Check second value
-      CHECK_EQUALITY(reg, v2);
-
-      // close device again
-      d.close();
-    }
-  });
-}
-
-/********************************************************************************************************************/
-
-/**
- *  Test asynchronous read.
- * 
- *  This tests that the correct values are read in asynchronous read operations, and it verifies that the
- *  implementation complies for asynchronous read operations to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_3_1_3 \ref transferElement_B_3_1_3 "B.3.1.3",
- *  * \anchor UnifiedTest_TransferElement_B_8_2 \ref transferElement_B_8_2 "B.8.2",
- *  * \anchor UnifiedTest_TransferElement_B_8_2_1 \ref transferElement_B_8_2_1 "B.8.2.1",
- *  * \anchor UnifiedTest_TransferElement_B_8_5_1 \ref transferElement_B_8_5_1 "B.8.5.1",
- *  * \anchor UnifiedTest_TransferElement_B_8_5_2 \ref transferElement_B_8_5_2 "B.8.5.2",
- *  * \anchor UnifiedTest_TransferElement_B_8_5_3 \ref transferElement_B_8_5_3 "B.8.5.3",
- */
-
-/********************************************************************************************************************/
-
-/**
- *  Test write.
- * 
- *  This tests that the correct values are written in write operations (non-destructive and destructive), and it
- *  verifies that the implementation complies for write operations to the following TransferElement
- *  specifications:
- *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2",
- *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_1_2 "B.3.2.2",
- */
 
 /********************************************************************************************************************/
 
