@@ -21,6 +21,11 @@ namespace ChimeraTK {
     : ChimeraTK::NDRegisterAccessor<UserType>("UnnamedConstantAccessor", accessModeFlags), _value(length, value) {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+
+      if(TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        TransferElement::_readQueue = cppext::future_queue<void>(1);
+        //TransferElement::_readQueue.push(value);
+      }
     }
 
     ~ConstantAccessor() {}
