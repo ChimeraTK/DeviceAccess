@@ -390,7 +390,8 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
 
   auto ubt = makeUnifiedBackendTest(
-      [](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> { return {}; });
+      [](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> { return {}; },
+      [](std::string registerName) {});
 
   ubt.setSyncReadTestRegisters<int>({"/Integers/signed32"});
   ubt.setWriteTestRegisters<int>({"/Integers/signed32"});

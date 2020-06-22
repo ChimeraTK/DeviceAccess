@@ -100,8 +100,8 @@ This documnent is currently still **INCOMPLETE**!
 
   - 3.2 Write operations
     - 3.2.1 do not distingish on which end the transfer is initiated. The API allows for application-initiated transfers and is compatible with device-initiated transfers as well.
-      - \anchor transferElement_B_3_2_1_2 3.2.1.2 It is guaranteed that the application buffer is still intact after calling TransferElement::write().
-    - \anchor transferElement_B_3_2_2 3.2.2 can optionally be "destructively", which allows the implementation to destroy content of the application buffer in the process.
+      - \anchor transferElement_B_3_2_1_2 3.2.1.2 It is guaranteed that the application buffer is still intact after calling TransferElement::write(). [\ref UnifiedTest_TransferElement_B_3_2_1_2 "U"]
+    - \anchor transferElement_B_3_2_2 3.2.2 can optionally be "destructively", which allows the implementation to destroy content of the application buffer in the process. [\ref UnifiedTest_TransferElement_B_3_2_2 "U"]
       - 3.2.2.1 Applications can allow this optimisation by using writeDestructively() instead of write().
       - \anchor transferElement_B_3_2_2_2 3.2.2.2 Applications are not allowed to use the content of the application buffer after writeDestructively().\ref transferElement_comment_B_3_2_2_2 "(*)"
 

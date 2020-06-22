@@ -37,12 +37,13 @@ namespace ctk = ChimeraTK;
  *  Note: This is work in progress. Tests are by far not yet complete. Interface changes of the test class are also
  *  likely.
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
 class UnifiedBackendTest {
  public:
   /** See factory function makeUnifiedBackendTest() how to generate instances. */
-  UnifiedBackendTest(SET_REMOTE_VALUE_CALLABLE_T setRemoteValueCallable)
-  : _setRemoteValueCallable(setRemoteValueCallable) {}
+  UnifiedBackendTest(
+      GET_REMOTE_VALUE_CALLABLE_T getRemoteValueCallable, std::function<void(std::string)> setRemoteValueCallable)
+  : _getRemoteValueCallable(getRemoteValueCallable), _setRemoteValueCallable(setRemoteValueCallable) {}
 
   /**
    *  "Strong typedef" for list of pairs of functors for enabling and disbaling a test condition.
@@ -144,7 +145,8 @@ class UnifiedBackendTest {
   std::string cdd;
 
   /// See constructor description.
-  SET_REMOTE_VALUE_CALLABLE_T _setRemoteValueCallable;
+  GET_REMOTE_VALUE_CALLABLE_T _getRemoteValueCallable;
+  std::function<void(std::string)> _setRemoteValueCallable;
 
   /// Name of integer register used for tests
   ctk::FixedUserTypeMap<std::list<std::string>> syncReadRegisters, asyncReadRegisters, readRegisters, writeRegisters,
@@ -154,29 +156,36 @@ class UnifiedBackendTest {
 /** 
    *  Construct new UnifiedBackendTest object.
    * 
-   *  The argument setRemoteValueCallable must be a lambda with the following signature:
+   *  The argument getRemoteValueCallable must be a lambda with the following signature:
    *  [] (std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> { ... }
    *  
    *  The dummy argument is merely used as a work-around for the lack of templated lambdas in the available C++ 17
    *  standard. It has no meaningful value, only the type is relevant.
    * 
+   *  The getRemoteValueCallable shall execute the following actions:
+   *   * Obtain the current value of the remote register,
+   *   * convert it into the decltype(dummy), e.g. using NumericToUserType(), and
+   *   * store the converted value into a vector of vectors in the same arrangement as it is supposed to appear in the
+   *     register accessor and return it.
+   *
    *  The setRemoteValueCallable shall execute the following actions:
    *   * Generate a new, distinct value which is possible value (in range and matching precision) for the specified
    *     register,
-   *   * load the value into the register of the dummy device used for the test,
-   *   * if the register supports AccessMode::wait_for_new_data, send out (publish) the new value,
-   *   * convert the value into the decltype(dummy), e.g. using NumericToUserType(), and
-   *   * store the converted value into a vector of vectors in the same arrangement as it is supposed to appear in the
-   *     register accessor and return it.
+   *   * load the value into the register of the dummy device used for the test, and
+   *   * if the register supports AccessMode::wait_for_new_data, send out (publish) the new value.
    * 
-   *   The type specified through decltype(dummy) will be one of the ChimeraTK-supported UserTypes, which is equal or
-   *   bigger than the template argument in the corresponding setSyncReadTestRegisters()/setAsyncReadTestRegisters()
-   *   call.
+   *  If getRemoteValueCallable() is called after a call to setRemoteValueCallable() with the same register name,
+   *  the value returned by getRemoteValueCallable() must be the same as the one which has been set via
+   *  setRemoteValueCallable(). This is especially important for registers with AccessMode::wait_for_new_data.
+   * 
+   *  The type specified through decltype(dummy) in the getRemoteValueCallable() call will be one of the
+   *  ChimeraTK-supported UserTypes, which is equal or bigger than the template argument in the corresponding
+   *  setSyncReadTestRegisters()/setAsyncReadTestRegisters() call.
    */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T> makeUnifiedBackendTest(
-    SET_REMOTE_VALUE_CALLABLE_T setRemoteValueCallable) {
-  return UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>(setRemoteValueCallable);
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T> makeUnifiedBackendTest(
+    GET_REMOTE_VALUE_CALLABLE_T getRemoteValueCallable, std::function<void(std::string)> setRemoteValueCallable) {
+  return UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>(getRemoteValueCallable, setRemoteValueCallable);
 }
 
 /********************************************************************************************************************/
@@ -244,8 +253,8 @@ namespace std {
 
 /********************************************************************************************************************/
 
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string& backend) {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string& backend) {
   cdd = backend;
   std::cout << "=== UnifiedBackendTest for " << cdd << std::endl;
 
@@ -300,6 +309,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_valueAfterConstruction();
   test_syncRead();
   test_asyncRead();
+  test_write();
   test_exceptionHandlingSyncRead();
   test_exceptionHandlingAsyncRead();
   test_exceptionHandlingWrite();
@@ -307,8 +317,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
 
 /********************************************************************************************************************/
 
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::recoverDevice(ChimeraTK::Device& d) {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::recoverDevice(ChimeraTK::Device& d) {
   for(size_t i = 0;; ++i) {
     try {
       d.open();
@@ -333,8 +343,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::recoverDevice(ChimeraTK::D
  *  * \anchor UnifiedTest_TransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6", and
  *  * MISSING SPEC for value after construction of value buffer
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_valueAfterConstruction() {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_valueAfterConstruction() {
   std::cout << "--- valueAfterConstruction" << std::endl;
   ctk::Device d(cdd);
 
@@ -364,8 +374,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_valueAfterConstructio
  *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1",
  *  * \anchor UnifiedTest_TransferElement_B_11_2_1_syncRead \ref transferElement_B_11_2_1 "B.11.2.1",
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
   std::cout << "--- syncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -379,7 +389,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // Set remote value to be read.
-      auto v1 = _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
 
       // open the device
       d.open();
@@ -394,11 +405,12 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
       someVersion = reg.getVersionNumber();
 
       // Set an intermediate remote value to be overwritten next
-      _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
       usleep(100000); // give potential race conditions a chance to pop up more easily...
 
       // Set another remote value to be read.
-      auto v2 = _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v2 = _getRemoteValueCallable(registerName, UserType());
 
       // Read second value
       reg.read();
@@ -432,8 +444,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
  *  * \anchor UnifiedTest_TransferElement_B_11_2_2_sameRegister \ref transferElement_B_11_2_2 "B.11.2.2" (same register
  *    only),
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
   std::cout << "--- asyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -447,7 +459,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
       // Set remote value to be read.
-      auto v1 = _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
 
       // open the device
       d.open();
@@ -471,9 +484,12 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
       someVersion = reg.getVersionNumber();
 
       // Set multiple remote values in a row - they will be queued
-      auto v2 = _setRemoteValueCallable(registerName, UserType());
-      auto v3 = _setRemoteValueCallable(registerName, UserType());
-      auto v4 = _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v2 = _getRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v3 = _getRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v4 = _getRemoteValueCallable(registerName, UserType());
 
       // Read and check second value
       reg.read();
@@ -504,9 +520,9 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
 
       // Provoke queue overflow by filling many values. We are only interested in the last one.
       for(size_t i = 0; i < 10; ++i) {
-        _setRemoteValueCallable(registerName, UserType());
+        _setRemoteValueCallable(registerName);
       }
-      auto v5 = _setRemoteValueCallable(registerName, UserType());
+      auto v5 = _getRemoteValueCallable(registerName, UserType());
 
       // Read last written value (B.8.2.1)
       BOOST_CHECK(reg.readLatest() == true);
@@ -517,7 +533,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
 
       // Obtain a second accessor, which should receive data right away since the device is open already (B.8.5.3)
       auto reg2 = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-      auto v6 = _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v6 = _getRemoteValueCallable(registerName, UserType());
       reg2.read();
       CHECK_EQUALITY(reg2, v6);
       BOOST_CHECK(reg2.dataValidity() == ctk::DataValidity::ok);
@@ -540,6 +557,24 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
 
 /********************************************************************************************************************/
 
+template<typename UserType>
+std::vector<std::vector<UserType>> generateValue(ctk::TwoDRegisterAccessor<UserType>& reg, double& someValue) {
+  double increment = 3.1415;
+  std::vector<std::vector<UserType>> theValue;
+  theValue.resize(reg.getNChannels());
+  for(size_t i = 0; i < reg.getNChannels(); ++i) {
+    for(size_t k = 0; k < reg.getNElementsPerChannel(); ++k) {
+      someValue += increment;
+      if(someValue > 126.) someValue -= 126.; // keep in range of every possible value type
+      reg[i][k] = ctk::numericToUserType<UserType>(someValue);
+      theValue[i].push_back(reg[i][k]);
+    }
+  }
+  return theValue;
+}
+
+/********************************************************************************************************************/
+
 /**
  *  Test write.
  * 
@@ -549,10 +584,11 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
  *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2",
  *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_2 "B.3.2.2",
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_write() {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
   std::cout << "--- write" << std::endl;
   ctk::Device d(cdd);
+  double someValue = 42;
 
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
@@ -563,13 +599,41 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_write() {
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
-      // Set remote value to be read.
-      auto v1 = _setRemoteValueCallable(registerName, UserType());
-
       // open the device
       d.open();
 
-      std::cout << "ATTENTION THIS IS A STUB!!!" << std::endl;
+      // write some value
+      std::vector<std::vector<UserType>> theValue = generateValue(reg, someValue);
+      ctk::VersionNumber ver;
+      reg.write(ver);
+
+      // check that application data buffer is not changed (non-destructive write, B.3.2.1.2)
+      BOOST_CHECK(reg.getNChannels() == theValue.size());
+      BOOST_CHECK(reg.getNElementsPerChannel() == theValue[0].size());
+      CHECK_EQUALITY(reg, theValue);
+
+      // check the version number
+      BOOST_CHECK(reg.getVersionNumber() == ver);
+
+      // check remote value
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
+      CHECK_EQUALITY(reg, v1);
+
+      // write another value, this time destructively
+      theValue = generateValue(reg, someValue);
+      ver = {};
+      reg.writeDestructively(ver);
+
+      // check that application data buffer shape is not changed (content may be lost)
+      BOOST_CHECK(reg.getNChannels() == theValue.size());
+      BOOST_CHECK(reg.getNElementsPerChannel() == theValue[0].size());
+
+      // check the version number
+      BOOST_CHECK(reg.getVersionNumber() == ver);
+
+      // check remote value
+      v1 = _getRemoteValueCallable(registerName, UserType());
+      CHECK_EQUALITY(reg, v1);
 
       // close device again
       d.close();
@@ -591,8 +655,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_write() {
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSyncRead() {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSyncRead() {
   std::cout << "--- exceptionHandlingSyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -697,8 +761,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyncRead() {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyncRead() {
   std::cout << "--- exceptionHandlingAsyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -711,7 +775,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
       // Set remove value (so we know it)
-      auto v1 = _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
 
       // Generate a number which is for sure different that the current value and fits into every data type
       int someNumber = 42;
@@ -731,7 +796,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
       // Change remove value, will be seen as initial value after recovery
-      auto v2 = _setRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v2 = _getRemoteValueCallable(registerName, UserType());
 
       // open the device, let it throw runtime_error exceptions
       d.open();
@@ -779,7 +845,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
         auto t0 = std::chrono::steady_clock::now();
 
         // change value (will be initial value)
-        auto v3 = _setRemoteValueCallable(registerName, UserType());
+        _setRemoteValueCallable(registerName);
+        auto v3 = _getRemoteValueCallable(registerName, UserType());
 
         // reactivate async read transfers
         d.activateAsyncRead();
@@ -852,8 +919,8 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
  */
-template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrite() {
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrite() {
   std::cout << "--- exceptionHandlingWrite" << std::endl;
   ctk::Device d(cdd);
 
