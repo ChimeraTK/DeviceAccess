@@ -114,8 +114,9 @@ namespace ChimeraTK {
     }
 
     /** Implement callback called by TransferFuture before it blocks in wait() */
-    // TODO Removed in TE spec. Call preRead isntead, see F.4
-    //void transferFutureWaitCallback() override { releaseLock(); }
+    // TODO Removed in TE spec. Call preRead isntead, see F.4 Still, has to
+    // handle multiple calls to preRead in readAny()
+    void doPreRead(TransferType /*type*/) override { releaseLock(); }
 
     /** Obtain the testableModeLock if not owned yet, and decrement the counter.
      */
