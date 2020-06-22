@@ -192,13 +192,17 @@ UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T> makeUnifiedBackendTest(
 // Helper template function to compare values appropriately for the type
 template<typename UserType>
 bool comparHelper(UserType a, UserType b) {
-  bool isFloat = std::is_floating_point<decltype(a)>::value;
-  if(isFloat) {
-    return std::abs(a - b) < (std::max(a, b) / 1e6);
-  }
-  else {
-    return a == b;
-  }
+  return a == b;
+}
+
+template<>
+bool comparHelper<double>(double a, double b) {
+  return std::abs(a - b) < (std::max(a, b) / 1e6);
+}
+
+template<>
+bool comparHelper<float>(float a, float b) {
+  return std::abs(a - b) < (std::max(a, b) / 1e6);
 }
 
 template<>
