@@ -123,13 +123,13 @@ class UnifiedBackendTest {
   [[deprecated]] void integerRegister(const std::list<std::string>& names) { setSyncReadTestRegisters<int>(names); }
 
  protected:
-  void valueAfterConstruction();
-  void syncRead();
-  void asyncRead();
-  void write();
-  void exceptionHandlingSyncRead();
-  void exceptionHandlingAsyncRead();
-  void exceptionHandlingWrite();
+  void test_valueAfterConstruction();
+  void test_syncRead();
+  void test_asyncRead();
+  void test_write();
+  void test_exceptionHandlingSyncRead();
+  void test_exceptionHandlingAsyncRead();
+  void test_exceptionHandlingWrite();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
@@ -297,12 +297,12 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   }
 
   // run the tests
-  valueAfterConstruction();
-  syncRead();
-  asyncRead();
-  exceptionHandlingSyncRead();
-  exceptionHandlingAsyncRead();
-  exceptionHandlingWrite();
+  test_valueAfterConstruction();
+  test_syncRead();
+  test_asyncRead();
+  test_exceptionHandlingSyncRead();
+  test_exceptionHandlingAsyncRead();
+  test_exceptionHandlingWrite();
 }
 
 /********************************************************************************************************************/
@@ -334,7 +334,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::recoverDevice(ChimeraTK::D
  *  * MISSING SPEC for value after construction of value buffer
  */
 template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::valueAfterConstruction() {
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_valueAfterConstruction() {
   std::cout << "--- valueAfterConstruction" << std::endl;
   ctk::Device d(cdd);
 
@@ -365,7 +365,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::valueAfterConstruction() {
  *  * \anchor UnifiedTest_TransferElement_B_11_2_1_syncRead \ref transferElement_B_11_2_1 "B.11.2.1",
  */
 template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::syncRead() {
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
   std::cout << "--- syncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -433,7 +433,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::syncRead() {
  *    only),
  */
 template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::asyncRead() {
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
   std::cout << "--- asyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -551,7 +551,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::asyncRead() {
  *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_2 "B.3.2.2",
  */
 template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::write() {
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_write() {
   std::cout << "--- write" << std::endl;
   ctk::Device d(cdd);
 
@@ -593,7 +593,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::write() {
  *  runtime_error handling only.
  */
 template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingSyncRead() {
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSyncRead() {
   std::cout << "--- exceptionHandlingSyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -699,7 +699,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingSyncRead(
  *  runtime_error handling only.
  */
 template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead() {
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyncRead() {
   std::cout << "--- exceptionHandlingAsyncRead" << std::endl;
   ctk::Device d(cdd);
 
@@ -854,7 +854,7 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingAsyncRead
  *  runtime_error handling only.
  */
 template<typename SET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::exceptionHandlingWrite() {
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrite() {
   std::cout << "--- exceptionHandlingWrite" << std::endl;
   ctk::Device d(cdd);
 
