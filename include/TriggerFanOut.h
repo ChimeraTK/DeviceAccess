@@ -49,7 +49,9 @@ namespace ChimeraTK {
     void deactivate() override {
       if(_thread.joinable()) {
         _thread.interrupt();
-        externalTrigger->interrupt();
+        if(externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+          externalTrigger->interrupt();
+        }
         _deviceModule.notify();
         _thread.join();
       }

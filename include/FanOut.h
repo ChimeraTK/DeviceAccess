@@ -51,10 +51,14 @@ namespace ChimeraTK {
     // interrupt the input and all slaves
     virtual void interrupt() {
       if(impl) {
-        impl->interrupt();
+        if(impl->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+          impl->interrupt();
+        }
       }
       for(auto& slave : slaves) {
-        slave->interrupt();
+        if(slave->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+          slave->interrupt();
+        }
       }
     }
 
