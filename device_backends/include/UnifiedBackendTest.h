@@ -474,7 +474,6 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
       auto v2 = _setRemoteValueCallable(registerName, UserType());
       auto v3 = _setRemoteValueCallable(registerName, UserType());
       auto v4 = _setRemoteValueCallable(registerName, UserType());
-      std::cout << v2[0][0] << " " << v3[0][0] << " " << v4[0][0] << std::endl;
 
       // Read and check second value
       reg.read();
