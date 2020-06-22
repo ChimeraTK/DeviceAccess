@@ -126,6 +126,7 @@ class UnifiedBackendTest {
   void valueAfterConstruction();
   void syncRead();
   void asyncRead();
+  void write();
   void exceptionHandlingSyncRead();
   void exceptionHandlingAsyncRead();
   void exceptionHandlingWrite();
@@ -549,6 +550,33 @@ void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::asyncRead() {
  *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2",
  *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_2 "B.3.2.2",
  */
+template<typename SET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<SET_REMOTE_VALUE_CALLABLE_T>::write() {
+  std::cout << "--- write" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    size_t valueId = 0;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Set remote value to be read.
+      auto v1 = _setRemoteValueCallable(registerName, UserType());
+
+      // open the device
+      d.open();
+
+      std::cout << "ATTENTION THIS IS A STUB!!!" << std::endl;
+
+      // close device again
+      d.close();
+    }
+  });
+}
 
 /********************************************************************************************************************/
 
