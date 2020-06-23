@@ -85,6 +85,22 @@ class UnifiedBackendTest {
   }
 
   /**
+   *  Set functors, which will do whatever necessary that data last received via a push-type subscription is
+   *  inconsistent with the actual value (as read by a synchronous read). This can e.g. be achieved by changing the
+   *  value without publishng the update to the subscribers.
+   *  
+   *  The functor receives the register name to be put into an inconsistent state as an argument. The test will use the
+   *  getRemoteValueCallable to obtain the true value which the accessor should eventually become consistent to, so
+   *  the implementation is free to change the actual value of the register.
+   * 
+   *  If it is impossible to create an inconsistent state (e.g. because the used protocol already implements measures
+   *  to prevent this), this function shall not be called. The corresponding tests will then be disabled.
+   */
+  void forceAsyncReadInconsistency(std::function<void(std::string)> callable) {
+    _forceAsyncReadInconsistency = callable;
+  }
+
+  /**
    *  Quirk hook: Call this functor after each call to activateAsyncRead().
    * 
    *  Note: When any quirk hook needs to be used to pass the test, the backend is *not* complying to the specifications.
@@ -145,6 +161,7 @@ class UnifiedBackendTest {
   void test_exceptionHandlingAsyncRead();
   void test_exceptionHandlingWrite();
   void test_writeDataLoss();
+  void test_asyncReadConsistencyHeartbeat();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
@@ -155,6 +172,9 @@ class UnifiedBackendTest {
   /// Action to provoke data loss in writes
   std::function<size_t(std::string)> _enableForceDataLossWrite;
   std::function<void(std::string)> _disableForceDataLossWrite;
+
+  /// Action to provoke a value inconsistency in asynchronous read transfers
+  std::function<void(std::string)> _forceAsyncReadInconsistency;
 
   /// Quirk hook: called right after each call to activateAsyncRead()
   std::function<void(void)> quirk_activateAsyncRead{[] {}};
@@ -303,6 +323,11 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
     _disableForceDataLossWrite = [](std::string) {};
   }
 
+  if(!_forceAsyncReadInconsistency) {
+    std::cout << "WARNING: UnifiedBackendTest::forceAsyncReadInconsistency() not called. Disabling test for data "
+              << "consistency heartbeat in asynchronous read operations." << std::endl;
+  }
+
   size_t nSyncReadRegisters = 0;
   auto lambda1 = [&nSyncReadRegisters](auto pair) { nSyncReadRegisters += pair.second.size(); };
   ctk::for_each(syncReadRegisters.table, lambda1);
@@ -339,6 +364,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_exceptionHandlingAsyncRead();
   test_exceptionHandlingWrite();
   test_writeDataLoss();
+  test_asyncReadConsistencyHeartbeat();
 }
 
 /********************************************************************************************************************/
@@ -623,7 +649,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
       ctk::VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // open the device
       d.open();
@@ -798,6 +824,17 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
       ctk::VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
+
+      // Obtain accessor for the test
+
+      // Test obtaining an accessor while device is closed and never using it. Bad implementations could fail in the
+      // desctructor in such case.
+      {
+        auto unused = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+        (void)unused;
+      }
+
+      // obtain accessor for the test
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
       // Set remove value (so we know it)
@@ -1109,7 +1146,71 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_writeDataLoss() {
  *  that the implementation complies to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_8_4 \ref transferElement_B_8_4 "B.8.4"
  */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyHeartbeat() {
+  std::cout << "--- asyncReadConsistencyHeartbeat" << std::endl;
+  if(!_forceAsyncReadInconsistency) {
+    std::cout << "    (skipped)" << std::endl;
+    return;
+  }
 
+  ctk::Device d(cdd);
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    size_t valueId = 0;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // open the device
+      d.open();
+
+      // Activate async read
+      d.activateAsyncRead();
+      quirk_activateAsyncRead();
+
+      // Set remote value to be read.
+      _setRemoteValueCallable(registerName);
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
+
+      // Obtain accessor
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Read and check initial value
+      reg.read();
+      CHECK_EQUALITY(reg, v1);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Provoke inconsistency
+      _forceAsyncReadInconsistency(registerName);
+
+      // Wait for the exception which informs about the problem
+      BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+
+      // Recover the device
+      this->recoverDevice(d);
+      auto v2 = _getRemoteValueCallable(registerName, UserType());
+
+      // Activate async read again
+      d.activateAsyncRead();
+      quirk_activateAsyncRead();
+
+      // Read and check value
+      reg.read();
+      CHECK_EQUALITY(reg, v2);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // close device again
+      d.close();
+    }
+  });
+}
 /********************************************************************************************************************/
 
 /**
