@@ -762,18 +762,17 @@ namespace ChimeraTK {
      * it returns immediately. An it is guarantted that eventually the boost::thread_interrupted exception will be received.
      *
      * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
+     *
+     * Implementation notice: This default implementation is always throwing. Each ThransferElement implementation
+     * that provides AccessMode::wait_for_new_data has to override it.
      */
-    void interrupt() {
+    virtual void interrupt() {
       if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error(
             "TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
       }
-      try {
-        throw boost::thread_interrupted();
-      }
-      catch(...) {
-        this->_readQueue.push_exception(std::current_exception());
-      }
+      throw ChimeraTK::logic_error(
+          "TransferElement::interrupt() must be overridden by all implementations with AccessMode::wait_for_new_data.");
     }
 
    protected:

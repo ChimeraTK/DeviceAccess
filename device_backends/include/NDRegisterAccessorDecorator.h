@@ -146,6 +146,8 @@ namespace ChimeraTK {
       _target->setExceptionBackend(exceptionBackend);
     }
 
+    void interrupt() override { _target->interrupt(); }
+
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
