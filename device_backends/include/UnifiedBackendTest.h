@@ -72,6 +72,19 @@ class UnifiedBackendTest {
   void forceRuntimeErrorOnWrite(const EnableDisableActionList& list) { forceExceptionsWrite = list; }
 
   /**
+   *  Set functors, which will do whatever necessary that data will be lost in write operations.
+   *  The enable function returns the number of write operations to be executed before data loss occurs. If
+   *  std::numeric_limits<size_t>::max() is returned, the test will be skipped for the given register and the disable
+   *  function will not be called. Otherwise it is guaranteed that disable is called for each register enable
+   *  was called before. The remote value will only be checked after disable has been called. Disable hence needs to
+   *  block until the buffers actually have been flushed, so a subsequent remote value test will not fail supriously.
+   */
+  void forceDataLossWrite(std::function<size_t(std::string)> enable, std::function<void(std::string)> disable) {
+    _enableForceDataLossWrite = enable;
+    _disableForceDataLossWrite = disable;
+  }
+
+  /**
    *  Quirk hook: Call this functor after each call to activateAsyncRead().
    * 
    *  Note: When any quirk hook needs to be used to pass the test, the backend is *not* complying to the specifications.
@@ -131,12 +144,17 @@ class UnifiedBackendTest {
   void test_exceptionHandlingSyncRead();
   void test_exceptionHandlingAsyncRead();
   void test_exceptionHandlingWrite();
+  void test_writeDataLoss();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
 
   /// Actions for enable exception throwing
   EnableDisableActionList forceExceptionsRead, forceExceptionsWrite;
+
+  /// Action to provoke data loss in writes
+  std::function<size_t(std::string)> _enableForceDataLossWrite;
+  std::function<void(std::string)> _disableForceDataLossWrite;
 
   /// Quirk hook: called right after each call to activateAsyncRead()
   std::function<void(void)> quirk_activateAsyncRead{[] {}};
@@ -278,6 +296,13 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
     std::exit(1);
   }
 
+  if(!_enableForceDataLossWrite || !_disableForceDataLossWrite) {
+    std::cout << "WARNING: UnifiedBackendTest::forceDataLossWrite() not called. Disabling test for data loss in "
+              << "write operations." << std::endl;
+    _enableForceDataLossWrite = [](std::string) { return std::numeric_limits<size_t>::max(); };
+    _disableForceDataLossWrite = [](std::string) {};
+  }
+
   size_t nSyncReadRegisters = 0;
   auto lambda1 = [&nSyncReadRegisters](auto pair) { nSyncReadRegisters += pair.second.size(); };
   ctk::for_each(syncReadRegisters.table, lambda1);
@@ -313,6 +338,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_exceptionHandlingSyncRead();
   test_exceptionHandlingAsyncRead();
   test_exceptionHandlingWrite();
+  test_writeDataLoss();
 }
 
 /********************************************************************************************************************/
@@ -1019,6 +1045,60 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrit
  *  following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_7_2 \ref transferElement_B_7_2 "B.7.2"
  */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_writeDataLoss() {
+  std::cout << "--- writeDataLoss" << std::endl;
+  ctk::Device d(cdd);
+  double someValue = 42;
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    size_t valueId = 0;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // enable test condition
+      size_t attempts = _enableForceDataLossWrite(registerName);
+      if(attempts == std::numeric_limits<size_t>::max()) {
+        std::cout << "    (skipped)" << std::endl;
+        continue;
+      }
+
+      // open the device
+      d.open();
+
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // write some value the requested number of attempts
+      for(size_t i = 0; i < attempts; ++i) {
+        std::vector<std::vector<UserType>> theValue = generateValue(reg, someValue);
+        ctk::VersionNumber someVersion;
+        bool dataLost = reg.write(someVersion);
+        if(i < attempts - 1) {
+          BOOST_CHECK(dataLost == false);
+        }
+        else {
+          BOOST_CHECK(dataLost == true);
+        }
+        // User buffer must be intact even when value was lost somewhere
+        CHECK_EQUALITY(reg, theValue);
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == someVersion);
+      }
+
+      // disable test condition
+      _disableForceDataLossWrite(registerName);
+
+      // check remote value, must be the last written value
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
+      CHECK_EQUALITY(reg, v1);
+
+      // close device again
+      d.close();
+    }
+  });
+}
 
 /********************************************************************************************************************/
 
