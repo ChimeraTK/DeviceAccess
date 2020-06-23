@@ -189,6 +189,33 @@ class UnifiedBackendTest {
   /// Name of integer register used for tests
   ctk::FixedUserTypeMap<std::list<std::string>> syncReadRegisters, asyncReadRegisters, readRegisters, writeRegisters,
       allRegisters;
+
+  /// Special DeviceBacked used for testing the exception reporting to the backend
+  struct ExceptionReportingBackend : ctk::DeviceBackendImpl {
+    ExceptionReportingBackend(const boost::shared_ptr<ctk::DeviceBackend>& target) : _target(target) {}
+    ~ExceptionReportingBackend() override {}
+
+    void setException() override {
+      _hasSeenException = true;
+      _target->setException();
+    }
+
+    /// Check whether setException() has been called since the last call to hasSeenException().
+    bool hasSeenException() {
+      bool ret = _hasSeenException;
+      _hasSeenException = false;
+      return ret;
+    }
+
+    void open() override{};
+    void close() override{};
+    bool isFunctional() const override { return false; };
+    std::string readDeviceInfo() override { return ""; }
+
+   private:
+    boost::shared_ptr<ctk::DeviceBackend> _target;
+    bool _hasSeenException{false};
+  };
 };
 
 /** 
@@ -703,6 +730,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
  *  * \anchor UnifiedTest_TransferElement_B_6_4_syncRead \ref transferElement_B_6_4 "B.6.4", and
  *  * \anchor UnifiedTest_TransferElement_B_9_3 \ref transferElement_B_9_3 "B.9.3", and
  *  * \anchor UnifiedTest_TransferElement_C_5_2_5_syncRead \ref transferElement_C_5_2_5 "C.5.2.5".
+ *  * \anchor UnifiedTest_TransferElement_B_9_1_syncRead \ref transferElement_B_9_1 "B.9.1"
  * 
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
@@ -721,6 +749,10 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
       // alter the application buffer to make sure it is not changed under exception
       reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
       reg.setDataValidity(ctk::DataValidity::ok);
@@ -728,6 +760,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
 
       // attempt read while device closed, logic_error is expected. (C.5.2.5)
       BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+      BOOST_CHECK(!erb->hasSeenException());
 
       // check that the application buffer has not changed after exception (B.6.4)
       BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
@@ -747,7 +780,9 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
         BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
 
         // Check for runtime_error where it is now expected
+        BOOST_CHECK(!erb->hasSeenException());
         BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
 
         // check that the application buffer has not changed after exception (B.6.4)
         BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
@@ -759,7 +794,9 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
 
         // check that exception is still thrown (device not yet recovered) (B.9.3)
         usleep(100000); // give potential race conditions a chance to pop up more easily...
+        BOOST_CHECK(!erb->hasSeenException());
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
 
         // recover
         this->recoverDevice(d);
@@ -780,7 +817,9 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
         BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
 
         // repeat the above test, a runtime_error should be expected again
+        BOOST_CHECK(!erb->hasSeenException());
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
 
         // check that the application buffer has not changed after exception (B.6.4)
         BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
@@ -793,7 +832,10 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
 
       // close device again
       d.close();
+
+      BOOST_CHECK(!erb->hasSeenException());
     }
+    
   });
 }
 
@@ -809,6 +851,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
  *  * \anchor UnifiedTest_TransferElement_B_8_3 \ref transferElement_B_8_3 "B.8.3" (only first sentence),
  *  * \anchor UnifiedTest_TransferElement_B_9_2_1_single \ref transferElement_B_9_2_1 "B.9.2.1" (only single accessor), and
  *  * \anchor UnifiedTest_TransferElement_B_9_2_2_single \ref transferElement_B_9_2_2 "B.9.2.2" (only single accessor).
+ *  * \anchor UnifiedTest_TransferElement_B_9_1_asyncRead \ref transferElement_B_9_1 "B.9.1"
  * 
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
@@ -837,6 +880,10 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
       // obtain accessor for the test
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
       // Set remove value (so we know it)
       _setRemoteValueCallable(registerName);
       auto v1 = _getRemoteValueCallable(registerName, UserType());
@@ -852,6 +899,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
 
       // attempt read while device closed, logic_error is expected. (C.5.2.5)
       BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+      BOOST_CHECK(!erb->hasSeenException());
 
       // check that the application buffer has not changed after exception (B.6.4)
       BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
@@ -890,7 +938,9 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
         BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
 
         // Check for runtime_error where it is now expected (B.9.2.1/B.9.2.2)
+        BOOST_CHECK(!erb->hasSeenException());
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
         usleep(10000);
         BOOST_CHECK(reg.readNonBlocking() == false);
 
@@ -934,7 +984,9 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
         BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
 
         // repeat the above test, a runtime_error should be expected again
+        BOOST_CHECK(!erb->hasSeenException());
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
 
         // check that the application buffer has not changed after exception (B.6.4)
         BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
@@ -978,6 +1030,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
  *  * \anchor UnifiedTest_TransferElement_B_6_4_write \ref transferElement_B_6_4 "B.6.4",
  *  * \anchor UnifiedTest_TransferElement_B_9_4_single \ref transferElement_B_9_4 "B.9.4" (only single accessor),
  *  * \anchor UnifiedTest_TransferElement_C_5_2_5_write \ref transferElement_C_5_2_5 "C.5.2.5",
+ *  * \anchor UnifiedTest_TransferElement_B_9_1_write\ref transferElement_B_9_1 "B.9.1"
  * 
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
  *  runtime_error handling only.
@@ -996,6 +1049,10 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrit
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
       // repeat the following check for a list of actions
       std::list<std::pair<std::string, std::function<void(void)>>> actionList;
       actionList.push_back({"write()", [&] { reg.write(); }});
@@ -1013,6 +1070,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrit
 
         // check for runtime_error where it is now expected
         BOOST_CHECK_THROW(theAction(), ChimeraTK::logic_error);
+        BOOST_CHECK(!erb->hasSeenException());
 
         // check that the application buffer has not changed after exception (B.6.4)
         BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
@@ -1037,7 +1095,9 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrit
           BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
 
           // check for runtime_error where it is now expected
+          BOOST_CHECK(!erb->hasSeenException());
           BOOST_CHECK_THROW(theAction(), ChimeraTK::runtime_error);
+          BOOST_CHECK(erb->hasSeenException());
 
           // check that the application buffer has not changed after exception (B.6.4)
           BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
@@ -1049,7 +1109,9 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrit
 
           // check that exception is still thrown (device not yet recovered) (B.9.4)
           usleep(100000); // give potential race conditions a chance to pop up more easily...
+          BOOST_CHECK(!erb->hasSeenException());
           BOOST_CHECK_THROW(theAction(), ChimeraTK::runtime_error);
+          BOOST_CHECK(erb->hasSeenException());
 
           // recover the device
           this->recoverDevice(d);
@@ -1218,7 +1280,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyH
  * 
  *  This tests if exceptions are reported to the exceptionBachend, and it verifies that the implementation complies to
  *  the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_9 \ref transferElement_B_9 "B.9" (with all sub-points)
+ *  * \anchor UnifiedTest_TransferElement_B_9 \ref transferElement_B_9 "B.9" (with all sub-points, excl. B.9.1)
  *  * \anchor UnifiedTest_TransferElement_B_10 \ref transferElement_B_10 "B.10" (with all sub-points)
  */
 
@@ -1230,6 +1292,24 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyH
  *  This tests if small getter functions of accessors work as expected, and it verifies that the implementation complies
  *  for to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_15_2 \ref transferElement_B_15_2 "B.15.2"
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test catalogue-accessor consistency
+ * 
+ *  This tests if the catalogue information matches the actual accessor.
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test logic_errors
+ * 
+ *  This tests if logic_errors are thrown in the right place, and it verifies that the implementation complies
+ *  for to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_C_5_2 \ref transferElement_C_5_2 "C.5.2"
  */
 
 /********************************************************************************************************************/
