@@ -313,27 +313,27 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testLateConstruction, T, test_types) {
   app.testModule.lateConstrScalarOutput = 120;
   app.testModule.lateConstrScalarOutput.write();
   app.testModule.lateConstrScalarPollInput.read();
-  BOOST_CHECK(app.testModule.lateConstrScalarPollInput == 120);
+  BOOST_CHECK_EQUAL(app.testModule.lateConstrScalarPollInput, 120);
   app.testModule.lateConstrScalarPollInput.read();
-  BOOST_CHECK(app.testModule.lateConstrScalarPollInput == 120);
+  BOOST_CHECK_EQUAL(app.testModule.lateConstrScalarPollInput, 120);
 
   // test the arrays
   app.testModule.feedingArray = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   app.testModule.feedingArray.write();
   app.testModule.lateConstrArrayPushInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPushInput[i] == i + 1);
+  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPushInput[i], i + 1);
 
   app.testModule.feedingArray = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
   app.testModule.feedingArray.write();
   app.testModule.lateConstrArrayPushInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPushInput[i] == (i + 1) * 10);
+  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPushInput[i], (i + 1) * 10);
 
   app.testModule.lateConstrArrayOutput = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   app.testModule.lateConstrArrayOutput.write();
   app.testModule.lateConstrArrayPollInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPollInput[i] == i);
+  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPollInput[i], i);
   app.testModule.lateConstrArrayPollInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPollInput[i] == i);
+  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPollInput[i], i);
 }
 
 /*********************************************************************************************************************/
