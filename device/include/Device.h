@@ -189,6 +189,13 @@ namespace ChimeraTK {
      */
     void setException();
 
+    /**
+     *  Obtain the backend.
+     * 
+     *  Note: using the backend in normal application code likely breaks the abstraction.
+     */
+    boost::shared_ptr<DeviceBackend> getBackend() { return _deviceBackendPointer; };
+
     /** \brief <b>Inefficient convenience function</b> to read a single-word
      * register without obtaining an accessor.
      *
