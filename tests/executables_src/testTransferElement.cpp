@@ -210,6 +210,8 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
 
   bool isWriteable() const override { return _writeable; }
 
+  void interrupt() override { this->interrupt_impl(this->_readQueue); }
+
   bool _writeable{true};
   bool _readable{true};
 
