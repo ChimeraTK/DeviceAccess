@@ -764,7 +764,8 @@ namespace ChimeraTK {
      * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      *
      * Implementation notice: This default implementation is always throwing. Each ThransferElement implementation
-     * that provides AccessMode::wait_for_new_data has to override it.
+     * that supports AccessMode::wait_for_new_data has to override it like this:
+     *   void interrupt() override { this->interrupt_impl(this->_myDataTransportQueue); }
      */
     virtual void interrupt() {
       if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
@@ -773,6 +774,21 @@ namespace ChimeraTK {
       }
       throw ChimeraTK::logic_error(
           "TransferElement::interrupt() must be overridden by all implementations with AccessMode::wait_for_new_data.");
+    }
+
+    /** Implementation of interrupt() for TransferElements which support AccessMode::wait_for_new_data */
+    template<typename QUEUE_TYPE>
+    void interrupt_impl(QUEUE_TYPE& dataTransportQueue) {
+      if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        throw ChimeraTK::logic_error(
+            "TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
+      }
+      try {
+        throw boost::thread_interrupted();
+      }
+      catch(...) {
+        dataTransportQueue.push_overwrite_exception(std::current_exception());
+      }
     }
 
    protected:
