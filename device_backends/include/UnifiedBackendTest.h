@@ -163,6 +163,7 @@ class UnifiedBackendTest {
   void test_writeDataLoss();
   void test_asyncReadConsistencyHeartbeat();
   void test_setException();
+  void test_interrupt();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
@@ -394,6 +395,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_writeDataLoss();
   test_asyncReadConsistencyHeartbeat();
   test_setException();
+  test_interrupt();
 }
 
 /********************************************************************************************************************/
@@ -1374,6 +1376,65 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_setException() {
 /********************************************************************************************************************/
 
 /**
+ *  Test interrupt()
+ * 
+ *  This tests that implementations supporting wait_for_new_data override correctly interrupt() as described in the
+ *  description of the function, and it verifies that the implementation complies for to the following TransferElement
+ *  specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_8_6 \ref transferElement_B_8_6 "B.8.6" (with sub-points)
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_interrupt() {
+  std::cout << "--- interrupt" << std::endl;
+
+  ctk::Device d(cdd);
+  auto backend = d.getBackend();
+  d.open();
+
+  // Activate async read
+  d.activateAsyncRead();
+  quirk_activateAsyncRead();
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    size_t valueId = 0;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      for(size_t i = 0; i < 2; ++i) {
+        // execute blocking read in another thread
+        boost::thread anotherThread([&] {
+          reg.read();
+          BOOST_ERROR("boost::thread_interrupt exception expected but not thrown.");
+        });
+
+        // interrupt the blocking operation
+        reg.getHighLevelImplElement()->interrupt();
+
+        // make sure the other thread can terminate
+        anotherThread.join();
+
+        // check accessor is still working
+        _setRemoteValueCallable(registerName);
+        auto v1 = _getRemoteValueCallable(registerName, UserType());
+        reg.read();
+        CHECK_EQUALITY(reg, v1);
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        someVersion = reg.getVersionNumber();
+      }
+    }
+  });
+
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
  *  Test small getter functions of accessors
  * 
  *  This tests if small getter functions of accessors work as expected, and it verifies that the implementation complies
@@ -1397,13 +1458,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_setException() {
  *  This tests if logic_errors are thrown in the right place, and it verifies that the implementation complies
  *  for to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_C_5_2 \ref transferElement_C_5_2 "C.5.2"
- */
-
-/********************************************************************************************************************/
-
-/**
- *  Test interrupt()
- * 
  */
 
 /********************************************************************************************************************/

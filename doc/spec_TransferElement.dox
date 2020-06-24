@@ -150,12 +150,12 @@ This documnent is currently still **INCOMPLETE**!
       - 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
       - 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
       - 8.5.6 When Device::activateAsyncRead() returns, it is not guaranteed that all initial values have been received already.
-  - \anchor transferElement_B_8_6 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt().
-    - \anchor transferElement_B_8_6_1 8.6.1 TransferElement::interrupt() places a boost::thread_interrupted exception into the TransferElement::_readQueue. [\ref testTransferElement_B_8_6_1 "T"]
-    - \anchor transferElement_B_8_6_2 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally. [\ref testTransferElement_B_8_6_2 "T"]
-    - \anchor transferElement_B_8_6_3 8.6.3 The operation receiving the boost::thread_interrupted exception will also obey \ref transferElement_B_5 "5", i.e. postRead() is still called. [\ref testTransferElement_B_8_6_3 "T"]
-    - \anchor transferElement_B_8_6_4 8.6.4 Calling TransferElement::interrupt() does not disturb the subsequent operation of the TransferElement. [\ref testTransferElement_B_8_6_4 "T" (base-class part)]
-    - \anchor transferElement_B_8_6_5 8.6.5 Calling TransferElement::interrupt() without AccessMode::wait_for_new_data will cause a ChimeraTK::logic_error. [\ref testTransferElement_B_8_6_5 "T"]
+  - \anchor transferElement_B_8_6 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt(). [\ref testTransferElement_B_8_6 "T" (with sub-points), \ref UnifiedTest_TransferElement_B_8_6 "U" (with sub-points)]
+    - \anchor transferElement_B_8_6_1 8.6.1 TransferElement::interrupt() places a boost::thread_interrupted exception into the TransferElement::_readQueue.
+    - \anchor transferElement_B_8_6_2 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally.
+    - \anchor transferElement_B_8_6_3 8.6.3 The operation receiving the boost::thread_interrupted exception will also obey \ref transferElement_B_5 "5", i.e. postRead() is still called.
+    - \anchor transferElement_B_8_6_4 8.6.4 Calling TransferElement::interrupt() does not disturb the subsequent operation of the TransferElement.
+    - \anchor transferElement_B_8_6_5 8.6.5 Calling TransferElement::interrupt() without AccessMode::wait_for_new_data will cause a ChimeraTK::logic_error.
 
 - \anchor transferElement_B_9 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this. [\ref UnifiedTest_TransferElement_B_9 "U" (without sub-points]
    - \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1") [\ref UnifiedTest_TransferElement_B_9_1_syncRead "U", \ref UnifiedTest_TransferElement_B_9_1_asyncRead "U", \ref UnifiedTest_TransferElement_B_9_1_write "U"]
