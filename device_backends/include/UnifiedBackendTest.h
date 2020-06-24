@@ -162,6 +162,7 @@ class UnifiedBackendTest {
   void test_exceptionHandlingWrite();
   void test_writeDataLoss();
   void test_asyncReadConsistencyHeartbeat();
+  void test_setException();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
@@ -392,6 +393,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_exceptionHandlingWrite();
   test_writeDataLoss();
   test_asyncReadConsistencyHeartbeat();
+  test_setException();
 }
 
 /********************************************************************************************************************/
@@ -669,7 +671,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
   ctk::Device d(cdd);
   double someValue = 42;
 
-  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     size_t valueId = 0;
     for(auto& registerName : pair.second) {
@@ -1150,7 +1152,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_writeDataLoss() {
   ctk::Device d(cdd);
   double someValue = 42;
 
-  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     size_t valueId = 0;
     for(auto& registerName : pair.second) {
@@ -1276,13 +1278,98 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyH
 /********************************************************************************************************************/
 
 /**
- *  Test exception reporting to exceptionBackend
+ *  Test setException()
  * 
- *  This tests if exceptions are reported to the exceptionBachend, and it verifies that the implementation complies to
- *  the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_9 \ref transferElement_B_9 "B.9" (with all sub-points, excl. B.9.1)
- *  * \anchor UnifiedTest_TransferElement_B_10 \ref transferElement_B_10 "B.10" (with all sub-points)
+ *  This tests if exceptions reported to the backend via setException() are treated correctly, and it verifies that the
+ *  implementation complies to the following TransferElement specifications:
+ *  * \anchor UnifiedTest_TransferElement_B_9 \ref transferElement_B_9 "B.9" (without sub-points)
+ *  * \anchor UnifiedTest_TransferElement_B_10_1 \ref transferElement_B_10_1 "B.10.1" (with all sub-points)
  */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_setException() {
+  std::cout << "--- setException" << std::endl;
+
+  ctk::Device d(cdd);
+  auto backend = d.getBackend();
+  d.open();
+
+  // obtain all read accessors, check that they are not throwing initially
+  std::list<ctk::TransferElementAbstractor> readAccessors;
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << " (sync read)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      readAccessors.push_back(reg);
+      BOOST_CHECK_NO_THROW(reg.read());
+    }
+  });
+
+  // obtain all async read accessors, check that they are not throwing initially
+  std::list<ctk::TransferElementAbstractor> asyncReadAccessors;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << " (async read)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      asyncReadAccessors.push_back(reg);
+      BOOST_CHECK_NO_THROW(reg.readNonBlocking());
+    }
+  });
+
+  // obtain all write accessors, check that they are not throwing initially
+  std::list<ctk::TransferElementAbstractor> writeAccessors;
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << " (write)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      writeAccessors.push_back(reg);
+      BOOST_CHECK_NO_THROW(reg.write());
+      BOOST_CHECK_NO_THROW(reg.writeDestructively());
+    }
+  });
+
+  // set backend into exception state
+  backend->setException();
+
+  // check that all read accessors are now throwing
+  for(auto& reg : readAccessors) {
+    BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
+  }
+
+  // check that all async read accessors are now throwing
+  for(auto& reg : asyncReadAccessors) {
+    BOOST_CHECK_THROW(reg.readNonBlocking(), ctk::runtime_error);
+  }
+
+  // check that all write accessors are now throwing
+  for(auto& reg : writeAccessors) {
+    BOOST_CHECK_THROW(reg.write(), ctk::runtime_error);
+    BOOST_CHECK_THROW(reg.writeDestructively(), ctk::runtime_error);
+  }
+
+  // recover the device
+  recoverDevice(d);
+
+  // check that all read accessors are no longer throwing
+  for(auto& reg : readAccessors) {
+    BOOST_CHECK_NO_THROW(reg.read());
+  }
+
+  // check that all async read accessors are no longer throwing
+  for(auto& reg : asyncReadAccessors) {
+    BOOST_CHECK_NO_THROW(reg.readNonBlocking());
+  }
+
+  // check that all write accessors are no longer throwing
+  for(auto& reg : writeAccessors) {
+    BOOST_CHECK_NO_THROW(reg.write());
+    BOOST_CHECK_NO_THROW(reg.writeDestructively());
+  }
+
+  d.close();
+}
 
 /********************************************************************************************************************/
 
@@ -1310,6 +1397,13 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyH
  *  This tests if logic_errors are thrown in the right place, and it verifies that the implementation complies
  *  for to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_C_5_2 \ref transferElement_C_5_2 "C.5.2"
+ */
+
+/********************************************************************************************************************/
+
+/**
+ *  Test interrupt()
+ * 
  */
 
 /********************************************************************************************************************/
