@@ -180,34 +180,6 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
   using TransferElement::_activeException;
 };
 
-#if 0 // currently not needed, maybe later?
-/** Special backend used to test the behaviour of the TransferElement base class */
-class TransferElementTestBackend : public DeviceBackendImpl {
- public:
-  TransferElementTestBackend(std::map<std::string, std::string> parameters);
-  ~TransferElementTestBackend() override {}
-
-  void open() override;
-
-  void close() override;
-
-  std::string readDeviceInfo() override { return std::string("TransferElementTestBackend"); }
-
-  static boost::shared_ptr<DeviceBackend> createInstance(
-      std::string address, std::map<std::string, std::string> parameters);
-
-  bool isFunctional() const override { return true; }
-
- protected:
-  friend class TransferElementTestAccessor;
-
-  template<typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(SubdeviceBackend, getRegisterAccessor_impl, 4);
-};
-#endif
-
 /********************************************************************************************************************/
 
 /**
