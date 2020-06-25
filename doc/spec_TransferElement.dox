@@ -124,9 +124,9 @@ This documnent is currently still **INCOMPLETE**!
   - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1_sync "T", \ref testTransferElement_B_5_1_async "T"]
   - \anchor transferElement_B_5_2 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa. [\ref testTransferElement_B_5_2 "T"]
 
-- \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6 "T"]
+- \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6_sync "T", \ref testTransferElement_B_6_async "T" (both without sub-points)]
   - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1_read "T", \ref testTransferElement_B_6_1_write "T"]
-  - 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers.
+  - \anchor transferElement_B_6_2 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers. [\ref testTransferElement_B_6_2 "T"]
   - \anchor transferElement_B_6_3 6.3 To ensure that the ApplicationCore ExeptionHandlingDecorator works in combination with other decorators, each decorator has to pass the stored exception to its target, and it has to be re-thrown in the doPostRead() of the layer where the exception originated (see \ref transferElement_C_2 "C.2") [\ref testTransferElement_B_6_3 "T"]
   - \anchor transferElement_B_6_4 6.4 When an exception is finally thrown by a TransferElement, the application buffer must still be unchanged. \ref  transferElement_comment_B_6_4 "(*)" [\ref UnifiedTest_TransferElement_B_6_4_syncRead "U", \ref UnifiedTest_TransferElement_B_6_4_asyncRead "U", \ref UnifiedTest_TransferElement_B_6_4_write "U"]
 
@@ -179,7 +179,7 @@ This documnent is currently still **INCOMPLETE**!
     - 10.2.3 TransferElement::setExceptionBackend() is virtual. Decorator-like TransferElements overload it so all target elements also get the correct exception backend.
     - \anchor transferElement_B_10_2_4 10.2.4 Decorators set their TransferElement::_exceptionBackend in the constructor to their target's _exceptionBackend. \ref transferElement_comment_B_10_2_4 "(*)"
     - 10.2.5 After replacing a low level transfer element in TransferElement::replaceTransferElement(), the exception backend of the new transfer element must be adapted.
-  - 10.3 After DeviceBackend::setException() has been called, DeviceBackend()::isFunctional() returns false until the backend has successfully been recovered by DeviceBackend::open().
+  - 10.3 After DeviceBackend::setException() has been called, DeviceBackend::isFunctional() returns false until the backend has successfully been recovered by DeviceBackend::open().
 
 - 11. A VersionNumber object is attached to each data transfer.
   - 11.1 VersionNumber objects
