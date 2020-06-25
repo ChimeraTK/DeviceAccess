@@ -252,6 +252,165 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
 /********************************************************************************************************************/
 
 /**
+ *  Test order of stages in high-level functions.
+ *  * \anchor testTransferElement_B_4_order \ref transferElement_B_4 "B.4" (just the order of the stages)
+ */
+BOOST_AUTO_TEST_CASE(test_B_4) {
+  {
+    TransferElementTestAccessor<int32_t> accessor({});
+
+    accessor.resetCounters();
+    accessor.read();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::read, true);
+
+    accessor.resetCounters();
+    accessor.readNonBlocking();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::readNonBlocking, true);
+    accessor.resetCounters();
+
+    accessor.write();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::write, true);
+
+    accessor.resetCounters();
+    accessor.write();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::write, true);
+
+    accessor.resetCounters();
+    accessor.writeDestructively();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::writeDestructively, true);
+
+    accessor.resetCounters();
+    accessor.writeDestructively();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::writeDestructively, true);
+  }
+
+  {
+    TransferElementTestAccessor<int32_t> accessor({AccessMode::wait_for_new_data});
+
+    accessor.resetCounters();
+    accessor.push();
+    accessor.read();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::read, false);
+
+    accessor.resetCounters();
+    accessor.readNonBlocking();
+    TEST_TRANSFER_SEQUENCE(accessor, TransferType::readNonBlocking, false);
+  }
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test preXxx
+ *  * \anchor testTransferElement_B_4_1 \ref transferElement_B_4_1 "B.4.1"
+ */
+BOOST_AUTO_TEST_CASE(test_B_4_1) {
+  TransferElementTestAccessor<int32_t> accessor({});
+
+  accessor.resetCounters();
+  accessor.preRead(TransferType::read);
+  BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
+  BOOST_CHECK(accessor._transferType_pre == TransferType::read);
+  accessor.readTransfer();
+  accessor.postRead(TransferType::read, true);
+
+  accessor.resetCounters();
+  accessor.preRead(TransferType::readNonBlocking);
+  BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
+  BOOST_CHECK(accessor._transferType_pre == TransferType::readNonBlocking);
+  accessor.readTransfer();
+  accessor.postRead(TransferType::readNonBlocking, true);
+
+  VersionNumber v{};
+  accessor.resetCounters();
+  accessor.preWrite(TransferType::write, v);
+  BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
+  BOOST_CHECK(accessor._transferType_pre == TransferType::write);
+  BOOST_CHECK(accessor._preWrite_version == v);
+  accessor.writeTransfer(v);
+  accessor.postWrite(TransferType::write, v);
+
+  v = {};
+  accessor.resetCounters();
+  accessor.preWrite(TransferType::writeDestructively, v);
+  BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
+  BOOST_CHECK(accessor._transferType_pre == TransferType::writeDestructively);
+  BOOST_CHECK(accessor._preWrite_version == v);
+  accessor.writeTransfer(v);
+  accessor.postWrite(TransferType::writeDestructively, v);
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test readTransfer()
+ *  * \anchor testTransferElement_B_4_2_1 \ref transferElement_B_4_2_1 "B.4.2.1"
+ */
+BOOST_AUTO_TEST_CASE(test_B_4_2_1) {
+  {
+    TransferElementTestAccessor<int32_t> accessor({AccessMode::wait_for_new_data});
+
+    accessor.resetCounters();
+    accessor.preRead(TransferType::read);
+    std::atomic<bool> readCompleted{false};
+    std::thread t([&] {
+      accessor.readTransfer();
+      readCompleted = true;
+    });
+    usleep(10000);
+    BOOST_CHECK(!readCompleted);
+    accessor.push();
+    t.join();
+    accessor.postRead(TransferType::read, true);
+  }
+  {
+    TransferElementTestAccessor<int32_t> accessor({});
+
+    accessor.resetCounters();
+    accessor.preRead(TransferType::read);
+    BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 0);
+    accessor.readTransfer();
+    BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 1);
+    accessor.postRead(TransferType::read, true);
+  }
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test readTransferNonBlocking()
+ *  * \anchor testTransferElement_B_4_2_2 \ref transferElement_B_4_2_2 "B.4.2.2"
+ */
+BOOST_AUTO_TEST_CASE(test_B_4_2_2) {
+  {
+    TransferElementTestAccessor<int32_t> accessor({AccessMode::wait_for_new_data});
+
+    accessor.resetCounters();
+    accessor.preRead(TransferType::readNonBlocking);
+    BOOST_CHECK(accessor.readTransferNonBlocking() == false);
+    accessor.postRead(TransferType::readNonBlocking, true);
+
+    accessor.resetCounters();
+    accessor.push();
+    accessor.preRead(TransferType::readNonBlocking);
+    BOOST_CHECK(accessor.readTransferNonBlocking() == true);
+    accessor.postRead(TransferType::readNonBlocking, true);
+  }
+  {
+    TransferElementTestAccessor<int32_t> accessor({});
+
+    accessor.resetCounters();
+    accessor.preRead(TransferType::readNonBlocking);
+    BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 0);
+    BOOST_CHECK(accessor.readTransferNonBlocking() == true);
+    BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 1);
+    accessor.postRead(TransferType::readNonBlocking, true);
+  }
+}
+
+/********************************************************************************************************************/
+
+/**
  *  Test correctness of the pre-transfer-post sequence and the return values of the operations, for synchronous
  *  operations without exceptions.
  * 
@@ -271,14 +430,12 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeNoExceptions) {
 
   accessor.resetCounters();
   accessor.read();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::read, true); // B.4.1, B.4.2.1, B.4.3
-  BOOST_CHECK(accessor._updateDataBuffer == true);            // B.7.3 (second sentence)
+  BOOST_CHECK(accessor._updateDataBuffer == true); // B.7.3 (second sentence)
 
   accessor.resetCounters();
   ret = accessor.readNonBlocking();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::readNonBlocking, true); // B.4.1, B.4.2.2, B.4.3
-  BOOST_CHECK(ret == true);                                              // B.7.1, B.4.2.2 (second sub-point)
-  BOOST_CHECK(accessor._updateDataBuffer == true);                       // B.7.3 (+B.4.2.2 second sub-point)
+  BOOST_CHECK(ret == true);                        // B.7.1, B.4.2.2 (second sub-point)
+  BOOST_CHECK(accessor._updateDataBuffer == true); // B.7.3 (+B.4.2.2 second sub-point)
 
   accessor._readable = false;
   accessor._writeable = true;
@@ -286,26 +443,22 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_SyncModeNoExceptions) {
   accessor.resetCounters();
   accessor._previousDataLost = false;
   ret = accessor.write();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::write, true); // B.4.1, B.4.2.3, B.4.3
-  BOOST_CHECK(ret == false);                                   // B.7.2
+  BOOST_CHECK(ret == false); // B.7.2
 
   accessor.resetCounters();
   accessor._previousDataLost = true;
   ret = accessor.write();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::write, true); // (redundant) B.4.1, B.4.2.3, B.4.3
-  BOOST_CHECK(ret == true);                                    // B.7.2
+  BOOST_CHECK(ret == true); // B.7.2
 
   accessor.resetCounters();
   accessor._previousDataLost = false;
   ret = accessor.writeDestructively();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::writeDestructively, true); // B.4.1, B.4.2.3, B.4.3
-  BOOST_CHECK(ret == false);                                                // B.7.2
+  BOOST_CHECK(ret == false); // B.7.2
 
   accessor.resetCounters();
   accessor._previousDataLost = true;
   ret = accessor.writeDestructively();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::writeDestructively, true); // (redundant) B.4.1, B.4.2.3, B.4.3
-  BOOST_CHECK(ret == true);                                                 // B.7.2
+  BOOST_CHECK(ret == true); // B.7.2
 }
 
 /********************************************************************************************************************/
@@ -427,8 +580,7 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeNoExceptions) {
   accessor.resetCounters();
   accessor.push();
   accessor.read();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::read, false); // B.4.1, B.4.2.1, B.4.3, B.8.2
-  BOOST_CHECK(accessor._updateDataBuffer == true);             // B.7.3
+  BOOST_CHECK(accessor._updateDataBuffer == true); // B.7.3
 
   accessor.resetCounters();
   std::atomic<bool> readCompleted{false};
@@ -444,15 +596,13 @@ BOOST_AUTO_TEST_CASE(testPreTransferPostSequence_AsyncModeNoExceptions) {
   accessor.resetCounters();
   accessor.push();
   ret = accessor.readNonBlocking();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::readNonBlocking, false); // B.4.1, B.4.2.1, B.4.3, B.8.2
-  BOOST_CHECK(ret == true);                                               // B.7.1
-  BOOST_CHECK(accessor._updateDataBuffer == true);                        // B.7.3
+  BOOST_CHECK(ret == true);                        // B.7.1
+  BOOST_CHECK(accessor._updateDataBuffer == true); // B.7.3
 
   accessor.resetCounters();
   ret = accessor.readNonBlocking();
-  TEST_TRANSFER_SEQUENCE(accessor, TransferType::readNonBlocking, false); // B.4.1, B.4.2.1, B.4.3, B.8.2
-  BOOST_CHECK(ret == false);                                              // B.7.1
-  BOOST_CHECK(accessor._updateDataBuffer == false);                       // B.7.3
+  BOOST_CHECK(ret == false);                        // B.7.1
+  BOOST_CHECK(accessor._updateDataBuffer == false); // B.7.3
 }
 
 /********************************************************************************************************************/
