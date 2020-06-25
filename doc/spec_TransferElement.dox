@@ -243,7 +243,10 @@ This documnent is currently still **INCOMPLETE**!
 - 8.5.2 As the asynchonous mechanism and a synchronous read are two idependent channels there are potential race condition, depending on the exact protocol.
   The backend has to avoid this if possible. If it cannot be avoided, the implementation must make sure that the last value in the queue is the newest value, and this is not dopped or missed, even if the values before are not in order or send twice.
 
-- \anchor transferElement_comment_B_9a \ref transferElement_B_9 "9." The ChimeraTK::runtime_error is the only exception that conceptually is recoverable by calling DeviceBackend::open(). ChimeraTK::logic_error is a programming or configuration mistake. The boost::numeric::bad_numeric_cast conceptually also is a logical error (wrong data type) which only shows at run time when the data is overflowing. The boost::thread_interrupted is thrown when TransferElement::interrupt() is called. It means that a blocking read() has been interrupted on request, not that the device is malfunctioning and would need recovery.
+- \anchor transferElement_comment_B_9a \ref transferElement_B_9 "9." The ChimeraTK::runtime_error is the only exception that conceptually is recoverable. This is done by calling DeviceBackend::open(). Other exceptions are not recoverable by the running application:
+  - ChimeraTK::logic_error is a programming or configuration mistake.
+  - The boost::numeric::bad_numeric_cast conceptually also is a logical error (wrong data type) which only shows at run time when the data is overflowing.
+  - The boost::thread_interrupted is thrown when TransferElement::interrupt() is called. It means that a blocking read() has been interrupted on request. It is not an error and hence there is nothing to recover.
 - \anchor transferElement_comment_B_9b \ref transferElement_B_9 "9." It does not matter if the exception occured in an asynchronous or synchronous read, or in a write operation.
 - \anchor transferElement_comment_B_9_1 \ref transferElement_B_9_1 "9.1" It depends on the implementation whether the backend already has done 9.2 and 9.3 when the transfer elements
   first sees the exeption and then reports it back again via DeviceBackend::setException(), or if it only happend in that function. The important part is
