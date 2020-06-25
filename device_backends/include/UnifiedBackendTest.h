@@ -732,7 +732,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
  *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
  *  implementation complies for synchronous read operations to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_6_4_syncRead \ref transferElement_B_6_4 "B.6.4", and
- *  * \anchor UnifiedTest_TransferElement_B_9_3 \ref transferElement_B_9_3 "B.9.3", and
+ *  * \anchor UnifiedTest_TransferElement_B_9_4 \ref transferElement_B_9_4 "B.9.4", and
  *  * \anchor UnifiedTest_TransferElement_C_5_2_5_syncRead \ref transferElement_C_5_2_5 "C.5.2.5".
  *  * \anchor UnifiedTest_TransferElement_B_9_1_syncRead \ref transferElement_B_9_1 "B.9.1"
  * 
@@ -853,8 +853,8 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
  *  * \anchor UnifiedTest_TransferElement_B_6_4_asyncRead \ref transferElement_B_6_4 "B.6.4",
  *  * \anchor UnifiedTest_TransferElement_C_5_2_5_asyncRead \ref transferElement_C_5_2_5 "C.5.2.5",
  *  * \anchor UnifiedTest_TransferElement_B_8_3 \ref transferElement_B_8_3 "B.8.3" (only first sentence),
- *  * \anchor UnifiedTest_TransferElement_B_9_2_1_single \ref transferElement_B_9_2_1 "B.9.2.1" (only single accessor), and
- *  * \anchor UnifiedTest_TransferElement_B_9_2_2_single \ref transferElement_B_9_2_2 "B.9.2.2" (only single accessor).
+ *  * \anchor UnifiedTest_TransferElement_B_9_3_1_single \ref transferElement_B_9_3_1 "B.9.3.1" (only single accessor), and
+ *  * \anchor UnifiedTest_TransferElement_B_9_3_2_single \ref transferElement_B_9_3_2 "B.9.3.2" (only single accessor).
  *  * \anchor UnifiedTest_TransferElement_B_9_1_asyncRead \ref transferElement_B_9_1 "B.9.1"
  * 
  *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
@@ -941,7 +941,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
         reg.setDataValidity(ctk::DataValidity::faulty);
         BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
 
-        // Check for runtime_error where it is now expected (B.9.2.1/B.9.2.2)
+        // Check for runtime_error where it is now expected (B.9.3.1/B.9.3.2)
         BOOST_CHECK(!erb->hasSeenException());
         BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
         BOOST_CHECK(erb->hasSeenException());
@@ -951,14 +951,14 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
         // disable exceptions on read
         testCondition.second();
 
-        // No data received before device is recovered and async read transfers are re-activated (B.9.2.1)
+        // No data received before device is recovered and async read transfers are re-activated (B.9.3.1)
         usleep(100000); // give potential race conditions a chance to pop up more easily...
         BOOST_CHECK(reg.readNonBlocking() == false);
 
         // recover
         this->recoverDevice(d);
 
-        // measure time until first data arrives, required for testing B.9.2.1 later
+        // measure time until first data arrives, required for testing B.9.3.1 later
         auto t0 = std::chrono::steady_clock::now();
 
         // change value (will be initial value)
@@ -1007,7 +1007,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
         // note: if this sleep is too short, the following BOOST_CHECK is insensitive against bugs.
         std::this_thread::sleep_for((t1 - t0) * 2);
 
-        // No data received before device async read transfers are re-activated (B.9.2.1)
+        // No data received before device async read transfers are re-activated (B.9.3.1)
         BOOST_CHECK(reg.readNonBlocking() == false);
 
         // reactivate async read transfers
@@ -1032,7 +1032,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyn
  *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
  *  implementation complies for write operations to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_6_4_write \ref transferElement_B_6_4 "B.6.4",
- *  * \anchor UnifiedTest_TransferElement_B_9_4_single \ref transferElement_B_9_4 "B.9.4" (only single accessor),
+ *  * \anchor UnifiedTest_TransferElement_B_9_5_single \ref transferElement_B_9_5 "B.9.5" (only single accessor),
  *  * \anchor UnifiedTest_TransferElement_C_5_2_5_write \ref transferElement_C_5_2_5 "C.5.2.5",
  *  * \anchor UnifiedTest_TransferElement_B_9_1_write\ref transferElement_B_9_1 "B.9.1"
  * 
@@ -1285,7 +1285,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyH
  *  This tests if exceptions reported to the backend via setException() are treated correctly, and it verifies that the
  *  implementation complies to the following TransferElement specifications:
  *  * \anchor UnifiedTest_TransferElement_B_9 \ref transferElement_B_9 "B.9" (without sub-points)
- *  * \anchor UnifiedTest_TransferElement_B_10_1 \ref transferElement_B_10_1 "B.10.1" (with all sub-points)
+ *  * \anchor UnifiedTest_TransferElement_B_9_2 \ref transferElement_B_9_2 "B.9.2" (with all sub-points)
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
 void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_setException() {
