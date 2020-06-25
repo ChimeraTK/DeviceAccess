@@ -216,6 +216,15 @@ This documnent is currently still **INCOMPLETE**!
   - 15.3 It is set through a constructor argument of TransferElement.
     - 15.3.1 The constructor argument does not have a default value. It must be set correctly by the TransferElement implementation in their constructor.
 
+- \anchor transferElement_B_16 16. This section will be moved from \ref transferElement_C_2 "C.2"
+
+  C.2 In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
+  - C.2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException.
+  - C.2.2 postXxx() is re-throwing the exception after delegating to doPostXxx().
+  - \anchor transferElement_B_16_3 C.2.3 Decorators delegate the TransferElement::_activeException to their target using TransferElement::setActiveException(). If the decorator's _activeException is not nullptr, the targets _activeException is replaced by it, and the decorator's _activeException, which is handed by reference, is set to nullptr \ref transferElement_comment_C_2_3a "(*)". The target is now responsible for handling the exception. If the decorator's _activeException already is nullptr, setActiveException() has no effect, so an active exception in the target is not overwritten \ref transferElement_comment_C_2_3b "(*)". \ref transferElement_comment_C_2_3c "(*)"
+    - C.2.3.1 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not call setActiveException() of the target and do not delegate to postXxx(). The exception is then re-thrown by the decorator's postXxx().
+
+
 ### New sections in RC 08 !! UNREVIEWED EXTENSION TO THE SPEC !!###
 
 - \anchor transferElement_B_10_3 10.3 DeviceBackend::activateAsyncRead() activates the sending of data through the TransferElement::_readQueue() as described in \ref transferElement_B_8_5 "8.5"
@@ -272,7 +281,9 @@ This documnent is currently still **INCOMPLETE**!
 ## C. Requirements for all implementations (full and decorator-like) ##
 
 - 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
-- \anchor transferElement_C_2 2. In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
+- \anchor transferElement_C_2 2. **This section wil be moved to** \ref transferElement_B_16 "B.16". **Don't modify any text here any more**
+
+  In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
   - 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException.
   - 2.2 postXxx() is re-throwing the exception after delegating to doPostXxx().
   - \anchor transferElement_C_2_3 2.3 Decorators delegate the TransferElement::_activeException to their target using TransferElement::setActiveException(). If the decorator's _activeException is not nullptr, the targets _activeException is replaced by it, and the decorator's _activeException, which is handed by reference, is set to nullptr \ref transferElement_comment_C_2_3a "(*)". The target is now responsible for handling the exception. If the decorator's _activeException already is nullptr, setActiveException() has no effect, so an active exception in the target is not overwritten \ref transferElement_comment_C_2_3b "(*)". \ref transferElement_comment_C_2_3c "(*)"
