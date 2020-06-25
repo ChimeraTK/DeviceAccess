@@ -628,8 +628,9 @@ BOOST_AUTO_TEST_CASE(testDelegateExceptionsInDecorators) {
   // this is like doPostRead of the decorator. According to C.2.3 it has to delegate the exception to the target by
   // calling setActiveException(), and the target's TransferElement base class is then responsible for throwing it after
   // the calling target's doPostRead().
+  auto myException_copy = myException;
   accessor.setActiveException(myException);
-  BOOST_CHECK(accessor._activeException == myException);                                     // C.2.1
+  BOOST_CHECK(accessor._activeException == myException_copy);                                // C.2.1
   BOOST_CHECK_THROW(accessor.postRead(TransferType::read, false), ChimeraTK::runtime_error); // C.2.3
   BOOST_CHECK(accessor._postRead_counter == 1);                                              // C.2.2
 
