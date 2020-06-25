@@ -278,7 +278,7 @@ class TransferElementTestBackend : public DeviceBackendImpl {
 /********************************************************************************************************************/
 
 /**
- *  Test correcness of the pre-transfer-post sequence and the return values of the operations, for synchronous
+ *  Test correctness of the pre-transfer-post sequence and the return values of the operations, for synchronous
  *  operations without exceptions.
  * 
  *  This tests the TransferElement specification:
