@@ -161,7 +161,7 @@ This documnent is currently still **INCOMPLETE**!
 - 9. If one transfer element of a device has seen an exception(*), all other transfer elements of the same device must also be aware of this.
    - \anchor transferElement_B_9_1 9.1 The transfer element which detects the exception reports it to its TransferElement::exceptionBackend by calling DeviceBackend::setException \ref transferElement_comment_B_9_1 "(*)" (cf. \ref transferElement_B_10_1 "10.1") [\ref UnifiedTest_TransferElement_B_9_1_syncRead "U", \ref UnifiedTest_TransferElement_B_9_1_asyncRead "U", \ref UnifiedTest_TransferElement_B_9_1_write "U"]
    - \anchor transferElement_B_9_2 9.2 TransferElements with wait_for_new_data flag
-    - \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the TransferElement::_readQueue until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called [\ref UnifiedTest_TransferElement_B_9_2_1_single "U"]
+    - \anchor transferElement_B_9_2_1 9.2.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the \ref transferElement_data_transport_queue "implementation-specific data transport queue" until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called [\ref UnifiedTest_TransferElement_B_9_2_1_single "U"]
     - \anchor transferElement_B_9_2_2 9.2.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.2.1. to avoid race conditions. [\ref UnifiedTest_TransferElement_B_9_2_2_single "U"]
     - 9.2.3 The first data on the queue after the exception is the initial value send when calling Device::activateAsyncRead() (see 8.5.2).
     - 9.2.4 The backend must make sure 9.2.2 is finished before a call to Device::activateAsyncRead() re-activates the asynchronous transfers again (*).
@@ -215,7 +215,7 @@ This documnent is currently still **INCOMPLETE**!
 
 ### New sections in RC 08 !! UNREVIEWED EXTENSION TO THE SPEC !!###
 
-- \anchor transferElement_B_10_3 10.3 DeviceBackend::activateAsyncRead() activates the sending of data through the TransferElement::_readQueue() as described in \ref transferElement_B_8_5 "8.5"
+- \anchor transferElement_B_10_3 10.3 DeviceBackend::activateAsyncRead() activates the sending of data through the \ref transferElement_data_transport_queue "implementation-specific data transport queue" as described in \ref transferElement_B_8_5 "8.5"
   - \anchor transferElement_B_10_3_1 10.3.1  Meta-backends like the LogicalNameMappingBackend delegate this call to all of their target backends
 
 ### (*) Comments ###
@@ -233,8 +233,6 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_B_6_4 \ref transferElement_B_6_4 "6.4" This means that implementations which raise boost::numeric::bad_numeric_cast in their doPostRead() implementation must make sure that the data buffer is either not toched as long as exceptions can occur, or that it is restored in case of an exception.
 
 - \anchor transferElement_comment_B_7_2 \ref transferElement_B_7_2 "7.2" Usually, writes are implemented as synchronous transfers, in which case no previous data can be lost. In case of asynchronous write transfers (as e.g. implemented in the ControlSystemAdapter's ProcessArray), the implementation must ensure the specified behaviour e.g. by using cppext::future_queue::push_overwrite() or a similar functionality. Please keep in mind that the return value of cppext::future_queue::push_overwrite() does not guarantee which data is lost *only* if concurrent push_overwrite() calls are executed in a multi-producer environment. TransferElements are not thread safe anyway, hence push_overwrite() will always overwrite old data in this context.
-
-- \anchor transferElement_comment_B_8_2 \ref transferElement_B_8_2 "8.2" Conceptually. In the current implementation TransferElement::_readQueue is a void queue, which is set up as a continuation of the data transport queue. The important point here that all described actions like exception handling are done on TransferElement::_readQueue.
 
 - 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
