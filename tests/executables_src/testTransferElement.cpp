@@ -210,6 +210,8 @@ class TransferElementTestAccessor : public NDRegisterAccessor<UserType> {
 
   bool isWriteable() const override { return _writeable; }
 
+  void interrupt() override { this->interrupt_impl(this->_readQueue); }
+
   bool _writeable{true};
   bool _readable{true};
 
@@ -914,11 +916,7 @@ BOOST_AUTO_TEST_CASE(testVersionNumber) {
 
 /**
  *  This tests the TransferElement specifications:
- *  * \anchor testTransferElement_B_8_6_1 \ref transferElement_B_8_6_1 "B.8.6.1",
- *  * \anchor testTransferElement_B_8_6_2 \ref transferElement_B_8_6_2 "B.8.6.2",
- *  * \anchor testTransferElement_B_8_6_3 \ref transferElement_B_8_6_3 "B.8.6.3",
- *  * \anchor testTransferElement_B_8_6_4 \ref transferElement_B_8_6_4 "B.8.6.4" (base-class part) and
- *  * \anchor testTransferElement_B_8_6_5 \ref transferElement_B_8_6_5 "B.8.6.5".
+ *  * \anchor testTransferElement_B_8_6 \ref transferElement_B_8_6 "B.8.6" (with all sub-points).
  */
 BOOST_AUTO_TEST_CASE(testInterrupt) {
   TransferElementTestAccessor<int32_t> snycAccessor({});
