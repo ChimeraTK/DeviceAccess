@@ -105,7 +105,7 @@ This documnent is currently still **INCOMPLETE**!
       - 3.2.2.1 Applications can allow this optimisation by using writeDestructively() instead of write().
       - \anchor transferElement_B_3_2_2_2 3.2.2.2 Applications are not allowed to use the content of the application buffer after writeDestructively().\ref transferElement_comment_B_3_2_2_2 "(*)"
 
-- \anchor transferElement_B_4 4. Stages of an operation initiated by calling the public high level functions xxxYyy() (see. A.6.1) [\ref testTransferElement_B_4_sync "T", \ref testTransferElement_B_4_async "T" (both except 4.3.2)]
+- \anchor transferElement_B_4 4. Stages of an operation initiated by calling the public high level functions xxxYyy() (see. A.6.1) [\ref testTransferElement_B_4_sync "T", \ref testTransferElement_B_4_async "T" (both except 4.2.4, 4.3.1 and 4.3.2)]
   - 4.1 preXxx(): calls doPreXxx() of the implementation to allow preparatory work before the actual transfer. doPreXxx() can be empty if nothing is to be done (*)
   - 4.2 xxxTransferYyy():
     - 4.2.1 readTransfer()
@@ -125,7 +125,7 @@ This documnent is currently still **INCOMPLETE**!
   - \anchor transferElement_B_5_2 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa. [\ref testTransferElement_B_5_2 "T"]
 
 - \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue (see \ref transferElement_D_1_1 "D.1.1") are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6_sync "T", \ref testTransferElement_B_6_async "T" (both without sub-points)]
-  - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1_read "T", \ref testTransferElement_B_6_1_write "T"]
+  - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1_sync "T"]
   - \anchor transferElement_B_6_2 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers. [\ref testTransferElement_B_6_2 "T"]
   - \anchor transferElement_B_6_3 6.3 To ensure that the ApplicationCore ExeptionHandlingDecorator works in combination with other decorators, each decorator has to pass the stored exception to its target, and it has to be re-thrown in the doPostRead() of the layer where the exception originated (see \ref transferElement_C_2 "C.2") [\ref testTransferElement_B_6_3 "T"]
   - \anchor transferElement_B_6_4 6.4 When an exception is finally thrown by a TransferElement, the application buffer must still be unchanged. \ref  transferElement_comment_B_6_4 "(*)" [\ref UnifiedTest_TransferElement_B_6_4_syncRead "U", \ref UnifiedTest_TransferElement_B_6_4_asyncRead "U", \ref UnifiedTest_TransferElement_B_6_4_write "U"]
@@ -223,12 +223,6 @@ This documnent is currently still **INCOMPLETE**!
 
 - \anchor transferElement_B_16 16. This section will be moved from \ref transferElement_C_2 "C.2"
 
-  C.2 In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
-  - C.2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException.
-  - C.2.2 postXxx() is re-throwing the exception after delegating to doPostXxx().
-  - \anchor transferElement_B_16_3 C.2.3 Decorators delegate the TransferElement::_activeException to their target using TransferElement::setActiveException(). If the decorator's _activeException is not nullptr, the targets _activeException is replaced by it, and the decorator's _activeException, which is handed by reference, is set to nullptr \ref transferElement_comment_C_2_3a "(*)". The target is now responsible for handling the exception. If the decorator's _activeException already is nullptr, setActiveException() has no effect, so an active exception in the target is not overwritten \ref transferElement_comment_C_2_3b "(*)". \ref transferElement_comment_C_2_3c "(*)"
-    - C.2.3.1 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not call setActiveException() of the target and do not delegate to postXxx(). The exception is then re-thrown by the decorator's postXxx().
-
 
 ### New sections in RC 08 !! UNREVIEWED EXTENSION TO THE SPEC !!###
 
@@ -287,11 +281,11 @@ The current default implementation in the TransferElement base class is always t
 ## C. Requirements for all implementations (full and decorator-like) ##
 
 - 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
-- \anchor transferElement_C_2 2. **This section wil be moved to** \ref transferElement_B_16 "B.16". **Don't modify any text here any more**
+- \anchor transferElement_C_2 2. **This section wil be moved to** \ref transferElement_B_16 "B.16".
 
   In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
-  - 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException.
-  - 2.2 postXxx() is re-throwing the exception after delegating to doPostXxx().
+  - \anchor transferElement_C_2_1 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException. [\ref testTransferElement_C_2_1 "T"]
+  - \anchor transferElement_C_2_2 2.2 postXxx() is re-throwing the exception after delegating to doPostXxx(). [\ref testTransferElement_C_2_2 "T"]
   - \anchor transferElement_C_2_3 2.3 Decorators delegate the TransferElement::_activeException to their target using TransferElement::setActiveException(). If the decorator's _activeException is not nullptr, the targets _activeException is replaced by it, and the decorator's _activeException, which is handed by reference, is set to nullptr \ref transferElement_comment_C_2_3a "(*)". The target is now responsible for handling the exception. If the decorator's _activeException already is nullptr, setActiveException() has no effect, so an active exception in the target is not overwritten \ref transferElement_comment_C_2_3b "(*)". \ref transferElement_comment_C_2_3c "(*)"
     - 2.3.1 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not call setActiveException() of the target and do not delegate to postXxx(). The exception is then re-thrown by the decorator's postXxx().
 
