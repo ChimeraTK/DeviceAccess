@@ -41,7 +41,10 @@ namespace ChimeraTK {
   };
 
   /** Set of AccessMode flags with additional functionality for an easier
-   * handling. */
+   * handling.
+   *
+   * The set holds flags which are enabled for an accessor. The method has() can be used to check wheater a flag is set.
+   * */
   class AccessModeFlags {
    public:
     /** Constructor initialises from a std::set<AccessMode> */
