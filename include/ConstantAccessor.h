@@ -13,6 +13,8 @@
 namespace ChimeraTK {
 
   /** Implementation of the NDRegisterAccessor which delivers always the same
+   * If AccessMode::wait_for_new_data was set, TransferElement::read() will
+   * still block until new data has arrived.
    * value and ignors any write operations */
   template<typename UserType>
   class ConstantAccessor : public ChimeraTK::NDRegisterAccessor<UserType> {
@@ -23,23 +25,14 @@ namespace ChimeraTK {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
 
       if(TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-        TransferElement::_readQueue = cppext::future_queue<void>(1);
-        //TransferElement::_readQueue.push(value);
+        TransferElement::_readQueue = cppext::future_queue<void>(0);
+        TransferElement::_readQueue.push();
       }
     }
 
     ~ConstantAccessor() {}
 
-    void doReadTransferSynchronously() override {
-      if(firstRead) {
-        firstRead = false;
-        return;
-      }
-      // block forever
-      promise.get_future().wait();
-      // if we get here, interrupt() has been called
-      throw boost::thread_interrupted();
-    }
+    void doReadTransferSynchronously() override {}
 
     void doPostRead(TransferType /*type*/, bool /* hasNewData */) override {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
