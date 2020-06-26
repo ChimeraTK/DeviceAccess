@@ -1,0 +1,13 @@
+namespace ChimeraTK {
+/**
+\page spec_TransferElement Technical specification: TransferElement V1.0RC8
+
+> **This is a stub to collect snipptes which are not to be forgotten when writing the spec.**
+
+- After DeviceBackend::setException() has been called, DeviceBackend::isFunctional() returns false until open() has been called successfully.
+
+
+*/
+
+} // end of namespace ChimeraTK
+
