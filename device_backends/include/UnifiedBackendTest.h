@@ -153,8 +153,10 @@ class UnifiedBackendTest {
   [[deprecated]] void integerRegister(const std::list<std::string>& names) { setSyncReadTestRegisters<int>(names); }
 
  protected:
-  void test_valueAfterConstruction();
-  void test_syncRead();
+  void test_B_11_6();
+  void test_NOSPEC_valueAfterConstruction();
+  void test_B_3_1_2_1();
+  void test_B_11_2_1();
   void test_asyncRead();
   void test_write();
   void test_exceptionHandlingSyncRead();
@@ -264,7 +266,6 @@ UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T> makeUnifiedBackendTest(
  * runtime library, or to introduce another library shipped with DeviceAccess just for this class.
  */
 /********************************************************************************************************************/
-
 /********************************************************************************************************************/
 
 // Helper template function to compare values appropriately for the type
@@ -387,8 +388,10 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   }
 
   // run the tests
-  test_valueAfterConstruction();
-  test_syncRead();
+  test_B_11_6();
+  test_NOSPEC_valueAfterConstruction();
+  test_B_3_1_2_1();
+  test_B_11_2_1();
   test_asyncRead();
   test_write();
   test_exceptionHandlingSyncRead();
@@ -422,15 +425,35 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::recoverDevice(ChimeraTK::D
 /********************************************************************************************************************/
 
 /**
- *  Test the content of the application buffer after construction.
- * 
- *  This tests verifies that the implementation complies to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6", and
- *  * MISSING SPEC for value after construction of value buffer
+ *  Test the value after construction for the version number in the application buffer
+ *  * \anchor UnifiedTest_TransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_valueAfterConstruction() {
-  std::cout << "--- valueAfterConstruction" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_6() {
+  std::cout << "--- B.11.6" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(allRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // check "value after construction" for VersionNumber
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test the content of the application data buffer after construction.
+ *  * MISSING SPEC
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_NOSPEC_valueAfterConstruction() {
+  std::cout << "--- test_NOSPEC_valueAfterConstruction" << std::endl;
   ctk::Device d(cdd);
 
   ctk::for_each(allRegisters.table, [&](auto pair) {
@@ -442,9 +465,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_valueAfterConstructio
       // check "value after construction" for value buffer
       std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
       for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
-
-      // check "value after construction" for VersionNumber
-      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
     }
   });
 }
@@ -453,21 +473,16 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_valueAfterConstructio
 
 /**
  *  Test synchronous read.
- * 
- *  This tests that the correct values are read in synchronous read operations, and it verifies that the
- *  implementation complies for synchronous read operations to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1",
- *  * \anchor UnifiedTest_TransferElement_B_11_2_1_syncRead \ref transferElement_B_11_2_1 "B.11.2.1",
+ *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
-  std::cout << "--- syncRead" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_3_1_2_1() {
+  std::cout << "--- test_B_3_1_2_1" << std::endl;
   ctk::Device d(cdd);
 
   ctk::for_each(readRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
-      ctk::VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
@@ -485,8 +500,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
       // Check application buffer
       CHECK_EQUALITY(reg, v1);
       BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
 
       // Set an intermediate remote value to be overwritten next
       _setRemoteValueCallable(registerName);
@@ -502,13 +515,77 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
       // Check application buffer
       CHECK_EQUALITY(reg, v2);
       BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
 
       // close device again
       d.close();
     }
   });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test version number bigger for newer values
+ *  * \anchor UnifiedTest_TransferElement_B_11_2_1 \ref transferElement_B_11_2_1 "B.11.2.1",
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_2_1() {
+  std::cout << "--- test_B_11_2_1" << std::endl;
+  ctk::Device d(cdd);
+
+  // open the device
+  d.open();
+  d.activateAsyncRead();
+  quirk_activateAsyncRead();
+
+  // synchronous read
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      for(size_t i = 0; i < 2; ++i) {
+        // Set remote value to be read.
+        _setRemoteValueCallable(registerName);
+
+        // Read value
+        reg.read();
+
+        // Check application buffer
+        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        someVersion = reg.getVersionNumber();
+      }
+    }
+  });
+
+  // asynchronous read
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << " (async)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      for(size_t i = 0; i < 2; ++i) {
+        // Set remote value to be read.
+        _setRemoteValueCallable(registerName);
+
+        // Read value
+        reg.read();
+
+        // Check application buffer
+        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        someVersion = reg.getVersionNumber();
+      }
+    }
+  });
+
+  // close device
+  d.close();
 }
 
 /********************************************************************************************************************/
