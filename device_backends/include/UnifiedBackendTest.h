@@ -301,13 +301,15 @@ namespace std {
     std::string fail = "";                                                                                             \
     BOOST_REQUIRE(accessor.getNChannels() == expectedValue.size());                                                    \
     BOOST_REQUIRE(accessor.getNElementsPerChannel() == expectedValue[0].size());                                       \
-    for(size_t i = 0; i < expectedValue.size(); ++i) {                                                                 \
-      for(size_t k = 0; k < expectedValue.size(); ++k) {                                                               \
-        if(!comparHelper(accessor[i][k], expectedValue[i][k])) {                                                       \
+    for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
+      for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                  \
+        if(!comparHelper(                                                                                              \
+               accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {     \
           if(fail.size() == 0) {                                                                                       \
-            fail = "Accessor content differs from expected value. First difference at index [" + std::to_string(i) +   \
-                "][" + std::to_string(k) + "]: " + std::to_string(accessor[i][k]) +                                    \
-                " != " + std::to_string(expectedValue[i][k]);                                                          \
+            fail = "Accessor content differs from expected value. First difference at index [" +                       \
+                std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                           \
+                "]: " + std::to_string(accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                                 \
+                " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                            \
           }                                                                                                            \
         }                                                                                                              \
       }                                                                                                                \
@@ -464,7 +466,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_syncRead() {
 
   ctk::for_each(readRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
-    size_t valueId = 0;
     for(auto& registerName : pair.second) {
       ctk::VersionNumber someVersion{nullptr};
 
@@ -534,7 +535,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
 
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
-    size_t valueId = 0;
     for(auto& registerName : pair.second) {
       ctk::VersionNumber someVersion{nullptr};
 
@@ -675,7 +675,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
 
   ctk::for_each(writeRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
-    size_t valueId = 0;
     for(auto& registerName : pair.second) {
       ctk::VersionNumber someVersion{nullptr};
 
@@ -1156,9 +1155,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_writeDataLoss() {
 
   ctk::for_each(writeRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
-    size_t valueId = 0;
     for(auto& registerName : pair.second) {
-      ctk::VersionNumber someVersion{nullptr};
       std::cout << "... registerName = " << registerName << std::endl;
 
       // enable test condition
@@ -1224,7 +1221,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyH
 
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
-    size_t valueId = 0;
     for(auto& registerName : pair.second) {
       ctk::VersionNumber someVersion{nullptr};
 
@@ -1397,7 +1393,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_interrupt() {
 
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
-    size_t valueId = 0;
     for(auto& registerName : pair.second) {
       ctk::VersionNumber someVersion{nullptr};
 
