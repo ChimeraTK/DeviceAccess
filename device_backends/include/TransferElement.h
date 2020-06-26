@@ -112,10 +112,7 @@ namespace ChimeraTK {
 
     /** Set the current DataValidity for this TransferElement. Will do nothing if the
      * backend does not support it */
-    void setDataValidity(DataValidity validity = DataValidity::ok) {
-      assert(isWriteable());
-      _dataValidity = validity;
-    }
+    void setDataValidity(DataValidity validity = DataValidity::ok) { _dataValidity = validity; }
 
     /** Return current validity of the data. Will always return DataValidity::ok if the
      * backend does not support it */
