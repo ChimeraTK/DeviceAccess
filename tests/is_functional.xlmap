@@ -11,4 +11,8 @@
         <targetDevice>PCIE3</targetDevice>
         <targetRegister>ADC.AREA_DMAABLE</targetRegister>
     </redirectedRegister>
+    <redirectedRegister name="EdummyInt32">
+        <targetDevice>EDUMMY</targetDevice>
+        <targetRegister>/Integers/signed32</targetRegister>
+    </redirectedRegister>
 </logicalNameMap>

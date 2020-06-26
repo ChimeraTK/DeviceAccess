@@ -8,6 +8,7 @@ using namespace boost::unit_test_framework;
 #include "TransferGroup.h"
 #include "ExceptionDummyBackend.h"
 #include "UnifiedBackendTest.h"
+#include "DummyRegisterAccessor.h"
 
 using namespace ChimeraTK;
 
@@ -39,15 +40,53 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   BOOST_CHECK(device.isOpened() == false);
   device.close();
   BOOST_CHECK(device.isOpened() == false);
+}
 
+/**********************************************************************************************************************/
+
+// Helper map for unifiedBackendTest
+static std::map<std::string, std::string> registerNameMap{{"/EdummyInt32", "/Integers/signed32"}};
+
+/**********************************************************************************************************************/
+
+// Helper function for unifiedBackendTest
+template<typename UserType>
+std::vector<std::vector<UserType>> getValueForUBT(std::string registerName, boost::shared_ptr<ExceptionDummy> backend) {
+  DummyRegisterAccessor<UserType> acc(backend.get(), "", registerNameMap.at(registerName));
+  std::vector<std::vector<UserType>> ret;
+  ret.resize(1);
+  for(size_t i = 0; i < acc.getNumberOfElements(); ++i) ret[0].push_back(acc[i]);
+  return ret;
+}
+
+/**********************************************************************************************************************/
+
+// Helper function for unifiedBackendTest
+void setValueFromUBT(std::string registerName, boost::shared_ptr<ExceptionDummy> backend) {
+  if(registerName == "/EdummyInt32") {
+    DummyRegisterAccessor<int32_t> acc(backend.get(), "", registerNameMap.at(registerName));
+    acc = acc + 3;
+  }
+  else {
+    std::cout << "setValueFromUBT() called for unknown register name: " << registerName << std::endl;
+    assert(false); // wrong register name
+  }
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   auto exceptionDummy =
       boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
 
   auto ubt = makeUnifiedBackendTest(
-      [](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> { return {}; },
-      [](std::string registerName) {});
+      [&](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> {
+        return getValueForUBT<decltype(dummy)>(registerName, exceptionDummy);
+      },
+      [&](std::string registerName) { setValueFromUBT(registerName, exceptionDummy); });
 
-  ubt.setSyncReadTestRegisters<int>({"/NotUsed0"});
+  ubt.setSyncReadTestRegisters<int>({"/EdummyInt32"});
+  ubt.setWriteTestRegisters<int>({"/EdummyInt32"});
 
   ubt.forceRuntimeErrorOnRead(
       {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
