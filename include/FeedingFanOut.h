@@ -64,7 +64,13 @@ namespace ChimeraTK {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
 
-      TransferElement::_readQueue = cppext::future_queue<void>(1);
+      TransferElement::_readQueue = cppext::future_queue<void>(3);
+
+      // If there is a return channel, the feeding node is an output with push-readback,
+      // so we can derive that wait_for_new_data  is valid
+      if(_withReturn) {
+        TransferElement::_accessModeFlags = {AccessMode::wait_for_new_data};
+      }
     }
 
     /** Add a slave to the FanOut. Only sending end-points of a consuming node may
@@ -91,14 +97,16 @@ namespace ChimeraTK {
           if(_hasReturnSlave) {
             throw ChimeraTK::logic_error("FeedingFanOut: Cannot add multiple slaves with return channel!");
           }
+
+          // Assert the assumption about the return channel made in the constructor
+          assert(slave->getAccessModeFlags().has(AccessMode::wait_for_new_data));
+
           _hasReturnSlave = true;
           _returnSlave = slave;
 
-          // Determine the AccessModeFlags from the return slave
+          // Set the readQeue from the return slave
           // As this becomes the implemention of the feeding output, the flags are determined by that slave accessor
-          // In other cases, the information is not relevant because the feeding node is on output which is never read
-          ChimeraTK::NDRegisterAccessor<UserType>::_accessModeFlags = _returnSlave->getAccessModeFlags();
-
+          // If not _withReturn, the queue is not relevant because the feeding node is on output which is never read
           TransferElement::_readQueue = _returnSlave->getReadQueue();
         }
       }
@@ -226,8 +234,8 @@ namespace ChimeraTK {
     void interrupt() override {
       // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
       FanOut<UserType>::interrupt();
-      if(this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-        ChimeraTK::NDRegisterAccessor<UserType>::interrupt();
+      if(_withReturn) {
+        _returnSlave->interrupt();
       }
     }
 
