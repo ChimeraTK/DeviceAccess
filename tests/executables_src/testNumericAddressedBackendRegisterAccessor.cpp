@@ -385,13 +385,40 @@ BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
 
 /**********************************************************************************************************************/
 
+// Helper function for unifiedBackendTest
+template<typename UserType>
+std::vector<std::vector<UserType>> getValueForUBT(std::string registerName, boost::shared_ptr<ExceptionDummy> backend) {
+  DummyRegisterAccessor<UserType> acc(backend.get(), "", registerName);
+  std::vector<std::vector<UserType>> ret;
+  ret.resize(1);
+  for(size_t i = 0; i < acc.getNumberOfElements(); ++i) ret[0].push_back(acc[i]);
+  return ret;
+}
+
+/**********************************************************************************************************************/
+
+// Helper function for unifiedBackendTest
+void setValueFromUBT(std::string registerName, boost::shared_ptr<ExceptionDummy> backend) {
+  if(registerName == "/Integers/signed32") {
+    DummyRegisterAccessor<int32_t> acc(backend.get(), "", registerName);
+    acc = acc + 3;
+  }
+  else {
+    assert(false); // wrong register name
+  }
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   std::string cdd("(ExceptionDummy:1?map=test3.map)");
   auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
 
   auto ubt = makeUnifiedBackendTest(
-      [](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> { return {}; },
-      [](std::string registerName) {});
+      [&](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> {
+        return getValueForUBT<decltype(dummy)>(registerName, exceptionDummy);
+      },
+      [&](std::string registerName) { setValueFromUBT(registerName, exceptionDummy); });
 
   ubt.setSyncReadTestRegisters<int>({"/Integers/signed32"});
   ubt.setWriteTestRegisters<int>({"/Integers/signed32"});
