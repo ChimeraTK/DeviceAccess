@@ -80,6 +80,7 @@ namespace ChimeraTK {
   VariableNetworkNode::VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int)
   : pdata(boost::make_shared<VariableNetworkNode_data>()) {
     pdata->type = NodeType::TriggerReceiver;
+    pdata->mode = UpdateMode::push;
     pdata->direction = {VariableDirection::consuming, false};
     pdata->nodeToTrigger = nodeToTrigger;
     pdata->name = "trigger:" + nodeToTrigger.getName();

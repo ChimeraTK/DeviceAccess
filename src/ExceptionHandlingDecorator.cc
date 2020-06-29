@@ -100,6 +100,18 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, VersionNumber versionNumber) {
+    try {
+      if(transferAllowed) {
+        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
+      }
+    }
+    catch(ChimeraTK::runtime_error& e) {
+      deviceModule.reportException(e.what());
+    }
+  }
+
+  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
     _owner = owner;
     if(_direction.dir == VariableDirection::feeding && previousReadFailed) {
