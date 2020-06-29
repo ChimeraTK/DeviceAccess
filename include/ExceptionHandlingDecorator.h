@@ -37,6 +37,8 @@ namespace ChimeraTK {
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override;
+
     void setOwner(EntityOwner* owner);
 
     void doPostRead(TransferType type, bool hasNewData) override;
