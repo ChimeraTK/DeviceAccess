@@ -153,19 +153,31 @@ class UnifiedBackendTest {
   [[deprecated]] void integerRegister(const std::list<std::string>& names) { setSyncReadTestRegisters<int>(names); }
 
  protected:
-  void test_B_11_6();
-  void test_NOSPEC_valueAfterConstruction();
   void test_B_3_1_2_1();
+  void test_B_3_2_1_2();
+  void test_B_3_2_2();
+  void test_B_6_4();
+  void test_B_7_2();
+  void test_B_8_2();
+  void test_B_8_2_1();
+  void test_B_8_3();
+  void test_B_8_4();
+  void test_B_8_5();
+  void test_B_8_5_1();
+  void test_B_8_5_2();
+  void test_B_8_5_3();
+  void test_B_8_6();
+  void test_B_9_1();
+  void test_B_9_2_1();
+  void test_B_9_2_2();
+  void test_B_9_3_1();
+  void test_B_9_4();
+  void test_B_10_1_2();
   void test_B_11_2_1();
-  void test_asyncRead();
-  void test_write();
-  void test_exceptionHandlingSyncRead();
-  void test_exceptionHandlingAsyncRead();
-  void test_exceptionHandlingWrite();
-  void test_writeDataLoss();
-  void test_asyncReadConsistencyHeartbeat();
-  void test_setException();
-  void test_interrupt();
+  void test_B_11_2_2();
+  void test_B_11_6();
+  void test_C_5_2_5();
+  void test_NOSPEC_valueAfterConstruction();
 
   /// Utility functions for recurring tasks
   void recoverDevice(ChimeraTK::Device& d);
@@ -299,7 +311,7 @@ namespace std {
 // Note: we use a macro and not a function, so BOOST_ERROR prints us the line number of the actual test!
 #define CHECK_EQUALITY(accessor, expectedValue)                                                                        \
   {                                                                                                                    \
-    std::string fail = "";                                                                                             \
+    std::string fail;                                                                                                  \
     BOOST_REQUIRE(accessor.getNChannels() == expectedValue.size());                                                    \
     BOOST_REQUIRE(accessor.getNElementsPerChannel() == expectedValue[0].size());                                       \
     for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
@@ -320,6 +332,50 @@ namespace std {
     }                                                                                                                  \
   }                                                                                                                    \
   (void)(0)
+
+// Simiar to CHECK_EQUALITY, but runs readLatest() on the accessor in a loop until the expected value has arrived, for
+// at most maxMillisecods. If the expected value is not seen within that time, an error is risen.
+#define CHECK_EQUALITY_TIMEOUT(accessor, expectedValue, maxMilliseconds)                                               \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(true) {                                                                                                      \
+      accessor.readLatest();                                                                                           \
+      std::string fail;                                                                                                \
+      BOOST_REQUIRE(accessor.getNChannels() == expectedValue.size());                                                  \
+      BOOST_REQUIRE(accessor.getNElementsPerChannel() == expectedValue[0].size());                                     \
+      for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
+        for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                \
+          if(!comparHelper(                                                                                            \
+                 accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
+            if(fail.size() == 0) {                                                                                     \
+              fail = "Accessor content differs from expected value. First difference at index [" +                     \
+                  std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
+                  "]: " + std::to_string(accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
+                  " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                          \
+            }                                                                                                          \
+          }                                                                                                            \
+        }                                                                                                              \
+      }                                                                                                                \
+      if(fail.size() == 0) break;                                                                                      \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK_MESSAGE(!timeout_reached, fail);                                                                     \
+      if(timeout_reached) break;                                                                                       \
+      usleep(10000);                                                                                                   \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  (void)(0)
+
+#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(!(condition)) {                                                                                              \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK(!timeout_reached);                                                                                   \
+      if(timeout_reached) break;                                                                                       \
+      usleep(1000);                                                                                                    \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  (void)0
 
 /********************************************************************************************************************/
 
@@ -388,19 +444,31 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   }
 
   // run the tests
-  test_B_11_6();
-  test_NOSPEC_valueAfterConstruction();
   test_B_3_1_2_1();
+  test_B_3_2_1_2();
+  test_B_3_2_2();
+  test_B_6_4();
+  test_B_7_2();
+  test_B_8_2();
+  test_B_8_2_1();
+  test_B_8_3();
+  test_B_8_4();
+  test_B_8_5();
+  test_B_8_5_1();
+  test_B_8_5_2();
+  test_B_8_5_3();
+  test_B_8_6();
+  test_B_9_1();
+  test_B_9_2_1();
+  test_B_9_2_2();
+  test_B_9_3_1();
+  test_B_9_4();
+  test_B_10_1_2();
   test_B_11_2_1();
-  test_asyncRead();
-  test_write();
-  test_exceptionHandlingSyncRead();
-  test_exceptionHandlingAsyncRead();
-  test_exceptionHandlingWrite();
-  test_writeDataLoss();
-  test_asyncReadConsistencyHeartbeat();
-  test_setException();
-  test_interrupt();
+  test_B_11_2_2();
+  test_B_11_6();
+  test_C_5_2_5();
+  test_NOSPEC_valueAfterConstruction();
 }
 
 /********************************************************************************************************************/
@@ -425,53 +493,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::recoverDevice(ChimeraTK::D
 /********************************************************************************************************************/
 
 /**
- *  Test the value after construction for the version number in the application buffer
- *  * \anchor UnifiedTest_TransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6"
- */
-template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_6() {
-  std::cout << "--- B.11.6" << std::endl;
-  ctk::Device d(cdd);
-
-  ctk::for_each(allRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    for(auto& registerName : pair.second) {
-      std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-
-      // check "value after construction" for VersionNumber
-      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
-    }
-  });
-}
-
-/********************************************************************************************************************/
-
-/**
- *  Test the content of the application data buffer after construction.
- *  * MISSING SPEC
- */
-template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_NOSPEC_valueAfterConstruction() {
-  std::cout << "--- test_NOSPEC_valueAfterConstruction" << std::endl;
-  ctk::Device d(cdd);
-
-  ctk::for_each(allRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    for(auto& registerName : pair.second) {
-      std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-
-      // check "value after construction" for value buffer
-      std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
-      for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
-    }
-  });
-}
-
-/********************************************************************************************************************/
-
-/**
  *  Test synchronous read.
  *  * \anchor UnifiedTest_TransferElement_B_3_1_2_1 \ref transferElement_B_3_1_2_1 "B.3.1.2.1"
  */
@@ -483,7 +504,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_3_1_2_1() {
   ctk::for_each(readRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
-
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -524,199 +544,8 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_3_1_2_1() {
 
 /********************************************************************************************************************/
 
-/**
- *  Test version number bigger for newer values
- *  * \anchor UnifiedTest_TransferElement_B_11_2_1 \ref transferElement_B_11_2_1 "B.11.2.1",
- */
-template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_2_1() {
-  std::cout << "--- test_B_11_2_1" << std::endl;
-  ctk::Device d(cdd);
-
-  // open the device
-  d.open();
-  d.activateAsyncRead();
-  quirk_activateAsyncRead();
-
-  // synchronous read
-  ctk::for_each(readRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    for(auto& registerName : pair.second) {
-      ctk::VersionNumber someVersion{nullptr};
-
-      std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-
-      for(size_t i = 0; i < 2; ++i) {
-        // Set remote value to be read.
-        _setRemoteValueCallable(registerName);
-
-        // Read value
-        reg.read();
-
-        // Check application buffer
-        BOOST_CHECK(reg.getVersionNumber() > someVersion);
-        someVersion = reg.getVersionNumber();
-      }
-    }
-  });
-
-  // asynchronous read
-  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    for(auto& registerName : pair.second) {
-      ctk::VersionNumber someVersion{nullptr};
-
-      std::cout << "... registerName = " << registerName << " (async)" << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-
-      for(size_t i = 0; i < 2; ++i) {
-        // Set remote value to be read.
-        _setRemoteValueCallable(registerName);
-
-        // Read value
-        reg.read();
-
-        // Check application buffer
-        BOOST_CHECK(reg.getVersionNumber() > someVersion);
-        someVersion = reg.getVersionNumber();
-      }
-    }
-  });
-
-  // close device
-  d.close();
-}
-
-/********************************************************************************************************************/
-
-/**
- *  Test asynchronous read.
- * 
- *  This tests that the correct values are read in asynchronous read operations, and it verifies that the
- *  implementation complies for asynchronous read operations to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_3_1_3 \ref transferElement_B_3_1_3 "B.3.1.3" (with sub-points),
- *  * \anchor UnifiedTest_TransferElement_B_8_2 \ref transferElement_B_8_2 "B.8.2",
- *  * \anchor UnifiedTest_TransferElement_B_8_2_1 \ref transferElement_B_8_2_1 "B.8.2.1",
- *  * \anchor UnifiedTest_TransferElement_B_8_5 \ref transferElement_B_8_5_1 "B.8.5" (without sub-points),
- *  * \anchor UnifiedTest_TransferElement_B_8_5_1 \ref transferElement_B_8_5_1 "B.8.5.1",
- *  * \anchor UnifiedTest_TransferElement_B_8_5_2 \ref transferElement_B_8_5_2 "B.8.5.2",
- *  * \anchor UnifiedTest_TransferElement_B_8_5_3 \ref transferElement_B_8_5_3 "B.8.5.3",
- *  * \anchor UnifiedTest_TransferElement_B_11_2_2_sameRegister \ref transferElement_B_11_2_2 "B.11.2.2" (same register
- *    only),
- */
-template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncRead() {
-  std::cout << "--- asyncRead" << std::endl;
-  ctk::Device d(cdd);
-
-  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    for(auto& registerName : pair.second) {
-      ctk::VersionNumber someVersion{nullptr};
-
-      std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-
-      // Set remote value to be read.
-      _setRemoteValueCallable(registerName);
-      auto v1 = _getRemoteValueCallable(registerName, UserType());
-
-      // open the device
-      d.open();
-
-      // Check no value arrives before activateAsyncRead(). This is more precisely tested again in
-      // exceptionHandlingAsyncRead() below. (B.8.5)
-      usleep(100000); // give potential race conditions a chance to pop up more easily...
-      BOOST_CHECK(reg.readNonBlocking() == false);
-
-      // Activate async read (B.8.5.1)
-      d.activateAsyncRead();
-      quirk_activateAsyncRead();
-
-      // Read initial value (B.8.5.2)
-      reg.read();
-
-      // Check application buffer
-      CHECK_EQUALITY(reg, v1);
-      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
-
-      // Set multiple remote values in a row - they will be queued
-      _setRemoteValueCallable(registerName);
-      auto v2 = _getRemoteValueCallable(registerName, UserType());
-      _setRemoteValueCallable(registerName);
-      auto v3 = _getRemoteValueCallable(registerName, UserType());
-      _setRemoteValueCallable(registerName);
-      auto v4 = _getRemoteValueCallable(registerName, UserType());
-
-      // Read and check second value
-      reg.read();
-      CHECK_EQUALITY(reg, v2);
-      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
-
-      // Read and check third value, this time with non blocking read (B.3.1.3.2 with data available)
-      BOOST_CHECK(reg.readNonBlocking() == true);
-      CHECK_EQUALITY(reg, v3);
-      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
-
-      // Read and check fourth value
-      reg.read();
-      CHECK_EQUALITY(reg, v4);
-      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
-
-      // No more data available, tested with non blocking read (B.3.1.3.2 without data available)
-      BOOST_CHECK(reg.readNonBlocking() == false);
-      CHECK_EQUALITY(reg, v4); // application buffer is unchanged
-      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() == someVersion);
-
-      // Provoke queue overflow by filling many values. We are only interested in the last one.
-      for(size_t i = 0; i < 10; ++i) {
-        _setRemoteValueCallable(registerName);
-      }
-      auto v5 = _getRemoteValueCallable(registerName, UserType());
-
-      // Read last written value (B.8.2.1)
-      BOOST_CHECK(reg.readLatest() == true);
-      CHECK_EQUALITY(reg, v5);
-      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
-
-      // Obtain a second accessor, which should receive data right away since the device is open already (B.8.5.3)
-      auto reg2 = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-      _setRemoteValueCallable(registerName);
-      auto v6 = _getRemoteValueCallable(registerName, UserType());
-      reg2.read();
-      CHECK_EQUALITY(reg2, v6);
-      BOOST_CHECK(reg2.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg2.getVersionNumber() != ctk::VersionNumber(nullptr));
-
-      // The value must be seen by the first accessor as well
-      reg.read();
-      CHECK_EQUALITY(reg, v6);
-      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-
-      // Since the data is the same, it is consistent and hence must have the same VersionNumber (B.11.2.2)
-      BOOST_CHECK(reg.getVersionNumber() == reg2.getVersionNumber());
-
-      // close device again
-      d.close();
-    }
-  });
-}
-
-/********************************************************************************************************************/
-
+/// Helper function for write tests.
+/// TODO: Function should be overridable for certain registers by the backend-dependent test (-> fixed point)
 template<typename UserType>
 std::vector<std::vector<UserType>> generateValue(ctk::TwoDRegisterAccessor<UserType>& reg, double& someValue) {
   double increment = 3.1415;
@@ -736,17 +565,54 @@ std::vector<std::vector<UserType>> generateValue(ctk::TwoDRegisterAccessor<UserT
 /********************************************************************************************************************/
 
 /**
- *  Test write.
+ *  Test write() does not destroy application buffer
+ *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2"
  * 
- *  This tests that the correct values are written in write operations (non-destructive and destructive), and it
- *  verifies that the implementation complies for write operations to the following TransferElement
- *  specifications:
- *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2",
- *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_2 "B.3.2.2",
+ * (Exception case is covered by B.6.4)
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
-  std::cout << "--- write" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_3_2_1_2() {
+  std::cout << "--- test_B_3_2_1_2" << std::endl;
+  ctk::Device d(cdd);
+  double someValue = 42;
+
+  // open the device
+  d.open();
+
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // write some value
+      std::vector<std::vector<UserType>> theValue = generateValue(reg, someValue);
+      ctk::VersionNumber ver;
+      reg.write(ver);
+
+      // check that application data buffer is not changed (non-destructive write, B.3.2.1.2)
+      BOOST_CHECK(reg.getNChannels() == theValue.size());
+      BOOST_CHECK(reg.getNElementsPerChannel() == theValue[0].size());
+      CHECK_EQUALITY(reg, theValue);
+
+      // check the version number
+      BOOST_CHECK(reg.getVersionNumber() == ver);
+    }
+  });
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test destructive write.
+ *  * \anchor UnifiedTest_TransferElement_B_3_2_2 \ref transferElement_B_3_2_2 "B.3.2.2"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_3_2_2() {
+  std::cout << "--- test_B_3_2_2" << std::endl;
   ctk::Device d(cdd);
   double someValue = 42;
 
@@ -803,46 +669,32 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_write() {
 /********************************************************************************************************************/
 
 /**
- *  Test exception handling for synchronous read operations.
- * 
- *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
- *  implementation complies for synchronous read operations to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_6_4_syncRead \ref transferElement_B_6_4 "B.6.4", and
- *  * \anchor UnifiedTest_TransferElement_B_9_3 \ref transferElement_B_9_3 "B.9.3", and
- *  * \anchor UnifiedTest_TransferElement_C_5_2_5_syncRead \ref transferElement_C_5_2_5 "C.5.2.5".
- *  * \anchor UnifiedTest_TransferElement_B_9_1_syncRead \ref transferElement_B_9_1 "B.9.1"
- * 
- *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
- *  runtime_error handling only.
+ *  Test application buffer unchanged after exception
+ *  * \anchor UnifiedTest_TransferElement_B_6_4 \ref transferElement_B_6_4 "B.6.4"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSyncRead() {
-  std::cout << "--- exceptionHandlingSyncRead" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_6_4() {
+  std::cout << "--- test_B_6_4" << std::endl;
   ctk::Device d(cdd);
 
+  std::cout << "... synchronous read " << std::endl;
   ctk::for_each(readRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       int someNumber = 42;
-      ctk::VersionNumber someVersion{nullptr};
 
-      std::cout << "... registerName = " << registerName << std::endl;
+      std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-
-      // set exception reporting backend
-      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
-      reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
       // alter the application buffer to make sure it is not changed under exception
       reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
       reg.setDataValidity(ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr)); // cannot be changed
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr)); // (quasi-assertion for the test)
 
-      // attempt read while device closed, logic_error is expected. (C.5.2.5)
-      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
-      BOOST_CHECK(!erb->hasSeenException());
+      // trigger logic error
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error); // (no check intended, just catch)
 
-      // check that the application buffer has not changed after exception (B.6.4)
+      // check that the application buffer has not changed after exception
       BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
       BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
@@ -854,359 +706,156 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingSync
         // enable exceptions on read
         testCondition.first();
 
-        // alter application buffer
-        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
-        reg.setDataValidity(ctk::DataValidity::faulty);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+        // trigger runtime_error
+        BOOST_CHECK_THROW(reg.read(), ctk::runtime_error); // (no check intended, just catch)
 
-        // Check for runtime_error where it is now expected
-        BOOST_CHECK(!erb->hasSeenException());
-        BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
-        BOOST_CHECK(erb->hasSeenException());
-
-        // check that the application buffer has not changed after exception (B.6.4)
+        // check that the application buffer has not changed after exception
         BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
-        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::faulty);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion);
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
         // disable exceptions on read
         testCondition.second();
-
-        // check that exception is still thrown (device not yet recovered) (B.9.3)
-        usleep(100000); // give potential race conditions a chance to pop up more easily...
-        BOOST_CHECK(!erb->hasSeenException());
-        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
-        BOOST_CHECK(erb->hasSeenException());
 
         // recover
         this->recoverDevice(d);
-
-        // make a successful read to make sure the exception state is gone
-        BOOST_CHECK_NO_THROW(reg.read());
-
-        // check that the application buffer is now changed (without implying assumptions about the value)
-        BOOST_CHECK(reg.getVersionNumber() > someVersion);
-        someVersion = reg.getVersionNumber();
-
-        // re-enable exceptions on read
-        testCondition.first();
-
-        // alter application buffer
-        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
-        reg.setDataValidity(ctk::DataValidity::faulty);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
-
-        // repeat the above test, a runtime_error should be expected again
-        BOOST_CHECK(!erb->hasSeenException());
-        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
-        BOOST_CHECK(erb->hasSeenException());
-
-        // check that the application buffer has not changed after exception (B.6.4)
-        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
-        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::faulty);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion);
-
-        // disable exceptions on read
-        testCondition.second();
       }
 
       // close device again
       d.close();
-
-      BOOST_CHECK(!erb->hasSeenException());
     }
-    
   });
-}
 
-/********************************************************************************************************************/
-
-/**
- *  Test exception handling for asynchronous read operations.
- * 
- *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
- *  implementation complies for asynchronous read operations to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_6_4_asyncRead \ref transferElement_B_6_4 "B.6.4",
- *  * \anchor UnifiedTest_TransferElement_C_5_2_5_asyncRead \ref transferElement_C_5_2_5 "C.5.2.5",
- *  * \anchor UnifiedTest_TransferElement_B_8_3 \ref transferElement_B_8_3 "B.8.3" (only first sentence),
- *  * \anchor UnifiedTest_TransferElement_B_9_2_1_single \ref transferElement_B_9_2_1 "B.9.2.1" (only single accessor), and
- *  * \anchor UnifiedTest_TransferElement_B_9_2_2_single \ref transferElement_B_9_2_2 "B.9.2.2" (only single accessor).
- *  * \anchor UnifiedTest_TransferElement_B_9_1_asyncRead \ref transferElement_B_9_1 "B.9.1"
- * 
- *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
- *  runtime_error handling only.
- */
-template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingAsyncRead() {
-  std::cout << "--- exceptionHandlingAsyncRead" << std::endl;
-  ctk::Device d(cdd);
-
+  std::cout << "... asynchronous read " << std::endl;
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
-      ctk::VersionNumber someVersion{nullptr};
-
-      std::cout << "... registerName = " << registerName << std::endl;
-
-      // Obtain accessor for the test
-
-      // Test obtaining an accessor while device is closed and never using it. Bad implementations could fail in the
-      // desctructor in such case.
-      {
-        auto unused = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-        (void)unused;
-      }
-
-      // obtain accessor for the test
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-
-      // set exception reporting backend
-      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
-      reg.getHighLevelImplElement()->setExceptionBackend(erb);
-
-      // Set remove value (so we know it)
-      _setRemoteValueCallable(registerName);
-      auto v1 = _getRemoteValueCallable(registerName, UserType());
-
-      // Generate a number which is for sure different that the current value and fits into every data type
       int someNumber = 42;
-      if(ctk::userTypeToNumeric<int>(v1[0][0]) == 42) someNumber = 43;
+
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
       // alter the application buffer to make sure it is not changed under exception
       reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
       reg.setDataValidity(ctk::DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr)); // cannot be changed
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr)); // (quasi-assertion for the test)
 
-      // attempt read while device closed, logic_error is expected. (C.5.2.5)
-      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
-      BOOST_CHECK(!erb->hasSeenException());
+      // trigger logic error via read()
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error); // (no check intended, just catch)
 
-      // check that the application buffer has not changed after exception (B.6.4)
+      // check that the application buffer has not changed after exception
       BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
       BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
-      // Change remove value, will be seen as initial value after recovery
-      _setRemoteValueCallable(registerName);
-      auto v2 = _getRemoteValueCallable(registerName, UserType());
+      // trigger logic error via readNonBlocking()
+      BOOST_CHECK_THROW(reg.readNonBlocking(), ctk::logic_error); // (no check intended, just catch)
 
-      // open the device, let it throw runtime_error exceptions
+      // check that the application buffer has not changed after exception
+      BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
+
+      // open the device, then let it throw runtime_error exceptions
       d.open();
       d.activateAsyncRead();
-      quirk_activateAsyncRead();
-
-      // read initial value
-      reg.read();
-
-      // check that the application buffer is now changed
-      CHECK_EQUALITY(reg, v2);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
-
-      // make sure no additional value arrives
-      usleep(10000);
-      BOOST_CHECK(reg.readNonBlocking() == false);
-      BOOST_CHECK(reg.getVersionNumber() == someVersion);
+      reg.read(); // initial value
 
       for(auto& testCondition : forceExceptionsRead) {
         // enable exceptions on read
         testCondition.first();
 
-        // alter application buffer
-        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
-        reg.setDataValidity(ctk::DataValidity::faulty);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+        // alter the application buffer to make sure it is not changed under exception
+        reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
+        reg.setDataValidity(ctk::DataValidity::ok);
+        auto ver = reg.getVersionNumber();
 
-        // Check for runtime_error where it is now expected (B.9.2.1/B.9.2.2)
-        BOOST_CHECK(!erb->hasSeenException());
-        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
-        BOOST_CHECK(erb->hasSeenException());
-        usleep(10000);
-        BOOST_CHECK(reg.readNonBlocking() == false);
+        // trigger runtime_error via read
+        BOOST_CHECK_THROW(reg.read(), ctk::runtime_error); // (no check intended, just catch)
 
-        // disable exceptions on read
+        // check that the application buffer has not changed after exception
+        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == ver);
+
+        // recover to get another exception
         testCondition.second();
-
-        // No data received before device is recovered and async read transfers are re-activated (B.9.2.1)
-        usleep(100000); // give potential race conditions a chance to pop up more easily...
-        BOOST_CHECK(reg.readNonBlocking() == false);
-
-        // recover
         this->recoverDevice(d);
-
-        // measure time until first data arrives, required for testing B.9.2.1 later
-        auto t0 = std::chrono::steady_clock::now();
-
-        // change value (will be initial value)
-        _setRemoteValueCallable(registerName);
-        auto v3 = _getRemoteValueCallable(registerName, UserType());
-
-        // reactivate async read transfers
         d.activateAsyncRead();
-        quirk_activateAsyncRead();
-
-        // make a successful read (initial value) to make sure the exception state is gone
-        reg.read();
-        auto t1 = std::chrono::steady_clock::now();
-        BOOST_CHECK(reg.readNonBlocking() == false);
-
-        // check that the application buffer is now changed
-        CHECK_EQUALITY(reg, v3);
-        BOOST_CHECK(reg.getVersionNumber() > someVersion);
-        someVersion = reg.getVersionNumber();
-
-        // re-enable exceptions on read
+        reg.read(); //initial value
         testCondition.first();
 
-        // alter application buffer
-        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
-        reg.setDataValidity(ctk::DataValidity::faulty);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+        // alter the application buffer to make sure it is not changed under exception
+        reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
+        reg.setDataValidity(ctk::DataValidity::ok);
+        ver = reg.getVersionNumber();
 
-        // repeat the above test, a runtime_error should be expected again
-        BOOST_CHECK(!erb->hasSeenException());
-        BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
-        BOOST_CHECK(erb->hasSeenException());
+        // trigger runtime_error via readNonBlocking
+        try {
+          while(!reg.readNonBlocking()) usleep(10000);
+        }
+        catch(ctk::runtime_error&) {
+        }
 
-        // check that the application buffer has not changed after exception (B.6.4)
+        // check that the application buffer has not changed after exception
         BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
-        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::faulty);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion);
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == ver);
 
         // disable exceptions on read
         testCondition.second();
 
         // recover
         this->recoverDevice(d);
-
-        // wait twice as long as it took above until first data arrived after recovery+reactivation
-        // note: if this sleep is too short, the following BOOST_CHECK is insensitive against bugs.
-        std::this_thread::sleep_for((t1 - t0) * 2);
-
-        // No data received before device async read transfers are re-activated (B.9.2.1)
-        BOOST_CHECK(reg.readNonBlocking() == false);
-
-        // reactivate async read transfers
-        d.activateAsyncRead();
-        quirk_activateAsyncRead();
-
-        // await initial value (no checks, just to be in same state again as at the beginning of the loop)
-        reg.read();
       }
 
       // close device again
       d.close();
     }
   });
-}
 
-/********************************************************************************************************************/
-
-/**
- *  Test exception handling for write operations.
- * 
- *  This tests that the implementation throws exceptions when it is supposed to do so, and it verifies that the
- *  implementation complies for write operations to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_6_4_write \ref transferElement_B_6_4 "B.6.4",
- *  * \anchor UnifiedTest_TransferElement_B_9_4_single \ref transferElement_B_9_4 "B.9.4" (only single accessor),
- *  * \anchor UnifiedTest_TransferElement_C_5_2_5_write \ref transferElement_C_5_2_5 "C.5.2.5",
- *  * \anchor UnifiedTest_TransferElement_B_9_1_write\ref transferElement_B_9_1 "B.9.1"
- * 
- *  Note: it is probbaly better to move the logic_error related tests into a separate function and test here for
- *  runtime_error handling only.
- */
-template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrite() {
-  std::cout << "--- exceptionHandlingWrite" << std::endl;
-  ctk::Device d(cdd);
-
+  std::cout << "... write " << std::endl;
   ctk::for_each(writeRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
       int someNumber = 42;
-      ctk::VersionNumber someVersion{nullptr};
 
-      std::cout << "... registerName = " << registerName << std::endl;
+      std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
-      // set exception reporting backend
-      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
-      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+      // alter the application buffer to make sure it is not changed under exception
+      reg[0][0] = ctk::numericToUserType<UserType>(someNumber);
+      reg.setDataValidity(ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr)); // (quasi-assertion for the test)
 
-      // repeat the following check for a list of actions
-      std::list<std::pair<std::string, std::function<void(void)>>> actionList;
-      actionList.push_back({"write()", [&] { reg.write(); }});
-      actionList.push_back({"writeDestructively()", [&] { reg.writeDestructively(); }});
+      // trigger logic error
+      BOOST_CHECK_THROW(reg.write(), ctk::logic_error); // (no check intended, just catch)
 
-      // attempt write while device closed, logic_error is expected (C.5.2.5).
-      for(auto action : actionList) {
-        std::cout << "    " << action.first << std::endl;
-        auto theAction = action.second;
+      // check that the application buffer has not changed after exception
+      BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
-        // alter the application buffer to make sure it is not changed under exception
-        reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
-        reg.setDataValidity(ctk::DataValidity::ok);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
-
-        // check for runtime_error where it is now expected
-        BOOST_CHECK_THROW(theAction(), ChimeraTK::logic_error);
-        BOOST_CHECK(!erb->hasSeenException());
-
-        // check that the application buffer has not changed after exception (B.6.4)
-        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
-        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion);
-      }
-
-      // open the device, let it throw runtime_error exceptions
+      // open the device, then let it throw runtime_error exceptions
       d.open();
 
-      for(auto& testCondition : forceExceptionsWrite) {
-        for(auto action : actionList) {
-          std::cout << "    " << action.first << std::endl;
-          auto theAction = action.second;
+      for(auto& testCondition : forceExceptionsRead) {
+        // enable exceptions on read
+        testCondition.first();
 
-          // enable exceptions on write
-          testCondition.first();
+        // trigger runtime_error
+        BOOST_CHECK_THROW(reg.write(), ctk::runtime_error); // (no check intended, just catch)
 
-          // alter the application buffer to make sure it is not changed under exception
-          reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
-          reg.setDataValidity(ctk::DataValidity::ok);
-          BOOST_CHECK(reg.getVersionNumber() == someVersion); // cannot be changed
+        // check that the application buffer has not changed after exception
+        BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
 
-          // check for runtime_error where it is now expected
-          BOOST_CHECK(!erb->hasSeenException());
-          BOOST_CHECK_THROW(theAction(), ChimeraTK::runtime_error);
-          BOOST_CHECK(erb->hasSeenException());
+        // disable exceptions on read
+        testCondition.second();
 
-          // check that the application buffer has not changed after exception (B.6.4)
-          BOOST_CHECK(reg[0][0] == ctk::numericToUserType<UserType>(someNumber));
-          BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
-          BOOST_CHECK(reg.getVersionNumber() == someVersion);
-
-          // disable exceptions on write
-          testCondition.second();
-
-          // check that exception is still thrown (device not yet recovered) (B.9.4)
-          usleep(100000); // give potential race conditions a chance to pop up more easily...
-          BOOST_CHECK(!erb->hasSeenException());
-          BOOST_CHECK_THROW(theAction(), ChimeraTK::runtime_error);
-          BOOST_CHECK(erb->hasSeenException());
-
-          // recover the device
-          this->recoverDevice(d);
-
-          // alter the application buffer in preparation of a write
-          reg[0][0] = ctk::numericToUserType<UserType>(++someNumber);
-          reg.setDataValidity(ctk::DataValidity::faulty);
-
-          // execute a successful write
-          BOOST_CHECK_NO_THROW(theAction());
-
-          // new version number must have been generated (B.11.3 - guaranteed by the base class)
-          BOOST_CHECK(reg.getVersionNumber() > someVersion);
-          someVersion = reg.getVersionNumber();
-        }
+        // recover
+        this->recoverDevice(d);
       }
 
       // close device again
@@ -1218,15 +867,12 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_exceptionHandlingWrit
 /********************************************************************************************************************/
 
 /**
- *  Test data loss in write.
- * 
- *  This tests if data loss in writes is correctly reported, and it verifies that the implementation complies to the
- *  following TransferElement specifications:
+ *  Test data loss in write
  *  * \anchor UnifiedTest_TransferElement_B_7_2 \ref transferElement_B_7_2 "B.7.2"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_writeDataLoss() {
-  std::cout << "--- writeDataLoss" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_7_2() {
+  std::cout << "--- test_B_7_2" << std::endl;
   ctk::Device d(cdd);
   double someValue = 42;
 
@@ -1280,15 +926,203 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_writeDataLoss() {
 /********************************************************************************************************************/
 
 /**
- *  Test async read consistency heartbeat
+ *  Test async read fills _readQueue
+ *  * \anchor UnifiedTest_TransferElement_B_8_2 \ref transferElement_B_8_2 "B.8.2"
  * 
- *  This tests if data consistency is checked and corrected periodically for async reads (if necessary), and it verifies
- *  that the implementation complies to the following TransferElement specifications:
+ *  Note: we do not care about read() vs. readNonBlocking() in this test, since that part of the implementation is in
+ *  the base class and hence tested in testTransferElement.
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_2() {
+  std::cout << "--- test_B_8_2" << std::endl;
+  ctk::Device d(cdd);
+
+  // open the device
+  d.open();
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Initial value (stays unchecked here)
+      reg.read();
+      usleep(100000); // give potential race conditions a chance to pop up more easily...
+      BOOST_CHECK(reg.readNonBlocking() == false);
+
+      // Set remote value to be read.
+      _setRemoteValueCallable(registerName);
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
+
+      // Read the value
+      reg.read();
+      usleep(100000); // give potential race conditions a chance to pop up more easily...
+      BOOST_CHECK(reg.readNonBlocking() == false);
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, v1);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Set multiple remote values in a row - they will be queued
+      _setRemoteValueCallable(registerName);
+      auto v2 = _getRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v3 = _getRemoteValueCallable(registerName, UserType());
+      _setRemoteValueCallable(registerName);
+      auto v4 = _getRemoteValueCallable(registerName, UserType());
+
+      // Read and check second value
+      reg.read();
+      CHECK_EQUALITY(reg, v2);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Read and check third value
+      reg.read();
+      CHECK_EQUALITY(reg, v3);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // Read and check fourth value
+      reg.read();
+      CHECK_EQUALITY(reg, v4);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+
+      // No more data available
+      BOOST_CHECK(reg.readNonBlocking() == false);
+      CHECK_EQUALITY(reg, v4); // application buffer is unchanged (SPEC???)
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() == someVersion);
+    }
+  });
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test _readQueue overrun
+ *  * \anchor UnifiedTest_TransferElement_B_8_2_1 \ref transferElement_B_8_2_1 "B.8.2.1"
+ * 
+ *  FIXME: This test is not really complete. It tests whether the latest value survives. It does not test though which
+ *  other values are surviving. For this the test needs to know the length of the implementation specific data transport
+ *  queue, which is currently not known to it (the length of the _readQueue continuation is always 1).
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_2_1() {
+  std::cout << "--- test_B_8_2_1" << std::endl;
+  ctk::Device d(cdd);
+
+  // open the device
+  d.open();
+
+  // Activate async read
+  d.activateAsyncRead();
+  quirk_activateAsyncRead();
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Initial value (stays unchecked here)
+      reg.read();
+      usleep(100000); // give potential race conditions a chance to pop up more easily...
+      BOOST_CHECK(reg.readNonBlocking() == false);
+
+      // Provoke queue overflow by filling many values. We are only interested in the last one.
+      for(size_t i = 0; i < 10; ++i) {
+        _setRemoteValueCallable(registerName);
+      }
+      auto v5 = _getRemoteValueCallable(registerName, UserType());
+
+      // Read last written value (B.8.2.1)
+      BOOST_CHECK(reg.readLatest() == true);
+      CHECK_EQUALITY(reg, v5);
+      BOOST_CHECK(reg.dataValidity() == ctk::DataValidity::ok);
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+      someVersion = reg.getVersionNumber();
+    }
+  });
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test new runtime errors are put to _readQueue in async reads
+ *  * \anchor UnifiedTest_TransferElement_B_8_3 \ref transferElement_B_8_3 "B.8.3"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_3() {
+  std::cout << "--- test_B_8_3" << std::endl;
+  ctk::Device d(cdd);
+  d.open();
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // obtain accessor for the test
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // read initial value
+      reg.read();
+
+      for(auto& testCondition : forceExceptionsRead) {
+        // execute preRead without exception state
+        reg.getHighLevelImplElement()->preRead(ctk::TransferType::read);
+
+        // enable exceptions on read
+        testCondition.first();
+
+        // Check for runtime_error as it is popped of the queue
+        BOOST_CHECK_THROW(reg.getHighLevelImplElement()->readTransfer(), ChimeraTK::runtime_error);
+
+        // complete the operation
+        reg.getHighLevelImplElement()->postRead(ctk::TransferType::read, false);
+
+        // disable exceptions on read
+        testCondition.second();
+
+        // recover
+        this->recoverDevice(d);
+      }
+    }
+  });
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test async read consistency heartbeat
  *  * \anchor UnifiedTest_TransferElement_B_8_4 \ref transferElement_B_8_4 "B.8.4"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyHeartbeat() {
-  std::cout << "--- asyncReadConsistencyHeartbeat" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_4() {
+  std::cout << "--- test_B_8_4" << std::endl;
   if(!_forceAsyncReadInconsistency) {
     std::cout << "    (skipped)" << std::endl;
     return;
@@ -1353,96 +1187,205 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_asyncReadConsistencyH
 /********************************************************************************************************************/
 
 /**
- *  Test setException()
- * 
- *  This tests if exceptions reported to the backend via setException() are treated correctly, and it verifies that the
- *  implementation complies to the following TransferElement specifications:
- *  * \anchor UnifiedTest_TransferElement_B_9 \ref transferElement_B_9 "B.9" (without sub-points)
- *  * \anchor UnifiedTest_TransferElement_B_10_1 \ref transferElement_B_10_1 "B.10.1" (with all sub-points)
+ *  Test no async transfers until activateAsyncRead() for TEs created before open.
+ *  * \anchor UnifiedTest_TransferElement_B_8_5 \ref transferElement_B_8_5 "B.8.5"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_setException() {
-  std::cout << "--- setException" << std::endl;
-
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_5() {
+  std::cout << "--- test_B_8_5" << std::endl;
   ctk::Device d(cdd);
-  auto backend = d.getBackend();
-  d.open();
 
-  // obtain all read accessors, check that they are not throwing initially
-  std::list<ctk::TransferElementAbstractor> readAccessors;
-  ctk::for_each(readRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    for(auto& registerName : pair.second) {
-      std::cout << "    registerName = " << registerName << " (sync read)" << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-      readAccessors.push_back(reg);
-      BOOST_CHECK_NO_THROW(reg.read());
-    }
-  });
-
-  // obtain all async read accessors, check that they are not throwing initially
-  std::list<ctk::TransferElementAbstractor> asyncReadAccessors;
   ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
-      std::cout << "    registerName = " << registerName << " (async read)" << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-      asyncReadAccessors.push_back(reg);
-      BOOST_CHECK_NO_THROW(reg.readNonBlocking());
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // First step: measure time until initial value arrives, so we know how long to wait to exclude that an initial
+      // value arrives wrongly.
+      std::chrono::duration<double> timeToInitialValue;
+      {
+        // start time measurement
+        auto t0 = std::chrono::steady_clock::now();
+
+        // open the device
+        d.open();
+
+        // obtain accessor
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+        // make a successful read (initial value) to make sure the exception state is gone
+        reg.read();
+
+        // finish time measurement
+        auto t1 = std::chrono::steady_clock::now();
+        timeToInitialValue = t1 - t0;
+
+        // close device again
+        d.close();
+      }
+
+      // Second step: Check if no data arrives without activateAsyncRead()
+      {
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+        // open the device
+        d.open();
+
+        // wait 2 times longer than the time until initial value was received before
+        std::this_thread::sleep_for(timeToInitialValue * 2);
+
+        // no value must have arrived
+        BOOST_CHECK(reg.readNonBlocking() == false);
+
+        // close device again
+        d.close();
+      }
     }
   });
+}
 
-  // obtain all write accessors, check that they are not throwing initially
-  std::list<ctk::TransferElementAbstractor> writeAccessors;
-  ctk::for_each(writeRegisters.table, [&](auto pair) {
+/********************************************************************************************************************/
+
+/**
+ *  Test activateAsynchronousRead
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_1 \ref transferElement_B_8_5_1 "B.8.5.1"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_5_1() {
+  std::cout << "--- test_B_8_5_1" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
-      std::cout << "    registerName = " << registerName << " (write)" << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-      writeAccessors.push_back(reg);
-      BOOST_CHECK_NO_THROW(reg.write());
-      BOOST_CHECK_NO_THROW(reg.writeDestructively());
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Set remote value to be read.
+      _setRemoteValueCallable(registerName);
+      auto v1 = _getRemoteValueCallable(registerName, UserType());
+
+      // open the device
+      d.open();
+
+      // Activate async read
+      d.activateAsyncRead();
+      quirk_activateAsyncRead();
+
+      // Read initial value
+      reg.read();
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, v1);
+
+      // close device again
+      d.close();
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test initial value
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_2 \ref transferElement_B_8_5_2 "B.8.5.2",
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_5_2() {
+  std::cout << "--- test_B_8_5_2" << std::endl;
+  ctk::Device d(cdd);
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // First check: initial value is correctly arriving
+      {
+        // Set remote value to be read.
+        _setRemoteValueCallable(registerName);
+        auto v1 = _getRemoteValueCallable(registerName, UserType());
+
+        // open the device
+        d.open();
+
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+        // Read initial value
+        reg.read();
+
+        // Check application buffer
+        CHECK_EQUALITY(reg, v1);
+
+        // close device again
+        d.close();
+      }
+
+      // Second check: Concurrent updates do not cause inconsistency. Note: This test cannot possilby cover all
+      // potential scenarios for race conditions, hence only one simple scenario is tested.
+      {
+        // Set initial remote value, to make sure it is different from the next remote value set below
+        _setRemoteValueCallable(registerName);
+
+        // open the device
+        d.open();
+
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+        // Concurrently set another remote value to be read (while presumably the subscription is still being made).
+        _setRemoteValueCallable(registerName);
+        auto v2 = _getRemoteValueCallable(registerName, UserType());
+
+        // Check that the second value arrives at some point (with timeout)
+        CHECK_EQUALITY_TIMEOUT(reg, v2, 30000);
+
+        // close device again
+        d.close();
+      }
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test no activation required for accessors created after open
+ *  * \anchor UnifiedTest_TransferElement_B_8_5_3 \ref transferElement_B_8_5_3 "B.8.5.3"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_5_3() {
+  std::cout << "--- test_B_8_5_3" << std::endl;
+  ctk::Device d(cdd);
+
+  // obtain deactivated accessors
+  std::list<ctk::TransferElementAbstractor> deactivatedAccessors;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << " (deactivated async read)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      deactivatedAccessors.push_back(reg);
     }
   });
 
-  // set backend into exception state
-  backend->setException();
+  // open the device
+  d.open();
 
-  // check that all read accessors are now throwing
-  for(auto& reg : readAccessors) {
-    BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
-  }
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
 
-  // check that all async read accessors are now throwing
-  for(auto& reg : asyncReadAccessors) {
-    BOOST_CHECK_THROW(reg.readNonBlocking(), ctk::runtime_error);
-  }
+      std::cout << "... registerName = " << registerName << " (activated async read)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
 
-  // check that all write accessors are now throwing
-  for(auto& reg : writeAccessors) {
-    BOOST_CHECK_THROW(reg.write(), ctk::runtime_error);
-    BOOST_CHECK_THROW(reg.writeDestructively(), ctk::runtime_error);
-  }
+      // Initial value should arrive
+      CHECK_TIMEOUT(reg.readNonBlocking() == true, 30000);
+    }
+  });
 
-  // recover the device
-  recoverDevice(d);
-
-  // check that all read accessors are no longer throwing
-  for(auto& reg : readAccessors) {
-    BOOST_CHECK_NO_THROW(reg.read());
-  }
-
-  // check that all async read accessors are no longer throwing
-  for(auto& reg : asyncReadAccessors) {
-    BOOST_CHECK_NO_THROW(reg.readNonBlocking());
-  }
-
-  // check that all write accessors are no longer throwing
-  for(auto& reg : writeAccessors) {
-    BOOST_CHECK_NO_THROW(reg.write());
-    BOOST_CHECK_NO_THROW(reg.writeDestructively());
-  }
-
+  // close device again
   d.close();
 }
 
@@ -1450,15 +1393,11 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_setException() {
 
 /**
  *  Test interrupt()
- * 
- *  This tests that implementations supporting wait_for_new_data override correctly interrupt() as described in the
- *  description of the function, and it verifies that the implementation complies for to the following TransferElement
- *  specifications:
  *  * \anchor UnifiedTest_TransferElement_B_8_6 \ref transferElement_B_8_6 "B.8.6" (with sub-points)
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_interrupt() {
-  std::cout << "--- interrupt" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_6() {
+  std::cout << "--- test_B_8_6" << std::endl;
 
   ctk::Device d(cdd);
   auto backend = d.getBackend();
@@ -1502,6 +1441,548 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_interrupt() {
   });
 
   d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test reporting exceptions to exception backend
+ *  * \anchor UnifiedTest_TransferElement_B_9_1 \ref transferElement_B_9_1 "B.9.1"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_1() {
+  std::cout << "--- test_B_9_1" << std::endl;
+  ctk::Device d(cdd);
+
+  // open the device, then let it throw runtime_error exceptions
+  d.open();
+
+  std::cout << "... synchronous read" << std::endl;
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
+      for(auto& testCondition : forceExceptionsRead) {
+        // enable exceptions on read
+        testCondition.first();
+
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
+
+        // disable exceptions on read
+        testCondition.second();
+
+        // recover
+        this->recoverDevice(d);
+
+        // make a successful read to make sure the exception state is gone. no reporting must take place here.
+        BOOST_CHECK_NO_THROW(reg.read());
+        BOOST_CHECK(!erb->hasSeenException());
+      }
+    }
+  });
+
+  std::cout << "... asynchronous read" << std::endl;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      reg.read(); // initial value
+
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
+      for(auto& testCondition : forceExceptionsRead) {
+        // enable exceptions on read
+        testCondition.first();
+
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
+
+        // disable exceptions on read
+        testCondition.second();
+
+        // recover
+        this->recoverDevice(d);
+
+        // make a successful readNonBlocking (no data) to make sure the exception state is gone. no reporting must take
+        // place here.
+        BOOST_CHECK_NO_THROW(reg.readNonBlocking());
+        BOOST_CHECK(!erb->hasSeenException());
+      }
+    }
+  });
+
+  std::cout << "... write" << std::endl;
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
+      for(auto& testCondition : forceExceptionsWrite) {
+        // enable exceptions on write
+        testCondition.first();
+
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        BOOST_CHECK_THROW(reg.write(), ctk::runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
+
+        // disable exceptions on write
+        testCondition.second();
+
+        // recover
+        this->recoverDevice(d);
+
+        // make a successful write to make sure the exception state is gone. no reporting must take place here.
+        BOOST_CHECK_NO_THROW(reg.write());
+        BOOST_CHECK(!erb->hasSeenException());
+      }
+    }
+  });
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test setException() disables asynchronous read transfers
+ *  * \anchor UnifiedTest_TransferElement_B_9_2_1 \ref transferElement_B_9_2_1 "B.9.2.1"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_2_1() {
+  std::cout << "--- test_B_9_2_1" << std::endl;
+  ctk::Device d(cdd);
+  d.open();
+
+  // obtain accessors and read initial value
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // obtain accessor for the test
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // read initial value
+      reg.read();
+
+      // enter exception state
+      d.setException();
+
+      // send value, must not be received
+      _setRemoteValueCallable(registerName);
+
+      // get the exception off the queue
+      BOOST_CHECK_THROW(reg.read(), ctk::runtime_error); // (no test intended, just catch)
+
+      // give potential race conditions a chance...
+      usleep(100000);
+
+      // no value expected
+      BOOST_CHECK(reg.readNonBlocking() == false);
+
+      // recover device
+      this->recoverDevice(d);
+    }
+  });
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test exactly one runtime_error in the _readQueue per async read accessor
+ *  * \anchor UnifiedTest_TransferElement_B_9_2_2 \ref transferElement_B_9_2_2 "B.9.2.2"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_2_2() {
+  std::cout << "--- test_B_9_2_2" << std::endl;
+  ctk::Device d(cdd);
+  d.open();
+
+  // obtain accessors and read initial value
+  std::list<ctk::TransferElementAbstractor> accessors;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // obtain accessor for the test
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      accessors.push_back(reg);
+
+      // read initial value
+      reg.read();
+    }
+  });
+
+  // enter exception state
+  d.setException();
+
+  usleep(10000); // give potential race conditions a chance...
+
+  // each accessor must have exactly one exception in the queue
+  for(auto& accessor : accessors) {
+    // call the read stages explicitly to make sure the exception is thrown in the right place
+    accessor.getHighLevelImplElement()->preRead(ctk::TransferType::read);
+    BOOST_CHECK_THROW(accessor.getHighLevelImplElement()->readTransfer(), ctk::runtime_error);
+    accessor.getHighLevelImplElement()->postRead(ctk::TransferType::read, false);
+    // no more exceptions in the queue are allowed
+    BOOST_CHECK(accessor.readNonBlocking() == false);
+  }
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test doReadTransferSynchonously throws runtime_error after setException() until recovery
+ *  * \anchor UnifiedTest_TransferElement_B_9_3_1 \ref transferElement_B_9_3_1 "B.9.3.1"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_3_1() {
+  std::cout << "--- test_B_9_3_1" << std::endl;
+  ctk::Device d(cdd);
+  d.open();
+
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // put backend into exception state
+      d.setException();
+
+      // Check for runtime_error where it is now expected
+      BOOST_CHECK_THROW(reg.read(), ctk::runtime_error);
+
+      // recover
+      this->recoverDevice(d);
+
+      // make a successful read to make sure the exception state is gone
+      BOOST_CHECK_NO_THROW(reg.read());
+    }
+  });
+
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test write operations throw after setException()
+ *  * \anchor UnifiedTest_TransferElement_B_9_4 \ref transferElement_B_9_4 "B.9.4"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_4() {
+  std::cout << "--- test_B_9_4" << std::endl;
+  ctk::Device d(cdd);
+  d.open();
+
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // put backend into exception state
+      d.setException();
+
+      // Check for runtime_error where it is now expected
+      BOOST_CHECK_THROW(reg.write(), ctk::runtime_error);
+
+      // recover
+      this->recoverDevice(d);
+
+      // make a successful read to make sure the exception state is gone
+      BOOST_CHECK_NO_THROW(reg.write());
+    }
+  });
+
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test repeated setException() has no effect (in particular, no additional exceptions in async transfers)
+ *  * \anchor UnifiedTest_TransferElement_B_10_1_2 \ref transferElement_B_10_1_2 "B.10.1.2"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_10_1_2() {
+  std::cout << "--- test_B_10_1_2" << std::endl;
+  ctk::Device d(cdd);
+  d.open();
+
+  // obtain accessors and read initial value
+  std::list<ctk::TransferElementAbstractor> accessors;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // obtain accessor for the test
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      accessors.push_back(reg);
+
+      // read initial value
+      reg.read();
+    }
+  });
+
+  // enter exception state
+  d.setException();
+
+  // each accessor has now an exception in the queue -> remove from queue
+  for(auto& accessor : accessors) {
+    BOOST_CHECK_THROW(accessor.read(), ctk::runtime_error); // (no test intended, just catch)
+  }
+
+  // call setException repeatedly
+  d.setException();
+  d.setException();
+
+  // give potential race conditions a chance...
+  usleep(10000);
+
+  // each accessor still must not have any more exceptions in the queue
+  for(auto& accessor : accessors) {
+    BOOST_CHECK(accessor.readNonBlocking() == false);
+  }
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test version number bigger for newer values
+ *  * \anchor UnifiedTest_TransferElement_B_11_2_1 \ref transferElement_B_11_2_1 "B.11.2.1",
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_2_1() {
+  std::cout << "--- test_B_11_2_1" << std::endl;
+  ctk::Device d(cdd);
+
+  // open the device
+  d.open();
+
+  // synchronous read
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      for(size_t i = 0; i < 2; ++i) {
+        // Set remote value to be read.
+        _setRemoteValueCallable(registerName);
+
+        // Read value
+        reg.read();
+
+        // Check application buffer
+        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        someVersion = reg.getVersionNumber();
+      }
+    }
+  });
+
+  // asynchronous read
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      ctk::VersionNumber someVersion{nullptr};
+
+      std::cout << "... registerName = " << registerName << " (async)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      for(size_t i = 0; i < 2; ++i) {
+        // Set remote value to be read.
+        _setRemoteValueCallable(registerName);
+
+        // Read value
+        reg.read();
+
+        // Check application buffer
+        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        someVersion = reg.getVersionNumber();
+      }
+    }
+  });
+
+  // close device
+  d.close();
+}
+/********************************************************************************************************************/
+
+/**
+ *  Test consistent data gets same VersionNumber
+ *  * \anchor UnifiedTest_TransferElement_B_11_2_2 \ref transferElement_B_11_2_2 "B.11.2.2"
+ * 
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * !!!!  TODO FIXME This test is not complete yet  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_2_2() {
+  std::cout << "--- test_B_11_2_2" << std::endl;
+  ctk::Device d(cdd);
+
+  // open the device
+  d.open();
+
+  // CASE 1: consistency with the same register in async read
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // Set remote value to be read.
+      _setRemoteValueCallable(registerName);
+
+      // Obtain accessor
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+      // Read the initial value
+      reg.read();
+
+      // Read through second accessor
+      auto reg2 = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      reg2.read();
+
+      // Version must be identical to the version of the first accessor
+      BOOST_CHECK(reg2.getVersionNumber() == reg.getVersionNumber());
+
+      // Change value, must be seen by both accessors, again same version expected
+      _setRemoteValueCallable(registerName);
+
+      reg.read();
+      reg2.read();
+      BOOST_CHECK(reg.getVersionNumber() == reg2.getVersionNumber());
+
+      // close device again
+      d.close();
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test the value after construction for the version number in the application buffer
+ *  * \anchor UnifiedTest_TransferElement_B_11_6 \ref transferElement_B_11_6 "B.11.6"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_6() {
+  std::cout << "--- B.11.6" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(allRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // check "value after construction" for VersionNumber
+      BOOST_CHECK(reg.getVersionNumber() == ctk::VersionNumber(nullptr));
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test logic_error on operation while backend closed
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_5 \ref transferElement_C_5_2_5 "C.5.2.5"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_5() {
+  std::cout << "--- test_C_5_2_5" << std::endl;
+  ctk::Device d(cdd);
+
+  std::cout << "... synchronous read" << std::endl;
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+    }
+  });
+
+  std::cout << "... asynchronous read" << std::endl;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+      BOOST_CHECK_THROW(reg.readNonBlocking(), ctk::logic_error);
+    }
+  });
+
+  std::cout << "... write" << std::endl;
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      BOOST_CHECK_THROW(reg.write(), ctk::logic_error);
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test the content of the application data buffer after construction.
+ *  * MISSING SPEC
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_NOSPEC_valueAfterConstruction() {
+  std::cout << "--- test_NOSPEC_valueAfterConstruction" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(allRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // check "value after construction" for value buffer
+      std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
+      for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
+    }
+  });
 }
 
 /********************************************************************************************************************/
