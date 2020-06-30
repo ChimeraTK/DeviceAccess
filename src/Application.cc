@@ -1055,6 +1055,57 @@ void Application::typedMakeConnection(VariableNetwork& network) {
 
 /*********************************************************************************************************************/
 
+
+template<typename UserType>
+void Application::addConsumersToFanout(boost::shared_ptr<FanOut<UserType>> fanOut, VariableNetworkNode& feeder, std::list<VariableNetworkNode> consumers, boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut) {
+  // In case we have one or more trigger receivers among our consumers, we
+  // produce one consuming application variable for each device. Later this will create a TriggerFanOut for
+  // each trigger consumer, i.e. one per device so one blocking device does not affect the others.
+  /** Map of deviceAliases to their corresponding TriggerFanOuts. */
+  std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> triggerFanOuts;
+
+  // add all consumers to the FanOut
+  for(auto& consumer : consumers) {
+    if(consumer.getType() == NodeType::Application) {
+      if(consumingFanOut && consumer.getMode() == UpdateMode::poll) {
+        consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
+        consumingFanOut.reset();
+      }
+      else {
+        auto impls = createApplicationVariable<UserType>(consumer);
+        fanOut->addSlave(impls.first, consumer);
+        consumer.setAppAccessorImplementation<UserType>(impls.second);
+      }
+    }
+    else if(consumer.getType() == NodeType::ControlSystem) {
+      auto impl = createProcessVariable<UserType>(consumer);
+      fanOut->addSlave(impl, consumer);
+    }
+    else if(consumer.getType() == NodeType::Device) {
+      auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+          {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+      fanOut->addSlave(impl, consumer);
+    }
+    else if(consumer.getType() == NodeType::TriggerReceiver) {
+      std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
+      auto triggerFanOut = triggerFanOuts[deviceAlias];
+      if(!triggerFanOut) { // triggerFanOut is a shared pointer, which evaluates false if default constructed.
+        // create a new process variable pair and set the sender/feeder to the fan out
+        auto triggerConnection = createApplicationVariable<UserType>(feeder);
+        triggerFanOut = triggerConnection.second;
+        triggerFanOuts[deviceAlias] = triggerFanOut;
+        fanOut->addSlave(triggerConnection.first, consumer);
+      }
+      consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerFanOut);
+    }
+    else {
+      throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
 VariableNetwork& Application::createNetwork() {
   networkList.emplace_back();
   return networkList.back();
