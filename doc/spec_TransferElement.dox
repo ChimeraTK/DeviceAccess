@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC9WIP !! Based on RC8 !!
+\page spec_TransferElement Technical specification: TransferElement V1.0RC10WIP !! Based on RC8! RC9 is not in yet !!
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -227,7 +227,7 @@ This documnent is currently still **INCOMPLETE**!
 
 - \anchor transferElement_B_16 16. This section will be moved from \ref transferElement_C_2 "C.2"
 
-### New in RC 9. NOT REVIEWED YET! ###
+### New in RC 10. NOT REVIEWED YET! ###
 
 - 16. TransferElement::replaceTransferElement()
   - 16.1 TransferElement::replaceTransferElement() checks that TransferElement::_exceptionBackend is identical before replacing anything.
