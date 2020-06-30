@@ -110,6 +110,7 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_3_2_2 3.2.2 can optionally be "destructively", which allows the implementation to destroy content of the application buffer in the process. [\ref UnifiedTest_TransferElement_B_3_2_2 "U"]
       - 3.2.2.1 Applications can allow this optimisation by using writeDestructively() instead of write().
       - \anchor transferElement_B_3_2_2_2 3.2.2.2 Applications are not allowed to use the content of the application buffer after writeDestructively().\ref transferElement_comment_B_3_2_2_2 "(*)"
+    - 3.2.3 return whether previous data has been lost, as reported by writeTransfer()/writeTransferDestructively() (c.f. \ref transferElement_B_7_2 "7.2").
 
 - \anchor transferElement_B_4 4. Stages of an operation initiated by calling the public high level functions xxxYyy() (see. A.6.1) [\ref testTransferElement_B_4_sync "T", \ref testTransferElement_B_4_async "T" (both except 4.2.4, 4.3.1 and 4.3.2)]
   - 4.1 preXxx(): calls doPreXxx() of the implementation to allow preparatory work before the actual transfer. doPreXxx() can be empty if nothing is to be done (*)
@@ -144,9 +145,10 @@ This documnent is currently still **INCOMPLETE**!
 
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
-  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the \ref transferElement_A_8_2 "implementation-specific data transport queue", from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T" (without sub-points), \ref UnifiedTest_TransferElement_B_8_2 "U" (without sub-points)]
+  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the \ref transferElement_A_8_2 "implementation-specific data transport queue", from which the readTransfer()/readTransferNonBlocking() operations will obtain the value (via the TransferElement::_readQueue continuation). [\ref testTransferElement_B_8_2 "T" (without sub-points), \ref UnifiedTest_TransferElement_B_8_2 "U" (without sub-points)]
     - \anchor transferElement_B_8_2_1 8.2.1 If the queue is full, the last written value will be overwritten. [\ref UnifiedTest_TransferElement_B_8_2_1 "U"]
     - \anchor transferElement_B_8_2_2 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*) [\ref testTransferElement_B_8_2_2 "T"]
+    - 8.2.3 The continuation of the \ref transferElement_A_8_2 "implementation-specific data transport queue" stores the value so it is available in doPostRead(), where it is filled into the application buffer.
   - \anchor transferElement_B_8_3 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value. [\ref UnifiedTest_TransferElement_B_8_3 "U" (first sentence), \ref testTransferElement_B_8_3 "T" (second sentence)]
   - \anchor transferElement_B_8_4 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals. [\ref UnifiedTest_TransferElement_B_8_4 "U"]
   - \anchor transferElement_B_8_5 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend makes sure that no data is filled into the  \ref transferElement_A_8_2 "implementation-specific data transport queue" until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are sent. We call this *asyncronous read is not activated* for these transfer elements. [\ref UnifiedTest_TransferElement_B_8_5 "U" (without sub-points)].
@@ -315,7 +317,7 @@ This documnent is currently still **INCOMPLETE**!
     - 5.2.3 The wrong AccessMode flags are provided
       - 5.2.3.1 Can be checked in the catalogue.
       - 5.2.3.2 Thrown in the constructor.
-    - \anchor transferElement_C_5_2_4 5.2.4 The requested user data type is too small to hold the data without range overflow when reading, or too big when writing \ref transferElement_comment_C_5_2_4 "(*)".
+    - \anchor transferElement_C_5_2_4 5.2.4 The requested user data type is too small to hold the data without range overflow when reading \ref transferElement_comment_C_5_2_4 "(*)".
       - 5.2.4.1 ToDo: cannot be checked in the catalogue to a sufficient degree
       - 5.2.4.2 Thrown in the constructor.
     - \anchor transferElement_C_5_2_5 5.2.5 A read/write operation is started while the backend is still closed [\ref UnifiedTest_TransferElement_C_5_2_5_syncRead "U", \ref UnifiedTest_TransferElement_C_5_2_5_asyncRead "U", \ref UnifiedTest_TransferElement_C_5_2_5_write "U"]
