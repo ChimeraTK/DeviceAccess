@@ -160,18 +160,7 @@ namespace ChimeraTK {
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
-      if(_handleRead) {
-        if(ChimeraTK::NDRegisterAccessorDecorator<UserType>::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-          auto& app = Application::getInstance();
-          assert(Application::testableModeTestLock());
-          if(app.testableMode_perVarCounter[_variableIdRead] > 1) {
-            app.testableMode_counter -= app.testableMode_perVarCounter[_variableIdRead] - 1;
-            app.testableMode_perVarCounter[_variableIdRead] = 1;
-          }
-        }
-
-        obtainLockAndDecrementCounter(hasNewData);
-      }
+      if(_handleRead) obtainLockAndDecrementCounter(hasNewData);
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
     }
 
