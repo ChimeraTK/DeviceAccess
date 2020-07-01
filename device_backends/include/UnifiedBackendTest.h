@@ -127,8 +127,8 @@ class UnifiedBackendTest {
     boost::fusion::at_key<UserType>(syncReadRegisters.table).push_back(name);
     boost::fusion::at_key<UserType>(readRegisters.table).push_back(name);
     boost::fusion::at_key<UserType>(allRegisters.table).push_back(name);
-    if(isReadOnly) readOnlyRegisters.push_back(name);
-    if(supportsRaw) rawRegisters.push_back(name);
+    readOnlyRegisters[name] = isReadOnly;
+    rawRegisters[name] = supportsRaw;
   }
 
   /**
@@ -145,8 +145,8 @@ class UnifiedBackendTest {
     boost::fusion::at_key<UserType>(asyncReadRegisters.table).push_back(name);
     boost::fusion::at_key<UserType>(readRegisters.table).push_back(name);
     boost::fusion::at_key<UserType>(allRegisters.table).push_back(name);
-    if(isReadOnly) readOnlyRegisters.push_back(name);
-    if(supportsRaw) rawRegisters.push_back(name);
+    readOnlyRegisters[name] = isReadOnly;
+    rawRegisters[name] = supportsRaw;
   }
 
   /**
@@ -158,8 +158,8 @@ class UnifiedBackendTest {
   void addWriteTestRegister(const std::string& name, bool isWriteOnly, bool supportsRaw) {
     boost::fusion::at_key<UserType>(writeRegisters.table).push_back(name);
     boost::fusion::at_key<UserType>(allRegisters.table).push_back(name);
-    if(isWriteOnly) writeOnlyRegisters.push_back(name);
-    if(supportsRaw) rawRegisters.push_back(name);
+    writeOnlyRegisters[name] = isWriteOnly;
+    rawRegisters[name] = supportsRaw;
   }
 
  protected:
@@ -190,6 +190,8 @@ class UnifiedBackendTest {
   void test_C_5_2_2_2();
   void test_C_5_2_3_2();
   void test_C_5_2_5_2();
+  void test_C_5_2_6_2();
+  void test_C_5_2_7_2();
   void test_NOSPEC_valueAfterConstruction();
 
   /// Utility functions for recurring tasks
@@ -219,8 +221,8 @@ class UnifiedBackendTest {
   ctk::FixedUserTypeMap<std::list<std::string>> syncReadRegisters, asyncReadRegisters, readRegisters, writeRegisters,
       allRegisters;
 
-  /// Names of registers with special properties. Must also be in one of the above lists.
-  std::list<std::string> readOnlyRegisters, writeOnlyRegisters, rawRegisters;
+  /// Special register properties
+  std::map<std::string, bool> readOnlyRegisters, writeOnlyRegisters, rawRegisters;
 
   /// Special DeviceBacked used for testing the exception reporting to the backend
   struct ExceptionReportingBackend : ctk::DeviceBackendImpl {
@@ -435,13 +437,11 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   size_t nSyncReadRegisters = 0;
   auto lambda1 = [&nSyncReadRegisters](auto pair) { nSyncReadRegisters += pair.second.size(); };
   ctk::for_each(syncReadRegisters.table, lambda1);
-  if(nSyncReadRegisters == 0) {
-    std::cout << "No synchronous read test registers specified." << std::endl;
-    std::exit(1);
-  }
+
   size_t nAsyncReadRegisters = 0;
   auto lambda2 = [&nAsyncReadRegisters](auto pair) { nAsyncReadRegisters += pair.second.size(); };
   ctk::for_each(asyncReadRegisters.table, lambda2);
+
   size_t nWriteRegisters = 0;
   auto lambda3 = [&nWriteRegisters](auto pair) { nWriteRegisters += pair.second.size(); };
   ctk::for_each(writeRegisters.table, lambda3);
@@ -449,7 +449,36 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   std::cout << "Using " << nSyncReadRegisters << " synchronous and " << nAsyncReadRegisters << " asynchronous read and "
             << nWriteRegisters << " write test registers." << std::endl;
 
-  if(nAsyncReadRegisters == 0) {
+  size_t nRawRegisters = 0;
+  for(auto& p : rawRegisters) {
+    if(p.second) nRawRegisters++;
+  }
+  size_t nReadOnlyRegisters = 0;
+  for(auto& p : readOnlyRegisters) {
+    if(p.second) nReadOnlyRegisters++;
+  }
+  size_t nWriteOnlyRegisters = 0;
+  for(auto& p : writeOnlyRegisters) {
+    if(p.second) nWriteOnlyRegisters++;
+  }
+  std::cout << "Of those are " << nRawRegisters << " supporting raw mode, " << nReadOnlyRegisters
+            << " are read-only and " << nWriteOnlyRegisters << " write-only." << std::endl;
+
+  if(nSyncReadRegisters + nAsyncReadRegisters + nWriteRegisters == 0) {
+    std::cout << "ERROR: No test registers specified. Cannot perform tests." << std::endl;
+    std::exit(1);
+  }
+
+  if(nSyncReadRegisters + nAsyncReadRegisters == 0) {
+    std::cout << "WARNING: No read test registers specified. This is acceptable only if the backend does not "
+              << "support reading at all." << std::endl;
+  }
+  else if(nSyncReadRegisters == 0) {
+    std::cout
+        << "WARNING: No synchronous read test registers specified. This is acceptable only if the backend has only "
+        << "registers which support AccessMode::wait_for_new_data." << std::endl;
+  }
+  else if(nAsyncReadRegisters == 0) {
     std::cout
         << "WARNING: No asynchronous read test registers specified. This is acceptable only if the backend does not "
         << "support AccessMode::wait_for_new_data at all." << std::endl;
@@ -457,6 +486,17 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   if(nWriteRegisters == 0) {
     std::cout << "WARNING: No write test registers specified. This is acceptable only if the backend does not "
               << "support writing at all." << std::endl;
+  }
+
+  if(nRawRegisters == 0) {
+    std::cout << "WARNING: No raw registers specified. This is acceptable only if the backend does not "
+              << "support raw access mode at all." << std::endl;
+  }
+  if(nReadOnlyRegisters == 0) {
+    std::cout << "WARNING: No read-only registers specified." << std::endl;
+  }
+  if(nWriteOnlyRegisters == 0) {
+    std::cout << "WARNING: No write-only registers specified." << std::endl;
   }
 
   // run the tests
@@ -487,6 +527,8 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_C_5_2_2_2();
   test_C_5_2_3_2();
   test_C_5_2_5_2();
+  test_C_5_2_6_2();
+  test_C_5_2_7_2();
   test_NOSPEC_valueAfterConstruction();
 }
 
@@ -1945,7 +1987,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_6() {
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
 void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_1_2() {
-  std::cout << "--- test_C_5_2_1" << std::endl;
+  std::cout << "--- test_C_5_2_1_2" << std::endl;
 
   // Constructor must throw when device is closed
   {
@@ -1974,7 +2016,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_1_2() {
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
 void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_2_2() {
-  std::cout << "--- test_C_5_2_2" << std::endl;
+  std::cout << "--- test_C_5_2_2_2" << std::endl;
 
   // Collect register sizes
   std::map<std::string, size_t> sizeMap;
@@ -2032,20 +2074,32 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_2_2() {
 /**
  *  Test logic_error for wrong access mode flags
  *  * \anchor UnifiedTest_TransferElement_C_5_2_3_2 \ref transferElement_C_5_2_3_2 "C.5.2.3.2"
- * 
- * FIXME: This test is incomplete, it only tests wrongly specified AccessMode::wait_for_new_data, not raw...
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
 void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_3_2() {
-  std::cout << "--- test_C_5_2_3" << std::endl;
+  std::cout << "--- test_C_5_2_3_2" << std::endl;
 
   ctk::Device d(cdd);
   ctk::for_each(syncReadRegisters.table, [&](auto pair) {
     typedef typename decltype(pair)::first_type UserType;
     for(auto& registerName : pair.second) {
-      std::cout << "... registerName = " << registerName << std::endl;
+      std::cout << "... registerName = " << registerName << " (wait_for_new_data throws)" << std::endl;
       BOOST_CHECK_THROW(d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data}),
           ctk::logic_error);
+      if(!rawRegisters[registerName]) {
+        BOOST_CHECK_THROW(
+            d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::raw}), ctk::logic_error);
+      }
+    }
+  });
+  ctk::for_each(allRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      if(!rawRegisters[registerName]) {
+        std::cout << "... registerName = " << registerName << " (raw throws)" << std::endl;
+        BOOST_CHECK_THROW(
+            d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::raw}), ctk::logic_error);
+      }
     }
   });
 }
@@ -2058,7 +2112,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_3_2() {
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
 void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_5_2() {
-  std::cout << "--- test_C_5_2_5" << std::endl;
+  std::cout << "--- test_C_5_2_5_2" << std::endl;
   ctk::Device d(cdd);
 
   std::cout << "... synchronous read" << std::endl;
@@ -2093,6 +2147,62 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_5_2() {
   });
 }
 
+/********************************************************************************************************************/
+
+/**
+ *  Test logic_error on read operation on write-only register
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_6_2 \ref transferElement_C_5_2_6_2 "C.5.2.6.2"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_6_2() {
+  std::cout << "--- test_C_5_2_6_2" << std::endl;
+  ctk::Device d(cdd);
+
+  std::cout << "... synchronous read" << std::endl;
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      if(!writeOnlyRegisters[registerName]) continue;
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+    }
+  });
+
+  std::cout << "... asynchronous read" << std::endl;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      if(!writeOnlyRegisters[registerName]) continue;
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      BOOST_CHECK_THROW(reg.read(), ctk::logic_error);
+      BOOST_CHECK_THROW(reg.readNonBlocking(), ctk::logic_error);
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test logic_error on write operation on read-only register
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_7_2 \ref transferElement_C_5_2_7_2 "C.5.2.7.2"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_7_2() {
+  std::cout << "--- test_C_5_2_7_2" << std::endl;
+  ctk::Device d(cdd);
+
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      if(!readOnlyRegisters[registerName]) continue;
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      BOOST_CHECK_THROW(reg.write(), ctk::logic_error);
+    }
+  });
+}
 /********************************************************************************************************************/
 
 /**
