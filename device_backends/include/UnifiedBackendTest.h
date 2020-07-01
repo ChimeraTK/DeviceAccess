@@ -186,7 +186,10 @@ class UnifiedBackendTest {
   void test_B_11_2_1();
   void test_B_11_2_2();
   void test_B_11_6();
-  void test_C_5_2_5();
+  void test_C_5_2_1_2();
+  void test_C_5_2_2_2();
+  void test_C_5_2_3_2();
+  void test_C_5_2_5_2();
   void test_NOSPEC_valueAfterConstruction();
 
   /// Utility functions for recurring tasks
@@ -480,7 +483,10 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_B_11_2_1();
   test_B_11_2_2();
   test_B_11_6();
-  test_C_5_2_5();
+  test_C_5_2_1_2();
+  test_C_5_2_2_2();
+  test_C_5_2_3_2();
+  test_C_5_2_5_2();
   test_NOSPEC_valueAfterConstruction();
 }
 
@@ -1934,11 +1940,124 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_11_6() {
 /********************************************************************************************************************/
 
 /**
- *  Test logic_error on operation while backend closed
- *  * \anchor UnifiedTest_TransferElement_C_5_2_5 \ref transferElement_C_5_2_5 "C.5.2.5"
+ *  Test logic_error for non-existing register
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_1_2 \ref transferElement_C_5_2_1_2 "C.5.2.1.2"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_5() {
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_1_2() {
+  std::cout << "--- test_C_5_2_1" << std::endl;
+
+  // Constructor must throw when device is closed
+  {
+    ctk::Device d(cdd);
+    BOOST_CHECK_THROW(
+        auto reg = d.getTwoDRegisterAccessor<int>("This_register_name_does_not_exist_for_sure/whileClosed"),
+        ctk::logic_error);
+  }
+
+  // Constructor must throw when device is open
+  {
+    ctk::Device d(cdd);
+    d.open();
+    BOOST_CHECK_THROW(
+        auto reg = d.getTwoDRegisterAccessor<int>("This_register_name_does_not_exist_for_sure/whileOpened"),
+        ctk::logic_error);
+    d.close();
+  }
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test logic_error for exceeding register size
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_2_2 \ref transferElement_C_5_2_2_2 "C.5.2.2.2"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_2_2() {
+  std::cout << "--- test_C_5_2_2" << std::endl;
+
+  // Collect register sizes
+  std::map<std::string, size_t> sizeMap;
+  {
+    ctk::Device d(cdd);
+    ctk::for_each(allRegisters.table, [&](auto pair) {
+      typedef typename decltype(pair)::first_type UserType;
+      for(auto& registerName : pair.second) {
+        std::cout << "... registerName = " << registerName << std::endl;
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+        sizeMap[registerName] = reg.getNElementsPerChannel();
+        std::cout << "    NElementsPerChannel = " << sizeMap[registerName] << std::endl;
+      }
+    });
+  }
+
+  ctk::for_each(allRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      // number of elements too big
+      {
+        ctk::Device d(cdd);
+        BOOST_CHECK_THROW(auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, sizeMap[registerName] + 1, 0),
+            ctk::logic_error);
+      }
+      // one element, but behind the end
+      {
+        ctk::Device d(cdd);
+        BOOST_CHECK_THROW(
+            auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 1, sizeMap[registerName]), ctk::logic_error);
+      }
+      // full length but offset by 1 element (so 1 element too long)
+      {
+        ctk::Device d(cdd);
+        BOOST_CHECK_THROW(
+            auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, sizeMap[registerName], 1), ctk::logic_error);
+      }
+      // does not throw when full length and no offset specified
+      {
+        ctk::Device d(cdd);
+        BOOST_CHECK_NO_THROW(auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, sizeMap[registerName], 0));
+      }
+      // does not throw when one element shorter and offset of 1 specified (only if register is long enough)
+      if(sizeMap[registerName] > 1) {
+        ctk::Device d(cdd);
+        BOOST_CHECK_NO_THROW(
+            auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, sizeMap[registerName] - 1, 1));
+      }
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test logic_error for wrong access mode flags
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_3_2 \ref transferElement_C_5_2_3_2 "C.5.2.3.2"
+ * 
+ * FIXME: This test is incomplete, it only tests wrongly specified AccessMode::wait_for_new_data, not raw...
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_3_2() {
+  std::cout << "--- test_C_5_2_3" << std::endl;
+
+  ctk::Device d(cdd);
+  ctk::for_each(syncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      BOOST_CHECK_THROW(d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data}),
+          ctk::logic_error);
+    }
+  });
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test logic_error on operation while backend closed
+ *  * \anchor UnifiedTest_TransferElement_C_5_2_5_2 \ref transferElement_C_5_2_5_2 "C.5.2.5.2"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_C_5_2_5_2() {
   std::cout << "--- test_C_5_2_5" << std::endl;
   ctk::Device d(cdd);
 
