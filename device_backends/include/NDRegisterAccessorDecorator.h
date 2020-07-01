@@ -52,13 +52,16 @@ namespace ChimeraTK {
 
       void doPreRead(TransferType type) override { _target->preRead(type); }
 
-      void doPostRead(TransferType type, bool hasNewData) override {
+      void doPostRead(TransferType type, bool updateDataBuffer) override {
         _target->setActiveException(this->_activeException);
-        _target->postRead(type, hasNewData);
-        if(!hasNewData) return;
-        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
+        _target->postRead(type, updateDataBuffer);
+
+        // Decorators have to copy meta data even if updataDataBuffer is false
         this->_dataValidity = _target->dataValidity();
         this->_versionNumber = _target->getVersionNumber();
+
+        if(!updateDataBuffer) return;
+        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
       }
 
       void doPreWrite(TransferType type, VersionNumber versionNumber) override {
