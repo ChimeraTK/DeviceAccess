@@ -176,12 +176,13 @@ class UnifiedBackendTest {
   void test_B_8_5_1();
   void test_B_8_5_2();
   void test_B_8_5_3();
-  void test_B_8_6();
+  void test_B_8_6_6();
   void test_B_9_1();
-  void test_B_9_2_1();
   void test_B_9_2_2();
   void test_B_9_3_1();
-  void test_B_9_4();
+  void test_B_9_3_2();
+  void test_B_9_4_1();
+  void test_B_9_5();
   void test_B_10_1_2();
   void test_B_11_2_1();
   void test_B_11_2_2();
@@ -513,13 +514,13 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_B_8_5_1();
   test_B_8_5_2();
   test_B_8_5_3();
-  test_B_8_6();
+  test_B_8_6_6();
   test_B_9_1();
-  test_B_9_2_1();
   test_B_9_2_2();
   test_B_9_3_1();
-  test_B_9_4();
-  test_B_10_1_2();
+  test_B_9_3_2();
+  test_B_9_4_1();
+  test_B_9_5();
   test_B_11_2_1();
   test_B_11_2_2();
   test_B_11_6();
@@ -1454,11 +1455,11 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_5_3() {
 
 /**
  *  Test interrupt()
- *  * \anchor UnifiedTest_TransferElement_B_8_6 \ref transferElement_B_8_6 "B.8.6" (with sub-points)
+ *  * \anchor UnifiedTest_TransferElement_B_8_6_6 \ref transferElement_B_8_6_6 "B.8.6.6" (via high-level test)
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_6() {
-  std::cout << "--- test_B_8_6" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_8_6_6() {
+  std::cout << "--- test_B_8_6_6" << std::endl;
 
   ctk::Device d(cdd);
   auto backend = d.getBackend();
@@ -1626,12 +1627,64 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_1() {
 /********************************************************************************************************************/
 
 /**
- *  Test setException() disables asynchronous read transfers
- *  * \anchor UnifiedTest_TransferElement_B_9_2_1 \ref transferElement_B_9_2_1 "B.9.2.1"
+ *  Test repeated setException() has no effect (in particular, no additional exceptions in async transfers)
+ *  * \anchor UnifiedTest_TransferElement_B_9_2_2 \ref transferElement_B_9_2_2 "B.9.2.2"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_2_1() {
-  std::cout << "--- test_B_9_2_1" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_2_2() {
+  std::cout << "--- test_B_9_2_2" << std::endl;
+  ctk::Device d(cdd);
+  d.open();
+
+  // obtain accessors and read initial value
+  std::list<ctk::TransferElementAbstractor> accessors;
+  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // obtain accessor for the test
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
+      accessors.push_back(reg);
+
+      // read initial value
+      reg.read();
+    }
+  });
+
+  // enter exception state
+  d.setException();
+
+  // each accessor has now an exception in the queue -> remove from queue
+  for(auto& accessor : accessors) {
+    BOOST_CHECK_THROW(accessor.read(), ctk::runtime_error); // (no test intended, just catch)
+  }
+
+  // call setException repeatedly
+  d.setException();
+  d.setException();
+
+  // give potential race conditions a chance...
+  usleep(10000);
+
+  // each accessor still must not have any more exceptions in the queue
+  for(auto& accessor : accessors) {
+    BOOST_CHECK(accessor.readNonBlocking() == false);
+  }
+
+  // close device again
+  d.close();
+}
+
+/********************************************************************************************************************/
+
+/**
+ *  Test setException() disables asynchronous read transfers
+ *  * \anchor UnifiedTest_TransferElement_B_9_3_1 \ref transferElement_B_9_3_1 "B.9.3.1"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_3_1() {
+  std::cout << "--- test_B_9_3_1" << std::endl;
   ctk::Device d(cdd);
   d.open();
 
@@ -1675,11 +1728,11 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_2_1() {
 
 /**
  *  Test exactly one runtime_error in the _readQueue per async read accessor
- *  * \anchor UnifiedTest_TransferElement_B_9_2_2 \ref transferElement_B_9_2_2 "B.9.2.2"
+ *  * \anchor UnifiedTest_TransferElement_B_9_3_2 \ref transferElement_B_9_3_2 "B.9.3.2"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_2_2() {
-  std::cout << "--- test_B_9_2_2" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_3_2() {
+  std::cout << "--- test_B_9_3_2" << std::endl;
   ctk::Device d(cdd);
   d.open();
 
@@ -1722,11 +1775,11 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_2_2() {
 
 /**
  *  Test doReadTransferSynchonously throws runtime_error after setException() until recovery
- *  * \anchor UnifiedTest_TransferElement_B_9_3_1 \ref transferElement_B_9_3_1 "B.9.3.1"
+ *  * \anchor UnifiedTest_TransferElement_B_9_4_1 \ref transferElement_B_9_4_1 "B.9.4.1"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_3_1() {
-  std::cout << "--- test_B_9_3_1" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_4_1() {
+  std::cout << "--- test_B_9_4_1" << std::endl;
   ctk::Device d(cdd);
   d.open();
 
@@ -1757,11 +1810,11 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_3_1() {
 
 /**
  *  Test write operations throw after setException()
- *  * \anchor UnifiedTest_TransferElement_B_9_4 \ref transferElement_B_9_4 "B.9.4"
+ *  * \anchor UnifiedTest_TransferElement_B_9_5 \ref transferElement_B_9_5 "B.9.5"
  */
 template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_4() {
-  std::cout << "--- test_B_9_4" << std::endl;
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_5() {
+  std::cout << "--- test_B_9_5" << std::endl;
   ctk::Device d(cdd);
   d.open();
 
@@ -1785,58 +1838,6 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_9_4() {
     }
   });
 
-  d.close();
-}
-
-/********************************************************************************************************************/
-
-/**
- *  Test repeated setException() has no effect (in particular, no additional exceptions in async transfers)
- *  * \anchor UnifiedTest_TransferElement_B_10_1_2 \ref transferElement_B_10_1_2 "B.10.1.2"
- */
-template<typename GET_REMOTE_VALUE_CALLABLE_T>
-void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_10_1_2() {
-  std::cout << "--- test_B_10_1_2" << std::endl;
-  ctk::Device d(cdd);
-  d.open();
-
-  // obtain accessors and read initial value
-  std::list<ctk::TransferElementAbstractor> accessors;
-  ctk::for_each(asyncReadRegisters.table, [&](auto pair) {
-    typedef typename decltype(pair)::first_type UserType;
-    for(auto& registerName : pair.second) {
-      std::cout << "... registerName = " << registerName << std::endl;
-
-      // obtain accessor for the test
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {ctk::AccessMode::wait_for_new_data});
-      accessors.push_back(reg);
-
-      // read initial value
-      reg.read();
-    }
-  });
-
-  // enter exception state
-  d.setException();
-
-  // each accessor has now an exception in the queue -> remove from queue
-  for(auto& accessor : accessors) {
-    BOOST_CHECK_THROW(accessor.read(), ctk::runtime_error); // (no test intended, just catch)
-  }
-
-  // call setException repeatedly
-  d.setException();
-  d.setException();
-
-  // give potential race conditions a chance...
-  usleep(10000);
-
-  // each accessor still must not have any more exceptions in the queue
-  for(auto& accessor : accessors) {
-    BOOST_CHECK(accessor.readNonBlocking() == false);
-  }
-
-  // close device again
   d.close();
 }
 

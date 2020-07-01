@@ -98,10 +98,10 @@ This documnent is currently still **INCOMPLETE**!
       - \anchor transferElement_B_3_1_2_1 3.1.2.1 obtain the <i>current</i> value of the process variable (if possible/applicable by synchronously communicating with the device) [\ref UnifiedTest_TransferElement_B_3_1_2_1 "U"],
       - 3.1.2.2 have no information whether the value has changed,
       - 3.1.2.3 behave identical whether read(), readNonBlocking() or readLatest() is called,
-      - 3.1.2.4 readNonBlocking() and readLatest() always return true.
-    - \anchor transferElement_B_3_1_3 3.1.3 If AccessMode::wait_for_new_data is set [\ref UnifiedTest_TransferElement_B_3_1_3 "U" (with sub-points)]
-      - 3.1.3.1 read() blocks until new data has arrived,
-      - 3.1.3.2 readNonBlocking() does not block and instead returns whether new data has arrived or not,
+      - \anchor transferElement_B_3_1_2_4 3.1.2.4 readNonBlocking() and readLatest() always return true. [\ref testTransferElement_B_3_1_2_4 "T"]
+    - 3.1.3 If AccessMode::wait_for_new_data is set
+      - \anchor transferElement_B_3_1_3_1 3.1.3.1 read() blocks until new data has arrived, [\ref testTransferElement_B_3_1_3_1 "T"]
+      - \anchor transferElement_B_3_1_3_2 3.1.3.2 readNonBlocking() does not block and instead returns whether new data has arrived or not, [\ref testTransferElement_B_3_1_3_2 "T"]
     - \anchor transferElement_B_3_1_4 3.1.4 readLatest() is merely a convenience function which calls readNonBlocking() until no more new data is available. [\ref testTransferElement_B_3_1_4 "T"]
 
   - 3.2 Write operations
@@ -111,45 +111,45 @@ This documnent is currently still **INCOMPLETE**!
       - 3.2.2.1 Applications can allow this optimisation by using writeDestructively() instead of write().
       - \anchor transferElement_B_3_2_2_2 3.2.2.2 Applications are not allowed to use the content of the application buffer after writeDestructively().\ref transferElement_comment_B_3_2_2_2 "(*)"
 
-- \anchor transferElement_B_4 4. Stages of an operation initiated by calling the public high level functions xxxYyy() (see. A.6.1) [\ref testTransferElement_B_4_sync "T", \ref testTransferElement_B_4_async "T" (both except 4.2.4, 4.3.1 and 4.3.2)]
-  - 4.1 preXxx(): calls doPreXxx() of the implementation to allow preparatory work before the actual transfer. doPreXxx() can be empty if nothing is to be done (*)
+- \anchor transferElement_B_4 4. Stages of an operation initiated by calling the public high level functions xxxYyy() (see. A.6.1) [\ref testTransferElement_B_4_order "T" (order of the stages)]
+  - \anchor transferElement_B_4_1 4.1 preXxx(): calls doPreXxx() of the implementation to allow preparatory work before the actual transfer. doPreXxx() can be empty if nothing is to be done (*) [\ref testTransferElement_B_4_1 "T"]
   - 4.2 xxxTransferYyy():
-    - 4.2.1 readTransfer()
+    - \anchor transferElement_B_4_2_1 4.2.1 readTransfer() [\ref testTransferElement_B_4_2_1 "T"]
       - If wait_for_new_data is set, it waits until new data has been received and returns
       - If wait_for_new_data is not set, it calls doReadTransferSynchrously()
-    - 4.2.2 readTransferNonBlocking()
+    - \anchor transferElement_B_4_2_2 4.2.2 readTransferNonBlocking() [\ref testTransferElement_B_4_2_2 "T"]
       - If wait_for_new_data is set, it returns immediately with the information whether new data has been received
       - If wait_for_new_data is not set, it calls doReadTransferSynchrously() and returns true
-    - 4.2.3 writeTransferYyy() calls the corresonding doWriteTransferYyy()
+    - \anchor transferElement_B_4_2_3 4.2.3 writeTransferYyy() calls the corresonding doWriteTransferYyy() [\ref testTransferElement_B_4_2_3 "T"]
     - 4.2.4 Transfer implementations do not change the application buffer
-  - 4.3 postXxx(): calls doPostXxx() of the implementation to allow follow-up work after the actual transfer.
+  - \anchor transferElement_B_4_3 4.3 postXxx(): calls doPostXxx() of the implementation to allow follow-up work after the actual transfer. [\ref testTransferElement_B_4_3 "T"]
     - 4.3.1 In read transfers, doPostRead() is the only place where the application buffer may be changed (*).
     - \anchor transferElement_B_4_3_2 4.3.2 In write transfers, postWrite() updates the version number of the application buffer TransferElement::_versionNumber to the version number provided to the write() call, if no exception is (re-)thrown in doPostWrite() (cf. \ref transferElement_B_11_3 "B.11.3"). [\ref testTransferElement_B_4_3_2 "T"]
 
-- \anchor transferElement_B_5 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*) [\ref testTransferElement_B_5_sync "T", \ref testTransferElement_B_5_async "T" (both without sub-points)]
-  - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1_sync "T", \ref testTransferElement_B_5_1_async "T"]
+- \anchor transferElement_B_5 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
+  - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1 "T"]
   - \anchor transferElement_B_5_2 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa. [\ref testTransferElement_B_5_2 "T"]
 
-- \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue (see \ref transferElement_A_8_1 "A.8.1") are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs. [\ref testTransferElement_B_6_sync "T", \ref testTransferElement_B_6_async "T" (both without sub-points)]
-  - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1_sync "T"]
+- \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue (see \ref transferElement_A_8_1 "A.8.1") are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs
+  - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1 "T"]
   - \anchor transferElement_B_6_2 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers. [\ref testTransferElement_B_6_2 "T"]
-  - \anchor transferElement_B_6_3 6.3 To ensure that the ApplicationCore ExeptionHandlingDecorator works in combination with other decorators, each decorator has to pass the stored exception to its target, and it has to be re-thrown in the doPostRead() of the layer where the exception originated (see \ref transferElement_C_2 "C.2") [\ref testTransferElement_B_6_3 "T"]
-  - \anchor transferElement_B_6_4 6.4 When an exception is finally thrown by a TransferElement, the application buffer must still be unchanged. \ref  transferElement_comment_B_6_4 "(*)" [\ref UnifiedTest_TransferElement_B_6_4_syncRead "U", \ref UnifiedTest_TransferElement_B_6_4_asyncRead "U", \ref UnifiedTest_TransferElement_B_6_4_write "U"]
+  - \anchor transferElement_B_6_3 6.3 To ensure that the ApplicationCore ExeptionHandlingDecorator works in combination with other decorators, each decorator has to pass the stored exception to its target, and it has to be re-thrown in the doPostRead() of the layer where the exception originated (see \ref transferElement_C_2 "C.2")
+  - \anchor transferElement_B_6_4 6.4 When an exception is finally thrown by a TransferElement, the application buffer must still be unchanged. \ref  transferElement_comment_B_6_4 "(*)" [\ref UnifiedTest_TransferElement_B_6_4 "U"]
 
-- \anchor transferElement_B_7 7. Return values of xxxTransferYyy(): [\ref testTransferElement_B_7_sync "T", \ref testTransferElement_B_7_async "T" (both except 7.4)]
+- \anchor transferElement_B_7 7. Return values of xxxTransferYyy():
   - 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
-  - \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)" [\ref UnifiedTest_TransferElement_B_7_2 "U"]
-  - 7.3 For read operations, the return value is passed on to postRead() (via updateDataBuffer), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), updateDataBuffer is set to true.
-  - \anchor transferElement_B_7_4 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() is called with updateDataBuffer = false because there was no successful transfer. [\ref testTransferElement_B_7_4_sync "T", \ref testTransferElement_B_7_4_async "T"]
+  - \anchor transferElement_B_7_2 7.2 writeTransfer() and writeTransferDestructively() return whether data has been lost. If it returns true, previous data was rejected in the process of the transfer. It is always guaranteed that the data of the current transfer is not lost. \ref transferElement_comment_B_7_2 "(*)" [\ref testTransferElement_B_7_2 "T", \ref UnifiedTest_TransferElement_B_7_2 "U"]
+  - \anchor transferElement_B_7_3 7.3 For read operations, the return value is passed on to postRead() (via updateDataBuffer), to allow the doPostXxx() implementations to decide the right actions. In case of readTransfer(), updateDataBuffer is set to true. [\ref testTransferElement_B_7_3 "T"]
+  - \anchor transferElement_B_7_4 7.4 In case of an exception in either preRead() or readTransferYyy(), postRead() is called with updateDataBuffer = false because there was no successful transfer. [\ref testTransferElement_B_7_4 "T"]
 
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
-  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the \ref transferElement_A_8_2 "implementation-specific data transport queue", from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T" (without sub-points), \ref UnifiedTest_TransferElement_B_8_2 "U" (without sub-points)]
-    - \anchor transferElement_B_8_2_1 8.2.1 If the queue is full, the last written value will be overwritten. [\ref UnifiedTest_TransferElement_B_8_2_1 "U"]
+  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the \ref transferElement_A_8_2 "implementation-specific data transport queue", from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T", \ref UnifiedTest_TransferElement_B_8_2 "U"]
+    - \anchor transferElement_B_8_2_1 8.2.1 If the queue is full, the last written value will be overwritten. [\ref UnifiedTest_TransferElement_B_8_2_1 "U" NOT COMPLETE YET]
     - \anchor transferElement_B_8_2_2 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*) [\ref testTransferElement_B_8_2_2 "T"]
   - \anchor transferElement_B_8_3 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value. [\ref UnifiedTest_TransferElement_B_8_3 "U" (first sentence), \ref testTransferElement_B_8_3 "T" (second sentence)]
   - \anchor transferElement_B_8_4 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals. [\ref UnifiedTest_TransferElement_B_8_4 "U"]
-  - \anchor transferElement_B_8_5 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend makes sure that no data is filled into the  \ref transferElement_A_8_2 "implementation-specific data transport queue" until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are sent. We call this *asyncronous read is not activated* for these transfer elements. [\ref UnifiedTest_TransferElement_B_8_5 "U" (without sub-points)].
+  - \anchor transferElement_B_8_5 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend makes sure that no data is filled into the  \ref transferElement_A_8_2 "implementation-specific data transport queue" until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are sent. We call this *asyncronous read is not activated* for these transfer elements. [\ref UnifiedTest_TransferElement_B_8_5 "U"].
       - \anchor transferElement_B_8_5_1 8.5.1 When Device::activateAsyncRead() is called, the backend activates asyncronous read for all its transfer elements where AccessMode::wait_for_new_data is set (*) [\ref UnifiedTest_TransferElement_B_8_5_1 "U"].
         - \anchor transferElement_B_8_5_1_1 8.5.1.1 Each backend is responsible for activating asynchronous reads only on those TransferElements which it created. (cf. \ref transferElement_B_9_2_1 "9.2.1")
         - 8.5.1.2 Meta-backends like the LogicalNameMappingBackend delegate Device::activateAsyncRead() to all of their target backends, as they also delegate the creation of the TransferElements to their targets.
@@ -158,35 +158,35 @@ This documnent is currently still **INCOMPLETE**!
       - 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
       - 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
       - 8.5.6 When Device::activateAsyncRead() returns, it is not guaranteed that all initial values have been received already.
-  - \anchor transferElement_B_8_6 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt(). [\ref testTransferElement_B_8_6 "T" (with sub-points), \ref UnifiedTest_TransferElement_B_8_6 "U" (with sub-points)]
+  - \anchor transferElement_B_8_6 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt().
     - \anchor transferElement_B_8_6_1 8.6.1 TransferElement::interrupt() places a boost::thread_interrupted exception into the \ref transferElement_A_8_2 "implementation-specific data transport queue". [\ref testTransferElement_B_8_6_1 "T"]
-    - \anchor transferElement_B_8_6_2 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally.
-    - \anchor transferElement_B_8_6_3 8.6.3 The operation receiving the boost::thread_interrupted exception will also obey \ref transferElement_B_5 "5", i.e. postRead() is still called.
-    - \anchor transferElement_B_8_6_4 8.6.4 Calling TransferElement::interrupt() does not disturb the subsequent operation of the TransferElement.
-    - \anchor transferElement_B_8_6_5 8.6.5 Calling TransferElement::interrupt() without AccessMode::wait_for_new_data will cause a ChimeraTK::logic_error.
-    - \anchor transferElement_B_8_6_6 8.6.6 TransferElement::interrupt() is a virtual function which has to be implemented by all TransferElement implementations \ref transferElement_comment_B_8_6_6 "(*)".
+    - \anchor transferElement_B_8_6_2 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally. [\ref testTransferElement_B_8_6_2 "T"]
+    - \anchor transferElement_B_8_6_3 8.6.3 The operation receiving the boost::thread_interrupted exception will also obey \ref transferElement_B_5 "5", i.e. postRead() is still called. [\ref testTransferElement_B_8_6_3 "T"]
+    - \anchor transferElement_B_8_6_4 8.6.4 Calling TransferElement::interrupt() does not disturb the subsequent operation of the TransferElement. [\ref testTransferElement_B_8_6_4 "T"]
+    - \anchor transferElement_B_8_6_5 8.6.5 Calling TransferElement::interrupt() without AccessMode::wait_for_new_data will cause a ChimeraTK::logic_error. [\ref testTransferElement_B_8_6_5 "T"]
+    - \anchor transferElement_B_8_6_6 8.6.6 TransferElement::interrupt() is a virtual function which has to be implemented by all TransferElement implementations \ref transferElement_comment_B_8_6_6 "(*)". [\ref UnifiedTest_TransferElement_B_8_6_6 "U" (via high-level test)]
        - \anchor transferElement_B_8_6_6_1 8.6.6.1 Full implementations must implement it by calling TransferElement::interrupt_impl() with the \ref transferElement_A_8_2 "implementation-specific data transport queue" as argument. \ref transferElement_comment_B_8_6_6_1 "(*)"
        - \anchor transferElement_B_8_6_6_2 8.6.6.2 Decorator-like implementations must delegate the call to their target.\ref transferElement_comment_B_8_6_6_2 "(*)"
 
-- \anchor transferElement_B_9 9. If one transfer element of a device has seen a ChimeraTK::runtime_error \ref transferElement_comment_B_9a "(*)", all other transfer elements of the same device must also be aware of this. \ref  transferElement_comment_B_9b "(*)" [\ref UnifiedTest_TransferElement_B_9 "U" (without sub-points)]
-  - \anchor transferElement_B_9_1 9.1 The transfer element which detects the ChimeraTK::runtime_error reports it to its TransferElement::_exceptionBackend by calling DeviceBackend::setException() \ref transferElement_comment_B_9_1 "(*)" (see \ref transferElement_B_9_2 "9.2") [\ref UnifiedTest_TransferElement_B_9_1_syncRead "U", \ref UnifiedTest_TransferElement_B_9_1_asyncRead "U", \ref UnifiedTest_TransferElement_B_9_1_write "U"]
+- \anchor transferElement_B_9 9. If one transfer element of a device has seen a ChimeraTK::runtime_error \ref transferElement_comment_B_9a "(*)", all other transfer elements of the same device must also be aware of this. \ref  transferElement_comment_B_9b "(*)"
+  - \anchor transferElement_B_9_1 9.1 The transfer element which detects the ChimeraTK::runtime_error reports it to its TransferElement::_exceptionBackend by calling DeviceBackend::setException() \ref transferElement_comment_B_9_1 "(*)" (see \ref transferElement_B_9_2 "9.2") [\ref UnifiedTest_TransferElement_B_9_1 "U"]
     - \anchor transferElement_B_9_1_1 9.1.1 TransferElement::_exceptionBackend is set when the TransferElement is created by a backend by calling TransferElement::setExceptionBackend().
     - \anchor transferElement_B_9_1_2 9.1.2 Meta-backends like the LogicalNameMappingBackend replace the exceptionBackend so the exception reporting is re-directed to the meta-backend.
     - \anchor transferElement_B_9_1_3 9.1.3 TransferElement::setExceptionBackend() is virtual. Decorator-like TransferElements overload it so all target elements also get the correct exception backend.
     - \anchor transferElement_B_9_1_4 9.1.4 Decorators set their TransferElement::_exceptionBackend in the constructor to their target's _exceptionBackend. \ref transferElement_comment_B_9_1_4 "(*)"
-  - \anchor transferElement_B_9_2 9.2 DeviceBackend::setException() triggers the actions described in \ref transferElement_B_9_3 "9.3", \ref transferElement_B_9_4 "9.4" and \ref transferElement_B_9_5 "9.5" [\ref UnifiedTest_TransferElement_B_9_2 "U" (with all sub-points)]
+  - \anchor transferElement_B_9_2 9.2 DeviceBackend::setException() triggers the actions described in \ref transferElement_B_9_3 "9.3", \ref transferElement_B_9_4 "9.4" and \ref transferElement_B_9_5 "9.5"
     - \anchor transferElement_B_9_2_1 9.2.1 Like for the activation of the asynchronous read (cf. \ref transferElement_B_8_5_1_1 "8.5.1.1"), each backend is only responsible for taking the actions in DeviceBackend::setException() for those TransferElements it created.
        Meta-backends like the LogicalNameMappingBackend delegate this call to all of their target backends, as they also delegated the creation.
-    - 9.2.2 Further calls to DeviceBackend::setException() have no effect until Device::open() has successfully been called.
+    - \anchor transferElement_B_9_2_2 9.2.2 Further calls to DeviceBackend::setException() have no effect until Device::open() has successfully been called. [\ref UnifiedTest_TransferElement_B_9_2_2 "U"]
     - \anchor transferElement_B_9_2_3 9.2.3 Application code can call Device::setException() to trigger the exception state \ref transferElement_comment_B_9_2_3 "(*)"
   - \anchor transferElement_B_9_3 9.3 TransferElements with wait_for_new_data flag
-    - \anchor transferElement_B_9_3_1 9.3.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the \ref transferElement_A_8_2 "implementation-specific data transport queue" until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called [\ref UnifiedTest_TransferElement_B_9_3_1_single "U"]
-    - \anchor transferElement_B_9_3_2 9.3.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.3.1. to avoid race conditions. [\ref UnifiedTest_TransferElement_B_9_3_2_single "U"]
+    - \anchor transferElement_B_9_3_1 9.3.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the \ref transferElement_A_8_2 "implementation-specific data transport queue" until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called [\ref UnifiedTest_TransferElement_B_9_3_1 "U"]
+    - \anchor transferElement_B_9_3_2 9.3.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.3.1. to avoid race conditions. [\ref UnifiedTest_TransferElement_B_9_3_2 "U"]
     - 9.3.3 The first data on the queue after the exception is the initial value sent when calling Device::activateAsyncRead() (see 8.5.2).
     - 9.3.4 The backend makes sure 9.3.2 is finished for each TransferElement before a call to Device::activateAsyncRead() re-activates its asynchronous transfer again (*).
-  - \anchor transferElement_B_9_4 9.4 TransferElements without wait_for_new_data [\ref UnifiedTest_TransferElement_B_9_4 "U"]
-     - \anchor transferElement_B_9_4_1 9.4.1 Each call to doReadTransferSynchonously() throws a ChimeraTK::runtime error until open() has been called successfully.
-  - \anchor transferElement_B_9_5 9.5 Write operations throw a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_5_single "U"]
+  - \anchor transferElement_B_9_4 9.4 TransferElements without wait_for_new_data
+     - \anchor transferElement_B_9_4_1 9.4.1 Each call to doReadTransferSynchonously() throws a ChimeraTK::runtime error until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_4_1 "U"]
+  - \anchor transferElement_B_9_5 9.5 Write operations throw a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_5 "U"]
 
 - \anchor transferElement_B_10 10. Removed. Became part of 9.
 
@@ -198,8 +198,8 @@ This documnent is currently still **INCOMPLETE**!
     - 11.1.4 can be initiallised with a {nullptr} which yields a special instance that sorts before all normal instances. All {nullptr} constructed objects are equal (==).
     - 11.1.5 The default constructor creates a new VersionNumber which is larger than all previously created VersionNumbers in a thread safe way.
   - 11.2 VersionNumber objects are used
-    - \anchor transferElement_B_11_2_1 11.2.1 to determine which data is older \ref transferElement_comment_B_11_2_1 "(*)", as needed e.g. by bidirectional process variable implementations [\ref UnifiedTest_TransferElement_B_11_2_1_syncRead "U"], and
-    - \anchor transferElement_B_11_2_2 11.2.2 to build a consistent data set from multiple TransferElements (see DataConsistencyGroup). This requires the data sources (e.g. backend implementations) to attach the same VersionNumber to different TransferElements if the data is consistent. [\ref UnifiedTest_TransferElement_B_11_2_2_sameRegister "U"]
+    - \anchor transferElement_B_11_2_1 11.2.1 to determine which data is older \ref transferElement_comment_B_11_2_1 "(*)", as needed e.g. by bidirectional process variable implementations [\ref UnifiedTest_TransferElement_B_11_2_1 "U"], and
+    - \anchor transferElement_B_11_2_2 11.2.2 to build a consistent data set from multiple TransferElements (see DataConsistencyGroup). This requires the data sources (e.g. backend implementations) to attach the same VersionNumber to different TransferElements if the data is consistent. [\ref UnifiedTest_TransferElement_B_11_2_2 "U" (STILL INCOMPLETE)]
     - 11.2.3 From the previous two points it follows that backend implementations must create a new VersionNumber for all data that is received or read, or associcate a known version number according to \ref transferElement_B_11_2_2 "11.2.2"
   - \anchor transferElement_B_11_3 11.3 The VersionNumber of the last successfully written/read data of a TransferElement can be obtained through TransferElement::getVersionNumber() (cf. \ref transferElement_B_4_3_2 "B.4.3.2"). [\ref testTransferElement_B_11_3 "T"]
   - 11.4 The VersionNumber for a transfer is given as an optional argument to TransferElement::write() resp. TransferElement::writeDestructively(). If the argument is missing, a new VersionNumber is generated.
@@ -221,9 +221,9 @@ This documnent is currently still **INCOMPLETE**!
 
 - 15. AccessModeFlags
   - 15.1 The TransferElement has a protected object TransferElement::_accessModeFlags.
-  - 15.2 It can be read via TransferElement::getAccessModeFlags().
-  - 15.3 It is set through a constructor argument of TransferElement.
-    - 15.3.1 The constructor argument does not have a default value. It must be set correctly by the TransferElement implementation in their constructor.
+  - \anchor transferElement_B_15_2 15.2 It can be read via TransferElement::getAccessModeFlags(). [\ref testTransferElement_B_15_2 "T"]
+  - \anchor transferElement_B_15_3 15.3 It is set through a constructor argument of TransferElement. [\ref testTransferElement_B_15_3 "T"]
+    - \anchor transferElement_B_15_3_1 15.3.1 The constructor argument does not have a default value. It must be set correctly by the TransferElement implementation in their constructor. [\ref testTransferElement_B_15_3_1 "T"]
 
 - \anchor transferElement_B_16 16. This section will be moved from \ref transferElement_C_2 "C.2"
 
@@ -287,9 +287,9 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_C_2 2. **This section wil be moved to** \ref transferElement_B_16 "B.16".
 
   In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
-  - \anchor transferElement_C_2_1 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException. [\ref testTransferElement_C_2_1 "T"]
-  - \anchor transferElement_C_2_2 2.2 postXxx() is re-throwing the exception after delegating to doPostXxx(). [\ref testTransferElement_C_2_2 "T"]
-  - \anchor transferElement_C_2_3 2.3 Decorators delegate the TransferElement::_activeException to their target using TransferElement::setActiveException(). If the decorator's _activeException is not nullptr, the targets _activeException is replaced by it, and the decorator's _activeException, which is handed by reference, is set to nullptr \ref transferElement_comment_C_2_3a "(*)". The target is now responsible for handling the exception. If the decorator's _activeException already is nullptr, setActiveException() has no effect, so an active exception in the target is not overwritten \ref transferElement_comment_C_2_3b "(*)". \ref transferElement_comment_C_2_3c "(*)"
+  - \anchor transferElement_C_2_1 \anchor transferElement_B_16_1 2.1 The TransferElement base class stores the caught exceptions in TransferElement::_activeException. [\ref testTransferElement_B_16_1 "T"]
+  - \anchor transferElement_C_2_2 \anchor transferElement_B_16_2 2.2 postXxx() is re-throwing the exception after delegating to doPostXxx(). [\ref testTransferElement_B_16_2 "T"]
+  - \anchor transferElement_C_2_3 \anchor transferElement_B_16_3 2.3 Decorators delegate the TransferElement::_activeException to their target using TransferElement::setActiveException(). If the decorator's _activeException is not nullptr, the targets _activeException is replaced by it, and the decorator's _activeException, which is handed by reference, is set to nullptr \ref transferElement_comment_C_2_3a "(*)". The target is now responsible for handling the exception. If the decorator's _activeException already is nullptr, setActiveException() has no effect, so an active exception in the target is not overwritten \ref transferElement_comment_C_2_3b "(*)". \ref transferElement_comment_C_2_3c "(*)"  [\ref testTransferElement_B_16_3 "T" (only setActiveException())]
     - 2.3.1 Decorators which are throwing themselves in doPreXxx(), before delegating to the target preXxx(), remember this. If they did throw in doPreXxx(), then in doPostXxx() they do not call setActiveException() of the target and do not delegate to postXxx(). The exception is then re-thrown by the decorator's postXxx().
 
 - 3. ChimeraTK::runtime_error in principle are recoverable. It is thrown, if the device (including the communication link) does not behave as expected. A later call to the same function (after the recovery has been triggered, cf. \ref transferElement_B_9_3_1 "B.9.3.1" resp. \ref transferElement_B_9_4_1 "B.9.4.1") must be able to succeed (for instance if a network outage has been resolved).
@@ -308,25 +308,25 @@ This documnent is currently still **INCOMPLETE**!
   - 5.2 Any logic_error must be thrown as early as possible(*). They are thrown **if and only if** one of the following conditions are met:
     - 5.2.1 A register does not exists my that name
       - 5.2.1.1 Can be checked in the catalogue (*)
-      - 5.2.1.2 Thrown in the constructor if possible (*), otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly().
+      - \anchor transferElement_C_5_2_1_2 5.2.1.2 Thrown in the constructor if possible (*), otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly(). [\ref UnifiedTest_TransferElement_C_5_2_1_2 "U"]
     - 5.2.2 The size or dimension of the requested TransferElement is too large (*)
       - 5.2.2.1 Can be checked in the catalogue.
-      - 5.2.2.2 Thrown in the constructor if possible, otherwise in doPreXxx().
+      - \anchor transferElement_C_5_2_2_2 5.2.2.2 Thrown in the constructor if possible, otherwise in doPreXxx(). [\ref UnifiedTest_TransferElement_C_5_2_2_2 "U"]
     - 5.2.3 The wrong AccessMode flags are provided
       - 5.2.3.1 Can be checked in the catalogue.
-      - 5.2.3.2 Thrown in the constructor if possible, otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly().
+      - \anchor transferElement_C_5_2_3_2 5.2.3.2 Thrown in the constructor if possible, otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly(). [\ref UnifiedTest_TransferElement_C_5_2_3_2 "U"]
     - 5.2.4 The requested user data type is too small to hold the data without range overflow when reading, or too big when writing (*)
       - 5.2.4.1 ToDo: cannot be checked in the catalogue to a sufficient degree
       - 5.2.4.2 Thrown in the constructor if possible, otherwise in doPreXxx()
-    - \anchor transferElement_C_5_2_5 5.2.5 A read/write operation is started while the backend is still closed [\ref UnifiedTest_TransferElement_C_5_2_5_syncRead "U", \ref UnifiedTest_TransferElement_C_5_2_5_asyncRead "U", \ref UnifiedTest_TransferElement_C_5_2_5_write "U"]
+    - 5.2.5 A read/write operation is started while the backend is still closed
       - 5.2.5.1 Check with DeviceBackend::isOpen().
-      - 5.2.5.2 Thrown in doPreXxx() (*)
+      - \anchor transferElement_C_5_2_5_2 5.2.5.2 Thrown in doPreXxx() (*) [\ref UnifiedTest_TransferElement_C_5_2_5_2 "U"]
     - 5.2.6 A read operation is executed on a transfer element that cannot be read
       - 5.2.6.1 Check with TransferElement::isReadable().
-      - 5.2.6.2 Thrown in doPreRead()
+      - \anchor transferElement_C_5_2_6_2 5.2.6.2 Thrown in doPreRead() [\ref UnifiedTest_TransferElement_C_5_2_6_2 "U"]
     - 5.2.7 A write operation is executed on a transfer element that cannot be written
       - 5.2.7.1 Check with TransferElement::isWriteable() or TransferElement::isReadOnly()
-      - 5.2.7.2 Thrown in doPreWrite()
+      - \anchor transferElement_C_5_2_7_2 5.2.7.2 Thrown in doPreWrite() [\ref UnifiedTest_TransferElement_C_5_2_7_2 "U"]
   - 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant under normal circumstances. Only when open() is called (either for the first time or to recover form a ChimeraTK::runtime_error) the information might change and applications are expected to check it again.
     - \anchor transferElement_C_5_3_1 5.3.1 If a device is changing this information on its own (e.g. makes a register read-only which was readable before), and the application hence performes an operation which is no longer possible, a ChimeraTK::runtime_error must be thrown (unexpected behaviour of the device). \ref transferElement_comment_C_5_3_1 "(*)"
   - 5.4 Two remarks about how to follow these rules:
