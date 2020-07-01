@@ -115,10 +115,6 @@ namespace ChimeraTK {
      * can report exception and trigger the recovery mechanism like this. */
     void reportException(std::string errMsg);
 
-    /** This functions is blocking until the device has been opened, initialsed and all recovery accessors
-      * have been written. If the device is not in an error state, the function will return immediately. */
-    void waitForRecovery();
-
     void prepare() override;
 
     void run() override;
@@ -247,9 +243,9 @@ namespace ChimeraTK {
      * moduleThread. */
     cppext::future_queue<std::string> errorQueue{5};
 
-    /** Mutex for errorCondVar.
+    /** Mutex to protect deviceHasError.
         Attention: In testable mode this mutex must only be locked when holding the testable mode mutex!*/
-    std::mutex errorMutex;
+    boost::shared_mutex errorMutex;
 
     /** This condition variable is used to block reportException() until the error
      * state has been resolved by the moduleThread. */
@@ -282,6 +278,8 @@ namespace ChimeraTK {
     /** Mutex to halt accessors until initial values can be received.*/
     bool isHoldingInitialValueMutex{true};
     boost::shared_mutex initialValueMutex;
+
+    std::atomic<int64_t> synchronousTransferCounter{0};
 
     friend class Application;
     // Access to virtualiseFromCatalog() is needed by ServerHistory

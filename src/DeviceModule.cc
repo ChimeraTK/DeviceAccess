@@ -234,7 +234,7 @@ namespace ChimeraTK {
       // To avoid deadlocks you must always first aquire the testable mode mutex if you need both.
       // You can hold the error mutex without holding the testable mode mutex (for instance for checking the error predicate),
       // but then you must not try to aquire the testable mode mutex!
-      std::unique_lock<std::mutex> errorLock(errorMutex);
+      boost::unique_lock<boost::shared_mutex> errorLock(errorMutex);
 
       if(!deviceHasError) { // only report new errors if the device does not have reported errors already
         if(errorQueue.push(errMsg)) {
@@ -258,25 +258,25 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void DeviceModule::waitForRecovery() {
-    // we need the error lock before we are allowed to access the predicate
-    std::unique_lock<std::mutex> errorLock(errorMutex);
-    if(!deviceHasError) return;
+  //  void DeviceModule::waitForRecovery() {
+  //    // we need the error lock before we are allowed to access the predicate
+  //    std::unique_lock<std::mutex> errorLock(errorMutex);
+  //    if(!deviceHasError) return;
 
-    //Wait until the error condition has been cleared by the exception handling thread.
-    //We must not hold the testable mode mutex while doing so, otherwise the other thread will never run to fulfill the condition
-    ++owner
-          ->testableMode_deviceInitialisationCounter; // don't drop out of testable mode while trying to recover (unless explicitly requested)
-    owner->testableModeUnlock("waitForDeviceOK");
-    while(deviceHasError) {
-      errorIsResolvedCondVar.wait(errorLock);
-      boost::this_thread::interruption_point();
-    }
-    errorLock.unlock(); // release the error lock. We must not hold it when trying to get the testable mode lock.
-    owner->testableModeLock("continueAfterException");
-    --owner
-          ->testableMode_deviceInitialisationCounter; // allow to leave the testable mode. We have detected successful recovery.
-  }
+  //    //Wait until the error condition has been cleared by the exception handling thread.
+  //    //We must not hold the testable mode mutex while doing so, otherwise the other thread will never run to fulfill the condition
+  //    ++owner
+  //          ->testableMode_deviceInitialisationCounter; // don't drop out of testable mode while trying to recover (unless explicitly requested)
+  //    owner->testableModeUnlock("waitForDeviceOK");
+  //    while(deviceHasError) {
+  //      errorIsResolvedCondVar.wait(errorLock);
+  //      boost::this_thread::interruption_point();
+  //    }
+  //    errorLock.unlock(); // release the error lock. We must not hold it when trying to get the testable mode lock.
+  //    owner->testableModeLock("continueAfterException");
+  //    --owner
+  //          ->testableMode_deviceInitialisationCounter; // allow to leave the testable mode. We have detected successful recovery.
+  //  }
 
   /*********************************************************************************************************************/
 
@@ -315,7 +315,7 @@ namespace ChimeraTK {
         firstAttempt = false;
         owner->testableModeLock("Initialise device");
 
-        std::unique_lock<std::mutex> errorLock(errorMutex);
+        boost::unique_lock<boost::shared_mutex> errorLock(errorMutex);
 
         // [Spec: 2.3.2] Run initialisation handlers
         try {
@@ -382,28 +382,23 @@ namespace ChimeraTK {
         // [Spec: 2.3.8] Wait for an exception being reported by the ExceptionHandlingDecorators
         // release the testable mode mutex for waiting for the exception.
         owner->testableModeUnlock("Wait for exception");
+
         // Do not modify the queue without holding the testable mode lock, because we also consistently have to modify
         // the counter protected by that mutex.
-        // Just check the condition variable.
-        errorLock.lock();
-        while(!deviceHasError) {
-          boost::this_thread::interruption_point(); // Make sure not to start waiting for the condition variable if
-                                                    // interruption was requested.
-          errorIsReportedCondVar.wait(errorLock);   // this releases the mutex while waiting
-          boost::this_thread::interruption_point(); // we need an interruption point in the waiting loop
-        }
+        // Just call wait(), not pop_wait().
+        boost::this_thread::interruption_point();
+        errorQueue.wait();
+        boost::this_thread::interruption_point();
 
-        errorLock.unlock(); // We must not hold the error lock when getting the testable mode mutex to avoid deadlocks!
         owner->testableModeLock("Process exception");
         // increment special testable mode counter to make sure the initialisation completes within one
         // "application step"
         ++owner->testableMode_deviceInitialisationCounter; // matched above with a decrement
 
-        errorLock.lock(); // we need both locks to modify the queue, so get it again.
+        errorLock.lock(); // we need both locks to modify the queue
 
         auto popResult = errorQueue.pop(error);
-        (void)popResult;
-        assert(popResult); // this if should always be true, otherwise the condition variable logic is wrong
+        assert(popResult); // this if should always be true, otherwise the waiting did not work.
         if(owner->isTestableModeEnabled()) {
           assert(owner->testableMode_counter > 0);
           --owner->testableMode_counter;
@@ -463,6 +458,13 @@ namespace ChimeraTK {
   void DeviceModule::terminate() {
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
+      // put an exception into the waiting queue
+      try {
+        throw boost::thread_interrupted();
+      }
+      catch(boost::thread_interrupted&) {
+        errorQueue.push_exception(std::current_exception());
+      }
       errorIsReportedCondVar
           .notify_all(); // the terminating thread will notify the threads waiting for errorIsResolvedCondVar
       moduleThread.join();

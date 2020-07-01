@@ -111,7 +111,7 @@ namespace ChimeraTK {
             boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
           }
           _deviceModule.reportException(e.what());
-          _deviceModule.waitForRecovery();
+          //_deviceModule.waitForRecovery();
           goto retry;
         }
         // send the version number to the consumers

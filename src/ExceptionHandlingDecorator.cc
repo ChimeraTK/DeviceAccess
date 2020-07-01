@@ -34,33 +34,6 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doReadTransferSynchronously() {
-    if(transferAllowed) {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
-    }
-  }
-
-  template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-    if(transferAllowed) {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
-    }
-    else {
-      return true; /* data loss */
-    }
-  }
-
-  template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
-    if(transferAllowed) {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
-    }
-    else {
-      return true; /* data loss */
-    }
-  }
-
-  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
      * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
@@ -70,7 +43,8 @@ namespace ChimeraTK {
      * modify the recoveryAcessor's user buffer while data is written to the device.
      */
     {
-      auto lock{deviceModule.getRecoverySharedLock()};
+      hasThrownToInhibitTransfer = false;
+      auto recoverylock{deviceModule.getRecoverySharedLock()};
 
       if(_recoveryAccessor != nullptr) {
         // Access to _recoveryAccessor is only possible channel-wise
@@ -84,30 +58,36 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(
             "ChimeraTK::ExceptionhandlingDecorator: Calling write() on a non-writeable accessor is not supported ");
       }
-    } // lock guard goes out of scope
 
-    // #138 Phase 1. Change for phase 2
-    // Starting a transfer is only allowed if the status is running (not in initialisation or shutdown)
-    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
-    // the waiting is only necessary as a hack for phase 1 because DeviceModule::startTransfer is not there yet
-    if(transferAllowed) deviceModule.waitForRecovery();
+      boost::shared_lock<boost::shared_mutex> errorLock(deviceModule.errorMutex);
+      if(deviceModule.deviceHasError) {
+        hasThrownToInhibitTransfer = true;
+        throw ChimeraTK::runtime_error(
+            "ExceptionHandlingDecorator is preventing the write transfer."); // writing will be delayed, done by the recovery accessor
+      }
+
+      ++deviceModule.synchronousTransferCounter; // must be under the lock
+
+    } // lock guard goes out of scope
 
     // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
     // preWrite and postWrite are only delegated if the transfer is allowed.
-    if(transferAllowed) {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type, versionNumber);
-    }
+    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type, versionNumber);
   }
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, VersionNumber versionNumber) {
-    try {
-      if(transferAllowed) {
+    if(!hasThrownToInhibitTransfer) {
+      try {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
       }
+      catch(ChimeraTK::runtime_error& e) {
+        deviceModule.reportException(e.what());
+      }
     }
-    catch(ChimeraTK::runtime_error& e) {
-      deviceModule.reportException(e.what());
+    else {
+      // get rid of the active exception do the calling postWrite() does not re-throw
+      _activeException = nullptr;
     }
   }
 
@@ -122,47 +102,31 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     bool hasException = false;
-    try {
-      // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
-      if(transferAllowed) {
-        this->_target->postRead(type, hasNewData);
+    // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
+    if(!hasThrownToInhibitTransfer) {
+      try {
+        _target->setActiveException(this->_activeException);
+        _target->postRead(type, hasNewData);
+      }
+      catch(ChimeraTK::runtime_error& e) {
+        deviceModule.reportException(e.what());
+        hasException = true;
+        // #138 Phase 1: Remove for phase 2
+        // Inform the owner about the failed read (will be informed again after successful recovery
+        setOwnerValidity(hasException);
       }
     }
-    catch(ChimeraTK::runtime_error& e) {
-      deviceModule.reportException(e.what());
-      hasException = true;
-      // #138 Phase 1: Remove for phase 2
-      // Inform the owner about the failed read (will be informed again after successful recovery
-      setOwnerValidity(hasException);
+    else {
+      _activeException = nullptr;
     }
-    // #138 Phase 2: change if codition here
-    if(hasException || !transferAllowed) {
-      // Try to recover and read until it succeeds.
-      // We are already behind the delegated postRead, so the transfer in the target is already complemted.
-      // So we have to use a complete blocking preRead, readTransfer, postRead, i.e. _tagret->read()
-      while(true) {
-        deviceModule.waitForRecovery();
-        /* //#138 Phase 2
-         * if (!deviceModule->startTransfer()) continue;
-         * // end  of #138 Phase 2
-         */
-        try {
-          this->_target->read();
-          hasException = false;
-          hasNewData = true; // if read() returns there is always new data
-          /* //#138 Phase 2
-           * deviceModule->stopTransfer());
-           * // end  of #138 Phase 2
-           */
-          break;
-        }
-        catch(ChimeraTK::runtime_error&) {
-          /* //#138 Phase 2
-           * deviceModule->stopTransfer());
-           * // end  of #138 Phase 2
-           */
-        }
-      }
+
+    if(hasException || hasThrownToInhibitTransfer) {
+      _dataValidity = DataValidity::faulty;
+      _versionNumber = {};
+    }
+    else {
+      _dataValidity = _target->dataValidity();
+      _versionNumber = _target->getVersionNumber();
     }
     setOwnerValidity(hasException);
     // only replace the user buffer if there really is new data
@@ -174,28 +138,26 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
+    hasThrownToInhibitTransfer = false;
+
     if(TransferElement::_versionNumber == VersionNumber(nullptr)) {
       Application::testableModeUnlock("ExceptionHandling_doPreRead");
       deviceModule.getInitialValueSharedLock();
       Application::testableModeLock("ExceptionHandling_doPreRead");
       // we don't have to store the shared lock. Once we acquired it the deviceModule will never take it again.
     }
-    /* #138 Phase 1. Change this for phase 2 */
-    /* Hack for phase 1 because DeviceModule::startTransfer is not there yet. */
-    deviceModule.waitForRecovery();
-    transferAllowed = true;
-    //    std::cout << "recovered" << std::endl;
-    //    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
-    //    auto l = Application::getInstance().getLifeCycleState();
-    //    std::cout << "LifeCycleState: "
-    //              << (l == LifeCycleState::run ? "run" : (l == LifeCycleState::initialisation ? "init" : "shutdown"))
-    //              << std::endl;
-    //    assert(transferAllowed); // not true in phase 2 any more
 
-    // only delegate preRead and postRead if  the transfer is allowerd
-    if(transferAllowed) {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
+    if(!TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+      boost::shared_lock<boost::shared_mutex> recoveryLock(deviceModule.errorMutex);
+      if(deviceModule.deviceHasError) {
+        hasThrownToInhibitTransfer = true;
+        throw ChimeraTK::runtime_error("ExceptionHandlingDecorator has thrown to skip read transfer");
+      }
+
+      ++deviceModule.synchronousTransferCounter;
     }
+
+    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
