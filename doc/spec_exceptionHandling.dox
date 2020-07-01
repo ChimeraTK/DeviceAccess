@@ -177,7 +177,7 @@ Note: This section defines the internal interface on a low level. Helper functio
   - \anchor c_2_2_1 2.2.1 These steps need to be done unconditionally at the very beginning of doPreWrite(), before \ref c_2_4 "2.4" and before delegating to preWrite(). \ref comment_c_2_2_1 "(*)"
   - 2.2.2 If the RecoveryHelper::wasWritten flag was previously not set, the return value of doWriteTransfer() must be forced to true (data lost).
   - 2.2.3 Update the value buffer of the RecoveryHelper::accessor, update the RecoveryHelper::versionNumber, set the RecoveryHelper::writeOrder to the DeviceModule::writeCounter after (atomically) incrementing it, and clear the RecoveryHelper::wasWritten flag. (cf. \ref b_2_3)
-  - \anchor c_2_2_4 2.2.4 The check whether to skip the transfer (cf. \ref c_2_4 "2.4") has to be done without releasing the lock between the update of the RecoveryHelper and the check. \ref comment_c_2_2_4 "(*)"
+  - \anchor c_2_2_4 2.2.4 The check whether to execute the transfer (cf. \ref c_2_4 "2.4") has to be done without releasing the lock between the update of the RecoveryHelper and the check. \ref comment_c_2_2_4 "(*)"
 
 - \anchor c_2_3 2.3 In doPreRead() it is checked if the transfer element has seen an initial value by checking whether the current version number is still {nullptr} (cf. \ref b_4_2 "B.4.2")
    - 2.3.1 This is done as the first thing unconditionally for all read types, as no read must return with the "value after constuction". (For further details, see the \ref spec_initialValuePropagation "intial value propagation specfication")
@@ -188,32 +188,34 @@ Note: This section defines the internal interface on a low level. Helper functio
      There is nothing extra to do for the ExceptionHandlingDecorator in this case.
    - \anchor c_2_3_5 2.3.5 The lock on the DeviceModule::errorMutex must not be held in this step to prevent dead-lock with the DeviceModule::initialValueMutex. \ref comment_c_2_3_5 "(*)"
 
-- \anchor c_2_4 2.4 In doPreRead()/doPreWrite(), it must be decided whether to delegate to the target's xxxTransferYyy() in doXxxTransferYyy() (cf. \ref c_2_5 "2.5").
+- \anchor c_2_4 2.4 In doPreRead()/doPreWrite(), it is decided whether to execute the target's transfer.
   - \anchor c_2_4_1 2.4.1 This is only applicable to read operations without AccessMode::wait_for_new_data, and to write operations \ref comment_c_2_4_1 "(*)".
   - 2.4.2 This part requires a shared lock on the DeviceModule::errorMutex.
-  - \anchor c_2_4_3 2.4.3 xxxTransferYyy() is only delegated to, if DeviceModule::deviceHasError == false (cf. \ref b_2_3 "B.2.3" and \ref b_2_2_3 "B.2.2.3").
-  - 2.4.4 If xxxTransferYyy() is not delegated to, none of the pre/transfer/post functions must be delegated to the target accessor.
-  - \anchor c_2_4_5 2.4.5 If xxxTransferYyy() is delegated to, the DeviceModule::synchronousTransferCounter must be incremented.
-  - \anchor c_2_4_6 2.4.6 If xxxTransferYyy() is not delegated to and it is a read operation, the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref c_2_6_4 "2.6.4"), and the current VersionNumber of the accessor is set to DeviceModule::exceptionVersionNumber. (cf. \ref b_2_3 "B.2.3")
+  - \anchor c_2_4_3 2.4.3 Transfers are only executed if DeviceModule::deviceHasError == false (cf. \ref b_2_3 "B.2.3" and \ref b_2_2_3 "B.2.2.3").
+  - 2.4.4 If a transfer is not executed, none of the pre/transfer/post functions must be delegated to the target accessor.
+  - \anchor c_2_4_5 2.4.5 If the transfer is executed, the DeviceModule::synchronousTransferCounter must be incremented.
+  - \anchor c_2_4_6 2.4.6 To prevent the execution of the transfer, a ChimeraTK::runtime_error is thrown before calling _target::preXxx() \ref exceptionHandling_comment_c_2_4_6 "(*)".
+    - \anchor c_2_4_6_1 2.4.6.1 The ExceptionHandlingDecorator remembers that it raised the exception, so in doPostXxx it does not call _target::postXxx(), (c.f. \ref c_2_6_1 "2.6.1").
 
-- \anchor c_2_5 2.5 In doXxxTransferYyy(), delegate to xxxTransferYyy(), if it was so decided in \ref c_2_4 "2.4".
+- \anchor c_2_5 2.5 *deleted*
 
 - 2.6 In doPostRead()/doPostWrite():
-  - 2.6.1 Delegate to postRead() / postWrite() (see \ref c_2_7 "2.7"), if it was so decided in \ref c_2_4 "2.4".
+  - \anchor c_2_6_1 2.6.1 Delegate to postRead() / postWrite() (see \ref c_2_7 "2.7"), if there was no exception raised by the ExceptionHandling decorator itself (see \ref c_2_4_6_1 "2.4.6.1").
   - \anchor c_2_6_2 2.6.2 In doPostWrite() the RecoveryHelper::wasWritten flag is set (while holding a shared lock on DeviceModule::recoveryMutex) if the write was successful (no exception thrown; data lost flag does not matter here). \ref comment_c_2_6_2 "(*)"
   - \anchor c_2_6_3 2.6.3 If the DeviceModule::synchronousTransferCounter was incremented in \ref c_2_4_5 "2.4.5", decrement it. \ref comment_c_2_6_3 "(*)"
-  - \anchor c_2_6_4 2.6.4 In doPostRead(), if no exception was thrown and DeviceModule::deviceHasError == false, end overriding the DataValidity returned by the accessor (cf. \ref c_2_7_2 "2.7.2" and \ref c_2_4_6 "2.4.6").
+  - \anchor c_2_6_4 2.6.4 In doPostRead(), _dataValidity and _versionNumber are set to
+    - DataValidity::faulty and DeviceModule::exceptionVersionNumber, respectively, if an exception was thrown in \ref c_2_4_6 "2.4.6" to prevent the transfer, or caught from the delegated postXxx() (see \ref c_2_7 "2.7")
+    - the target's data validity  and version number, respectively, in all other cases
 
 - \anchor c_2_7 2.7 In doPostRead()/doPostWrite(), any ChimeraTK::runtime_error exception thrown by the delegated postRead()/postWrite() is caught \ref comment_c_2_7 "(*)". The following actions are executed in case of a ChimeraTK::runtime_error:
   - \anchor c_2_7_1 2.7.1 The error is reported to the DeviceModule via DeviceModule::reportException() (cf. \ref spec_execptionHandling_high_level_implmentation_reportException "C.4"). This automatically sets DeviceModule::deviceHasError to true. From this point on, no new transfers will be started. \ref comment_c_2_7_1 "(*)"
-  - \anchor c_2_7_2 2.7.2 For read operations: the DataValidity returned by the accessor is overridden to faulty until next successful read operation (cf. \ref c_2_6_4 "2.6.4"), and the current VersionNumber of the accessor is set to DeviceModule::exceptionVersionNumber.
 
 - 2.8 The constructor of the decorator
   - 2.8.1 receives the VariableNetworkNode for the device variable, to enable it to create additional, undecorated copies of the register accessor,
   - 2.8.2 puts the name of the register (from the VariableNetworkNode) to DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters depending on the direction the accessor is used, and
   - 2.8.3 creates the recovery accessor and initialises the RecoveryHelper object.
   - 2.8.4 Note: The alias name of the device can be obtained from the VariableNetworkNode, which allows to obtain the corresponding DeviceModule via Application::deviceModuleList (change the list into a map).
-  - 2.8.5 The code instantiating the decorator (Application::createDeviceVariable()) has to make sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so the overriden DataValidity flag in case of an exception is properly propagated to the owning module/fan out (cf. \ref c_2_7_2 "2.7.2" and \ref c_2_4_6 "2.4.6").
+  - 2.8.5 The code instantiating the decorator (Application::createDeviceVariable()) makes sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so in case of an exception the dataValidity flag is properly propagated to the owning module/fan out (cf. \ref c_2_6_4 "2.6.4").
 
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_comments (*) Comments
 
@@ -236,6 +238,8 @@ Note: This section defines the internal interface on a low level. Helper functio
 The only thing that can happend by not having the DeviceModule::errorMutex is that in case of a device error the transfer is already skipped in  \ref c_2_4 "2.4" and not by an exception in the transfer.
 
 - \anchor comment_c_2_4_1 \ref c_2_4_1 "2.4.1" In case of read operations with AccessMode::wait_for_new_data, there is no doXxxTransferYyy() called by the TransferElement. The requirement in \ref b_2_2_4 "B.2.2.4" is fullfilled by the backend implementations, see the TransferElement specification in DeviceAccess.
+
+- \anchor exceptionHandling_comment_c_2_4_6 \ref c_2_4_6 "2.4.6" The actual implementation to skip the transfer is done in the TransferElement and the TransferGroup. If the ExceptionHandlingDecorator would implement it by overriding doXxxTransferYyy() it would not work for the TransferGroup, which instead calls the transfer function of the LowLevelTransferElement.
 
 - \anchor comment_c_2_6_2 \ref c_2_6_2 "2.6.2" The RecoveryHelper::wasWritten flag is used to report loss of data. If the loss of data is already reported directly, it should not later be reported again. Hence the written flag is set even if there was a loss of data in this context. Setting the flag is ideally done before decrementing the DeviceModule::synchronousTransferCounter in \ref c_2_6_3 "2.6.3", because this eliminates the possibility that acquiring the shared lock on the DeviceModule::recoveryMutex could block (exclusive lock is only acquired during recovery, which cannot start before DeviceModule::synchronousTransferCounter == 0)
 
