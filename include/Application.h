@@ -254,15 +254,16 @@ namespace ChimeraTK {
     void typedMakeConnection(VariableNetwork& network);
 
     /** Helper function to set consumer implementations in typedMakeConnection() */
+    //FIXME Remove obsolete arguments
     template<typename UserType>
     std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode&>>
-        setConsumerImplementations(/*boost::shared_ptr<FanOut<UserType>> fanOut,*/ VariableNetworkNode& feeder,
-            std::list<VariableNetworkNode> consumers, boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut);
+        setConsumerImplementations(/*boost::shared_ptr<FanOut<UserType>> fanOut,*/ VariableNetworkNode const& feeder,
+            std::list<VariableNetworkNode> consumers/*, boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut*/);
 
     /** Helper function to add consumers to fanouts in typedMakeConnection() */
     template<typename UserType>
     void addConsumersToFanout(boost::shared_ptr<FanOut<UserType>> fanout, VariableNetworkNode& feeder,
-        std::list<VariableNetworkNode> consumers, boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut);
+        std::list<VariableNetworkNode> consumers/*, boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut*/);
 
     /** Functor class to call typedMakeConnection() with the right template
      * argument. */
