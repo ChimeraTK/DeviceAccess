@@ -121,12 +121,6 @@ namespace ChimeraTK {
 
     void terminate() override;
 
-    /** Notify all condition variables that are waiting inside reportExeption(). This is
-     *  called from other threads hosting accessors. You must call a boost::thread::terminate() on the
-     *  thread running the accessor, then call DeviceModule::notify() to wake up reportException, which will detect the interruption and return.
-     */
-    void notify();
-
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
     void setCurrentVersionNumber(VersionNumber versionNumber) override {
@@ -247,14 +241,7 @@ namespace ChimeraTK {
         Attention: In testable mode this mutex must only be locked when holding the testable mode mutex!*/
     boost::shared_mutex errorMutex;
 
-    /** This condition variable is used to block reportException() until the error
-     * state has been resolved by the moduleThread. */
-    std::condition_variable errorIsResolvedCondVar;
-
-    /** This condition variable is used to block the error handling thread until an exception is reported.*/
-    std::condition_variable errorIsReportedCondVar;
-
-    /** The error flag (predicate) for the conditionVariable */
+    /** The error flag whether the device is functional. protected by the errorMutex. */
     bool deviceHasError{true};
 
     /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).

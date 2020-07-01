@@ -52,7 +52,6 @@ namespace ChimeraTK {
         if(externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
           externalTrigger->interrupt();
         }
-        _deviceModule.notify();
         _thread.join();
       }
       assert(!_thread.joinable());
