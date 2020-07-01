@@ -29,6 +29,12 @@ namespace ChimeraTK {
         DeviceModule& devMod, VariableDirection direction,
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor = {nullptr});
 
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
+
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
+
+    void doReadTransferSynchronously() override;
+
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override;
@@ -51,6 +57,8 @@ namespace ChimeraTK {
 
     EntityOwner* _owner = {nullptr};
     VariableDirection _direction;
+
+    bool transferAllowed{false};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
