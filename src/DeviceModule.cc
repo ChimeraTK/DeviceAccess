@@ -66,6 +66,7 @@ namespace ChimeraTK {
   : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
     registerNamePrefix(""), owner(application) {
     application->registerDeviceModule(this);
+    initialValueMutex.lock();
     if(initialisationHandler) {
       initialisationHandlers.push_back(initialisationHandler);
     }
@@ -342,7 +343,7 @@ namespace ChimeraTK {
 
         // [Spec: 2.3.4] Write all recovery accessors
         try {
-          boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
+          boost::unique_lock<boost::shared_mutex> uniqueLock(recoveryMutex);
           for(auto& recoveryHelper : recoveryHelpers) {
             if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
               recoveryHelper->accessor->write(recoveryHelper->versionNumber);
@@ -370,6 +371,10 @@ namespace ChimeraTK {
         --owner->testableMode_deviceInitialisationCounter;
 
         // [Spec: 2.3.6+2.3.7] send the trigger that the device is available again
+        if(isHoldingInitialValueMutex) {
+          isHoldingInitialValueMutex = false;
+          initialValueMutex.unlock();
+        }
         deviceBecameFunctional.write();
         errorLock.unlock();
         errorIsResolvedCondVar.notify_all();
@@ -493,7 +498,11 @@ namespace ChimeraTK {
   }
 
   boost::shared_lock<boost::shared_mutex> DeviceModule::getRecoverySharedLock() {
-    return boost::shared_lock<boost::shared_mutex>(recoverySharedMutex);
+    return boost::shared_lock<boost::shared_mutex>(recoveryMutex);
+  }
+
+  boost::shared_lock<boost::shared_mutex> DeviceModule::getInitialValueSharedLock() {
+    return boost::shared_lock<boost::shared_mutex>(initialValueMutex);
   }
 
 } // namespace ChimeraTK

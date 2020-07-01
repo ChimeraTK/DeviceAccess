@@ -142,6 +142,12 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
+    if(TransferElement::_versionNumber == VersionNumber(nullptr)) {
+      Application::testableModeUnlock("ExceptionHandling_doPreRead");
+      deviceModule.getInitialValueSharedLock();
+      Application::testableModeLock("ExceptionHandling_doPreRead");
+      // we don't have to store the shared lock. Once we acquired it the deviceModule will never take it again.
+    }
     /* #138 Phase 1. Change this for phase 2 */
     /* Hack for phase 1 because DeviceModule::startTransfer is not there yet. */
     deviceModule.waitForRecovery();

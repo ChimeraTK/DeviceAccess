@@ -66,8 +66,6 @@ namespace ChimeraTK {
      * for more information).*/
     DeviceModule(Application* application, const std::string& deviceAliasOrURI,
         std::function<void(DeviceModule*)> initialisationHandler = nullptr);
-    /** Default constructor: create dysfunctional device module */
-    DeviceModule() {}
 
     /** Destructor */
     virtual ~DeviceModule();
@@ -203,9 +201,15 @@ namespace ChimeraTK {
      * You can get a shared_lock with getRecoverySharedLock(). */
     void addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor);
 
-    /** Returns a shared lock for the DeviceModule::recoverySharedMutex. This locks writing
+    /** Returns a shared lock for the DeviceModule::recoveryMutex. This locks writing
      * the list DeviceModule::writeRecoveryOpen, during a recovery.*/
     boost::shared_lock<boost::shared_mutex> getRecoverySharedLock();
+
+    /** Get a shared lock to the DeviceModule::initialValueMutex.
+     * The DeviceModule is holing the exclusive lock from construction until the intial values
+     * can be received in the accessors. It then releases the lock and will never acquire it again.
+     */
+    boost::shared_lock<boost::shared_mutex> getInitialValueSharedLock();
 
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
@@ -273,7 +277,11 @@ namespace ChimeraTK {
     std::list<std::function<void(DeviceModule*)>> initialisationHandlers;
 
     /** Mutex for writing the DeviceModule::writeRecoveryOpen.*/
-    boost::shared_mutex recoverySharedMutex;
+    boost::shared_mutex recoveryMutex;
+
+    /** Mutex to halt accessors until initial values can be received.*/
+    bool isHoldingInitialValueMutex{true};
+    boost::shared_mutex initialValueMutex;
 
     friend class Application;
     // Access to virtualiseFromCatalog() is needed by ServerHistory
