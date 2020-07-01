@@ -166,6 +166,7 @@ class UnifiedBackendTest {
   void test_B_3_1_2_1();
   void test_B_3_2_1_2();
   void test_B_3_2_2();
+  void test_B_4_2_4();
   void test_B_6_4();
   void test_B_7_2();
   void test_B_8_2();
@@ -503,6 +504,7 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::runTests(const std::string
   test_B_3_1_2_1();
   test_B_3_2_1_2();
   test_B_3_2_2();
+  test_B_4_2_4();
   test_B_6_4();
   test_B_7_2();
   test_B_8_2();
@@ -725,6 +727,99 @@ void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_3_2_2() {
       d.close();
     }
   });
+}
+
+/********************************************************************************************************************/
+
+/// Helper macros for test_B_4_2_4
+#define STORE_APPLICATION_BUFFER(UserType, accessor)                                                                   \
+  std::vector<std::vector<UserType>> STORE_APPLICATION_BUFFER_data;                                                    \
+  ctk::VersionNumber STORE_APPLICATION_BUFFER_version;                                                                 \
+  ctk::DataValidity STORE_APPLICATION_BUFFER_validity;                                                                 \
+  for(size_t i = 0; i < accessor.getNChannels(); ++i) {                                                                \
+    STORE_APPLICATION_BUFFER_data.push_back(accessor[i]);                                                              \
+  }                                                                                                                    \
+  STORE_APPLICATION_BUFFER_version = accessor.getVersionNumber();                                                      \
+  STORE_APPLICATION_BUFFER_validity = accessor.dataValidity()
+
+#define CHECK_APPLICATION_BUFFER(UserType, accessor)                                                                   \
+  CHECK_EQUALITY(accessor, STORE_APPLICATION_BUFFER_data);                                                             \
+  BOOST_CHECK(STORE_APPLICATION_BUFFER_version == accessor.getVersionNumber());                                        \
+  BOOST_CHECK(STORE_APPLICATION_BUFFER_validity == accessor.dataValidity())
+
+/**
+ *  Test transfer implementations do not change the application buffer
+ *  * \anchor UnifiedTest_TransferElement_B_4_2_4 \ref transferElement_B_4_2_4 "B.4.2.4"
+ */
+template<typename GET_REMOTE_VALUE_CALLABLE_T>
+void UnifiedBackendTest<GET_REMOTE_VALUE_CALLABLE_T>::test_B_4_2_4() {
+  std::cout << "--- test_B_4_2_4" << std::endl;
+  ctk::Device d(cdd);
+  double someValue = 42;
+
+  // open the device
+  d.open();
+
+  std::cout << "... writeTransfer()" << std::endl;
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto te = reg.getHighLevelImplElement();
+
+      // write some value, calling the stages manually
+      std::vector<std::vector<UserType>> theValue = generateValue(reg, someValue);
+      ctk::VersionNumber ver;
+      STORE_APPLICATION_BUFFER(UserType, reg);
+      te->preWrite(ctk::TransferType::write, ver);
+      CHECK_APPLICATION_BUFFER(UserType, reg);
+      te->writeTransfer(ver);
+      CHECK_APPLICATION_BUFFER(UserType, reg);
+      te->postWrite(ctk::TransferType::write, ver);
+    }
+  });
+
+  std::cout << "... writeTransferDestructively()" << std::endl;
+  ctk::for_each(writeRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto te = reg.getHighLevelImplElement();
+
+      // write some value, calling the stages manually
+      std::vector<std::vector<UserType>> theValue = generateValue(reg, someValue);
+      ctk::VersionNumber ver;
+      te->preWrite(ctk::TransferType::writeDestructively, ver);
+      STORE_APPLICATION_BUFFER(UserType, reg);
+      te->writeTransferDestructively(ver);
+      CHECK_APPLICATION_BUFFER(UserType, reg);
+      te->postWrite(ctk::TransferType::writeDestructively, ver);
+    }
+  });
+
+  std::cout << "... readTransferSynchronously()" << std::endl;
+  ctk::for_each(readRegisters.table, [&](auto pair) {
+    typedef typename decltype(pair)::first_type UserType;
+    for(auto& registerName : pair.second) {
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto te = reg.getHighLevelImplElement();
+
+      // write some value, calling the stages manually
+      std::vector<std::vector<UserType>> theValue = generateValue(reg, someValue);
+      ctk::VersionNumber ver;
+      STORE_APPLICATION_BUFFER(UserType, reg);
+      te->preRead(ctk::TransferType::read);
+      CHECK_APPLICATION_BUFFER(UserType, reg);
+      te->readTransfer();
+      CHECK_APPLICATION_BUFFER(UserType, reg);
+      te->postRead(ctk::TransferType::read, true);
+    }
+  });
+  // close device again
+  d.close();
 }
 
 /********************************************************************************************************************/
