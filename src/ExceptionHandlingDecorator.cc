@@ -34,33 +34,6 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doReadTransferSynchronously() {
-    if(transferAllowed) {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
-    }
-  }
-
-  template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-    if(transferAllowed) {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
-    }
-    else {
-      return true; /* data loss */
-    }
-  }
-
-  template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
-    if(transferAllowed) {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
-    }
-    else {
-      return true; /* data loss */
-    }
-  }
-
-  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
      * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
@@ -88,7 +61,7 @@ namespace ChimeraTK {
 
     // #138 Phase 1. Change for phase 2
     // Starting a transfer is only allowed if the status is running (not in initialisation or shutdown)
-    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
+    bool transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
     // the waiting is only necessary as a hack for phase 1 because DeviceModule::startTransfer is not there yet
     if(transferAllowed) deviceModule.waitForRecovery();
 
@@ -102,9 +75,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, VersionNumber versionNumber) {
     try {
-      if(transferAllowed) {
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
-      }
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
     }
     catch(ChimeraTK::runtime_error& e) {
       deviceModule.reportException(e.what());
@@ -123,10 +94,7 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     bool hasException = false;
     try {
-      // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
-      if(transferAllowed) {
-        this->_target->postRead(type, hasNewData);
-      }
+      this->_target->postRead(type, hasNewData);
     }
     catch(ChimeraTK::runtime_error& e) {
       deviceModule.reportException(e.what());
@@ -136,7 +104,7 @@ namespace ChimeraTK {
       setOwnerValidity(hasException);
     }
     // #138 Phase 2: change if codition here
-    if(hasException || !transferAllowed) {
+    if(hasException) {
       // Try to recover and read until it succeeds.
       // We are already behind the delegated postRead, so the transfer in the target is already complemted.
       // So we have to use a complete blocking preRead, readTransfer, postRead, i.e. _tagret->read()
@@ -177,19 +145,7 @@ namespace ChimeraTK {
     /* #138 Phase 1. Change this for phase 2 */
     /* Hack for phase 1 because DeviceModule::startTransfer is not there yet. */
     deviceModule.waitForRecovery();
-    transferAllowed = true;
-    //    std::cout << "recovered" << std::endl;
-    //    transferAllowed = (Application::getInstance().getLifeCycleState() == LifeCycleState::run);
-    //    auto l = Application::getInstance().getLifeCycleState();
-    //    std::cout << "LifeCycleState: "
-    //              << (l == LifeCycleState::run ? "run" : (l == LifeCycleState::initialisation ? "init" : "shutdown"))
-    //              << std::endl;
-    //    assert(transferAllowed); // not true in phase 2 any more
-
-    // only delegate preRead and postRead if  the transfer is allowerd
-    if(transferAllowed) {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
-    }
+    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
