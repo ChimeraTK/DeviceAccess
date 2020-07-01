@@ -881,16 +881,17 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl, consumerImplementationPairs);
           fanOut = consumingFanOut;
 
-          // TODO Is this correct, we already added all consumer as slaves in the fanout  constructor
+          // TODO Is this correct? we already added all consumer as slaves in the fanout  constructor.
+          //      Maybe assert that we only have a single poll-type node (is there a check in checkConnections?)
           for(auto consumer : consumers) {
             if(consumer.getMode() == UpdateMode::poll) {
               consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
-              consumingFanOut.reset();
+              //consumingFanOut.reset();
               break;
             }
           }
         }
-
+        // FIXME Remove
         //        addConsumersToFanout<UserType>(fanOut, feeder, consumers, consumingFanOut);
         connectionMade = true;
       }
