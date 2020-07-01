@@ -114,43 +114,53 @@ class UnifiedBackendTest {
   }
 
   /**
-   *  Set the names of synchronous read registers to be used for the tests. These registers must *not* support
+   *  Add a synchronous read register to be used for the tests. These registers must *not* support
    *  AccessMode::wait_for_new_data. The registers must be readable. Registers may not appear in the list set via
    *  setAsyncReadTestRegisters() as well, but they may appear in the list set through setWriteTestRegisters().
+   *  
+   *  Any number of synchronous read registers can be added.
+   * 
+   *  If supportsRaw == true, the specified UserType is assumed to be the raw UserType.
    */
   template<typename UserType>
-  void setSyncReadTestRegisters(std::list<std::string> names) {
-    names.sort();
-    boost::fusion::at_key<UserType>(syncReadRegisters.table).merge(std::list<std::string>(names));
-    boost::fusion::at_key<UserType>(readRegisters.table).merge(std::list<std::string>(names));
-    boost::fusion::at_key<UserType>(allRegisters.table).merge(std::list<std::string>(names));
+  void addSyncReadTestRegister(const std::string& name, bool isReadOnly, bool supportsRaw) {
+    boost::fusion::at_key<UserType>(syncReadRegisters.table).push_back(name);
+    boost::fusion::at_key<UserType>(readRegisters.table).push_back(name);
+    boost::fusion::at_key<UserType>(allRegisters.table).push_back(name);
+    if(isReadOnly) readOnlyRegisters.push_back(name);
+    if(supportsRaw) rawRegisters.push_back(name);
   }
 
   /**
-   *  Set the names of asynchronous read registers to be used for the tests. These registers must support
+   *  Add an asynchronous read register to be used for the tests. These registers must support
    *  AccessMode::wait_for_new_data. The registers must be readable. Registers may not appear in the list set via
    *  setSyncReadTestRegisters() as well, but they may appear in the list set through setWriteTestRegisters().
+   *
+   *  Any number of asynchronous read registers can be added.
+   * 
+   *  If supportsRaw == true, the specified UserType is assumed to be the raw UserType.
    */
   template<typename UserType>
-  void setAsyncReadTestRegisters(std::list<std::string> names) {
-    names.sort();
-    boost::fusion::at_key<UserType>(asyncReadRegisters.table).merge(std::list<std::string>(names));
-    boost::fusion::at_key<UserType>(readRegisters.table).merge(std::list<std::string>(names));
-    boost::fusion::at_key<UserType>(allRegisters.table).merge(std::list<std::string>(names));
+  void addAsyncReadTestRegister(const std::string& name, bool isReadOnly, bool supportsRaw) {
+    boost::fusion::at_key<UserType>(asyncReadRegisters.table).push_back(name);
+    boost::fusion::at_key<UserType>(readRegisters.table).push_back(name);
+    boost::fusion::at_key<UserType>(allRegisters.table).push_back(name);
+    if(isReadOnly) readOnlyRegisters.push_back(name);
+    if(supportsRaw) rawRegisters.push_back(name);
   }
 
   /**
-   *  Set the names of asynchronous read registers to be used for the tests. These registers must support
-   *  AccessMode::wait_for_new_data. The registers must be readable.
+   *  Add a write register to be used for the tests. Any number of write registers can be added.
+   * 
+   *  If supportsRaw == true, the specified UserType is assumed to be the raw UserType.
    */
   template<typename UserType>
-  void setWriteTestRegisters(std::list<std::string> names) {
-    names.sort();
-    boost::fusion::at_key<UserType>(writeRegisters.table).merge(std::list<std::string>(names));
-    boost::fusion::at_key<UserType>(allRegisters.table).merge(std::list<std::string>(names));
+  void addWriteTestRegister(const std::string& name, bool isWriteOnly, bool supportsRaw) {
+    boost::fusion::at_key<UserType>(writeRegisters.table).push_back(name);
+    boost::fusion::at_key<UserType>(allRegisters.table).push_back(name);
+    if(isWriteOnly) writeOnlyRegisters.push_back(name);
+    if(supportsRaw) rawRegisters.push_back(name);
   }
-
-  [[deprecated]] void integerRegister(const std::list<std::string>& names) { setSyncReadTestRegisters<int>(names); }
 
  protected:
   void test_B_3_1_2_1();
@@ -202,9 +212,12 @@ class UnifiedBackendTest {
   GET_REMOTE_VALUE_CALLABLE_T _getRemoteValueCallable;
   std::function<void(std::string)> _setRemoteValueCallable;
 
-  /// Name of integer register used for tests
+  /// Names of registers used for tests
   ctk::FixedUserTypeMap<std::list<std::string>> syncReadRegisters, asyncReadRegisters, readRegisters, writeRegisters,
       allRegisters;
+
+  /// Names of registers with special properties. Must also be in one of the above lists.
+  std::list<std::string> readOnlyRegisters, writeOnlyRegisters, rawRegisters;
 
   /// Special DeviceBacked used for testing the exception reporting to the backend
   struct ExceptionReportingBackend : ctk::DeviceBackendImpl {

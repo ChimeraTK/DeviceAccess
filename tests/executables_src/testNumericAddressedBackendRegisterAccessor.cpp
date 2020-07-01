@@ -420,8 +420,8 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       },
       [&](std::string registerName) { setValueFromUBT(registerName, exceptionDummy); });
 
-  ubt.setSyncReadTestRegisters<int>({"/Integers/signed32"});
-  ubt.setWriteTestRegisters<int>({"/Integers/signed32"});
+  ubt.addSyncReadTestRegister<int>("/Integers/signed32", false, true);
+  ubt.addWriteTestRegister<int>("/Integers/signed32", false, true);
 
   ubt.forceRuntimeErrorOnRead(
       {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});

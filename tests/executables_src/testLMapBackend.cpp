@@ -85,8 +85,8 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       },
       [&](std::string registerName) { setValueFromUBT(registerName, exceptionDummy); });
 
-  ubt.setSyncReadTestRegisters<int>({"/EdummyInt32"});
-  ubt.setWriteTestRegisters<int>({"/EdummyInt32"});
+  ubt.addSyncReadTestRegister<int>("/EdummyInt32", false, true);
+  ubt.addWriteTestRegister<int>("/EdummyInt32", false, true);
 
   ubt.forceRuntimeErrorOnRead(
       {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
