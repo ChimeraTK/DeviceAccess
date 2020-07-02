@@ -66,8 +66,6 @@ namespace ChimeraTK {
      * for more information).*/
     DeviceModule(Application* application, const std::string& deviceAliasOrURI,
         std::function<void(DeviceModule*)> initialisationHandler = nullptr);
-    /** Default constructor: create dysfunctional device module */
-    DeviceModule() {}
 
     /** Destructor */
     virtual ~DeviceModule();
@@ -117,21 +115,11 @@ namespace ChimeraTK {
      * can report exception and trigger the recovery mechanism like this. */
     void reportException(std::string errMsg);
 
-    /** This functions is blocking until the device has been opened, initialsed and all recovery accessors
-      * have been written. If the device is not in an error state, the function will return immediately. */
-    void waitForRecovery();
-
     void prepare() override;
 
     void run() override;
 
     void terminate() override;
-
-    /** Notify all condition variables that are waiting inside reportExeption(). This is
-     *  called from other threads hosting accessors. You must call a boost::thread::terminate() on the
-     *  thread running the accessor, then call DeviceModule::notify() to wake up reportException, which will detect the interruption and return.
-     */
-    void notify();
 
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
@@ -153,15 +141,6 @@ namespace ChimeraTK {
     }
     void decrementDataFaultCounter() override {
       throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
-
-    void incrementExceptionCounter(bool /*writeAllOutputs*/) override {
-      throw ChimeraTK::logic_error("incrementExceptionCounter() called on  a DeviceModule. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
-    void decrementExceptionCounter() override {
-      throw ChimeraTK::logic_error("decrementExceptionCounter() called on  a DeviceModule. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
 
@@ -203,9 +182,15 @@ namespace ChimeraTK {
      * You can get a shared_lock with getRecoverySharedLock(). */
     void addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor);
 
-    /** Returns a shared lock for the DeviceModule::recoverySharedMutex. This locks writing
+    /** Returns a shared lock for the DeviceModule::recoveryMutex. This locks writing
      * the list DeviceModule::writeRecoveryOpen, during a recovery.*/
     boost::shared_lock<boost::shared_mutex> getRecoverySharedLock();
+
+    /** Get a shared lock to the DeviceModule::initialValueMutex.
+     * The DeviceModule is holing the exclusive lock from construction until the intial values
+     * can be received in the accessors. It then releases the lock and will never acquire it again.
+     */
+    boost::shared_lock<boost::shared_mutex> getInitialValueSharedLock();
 
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
@@ -243,18 +228,11 @@ namespace ChimeraTK {
      * moduleThread. */
     cppext::future_queue<std::string> errorQueue{5};
 
-    /** Mutex for errorCondVar.
+    /** Mutex to protect deviceHasError.
         Attention: In testable mode this mutex must only be locked when holding the testable mode mutex!*/
-    std::mutex errorMutex;
+    boost::shared_mutex errorMutex;
 
-    /** This condition variable is used to block reportException() until the error
-     * state has been resolved by the moduleThread. */
-    std::condition_variable errorIsResolvedCondVar;
-
-    /** This condition variable is used to block the error handling thread until an exception is reported.*/
-    std::condition_variable errorIsReportedCondVar;
-
-    /** The error flag (predicate) for the conditionVariable */
+    /** The error flag whether the device is functional. protected by the errorMutex. */
     bool deviceHasError{true};
 
     /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
@@ -273,7 +251,13 @@ namespace ChimeraTK {
     std::list<std::function<void(DeviceModule*)>> initialisationHandlers;
 
     /** Mutex for writing the DeviceModule::writeRecoveryOpen.*/
-    boost::shared_mutex recoverySharedMutex;
+    boost::shared_mutex recoveryMutex;
+
+    /** Mutex to halt accessors until initial values can be received.*/
+    bool isHoldingInitialValueMutex{true};
+    boost::shared_mutex initialValueMutex;
+
+    std::atomic<int64_t> synchronousTransferCounter{0};
 
     friend class Application;
     // Access to virtualiseFromCatalog() is needed by ServerHistory

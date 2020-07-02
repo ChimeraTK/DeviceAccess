@@ -29,17 +29,9 @@ namespace ChimeraTK {
         DeviceModule& devMod, VariableDirection direction,
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor = {nullptr});
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
-
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
-
-    void doReadTransferSynchronously() override;
-
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override;
-
-    void setOwner(EntityOwner* owner);
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
@@ -47,18 +39,21 @@ namespace ChimeraTK {
 
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
+    using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
+    using ChimeraTK::TransferElement::_versionNumber;
+    using ChimeraTK::TransferElement::_dataValidity;
+    using ChimeraTK::TransferElement::_activeException;
+
     DeviceModule& deviceModule;
 
     bool previousReadFailed{true};
 
-    void setOwnerValidity(bool hasExceptionNow);
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
 
-    EntityOwner* _owner = {nullptr};
     VariableDirection _direction;
 
-    bool transferAllowed{false};
+    bool hasThrownToInhibitTransfer{false};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

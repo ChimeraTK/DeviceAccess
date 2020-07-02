@@ -52,7 +52,6 @@ namespace ChimeraTK {
         if(externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
           externalTrigger->interrupt();
         }
-        _deviceModule.notify();
         _thread.join();
       }
       assert(!_thread.joinable());
@@ -113,7 +112,7 @@ namespace ChimeraTK {
             boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
           }
           _deviceModule.reportException(e.what());
-          _deviceModule.waitForRecovery();
+          //_deviceModule.waitForRecovery();
           goto retry;
         }
         // send the version number to the consumers

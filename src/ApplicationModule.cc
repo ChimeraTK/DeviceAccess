@@ -121,29 +121,11 @@ namespace ChimeraTK {
     Application::testableModeUnlock("terminate");
   }
 
-  void ApplicationModule::incrementDataFaultCounter() {
-    ++dataFaultCounter;
-  }
+  void ApplicationModule::incrementDataFaultCounter() { ++dataFaultCounter; }
 
   void ApplicationModule::decrementDataFaultCounter() {
     assert(dataFaultCounter > 0);
     --dataFaultCounter;
   }
 
-  void ApplicationModule::incrementExceptionCounter(bool writeAllOutputs) {
-    ++exceptionCounter;
-   // writeAll only once for first incrementExceptionCounter call -> going with exceptionCounter from 0 to 1
-   // can be inhibited by setting writeAllOutputs to false (in the initialisation phase)
-   if (exceptionCounter == 1 && writeAllOutputs)
-     this->writeAll();
-  }
-
-  void ApplicationModule::decrementExceptionCounter() {
-    assert(exceptionCounter > 0);
-    --exceptionCounter;
-    //writeAll only once for last decrementExceptionCounter call -> going with exceptionCounter from 1 to 0
-    if (exceptionCounter == 0)
-      this->writeAll();
-  }
-  
 } /* namespace ChimeraTK */

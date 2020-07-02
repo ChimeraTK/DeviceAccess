@@ -723,7 +723,7 @@ void Application::makeConnectionsForNetwork(VariableNetwork& network) {
 
 template<typename UserType>
 void Application::typedMakeConnection(VariableNetwork& network) {
-#define DEBUG_TYPED_MAKE_CONNECTIONS 1
+#define DEBUG_TYPED_MAKE_CONNECTIONS 0
 #if DEBUG_TYPED_MAKE_CONNECTIONS
   std::cout << std::endl << "Executing typedMakeConnections for network:" << std::endl;
   network.dump("", std::cout);
@@ -777,13 +777,8 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         auto consumer = consumers.front();
         if(consumer.getType() == NodeType::Application) {
           consumer.setAppAccessorImplementation(feedingImpl);
-          //check if the feedingImpl is from a device. In this case it has been decorated with an ExceptionHandlingDecorator
-          auto feedingDeviceImpl =
-              boost::dynamic_pointer_cast<ChimeraTK::ExceptionHandlingDecorator<UserType>>(feedingImpl);
-          if(feedingDeviceImpl) {
-            auto owningModule = consumer.getOwningModule(); // application module or variable group
-            feedingDeviceImpl->setOwner(owningModule);
-          }
+
+          connectionMade = true;
         }
         else if(consumer.getType() == NodeType::Device) {
           consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
