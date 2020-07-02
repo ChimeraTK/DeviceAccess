@@ -23,8 +23,13 @@ namespace ChimeraTK {
   template<typename UserType>
   class ThreadedFanOut : public FanOut<UserType>, public InternalModule {
    public:
-    ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl, VariableNetwork& network)
-    : FanOut<UserType>(feedingImpl), _network(network) {}
+    ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl, VariableNetwork& network,
+        ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
+    : FanOut<UserType>(feedingImpl), _network(network) {
+      for(auto el : consumerImplementationPairs) {
+        FanOut<UserType>::addSlave(el.first, el.second);
+      }
+    }
 
     ~ThreadedFanOut() { deactivate(); }
 
@@ -109,7 +114,15 @@ namespace ChimeraTK {
   template<typename UserType>
   class ThreadedFanOutWithReturn : public ThreadedFanOut<UserType> {
    public:
-    using ThreadedFanOut<UserType>::ThreadedFanOut;
+    ThreadedFanOutWithReturn(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
+        VariableNetwork& network, ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
+    : ThreadedFanOut<UserType>(feedingImpl, network, consumerImplementationPairs) {
+      for(auto el : consumerImplementationPairs) {
+        //TODO Calling a virtual in the constructor seems odd,
+        //     but works because we want this version's implementation
+        addSlave(el.first, el.second);
+      }
+    }
 
     void setReturnChannelSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> returnChannelSlave) {
       _returnChannelSlave = returnChannelSlave;
@@ -117,7 +130,9 @@ namespace ChimeraTK {
 
     void addSlave(
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& consumer) override {
-      FanOut<UserType>::addSlave(slave, consumer);
+      // TODO Adding slaves is currently by done by the ThreadedFanOut base class.
+      //      Refactor constructors and addSlaves for all FanOuts?
+      //FanOut<UserType>::addSlave(slave, consumer);
       if(consumer.getDirection().withReturn) {
         assert(_returnChannelSlave == nullptr);
         _returnChannelSlave = slave;

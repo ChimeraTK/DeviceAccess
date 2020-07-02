@@ -67,15 +67,10 @@ namespace ChimeraTK {
       this->_readQueue = cppext::future_queue<void>(3);
 
       // Add the consuming accessors
+      // TODO FanOut constructors and addSlave should get refactoring
       for(auto el : consumerImplementationPairs){
         addSlave(el.first, el.second);
       }
-
-//      // If there is a return channel, the feeding node is an output with push-readback,
-//      // so we can derive that wait_for_new_data  is valid
-//      if(_withReturn) {
-//        TransferElement::_accessModeFlags = {AccessMode::wait_for_new_data};
-//      }
     }
 
     /** Add a slave to the FanOut. Only sending end-points of a consuming node may
