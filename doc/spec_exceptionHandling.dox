@@ -175,7 +175,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_behaviour Behaviour
 - \anchor c_2_2 2.2 In doPreWrite() the RecoveryHelper is updated while holding a shared lock on DeviceModule::recoveryMutex:
   - \anchor c_2_2_1 2.2.1 These steps need to be done unconditionally at the very beginning of doPreWrite(), before \ref c_2_4 "2.4" and before delegating to preWrite(). \ref comment_c_2_2_1 "(*)"
-  - 2.2.2 If the RecoveryHelper::wasWritten flag was previously not set, the return value of doWriteTransfer() must be forced to true (data lost).
+  - 2.2.2 If the RecoveryHelper::wasWritten flag was previously not set and the writeOrder is not 0 any more, the return value of doWriteTransfer() must be forced to true (data lost).
   - 2.2.3 Update the value buffer of the RecoveryHelper::accessor, update the RecoveryHelper::versionNumber, set the RecoveryHelper::writeOrder to the DeviceModule::writeCounter after (atomically) incrementing it, and clear the RecoveryHelper::wasWritten flag. (cf. \ref b_2_3)
   - \anchor c_2_2_4 2.2.4 The check whether to execute the transfer (cf. \ref c_2_4 "2.4") has to be done without releasing the lock between the update of the RecoveryHelper and the check. \ref comment_c_2_2_4 "(*)"
 
