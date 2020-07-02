@@ -33,8 +33,6 @@ namespace ChimeraTK {
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override;
 
-    void setOwner(EntityOwner* owner);
-
     void doPostRead(TransferType type, bool hasNewData) override;
 
     void doPreRead(TransferType type) override;
@@ -53,7 +51,6 @@ namespace ChimeraTK {
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
 
-    EntityOwner* _owner = {nullptr};
     VariableDirection _direction;
 
     bool hasThrownToInhibitTransfer{false};

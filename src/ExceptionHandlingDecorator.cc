@@ -78,11 +78,6 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
-    _owner = owner;
-  }
-
-  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     bool hasException = false;
     // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
