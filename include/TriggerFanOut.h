@@ -62,12 +62,14 @@ namespace ChimeraTK {
      * all slaves have to be added. */
     template<typename UserType>
     boost::shared_ptr<FeedingFanOut<UserType>> addNetwork(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode) {
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode,
+        ConsumerImplementationPairs<UserType> const& consumerImplementationPairs) {
       assert(feedingNode.get() != nullptr);
       transferGroup.addAccessor(feedingNode);
       auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>(feedingNode->getName(), feedingNode->getUnit(),
           feedingNode->getDescription(), feedingNode->getNumberOfSamples(),
-          false); // in TriggerFanOuts we cannot have return channels
+          false, // in TriggerFanOuts we cannot have return channels
+          consumerImplementationPairs);
       boost::fusion::at_key<UserType>(fanOutMap.table)[feedingNode] = feedingFanOut;
       return feedingFanOut;
     }

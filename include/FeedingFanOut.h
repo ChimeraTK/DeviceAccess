@@ -56,7 +56,7 @@ namespace ChimeraTK {
   class FeedingFanOut : public FanOut<UserType>, public ChimeraTK::NDRegisterAccessor<UserType> {
    public:
     FeedingFanOut(std::string const& name, std::string const& unit, std::string const& description,
-        size_t numberOfElements, bool withReturn)
+        size_t numberOfElements, bool withReturn, ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
     : FanOut<UserType>(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>()),
       // We pass default-constructed, empty AccessModeFlags, they may later be determined from _returnSlave
       ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:" + name, AccessModeFlags{}, unit, description),
@@ -64,12 +64,12 @@ namespace ChimeraTK {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
 
-      TransferElement::_readQueue = cppext::future_queue<void>(3);
+      this->_readQueue = cppext::future_queue<void>(3);
 
-      // If there is a return channel, the feeding node is an output with push-readback,
-      // so we can derive that wait_for_new_data  is valid
-      if(_withReturn) {
-        TransferElement::_accessModeFlags = {AccessMode::wait_for_new_data};
+      // Add the consuming accessors
+      // TODO FanOut constructors and addSlave should get refactoring
+      for(auto el : consumerImplementationPairs){
+        addSlave(el.first, el.second);
       }
     }
 
@@ -107,7 +107,8 @@ namespace ChimeraTK {
           // Set the readQeue from the return slave
           // As this becomes the implemention of the feeding output, the flags are determined by that slave accessor
           // If not _withReturn, the queue is not relevant because the feeding node is on output which is never read
-          TransferElement::_readQueue = _returnSlave->getReadQueue();
+          this->_readQueue = _returnSlave->getReadQueue();
+          this->_accessModeFlags = _returnSlave->getAccessModeFlags();
         }
       }
 

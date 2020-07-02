@@ -32,6 +32,10 @@ namespace ChimeraTK {
 
   template<typename UserType>
   class Accessor;
+  template<typename UserType>
+  class FanOut;
+  template<typename UserType>
+  class ConsumingFanOut;
 
   class Application : public ApplicationBase, public EntityOwner {
    public:
@@ -248,6 +252,11 @@ namespace ChimeraTK {
     /** UserType-dependent part of makeConnectionsForNetwork() */
     template<typename UserType>
     void typedMakeConnection(VariableNetwork& network);
+
+    /** Helper function to set consumer implementations in typedMakeConnection() */
+    template<typename UserType>
+    std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode>>
+        setConsumerImplementations(VariableNetworkNode const& feeder, std::list<VariableNetworkNode> consumers);
 
     /** Functor class to call typedMakeConnection() with the right template
      * argument. */

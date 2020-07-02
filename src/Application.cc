@@ -723,6 +723,13 @@ void Application::makeConnectionsForNetwork(VariableNetwork& network) {
 
 template<typename UserType>
 void Application::typedMakeConnection(VariableNetwork& network) {
+#define DEBUG_TYPED_MAKE_CONNECTIONS 0
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+  std::cout << std::endl << "Executing typedMakeConnections for network:" << std::endl;
+  network.dump("", std::cout);
+  std::cout << std::endl;
+#endif
+
   try {                          // catch exceptions to add information about the failed network
     bool connectionMade = false; // to check the logic...
 
@@ -735,6 +742,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
 
     // 1st case: the feeder requires a fixed implementation
     if(feeder.hasImplementation() && !constantFeeder) {
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+      std::cout << "  Creating fixed implementation for feeder '" << feeder.getName() << "'..." << std::endl;
+#endif
+
       // Create feeding implementation. Note: though the implementation is derived
       // from the feeder, it will be used as the implementation of the (or one of
       // the) consumer. Logically, implementations are always pairs of
@@ -757,44 +768,63 @@ void Application::typedMakeConnection(VariableNetwork& network) {
 
       // if we just have two nodes, directly connect them
       if(nNodes == 2 && !useExternalTrigger) {
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+        std::cout << "    Setting up direct connection without external trigger." << std::endl;
+#endif
+        bool needsFanOut{false};
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> consumingImpl;
+
         auto consumer = consumers.front();
         if(consumer.getType() == NodeType::Application) {
           consumer.setAppAccessorImplementation(feedingImpl);
+
           connectionMade = true;
         }
         else if(consumer.getType() == NodeType::Device) {
-          auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+          consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
           // connect the Device with e.g. a ControlSystem node via a
           // ThreadedFanOut
-          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
-          fanOut->addSlave(consumingImpl, consumer);
-          internalModuleList.push_back(fanOut);
-          connectionMade = true;
+          needsFanOut = true;
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
-          auto consumingImpl = createProcessVariable<UserType>(consumer);
+          consumingImpl = createProcessVariable<UserType>(consumer);
           // connect the ControlSystem with e.g. a Device node via an
           // ThreadedFanOut
-          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
-          fanOut->addSlave(consumingImpl, consumer);
-          internalModuleList.push_back(fanOut);
-          connectionMade = true;
+          needsFanOut = true;
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(feedingImpl);
-          connectionMade = true;
         }
         else {
           throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
         }
+
+        if(needsFanOut) {
+          assert(consumingImpl != nullptr);
+          auto consumerImplPair = ConsumerImplementationPairs<UserType>{{consumingImpl, consumer}};
+          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network, consumerImplPair);
+          internalModuleList.push_back(fanOut);
+        }
+
+        connectionMade = true;
       }
       else { /* !(nNodes == 2 && !useExternalTrigger) */
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+        std::cout << "    Setting up triggered connection." << std::endl;
+#endif
 
         // create the right FanOut type
         boost::shared_ptr<FanOut<UserType>> fanOut;
         boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut;
+
+        // Fanouts need to know the consumers on contruction, so we collect them first
+        auto consumerImplementationPairs = setConsumerImplementations<UserType>(feeder, consumers);
+
         if(useExternalTrigger) {
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+          std::cout << "      Using external trigger." << std::endl;
+#endif
           // if external trigger is enabled, use externally triggered threaded
           // FanOut. Create one per external trigger impl.
           void* triggerImplId = network.getExternalTriggerImpl().get();
@@ -816,72 +846,44 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
-          fanOut = triggerFanOut->addNetwork(feedingImpl);
+          fanOut = triggerFanOut->addNetwork(feedingImpl, consumerImplementationPairs);
         }
         else if(useFeederTrigger) {
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+          std::cout << "      Using trigger provided by the feeder." << std::endl;
+#endif
           // if the trigger is provided by the pushing feeder, use the treaded
           // version of the FanOut to distribute new values immediately to all
           // consumers. Depending on whether we have a return channel or not, pick
           // the right implementation of the FanOut
           boost::shared_ptr<ThreadedFanOut<UserType>> threadedFanOut;
           if(!feeder.getDirection().withReturn) {
-            threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
+            threadedFanOut =
+                boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network, consumerImplementationPairs);
           }
           else {
-            threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl, network);
+            threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(
+                feedingImpl, network, consumerImplementationPairs);
           }
           internalModuleList.push_back(threadedFanOut);
           fanOut = threadedFanOut;
         }
         else {
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+          std::cout << "      No trigger, using consuming fanout." << std::endl;
+#endif
           assert(network.hasApplicationConsumer()); // checkConnections should
                                                     // catch this
-          consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl);
+          consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl, consumerImplementationPairs);
           fanOut = consumingFanOut;
-        }
 
-        // In case we have one or more trigger receivers among our consumers, we
-        // produce one consuming application variable for each device. Later this will create a TriggerFanOut for
-        // each trigger consumer, i.e. one per device so one blocking device does not affect the others.
-        /** Map of deviceAliases to their corresponding TriggerFanOuts. */
-        std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> triggerFanOuts;
-
-        // add all consumers to the FanOut
-        for(auto& consumer : consumers) {
-          if(consumer.getType() == NodeType::Application) {
-            if(consumingFanOut && consumer.getMode() == UpdateMode::poll) {
+          // TODO Is this correct? we already added all consumer as slaves in the fanout  constructor.
+          //      Maybe assert that we only have a single poll-type node (is there a check in checkConnections?)
+          for(auto consumer : consumers) {
+            if(consumer.getMode() == UpdateMode::poll) {
               consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
-              consumingFanOut.reset();
+              break;
             }
-            else {
-              auto impls = createApplicationVariable<UserType>(consumer);
-              fanOut->addSlave(impls.first, consumer);
-              consumer.setAppAccessorImplementation<UserType>(impls.second);
-            }
-          }
-          else if(consumer.getType() == NodeType::ControlSystem) {
-            auto impl = createProcessVariable<UserType>(consumer);
-            fanOut->addSlave(impl, consumer);
-          }
-          else if(consumer.getType() == NodeType::Device) {
-            auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-                {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
-            fanOut->addSlave(impl, consumer);
-          }
-          else if(consumer.getType() == NodeType::TriggerReceiver) {
-            std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
-            auto triggerFanOut = triggerFanOuts[deviceAlias];
-            if(!triggerFanOut) { // triggerFanOut is a shared pointer, which evaluates false if default constructed.
-              // create a new process variable pair and set the sender/feeder to the fan out
-              auto triggerConnection = createApplicationVariable<UserType>(feeder);
-              triggerFanOut = triggerConnection.second;
-              triggerFanOuts[deviceAlias] = triggerFanOut;
-              fanOut->addSlave(triggerConnection.first, consumer);
-            }
-            consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerFanOut);
-          }
-          else {
-            throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
           }
         }
         connectionMade = true;
@@ -889,6 +891,11 @@ void Application::typedMakeConnection(VariableNetwork& network) {
     }
     // 2nd case: the feeder does not require a fixed implementation
     else if(!constantFeeder) { /* !feeder.hasImplementation() */
+
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+      std::cout << "  Feeder '" << feeder.getName() << "' does not require a fixed implementation." << std::endl;
+#endif
+
       // we should be left with an application feeder node
       if(feeder.getType() != NodeType::Application) {
         throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
@@ -901,81 +908,47 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto impls = createApplicationVariable<UserType>(feeder, consumer);
           feeder.setAppAccessorImplementation<UserType>(impls.first);
           consumer.setAppAccessorImplementation<UserType>(impls.second);
-          connectionMade = true;
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
           auto impl = createProcessVariable<UserType>(consumer);
           feeder.setAppAccessorImplementation<UserType>(impl);
-          connectionMade = true;
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
           feeder.setAppAccessorImplementation<UserType>(impl);
-          connectionMade = true;
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           auto impls = createApplicationVariable<UserType>(feeder, consumer);
           feeder.setAppAccessorImplementation<UserType>(impls.first);
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
-          connectionMade = true;
         }
         else if(consumer.getType() == NodeType::Constant) {
           auto impl = consumer.getConstAccessor<UserType>();
           feeder.setAppAccessorImplementation<UserType>(impl);
-          connectionMade = true;
         }
         else {
           throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
         }
+        connectionMade = true;
       }
       else {
+        auto consumerImplementationPairs = setConsumerImplementations<UserType>(feeder, consumers);
+
         // create FanOut and use it as the feeder implementation
-        auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(),
-            feeder.getDescription(), feeder.getNumberOfElements(), feeder.getDirection().withReturn);
+        auto fanOut =
+            boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(), feeder.getDescription(),
+                feeder.getNumberOfElements(), feeder.getDirection().withReturn, consumerImplementationPairs);
         feeder.setAppAccessorImplementation<UserType>(fanOut);
 
-        // In case we have one or more trigger receivers among our consumers, we
-        // produce one consuming application variable for each device. Later this will create a TriggerFanOut for
-        // each trigger consimer, i.e. one per device so one blocking device does not affect the others.
-        /** Map of deviceAliases to their corresponding TriggerFanOuts. */
-        std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> triggerFanOuts;
-
-        for(auto& consumer : consumers) {
-          if(consumer.getType() == NodeType::Application) {
-            auto impls = createApplicationVariable<UserType>(consumer);
-            fanOut->addSlave(impls.first, consumer);
-            consumer.setAppAccessorImplementation<UserType>(impls.second);
-          }
-          else if(consumer.getType() == NodeType::ControlSystem) {
-            auto impl = createProcessVariable<UserType>(consumer);
-            fanOut->addSlave(impl, consumer);
-          }
-          else if(consumer.getType() == NodeType::Device) {
-            auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-                {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
-            fanOut->addSlave(impl, consumer);
-          }
-          else if(consumer.getType() == NodeType::TriggerReceiver) {
-            std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
-            auto triggerFanOut = triggerFanOuts[deviceAlias];
-            if(!triggerFanOut) { // triggerFanOut is a shared pointer, which evaluates false if default constructed.
-              // create a new process variable pair and set the sender/feeder to the fan out
-              auto triggerConnection = createApplicationVariable<UserType>(feeder);
-              triggerFanOut = triggerConnection.second;
-              triggerFanOuts[deviceAlias] = triggerFanOut;
-              fanOut->addSlave(triggerConnection.first, consumer);
-            }
-            consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerFanOut);
-          }
-          else {
-            throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
-          }
-        }
         connectionMade = true;
       }
     }
     else { /* constantFeeder */
+
+#if DEBUG_TYPED_MAKE_CONNECTIONS
+      std::cout << "  Using constant feeder '" << feeder.getName() << "'..." << std::endl;
+#endif
       assert(feeder.getType() == NodeType::Constant);
       auto feedingImpl = feeder.getConstAccessor<UserType>();
       assert(feedingImpl != nullptr);
@@ -1039,11 +1012,76 @@ void Application::typedMakeConnection(VariableNetwork& network) {
   }
   catch(ChimeraTK::logic_error& e) {
     std::stringstream ss;
-    ss << "ChimeraTK::logic_error thrown in Application::typedMakeConnection() for network:" << std::endl;
+    ss << "ChimeraTK::logic_error thrown in Application::typedMakeConnection():" << std::endl
+       << "  " << e.what() << std::endl
+       << "For network:" << std::endl;
     network.dump("", ss);
-    ss << e.what();
     throw ChimeraTK::logic_error(ss.str());
   }
+}
+
+/*********************************************************************************************************************/
+
+template<typename UserType>
+std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode>> Application::
+    setConsumerImplementations(VariableNetworkNode const& feeder, std::list<VariableNetworkNode> consumers) {
+  std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode>>
+      consumerImplPairs;
+
+  /** Map of deviceAliases to their corresponding TriggerFanOuts */
+  std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> triggerFanOuts;
+
+  for(auto& consumer : consumers) {
+    bool addToConsumerImplPairs{true};
+    std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode> pair{
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>(), consumer};
+
+    if(consumer.getType() == NodeType::Application) {
+      auto impls = createApplicationVariable<UserType>(consumer);
+      consumer.setAppAccessorImplementation<UserType>(impls.second);
+      pair = std::make_pair(impls.first, consumer);
+    }
+    else if(consumer.getType() == NodeType::ControlSystem) {
+      auto impl = createProcessVariable<UserType>(consumer);
+      pair = std::make_pair(impl, consumer);
+    }
+    else if(consumer.getType() == NodeType::Device) {
+      auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+          {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+      pair = std::make_pair(impl, consumer);
+    }
+    else if(consumer.getType() == NodeType::TriggerReceiver) {
+      // In case we have one or more trigger receivers among our consumers, we produce one
+      // consuming application variable for each device. Later this will create a TriggerFanOut for
+      // each trigger consumer, i.e. one per device so one blocking device does not affect the others.
+
+      std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
+      auto triggerFanOut = triggerFanOuts[deviceAlias];
+      if(triggerFanOut == nullptr) {
+        // create a new process variable pair and set the sender/feeder to the fan out
+        auto triggerConnection = createApplicationVariable<UserType>(feeder);
+        triggerFanOut = triggerConnection.second;
+        triggerFanOuts[deviceAlias] = triggerFanOut;
+
+        assert(triggerConnection.first != nullptr);
+        pair = std::make_pair(triggerConnection.first, consumer);
+      }
+      else {
+        // We already have added a pair for this device
+        addToConsumerImplPairs = false;
+      }
+      consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerFanOut);
+    }
+    else {
+      throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
+    }
+
+    if(addToConsumerImplPairs) {
+      consumerImplPairs.push_back(pair);
+    }
+  }
+
+  return consumerImplPairs;
 }
 
 /*********************************************************************************************************************/

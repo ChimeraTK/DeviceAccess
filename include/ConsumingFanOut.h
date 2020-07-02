@@ -21,9 +21,15 @@ namespace ChimeraTK {
   template<typename UserType>
   class ConsumingFanOut : public FanOut<UserType>, public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
-    ConsumingFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl)
+    ConsumingFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
+        ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
     : FanOut<UserType>(feedingImpl), ChimeraTK::NDRegisterAccessorDecorator<UserType>(feedingImpl) {
       assert(feedingImpl->isReadable());
+
+      // Add the consuming accessors
+      for(auto el : consumerImplementationPairs) {
+        FanOut<UserType>::addSlave(el.first, el.second);
+      }
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
