@@ -182,6 +182,11 @@ namespace ChimeraTK {
      * You can get a shared_lock with getRecoverySharedLock(). */
     void addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor);
 
+    /** Each call to this function gives a unique number. It is atomically increased with each call.
+     *  The smalled valid write order is 1.
+     */
+    uint64_t writeOrder();
+
     /** Returns a shared lock for the DeviceModule::recoveryMutex. This locks writing
      * the list DeviceModule::writeRecoveryOpen, during a recovery.*/
     boost::shared_lock<boost::shared_mutex> getRecoverySharedLock();
@@ -258,6 +263,7 @@ namespace ChimeraTK {
     boost::shared_mutex initialValueMutex;
 
     std::atomic<int64_t> synchronousTransferCounter{0};
+    std::atomic<uint64_t> writeOrderCounter{0};
 
     friend class Application;
     // Access to virtualiseFromCatalog() is needed by ServerHistory
