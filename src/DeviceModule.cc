@@ -392,13 +392,18 @@ namespace ChimeraTK {
         --owner->testableMode_counter;
       }
 
-      // [Spec: 2.6.1] report exception to the control system
+      errorLock.unlock(); // we must not hold the lock while waiting for the synchronousTransferCounter to go back to 0
+
+      // [ExceptionHandling Spec: C.3.3.14] report exception to the control system
       deviceError.status = 1;
       deviceError.message = error;
       deviceError.setCurrentVersionNumber({});
       deviceError.writeAll();
 
-      // TODO Implementation for Spec 2.6.2 goes here.
+      // [ExceptionHandling Spec: C.3.3.15] Wait for all synchronous transfers to finish before starting recovery.
+      while(synchronousTransferCounter > 0) {
+        usleep(1000);
+      }
 
     } // while(true)
   }

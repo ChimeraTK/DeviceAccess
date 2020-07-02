@@ -11,6 +11,7 @@ namespace ChimeraTK {
   struct RecoveryHelper {
     boost::shared_ptr<TransferElement> accessor;
     VersionNumber versionNumber;
+
     RecoveryHelper(boost::shared_ptr<TransferElement> a, VersionNumber v = VersionNumber(nullptr))
     : accessor(a), versionNumber(v) {}
   };

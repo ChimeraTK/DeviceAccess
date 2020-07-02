@@ -64,6 +64,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, VersionNumber versionNumber) {
     if(!hasThrownToInhibitTransfer) {
+      --deviceModule.synchronousTransferCounter;
       try {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
       }
@@ -83,6 +84,9 @@ namespace ChimeraTK {
     // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
     if(!hasThrownToInhibitTransfer) {
       try {
+        if(!TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) { // was as synchronous transfer
+          --deviceModule.synchronousTransferCounter;
+        }
         _target->setActiveException(this->_activeException);
         _target->postRead(type, hasNewData);
       }
