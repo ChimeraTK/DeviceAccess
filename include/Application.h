@@ -276,8 +276,7 @@ namespace ChimeraTK {
 
     /** Perform the actual connection of an accessor to a device register */
     template<typename UserType>
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createDeviceVariable(const std::string& deviceAlias,
-        const std::string& registerName, VariableDirection direction, UpdateMode mode, size_t nElements);
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createDeviceVariable(VariableNetworkNode const& node);
 
     /** Create a process variable with the PVManager, which is exported to the
        control system adapter. nElements will be the array size of the created

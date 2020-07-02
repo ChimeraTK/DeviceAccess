@@ -349,8 +349,13 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 
 template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(
-    const std::string& deviceAlias, const std::string& registerName, VariableDirection direction, UpdateMode mode,
-    size_t nElements) {
+    VariableNetworkNode const& node) {
+  auto deviceAlias = node.getDeviceAlias();
+  auto registerName = node.getRegisterName();
+  auto direction = node.getDirection();
+  auto mode = node.getMode();
+  auto nElements = node.getNumberOfElements();
+
   // Device opens in DeviceModule
   if(deviceMap.count(deviceAlias) == 0) {
     deviceMap[deviceAlias] = ChimeraTK::BackendFactory::getInstance().createBackend(deviceAlias);
@@ -364,6 +369,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 
+  assert(deviceModuleMap.count(deviceAlias) != 0);
   DeviceModule* devmod = deviceModuleMap[deviceAlias];
 
   // decorate the accessor with a ExceptionHandlingDecorator and return it
@@ -738,18 +744,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
       std::cout << "  Creating fixed implementation for feeder '" << feeder.getName() << "'..." << std::endl;
 #endif
 
-      // Create feeding implementation. Note: though the implementation is derived
-      // from the feeder, it will be used as the implementation of the (or one of
-      // the) consumer. Logically, implementations are always pairs of
-      // implementations (sender and receiver), but in this case the feeder
-      // already has a fixed implementation pair. So our feedingImpl will contain
-      // the consumer-end of the implementation pair. This is the reason why the
-      // functions createProcessScalar() and createDeviceAccessor() get the
-      // VariableDirection::consuming.
+      // Create feeding implementation.
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
       if(feeder.getType() == NodeType::Device) {
-        feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
-            {VariableDirection::feeding, false}, feeder.getMode(), feeder.getNumberOfElements());
+        feedingImpl = createDeviceVariable<UserType>(feeder);
       }
       else if(feeder.getType() == NodeType::ControlSystem) {
         feedingImpl = createProcessVariable<UserType>(feeder);
@@ -773,8 +771,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           connectionMade = true;
         }
         else if(consumer.getType() == NodeType::Device) {
-          consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+          consumingImpl = createDeviceVariable<UserType>(consumer);
           // connect the Device with e.g. a ControlSystem node via a
           // ThreadedFanOut
           needsFanOut = true;
@@ -898,8 +895,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           feeder.setAppAccessorImplementation<UserType>(impl);
         }
         else if(consumer.getType() == NodeType::Device) {
-          auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+          auto impl = createDeviceVariable<UserType>(consumer);
           feeder.setAppAccessorImplementation<UserType>(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -1024,8 +1020,7 @@ std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, 
       pair = std::make_pair(impl, consumer);
     }
     else if(consumer.getType() == NodeType::Device) {
-      auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-          {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+      auto impl = createDeviceVariable<UserType>(consumer);
       pair = std::make_pair(impl, consumer);
     }
     else if(consumer.getType() == NodeType::TriggerReceiver) {
