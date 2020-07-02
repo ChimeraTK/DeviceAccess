@@ -208,12 +208,6 @@ namespace ChimeraTK {
      *  incrementDataFaultCounter(). */
     virtual void decrementDataFaultCounter() = 0;
 
-    /** Writing outputs can be disabled in the initialisation phase */
-    virtual void incrementExceptionCounter(bool writeAllOutputs = true) = 0;
-
-    virtual void decrementExceptionCounter() = 0;
-
-
    protected:
     /** Add the part of the tree structure matching the given tag to a
      * VirtualModule. Users normally will use findTag() instead. "tag" is

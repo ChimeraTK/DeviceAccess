@@ -50,7 +50,6 @@ namespace ChimeraTK {
 
     bool previousReadFailed{true};
 
-    void setOwnerValidity(bool hasExceptionNow);
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
 

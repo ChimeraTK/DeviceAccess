@@ -144,15 +144,6 @@ namespace ChimeraTK {
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
 
-    void incrementExceptionCounter(bool /*writeAllOutputs*/) override {
-      throw ChimeraTK::logic_error("incrementExceptionCounter() called on  a DeviceModule. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
-    void decrementExceptionCounter() override {
-      throw ChimeraTK::logic_error("decrementExceptionCounter() called on  a DeviceModule. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
-
     /** Add initialisation handlers to the device.
      *
      *  Initialisation handlers are called after the device has been opened, or after the device is recovering

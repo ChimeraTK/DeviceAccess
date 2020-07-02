@@ -20,20 +20,6 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::setOwnerValidity(bool hasExceptionNow) {
-    if(hasExceptionNow != previousReadFailed) {
-      previousReadFailed = hasExceptionNow;
-      if(!_owner) return;
-      if(hasExceptionNow) {
-        _owner->incrementExceptionCounter();
-      }
-      else {
-        _owner->decrementExceptionCounter();
-      }
-    }
-  }
-
-  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
      * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
@@ -94,9 +80,6 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
     _owner = owner;
-    if(_direction.dir == VariableDirection::feeding && previousReadFailed) {
-      _owner->incrementExceptionCounter(false); // do not write. We are still in the setup phase.
-    }
   }
 
   template<typename UserType>
@@ -111,9 +94,6 @@ namespace ChimeraTK {
       catch(ChimeraTK::runtime_error& e) {
         deviceModule.reportException(e.what());
         hasException = true;
-        // #138 Phase 1: Remove for phase 2
-        // Inform the owner about the failed read (will be informed again after successful recovery
-        setOwnerValidity(hasException);
       }
     }
     else {
@@ -128,7 +108,7 @@ namespace ChimeraTK {
       _dataValidity = _target->dataValidity();
       _versionNumber = _target->getVersionNumber();
     }
-    setOwnerValidity(hasException);
+
     // only replace the user buffer if there really is new data
     if(hasNewData) {
       for(size_t i = 0; i < buffer_2D.size(); ++i)

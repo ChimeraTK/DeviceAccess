@@ -441,15 +441,6 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("decrementDataFaultCounter() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-
-    void incrementExceptionCounter(bool /*writeAllOutputs*/) override {
-      throw ChimeraTK::logic_error("incrementExceptionCounter() called on the application. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
-    void decrementExceptionCounter() override {
-      throw ChimeraTK::logic_error("decrementExceptionCounter() called on the application. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
   };
 
 } /* namespace ChimeraTK */
