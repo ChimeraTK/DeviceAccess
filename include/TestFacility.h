@@ -84,8 +84,8 @@ namespace ChimeraTK {
       while(true) {
         boost::this_thread::yield();
         bool allOpened = true;
-        for(auto dm : Application::getInstance().deviceModuleList) {
-          if(!dm->device.isOpened()) allOpened = false;
+        for(auto dm : Application::getInstance().deviceModuleMap) {
+          if(!dm.second->device.isOpened()) allOpened = false;
         }
         if(allOpened) break;
       }

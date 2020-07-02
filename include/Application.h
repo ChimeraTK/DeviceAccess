@@ -317,8 +317,8 @@ namespace ChimeraTK {
      * name from the DMAP file */
     std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> deviceMap;
 
-    /** List of DeviceModules */
-    std::list<DeviceModule*> deviceModuleList;
+    /** Map of DeviceModules. The alias name is the key.*/
+    std::map<std::string, DeviceModule*> deviceModuleMap;
 
     /** Flag if connections should be made in testable mode (i.e. the
      * TestableModeAccessorDecorator is put around all push-type input accessors

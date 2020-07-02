@@ -177,8 +177,8 @@ void Application::run() {
   for(auto& module : getSubmoduleListRecursive()) {
     module->prepare();
   }
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->prepare();
+  for(auto& deviceModule : deviceModuleMap) {
+    deviceModule.second->prepare();
   }
 
   // check for application PVs which have a value, which needs to be propagated as initial value
@@ -199,8 +199,8 @@ void Application::run() {
     internalModule->activate();
   }
 
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->run();
+  for(auto& deviceModule : deviceModuleMap) {
+    deviceModule.second->run();
   }
 
   // start the threads for the modules
@@ -233,8 +233,8 @@ void Application::shutdown() {
     module->terminate();
   }
 
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->terminate();
+  for(auto& deviceModule : deviceModuleMap) {
+    deviceModule.second->terminate();
   }
   ApplicationBase::shutdown();
 }
@@ -251,8 +251,8 @@ void Application::generateXML() {
   processUnconnectedNodes();
 
   // create connections for exception handling
-  for(auto& devModule : deviceModuleList) {
-    devModule->defineConnections();
+  for(auto& devModule : deviceModuleMap) {
+    devModule.second->defineConnections();
   }
 
   // finalise connections: decide still-undecided details, in particular for
@@ -364,15 +364,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 
-  // find the right DeviceModule for this alias name - required for exception handling
-  DeviceModule* devmod = nullptr;
-  for(auto& dm : deviceModuleList) {
-    if(dm->deviceAliasOrURI == deviceAlias) {
-      devmod = dm;
-      break;
-    }
-  }
-  assert(devmod != nullptr);
+  DeviceModule* devmod = deviceModuleMap[deviceAlias];
 
   // decorate the accessor with a ExceptionHandlingDecorator and return it
   // Consuming from the network means writing to the device what you consumed.
@@ -544,8 +536,8 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
-  for(auto& devModule : deviceModuleList) {
-    devModule->defineConnections();
+  for(auto& devModule : deviceModuleMap) {
+    devModule.second->defineConnections();
   }
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
@@ -830,19 +822,11 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           void* triggerImplId = network.getExternalTriggerImpl().get();
           auto triggerFanOut = triggerMap[triggerImplId];
           if(!triggerFanOut) {
-            // find the right DeviceModule for this alias name - required for exception handling
-            DeviceModule* devmod = nullptr;
-            std::string deviceAlias = feeder.getDeviceAlias();
-            for(auto& dm : deviceModuleList) {
-              if(dm->deviceAliasOrURI == deviceAlias) {
-                devmod = dm;
-                break;
-              }
-            }
-            assert(devmod != nullptr);
+            assert(deviceModuleMap.find(feeder.getDeviceAlias()) != deviceModuleMap.end());
 
             // create the trigger fan out and store it in the map and the internalModuleList
-            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl(), *devmod, network);
+            triggerFanOut = boost::make_shared<TriggerFanOut>(
+                network.getExternalTriggerImpl(), *deviceModuleMap[feeder.getDeviceAlias()], network);
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
@@ -980,15 +964,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto impl = deviceMap[consumer.getDeviceAlias()]->getRegisterAccessor<UserType>(
               consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
-          // find the right DeviceModule for this alias name
-          DeviceModule* devmod = nullptr;
-          for(auto& dm : deviceModuleList) {
-            if(dm->deviceAliasOrURI == consumer.getDeviceAlias()) {
-              devmod = dm;
-              break;
-            }
-          }
-          assert(devmod != nullptr);
+
+          assert(deviceModuleMap.find(consumer.getDeviceAlias()) != deviceModuleMap.end());
+          DeviceModule* devmod = deviceModuleMap[consumer.getDeviceAlias()];
 
           // The accessor implementation already has its data in the user buffer. We now just have to add a valid version number
           // and have a recovery accessors (RecoveryHelper to be excact) which we can register at the DeviceModule.
@@ -1252,10 +1230,10 @@ std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
 
 /*********************************************************************************************************************/
 void Application::registerDeviceModule(DeviceModule* deviceModule) {
-  deviceModuleList.push_back(deviceModule);
+  deviceModuleMap[deviceModule->deviceAliasOrURI] = deviceModule;
 }
 
 /*********************************************************************************************************************/
 void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
-  deviceModuleList.remove(deviceModule);
+  deviceModuleMap.erase(deviceModule->deviceAliasOrURI);
 }
