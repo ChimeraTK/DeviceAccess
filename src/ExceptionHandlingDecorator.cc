@@ -9,13 +9,13 @@ namespace ChimeraTK {
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
       VariableDirection direction, boost::shared_ptr<NDRegisterAccessor<UserType>> recoveryAccessor)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod),
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _deviceModule(devMod),
     _recoveryAccessor(recoveryAccessor), _direction(direction) {
     // Register recoveryAccessor at the DeviceModule
     if(recoveryAccessor != nullptr) {
-      // version number is still {nullptr} (i.e. invalid)
-      _recoveryHelper = boost::make_shared<RecoveryHelper>(recoveryAccessor, VersionNumber(nullptr));
-      deviceModule.addRecoveryAccessor(_recoveryHelper);
+      // version number and write order are still {nullptr} and 0 (i.e. invalid)
+      _recoveryHelper = boost::make_shared<RecoveryHelper>(recoveryAccessor, VersionNumber(nullptr), 0);
+      _deviceModule.addRecoveryAccessor(_recoveryHelper);
     }
   }
 
@@ -29,30 +29,36 @@ namespace ChimeraTK {
      * modify the recoveryAcessor's user buffer while data is written to the device.
      */
     {
-      hasThrownToInhibitTransfer = false;
-      auto recoverylock{deviceModule.getRecoverySharedLock()};
+      _hasThrownToInhibitTransfer = false;
+      _dataLostInPreviousWrite = false;
+      auto recoverylock{_deviceModule.getRecoverySharedLock()};
 
       if(_recoveryAccessor != nullptr) {
+        if(!_recoveryHelper->wasWritten && (_recoveryHelper->writeOrder != 0)) {
+          _dataLostInPreviousWrite = true;
+        }
+
         // Access to _recoveryAccessor is only possible channel-wise
         for(unsigned int ch = 0; ch < _recoveryAccessor->getNumberOfChannels(); ++ch) {
           _recoveryAccessor->accessChannel(ch) = buffer_2D[ch];
         }
-        // FIXME: This should be the version number of the owner, which is not set at the moment
-        _recoveryHelper->versionNumber = {};
+        _recoveryHelper->versionNumber = versionNumber;
+        _recoveryHelper->writeOrder = _deviceModule.writeOrder();
+        _recoveryHelper->wasWritten = false;
       }
       else {
         throw ChimeraTK::logic_error(
             "ChimeraTK::ExceptionhandlingDecorator: Calling write() on a non-writeable accessor is not supported ");
       }
 
-      boost::shared_lock<boost::shared_mutex> errorLock(deviceModule.errorMutex);
-      if(deviceModule.deviceHasError) {
-        hasThrownToInhibitTransfer = true;
+      boost::shared_lock<boost::shared_mutex> errorLock(_deviceModule.errorMutex);
+      if(_deviceModule.deviceHasError) {
+        _hasThrownToInhibitTransfer = true;
         throw ChimeraTK::runtime_error(
             "ExceptionHandlingDecorator is preventing the write transfer."); // writing will be delayed, done by the recovery accessor
       }
 
-      ++deviceModule.synchronousTransferCounter; // must be under the lock
+      ++_deviceModule.synchronousTransferCounter; // must be under the lock
 
     } // lock guard goes out of scope
 
@@ -63,13 +69,13 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, VersionNumber versionNumber) {
-    if(!hasThrownToInhibitTransfer) {
-      --deviceModule.synchronousTransferCounter;
+    if(!_hasThrownToInhibitTransfer) {
+      --_deviceModule.synchronousTransferCounter;
       try {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
       }
       catch(ChimeraTK::runtime_error& e) {
-        deviceModule.reportException(e.what());
+        _deviceModule.reportException(e.what());
       }
     }
     else {
@@ -82,16 +88,16 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     bool hasException = false;
     // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
-    if(!hasThrownToInhibitTransfer) {
+    if(!_hasThrownToInhibitTransfer) {
       try {
         if(!TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) { // was as synchronous transfer
-          --deviceModule.synchronousTransferCounter;
+          --_deviceModule.synchronousTransferCounter;
         }
         _target->setActiveException(this->_activeException);
         _target->postRead(type, hasNewData);
       }
       catch(ChimeraTK::runtime_error& e) {
-        deviceModule.reportException(e.what());
+        _deviceModule.reportException(e.what());
         hasException = true;
       }
     }
@@ -99,7 +105,7 @@ namespace ChimeraTK {
       _activeException = nullptr;
     }
 
-    if(hasException || hasThrownToInhibitTransfer) {
+    if(hasException || _hasThrownToInhibitTransfer) {
       _dataValidity = DataValidity::faulty;
       _versionNumber = {};
     }
@@ -117,27 +123,42 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
-    hasThrownToInhibitTransfer = false;
+    _hasThrownToInhibitTransfer = false;
 
     if(TransferElement::_versionNumber == VersionNumber(nullptr)) {
       Application::testableModeUnlock("ExceptionHandling_doPreRead");
-      deviceModule.getInitialValueSharedLock();
+      _deviceModule.getInitialValueSharedLock();
       Application::testableModeLock("ExceptionHandling_doPreRead");
       // we don't have to store the shared lock. Once we acquired it the deviceModule will never take it again.
     }
 
     if(!TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-      boost::shared_lock<boost::shared_mutex> recoveryLock(deviceModule.errorMutex);
-      if(deviceModule.deviceHasError) {
-        hasThrownToInhibitTransfer = true;
+      boost::shared_lock<boost::shared_mutex> recoveryLock(_deviceModule.errorMutex);
+      if(_deviceModule.deviceHasError) {
+        _hasThrownToInhibitTransfer = true;
         throw ChimeraTK::runtime_error("ExceptionHandlingDecorator has thrown to skip read transfer");
       }
 
-      ++deviceModule.synchronousTransferCounter;
+      ++_deviceModule.synchronousTransferCounter;
     }
 
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
+
+  template<typename UserType>
+  bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(VersionNumber versionNumber) {
+    bool transferLostData = _target->writeTransfer(versionNumber);
+    return transferLostData || _dataLostInPreviousWrite;
+  }
+
+  template<typename UserType>
+  bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(VersionNumber versionNumber) {
+    bool transferLostData = _target->writeTransferDestructively(versionNumber);
+    return transferLostData || _dataLostInPreviousWrite;
+  }
+
+  template<typename Callable>
+  bool genericWriteWrapper(Callable writeFunction, VersionNumber versionNumber);
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 

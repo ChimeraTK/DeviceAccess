@@ -336,6 +336,7 @@ namespace ChimeraTK {
         for(auto& recoveryHelper : recoveryHelpers) {
           if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
             recoveryHelper->accessor->write(recoveryHelper->versionNumber);
+            recoveryHelper->wasWritten = true;
           }
         }
       }
@@ -479,6 +480,8 @@ namespace ChimeraTK {
   void DeviceModule::addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor) {
     recoveryHelpers.push_back(recoveryAccessor);
   }
+
+  uint64_t DeviceModule::writeOrder() { return ++writeOrderCounter; }
 
   boost::shared_lock<boost::shared_mutex> DeviceModule::getRecoverySharedLock() {
     return boost::shared_lock<boost::shared_mutex>(recoveryMutex);

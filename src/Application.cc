@@ -177,8 +177,8 @@ void Application::run() {
   for(auto& module : getSubmoduleListRecursive()) {
     module->prepare();
   }
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->prepare();
+  for(auto& deviceModule : deviceModuleMap) {
+    deviceModule.second->prepare();
   }
 
   // check for application PVs which have a value, which needs to be propagated as initial value
@@ -199,8 +199,8 @@ void Application::run() {
     internalModule->activate();
   }
 
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->run();
+  for(auto& deviceModule : deviceModuleMap) {
+    deviceModule.second->run();
   }
 
   // start the threads for the modules
@@ -233,8 +233,8 @@ void Application::shutdown() {
     module->terminate();
   }
 
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->terminate();
+  for(auto& deviceModule : deviceModuleMap) {
+    deviceModule.second->terminate();
   }
   ApplicationBase::shutdown();
 }
@@ -251,8 +251,8 @@ void Application::generateXML() {
   processUnconnectedNodes();
 
   // create connections for exception handling
-  for(auto& devModule : deviceModuleList) {
-    devModule->defineConnections();
+  for(auto& devModule : deviceModuleMap) {
+    devModule.second->defineConnections();
   }
 
   // finalise connections: decide still-undecided details, in particular for
@@ -349,8 +349,13 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 
 template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(
-    const std::string& deviceAlias, const std::string& registerName, VariableDirection direction, UpdateMode mode,
-    size_t nElements) {
+    VariableNetworkNode const& node) {
+  auto deviceAlias = node.getDeviceAlias();
+  auto registerName = node.getRegisterName();
+  auto direction = node.getDirection();
+  auto mode = node.getMode();
+  auto nElements = node.getNumberOfElements();
+
   // Device opens in DeviceModule
   if(deviceMap.count(deviceAlias) == 0) {
     deviceMap[deviceAlias] = ChimeraTK::BackendFactory::getInstance().createBackend(deviceAlias);
@@ -364,15 +369,8 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 
-  // find the right DeviceModule for this alias name - required for exception handling
-  DeviceModule* devmod = nullptr;
-  for(auto& dm : deviceModuleList) {
-    if(dm->deviceAliasOrURI == deviceAlias) {
-      devmod = dm;
-      break;
-    }
-  }
-  assert(devmod != nullptr);
+  assert(deviceModuleMap.count(deviceAlias) != 0);
+  DeviceModule* devmod = deviceModuleMap[deviceAlias];
 
   // decorate the accessor with a ExceptionHandlingDecorator and return it
   // Consuming from the network means writing to the device what you consumed.
@@ -544,8 +542,8 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
-  for(auto& devModule : deviceModuleList) {
-    devModule->defineConnections();
+  for(auto& devModule : deviceModuleMap) {
+    devModule.second->defineConnections();
   }
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
@@ -746,18 +744,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
       std::cout << "  Creating fixed implementation for feeder '" << feeder.getName() << "'..." << std::endl;
 #endif
 
-      // Create feeding implementation. Note: though the implementation is derived
-      // from the feeder, it will be used as the implementation of the (or one of
-      // the) consumer. Logically, implementations are always pairs of
-      // implementations (sender and receiver), but in this case the feeder
-      // already has a fixed implementation pair. So our feedingImpl will contain
-      // the consumer-end of the implementation pair. This is the reason why the
-      // functions createProcessScalar() and createDeviceAccessor() get the
-      // VariableDirection::consuming.
+      // Create feeding implementation.
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
       if(feeder.getType() == NodeType::Device) {
-        feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
-            {VariableDirection::feeding, false}, feeder.getMode(), feeder.getNumberOfElements());
+        feedingImpl = createDeviceVariable<UserType>(feeder);
       }
       else if(feeder.getType() == NodeType::ControlSystem) {
         feedingImpl = createProcessVariable<UserType>(feeder);
@@ -781,8 +771,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           connectionMade = true;
         }
         else if(consumer.getType() == NodeType::Device) {
-          consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+          consumingImpl = createDeviceVariable<UserType>(consumer);
           // connect the Device with e.g. a ControlSystem node via a
           // ThreadedFanOut
           needsFanOut = true;
@@ -830,19 +819,11 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           void* triggerImplId = network.getExternalTriggerImpl().get();
           auto triggerFanOut = triggerMap[triggerImplId];
           if(!triggerFanOut) {
-            // find the right DeviceModule for this alias name - required for exception handling
-            DeviceModule* devmod = nullptr;
-            std::string deviceAlias = feeder.getDeviceAlias();
-            for(auto& dm : deviceModuleList) {
-              if(dm->deviceAliasOrURI == deviceAlias) {
-                devmod = dm;
-                break;
-              }
-            }
-            assert(devmod != nullptr);
+            assert(deviceModuleMap.find(feeder.getDeviceAlias()) != deviceModuleMap.end());
 
             // create the trigger fan out and store it in the map and the internalModuleList
-            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl(), *devmod, network);
+            triggerFanOut = boost::make_shared<TriggerFanOut>(
+                network.getExternalTriggerImpl(), *deviceModuleMap[feeder.getDeviceAlias()], network);
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
@@ -914,8 +895,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           feeder.setAppAccessorImplementation<UserType>(impl);
         }
         else if(consumer.getType() == NodeType::Device) {
-          auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+          auto impl = createDeviceVariable<UserType>(consumer);
           feeder.setAppAccessorImplementation<UserType>(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -980,20 +960,14 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto impl = deviceMap[consumer.getDeviceAlias()]->getRegisterAccessor<UserType>(
               consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
-          // find the right DeviceModule for this alias name
-          DeviceModule* devmod = nullptr;
-          for(auto& dm : deviceModuleList) {
-            if(dm->deviceAliasOrURI == consumer.getDeviceAlias()) {
-              devmod = dm;
-              break;
-            }
-          }
-          assert(devmod != nullptr);
+
+          assert(deviceModuleMap.find(consumer.getDeviceAlias()) != deviceModuleMap.end());
+          DeviceModule* devmod = deviceModuleMap[consumer.getDeviceAlias()];
 
           // The accessor implementation already has its data in the user buffer. We now just have to add a valid version number
           // and have a recovery accessors (RecoveryHelper to be excact) which we can register at the DeviceModule.
           // As this is a constant we don't need to change it later and don't have to store it somewere else.
-          devmod->addRecoveryAccessor(boost::make_shared<RecoveryHelper>(impl, VersionNumber()));
+          devmod->addRecoveryAccessor(boost::make_shared<RecoveryHelper>(impl, VersionNumber(), devmod->writeOrder()));
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
@@ -1046,8 +1020,7 @@ std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, 
       pair = std::make_pair(impl, consumer);
     }
     else if(consumer.getType() == NodeType::Device) {
-      auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-          {VariableDirection::consuming, false}, consumer.getMode(), consumer.getNumberOfElements());
+      auto impl = createDeviceVariable<UserType>(consumer);
       pair = std::make_pair(impl, consumer);
     }
     else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -1252,10 +1225,10 @@ std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
 
 /*********************************************************************************************************************/
 void Application::registerDeviceModule(DeviceModule* deviceModule) {
-  deviceModuleList.push_back(deviceModule);
+  deviceModuleMap[deviceModule->deviceAliasOrURI] = deviceModule;
 }
 
 /*********************************************************************************************************************/
 void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
-  deviceModuleList.remove(deviceModule);
+  deviceModuleMap.erase(deviceModule->deviceAliasOrURI);
 }

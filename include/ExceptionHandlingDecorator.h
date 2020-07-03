@@ -37,6 +37,9 @@ namespace ChimeraTK {
 
     void doPreRead(TransferType type) override;
 
+    bool doWriteTransfer(VersionNumber versionNumber) override;
+    bool doWriteTransferDestructively(VersionNumber versionNumber) override;
+
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
@@ -44,7 +47,7 @@ namespace ChimeraTK {
     using ChimeraTK::TransferElement::_dataValidity;
     using ChimeraTK::TransferElement::_activeException;
 
-    DeviceModule& deviceModule;
+    DeviceModule& _deviceModule;
 
     bool previousReadFailed{true};
 
@@ -53,7 +56,8 @@ namespace ChimeraTK {
 
     VariableDirection _direction;
 
-    bool hasThrownToInhibitTransfer{false};
+    bool _hasThrownToInhibitTransfer{false};
+    bool _dataLostInPreviousWrite{false};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

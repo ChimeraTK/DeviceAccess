@@ -276,8 +276,7 @@ namespace ChimeraTK {
 
     /** Perform the actual connection of an accessor to a device register */
     template<typename UserType>
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createDeviceVariable(const std::string& deviceAlias,
-        const std::string& registerName, VariableDirection direction, UpdateMode mode, size_t nElements);
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createDeviceVariable(VariableNetworkNode const& node);
 
     /** Create a process variable with the PVManager, which is exported to the
        control system adapter. nElements will be the array size of the created
@@ -317,8 +316,8 @@ namespace ChimeraTK {
      * name from the DMAP file */
     std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> deviceMap;
 
-    /** List of DeviceModules */
-    std::list<DeviceModule*> deviceModuleList;
+    /** Map of DeviceModules. The alias name is the key.*/
+    std::map<std::string, DeviceModule*> deviceModuleMap;
 
     /** Flag if connections should be made in testable mode (i.e. the
      * TestableModeAccessorDecorator is put around all push-type input accessors
