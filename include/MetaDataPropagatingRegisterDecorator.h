@@ -20,10 +20,7 @@ namespace ChimeraTK {
     MetaDataPropagatingRegisterDecorator(const boost::shared_ptr<NDRegisterAccessor<T>>& target, EntityOwner* owner)
     : NDRegisterAccessorDecorator<T, T>(target), _owner(owner) {}
 
-    void doPreRead(TransferType type) override {
-      isNonblockingRead = false;
-      NDRegisterAccessorDecorator<T, T>::doPreRead(type);
-    }
+    void doPreRead(TransferType type) override { NDRegisterAccessorDecorator<T, T>::doPreRead(type); }
 
     void doPostRead(TransferType type, bool hasNewData) override;
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
@@ -35,8 +32,6 @@ namespace ChimeraTK {
     DataValidity lastValidity{DataValidity::ok};
     /** value of validity flag from user */
     DataValidity localValidity{DataValidity::ok};
-
-    bool isNonblockingRead{false};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MetaDataPropagatingRegisterDecorator);
