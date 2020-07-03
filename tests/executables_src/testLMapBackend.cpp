@@ -49,50 +49,49 @@ static std::map<std::string, std::string> registerNameMap{{"/EdummyInt32", "/Int
 
 /**********************************************************************************************************************/
 
-// Helper function for unifiedBackendTest
-template<typename UserType>
-std::vector<std::vector<UserType>> getValueForUBT(std::string registerName, boost::shared_ptr<ExceptionDummy> backend) {
-  DummyRegisterAccessor<UserType> acc(backend.get(), "", registerNameMap.at(registerName));
-  std::vector<std::vector<UserType>> ret;
-  ret.resize(1);
-  for(size_t i = 0; i < acc.getNumberOfElements(); ++i) ret[0].push_back(acc[i]);
-  return ret;
-}
+static auto exceptionDummy =
+    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
 
-/**********************************************************************************************************************/
+struct RegEdummyInt32 {
+  const std::string path{"/EdummyInt32"};
+  const bool isWriteable{true};
+  const bool isReadable{true};
+  const ChimeraTK::AccessModeFlags supportedFlags{ChimeraTK::AccessMode::raw};
+  const size_t nChannels{1};
+  const size_t nElementsPerChannel{1};
+  const size_t writeQueueLength{std::numeric_limits<size_t>::max()};
+  const bool testAsyncReadInconsistency{false};
+  typedef int32_t minimumUserType;
+  typedef minimumUserType rawUserType;
 
-// Helper function for unifiedBackendTest
-void setValueFromUBT(std::string registerName, boost::shared_ptr<ExceptionDummy> backend) {
-  if(registerName == "/EdummyInt32") {
-    DummyRegisterAccessor<int32_t> acc(backend.get(), "", registerNameMap.at(registerName));
-    acc = acc + 3;
+  DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", registerNameMap.at(path)};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return {{acc + 3}};
   }
-  else {
-    std::cout << "setValueFromUBT() called for unknown register name: " << registerName << std::endl;
-    assert(false); // wrong register name
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    return {{acc}};
   }
-}
+
+  void setRemoteValue() { acc = generateValue<minimumUserType>()[0][0]; }
+
+  void setForceRuntimeError(bool enable) {
+    exceptionDummy->throwExceptionRead = enable;
+    exceptionDummy->throwExceptionWrite = enable;
+  }
+
+  void setForceDataLossWrite(bool) { assert(false); }
+
+  void forceAsyncReadInconsistency() { assert(false); }
+};
 
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
-  auto exceptionDummy =
-      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
-
-  auto ubt = makeUnifiedBackendTest(
-      [&](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> {
-        return getValueForUBT<decltype(dummy)>(registerName, exceptionDummy);
-      },
-      [&](std::string registerName) { setValueFromUBT(registerName, exceptionDummy); });
-
-  ubt.addSyncReadTestRegister<int>("/EdummyInt32", false, true);
-  ubt.addWriteTestRegister<int>("/EdummyInt32", false, true);
-
-  ubt.forceRuntimeErrorOnRead(
-      {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
-  ubt.forceRuntimeErrorOnWrite(
-      {{[&] { exceptionDummy->throwExceptionWrite = true; }, [&] { exceptionDummy->throwExceptionWrite = false; }}});
-
+  auto ubt = ChimeraTK::UnifiedBackendTest<>().addRegister<RegEdummyInt32>();
   ubt.runTests("LMAP1");
 }
 

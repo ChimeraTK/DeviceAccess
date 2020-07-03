@@ -410,24 +410,51 @@ void setValueFromUBT(std::string registerName, boost::shared_ptr<ExceptionDummy>
 
 /**********************************************************************************************************************/
 
+static std::string cdd("(ExceptionDummy:1?map=test3.map)");
+
+static auto exceptionDummy =
+    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
+
+struct Integers_signed32 {
+  const std::string path{"/Integers/signed32"};
+  const bool isWriteable{true};
+  const bool isReadable{true};
+  const ChimeraTK::AccessModeFlags supportedFlags{ChimeraTK::AccessMode::raw};
+  const size_t nChannels{1};
+  const size_t nElementsPerChannel{1};
+  const size_t writeQueueLength{std::numeric_limits<size_t>::max()};
+  const bool testAsyncReadInconsistency{false};
+  typedef int32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+
+  DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return {{acc + 3}};
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    return {{acc}};
+  }
+
+  void setRemoteValue() { acc = generateValue<minimumUserType>()[0][0]; }
+
+  void setForceRuntimeError(bool enable) {
+    exceptionDummy->throwExceptionRead = enable;
+    exceptionDummy->throwExceptionWrite = enable;
+  }
+
+  void setForceDataLossWrite(bool) { assert(false); }
+
+  void forceAsyncReadInconsistency() { assert(false); }
+};
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
-  std::string cdd("(ExceptionDummy:1?map=test3.map)");
-  auto exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
-
-  auto ubt = makeUnifiedBackendTest(
-      [&](std::string registerName, auto dummy) -> std::vector<std::vector<decltype(dummy)>> {
-        return getValueForUBT<decltype(dummy)>(registerName, exceptionDummy);
-      },
-      [&](std::string registerName) { setValueFromUBT(registerName, exceptionDummy); });
-
-  ubt.addSyncReadTestRegister<int>("/Integers/signed32", false, true);
-  ubt.addWriteTestRegister<int>("/Integers/signed32", false, true);
-
-  ubt.forceRuntimeErrorOnRead(
-      {{[&] { exceptionDummy->throwExceptionRead = true; }, [&] { exceptionDummy->throwExceptionRead = false; }}});
-  ubt.forceRuntimeErrorOnWrite(
-      {{[&] { exceptionDummy->throwExceptionWrite = true; }, [&] { exceptionDummy->throwExceptionWrite = false; }}});
-
+  auto ubt = ChimeraTK::UnifiedBackendTest<>().addRegister<Integers_signed32>();
   ubt.runTests(cdd);
 }
 
