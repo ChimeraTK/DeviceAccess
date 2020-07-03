@@ -151,6 +151,9 @@ namespace ChimeraTK {
       });
 
       _returnSlave->postRead(type, hasNewData);
+
+      this->_versionNumber = _returnSlave->getVersionNumber();
+      this->_dataValidity = _returnSlave->dataValidity();
     }
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {
