@@ -34,6 +34,12 @@ namespace ChimeraTK {
     /** Const operator to access individual sequences/channels. */
     const std::vector<UserType>& operator[](size_t channel) const { return get()->accessChannel(channel); }
 
+    /** Assignment operator to assign the entire 2D array */
+    TwoDRegisterAccessor<UserType>& operator=(const std::vector<std::vector<UserType>>& other) {
+      get()->accessChannels() = other;
+      return *this;
+    }
+
     /** Return the number of channels (formerly called sequences) */
     size_t getNChannels() const { return get()->getNumberOfChannels(); }
 
