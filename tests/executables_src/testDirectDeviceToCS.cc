@@ -140,6 +140,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDev, T, test_types) {
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
+  // Synchronize to DeviceModule init/recovery procedure being finshed
   CHECK_TIMEOUT(deviceIsInitialised("Dummy0", pvManagers.first), 10000);
 
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
@@ -171,7 +172,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDevFanOut, T, test_types) {
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
-  CHECK_TIMEOUT(deviceIsInitialised("Dummy0", pvManagers.first), 1);
+  // Synchronize to DeviceModule init/recovery procedure being finshed
+  CHECK_TIMEOUT(deviceIsInitialised("Dummy0", pvManagers.first), 10000);
 
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK(myFeeder->getName() == "/myFeeder");
