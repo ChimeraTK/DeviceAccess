@@ -16,7 +16,6 @@
 #include <regex>
 #include <boost/thread/barrier.hpp>
 
-
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
