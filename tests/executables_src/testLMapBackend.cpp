@@ -44,11 +44,6 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
 /**********************************************************************************************************************/
 
-// Helper map for unifiedBackendTest
-static std::map<std::string, std::string> registerNameMap{{"/EdummyInt32", "/Integers/signed32"}};
-
-/**********************************************************************************************************************/
-
 static boost::shared_ptr<ExceptionDummy> exceptionDummy;
 
 struct RegEdummyInt32 {
@@ -63,7 +58,7 @@ struct RegEdummyInt32 {
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
 
-  DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", registerNameMap.at(path)};
+  DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", "/Integers/signed32"};
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
