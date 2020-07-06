@@ -416,18 +416,19 @@ static auto exceptionDummy =
     boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
 
 struct Integers_signed32 {
-  const std::string path{"/Integers/signed32"};
-  const bool isWriteable{true};
-  const bool isReadable{true};
-  const ChimeraTK::AccessModeFlags supportedFlags{ChimeraTK::AccessMode::raw};
-  const size_t nChannels{1};
-  const size_t nElementsPerChannel{1};
-  const size_t writeQueueLength{std::numeric_limits<size_t>::max()};
-  const bool testAsyncReadInconsistency{false};
+  std::string path() { return "/Integers/signed32"; }
+  bool isWriteable() { return true; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 1; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  bool testAsyncReadInconsistency() { return false; }
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
 
-  DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path};
+  DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
@@ -441,7 +442,7 @@ struct Integers_signed32 {
 
   void setRemoteValue() { acc = generateValue<minimumUserType>()[0][0]; }
 
-  void setForceRuntimeError(bool enable) {
+  void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
   }

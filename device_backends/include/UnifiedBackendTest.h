@@ -52,14 +52,16 @@ namespace ChimeraTK {
    *  The register descriptor must be of the following form:
    * 
    *  struct MyRegisterDescriptor {
-   *    const std::string path{"/path/of/register"};
-   *    const bool isWriteable{true};
-   *    const bool isReadable{true};
-   *    const ChimeraTK::AccessModeFlags supportedFlags{ChimeraTK::AccessMode::wait_for_new_data};
-   *    const size_t nChannels{1};
-   *    const size_t nElementsPerChannel{5};
-   *    const size_t writeQueueLength{std::numeric_limits<size_t>::max()}; // see setForceDataLossWrite()
-   *    const bool testAsyncReadInconsistency{true}; // see forceAsyncReadInconsistency()
+   *    std::string path() {return "/path/of/register";}
+   *    bool isWriteable() {return true;}
+   *    bool isReadable() {return true;}
+   *    ChimeraTK::AccessModeFlags supportedFlags() {return {ChimeraTK::AccessMode::wait_for_new_data};}
+   *    size_t nChannels() {return 1;}
+   *    size_t nElementsPerChannel() {return 5;}
+   *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}  // see setForceDataLossWrite()
+   *    size_t nRuntimeErrorCases() {return 1;}                                 // see setForceRuntimeError()
+   *    bool testAsyncReadInconsistency() {return true;}                        // see forceAsyncReadInconsistency()
+   * 
    *    typedef int32_t minimumUserType;
    *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted
    * 
@@ -80,7 +82,10 @@ namespace ChimeraTK {
    *    /// affected by this is not important for the test (i.e. blocking the entire communication is ok).
    *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
    *    /// enable = false, without calling setForceRuntimeError() for any other register in between.
-   *    void setForceRuntimeError(bool enable);
+   *    /// The second case argument will be set to a number between 0 and nRuntimeErrorCases()-1. Each case will be
+   *    /// enabled and disabled separately. It is guaranteed that never two cases are enabled at the same time. If
+   *    /// nRuntimeErrorCases() == 0, this function will never be called.
+   *    void setForceRuntimeError(bool enable, size_t case);
    * 
    *    /// Force data loss during write operations. It is expected that data loss occurse exactly writeQueueLength
    *    /// write operations after calling this function with enable=true.
@@ -101,6 +106,9 @@ namespace ChimeraTK {
    *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
    *  any data (e.g. seeds for generating values), use static member variables.
    * 
+   *  Properties of the register are implemented as functions instead of data members to make it easier to override
+   *  values when using a common base clase for multiple descriptors to avoid code duplication (without triggering a
+   *  shadowing warning).
    */
     template<typename REG_T>
     UnifiedBackendTest<typename boost::mpl::push_back<VECTOR_OF_REGISTERS_T, REG_T>::type> addRegister() {
@@ -160,31 +168,31 @@ namespace ChimeraTK {
     /// Utility functions for register traits
     template<typename REG_T>
     bool isRead(REG_T x = {}) {
-      return x.isReadable;
+      return x.isReadable();
     }
     template<typename REG_T>
     bool isWrite(REG_T x = {}) {
-      return x.isWriteable;
+      return x.isWriteable();
     }
     template<typename REG_T>
     bool isSyncRead(REG_T x = {}) {
-      return x.isReadable && !x.supportedFlags.has(ChimeraTK::AccessMode::wait_for_new_data);
+      return x.isReadable() && !x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data);
     }
     template<typename REG_T>
     bool isAsyncRead(REG_T x = {}) {
-      return x.isReadable && x.supportedFlags.has(ChimeraTK::AccessMode::wait_for_new_data);
+      return x.isReadable() && x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data);
     }
     template<typename REG_T>
     bool isRaw(REG_T x = {}) {
-      return x.supportedFlags.has(ChimeraTK::AccessMode::raw);
+      return x.supportedFlags().has(ChimeraTK::AccessMode::raw);
     }
     template<typename REG_T>
     bool isReadOnly(REG_T x = {}) {
-      return !x.isWriteable && x.isReadable;
+      return !x.isWriteable() && x.isReadable();
     }
     template<typename REG_T>
     bool isWriteOnly(REG_T x = {}) {
-      return x.isWriteable && !x.isReadable;
+      return x.isWriteable() && !x.isReadable();
     }
 
     /// boost::mpl::vector with all register descriptors
@@ -462,7 +470,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isSyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -519,7 +527,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -556,7 +564,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
@@ -638,7 +646,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       auto te = reg.getHighLevelImplElement();
@@ -659,7 +667,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       auto te = reg.getHighLevelImplElement();
@@ -679,7 +687,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       auto te = reg.getHighLevelImplElement();
@@ -715,7 +723,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       int someNumber = 42;
 
       std::cout << "    registerName = " << registerName << std::endl;
@@ -734,35 +742,37 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
-      // open the device, then let it throw runtime_error exceptions
-      d.open();
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // open the device, then let it throw runtime_error exceptions
+        d.open();
 
-      // enable runtime errors
-      x.setForceRuntimeError(true);
+        // enable runtime errors
+        x.setForceRuntimeError(true, i);
 
-      // trigger runtime_error
-      BOOST_CHECK_THROW(reg.read(), runtime_error); // (no check intended, just catch)
+        // trigger runtime_error
+        BOOST_CHECK_THROW(reg.read(), runtime_error); // (no check intended, just catch)
 
-      // check that the application buffer has not changed after exception
-      BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
-      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
+        // check that the application buffer has not changed after exception
+        BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
-      // disable runtime errors
-      x.setForceRuntimeError(false);
+        // disable runtime errors
+        x.setForceRuntimeError(false, i);
 
-      // recover
-      this->recoverDevice(d);
+        // recover
+        this->recoverDevice(d);
 
-      // close device again
-      d.close();
+        // close device again
+        d.close();
+      }
     });
 
     std::cout << "... asynchronous read " << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       int someNumber = 42;
 
       std::cout << "    registerName = " << registerName << std::endl;
@@ -789,66 +799,68 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
-      // open the device, then let it throw runtime_error exceptions
-      d.open();
-      d.activateAsyncRead();
-      reg.read(); // initial value
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // open the device, then let it throw runtime_error exceptions
+        d.open();
+        d.activateAsyncRead();
+        reg.read(); // initial value
 
-      // enable runtime errors
-      x.setForceRuntimeError(true);
+        // enable runtime errors
+        x.setForceRuntimeError(true, i);
 
-      // alter the application buffer to make sure it is not changed under exception
-      reg[0][0] = numericToUserType<UserType>(someNumber);
-      reg.setDataValidity(DataValidity::ok);
-      auto ver = reg.getVersionNumber();
+        // alter the application buffer to make sure it is not changed under exception
+        reg[0][0] = numericToUserType<UserType>(someNumber);
+        reg.setDataValidity(DataValidity::ok);
+        auto ver = reg.getVersionNumber();
 
-      // trigger runtime_error via read
-      BOOST_CHECK_THROW(reg.read(), runtime_error); // (no check intended, just catch)
+        // trigger runtime_error via read
+        BOOST_CHECK_THROW(reg.read(), runtime_error); // (no check intended, just catch)
 
-      // check that the application buffer has not changed after exception
-      BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
-      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() == ver);
+        // check that the application buffer has not changed after exception
+        BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == ver);
 
-      // recover to get another exception
-      x.setForceRuntimeError(false);
-      this->recoverDevice(d);
-      d.activateAsyncRead();
-      reg.read(); //initial value
-      x.setForceRuntimeError(true);
+        // recover to get another exception
+        x.setForceRuntimeError(false, i);
+        this->recoverDevice(d);
+        d.activateAsyncRead();
+        reg.read(); //initial value
+        x.setForceRuntimeError(true, i);
 
-      // alter the application buffer to make sure it is not changed under exception
-      reg[0][0] = numericToUserType<UserType>(someNumber);
-      reg.setDataValidity(DataValidity::ok);
-      ver = reg.getVersionNumber();
+        // alter the application buffer to make sure it is not changed under exception
+        reg[0][0] = numericToUserType<UserType>(someNumber);
+        reg.setDataValidity(DataValidity::ok);
+        ver = reg.getVersionNumber();
 
-      // trigger runtime_error via readNonBlocking
-      try {
-        while(!reg.readNonBlocking()) usleep(10000);
+        // trigger runtime_error via readNonBlocking
+        try {
+          while(!reg.readNonBlocking()) usleep(10000);
+        }
+        catch(runtime_error&) {
+        }
+
+        // check that the application buffer has not changed after exception
+        BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == ver);
+
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+
+        // close device again
+        d.close();
       }
-      catch(runtime_error&) {
-      }
-
-      // check that the application buffer has not changed after exception
-      BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
-      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() == ver);
-
-      // disable exceptions on read
-      x.setForceRuntimeError(false);
-
-      // recover
-      this->recoverDevice(d);
-
-      // close device again
-      d.close();
     });
 
     std::cout << "... write " << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       int someNumber = 42;
 
       std::cout << "    registerName = " << registerName << std::endl;
@@ -867,28 +879,30 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
       BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
-      // open the device, then let it throw runtime_error exceptions
-      d.open();
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // open the device, then let it throw runtime_error exceptions
+        d.open();
 
-      // enable exceptions on read
-      x.setForceRuntimeError(true);
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
 
-      // trigger runtime_error
-      BOOST_CHECK_THROW(reg.write(), runtime_error); // (no check intended, just catch)
+        // trigger runtime_error
+        BOOST_CHECK_THROW(reg.write(), runtime_error); // (no check intended, just catch)
 
-      // check that the application buffer has not changed after exception
-      BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
-      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
+        // check that the application buffer has not changed after exception
+        BOOST_CHECK(reg[0][0] == numericToUserType<UserType>(someNumber));
+        BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+        BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
-      // disable exceptions on read
-      x.setForceRuntimeError(false);
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
 
-      // recover
-      this->recoverDevice(d);
+        // recover
+        this->recoverDevice(d);
 
-      // close device again
-      d.close();
+        // close device again
+        d.close();
+      }
     });
   }
 
@@ -904,13 +918,13 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isWrite(x) || x.writeQueueLength == std::numeric_limits<size_t>::max()) return;
+      if(!this->isWrite(x) || x.writeQueueLength() == std::numeric_limits<size_t>::max()) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // enable test condition
-      size_t attempts = x.writeQueueLength;
+      size_t attempts = x.writeQueueLength();
       x.setForceDataLossWrite(true);
 
       // open the device
@@ -968,7 +982,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
@@ -1058,7 +1072,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
@@ -1102,7 +1116,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
@@ -1110,26 +1124,28 @@ namespace ChimeraTK {
       // obtain accessor for the test
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
-      // read initial value
-      reg.read();
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // read initial value
+        reg.read();
 
-      // execute preRead without exception state
-      reg.getHighLevelImplElement()->preRead(TransferType::read);
+        // execute preRead without exception state
+        reg.getHighLevelImplElement()->preRead(TransferType::read);
 
-      // enable exceptions on read
-      x.setForceRuntimeError(true);
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
 
-      // Check for runtime_error as it is popped of the queue
-      BOOST_CHECK_THROW(reg.getHighLevelImplElement()->readTransfer(), ChimeraTK::runtime_error);
+        // Check for runtime_error as it is popped of the queue
+        BOOST_CHECK_THROW(reg.getHighLevelImplElement()->readTransfer(), ChimeraTK::runtime_error);
 
-      // complete the operation
-      reg.getHighLevelImplElement()->postRead(TransferType::read, false);
+        // complete the operation
+        reg.getHighLevelImplElement()->postRead(TransferType::read, false);
 
-      // disable exceptions on read
-      x.setForceRuntimeError(false);
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
 
-      // recover
-      this->recoverDevice(d);
+        // recover
+        this->recoverDevice(d);
+      }
     });
 
     // close device again
@@ -1149,9 +1165,9 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isAsyncRead(x) || !x.testAsyncReadInconsistency) return;
+      if(!this->isAsyncRead(x) || !x.testAsyncReadInconsistency()) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
@@ -1215,7 +1231,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // First step: measure time until initial value arrives, so we know how long to wait to exclude that an initial
@@ -1275,7 +1291,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
@@ -1313,7 +1329,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // First check: initial value is correctly arriving
@@ -1377,7 +1393,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << " (deactivated async read)" << std::endl;
@@ -1391,7 +1407,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << " (activated async read)" << std::endl;
@@ -1425,7 +1441,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
@@ -1476,7 +1492,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -1484,30 +1500,32 @@ namespace ChimeraTK {
       auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
-      // enable exceptions on read
-      x.setForceRuntimeError(true);
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
 
-      // Runtime error should be reported via setException()
-      BOOST_CHECK(!erb->hasSeenException());
-      BOOST_CHECK_THROW(reg.read(), runtime_error);
-      BOOST_CHECK(erb->hasSeenException());
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        BOOST_CHECK_THROW(reg.read(), runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
 
-      // disable exceptions on read
-      x.setForceRuntimeError(false);
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
 
-      // recover
-      this->recoverDevice(d);
+        // recover
+        this->recoverDevice(d);
 
-      // make a successful read to make sure the exception state is gone. no reporting must take place here.
-      BOOST_CHECK_NO_THROW(reg.read());
-      BOOST_CHECK(!erb->hasSeenException());
+        // make a successful read to make sure the exception state is gone. no reporting must take place here.
+        BOOST_CHECK_NO_THROW(reg.read());
+        BOOST_CHECK(!erb->hasSeenException());
+      }
     });
 
     std::cout << "... asynchronous read" << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
       reg.read(); // initial value
@@ -1516,31 +1534,33 @@ namespace ChimeraTK {
       auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
-      // enable exceptions on read
-      x.setForceRuntimeError(true);
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
 
-      // Runtime error should be reported via setException()
-      BOOST_CHECK(!erb->hasSeenException());
-      BOOST_CHECK_THROW(reg.read(), runtime_error);
-      BOOST_CHECK(erb->hasSeenException());
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        BOOST_CHECK_THROW(reg.read(), runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
 
-      // disable exceptions on read
-      x.setForceRuntimeError(false);
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
 
-      // recover
-      this->recoverDevice(d);
+        // recover
+        this->recoverDevice(d);
 
-      // make a successful readNonBlocking (no data) to make sure the exception state is gone. no reporting must take
-      // place here.
-      BOOST_CHECK_NO_THROW(reg.readNonBlocking());
-      BOOST_CHECK(!erb->hasSeenException());
+        // make a successful readNonBlocking (no data) to make sure the exception state is gone. no reporting must take
+        // place here.
+        BOOST_CHECK_NO_THROW(reg.readNonBlocking());
+        BOOST_CHECK(!erb->hasSeenException());
+      }
     });
 
     std::cout << "... write" << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -1548,23 +1568,25 @@ namespace ChimeraTK {
       auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
-      // enable exceptions on write
-      x.setForceRuntimeError(true);
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
 
-      // Runtime error should be reported via setException()
-      BOOST_CHECK(!erb->hasSeenException());
-      BOOST_CHECK_THROW(reg.write(), runtime_error);
-      BOOST_CHECK(erb->hasSeenException());
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        BOOST_CHECK_THROW(reg.write(), runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
 
-      // disable exceptions on write
-      x.setForceRuntimeError(false);
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
 
-      // recover
-      this->recoverDevice(d);
+        // recover
+        this->recoverDevice(d);
 
-      // make a successful write to make sure the exception state is gone. no reporting must take place here.
-      BOOST_CHECK_NO_THROW(reg.write());
-      BOOST_CHECK(!erb->hasSeenException());
+        // make a successful write to make sure the exception state is gone. no reporting must take place here.
+        BOOST_CHECK_NO_THROW(reg.write());
+        BOOST_CHECK(!erb->hasSeenException());
+      }
     });
 
     // close device again
@@ -1588,7 +1610,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // obtain accessor for the test
@@ -1639,7 +1661,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // obtain accessor for the test
@@ -1688,7 +1710,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // obtain accessor for the test
@@ -1735,7 +1757,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -1770,7 +1792,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -1808,7 +1830,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
@@ -1831,7 +1853,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << " (async)" << std::endl;
@@ -1875,7 +1897,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // Set remote value to be read.
@@ -1919,7 +1941,7 @@ namespace ChimeraTK {
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
@@ -1973,7 +1995,7 @@ namespace ChimeraTK {
       Device d(cdd);
       boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
         typedef typename decltype(x)::minimumUserType UserType;
-        auto registerName = x.path;
+        auto registerName = x.path();
         std::cout << "... registerName = " << registerName << std::endl;
         auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
         sizeMap[registerName] = reg.getNElementsPerChannel();
@@ -1983,7 +2005,7 @@ namespace ChimeraTK {
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       // number of elements too big
       {
         Device d(cdd);
@@ -2030,7 +2052,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << " (wait_for_new_data throws)" << std::endl;
       BOOST_CHECK_THROW(
           d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data}), logic_error);
@@ -2038,7 +2060,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(this->isRaw(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << " (raw throws)" << std::endl;
       BOOST_CHECK_THROW(d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::raw}), logic_error);
     });
@@ -2059,7 +2081,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       BOOST_CHECK_THROW(reg.read(), logic_error);
@@ -2069,7 +2091,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
       BOOST_CHECK_THROW(reg.read(), logic_error);
@@ -2080,7 +2102,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       BOOST_CHECK_THROW(reg.write(), logic_error);
@@ -2102,7 +2124,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWriteOnly(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       BOOST_CHECK_THROW(reg.read(), logic_error);
@@ -2112,7 +2134,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWriteOnly(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       BOOST_CHECK_THROW(
           d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data}), logic_error);
@@ -2133,7 +2155,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isReadOnly(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       BOOST_CHECK_THROW(reg.write(), logic_error);
@@ -2153,7 +2175,7 @@ namespace ChimeraTK {
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path;
+      auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 

@@ -20,13 +20,14 @@ static boost::shared_ptr<ExceptionDummy> exceptionDummy, exceptionDummy2;
 
 template<typename Derived>
 struct RegisterDescriptorBase {
-  const bool isWriteable{true};
-  const bool isReadable{true};
-  const ChimeraTK::AccessModeFlags supportedFlags{ChimeraTK::AccessMode::raw};
-  const size_t writeQueueLength{std::numeric_limits<size_t>::max()};
-  const bool testAsyncReadInconsistency{false};
+  bool isWriteable() { return true; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  bool testAsyncReadInconsistency() { return false; }
+  size_t nRuntimeErrorCases() { return 1; }
 
-  void setForceRuntimeError(bool enable) {
+  void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
   }
@@ -42,13 +43,13 @@ template<typename Derived>
 struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
 
-  const size_t nChannels{1};
-  const bool isWriteable{false};
+  size_t nChannels() { return 1; }
+  bool isWriteable() { return false; }
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
     std::vector<UserType> v;
-    for(size_t k = 0; k < derived->nElementsPerChannel; ++k) {
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
       v.push_back(derived->acc[derived->channel][k] + derived->increment * (k + 1));
     }
     return {v};
@@ -57,7 +58,7 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue() {
     std::vector<UserType> v;
-    for(size_t k = 0; k < derived->nElementsPerChannel; ++k) {
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
       v.push_back(derived->acc[derived->channel][k]);
     }
     return {v};
@@ -65,7 +66,7 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   void setRemoteValue() {
     auto v = generateValue<typename Derived::minimumUserType>()[0];
-    for(size_t k = 0; k < derived->nElementsPerChannel; ++k) {
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
       derived->acc[derived->channel][k] = v[k];
     }
   }
@@ -75,14 +76,14 @@ template<typename Derived>
 struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
 
-  const size_t nChannels{1};
+  size_t nChannels() { return 1; }
 
   size_t myOffset() { return 0; }
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
     std::vector<UserType> v;
-    for(size_t i = 0; i < derived->nElementsPerChannel; ++i) {
+    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       v.push_back(derived->acc[i + derived->myOffset()] + derived->increment * (i + 1));
     }
     return {v};
@@ -91,7 +92,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue() {
     std::vector<UserType> v;
-    for(size_t i = 0; i < derived->nElementsPerChannel; ++i) {
+    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       v.push_back(derived->acc[i + derived->myOffset()]);
     }
     return {v};
@@ -99,7 +100,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   void setRemoteValue() {
     auto v = generateValue<typename Derived::minimumUserType>()[0];
-    for(size_t i = 0; i < derived->nElementsPerChannel; ++i) {
+    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       derived->acc[i + derived->myOffset()] = v[i];
     }
   }
@@ -107,13 +108,42 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
 template<typename Derived>
 struct ScalarRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
-  const size_t nElementsPerChannel{1};
+  size_t nElementsPerChannel() { return 1; }
+};
+
+template<typename Derived>
+struct ConstantRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
+  using RegisterDescriptorBase<Derived>::derived;
+
+  size_t nChannels() { return 1; }
+  bool isWriteable() { return false; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+
+  size_t nRuntimeErrorCases() { return 0; }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return this->getRemoteValue<UserType>();
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    std::vector<UserType> v;
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
+      v.push_back(derived->value[k]);
+    }
+    return {derived->value};
+  }
+
+  void setRemoteValue() {}
+
+  void setForceRuntimeError(bool, size_t) { assert(false); }
 };
 
 /********************************************************************************************************************/
 
 struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
-  const std::string path{"/SingleWord"};
+  std::string path() { return "/SingleWord"; }
 
   const int32_t increment = 3;
 
@@ -123,10 +153,10 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
 };
 
 struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
-  const std::string path{"/FullArea"};
+  std::string path() { return "/FullArea"; }
 
   const int32_t increment = 7;
-  const size_t nElementsPerChannel{0x400};
+  size_t nElementsPerChannel() { return 0x400; }
 
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
@@ -134,10 +164,10 @@ struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
 };
 
 struct RegPartOfArea : OneDRegisterDescriptorBase<RegPartOfArea> {
-  const std::string path{"/PartOfArea"};
+  std::string path() { return "/PartOfArea"; }
 
   const int32_t increment = 11;
-  const size_t nElementsPerChannel{20};
+  size_t nElementsPerChannel() { return 20; }
   size_t myOffset() { return 10; }
 
   typedef int32_t minimumUserType;
@@ -146,10 +176,10 @@ struct RegPartOfArea : OneDRegisterDescriptorBase<RegPartOfArea> {
 };
 
 struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
-  const std::string path{"/Channel3"};
+  std::string path() { return "/Channel3"; }
 
   const int32_t increment = 17;
-  const size_t nElementsPerChannel{4};
+  size_t nElementsPerChannel() { return 4; }
   const size_t channel{3};
 
   typedef int32_t minimumUserType;
