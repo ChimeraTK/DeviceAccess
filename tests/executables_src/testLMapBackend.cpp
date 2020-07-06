@@ -49,8 +49,7 @@ static std::map<std::string, std::string> registerNameMap{{"/EdummyInt32", "/Int
 
 /**********************************************************************************************************************/
 
-static auto exceptionDummy =
-    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
+static boost::shared_ptr<ExceptionDummy> exceptionDummy;
 
 struct RegEdummyInt32 {
   const std::string path{"/EdummyInt32"};
@@ -83,14 +82,16 @@ struct RegEdummyInt32 {
     exceptionDummy->throwExceptionWrite = enable;
   }
 
-  void setForceDataLossWrite(bool) { assert(false); }
+  [[noreturn]] void setForceDataLossWrite(bool) { assert(false); }
 
-  void forceAsyncReadInconsistency() { assert(false); }
+  [[noreturn]] void forceAsyncReadInconsistency() { assert(false); }
 };
 
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend("EDUMMY"));
   auto ubt = ChimeraTK::UnifiedBackendTest<>().addRegister<RegEdummyInt32>();
   ubt.runTests("LMAP1");
 }
