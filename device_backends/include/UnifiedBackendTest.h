@@ -2028,7 +2028,7 @@ namespace ChimeraTK {
 
     Device d(cdd);
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isSyncRead(x)) return;
+      if(this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path;
       std::cout << "... registerName = " << registerName << " (wait_for_new_data throws)" << std::endl;
@@ -2036,7 +2036,7 @@ namespace ChimeraTK {
           d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data}), logic_error);
     });
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isRaw(x)) return;
+      if(this->isRaw(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path;
       std::cout << "... registerName = " << registerName << " (raw throws)" << std::endl;
