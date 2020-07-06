@@ -1,0 +1,115 @@
+<logicalNameMap>
+    <redirectedRegister name="SingleWord">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="FullArea">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="PartOfArea">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <targetStartIndex>10</targetStartIndex>
+        <numberOfElements>20</numberOfElements>
+    </redirectedRegister>
+    <redirectedChannel name="Channel3">
+        <targetDevice><par>target2</par></targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>3</targetChannel>
+    </redirectedChannel>
+    <redirectedChannel name="Channel4">
+        <targetDevice><par>target2</par></targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>4</targetChannel>
+    </redirectedChannel>
+    <redirectedChannel name="LastChannelInRegister">
+        <targetDevice><par>target2</par></targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>15</targetChannel>
+    </redirectedChannel>
+    <constant name="Constant">
+        <type>integer</type>
+        <value>42</value>
+    </constant>
+    <constant name="Constant2">
+        <type>integer</type>
+        <value>666</value>
+    </constant>
+    <redirectedRegister name="SingleWord_Scaled">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">4.2</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="SingleWord_Scaled_Twice">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">2</parameter>
+        </plugin>
+        <plugin name="multiply">
+          <parameter name="factor">3</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="FullArea_Scaled">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">0.5</parameter>
+        </plugin>
+    </redirectedRegister>
+    <module name="MyModule">
+      <module name="SomeSubmodule">
+        <variable name="Variable">
+          <type>integer</type>
+          <value>2</value>
+        </variable>
+      </module>
+      <redirectedChannel name="ConfigurableChannel">
+        <targetDevice><par>target2</par></targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel><ref>/Constant</ref></targetChannel>
+      </redirectedChannel>
+    </module>
+    <constant name="ArrayConstant">
+        <type>integer</type>
+        <value index="0">1111</value>
+        <value index="4">5555</value>
+        <value index="1">2222</value>
+        <value index="3">4444</value>
+        <value index="2">3333</value>
+        <numberOfElements>5</numberOfElements>
+    </constant>
+    <variable name="ArrayVariable">
+        <type>integer</type>
+        <value index="0">11</value>
+        <value index="1">22</value>
+        <value index="2">33</value>
+        <value index="3">44</value>
+        <value index="4">55</value>
+        <value index="5">66</value>
+        <numberOfElements>6</numberOfElements>
+    </variable>
+    <redirectedBit name="Bit0ofVar">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+      <targetBit>0</targetBit>
+    </redirectedBit>
+    <redirectedBit name="Bit1ofVar">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+      <targetBit>1</targetBit>
+    </redirectedBit>
+    <redirectedBit name="Bit2ofVar">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+      <targetBit>2</targetBit>
+    </redirectedBit>
+    <redirectedBit name="Bit3ofVar">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+      <targetBit>3</targetBit>
+    </redirectedBit>
+</logicalNameMap>

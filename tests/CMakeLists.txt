@@ -89,7 +89,7 @@ MACRO( COPY_MAPPING_FILES )
     badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
     subdeviceTest.dmap Subdevice.map SubdeviceTarget.map
     shareddummyTest.dmap shareddummy.map
-    registerAccess.map floatRawTest.map test3.map
+    registerAccess.map floatRawTest.map test3.map unifiedTest.xlmap
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.
