@@ -10,16 +10,18 @@ namespace ChimeraTK {
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, VariableNetworkNode networkNode)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _direction(networkNode.getDirection()) {
     auto deviceAlias = networkNode.getDeviceAlias();
+    auto registerName = networkNode.getRegisterName();
 
     assert(Application::getInstance().deviceModuleMap.count(deviceAlias) != 0);
     _deviceModule = Application::getInstance().deviceModuleMap[deviceAlias];
 
     // Consuming from the network means writing to the device what you consumed.
     if(_direction.dir == VariableDirection::consuming) {
+      _deviceModule->writeRegisterPaths.push_back(registerName);
+
       // writable registers get a recoveryAccessor
       // Notice: There will be write-accessors without recovery accessors in future (intentionally turned off by the application programmer)
       // When this feature is added the VariableNetworkNode will get a new data member to indicate this.
-      auto registerName = networkNode.getRegisterName();
       auto nElements = networkNode.getNumberOfElements();
 
       // The device in the deviceModule does not have a valid backend yet. It is set when open() is called, which has not happened yet.
@@ -32,6 +34,12 @@ namespace ChimeraTK {
       // version number and write order are still {nullptr} and 0 (i.e. invalid)
       _recoveryHelper = boost::make_shared<RecoveryHelper>(_recoveryAccessor, VersionNumber(nullptr), 0);
       _deviceModule->addRecoveryAccessor(_recoveryHelper);
+    }
+    else if(_direction.dir == VariableDirection::feeding) {
+      _deviceModule->readRegisterPaths.push_back(registerName);
+    }
+    else {
+      throw ChimeraTK::logic_error("Invalid variable direction in " + networkNode.getRegisterName());
     }
   }
 

@@ -265,6 +265,9 @@ namespace ChimeraTK {
     std::atomic<int64_t> synchronousTransferCounter{0};
     std::atomic<uint64_t> writeOrderCounter{0};
 
+    std::list<RegisterPath> writeRegisterPaths;
+    std::list<RegisterPath> readRegisterPaths;
+
     friend class Application;
     // Access to virtualiseFromCatalog() is needed by ServerHistory
     friend struct history::ServerHistory;
