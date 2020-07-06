@@ -333,6 +333,10 @@ namespace ChimeraTK {
       // [Spec: 2.3.4] Write all recovery accessors
       try {
         boost::unique_lock<boost::shared_mutex> uniqueLock(recoveryMutex);
+        // sort recovery helpers according to write order
+        recoveryHelpers.sort([](boost::shared_ptr<RecoveryHelper>& a, boost::shared_ptr<RecoveryHelper>& b) {
+          return a->writeOrder < b->writeOrder;
+        });
         for(auto& recoveryHelper : recoveryHelpers) {
           if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
             recoveryHelper->accessor->write(recoveryHelper->versionNumber);
