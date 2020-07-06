@@ -187,6 +187,41 @@ struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
   DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
 };
 
+struct RegChannel4 : ChannelRegisterDescriptorBase<RegChannel4> {
+  std::string path() { return "/Channel4"; }
+
+  const int32_t increment = 23;
+  size_t nElementsPerChannel() { return 4; }
+  const size_t channel{4};
+
+  typedef int32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+};
+
+struct RegChannelLast : ChannelRegisterDescriptorBase<RegChannelLast> {
+  std::string path() { return "/LastChannelInRegister"; }
+
+  const int32_t increment = 27;
+  size_t nElementsPerChannel() { return 4; }
+  const size_t channel{15};
+
+  typedef int32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+};
+
+struct RegConstant : ConstantRegisterDescriptorBase<RegConstant> {
+  std::string path() { return "/Constant"; }
+
+  size_t nElementsPerChannel() { return 1; }
+  const std::vector<int32_t> value{42};
+
+  typedef int32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_USER"};
+};
+
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
@@ -199,7 +234,11 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
                  .addRegister<RegSingleWord>()
                  .addRegister<RegFullArea>()
                  .addRegister<RegPartOfArea>()
-                 .addRegister<RegChannel3>();
+                 //.addRegister<RegChannel3>()
+                 //.addRegister<RegChannel4>()
+                 //.addRegister<RegChannelLast>()
+                 //.addRegister<RegChannelLast>()
+                 .addRegister<RegConstant>();
   ubt.runTests(lmapCdd);
 }
 
