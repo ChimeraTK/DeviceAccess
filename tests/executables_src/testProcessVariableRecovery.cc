@@ -14,6 +14,7 @@
 #include <ChimeraTK/Device.h>
 #include <stdlib.h>
 #include <regex>
+#include <boost/thread/barrier.hpp>
 
 
 using namespace boost::unit_test_framework;
@@ -26,13 +27,24 @@ static constexpr char deviceCDD[] = "(ExceptionDummy?map=test5.map)";
  * application first sees the exception.
  */
 struct TestModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarPushInput<int32_t> trigger{this, "trigger", "", "This is my trigger."};
   ctk::ScalarOutput<int32_t> scalarOutput{this, "TO_DEV_SCALAR1", "", "Here I write a scalar"};
   ctk::ArrayOutput<int32_t> arrayOutput{this, "TO_DEV_ARRAY1", "", 4, "Here I write an array"};
 
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required to make sure the initial value propagation is done.
+  // execute this right after the Application::run():
+  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+  boost::barrier mainLoopStarted;
+
   void mainLoop() override {
+    mainLoopStarted.wait();
+
     while(true) {
       trigger.read();
       scalarOutput = int32_t(trigger);
@@ -149,6 +161,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   test.writeScalar("/TEST/trigger", 0);
 
   app.run();
+  app.module.mainLoopStarted.wait();
 
   ctk::Device dummy;
   dummy.open(deviceCDD);
