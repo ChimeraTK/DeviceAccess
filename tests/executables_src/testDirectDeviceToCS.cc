@@ -25,6 +25,18 @@ namespace ctk = ChimeraTK;
 typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
 
 /*********************************************************************************************************************/
+/* Helper function to synchronize with device initialization
+ *
+ * This is required because we open the device manually in the test cases.
+ */
+static bool deviceIsInitialised(std::string alias, boost::shared_ptr<ctk::ControlSystemPVManager> csPVManager) {
+  auto dummyDeviceStatus = csPVManager->getProcessArray<int>("/Devices/" + alias + "/status");
+  dummyDeviceStatus->read();
+
+  return dummyDeviceStatus->accessData(0) == 0;
+}
+
+/*********************************************************************************************************************/
 /* dummy application */
 
 template<typename T>
@@ -128,6 +140,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDev, T, test_types) {
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
+  CHECK_TIMEOUT(deviceIsInitialised("Dummy0", pvManagers.first), 10000);
 
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK(myFeeder->getName() == "/myFeeder");
@@ -158,6 +171,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDevFanOut, T, test_types) {
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
+  CHECK_TIMEOUT(deviceIsInitialised("Dummy0", pvManagers.first), 1);
 
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK(myFeeder->getName() == "/myFeeder");
@@ -220,7 +234,8 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   testDirectRegister(test, csuint16, devuint16, [] {});
   testDirectRegister(test, csint8, devint8, [] {});
   testDirectRegister(test, csuint8, devuint8, [] {});
-  testDirectRegister(test, csfloat, devfloat, [] {}, false);
+  testDirectRegister(
+      test, csfloat, devfloat, [] {}, false);
   testDirectRegister(test, csDeep1, devDeep1, [] {});
   testDirectRegister(test, csDeep2, devDeep2, [] {});
 }
