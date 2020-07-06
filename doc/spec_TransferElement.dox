@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC10WIP !! Based on RC8! RC9 is not in yet !!
+\page spec_TransferElement Technical specification: TransferElement V1.0RC10WIP !! Based on RC9.
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -110,6 +110,7 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_3_2_2 3.2.2 can optionally be "destructively", which allows the implementation to destroy content of the application buffer in the process. [\ref UnifiedTest_TransferElement_B_3_2_2 "U"]
       - 3.2.2.1 Applications can allow this optimisation by using writeDestructively() instead of write().
       - \anchor transferElement_B_3_2_2_2 3.2.2.2 Applications are not allowed to use the content of the application buffer after writeDestructively().\ref transferElement_comment_B_3_2_2_2 "(*)"
+    - 3.2.3 return whether previous data has been lost, as reported by writeTransfer()/writeTransferDestructively() (c.f. \ref transferElement_B_7_2 "7.2").
 
 - \anchor transferElement_B_4 4. Stages of an operation initiated by calling the public high level functions xxxYyy() (see. A.6.1) [\ref testTransferElement_B_4_order "T" (order of the stages)]
   - \anchor transferElement_B_4_1 4.1 preXxx(): calls doPreXxx() of the implementation to allow preparatory work before the actual transfer. doPreXxx() can be empty if nothing is to be done (*) [\ref testTransferElement_B_4_1 "T"]
@@ -144,9 +145,10 @@ This documnent is currently still **INCOMPLETE**!
 
 - 8. Read operations with AccessMode::wait_for_new_data:
   - 8.1 Since the transfer is initiated by the device side in this case, the transfer is asynchronous to the read operation.
-  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the \ref transferElement_A_8_2 "implementation-specific data transport queue", from which the read()/readNonBlocking() operations will obtain the value. [\ref testTransferElement_B_8_2 "T", \ref UnifiedTest_TransferElement_B_8_2 "U"]
+  - \anchor transferElement_B_8_2 8.2 The backend fills any received values into the \ref transferElement_A_8_2 "implementation-specific data transport queue", from which the readTransfer()/readTransferNonBlocking() operations will obtain the value (via the TransferElement::_readQueue continuation). [\ref testTransferElement_B_8_2 "T", \ref UnifiedTest_TransferElement_B_8_2 "U"]
     - \anchor transferElement_B_8_2_1 8.2.1 If the queue is full, the last written value will be overwritten. [\ref UnifiedTest_TransferElement_B_8_2_1 "U" (STILL INCOMPLETE)]
     - \anchor transferElement_B_8_2_2 8.2.2 The backend may fill a ChimeraTK::detail::DiscardValueException to the queue, which has the same effect on the application side as if no entry was filled to the queue. (*) [\ref testTransferElement_B_8_2_2 "T"]
+    - 8.2.3 The continuation of the \ref transferElement_A_8_2 "implementation-specific data transport queue" stores the value so it is available in doPostRead(), where it is filled into the application buffer.
   - \anchor transferElement_B_8_3 8.3 Runtime errors like broken connections are reported by the backend by pushing ChimeraTK::runtime_error exceptions into the queue. The exception will then be obtained by the read operation in place of a value. [\ref UnifiedTest_TransferElement_B_8_3 "U" (first sentence), \ref testTransferElement_B_8_3 "T" (second sentence)]
   - \anchor transferElement_B_8_4 8.4 The backend ensures consistency of the value with the device, even if data loss may occur on the transport layer. If necessary, a heartbeat mechanism is implemented to correct any inconsistencies at regular intervals. [\ref UnifiedTest_TransferElement_B_8_4 "U"]
   - \anchor transferElement_B_8_5 8.5 For transfer elements which are created before the device has been opened (or after the device has seen an exception, see 9.) the backend makes sure that no data is filled into the  \ref transferElement_A_8_2 "implementation-specific data transport queue" until the device has successfully been opened and Device::activateAsyncRead() is called (*). Also no runtime_errors are sent. We call this *asyncronous read is not activated* for these transfer elements. [\ref UnifiedTest_TransferElement_B_8_5 "U"].
@@ -298,29 +300,29 @@ This documnent is currently still **INCOMPLETE**!
   - 3.2 TransferElement::isReadable(), TransferElement::isWriteable() or TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
   - 3.3 doPreXxx(), if the information returned by the functions in 3.2 is not yet available and needs to be determined from the running device.
 
-- 4. boost::numeric::bad_numeric_cast may only be thrown in
+- \anchor transferElement_C_4 4. boost::numeric::bad_numeric_cast may only be thrown in
   - 4.1 TransferElement::doPreWrite()
   - 4.2 TransferElement::doPostRead(), but only if updateDataBuffer == true
-  - 4.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 5.2.4) (*).
+  - 4.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 5.2.4).
 
 - 5. ChimeraTK::logic_error must follow strict conditions. It is thrown, if the application (including its configuration files) does not behave as expected.
   - 5.1 logic_errors must be deterministic. They must always be avoidable by calling the corresponding test functions before executing a potentially failing action (*), and must occur if the logical condition is not fulfilled and the function is called anyway.
-  - 5.2 Any logic_error must be thrown as early as possible(*). They are thrown **if and only if** one of the following conditions are met:
+  - \anchor transferElement_C_5_2 5.2 Any logic_error must be thrown as early as possible \ref transferElement_comment_C_5_2 "(*)". They are thrown **if and only if** one of the following conditions are met:
     - 5.2.1 A register does not exists my that name
-      - 5.2.1.1 Can be checked in the catalogue (*)
-      - \anchor transferElement_C_5_2_1_2 5.2.1.2 Thrown in the constructor if possible (*), otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly(). [\ref UnifiedTest_TransferElement_C_5_2_1_2 "U"]
-    - 5.2.2 The size or dimension of the requested TransferElement is too large (*)
+      -  \anchor transferElement_C_5_2_1_1 5.2.1.1 Can be checked in the catalogue \ref transferElement_comment_C_5_2_1_1 "(*)"
+      - \anchor transferElement_C_5_2_1_2 5.2.1.2 Thrown in the constructor. [\ref UnifiedTest_TransferElement_C_5_2_1_2 "U"]
+    - \anchor transferElement_C_5_2_2 5.2.2 The size or dimension of the requested TransferElement is too large \ref transferElement_comment_C_5_2_2 "(*)"
       - 5.2.2.1 Can be checked in the catalogue.
-      - \anchor transferElement_C_5_2_2_2 5.2.2.2 Thrown in the constructor if possible, otherwise in doPreXxx(). [\ref UnifiedTest_TransferElement_C_5_2_2_2 "U"]
+      - \anchor transferElement_C_5_2_2_2 5.2.2.2 Thrown in the constructor. [\ref UnifiedTest_TransferElement_C_5_2_2_2 "U"]
     - 5.2.3 The wrong AccessMode flags are provided
       - 5.2.3.1 Can be checked in the catalogue.
-      - \anchor transferElement_C_5_2_3_2 5.2.3.2 Thrown in the constructor if possible, otherwise in doPreXxx(), isReadable(), isWriteable() and isReadOnly(). [\ref UnifiedTest_TransferElement_C_5_2_3_2 "U"]
-    - 5.2.4 The requested user data type is too small to hold the data without range overflow when reading, or too big when writing (*)
+      - \anchor transferElement_C_5_2_3_2 5.2.3.2 Thrown in the constructor. [\ref UnifiedTest_TransferElement_C_5_2_3_2 "U"]
+    - \anchor transferElement_C_5_2_4 5.2.4 The requested user data type is too small to hold the data without range overflow when reading \ref transferElement_comment_C_5_2_4 "(*)".
       - 5.2.4.1 ToDo: cannot be checked in the catalogue to a sufficient degree
-      - 5.2.4.2 Thrown in the constructor if possible, otherwise in doPreXxx()
+      - 5.2.4.2 Thrown in the constructor.
     - 5.2.5 A read/write operation is started while the backend is still closed
       - 5.2.5.1 Check with DeviceBackend::isOpen().
-      - \anchor transferElement_C_5_2_5_2 5.2.5.2 Thrown in doPreXxx() (*) [\ref UnifiedTest_TransferElement_C_5_2_5_2 "U"]
+      - \anchor transferElement_C_5_2_5_2 5.2.5.2 Thrown in doPreXxx() \ref transferElement_comment_C_5_2_5_2 "(*)". [\ref UnifiedTest_TransferElement_C_5_2_5_2 "U"]
     - 5.2.6 A read operation is executed on a transfer element that cannot be read
       - 5.2.6.1 Check with TransferElement::isReadable().
       - \anchor transferElement_C_5_2_6_2 5.2.6.2 Thrown in doPreRead() [\ref UnifiedTest_TransferElement_C_5_2_6_2 "U"]
@@ -329,23 +331,20 @@ This documnent is currently still **INCOMPLETE**!
       - \anchor transferElement_C_5_2_7_2 5.2.7.2 Thrown in doPreWrite() [\ref UnifiedTest_TransferElement_C_5_2_7_2 "U"]
   - 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant under normal circumstances. Only when open() is called (either for the first time or to recover form a ChimeraTK::runtime_error) the information might change and applications are expected to check it again.
     - \anchor transferElement_C_5_3_1 5.3.1 If a device is changing this information on its own (e.g. makes a register read-only which was readable before), and the application hence performes an operation which is no longer possible, a ChimeraTK::runtime_error must be thrown (unexpected behaviour of the device). \ref transferElement_comment_C_5_3_1 "(*)"
-  - 5.4 Two remarks about how to follow these rules:
+  - 5.4 Remarks about how to follow these rules:
     - 5.4.1 If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
-    - 5.4.2 isReadable(), isWriteable() and isReadOnly() might have to check for the existance of the register from a running backend (in case there is no map file). This implies that these calls may throw ChimeraTK::logic_error and ChimeraTK::runtime_error exceptions.
 
 ### (*) Comments ###
 - \anchor transferElement_comment_C_2 \ref transferElement_C_2 "2." This concerns all exceptions that were caught, not only ChimeraTK::runtime_error and ChimeraTK::logic_error.
 - \anchor transferElement_comment_C_2_3a \ref transferElement_C_2_3 "2.3" It is important that after calling the target's setActiveException(), the decorator has a nullptr in its _activeException. This is for instance required if the target is the ApplicationCore::ExceptionHandlingDecorator. It suppresses the exception and then the outer layers must not throw any more.
 - \anchor transferElement_comment_C_2_3b \ref transferElement_C_2_3 "2.3" Notice that if both the decorator and the target TransferElement have an active exception, the exception in the target is replaced. This is intentional. It can only happen if the same low level TransferElement is used by several high level elements in a TransferGroup. In this case the tranfer had not been executed because the high level elements had already seen the exception in preXxx, and the exception in the target can only be the exception which had been put in by another high level element in its doPostXxx, and thus has already been thrown.
 - \anchor transferElement_comment_C_2_3c \ref transferElement_C_2_3 "2.3" This behaviour is implemented in doPostXxx() of the NDRegisterAccessorDecorator base class, which is usually called by decorator implementations.
-- 4.3 If there is no map file or such, the information about the target data types must be deretmined from the device. This cannot be done in the constructor if the backend is still closed. In this case the overflow check can happen at runtime and result in a boost::numeric::bad_numeric_cast.
 - 5.1 Test functions do not yet exist for everything. This needs to be changed!
-- 5.2 Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
-- 5.2.1.1 It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
-- 5.2.1.2 If a backend cannot decide the existence of a register in the accessor's constructor (because there is no map file or such, and the backend might be closed), it needs to check the presence later. If the information is available in the constructor, the check has to be done there.
-- 5.2.2 This also includes that the offset in a one dimensional case is so large that there are not enough elements left to provide the requested data.
-- 5.2.4 Some backends currenty throw a boost::numeric::bad_numeric_cast instead as described in 5.
-- 5.2.5.2 The generic tests if a backend is opened, or if an accessor readable or writeable are intentionally not implemented in TransferElement because they would invovle additional virtual function calls. To avoid these each implementation has to implement the checks in doPreXxx().
+- \anchor transferElement_comment_C_5_2 \ref transferElement_C_5_2 "5.2" Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
+- \anchor transferElement_comment_C_5_2_1_1 \ref transferElement_C_5_2_1_1  "5.2.1.1" It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
+- \anchor transferElement_comment_C_5_2_2 \ref transferElement_C_5_2_2  "5.2.2" This also includes that the offset in a one dimensional case is so large that there are not enough elements left to provide the requested data.
+- \anchor transferElement_comment_C_5_2_4 \ref transferElement_C_5_2_4 "5.2.4" Some backends currenty throw a boost::numeric::bad_numeric_cast instead as described in \ref transferElement_C_4 "4".
+- \anchor transferElement_comment_C_5_2_5_2 \ref transferElement_C_5_2_5_2 "5.2.5.2" The generic tests if a backend is opened, or if an accessor readable or writeable are intentionally not implemented in TransferElement because they would invovle additional virtual function calls. To avoid these each implementation has to implement the checks in doPreXxx().
 - \anchor transferElement_comment_C_5_3_1 \ref transferElement_C_5_3_1 "5.3.1" To recover from the ChimeraTK::runtime_error, the application must call open(). At that point, the information is allowed to be changed. If the application fails to recheck the information, a retry of the failed operation will result in a ChimeraTK::logic_error. This behaviour follows the requirement to throw logic_errors only in doPreXxx(): if during a transfer the backend discovers that the operation is no longer allowed, a runtime_error must be thrown.
 
 ## D. Requirements for full implementations (e.g. in backends) ##
