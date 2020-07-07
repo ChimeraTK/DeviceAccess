@@ -1,7 +1,7 @@
 <logicalNameMap>
     <redirectedRegister name="SingleWord">
         <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
     </redirectedRegister>
     <redirectedRegister name="FullArea">
         <targetDevice><par>target</par></targetDevice>
@@ -38,14 +38,14 @@
     </constant>
     <redirectedRegister name="SingleWord_Scaled">
         <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
         <plugin name="multiply">
           <parameter name="factor">4.2</parameter>
         </plugin>
     </redirectedRegister>
     <redirectedRegister name="SingleWord_Scaled_Twice">
         <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
         <plugin name="multiply">
           <parameter name="factor">2</parameter>
         </plugin>

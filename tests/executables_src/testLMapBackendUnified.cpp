@@ -91,27 +91,40 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue(bool getRaw = false) {
     std::vector<UserType> v;
-    auto cv = derived->template getRemoteValue<typename Derived::minimumUserType>()[0];
+    typedef typename Derived::rawUserType Traw;
+    typedef typename Derived::minimumUserType T;
+    auto cv = derived->template getRemoteValue<Traw>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      typename Derived::minimumUserType e = cv[i + derived->myOffset()] + derived->increment * (i + 1);
-      if(!getRaw) e = derived->convertRawToCooked(e);
-      v.push_back(e);
+      Traw e = cv[i + derived->myOffset()] + derived->increment * (static_cast<T>(i) + 1);
+      if(!getRaw) {
+        v.push_back(derived->template convertRawToCooked<T>(e));
+      }
+      else {
+        v.push_back(static_cast<T>(e));
+      }
     }
     return {v};
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue(bool getRaw = false) {
     std::vector<UserType> v;
+    typedef typename Derived::rawUserType Traw;
+    typedef typename Derived::minimumUserType T;
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      v.push_back(derived->template convertRawToCooked<typename Derived::minimumUserType>(
-          derived->acc[i + derived->myOffset()]));
+      Traw e = derived->acc[i + derived->myOffset()];
+      if(!getRaw) {
+        v.push_back(derived->template convertRawToCooked<T>(e));
+      }
+      else {
+        v.push_back(static_cast<T>(e));
+      }
     }
     return {v};
   }
 
   void setRemoteValue() {
-    auto v = generateValue<typename Derived::minimumUserType>(true)[0];
+    auto v = generateValue<typename Derived::rawUserType>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       derived->acc[i + derived->myOffset()] = v[i];
     }
@@ -162,7 +175,7 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   size_t nRuntimeErrorCases() { return 0; }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue(bool = false) {
     auto acc = lmapBackend->getRegisterAccessor<typename Derived::minimumUserType>(derived->path(), 0, 0, {});
     acc->read();
     std::vector<UserType> v;
@@ -188,11 +201,11 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
 struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   std::string path() { return "/SingleWord"; }
 
-  const int32_t increment = 3;
+  const uint32_t increment = 3;
 
-  typedef int32_t minimumUserType;
+  typedef uint32_t minimumUserType;
   typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_USER"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
@@ -274,40 +287,59 @@ struct RegConstant2 : ConstantRegisterDescriptorBase<RegConstant2> {
   typedef minimumUserType rawUserType;
 };
 
-struct RegSingleWordScaled : ScalarRegisterDescriptorBase<RegSingleWordScaled> {
+struct RegSingleWordScaled_R : ScalarRegisterDescriptorBase<RegSingleWordScaled_R> {
   std::string path() { return "/SingleWord_Scaled"; }
+  bool isWriteable() { return false; }
 
-  const float increment = std::exp(29.F);
+  const double increment = std::exp(1.);
 
   template<typename T>
   T convertRawToCooked(T value) {
-    return 4.2 * value;
+    return value * 4.2;
   }
 
-  typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_USER"};
+  typedef double minimumUserType;
+  typedef uint32_t rawUserType;
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
+struct RegSingleWordScaled_W : ScalarRegisterDescriptorBase<RegSingleWordScaled_W> {
+  std::string path() { return "/SingleWord_Scaled"; }
+  bool isReadable() { return false; }
+
+  const double increment = std::exp(2.);
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value / 4.2;
+  }
+
+  typedef double minimumUserType;
+  typedef uint32_t rawUserType;
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegSingleWordScaledTwice : ScalarRegisterDescriptorBase<RegSingleWordScaledTwice> {
   std::string path() { return "/SingleWord_Scaled_Twice"; }
+  bool isWriteable() { return false; }
 
-  const float increment = std::exp(31.F);
+  const double increment = std::exp(3.);
 
   template<typename T>
   T convertRawToCooked(T value) {
     return 6 * value;
   }
 
-  typedef float minimumUserType;
+  typedef double minimumUserType;
   typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_USER"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   std::string path() { return "/FullArea_Scaled"; }
+  bool isWriteable() { return false; }
 
-  const float increment = std::exp(37.F);
+  const double increment = std::exp(4.);
   size_t nElementsPerChannel() { return 0x400; }
 
   template<typename T>
@@ -315,7 +347,7 @@ struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
     return 0.5 * value;
   }
 
-  typedef float minimumUserType;
+  typedef double minimumUserType;
   typedef minimumUserType rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
@@ -349,7 +381,8 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
                  //.addRegister<RegChannelLast>()
                  .addRegister<RegConstant>()
                  .addRegister<RegConstant2>()
-                 .addRegister<RegSingleWordScaled>()
+                 .addRegister<RegSingleWordScaled_R>()
+                 .addRegister<RegSingleWordScaled_W>()
                  .addRegister<RegSingleWordScaledTwice>()
                  .addRegister<RegFullAreaScaled>()
                  .addRegister<RegVariable>();
