@@ -9,6 +9,9 @@
 
 #include "Device.h"
 
+// disable shadow warning, boost::mpl::for_each is triggering this warning on Ubuntu 16.04
+#pragma GCC diagnostic ignored "-Wshadow"
+
 namespace ChimeraTK {
 
   /**
@@ -131,6 +134,7 @@ namespace ChimeraTK {
 
    protected:
     void test_B_3_1_2_1();
+    void test_NOSPEC_write();
     void test_B_3_2_1_2();
     void test_B_3_2_2();
     void test_B_4_2_4();
@@ -297,6 +301,31 @@ namespace ChimeraTK {
   }                                                                                                                    \
   (void)(0)
 
+// Similar to CHECK_EQUALITY, but compares two 2D vectors
+#define CHECK_EQUALITY_VECTOR(value, expectedValue)                                                                    \
+  {                                                                                                                    \
+    std::string fail;                                                                                                  \
+    BOOST_CHECK_EQUAL(value.size(), expectedValue.size());                                                             \
+    BOOST_CHECK_EQUAL(value[0].size(), expectedValue[0].size());                                                       \
+    for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
+      for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                  \
+        if(!comparHelper(                                                                                              \
+               value[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {        \
+          if(fail.size() == 0) {                                                                                       \
+            fail = "Data content differs from expected value. First difference at index [" +                           \
+                std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                           \
+                "]: " + std::to_string(value[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                                    \
+                " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                            \
+          }                                                                                                            \
+        }                                                                                                              \
+      }                                                                                                                \
+    }                                                                                                                  \
+    if(fail != "") {                                                                                                   \
+      BOOST_ERROR(fail);                                                                                               \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  (void)(0)
+
 // Simiar to CHECK_EQUALITY, but runs readLatest() on the accessor in a loop until the expected value has arrived, for
 // at most maxMillisecods. If the expected value is not seen within that time, an error is risen.
 #define CHECK_EQUALITY_TIMEOUT(accessor, expectedValue, maxMilliseconds)                                               \
@@ -405,6 +434,7 @@ namespace ChimeraTK {
 
     // run the tests
     test_B_3_1_2_1();
+    test_NOSPEC_write();
     test_B_3_2_1_2();
     test_B_3_2_2();
     test_B_4_2_4();
@@ -511,6 +541,46 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /**
+   *  Test write.
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_write() {
+    std::cout << "--- test_NOSPEC_write - write" << std::endl;
+    Device d(cdd);
+
+    // open the device
+    d.open();
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isWrite(x)) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      auto v0 = x.template getRemoteValue<UserType>();
+
+      // write some value
+      auto theValue = x.template generateValue<UserType>();
+
+      reg = theValue;
+      reg.write();
+
+      // check remote value
+      auto v1 = x.template getRemoteValue<UserType>();
+      CHECK_EQUALITY_VECTOR(v1, theValue);
+      
+    });
+
+    // close device again
+    d.close();
+  }
+
+  /********************************************************************************************************************/
+
+  /**
    *  Test write() does not destroy application buffer
    *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2"
    * 
@@ -561,38 +631,21 @@ namespace ChimeraTK {
     std::cout << "--- test_B_3_2_2 - destructive write" << std::endl;
     Device d(cdd);
 
+    // open the device
+    d.open();
+
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
-      VersionNumber someVersion{nullptr};
+      VersionNumber ver{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
-      // open the device
-      d.open();
-
-      // write some value
+      // write some value destructively
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
-      VersionNumber ver;
-      reg.write(ver);
-
-      // check that application data buffer is not changed (non-destructive write, B.3.2.1.2)
-      CHECK_EQUALITY(reg, theValue);
-
-      // check the version number
-      BOOST_CHECK(reg.getVersionNumber() == ver);
-
-      // check remote value
-      auto v1 = x.template getRemoteValue<UserType>();
-      CHECK_EQUALITY(reg, v1);
-
-      // write another value, this time destructively
-      theValue = x.template generateValue<UserType>();
-      reg = theValue;
-      ver = {};
       reg.writeDestructively(ver);
 
       // check that application data buffer shape is not changed (content may be lost)
@@ -603,13 +656,12 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.getVersionNumber() == ver);
 
       // check remote value
-      v1 = x.template getRemoteValue<UserType>();
-      reg = theValue; // work around for CHECK_EQUALITY only working with accessors...
-      CHECK_EQUALITY(reg, v1);
-
-      // close device again
-      d.close();
+      auto v1 = x.template getRemoteValue<UserType>();
+      CHECK_EQUALITY_VECTOR(v1, theValue);
     });
+
+    // close device again
+    d.close();
   }
 
 /********************************************************************************************************************/
