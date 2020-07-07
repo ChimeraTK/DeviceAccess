@@ -368,22 +368,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
 
   // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
-
-  assert(deviceModuleMap.count(deviceAlias) != 0);
-  DeviceModule* devmod = deviceModuleMap[deviceAlias];
-
-  // decorate the accessor with a ExceptionHandlingDecorator and return it
-  // Consuming from the network means writing to the device what you consumed.
-  if(direction.dir == VariableDirection::consuming) {
-    // writable registers additionally get a recoveryAccessor
-    // Notice: Don't use the fact that there is a recovery accessor to determine the direction in the ExceptionHandlingDecorator.
-    // There will be write-accessors without recovery accessors in future (intentionally turned off by the application programmer)
-    auto recoveryAccessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
-    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, direction, recoveryAccessor);
-  }
-  else {
-    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, direction);
-  }
+  return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node);
 }
 
 /*********************************************************************************************************************/

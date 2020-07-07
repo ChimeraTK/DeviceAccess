@@ -306,6 +306,28 @@ namespace ChimeraTK {
 
       boost::unique_lock<boost::shared_mutex> errorLock(errorMutex);
 
+      // [Spec: 2.3.3] Empty exception reporting queue.
+      while(errorQueue.pop()) {
+        if(owner->isTestableModeEnabled()) {
+          assert(owner->testableMode_counter > 0);
+          --owner->testableMode_counter;
+        }
+      }
+
+      for(auto& writeMe : writeRegisterPaths) {
+        auto reg = device.getOneDRegisterAccessor<double>(writeMe); // the user data type does not matter here.
+        if(!reg.isWriteable()) {
+          throw ChimeraTK::logic_error(std::string(writeMe) + " is not writeable!");
+        }
+      }
+
+      for(auto& readMe : readRegisterPaths) {
+        auto reg = device.getOneDRegisterAccessor<double>(readMe); // the user data type does not matter here.
+        if(!reg.isReadable()) {
+          throw ChimeraTK::logic_error(std::string(readMe) + " is not readable!");
+        }
+      }
+
       // [Spec: 2.3.2] Run initialisation handlers
       try {
         for(auto& initHandler : initialisationHandlers) {
@@ -322,17 +344,13 @@ namespace ChimeraTK {
         continue;
       }
 
-      // [Spec: 2.3.3] Empty exception reporting queue.
-      while(errorQueue.pop()) {
-        if(owner->isTestableModeEnabled()) {
-          assert(owner->testableMode_counter > 0);
-          --owner->testableMode_counter;
-        }
-      }
-
       // [Spec: 2.3.4] Write all recovery accessors
       try {
         boost::unique_lock<boost::shared_mutex> uniqueLock(recoveryMutex);
+        // sort recovery helpers according to write order
+        recoveryHelpers.sort([](boost::shared_ptr<RecoveryHelper>& a, boost::shared_ptr<RecoveryHelper>& b) {
+          return a->writeOrder < b->writeOrder;
+        });
         for(auto& recoveryHelper : recoveryHelpers) {
           if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
             recoveryHelper->accessor->write(recoveryHelper->versionNumber);

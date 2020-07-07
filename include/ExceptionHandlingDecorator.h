@@ -20,14 +20,12 @@ namespace ChimeraTK {
   class ExceptionHandlingDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
     /**
-     * Decorate the accessors which is handed in the constuctor. It needs the device module to implement
-     * the exception handling. Accessors which write to the device in addition need a recovery accessor
-     * so the variables can be written again after a device has recovered from an error. Accessors
-     * which only read don't specify the third parameter.
+     * Decorate the accessors which is handed in the constuctor.
+     * All information to get the DeviceModule and to create a recovery accessor are
+     * taken from the VariableNetworkNode.
      */
-    ExceptionHandlingDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
-        DeviceModule& devMod, VariableDirection direction,
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor = {nullptr});
+    ExceptionHandlingDecorator(
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, VariableNetworkNode networkNode);
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
@@ -47,16 +45,18 @@ namespace ChimeraTK {
     using ChimeraTK::TransferElement::_dataValidity;
     using ChimeraTK::TransferElement::_activeException;
 
-    DeviceModule& _deviceModule;
+    DeviceModule* _deviceModule;
 
     bool previousReadFailed{true};
 
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
+    // store the recoveryAccessor separately. The RecoveryHelper only contains a pointer to TransferElement and can't be used to fill in data.
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
 
     VariableDirection _direction;
 
     bool _hasThrownToInhibitTransfer{false};
+    bool _hasThrownLogicError{false};
     bool _dataLostInPreviousWrite{false};
   };
 
