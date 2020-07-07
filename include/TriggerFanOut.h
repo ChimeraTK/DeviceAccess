@@ -91,33 +91,11 @@ namespace ChimeraTK {
       }
 
       while(true) {
-        // receive data. We need to catch exceptions here, since the ExceptionHandlingDecorator cannot do this for us
-        // inside a TransferGroup, if the exception is thrown inside doReadTransfer() (as it is directly called on the
-        // lowest-level TransferElements inside the group).
-        auto lastValidity = DataValidity::ok;
-      retry:
-        try {
-          if(!_deviceModule.device.isOpened()) {
-            Application::getInstance().testableModeUnlock("waitForDeviceOpen");
-            boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
-            Application::getInstance().testableModeLock("waitForDeviceOpen");
-            goto retry;
-          }
-          transferGroup.read();
-        }
-        catch(ChimeraTK::runtime_error& e) {
-          // send the data to the consumers
-          if(lastValidity == DataValidity::ok) {
-            lastValidity = DataValidity::faulty;
-            boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
-          }
-          _deviceModule.reportException(e.what());
-          //_deviceModule.waitForRecovery();
-          goto retry;
-        }
+        transferGroup.read();
         // send the version number to the consumers
         boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version));
-        // wait for external trigger (exception handling is done here by the decorator)
+
+        // wait for external trigger
         boost::this_thread::interruption_point();
         Profiler::stopMeasurement();
         externalTrigger->read();

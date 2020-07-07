@@ -234,8 +234,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   testDirectRegister(test, csuint16, devuint16, [] {});
   testDirectRegister(test, csint8, devint8, [] {});
   testDirectRegister(test, csuint8, devuint8, [] {});
-  testDirectRegister(
-      test, csfloat, devfloat, [] {}, false);
+  testDirectRegister(test, csfloat, devfloat, [] {}, false);
   testDirectRegister(test, csDeep1, devDeep1, [] {});
   testDirectRegister(test, csDeep2, devDeep2, [] {});
 }
