@@ -9,6 +9,7 @@ using namespace boost::unit_test_framework;
 #include "ExceptionDummyBackend.h"
 #include "UnifiedBackendTest.h"
 #include "DummyRegisterAccessor.h"
+#include "LogicalNameMappingBackend.h"
 
 using namespace ChimeraTK;
 
@@ -17,6 +18,7 @@ BOOST_AUTO_TEST_SUITE(LMapBackendUnifiedTestSuite)
 /**********************************************************************************************************************/
 
 static boost::shared_ptr<ExceptionDummy> exceptionDummy, exceptionDummy2;
+static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 
 template<typename Derived>
 struct RegisterDescriptorBase {
@@ -80,11 +82,20 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   size_t myOffset() { return 0; }
 
+  // T is always minimumUserType, but C++ doesn't allow to use Derived::minimumUserType here (circular dependency)
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value;
+  }
+
   template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  std::vector<std::vector<UserType>> generateValue(bool getRaw = false) {
     std::vector<UserType> v;
+    auto cv = derived->template getRemoteValue<typename Derived::minimumUserType>()[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      v.push_back(derived->acc[i + derived->myOffset()] + derived->increment * (i + 1));
+      typename Derived::minimumUserType e = cv[i + derived->myOffset()] + derived->increment * (i + 1);
+      if(!getRaw) e = derived->convertRawToCooked(e);
+      v.push_back(e);
     }
     return {v};
   }
@@ -93,13 +104,14 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   std::vector<std::vector<UserType>> getRemoteValue() {
     std::vector<UserType> v;
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      v.push_back(derived->acc[i + derived->myOffset()]);
+      v.push_back(derived->template convertRawToCooked<typename Derived::minimumUserType>(
+          derived->acc[i + derived->myOffset()]));
     }
     return {v};
   }
 
   void setRemoteValue() {
-    auto v = generateValue<typename Derived::minimumUserType>()[0];
+    auto v = generateValue<typename Derived::minimumUserType>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       derived->acc[i + derived->myOffset()] = v[i];
     }
@@ -132,7 +144,7 @@ struct ConstantRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
       v.push_back(derived->value[k]);
     }
-    return {derived->value};
+    return {v};
   }
 
   void setRemoteValue() {}
@@ -140,6 +152,37 @@ struct ConstantRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   void setForceRuntimeError(bool, size_t) { assert(false); }
 };
 
+template<typename Derived>
+struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
+  using RegisterDescriptorBase<Derived>::derived;
+
+  size_t nChannels() { return 1; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+
+  size_t nRuntimeErrorCases() { return 0; }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    auto acc = lmapBackend->getRegisterAccessor<typename Derived::minimumUserType>(derived->path(), 0, 0, {});
+    acc->read();
+    std::vector<UserType> v;
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
+      v.push_back(acc->accessData(k));
+    }
+    return {v};
+  }
+
+  void setRemoteValue() {
+    auto acc = lmapBackend->getRegisterAccessor<typename Derived::minimumUserType>(derived->path(), 0, 0, {});
+    auto v = derived->template generateValue<typename Derived::minimumUserType>()[0];
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
+      acc->accessData(k) = v[k];
+    }
+    acc->write();
+  }
+
+  void setForceRuntimeError(bool, size_t) { assert(false); }
+};
 /********************************************************************************************************************/
 
 struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
@@ -219,9 +262,73 @@ struct RegConstant : ConstantRegisterDescriptorBase<RegConstant> {
 
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
+};
+
+struct RegConstant2 : ConstantRegisterDescriptorBase<RegConstant2> {
+  std::string path() { return "/Constant2"; }
+
+  size_t nElementsPerChannel() { return 1; }
+  const std::vector<int32_t> value{666};
+
+  typedef int32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+};
+
+struct RegSingleWordScaled : ScalarRegisterDescriptorBase<RegSingleWordScaled> {
+  std::string path() { return "/SingleWord_Scaled"; }
+
+  const float increment = std::exp(29.F);
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return 4.2 * value;
+  }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_USER"};
 };
 
+struct RegSingleWordScaledTwice : ScalarRegisterDescriptorBase<RegSingleWordScaledTwice> {
+  std::string path() { return "/SingleWord_Scaled_Twice"; }
+
+  const float increment = std::exp(31.F);
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return 6 * value;
+  }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_USER"};
+};
+
+struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
+  std::string path() { return "/FullArea_Scaled"; }
+
+  const float increment = std::exp(37.F);
+  size_t nElementsPerChannel() { return 0x400; }
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return 0.5 * value;
+  }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
+};
+
+struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
+  std::string path() { return "/MyModule/SomeSubmodule/Variable"; }
+
+  const int increment = 43;
+  size_t nElementsPerChannel() { return 1; }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+};
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
@@ -230,6 +337,8 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   std::string lmapCdd = "(logicalNameMap?map=unifiedTest.xlmap&target=" + dummyCdd + "&target2=" + dummy2Cdd + ")";
   exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummyCdd));
   exceptionDummy2 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy2Cdd));
+  lmapBackend =
+      boost::dynamic_pointer_cast<LogicalNameMappingBackend>(BackendFactory::getInstance().createBackend(lmapCdd));
   auto ubt = ChimeraTK::UnifiedBackendTest<>()
                  .addRegister<RegSingleWord>()
                  .addRegister<RegFullArea>()
@@ -238,7 +347,12 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
                  //.addRegister<RegChannel4>()
                  //.addRegister<RegChannelLast>()
                  //.addRegister<RegChannelLast>()
-                 .addRegister<RegConstant>();
+                 .addRegister<RegConstant>()
+                 .addRegister<RegConstant2>()
+                 .addRegister<RegSingleWordScaled>()
+                 .addRegister<RegSingleWordScaledTwice>()
+                 .addRegister<RegFullAreaScaled>()
+                 .addRegister<RegVariable>();
   ubt.runTests(lmapCdd);
 }
 
