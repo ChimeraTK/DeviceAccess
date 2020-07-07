@@ -557,6 +557,10 @@ struct Fixture_noTestableMode {
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
     device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
+
+    auto device1Status =
+        test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD1 / "status");
+
     device1DummyBackend->open();
     device2DummyBackend->open();
 
@@ -567,6 +571,7 @@ struct Fixture_noTestableMode {
     test.setScalarDefault("m1/o1", DEFAULT);
 
     test.runApplication();
+    CHECK_EQUAL_TIMEOUT((device1Status.readLatest(), device1Status), 0, 100000);
 
     // Making sure the default is written to the device before proceeding.
     auto m1o1 = device1DummyBackend->getRegisterAccessor<int>("m1/o1", 1, 0, false);
@@ -594,6 +599,9 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto result = test.getScalar<int>("m1/Module1_result");
 
+  auto device2Status =
+      test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD2 / "status");
+
   threadedFanoutInput = 10000;
   consumingFanoutSource = 1000;
   pollRegister = 1;
@@ -607,29 +615,41 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
 
   // -------------------------------------------------------------//
   // device module exception
+  threadedFanoutInput = 20000;
   pollRegister = 0;
 
   device2DummyBackend->throwExceptionRead = true;
 
   threadedFanoutInput.write();
-  // when the error detected the old value is written with faulty flag
+  // The new value from the fanout input should have been propagated,
+  // the new value of the poll input is not seen, because it gets skipped
   result.read();
-  BOOST_CHECK_EQUAL(result, 11001);
+  BOOST_CHECK_EQUAL(result, 21001);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
   // -------------------------------------------------------------//
+
+  threadedFanoutInput = 30000;
+  threadedFanoutInput.write();
+  // Further reads to the poll input are skipped
+  result.read();
+  BOOST_CHECK_EQUAL(result, 31001);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // -------------------------------------------------------------//
+
   // recovery from device module exception
   device2DummyBackend->throwExceptionRead = false;
-  // When the device recovers, the old value is written with ok flag
-  // It might be that the main loop does not write the value each time, so it has
-  // to be done once so the data does not stay invalid.
-  result.read();
-  BOOST_CHECK_EQUAL(result, 11001);
-  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+  CHECK_EQUAL_TIMEOUT((device2Status.readLatest(), device2Status), 0, 100000);
 
-  // finally the loop runs though and propagates the new value
+
+  threadedFanoutInput = 40000;
+  threadedFanoutInput.write();
   result.read();
-  BOOST_CHECK_EQUAL(result, 11000);
+  // Now we expect also the last value written to the pollRegister being
+  // propagated and the DataValidity should be ok again.
+  BOOST_CHECK_EQUAL(result, 41000);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 }
 
 BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
@@ -936,45 +956,81 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   device2DummyBackend->throwExceptionRead = true;
   pushInput.write();
 
-  // Output should be rewritten exactly once and the data valditity should be propagated
   CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 1, 10000);
   result.read();
   BOOST_CHECK(result.readLatest() == false);
-  // FIXME: This is olde behaviour:
-  BOOST_CHECK_EQUAL(result, 11);
-  // According to the new spec the new value for the push input should have been propagated already:
-  //BOOST_CHECK_EQUAL(result, 21);
+  // The new data from the pushInput and the DataValidity::faulty should have been propagated to the outout,
+  // the pollRegister should be skipped (Exceptionhandling spec B.2.2.3), so we don't expect the latest assigned value of 2
+  BOOST_CHECK_EQUAL(result, 21);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
-  // triggering once more does not produce any output until the device has recovered
+  // Writeing the pushInput should still trigger module execution and
+  // update the result value. Result validity should still be faulty because
+  // the device still has the exception
   pushInput = 30;
   pushInput.setDataValidity(ctk::DataValidity::ok);
   pushInput.write();
-  // just a short sleep, waiting for nothing. We will test below that there was nothing when the device recovers
-  sleep(1);
+  result.read();
+  BOOST_CHECK_EQUAL(result, 31);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // let the device recover
+  device2DummyBackend->throwExceptionRead = false;
+  CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 0, 10000);
+
+  // Everything should be back to normal, also the value of the pollRegister
+  // should be reflected in the output
+  pushInput = 40;
+  pollRegister = 3;
+  pushInput.write();
+  result.read();
+  BOOST_CHECK_EQUAL(result, 43);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+  // nothing more in the queue
   BOOST_CHECK(result.readLatest() == false);
 
-  pollRegister = 3;
-  device2DummyBackend->throwExceptionRead = false; // let the device recover
 
-  // the 2 from the poll register is never seen...
+  // Check if we get faulty output from the exception alone,
+  // keep pushInput ok
+  pollRegister = 4;
+  pushInput = 50;
+  device2DummyBackend->throwExceptionRead = true;
 
-  // /////////////////////////// FIXME: old behaviour. This will go away with the new spec
-  // The original data is written again, still with faulty as the push input was faulty as well
+  pushInput.write();
   result.read();
-  BOOST_CHECK_EQUAL(result, 11);
-  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
-  // The 20 at the push input is propagated (together with its faulty flag). It already sees the new value from the poll type
-  // It's good that this goes away. This combination was never at the souces at the same time.
-  result.read();
-  BOOST_CHECK_EQUAL(result, 23);
+  BOOST_CHECK(result.readLatest() == false);
+  // The new data from the pushInput, the device exception should yield DataValidity::faulty at the outout,
+  BOOST_CHECK_EQUAL(result, 53);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
-  // /////////////////////////// END OF FIXME: old behaviour
-
-  // The new, good value arrives
+  // Also set pushInputValidity to faulty
+  pushInput = 60;
+  pushInput.setDataValidity(ctk::DataValidity::faulty);
+  pushInput.write();
   result.read();
-  BOOST_CHECK_EQUAL(result, 33);
+  BOOST_CHECK_EQUAL(result, 63);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // let the device recover
+  device2DummyBackend->throwExceptionRead = false;
+  CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 0, 10000);
+
+  // The new pollRegister value should now be reflected in the result,
+  // but it's still faulty from the pushInput
+  pushInput = 70;
+  pollRegister = 5;
+  pushInput.write();
+  result.read();
+  BOOST_CHECK_EQUAL(result, 75);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // MAke pushInput ok, everything should be back to normal
+  pushInput = 80;
+  pushInput.setDataValidity(ctk::DataValidity::ok);
+  pollRegister = 6;
+  pushInput.write();
+  result.read();
+  BOOST_CHECK_EQUAL(result, 86);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
   // nothing more in the queue
   BOOST_CHECK(result.readLatest() == false);
