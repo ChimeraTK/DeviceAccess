@@ -107,4 +107,32 @@
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <targetBit>2</targetBit>
     </redirectedBit>
+    <redirectedRegister name="WordFirmwareForcedReadOnly">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <plugin name="forceReadOnly">
+      </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="WordFirmwareWithMath">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">x + 2.345</parameter>
+      </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="WordFirmwareAsParameterInMath">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">word_firmware - 42</parameter>
+        <parameter name="word_firmware">/SingleWord</parameter>
+      </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="MonostableTrigger">
+    <targetDevice><par>target</par></targetDevice>
+      <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+      <plugin name="monostableTrigger">
+        <parameter name="milliseconds">100</parameter>
+      </plugin>
+    </redirectedRegister>
 </logicalNameMap>

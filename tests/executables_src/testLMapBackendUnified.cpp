@@ -320,36 +320,34 @@ struct RegConstant2 : ConstantRegisterDescriptorBase<RegConstant2> {
   typedef minimumUserType rawUserType;
 };
 
-struct RegSingleWordScaled_R : ScalarRegisterDescriptorBase<RegSingleWordScaled_R> {
+template<typename Derived>
+struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
   std::string path() { return "/SingleWord_Scaled"; }
-  bool isWriteable() { return false; }
 
   const double increment = std::exp(1.);
-
-  template<typename T>
-  T convertRawToCooked(T value) {
-    return value * 4.2;
-  }
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
-struct RegSingleWordScaled_W : ScalarRegisterDescriptorBase<RegSingleWordScaled_W> {
-  std::string path() { return "/SingleWord_Scaled"; }
+struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
+  bool isWriteable() { return false; }
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value * 4.2;
+  }
+};
+
+struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
   bool isReadable() { return false; }
 
-  const double increment = std::exp(2.);
-
+  // the scale plugin applies the same factor in both directions, so we have to inverse it for write tests
   template<typename T>
   T convertRawToCooked(T value) {
     return value / 4.2;
   }
-
-  typedef double minimumUserType;
-  typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegSingleWordScaledTwice : ScalarRegisterDescriptorBase<RegSingleWordScaledTwice> {
@@ -436,6 +434,85 @@ struct RegBit2OfWordFirmware : BitRegisterDescriptorBase<RegBit2OfWordFirmware> 
   size_t bit = 2;
 };
 
+struct RegWirdFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWirdFirmwareForcedReadOnly> {
+  std::string path() { return "/WordFirmwareForcedReadOnly"; }
+
+  const uint32_t increment = -47;
+  bool isWriteable() { return false; }
+
+  typedef uint32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
+template<typename Derived>
+struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
+  std::string path() { return "/WordFirmwareWithMath"; }
+
+  const double increment = 7;
+
+  typedef double minimumUserType;
+  typedef uint32_t rawUserType;
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
+struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R> {
+  bool isWriteable() { return false; }
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value + 2.345;
+  }
+};
+
+struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMath_W> {
+  bool isReadable() { return false; }
+
+  // the math plugin applies the same formula in both directions, so we have to reverse the formula for write tests
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value - 2.345;
+  }
+};
+
+struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFirmwareAsParameterInMath> {
+  std::string path() { return "/WordFirmwareAsParameterInMath"; }
+
+  // no write test, since we cannot write into a parameter...
+  bool isWriteable() { return false; }
+
+  const double increment = 91;
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value - 42;
+  }
+
+  typedef double minimumUserType;
+  typedef uint32_t rawUserType;
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
+struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger> {
+  std::string path() { return "/MonostableTrigger"; }
+
+  // Note: the test is rather trivial and does not cover much apart from exception handling, since it requires a special
+  // dummy to test the intermediate value.
+
+  bool isReadable() { return false; }
+
+  uint32_t increment = 0; // unused but required to be present
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return {{0}};
+  }
+
+  typedef uint32_t minimumUserType;
+  typedef uint32_t rawUserType;
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
@@ -467,6 +544,11 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegBit0OfVar>()
       .addRegister<RegBit3OfVar>()
       //.addRegister<RegBit2OfWordFirmware>() // throws wrong exception type, needs investigation...
+      .addRegister<RegWirdFirmwareForcedReadOnly>()
+      .addRegister<RegWordFirmwareWithMath_R>()
+      .addRegister<RegWordFirmwareWithMath_W>()
+      .addRegister<RegWordFirmwareAsParameterInMath>()
+      .addRegister<RegMonostableTrigger>()
       .runTests(lmapCdd);
 }
 
