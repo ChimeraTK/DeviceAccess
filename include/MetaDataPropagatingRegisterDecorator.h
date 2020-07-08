@@ -30,8 +30,6 @@ namespace ChimeraTK {
 
     /** value of validity flag from last read operation */
     DataValidity lastValidity{DataValidity::ok};
-    /** value of validity flag from user */
-    DataValidity localValidity{DataValidity::ok};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MetaDataPropagatingRegisterDecorator);
