@@ -246,22 +246,22 @@ namespace ChimeraTK {
 
   // Helper template function to compare values appropriately for the type
   template<typename UserType>
-  bool comparHelper(UserType a, UserType b) {
+  bool compareHelper(UserType a, UserType b) {
     return a == b;
   }
 
   template<>
-  bool comparHelper<double>(double a, double b) {
-    return std::abs(a - b) < (std::max(a, b) / 1e6);
+  bool compareHelper<double>(double a, double b) {
+    return std::abs(a - b) < std::abs(std::max(a, b) / 1e6);
   }
 
   template<>
-  bool comparHelper<float>(float a, float b) {
-    return std::abs(a - b) < (std::max(a, b) / 1e6);
+  bool compareHelper<float>(float a, float b) {
+    return std::abs(a - b) < std::abs(std::max(a, b) / 1e6F);
   }
 
   template<>
-  bool comparHelper<std::string>(std::string a, std::string b) {
+  bool compareHelper<std::string>(std::string a, std::string b) {
     return a == b;
   }
 } // namespace ChimeraTK
@@ -284,7 +284,7 @@ namespace ChimeraTK {
     BOOST_CHECK_EQUAL(accessor.getNElementsPerChannel(), expectedValue[0].size());                                     \
     for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
       for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                  \
-        if(!comparHelper(                                                                                              \
+        if(!compareHelper(                                                                                             \
                accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {     \
           if(fail.size() == 0) {                                                                                       \
             fail = "Accessor content differs from expected value. First difference at index [" +                       \
@@ -309,7 +309,7 @@ namespace ChimeraTK {
     BOOST_CHECK_EQUAL(value[0].size(), expectedValue[0].size());                                                       \
     for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
       for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                  \
-        if(!comparHelper(                                                                                              \
+        if(!compareHelper(                                                                                             \
                value[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {        \
           if(fail.size() == 0) {                                                                                       \
             fail = "Data content differs from expected value. First difference at index [" +                           \
@@ -338,7 +338,7 @@ namespace ChimeraTK {
       BOOST_CHECK_EQUAL(accessor.getNElementsPerChannel(), expectedValue[0].size());                                   \
       for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
         for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                \
-          if(!comparHelper(                                                                                            \
+          if(!compareHelper(                                                                                           \
                  accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
             if(fail.size() == 0) {                                                                                     \
               fail = "Accessor content differs from expected value. First difference at index [" +                     \
