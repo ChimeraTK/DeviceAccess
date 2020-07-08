@@ -560,8 +560,6 @@ namespace ChimeraTK {
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
-      auto v0 = x.template getRemoteValue<UserType>();
-
       // write some value
       auto theValue = x.template generateValue<UserType>();
 
