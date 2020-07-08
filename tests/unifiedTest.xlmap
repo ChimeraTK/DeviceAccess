@@ -36,30 +36,6 @@
         <type>integer</type>
         <value>666</value>
     </constant>
-    <redirectedRegister name="SingleWord_Scaled">
-        <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
-        <plugin name="multiply">
-          <parameter name="factor">4.2</parameter>
-        </plugin>
-    </redirectedRegister>
-    <redirectedRegister name="SingleWord_Scaled_Twice">
-        <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
-        <plugin name="multiply">
-          <parameter name="factor">2</parameter>
-        </plugin>
-        <plugin name="multiply">
-          <parameter name="factor">3</parameter>
-        </plugin>
-    </redirectedRegister>
-    <redirectedRegister name="FullArea_Scaled">
-        <targetDevice><par>target</par></targetDevice>
-        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
-        <plugin name="multiply">
-          <parameter name="factor">0.5</parameter>
-        </plugin>
-    </redirectedRegister>
     <module name="MyModule">
       <module name="SomeSubmodule">
         <variable name="Variable">
@@ -107,6 +83,30 @@
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <targetBit>2</targetBit>
     </redirectedBit>
+    <redirectedRegister name="SingleWord_Scaled">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">4.2</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="SingleWord_Scaled_Twice">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">2</parameter>
+        </plugin>
+        <plugin name="multiply">
+          <parameter name="factor">3</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="FullArea_Scaled">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">0.5</parameter>
+        </plugin>
+    </redirectedRegister>
     <redirectedRegister name="WordFirmwareForcedReadOnly">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>

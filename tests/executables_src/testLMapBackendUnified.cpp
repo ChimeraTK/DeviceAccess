@@ -20,6 +20,10 @@ BOOST_AUTO_TEST_SUITE(LMapBackendUnifiedTestSuite)
 static boost::shared_ptr<ExceptionDummy> exceptionDummy, exceptionDummy2;
 static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 
+/**********************************************************************************************************************/
+/* First a number of base descriptors is defined to simplify the descriptors for the individual registers. */
+
+/// Base descriptor with defaults, used for all registers
 template<typename Derived>
 struct RegisterDescriptorBase {
   bool isWriteable() { return true; }
@@ -41,6 +45,7 @@ struct RegisterDescriptorBase {
   [[noreturn]] void forceAsyncReadInconsistency() { assert(false); }
 };
 
+/// Base descriptor for channel accessors
 template<typename Derived>
 struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
@@ -74,6 +79,7 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   }
 };
 
+/// Base descriptor for 1D accessors (and scalars)
 template<typename Derived>
 struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
@@ -131,11 +137,13 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   }
 };
 
+/// Base descriptor for scalars
 template<typename Derived>
 struct ScalarRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   size_t nElementsPerChannel() { return 1; }
 };
 
+/// Base descriptor for constant accessors
 template<typename Derived>
 struct ConstantRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
@@ -165,6 +173,7 @@ struct ConstantRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   void setForceRuntimeError(bool, size_t) { assert(false); }
 };
 
+/// Base descriptor for variable accessors
 template<typename Derived>
 struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
@@ -197,6 +206,7 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   void setForceRuntimeError(bool, size_t) { assert(false); }
 };
 
+// Base descriptor for bit accessors
 template<typename Derived>
 struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
@@ -230,7 +240,9 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
 };
 
 /********************************************************************************************************************/
+/* Now for each register in unifiedTest.xlmap we define a descriptor */
 
+/// Test passing through scalar accessors
 struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   std::string path() { return "/SingleWord"; }
 
@@ -241,6 +253,7 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test passing through 1D array accessors
 struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
   std::string path() { return "/FullArea"; }
 
@@ -252,6 +265,7 @@ struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
+/// Test passing through partial array accessors
 struct RegPartOfArea : OneDRegisterDescriptorBase<RegPartOfArea> {
   std::string path() { return "/PartOfArea"; }
 
@@ -264,6 +278,7 @@ struct RegPartOfArea : OneDRegisterDescriptorBase<RegPartOfArea> {
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
+/// Test channel accessor
 struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
   std::string path() { return "/Channel3"; }
 
@@ -276,6 +291,7 @@ struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
   DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
 };
 
+/// Test channel accessors
 struct RegChannel4 : ChannelRegisterDescriptorBase<RegChannel4> {
   std::string path() { return "/Channel4"; }
 
@@ -288,6 +304,7 @@ struct RegChannel4 : ChannelRegisterDescriptorBase<RegChannel4> {
   DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
 };
 
+/// Test channel accessors
 struct RegChannelLast : ChannelRegisterDescriptorBase<RegChannelLast> {
   std::string path() { return "/LastChannelInRegister"; }
 
@@ -300,6 +317,7 @@ struct RegChannelLast : ChannelRegisterDescriptorBase<RegChannelLast> {
   DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
 };
 
+/// Test constant accessor
 struct RegConstant : ConstantRegisterDescriptorBase<RegConstant> {
   std::string path() { return "/Constant"; }
 
@@ -310,6 +328,7 @@ struct RegConstant : ConstantRegisterDescriptorBase<RegConstant> {
   typedef minimumUserType rawUserType;
 };
 
+/// Test constant accessor
 struct RegConstant2 : ConstantRegisterDescriptorBase<RegConstant2> {
   std::string path() { return "/Constant2"; }
 
@@ -320,6 +339,64 @@ struct RegConstant2 : ConstantRegisterDescriptorBase<RegConstant2> {
   typedef minimumUserType rawUserType;
 };
 
+/// Test variable accessor
+struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
+  std::string path() { return "/MyModule/SomeSubmodule/Variable"; }
+
+  const int increment = 43;
+  size_t nElementsPerChannel() { return 1; }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+};
+
+/// Test constant accessor with arrays
+struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
+  std::string path() { return "/ArrayConstant"; }
+
+  const std::vector<int32_t> value{1111, 5555, 2222, 4444, 3333};
+  size_t nElementsPerChannel() { return 5; }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+};
+
+/// Test variable accessor with arrays
+struct RegArrayVariable : ConstantRegisterDescriptorBase<RegArrayVariable> {
+  std::string path() { return "/ArrayVariable"; }
+
+  const std::vector<int32_t> value{11, 22, 33, 44, 55, 66};
+  size_t nElementsPerChannel() { return 6; }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+};
+
+/// Test bit accessor with a variable accessor as target
+struct RegBit0OfVar : BitRegisterDescriptorBase<RegBit0OfVar> {
+  std::string path() { return "/Bit0ofVar"; }
+
+  RegVariable target;
+  size_t bit = 0;
+};
+
+/// Test bit accessor with a variable accessor as target
+struct RegBit3OfVar : BitRegisterDescriptorBase<RegBit3OfVar> {
+  std::string path() { return "/Bit3ofVar"; }
+
+  RegVariable target;
+  size_t bit = 3;
+};
+
+/// Test bit accessor with a real dummy accessor as target
+struct RegBit2OfWordFirmware : BitRegisterDescriptorBase<RegBit2OfWordFirmware> {
+  std::string path() { return "/Bit2ofWordFirmware"; }
+
+  RegSingleWord target;
+  size_t bit = 2;
+};
+
+/// Test multiply plugin - needs to be done separately for reading and writing (see below)
 template<typename Derived>
 struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
   std::string path() { return "/SingleWord_Scaled"; }
@@ -350,6 +427,7 @@ struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
   }
 };
 
+/// Test multiply plugin applied twice (just one direction for sake of simplicity)
 struct RegSingleWordScaledTwice : ScalarRegisterDescriptorBase<RegSingleWordScaledTwice> {
   std::string path() { return "/SingleWord_Scaled_Twice"; }
   bool isWriteable() { return false; }
@@ -366,6 +444,7 @@ struct RegSingleWordScaledTwice : ScalarRegisterDescriptorBase<RegSingleWordScal
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test multiply plugin applied to array (just one direction for sake of simplicity)
 struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   std::string path() { return "/FullArea_Scaled"; }
   bool isWriteable() { return false; }
@@ -383,58 +462,8 @@ struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
-struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
-  std::string path() { return "/MyModule/SomeSubmodule/Variable"; }
-
-  const int increment = 43;
-  size_t nElementsPerChannel() { return 1; }
-
-  typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
-};
-
-struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
-  std::string path() { return "/ArrayConstant"; }
-
-  const std::vector<int32_t> value{1111, 5555, 2222, 4444, 3333};
-  size_t nElementsPerChannel() { return 5; }
-
-  typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
-};
-
-struct RegArrayVariable : ConstantRegisterDescriptorBase<RegArrayVariable> {
-  std::string path() { return "/ArrayVariable"; }
-
-  const std::vector<int32_t> value{11, 22, 33, 44, 55, 66};
-  size_t nElementsPerChannel() { return 6; }
-
-  typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
-};
-
-struct RegBit0OfVar : BitRegisterDescriptorBase<RegBit0OfVar> {
-  std::string path() { return "/Bit0ofVar"; }
-
-  RegVariable target;
-  size_t bit = 0;
-};
-
-struct RegBit3OfVar : BitRegisterDescriptorBase<RegBit3OfVar> {
-  std::string path() { return "/Bit3ofVar"; }
-
-  RegVariable target;
-  size_t bit = 3;
-};
-
-struct RegBit2OfWordFirmware : BitRegisterDescriptorBase<RegBit2OfWordFirmware> {
-  std::string path() { return "/Bit2ofWordFirmware"; }
-
-  RegSingleWord target;
-  size_t bit = 2;
-};
-
-struct RegWirdFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWirdFirmwareForcedReadOnly> {
+/// Test force readonly plugin
+struct RegWordFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWordFirmwareForcedReadOnly> {
   std::string path() { return "/WordFirmwareForcedReadOnly"; }
 
   const uint32_t increment = -47;
@@ -445,6 +474,7 @@ struct RegWirdFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWirdFirmw
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test math plugin - needs to be done separately for reading and writing (see below)
 template<typename Derived>
 struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
   std::string path() { return "/WordFirmwareWithMath"; }
@@ -475,6 +505,7 @@ struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMa
   }
 };
 
+/// Test math plugin with real dummy register as parameter (exception handling...)
 struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFirmwareAsParameterInMath> {
   std::string path() { return "/WordFirmwareAsParameterInMath"; }
 
@@ -493,6 +524,7 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test monostable trigger plugin (rather minimal test, needs extension!)
 struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger> {
   std::string path() { return "/MonostableTrigger"; }
 
@@ -534,17 +566,17 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       //.addRegister<RegChannelLast>() // triggers "BUG: Wrong exception type thrown in transfer function!"
       .addRegister<RegConstant>()
       .addRegister<RegConstant2>()
-      .addRegister<RegSingleWordScaled_R>()
-      .addRegister<RegSingleWordScaled_W>()
-      .addRegister<RegSingleWordScaledTwice>()
-      .addRegister<RegFullAreaScaled>()
       .addRegister<RegVariable>()
       .addRegister<RegArrayConstant>()
       .addRegister<RegArrayVariable>()
       .addRegister<RegBit0OfVar>()
       .addRegister<RegBit3OfVar>()
       //.addRegister<RegBit2OfWordFirmware>() // throws wrong exception type, needs investigation...
-      .addRegister<RegWirdFirmwareForcedReadOnly>()
+      .addRegister<RegSingleWordScaled_R>()
+      .addRegister<RegSingleWordScaled_W>()
+      .addRegister<RegSingleWordScaledTwice>()
+      .addRegister<RegFullAreaScaled>()
+      .addRegister<RegWordFirmwareForcedReadOnly>()
       .addRegister<RegWordFirmwareWithMath_R>()
       .addRegister<RegWordFirmwareWithMath_W>()
       .addRegister<RegWordFirmwareAsParameterInMath>()
