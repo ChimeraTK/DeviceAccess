@@ -196,6 +196,39 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
 
   void setForceRuntimeError(bool, size_t) { assert(false); }
 };
+
+template<typename Derived>
+struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
+  using RegisterDescriptorBase<Derived>::derived;
+
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 1; }
+
+  typedef uint8_t minimumUserType;
+  typedef minimumUserType rawUserType;
+
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+
+  size_t nRuntimeErrorCases() { return derived->target.nRuntimeErrorCases(); }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return {{!this->template getRemoteValue<uint64_t>()[0][0]}};
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    uint64_t v = derived->target.template getRemoteValue<uint64_t>()[0][0];
+    uint64_t mask = 1 << derived->bit;
+    bool result = v & mask;
+    return {{result}};
+  }
+
+  void setRemoteValue() { derived->target.setRemoteValue(); }
+
+  void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }
+};
+
 /********************************************************************************************************************/
 
 struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
@@ -361,6 +394,48 @@ struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
   typedef float minimumUserType;
   typedef minimumUserType rawUserType;
 };
+
+struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
+  std::string path() { return "/ArrayConstant"; }
+
+  const std::vector<int32_t> value{1111, 5555, 2222, 4444, 3333};
+  size_t nElementsPerChannel() { return 5; }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+};
+
+struct RegArrayVariable : ConstantRegisterDescriptorBase<RegArrayVariable> {
+  std::string path() { return "/ArrayVariable"; }
+
+  const std::vector<int32_t> value{11, 22, 33, 44, 55, 66};
+  size_t nElementsPerChannel() { return 6; }
+
+  typedef float minimumUserType;
+  typedef minimumUserType rawUserType;
+};
+
+struct RegBit0OfVar : BitRegisterDescriptorBase<RegBit0OfVar> {
+  std::string path() { return "/Bit0ofVar"; }
+
+  RegVariable target;
+  size_t bit = 0;
+};
+
+struct RegBit3OfVar : BitRegisterDescriptorBase<RegBit3OfVar> {
+  std::string path() { return "/Bit3ofVar"; }
+
+  RegVariable target;
+  size_t bit = 3;
+};
+
+struct RegBit2OfWordFirmware : BitRegisterDescriptorBase<RegBit2OfWordFirmware> {
+  std::string path() { return "/Bit2ofWordFirmware"; }
+
+  RegSingleWord target;
+  size_t bit = 2;
+};
+
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
@@ -371,22 +446,28 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   exceptionDummy2 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy2Cdd));
   lmapBackend =
       boost::dynamic_pointer_cast<LogicalNameMappingBackend>(BackendFactory::getInstance().createBackend(lmapCdd));
-  auto ubt = ChimeraTK::UnifiedBackendTest<>()
-                 .addRegister<RegSingleWord>()
-                 .addRegister<RegFullArea>()
-                 .addRegister<RegPartOfArea>()
-                 //.addRegister<RegChannel3>()
-                 //.addRegister<RegChannel4>()
-                 //.addRegister<RegChannelLast>()
-                 //.addRegister<RegChannelLast>()
-                 .addRegister<RegConstant>()
-                 .addRegister<RegConstant2>()
-                 .addRegister<RegSingleWordScaled_R>()
-                 .addRegister<RegSingleWordScaled_W>()
-                 .addRegister<RegSingleWordScaledTwice>()
-                 .addRegister<RegFullAreaScaled>()
-                 .addRegister<RegVariable>();
-  ubt.runTests(lmapCdd);
+
+  ChimeraTK::UnifiedBackendTest<>()
+      .addRegister<RegSingleWord>()
+      .addRegister<RegFullArea>()
+      .addRegister<RegPartOfArea>()
+      //.addRegister<RegChannel3>() // triggers "BUG: Wrong exception type thrown in transfer function!"
+      //.addRegister<RegChannel4>() // triggers "BUG: Wrong exception type thrown in transfer function!"
+      //.addRegister<RegChannelLast>() // triggers "BUG: Wrong exception type thrown in transfer function!"
+      //.addRegister<RegChannelLast>() // triggers "BUG: Wrong exception type thrown in transfer function!"
+      .addRegister<RegConstant>()
+      .addRegister<RegConstant2>()
+      .addRegister<RegSingleWordScaled_R>()
+      .addRegister<RegSingleWordScaled_W>()
+      .addRegister<RegSingleWordScaledTwice>()
+      .addRegister<RegFullAreaScaled>()
+      .addRegister<RegVariable>()
+      .addRegister<RegArrayConstant>()
+      .addRegister<RegArrayVariable>()
+      .addRegister<RegBit0OfVar>()
+      .addRegister<RegBit3OfVar>()
+      //.addRegister<RegBit2OfWordFirmware>() // throws wrong exception type, needs investigation...
+      .runTests(lmapCdd);
 }
 
 /********************************************************************************************************************/

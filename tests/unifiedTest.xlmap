@@ -97,19 +97,14 @@
       <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
       <targetBit>0</targetBit>
     </redirectedBit>
-    <redirectedBit name="Bit1ofVar">
-      <targetDevice>this</targetDevice>
-      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
-      <targetBit>1</targetBit>
-    </redirectedBit>
-    <redirectedBit name="Bit2ofVar">
-      <targetDevice>this</targetDevice>
-      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
-      <targetBit>2</targetBit>
-    </redirectedBit>
     <redirectedBit name="Bit3ofVar">
       <targetDevice>this</targetDevice>
       <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
       <targetBit>3</targetBit>
+    </redirectedBit>
+    <redirectedBit name="Bit2ofWordFirmware">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <targetBit>2</targetBit>
     </redirectedBit>
 </logicalNameMap>
