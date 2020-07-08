@@ -557,7 +557,6 @@ struct Fixture_noTestableMode {
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
     device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
-
     auto device1Status =
         test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD1 / "status");
 
@@ -641,7 +640,6 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   // recovery from device module exception
   device2DummyBackend->throwExceptionRead = false;
   CHECK_EQUAL_TIMEOUT((device2Status.readLatest(), device2Status), 0, 100000);
-
 
   threadedFanoutInput = 40000;
   threadedFanoutInput.write();
@@ -806,25 +804,15 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   // Now the device has to go into the error state
   CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 1, 10000);
 
-  // The data is propagated once more to make sure the invaldi flag goes through (in this case it already was invalid, but
-  // cannot be nown by the code, see testDataValidPropagationOnException.
+  // The new value of the threadedFanoutInput should be propagated, the
+  // pollRegister is skipped, see testDataValidPropagationOnException.
   m1_result.read();
-  // FIXME: The correct behaviour according to the new spec is that the new value of threadedFanoutInput is already processed.
-  //BOOST_CHECK_EQUAL(m1_result, 1100);
-  BOOST_CHECK_EQUAL(m1_result, 1101);
+  BOOST_CHECK_EQUAL(m1_result, 1100);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
   m2_result.read();
-  // FIXME: The correct behaviour according to the new spec is that the new value of threadedFanoutInput is already processed.
-  //BOOST_CHECK_EQUAL(m2_result, 1100);
-  BOOST_CHECK_EQUAL(m2_result, 1101);
+  // Same for m2
+  BOOST_CHECK_EQUAL(m2_result, 1100);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
-
-  // Trigger the loop another time. Now the execution is blocked
-  threadedFanoutInput = 2;
-  threadedFanoutInput.write();
-
-  // The result of m1 must not be written out again. We can't test this at this safely here.
-  // Instead, we know that the next read after recovery will already contain the new data.
 
   // ---------------------------------------------------------------------//
   // device exception recovery
@@ -836,26 +824,14 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   // nothing else in the queue
   BOOST_CHECK(deviceStatus.readNonBlocking() == false);
 
-  /////////////////// FIXME: This is old behaviour and will go away with proper implementation of the spec//////////////////
+  // ---------------------------------------------------------------------//
+  // Now both, threadedFanoutInput and pollRegister should propagate
+  pollRegister = 300;
+  threadedFanoutInput = 2;
+  threadedFanoutInput.write();
 
-  // After recovering the old data has been written once, still with invalid because the fan input is still invalid
   m1_result.read();
-  BOOST_CHECK_EQUAL(m1_result, 1101);
-  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
-  m2_result.read();
-  BOOST_CHECK_EQUAL(m2_result, 1101);
-  BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
-
-  // Now the data for threadedFanoutInput = 0 is propagated. In the new spec this was already done above
-  m1_result.read();
-  BOOST_CHECK_EQUAL(m1_result, 1200);
-  m2_result.read();
-  BOOST_CHECK_EQUAL(m2_result, 1200);
-
-  /////////////////// END OF FIXME: old behaviour ///////////////////////////////////////////////////
-
-  m1_result.read(); // we know there must be exaclty one value being written. Wait for it.
-  BOOST_CHECK_EQUAL(m1_result, 1202);
+  BOOST_CHECK_EQUAL(m1_result, 1302);
   // Data validity still faulty because the input from the fan is invalid
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
   // again, nothing else in the queue
@@ -863,7 +839,7 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
   // same for m2
   m2_result.read();
-  BOOST_CHECK_EQUAL(m2_result, 1202);
+  BOOST_CHECK_EQUAL(m2_result, 1302);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(m2_result.readNonBlocking() == false);
 
@@ -874,12 +850,12 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   threadedFanoutInput.write();
 
   m1_result.read();
-  BOOST_CHECK_EQUAL(m1_result, 1203);
+  BOOST_CHECK_EQUAL(m1_result, 1303);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(m1_result.readNonBlocking() == false);
 
   m2_result.read();
-  BOOST_CHECK_EQUAL(m2_result, 1203);
+  BOOST_CHECK_EQUAL(m2_result, 1303);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(m1_result.readNonBlocking() == false);
 }
@@ -988,7 +964,6 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
   // nothing more in the queue
   BOOST_CHECK(result.readLatest() == false);
-
 
   // Check if we get faulty output from the exception alone,
   // keep pushInput ok
