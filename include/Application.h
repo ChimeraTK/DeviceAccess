@@ -161,6 +161,8 @@ namespace ChimeraTK {
       pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
     }
 
+    void debugMakeConnections(){ enableDebugMakeConnections = true; };
+
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
 
     std::string getQualifiedName() const override { return "/" + _name; }
@@ -361,6 +363,9 @@ namespace ChimeraTK {
 
     /** Flag whether to warn about unconnected variables or not */
     bool enableUnconnectedVariablesWarning{false};
+
+    /** Flag if debug output is enabled for creation of the varible connections */
+    bool enableDebugMakeConnections{false};
 
     /** Map from ProcessArray uniqueId to the variable ID for control system
      * variables. This is required for the TestFacility. */

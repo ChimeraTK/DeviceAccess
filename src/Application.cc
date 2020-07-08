@@ -706,13 +706,11 @@ void Application::makeConnectionsForNetwork(VariableNetwork& network) {
 
 template<typename UserType>
 void Application::typedMakeConnection(VariableNetwork& network) {
-#define DEBUG_TYPED_MAKE_CONNECTIONS 0
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-  std::cout << std::endl << "Executing typedMakeConnections for network:" << std::endl;
-  network.dump("", std::cout);
-  std::cout << std::endl;
-#endif
-
+  if(enableDebugMakeConnections) {
+    std::cout << std::endl << "Executing typedMakeConnections for network:" << std::endl;
+    network.dump("", std::cout);
+    std::cout << std::endl;
+  }
   try {                          // catch exceptions to add information about the failed network
     bool connectionMade = false; // to check the logic...
 
@@ -725,9 +723,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
 
     // 1st case: the feeder requires a fixed implementation
     if(feeder.hasImplementation() && !constantFeeder) {
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-      std::cout << "  Creating fixed implementation for feeder '" << feeder.getName() << "'..." << std::endl;
-#endif
+      if(enableDebugMakeConnections) {
+        std::cout << "  Creating fixed implementation for feeder '" << feeder.getName() << "'..." << std::endl;
+      }
 
       // Create feeding implementation.
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
@@ -743,9 +741,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
 
       // if we just have two nodes, directly connect them
       if(nNodes == 2 && !useExternalTrigger) {
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-        std::cout << "    Setting up direct connection without external trigger." << std::endl;
-#endif
+        if(enableDebugMakeConnections) {
+          std::cout << "    Setting up direct connection without external trigger." << std::endl;
+        }
         bool needsFanOut{false};
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> consumingImpl;
 
@@ -784,9 +782,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         connectionMade = true;
       }
       else { /* !(nNodes == 2 && !useExternalTrigger) */
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-        std::cout << "    Setting up triggered connection." << std::endl;
-#endif
+        if(enableDebugMakeConnections) {
+          std::cout << "    Setting up triggered connection." << std::endl;
+        }
 
         // create the right FanOut type
         boost::shared_ptr<FanOut<UserType>> fanOut;
@@ -796,9 +794,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         auto consumerImplementationPairs = setConsumerImplementations<UserType>(feeder, consumers);
 
         if(useExternalTrigger) {
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-          std::cout << "      Using external trigger." << std::endl;
-#endif
+          if(enableDebugMakeConnections) {
+            std::cout << "      Using external trigger." << std::endl;
+          }
+
           // if external trigger is enabled, use externally triggered threaded
           // FanOut. Create one per external trigger impl.
           void* triggerImplId = network.getExternalTriggerImpl().get();
@@ -815,9 +814,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           fanOut = triggerFanOut->addNetwork(feedingImpl, consumerImplementationPairs);
         }
         else if(useFeederTrigger) {
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-          std::cout << "      Using trigger provided by the feeder." << std::endl;
-#endif
+          if(enableDebugMakeConnections) {
+            std::cout << "      Using trigger provided by the feeder." << std::endl;
+          }
+
           // if the trigger is provided by the pushing feeder, use the treaded
           // version of the FanOut to distribute new values immediately to all
           // consumers. Depending on whether we have a return channel or not, pick
@@ -835,9 +835,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           fanOut = threadedFanOut;
         }
         else {
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-          std::cout << "      No trigger, using consuming fanout." << std::endl;
-#endif
+          if(enableDebugMakeConnections) {
+            std::cout << "      No trigger, using consuming fanout." << std::endl;
+          }
           assert(network.hasApplicationConsumer()); // checkConnections should
                                                     // catch this
           consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl, consumerImplementationPairs);
@@ -858,9 +858,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
     // 2nd case: the feeder does not require a fixed implementation
     else if(!constantFeeder) { /* !feeder.hasImplementation() */
 
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-      std::cout << "  Feeder '" << feeder.getName() << "' does not require a fixed implementation." << std::endl;
-#endif
+      if(enableDebugMakeConnections) {
+        std::cout << "  Feeder '" << feeder.getName() << "' does not require a fixed implementation." << std::endl;
+      }
 
       // we should be left with an application feeder node
       if(feeder.getType() != NodeType::Application) {
@@ -911,9 +911,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
     }
     else { /* constantFeeder */
 
-#if DEBUG_TYPED_MAKE_CONNECTIONS
-      std::cout << "  Using constant feeder '" << feeder.getName() << "'..." << std::endl;
-#endif
+      if(enableDebugMakeConnections) {
+        std::cout << "  Using constant feeder '" << feeder.getName() << "'..." << std::endl;
+      }
       assert(feeder.getType() == NodeType::Constant);
       auto feedingImpl = feeder.getConstAccessor<UserType>();
       assert(feedingImpl != nullptr);
