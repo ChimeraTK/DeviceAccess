@@ -368,6 +368,13 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
 
   // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
+
+  // Receiving accessors should be faulty after construction,
+  // see data validity propagation spec 2.6.1
+  if(node.getDirection().dir == VariableDirection::feeding){
+    accessor->setDataValidity(DataValidity::faulty);
+  }
+
   return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node);
 }
 
