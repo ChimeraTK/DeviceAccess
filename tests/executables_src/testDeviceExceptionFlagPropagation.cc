@@ -59,14 +59,14 @@ struct TestApplication : ctk::Application {
           case 1:
             vars.read.readLatest();
             break;
-          case 3:
+          case 2:
             vars.read.read();
             break;
-          case 5:
+          case 3:
             vars.set.write();
             break;
-          case 6:
-            vars.set.write();
+          case 4:
+            vars.set.write(); //FIXME should be wrtDestructively?
             break;
           default:
             break;
@@ -83,8 +83,10 @@ struct TestApplication : ctk::Application {
 };
 
 BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
-  for(int readMode = 0; readMode < 3; ++readMode) {
+  for(int readMode = 0; readMode < 1; ++readMode) { //FIXME set to 1
     TestApplication app;
+    //app.debugMakeConnections();
+
     boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
@@ -92,15 +94,22 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
     app.name.name.tick >> app.module.vars.tick;
 
-    // Open and put device in an error state
-    dummyBackend1->throwExceptionOpen = true;
     ctk::TestFacility test(false);
+
+    // Open and put device in an error state
+    // FIXME Move this further down. It makes the sequence confusing, the check below should be faulty,
+    // because the receiving end of all accessor implementations should be constructed with faulty (Initial value propagation spec, D.1)
+    //dummyBackend1->throwExceptionOpen = true;
     BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
 
+
+    // Throw on device open and check if DataValidity::faulty gets propagated
+    dummyBackend1->throwExceptionOpen = true;
     // set the read mode
     app.module.readMode = readMode;
     std::cout << "Read mode is: " << app.module.readMode << ". Run application.\n";
     app.run();
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int>("Devices/" + std::string(ExceptionDummyCDD1) + "/status"), 1, 10000);
 
     // Trigger and check
     app.name.name.tick.write();
@@ -126,7 +135,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   test.runApplication();
 
   // Advance through all non-blocking read methods
-  while(app.module.readMode < 4) {
+  while(app.module.readMode < 2) {
     // Check
     app.trigger.sendTrigger();
     test.stepApplication();
@@ -142,9 +151,6 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
     // advance to the next read
     dummyBackend1->throwExceptionRead = false;
     app.module.readMode++;
-
-    // Skip readAsync(). See https://github.com/ChimeraTK/ApplicationCore/issues/48
-    if(app.module.readMode == 2) app.module.readMode++;
   }
 }
 
@@ -155,14 +161,14 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
 
   app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
   app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
-  app.module.readMode = 5;
+  app.module.readMode = 3;
   app.trigger.tick >> app.module.vars.tick;
 
   ctk::TestFacility test(true);
   test.runApplication();
 
   // Advance through all non-blocking read methods
-  while(app.module.readMode < 7) {
+  while(app.module.readMode < 5) {
     // Check
     app.trigger.sendTrigger();
     test.stepApplication();
