@@ -414,15 +414,15 @@ struct TestApplication3 : ctk::Application {
   Module2 m2{this, "m2", ""};
 
   ctk::ControlSystemModule cs;
-  ctk::DeviceModule device1DummyBackend{this, ExceptionDummyCDD1};
-  ctk::DeviceModule device2DummyBackend{this, ExceptionDummyCDD2};
+  ctk::DeviceModule device1{this, ExceptionDummyCDD1};
+  ctk::DeviceModule device2{this, ExceptionDummyCDD2};
 
   void defineConnections() override {
-    device1DummyBackend["m1"]("i1") >> m1("i1");
+    device1["m1"]("i1") >> m1("i1");
     findTag("CS").connectTo(cs);
-    findTag("DEVICE1").connectTo(device1DummyBackend);
-    findTag("DEVICE2").connectTo(device2DummyBackend);
-    device1DummyBackend["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
+    findTag("DEVICE1").connectTo(device1);
+    findTag("DEVICE2").connectTo(device2);
+    device1["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
   }
 };
 
@@ -462,8 +462,9 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
   consumingFanoutSource = 10;
 
-  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+  auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
   pollRegister = 5;
+  pollRegister.write();
 
   test.stepApplication();
 
@@ -593,7 +594,7 @@ BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTes
 BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   std::cout << "testDeviceReadFailure" << std::endl;
   auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
-  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+  auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
 
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto result = test.getScalar<int>("m1/Module1_result");
@@ -604,6 +605,7 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   threadedFanoutInput = 10000;
   consumingFanoutSource = 1000;
   pollRegister = 1;
+  pollRegister.write();
 
   // -------------------------------------------------------------//
   // without errors
@@ -616,6 +618,7 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   // device module exception
   threadedFanoutInput = 20000;
   pollRegister = 0;
+  pollRegister.write();
 
   device2DummyBackend->throwExceptionRead = true;
 
@@ -703,8 +706,9 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
   auto result = test.getScalar<int>("m1/Module1_result");
 
-  auto pollRegisterSource = device2DummyBackend->getRawAccessor("m1", "i2");
+  auto pollRegisterSource = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
   pollRegisterSource = 100;
+  pollRegisterSource.write();
 
   threadedFanoutInput = 10;
 
@@ -769,8 +773,9 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
   consumingFanoutSource = 1000;
 
-  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+  auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
   pollRegister = 100;
+  pollRegister.write();
 
   threadedFanoutInput = 1;
 
@@ -810,6 +815,7 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   // device module exception
   device2DummyBackend->throwExceptionRead = true;
   pollRegister = 200;
+  pollRegister.write();
   threadedFanoutInput = 0;
   threadedFanoutInput.write();
 
@@ -839,6 +845,7 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   // ---------------------------------------------------------------------//
   // Now both, threadedFanoutInput and pollRegister should propagate
   pollRegister = 300;
+  pollRegister.write();
   threadedFanoutInput = 2;
   threadedFanoutInput.write();
 
@@ -922,7 +929,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   ctk::TestFacility test{false};
   test.runApplication();
 
-  auto pollRegister = device2DummyBackend->getRawAccessor("m1", "i2");
+  auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
   auto pushInput = test.getScalar<int>("module/o1");
   auto result = test.getScalar<int>("module/Module3_result");
 
@@ -930,6 +937,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
       test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication4::ExceptionDummyCDD2 / "status");
 
   pollRegister = 1;
+  pollRegister.write();
   pushInput = 10;
   pushInput.write();
 
@@ -939,6 +947,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
 
   // Set data validity to faulty and trigger excetion in the same update
   pollRegister = 2;
+  pollRegister.write();
   pushInput = 20;
   pushInput.setDataValidity(ctk::DataValidity::faulty);
   device2DummyBackend->throwExceptionRead = true;
@@ -970,6 +979,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   // should be reflected in the output
   pushInput = 40;
   pollRegister = 3;
+  pollRegister.write();
   pushInput.write();
   result.read();
   BOOST_CHECK_EQUAL(result, 43);
@@ -980,6 +990,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   // Check if we get faulty output from the exception alone,
   // keep pushInput ok
   pollRegister = 4;
+  pollRegister.write();
   pushInput = 50;
   device2DummyBackend->throwExceptionRead = true;
 
@@ -1006,6 +1017,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   // but it's still faulty from the pushInput
   pushInput = 70;
   pollRegister = 5;
+  pollRegister.write();
   pushInput.write();
   result.read();
   BOOST_CHECK_EQUAL(result, 75);
@@ -1015,6 +1027,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   pushInput = 80;
   pushInput.setDataValidity(ctk::DataValidity::ok);
   pollRegister = 6;
+  pollRegister.write();
   pushInput.write();
   result.read();
   BOOST_CHECK_EQUAL(result, 86);
