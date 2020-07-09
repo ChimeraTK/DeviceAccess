@@ -26,20 +26,31 @@ namespace ChimeraTK {
     : FanOut<UserType>(feedingImpl), ChimeraTK::NDRegisterAccessorDecorator<UserType>(feedingImpl) {
       assert(feedingImpl->isReadable());
 
+      _lastReceivedValue.resize(buffer_2D[0].size());
+
       // Add the consuming accessors
       for(auto el : consumerImplementationPairs) {
         FanOut<UserType>::addSlave(el.first, el.second);
       }
     }
 
-    void doPostRead(TransferType type, bool hasNewData) override {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
-      if(!hasNewData) return;
+    void doPostRead(TransferType type, bool updateDataBuffer) override {
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, updateDataBuffer);
 
+      if(updateDataBuffer) {
+        // We have to keep a copy to write into the slaves. There might
+        // be decorators arount this fanout which swap out buffer_2D, so it is
+        // not available any more for a second read witout updateDataBuffer (exception case).
+        _lastReceivedValue = buffer_2D[0];
+      }
+
+      // The ConsumingFanOut conceptually never has a wait_fow_new_data flags. Hence each read
+      // operation returns with "new" data, even in case of an exception. So each read
+      // always synchronises all slaves and pushes the content of the data buffer.
       for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
         // do not send copy if no data is expected (e.g. trigger)
         if(slave->getNumberOfSamples() != 0) {
-          slave->accessChannel(0) = buffer_2D[0];
+          slave->accessChannel(0) = _lastReceivedValue;
         }
         slave->setDataValidity(this->dataValidity());
         slave->writeDestructively();
@@ -56,6 +67,7 @@ namespace ChimeraTK {
 
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
+    std::vector<UserType> _lastReceivedValue;
   };
 
 } /* namespace ChimeraTK */

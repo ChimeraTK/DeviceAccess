@@ -729,10 +729,11 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   consumingFanoutSource = 0;
 
   device1DummyBackend->throwExceptionRead = true;
+  threadedFanoutInput = 20;
   threadedFanoutInput.write();
 
   CHECK_TIMEOUT(result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(result, 111);
+  BOOST_CHECK_EQUAL(result, 121);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
   CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
@@ -741,10 +742,18 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
 
   // --------------------------------------------------------//
   // Recovery
-  device1DummyBackend->throwExceptionRead = true;
+  device1DummyBackend->throwExceptionRead = false;
+
+  // Wait until the device has recovered. Otherwise the read might be skipped and we still read the previous value with the faulty flag.
+  while((void)device1Status.read(), device1Status == 1) {
+    usleep(1000);
+  }
+
+  threadedFanoutInput = 30;
+  threadedFanoutInput.write();
 
   CHECK_TIMEOUT(result.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(result, 110);
+  BOOST_CHECK_EQUAL(result, 130);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 
   CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
