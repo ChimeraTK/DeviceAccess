@@ -1,28 +1,27 @@
 Technical specification: data validity propagation {#spec_dataValidityPropagation}
 ==================================================================================
 
-> **DRAFT VERSION, WRITE-UP IN PROGRESS!**
+> **This is a release candidate in implementation**
 
-Specification version v1.0
+Specification version V1.0RC1
 
 1. General idea
 ---------------
 
-### 1.1 Version v1.0
-
-* 1.1.1 In ApplicationCore each variable has a data validiy flag attached to it. ChimeraTK::DataValidity can be 'ok' or 'faulty'.
-* 1.1.2 This flag is automatically propagated: If one of the inputs of an ApplicationModule is faulty, the data validity of the module becomes faulty, which means
+* 1.1 In ApplicationCore each variable has a data validiy flag attached to it. ChimeraTK::DataValidity can be 'ok' or 'faulty'.
+* 1.2 This flag is automatically propagated: If one of the inputs of an ApplicationModule is faulty, the data validity of the module becomes faulty, which means
 all outputs of this module will automatically be flagged as faulty.
       Fan-outs might be special cases (see 2.4).
-* 1.1.3 If a device is in error state, all variables which are read from it shall be marked as 'faulty'. This flag is then propagated through all the modules (via 1.1.2) so it shows up in the control system.
-* 1.1.4 The user has the possibility to query the data validity of the module
-* 1.1.5 The user has the possibility to set the data validity of the module to 'faulty'. However, the user cannot actively set the module to 'ok' if one of the inputs is 'faulty'.
-* \anchor dataValidity_1_1_6 1.1.6 The user can decide to flag individual outputs as bad. However, the user cannot actively set an output to 'ok' if the data validity of the module is 'faulty' (to be more precise: if the validity of the corresponding  DataFaultCounter is faulty). \ref dataValidity_comment_1_1_6 "(*)"
-* 1.1.7 The user can get the data validity flag of individual inputs and take special actions.
+* 1.3 If a device is in error state, all variables which are read from it shall be marked as 'faulty'. This flag is then propagated through all the modules (via 1.1.2) so it shows up in the control system.
+* 1.4 The user has the possibility to query the data validity of the module
+* 1.5 The user has the possibility to set the data validity of the module to 'faulty'. However, the user cannot actively set the module to 'ok' if one of the inputs is 'faulty'.
+* \anchor dataValidity_1_6 1.6 The user can decide to flag individual outputs as bad. However, the user cannot actively set an output to 'ok' if the data validity of the module is 'faulty' (to be more precise: if the validity of the corresponding  DataFaultCounter is faulty). \ref dataValidity_comment_1_6 "(*)"
+* 1.7 The user can get the data validity flag of individual inputs and take special actions.
+* 1.8 The data validity of receiving variables is set to 'faulty' on construction. Like this, data is marked as faulty as long as no sensible initial values have been propagated.
 
 ### Comments
 
-* \anchor dataValidity_comment_1_1_6 \ref dataValidity_1_1_6 "1.1.6": The alternative implementation to add a data validity flag to the write() function is not a good solution because it does not work with writeAll().
+* \anchor dataValidity_comment_1_6 \ref dataValidity_1_6 "1.6": The alternative implementation to add a data validity flag to the write() function is not a good solution because it does not work with writeAll().
 
 2. Technical implementation
 ---------------------------
@@ -33,7 +32,7 @@ all outputs of this module will automatically be flagged as faulty.
 * 2.1.2 The decorator knows about the DataFaultCounter to which it is associated.
 
 * 2.1.3 **read:** For each read operation it checks the incoming data validity and informs the associated ChimeraTK::DataFaultCounter about the status.
-* 2.1.5 **write:** When writing, the decorator is checking the validity flags of the DataFaultCounter and the individual flag of the output. Only if both are 'ok' the output validity is 'ok', otherwise the outgoing data is send as 'faulty'.
+* 2.1.5 **write:** When writing, the decorator is checking the validity flags of the DataFaultCounter and the individual flag of the output set by the user. Only if both are 'ok' the output validity is 'ok', otherwise the outgoing data is send as 'faulty'.
 
 ### 2.2 DataFaultCounter
 
@@ -63,6 +62,10 @@ See @ref spec_execptionHandling.
 * 2.5.1 When creating the objects, ApplicationCore takes care that the MetaDataPropagatingRegisterDecorator is always placed around the ExceptionHandlingDecorators. Like this
   a `faulty` flag raised by the ExceptionHandlingDecorator is automatically picked up by the MetaDataPropagatingRegisterDecorator.
 * 2.5.2 The first failing read returns with the old data and the 'faulty' flag. Like this the flag is propagated to the outputs. Only further reads might freeze until the device is available again.
+
+### 2.6 Application class
+
+* 2.6.1 For device variables, the requirement of setting receiving endpoints to 'faulty' on construction can not be fulfilled. In DeviceAccess the accessor are bidirectional and provide no possibility to distinguish sender and receiver. Instead, the validity is set right after construction in Application::createDeviceVariable() for receivers.  
 
 ### Comments:
 
