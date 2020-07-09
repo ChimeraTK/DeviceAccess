@@ -1,3 +1,4 @@
+#include <cstring>
 #include <future>
 
 #define BOOST_TEST_MODULE testExceptionHandling
@@ -21,6 +22,87 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
+// TODO: extend/rename test application as required/ make new test applications as the exception
+// handling cases are covered.
+/**************************/
+struct Module : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPollInput<int> fromDevice{this, "REG1", "", "", {"DEVICE"}};
+  ctk::ScalarOutput<int> toCs{this, "o1", "", "", {"CS"}};
+
+  void mainLoop() override {
+    while(true) {
+      readAll();
+      toCs = static_cast<int>(fromDevice);
+      writeAll();
+      boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
+    }
+  }
+};
+
+struct DummyApplication : ctk::Application {
+  //   +----------+  poll_type_variable  +------+
+  //   |Module x<------------------------+Device|
+  //   +----------+                      +------+
+
+  constexpr static char const* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  DummyApplication() : Application("testFault") {}
+  ~DummyApplication() { shutdown(); }
+
+  Module m{this, "", ""};
+
+  ctk::ControlSystemModule cs;
+  ctk::DeviceModule device{this, ExceptionDummyCDD1};
+
+  void defineConnections() override {
+    findTag("CS").connectTo(cs);
+    findTag("DEVICE").connectTo(device);
+  }
+};
+
+struct Fixture_noTestFacility {
+  Fixture_noTestFacility()
+  : deviceBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))) {
+
+    deviceBackend->open();
+    testFacitiy.runApplication();
+
+    //
+    // As a test precondition, the DeviceModule  must have completed its startup procedure. The code
+    // block below is a workaround to ensure this.
+    //
+    // Code below depends on behavior of process variable 'status', where 'status' is initialized
+    // with 0 as default after which its written with:
+    //  - 1 (before DeviceModule begins opening the device),
+    //  - 0 (once DeviceModule successfully opens the device/device startup is complete).
+    // This sequence is similar for the associated 'message' variable; replace 0/1 values above
+    // with an empty/non-empty string.
+    //
+    // Thus checking for two writes on these variables is a resonable indication that device startup
+    // is done. (provided the assumption explained above holds).
+    /************************************************************************************************/
+    auto status =
+        testFacitiy.getScalar<int>(ctk::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status");
+    auto message = testFacitiy.getScalar<std::string>(
+        ctk::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message");
+
+    CHECK_TIMEOUT(status.readNonBlocking() == true, 100000);
+    CHECK_TIMEOUT(status.readNonBlocking() == true, 100000);
+
+    CHECK_TIMEOUT(message.readNonBlocking() == true, 100000);
+    CHECK_TIMEOUT(message.readNonBlocking() == true, 100000);
+    /************************************************************************************************/
+  }
+  ~Fixture_noTestFacility() { deviceBackend->throwExceptionRead = false; }
+
+  ctk::TestFacility testFacitiy{false};
+  boost::shared_ptr<ctk::ExceptionDummy> deviceBackend;
+  DummyApplication app;
+};
+/* **********************************/
+
 /*
  * This test suite checks behavior on a device related runtime error.
  */
@@ -38,7 +120,29 @@ BOOST_AUTO_TEST_SUITE(checkRuntimeErrorHandling)
   *
   * \anchor testExceptionHandling_b_2_1 \ref exceptionHandling_b_2_1 "B.2.1"
   */
-BOOST_FIXTURE_TEST_CASE(testFaultReporting) {}
+BOOST_FIXTURE_TEST_CASE(testFaultReporting, Fixture_noTestFacility) {
+  auto status =
+      testFacitiy.getScalar<int>(ctk::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status");
+  auto message = testFacitiy.getScalar<std::string>(
+      ctk::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message");
+
+  BOOST_CHECK_EQUAL(status, 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(message), "");
+
+  deviceBackend->throwExceptionRead = true;
+
+  CHECK_TIMEOUT(status.readNonBlocking() == true, 10000);
+  CHECK_TIMEOUT(message.readNonBlocking() == true, 10000);
+  BOOST_CHECK_EQUAL(status, 1);
+  BOOST_CHECK(static_cast<std::string>(message) != "");
+
+  deviceBackend->throwExceptionRead = false;
+
+  CHECK_TIMEOUT(status.readNonBlocking() == true, 10000);
+  CHECK_TIMEOUT(message.readNonBlocking() == true, 10000);
+  BOOST_CHECK_EQUAL(status, 0);
+  BOOST_CHECK(static_cast<std::string>(message) == "");
+}
 
 BOOST_AUTO_TEST_CASE(testBlockingRead) { // wait_for_new_data
                                          // how does the api of the accessor look like
