@@ -502,8 +502,7 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
 
 BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   std::cout << "testInvalidTrigger" << std::endl;
-  return; // FIXME Test does not pass because feature is not implemented yet.
-          // See issue #109
+
   auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
   deviceRegister = 20;
 

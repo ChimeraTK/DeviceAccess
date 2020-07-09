@@ -93,7 +93,7 @@ namespace ChimeraTK {
       while(true) {
         transferGroup.read();
         // send the version number to the consumers
-        boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version));
+        boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, externalTrigger->dataValidity()));
 
         // wait for external trigger
         boost::this_thread::interruption_point();
@@ -109,7 +109,7 @@ namespace ChimeraTK {
     /** Functor class to send data to the consumers, suitable for
      * boost::fusion::for_each(). */
     struct SendDataToConsumers {
-      SendDataToConsumers(VersionNumber version, DataValidity triggerValidity = DataValidity::ok)
+      SendDataToConsumers(VersionNumber version, DataValidity triggerValidity)
       : _version(version), _triggerValidity(triggerValidity) {}
 
       template<typename PAIR>
