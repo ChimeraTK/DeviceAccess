@@ -159,7 +159,7 @@ namespace ChimeraTK {
     /// to be accessed. A raw pointer is needed, as used inside the DummyBackend
     /// itself. module and name denominate the register entry in the map file.
     DummyRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
-    : _dev(dev), fpc(module + "/" + name) {
+    : _dev(dev), _path(module + "/" + name), fpc(module + "/" + name) {
       _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
       fpc = FixedPointConverter(
           module + "/" + name, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
@@ -180,9 +180,18 @@ namespace ChimeraTK {
     /// expose = operator from base class
     using proxies::DummyRegisterElement<T>::operator=;
 
+    /// Return the backend
+    DummyBackend& getBackend() const { return *_dev; }
+
+    /// Return the register path
+    const RegisterPath& getRegisterPath() const { return _path; }
+
    protected:
     /// pointer to VirtualDevice
     DummyBackend* _dev;
+
+    /// path of the register
+    RegisterPath _path;
 
     /// fixed point converter
     FixedPointConverter fpc;
