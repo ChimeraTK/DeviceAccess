@@ -25,7 +25,13 @@ namespace ChimeraTK {
 
   template<typename T>
   void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type, VersionNumber versionNumber) {
-    ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(_owner->getDataValidity());
+    if(TransferElement::_dataValidity == DataValidity::faulty) { // the application has manualy set the validity to faulty
+      ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(DataValidity::faulty);
+    }
+    else { // automatic propagation of the owner validity
+      ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(_owner->getDataValidity());
+    }
+
     NDRegisterAccessorDecorator<T, T>::doPreWrite(type, versionNumber);
   }
 

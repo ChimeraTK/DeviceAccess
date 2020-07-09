@@ -123,9 +123,11 @@ namespace ChimeraTK {
           auto fanOut = network.second;
           fanOut->setDataValidity(_validity);
           fanOut->accessChannel(0).swap(feeder->accessChannel(0));
-          bool dataLoss = fanOut->writeDestructively(_version);
+          // don't use write destructively. In case of an exception we still need the data for the next read (see Exception Handling spec B.2.2.6)
+          bool dataLoss = fanOut->write(_version);
           if(dataLoss) Application::incrementDataLossCounter();
-          // no need to swap back since we don't need the data
+          // swap the data back to the feeder so we have a valid copy there.
+          fanOut->accessChannel(0).swap(feeder->accessChannel(0));
         }
       }
 
