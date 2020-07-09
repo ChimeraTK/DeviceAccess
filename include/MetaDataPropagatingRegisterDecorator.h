@@ -30,6 +30,10 @@ namespace ChimeraTK {
 
     /** value of validity flag from last read operation */
     DataValidity lastValidity{DataValidity::ok};
+
+    using TransferElement::_dataValidity;
+    using NDRegisterAccessorDecorator<T>::_target;
+    using NDRegisterAccessorDecorator<T>::buffer_2D;
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MetaDataPropagatingRegisterDecorator);
