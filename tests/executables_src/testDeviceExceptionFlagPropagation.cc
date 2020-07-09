@@ -83,9 +83,8 @@ struct TestApplication : ctk::Application {
 };
 
 BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
-  for(int readMode = 0; readMode < 1; ++readMode) { //FIXME set to 1
+  for(int readMode = 0; readMode < 2; ++readMode) {
     TestApplication app;
-    //app.debugMakeConnections();
 
     boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
