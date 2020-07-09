@@ -21,6 +21,43 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
+/*
+ * This test suite checks behavior on a device related runtime error.
+ */
+BOOST_AUTO_TEST_SUITE(checkRuntimeErrorHandling)
+
+/*
+  * Verify the framework creates fault indicator process variables for a device.
+  *
+  * These are mapped on the control system as:
+  *   - /Devices/<device_alias or cdd>/status
+  *   - /Devices/<device_alias or cdd>/message
+  *
+  * A runtime errror on <device_alias> changes status to 1, with a non empty message
+  * string.
+  *
+  * \anchor testExceptionHandling_b_2_1 \ref exceptionHandling_b_2_1 "B.2.1"
+  */
+BOOST_FIXTURE_TEST_CASE(testFaultReporting) {}
+
+BOOST_AUTO_TEST_CASE(testBlockingRead) { // wait_for_new_data
+                                         // how does the api of the accessor look like
+    //device1DummyBackend["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
+  // make one with wait_for_new_data
+
+  // The framework decides the accessmode flags based on how the wiring looks like:
+  //
+  // we will have to make up wiring to get what we desire.
+}
+
+BOOST_AUTO_TEST_CASE(testReadLatest) {}
+
+BOOST_AUTO_TEST_CASE(testReadNonBlocking) {}
+
+BOOST_AUTO_TEST_CASE(testWrite) {}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
 constexpr char ExceptionDummyCDD2[] = "(ExceptionDummy:2?map=test3.map)";
 constexpr char ExceptionDummyCDD3[] = "(ExceptionDummy:3?map=test4.map)";
