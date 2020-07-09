@@ -208,7 +208,6 @@ struct TestApplication : public ctk::Application {
   ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, dummySdm};
   BlockingReadTestModule<T> blockingReadTestModule{this, "blockingReadTestModule", "Module for testing blocking read"};
-  //AsyncReadTestModule<T> asyncReadTestModule{this, "asyncReadTestModule", "Module for testing async read"};
   ReadAnyTestModule<T> readAnyTestModule{this, "readAnyTestModule", "Module for testing readAny()"};
 };
 
@@ -230,8 +229,6 @@ struct PollingTestApplication : public ctk::Application {
 /* test that no TestableModeAccessorDecorator is used if the testable mode is
  * not enabled */
 
-#if 0
-
 BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
   std::cout << "***************************************************************"
                "******************************************************"
@@ -244,7 +241,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
   app.setPVManager(pvManagers.second);
 
   app.blockingReadTestModule.connectTo(app.cs["blocking"]);
-  //app.asyncReadTestModule.connectTo(app.cs["async"]);
   app.readAnyTestModule.connectTo(app.cs["readAny"]);
 
   app.initialise();
@@ -259,8 +255,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
   BOOST_CHECK(boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hloutput) == nullptr);
 }
 
-#endif
-
 /*********************************************************************************************************************/
 /* test blocking read in test mode */
 
@@ -274,7 +268,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testBlockingRead, T, test_types) {
 
   app.cs("input") >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("output");
-  //app.asyncReadTestModule.connectTo(app.cs["async"]); // avoid runtime warning
   app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
 
   ctk::TestFacility test;
@@ -297,48 +290,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testBlockingRead, T, test_types) {
 }
 
 /*********************************************************************************************************************/
-/* test async read in test mode */
-
-#if 0
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testAsyncRead, T, test_types) {
-  std::cout << "***************************************************************"
-               "******************************************************"
-            << std::endl;
-  std::cout << "==> testAsyncRead<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-
-//  app.cs("input") >> app.asyncReadTestModule.someInput;
-//  app.asyncReadTestModule.someOutput >> app.cs("output");
-  app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
-  app.readAnyTestModule.connectTo(app.cs["readAny"]);       // avoid runtime warning
-
-  ctk::TestFacility test;
-
-  auto pvInput = test.getScalar<T>("input");
-  auto pvOutput = test.getScalar<T>("output");
-
-  test.runApplication();
-
-  // test blocking read when taking control in the test thread
-  for(int i = 0; i < 5; ++i) {
-    pvInput = 120 + i;
-    pvInput.write();
-    usleep(10000);
-    BOOST_CHECK(pvOutput.readNonBlocking() == false);
-    test.stepApplication();
-    bool ret = pvOutput.readNonBlocking();
-    BOOST_CHECK(ret == true);
-    if(!ret) {
-      CHECK_TIMEOUT(pvOutput.readNonBlocking() == true, 10000);
-    }
-    int val = pvOutput;
-    BOOST_CHECK(val == 120 + i);
-  }
-}
-
-/*********************************************************************************************************************/
 /* test testReadAny in test mode */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
@@ -353,7 +304,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   app.readAnyTestModule.value >> app.cs("value");
   app.readAnyTestModule.index >> app.cs("index");
   app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
-  //app.asyncReadTestModule.connectTo(app.cs["async"]);       // avoid runtime warning
 
   ctk::TestFacility test;
   auto value = test.getScalar<T>("value");
@@ -495,8 +445,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testChainedModules, T, test_types) {
   // put everything we got into one chain
   app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
   app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
-//  app.blockingReadTestModule.someOutput >> app.asyncReadTestModule.someInput;
-//  app.asyncReadTestModule.someOutput >> app.cs("value");
+  app.blockingReadTestModule.someOutput >> app.cs("value");
   app.readAnyTestModule.index >> app.cs("index");
 
   ctk::TestFacility test;
@@ -589,14 +538,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
 
   // distribute a value to multiple inputs
   app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
-  //app.readAnyTestModule.value >> app.blockingReadTestModule.someInput >> app.asyncReadTestModule.someInput;
+  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
-  //app.asyncReadTestModule.someOutput >> app.cs("valueFromAsync");
   app.readAnyTestModule.index >> app.cs("index");
 
   ctk::TestFacility test;
   auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
-  auto valueFromAsync = test.getScalar<T>("valueFromAsync");
   auto index = test.getScalar<uint32_t>("index");
   auto v1 = test.getScalar<T>("input/v1");
   auto v2 = test.getScalar<T>("input/v2");
@@ -607,7 +554,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   // check that we don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // send something to v2
@@ -617,16 +563,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   // check that we still don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // run the application and check that we got the expected result
   test.stepApplication();
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
   BOOST_CHECK_EQUAL((T)valueFromBlocking, 11);
-  BOOST_CHECK_EQUAL((T)valueFromAsync, 11);
   BOOST_CHECK_EQUAL((unsigned int)index, 2);
 
   // send something to v3
@@ -636,16 +579,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   // check that we still don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // run the application and check that we got the expected result
   test.stepApplication();
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
   BOOST_CHECK_EQUAL((T)valueFromBlocking, 12);
-  BOOST_CHECK_EQUAL((T)valueFromAsync, 12);
   BOOST_CHECK_EQUAL((unsigned int)index, 3);
 
   // send something to v3 again
@@ -655,16 +595,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   // check that we still don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // run the application and check that we got the expected result
   test.stepApplication();
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
   BOOST_CHECK_EQUAL((T)valueFromBlocking, 13);
-  BOOST_CHECK_EQUAL((T)valueFromAsync, 13);
   BOOST_CHECK_EQUAL((unsigned int)index, 3);
 
   // check that stepApplication() throws an exception if no input data is
@@ -679,7 +616,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   // check that we still don't receive anything anymore
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 }
 
@@ -699,16 +635,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   app.dev("REG2")[triggernode] >> app.readAnyTestModule.inputs.v2;
   app.cs("v3") >> app.readAnyTestModule.inputs.v3;
   app.cs("v4") >> app.readAnyTestModule.inputs.v4;
-  //app.readAnyTestModule.value >> app.blockingReadTestModule.someInput >> app.asyncReadTestModule.someInput;
+  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
-  //app.asyncReadTestModule.someOutput >> app.cs("valueFromAsync");
   app.readAnyTestModule.index >> app.cs("index");
 
   ctk::TestFacility test;
   ctk::Device dev;
   dev.open(dummySdm);
   auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
-  auto valueFromAsync = test.getScalar<T>("valueFromAsync");
   auto index = test.getScalar<uint32_t>("index");
   auto trigger = test.getScalar<int>("trigger");
   auto v2 = dev.getScalarRegisterAccessor<T>("REG2");
@@ -717,7 +651,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   // check that we don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // send something to v2 and send the trigger
@@ -728,16 +661,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   // check that we still don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // run the application and check that we got the expected result
   test.stepApplication();
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
   BOOST_CHECK(valueFromBlocking == 11);
-  BOOST_CHECK(valueFromAsync == 11);
   BOOST_CHECK(index == 2);
 
   // again send something to v2 and send the trigger
@@ -748,16 +678,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   // check that we still don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // run the application and check that we got the expected result
   test.stepApplication();
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
   BOOST_CHECK(valueFromBlocking == 22);
-  BOOST_CHECK(valueFromAsync == 22);
   BOOST_CHECK(index == 2);
 
   // check that stepApplication() throws an exception if no input data is
@@ -772,7 +699,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   // check that we still don't receive anything anymore
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
+  //  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 }
 
@@ -792,18 +719,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   app.cs("v2") >> app.readAnyTestModule.inputs.v2;
   app.cs("v3") >> app.readAnyTestModule.inputs.v3;
   app.cs("v4") >> app.readAnyTestModule.inputs.v4;
-  //app.dev("REG2")[triggernode] >> app.asyncReadTestModule.someInput;
   app.dev("REG3")[triggernode] >> app.blockingReadTestModule.someInput;
   app.readAnyTestModule.value >> app.cs("valueFromAny");
   app.readAnyTestModule.index >> app.cs("index");
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
-  //app.asyncReadTestModule.someOutput >> app.cs("valueFromAsync");
 
   ctk::TestFacility test;
   ctk::Device dev;
   dev.open(dummySdm);
   auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
-  auto valueFromAsync = test.getScalar<T>("valueFromAsync");
   auto valueFromAny = test.getScalar<T>("valueFromAny");
   auto index = test.getScalar<uint32_t>("index");
   auto trigger = test.getScalar<int>("trigger");
@@ -815,7 +739,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   // check that we don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
@@ -831,25 +754,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   // check that we still don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(valueFromAny.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // run the application and check that we got the expected result
   test.stepApplication();
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(valueFromAny.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
   BOOST_CHECK(valueFromBlocking == 33);
-  BOOST_CHECK(valueFromAsync == 22);
   BOOST_CHECK(valueFromAny == 11);
   BOOST_CHECK(index == 1);
 
   // check that we don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
@@ -865,18 +784,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   // check that we still don't receive anything yet
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(valueFromAny.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 
   // run the application and check that we got the expected result
   test.stepApplication();
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(valueFromAny.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
   BOOST_CHECK(valueFromBlocking == 4);
-  BOOST_CHECK(valueFromAsync == 5);
   BOOST_CHECK(valueFromAny == 6);
   BOOST_CHECK(index == 1);
 
@@ -892,7 +808,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   // check that we still don't receive anything anymore
   usleep(10000);
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
-  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
   BOOST_CHECK(valueFromAny.readNonBlocking() == false);
   BOOST_CHECK(index.readNonBlocking() == false);
 }
@@ -910,7 +825,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
 
   app.cs("input") >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("output");
-  //app.asyncReadTestModule.connectTo(app.cs["async"]); // avoid runtime warning
   app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
 
   ctk::TestFacility test;
@@ -1076,5 +990,3 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPolling, T, test_types) {
   BOOST_CHECK_EQUAL((T)pv_valuePush, 24);
   BOOST_CHECK_EQUAL((T)pv_state, 3);
 }
-
-#endif
