@@ -13,26 +13,30 @@ namespace ChimeraTK {
     }
 
     // Check if the data validity flag changed. If yes, propagate this information to the owning module.
-    auto valid = ChimeraTK::NDRegisterAccessorDecorator<T>::dataValidity();
-    if(valid != lastValidity) {
-      if(valid == DataValidity::faulty)
+    if(_dataValidity != lastValidity) {
+      if(_dataValidity == DataValidity::faulty)
         _owner->incrementDataFaultCounter();
       else
         _owner->decrementDataFaultCounter();
-      lastValidity = valid;
+      lastValidity = _dataValidity;
     }
   }
 
   template<typename T>
   void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type, VersionNumber versionNumber) {
-    if(TransferElement::_dataValidity == DataValidity::faulty) { // the application has manualy set the validity to faulty
-      ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(DataValidity::faulty);
+    // We cannot use NDRegisterAccessorDecorator<T> here because we need a different implementation of setting the target data validity.
+    // So we have a complete implemetation here.
+    if(_dataValidity == DataValidity::faulty) { // the application has manualy set the validity to faulty
+      _target->setDataValidity(DataValidity::faulty);
     }
     else { // automatic propagation of the owner validity
-      ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(_owner->getDataValidity());
+      _target->setDataValidity(_owner->getDataValidity());
     }
 
-    NDRegisterAccessorDecorator<T, T>::doPreWrite(type, versionNumber);
+    for(unsigned int i = 0; i < _target->getNumberOfChannels(); ++i) {
+      buffer_2D[i].swap(_target->accessChannel(i));
+    }
+    _target->preWrite(type, versionNumber);
   }
 
 } // namespace ChimeraTK
