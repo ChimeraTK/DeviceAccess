@@ -459,8 +459,9 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   threadedFanoutInput = 20;
   threadedFanoutInput.write();
   // write to register: m1.i1 linked with the consumingFanout.
-  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1_DUMMY_WRITEABLE");
   consumingFanoutSource = 10;
+  consumingFanoutSource.write();
 
   auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
   pollRegister = 5;
@@ -504,8 +505,9 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
 BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   std::cout << "testInvalidTrigger" << std::endl;
 
-  auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
+  auto deviceRegister = app.device1.device.getScalarRegisterAccessor<int>("/m1/i3_DUMMY_WRITEABLE");
   deviceRegister = 20;
+  deviceRegister.write();
 
   auto trigger = test.getScalar<int>("trigger");
   auto result = test.getScalar<int>("i3"); //Cs hook into reg: m1.i3
@@ -524,6 +526,7 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   //----------------------------------------------------------------//
   // faulty trigger
   deviceRegister = 30;
+  deviceRegister.write();
   trigger = 1;
   trigger.setDataValidity(ctk::DataValidity::faulty);
   trigger.write();
@@ -537,6 +540,7 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   //----------------------------------------------------------------//
   // recovery
   deviceRegister = 50;
+  deviceRegister.write();
 
   trigger = 1;
   trigger.setDataValidity(ctk::DataValidity::ok);
@@ -593,7 +597,7 @@ BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTes
 
 BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   std::cout << "testDeviceReadFailure" << std::endl;
-  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1_DUMMY_WRITEABLE");
   auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
 
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
@@ -604,6 +608,7 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
 
   threadedFanoutInput = 10000;
   consumingFanoutSource = 1000;
+  consumingFanoutSource.write();
   pollRegister = 1;
   pollRegister.write();
 
@@ -664,8 +669,9 @@ BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
   // trigger works as expected
   trigger = 1;
 
-  auto deviceRegister = device1DummyBackend->getRawAccessor("m1", "i3");
+  auto deviceRegister = app.device1.device.getScalarRegisterAccessor<int>("/m1/i3_DUMMY_WRITEABLE");
   deviceRegister = 30;
+  deviceRegister.write();
 
   trigger.write();
 
@@ -676,6 +682,8 @@ BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
   //----------------------------------------------------------------//
   // Device module exception
   deviceRegister = 10;
+  deviceRegister.write();
+
   device1DummyBackend->throwExceptionRead = true;
 
   trigger = 1;
@@ -712,8 +720,9 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
 
   threadedFanoutInput = 10;
 
-  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1_DUMMY_WRITEABLE");
   consumingFanoutSource = 1;
+  consumingFanoutSource.write();
 
   //----------------------------------------------------------//
   // no device module exception
@@ -730,6 +739,7 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   // --------------------------------------------------------//
   // device exception on consuming fanout source read
   consumingFanoutSource = 0;
+  consumingFanoutSource.write();
 
   device1DummyBackend->throwExceptionRead = true;
   threadedFanoutInput = 20;
@@ -770,8 +780,9 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   auto m1_result = test.getScalar<int>("m1/Module1_result");
   auto m2_result = test.getScalar<int>("m2/Module2_result");
 
-  auto consumingFanoutSource = device1DummyBackend->getRawAccessor("m1", "i1");
+  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1_DUMMY_WRITEABLE");
   consumingFanoutSource = 1000;
+  consumingFanoutSource.write();
 
   auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
   pollRegister = 100;
