@@ -105,6 +105,10 @@ namespace ChimeraTK {
       // set ID to match the decorated accessor
       this->_id = _target->getId();
 
+      // Initialise buffer meta data from target
+      this->_dataValidity = _target->dataValidity();
+      this->_versionNumber = _target->getVersionNumber();
+
       // initialise buffers
       buffer_2D.resize(_target->getNumberOfChannels());
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].resize(_target->getNumberOfSamples());
