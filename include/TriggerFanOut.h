@@ -109,8 +109,8 @@ namespace ChimeraTK {
     /** Functor class to send data to the consumers, suitable for
      * boost::fusion::for_each(). */
     struct SendDataToConsumers {
-      SendDataToConsumers(VersionNumber version, DataValidity validity = DataValidity::ok)
-      : _version(version), _validity(validity) {}
+      SendDataToConsumers(VersionNumber version, DataValidity triggerValidity = DataValidity::ok)
+      : _version(version), _triggerValidity(triggerValidity) {}
 
       template<typename PAIR>
       void operator()(PAIR& pair) const {
@@ -121,7 +121,9 @@ namespace ChimeraTK {
         for(auto& network : theMap) {
           auto feeder = network.first;
           auto fanOut = network.second;
-          fanOut->setDataValidity(_validity);
+          fanOut->setDataValidity((_triggerValidity == DataValidity::ok && feeder->dataValidity() == DataValidity::ok) ?
+                  DataValidity::ok :
+                  DataValidity::faulty);
           fanOut->accessChannel(0).swap(feeder->accessChannel(0));
           // don't use write destructively. In case of an exception we still need the data for the next read (see Exception Handling spec B.2.2.6)
           bool dataLoss = fanOut->write(_version);
@@ -132,7 +134,7 @@ namespace ChimeraTK {
       }
 
       VersionNumber _version;
-      DataValidity _validity;
+      DataValidity _triggerValidity;
     };
 
     /** TransferElement acting as our trigger */
