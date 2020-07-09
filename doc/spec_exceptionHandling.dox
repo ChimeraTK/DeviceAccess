@@ -40,7 +40,7 @@ namespace ChimeraTK {
 
 \subsection spec_exceptionHandling_behaviour_runtime_errors Runtime error handling
 - \anchor b_2 2. When a ChimeraTK::runtime_error has been received by the framework (thrown by a device register accessor):
-  - 2.1 The exception status is published as a process variable together with an error message.
+  - \anchor exceptionHandling_b_2_1 2.1 The exception status is published as a process variable together with an error message. [\ref testExceptionHandling_b_2_1 "T"]
     - 2.1.1 The variable \c Devices/\<alias\>/status contains a boolean flag whether the device is in an error state.
     - 2.1.2 The variable \c Devices/\<alias\>/message contains an error message, if the device is in an error state, or an empty string otherwise.
   - \anchor b_2_2 2.2 Read operations will propagate the DataValidity::faulty flag to the owning module / fan out (without changing the actual data value of the process variable):
