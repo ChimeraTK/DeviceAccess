@@ -557,8 +557,8 @@ struct Fixture_noTestableMode {
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
     device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
-    auto device1Status =
-        test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD1 / "status");
+    device1Status.replace(
+        test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD1 / "status"));
 
     device1DummyBackend->open();
     device2DummyBackend->open();
@@ -586,6 +586,7 @@ struct Fixture_noTestableMode {
   boost::shared_ptr<ctk::ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
   ctk::TestFacility test{false};
+  ChimeraTK::ScalarRegisterAccessor<int> device1Status;
 };
 
 BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestableMode)
@@ -652,11 +653,12 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
 
 BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
   std::cout << "testReadDeviceWithTrigger" << std::endl;
-  return; // FIXME Test does not pass because feature is not implemented yet.
-          // See issue #110
   auto trigger = test.getScalar<int>("trigger");
   auto fromDevice = test.getScalar<int>("i3"); // cs side display: m1.i3
   //----------------------------------------------------------------//
+  fromDevice.read(); // there is an initial value
+  BOOST_CHECK_EQUAL(fromDevice, 0);
+
   // trigger works as expected
   trigger = 1;
 
@@ -665,7 +667,7 @@ BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
 
   trigger.write();
 
-  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  fromDevice.read();
   BOOST_CHECK_EQUAL(fromDevice, 30);
   BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
 
@@ -677,25 +679,27 @@ BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
   trigger = 1;
   trigger.write();
 
-  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  fromDevice.read();
   BOOST_CHECK_EQUAL(fromDevice, 30);
   BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::faulty);
   //----------------------------------------------------------------//
   // Recovery
   device1DummyBackend->throwExceptionRead = false;
 
-  trigger = 1;
+  // Wait until the device has recovered. Otherwise the read might be skipped and we still read the previous value with the faulty flag.
+  while((void)device1Status.read(), device1Status == 1) {
+    usleep(1000);
+  }
+
   trigger.write();
 
-  CHECK_TIMEOUT(fromDevice.readLatest(), 10000);
+  fromDevice.read();
   BOOST_CHECK_EQUAL(fromDevice, 10);
   BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
 }
 
 BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   std::cout << "testConsumingFanout" << std::endl;
-  return; // FIXME Test does not pass because feature is not implemented yet.
-          // See issue #102
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
   auto result = test.getScalar<int>("m1/Module1_result");
