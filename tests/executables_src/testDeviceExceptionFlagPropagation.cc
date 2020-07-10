@@ -66,7 +66,7 @@ struct TestApplication : ctk::Application {
             vars.set.write();
             break;
           case 4:
-            vars.set.write(); //FIXME should be wrtDestructively?
+            vars.set.writeDestructively();
             break;
           default:
             break;
@@ -95,12 +95,8 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
 
     ctk::TestFacility test(false);
 
-    // Open and put device in an error state
-    // FIXME Move this further down. It makes the sequence confusing, the check below should be faulty,
-    // because the receiving end of all accessor implementations should be constructed with faulty (Initial value propagation spec, D.1)
-    //dummyBackend1->throwExceptionOpen = true;
+    // The receiving end of all accessor implementations should be constructed with faulty (Initial value propagation spec, D.1)
     BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
-
 
     // Throw on device open and check if DataValidity::faulty gets propagated
     dummyBackend1->throwExceptionOpen = true;
@@ -133,8 +129,8 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   ctk::TestFacility test(true);
   test.runApplication();
 
-  // Advance through all non-blocking read methods
-  while(app.module.readMode < 2) {
+  // Advance through all read methods
+  while(app.module.readMode < 3) {
     // Check
     app.trigger.sendTrigger();
     test.stepApplication();
@@ -147,8 +143,11 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
     test.stepApplication(false);
     BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
 
-    // advance to the next read
+    // Reset throwing and let the device recover
     dummyBackend1->throwExceptionRead = false;
+    test.stepApplication(true);
+
+    // advance to the next read
     app.module.readMode++;
   }
 }
