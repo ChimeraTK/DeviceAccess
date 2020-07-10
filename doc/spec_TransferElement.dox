@@ -231,6 +231,21 @@ This documnent is currently still **INCOMPLETE**!
 
 ### New in RC 10. NOT REVIEWED YET! ###
 
+- 12. TransferGroup
+  - 12.2 The TransferGroup is not using the xxxYyy() functions of the TransferElement base class because it is calling the postXxx() and preXx() functions of the high level elements, while the transfer itself is executed on the exchanged low level TransferElement. Hence TransferGroup::read() and TransferGroup::write() must implement the same exception handling a their TransferElement counterparts. This especially means:
+    - 12.2.1 The transfer and postXxx() are not executed if there was an exception in preXxx (c.f. \ref transferElement_B_6_1 "6.1" and \ref transferElement_B_6_2 "6.2")
+      - 12.2.1.1 This also means if only some of the high level elements have seen an exception, the transfer is executed for those elements where there was no exception.
+      - 12.2.1.2 The transfer is only executed for low level TransferElement where none of its high level elements has seen an exception.
+    - 12.2.2 Exceptions seen in the low level TransferElement are propagated to the high level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3")
+    - 12.2.3 postXxx() must be called for all high level elements where preXxx() did not throw, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5").
+      - 12.2.3.1 If exceptions have been caught from any postXxx(), an exception is thrown after all of them haven executed.
+      - 12.2.3.2 If more than one exception type is detected, the exception type with the highest priority is thrown:
+        * boost::thread_interrupted has highest priority. If it is shadowed by another exception the application might not terminate.
+        * ChimeraTK::logic_error is an unrecoverabel programming or configuration mistake and must not be shadowed by ChimeraTK::runtime_error
+        * boost::numeric_cast is similar to ChimeraTK::logic_error
+        * ChimeraTK::runtime_error
+    - 12.2.4 When reading, the application buffer only stays unchanged for those TransferElements which have seen an exception. TransferElements which could successfully perform the transfer have new data. (c.f.  \ref transferElement_B_6_4 "6.4")
+      
 - 16. TransferElement::replaceTransferElement()
   - 16.1 TransferElement::replaceTransferElement() checks that TransferElement::_exceptionBackend is identical before replacing anything.
 
