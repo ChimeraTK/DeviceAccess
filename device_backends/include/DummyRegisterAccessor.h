@@ -231,7 +231,8 @@ namespace ChimeraTK {
     /// itself. module and name denominate the register entry in the map file.
     /// Note: The string "AREA_MULTIPLEXED_SEQUENCE_" will be prepended to the
     /// name when searching for the register.
-    DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name) : _dev(dev), pitch(0) {
+    DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
+    : _dev(dev), _path(module + "/" + name), pitch(0) {
       _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
 
       int i = 0;
@@ -280,9 +281,18 @@ namespace ChimeraTK {
       return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
     }
 
+    /// Return the backend
+    DummyBackend& getBackend() const { return *_dev; }
+
+    /// Return the register path
+    const RegisterPath& getRegisterPath() const { return _path; }
+
    protected:
     /// pointer to VirtualDevice
     DummyBackend* _dev;
+
+    /// path of the register
+    RegisterPath _path;
 
     /// pointer to fixed point converter
     std::vector<FixedPointConverter> fpc;
