@@ -57,9 +57,7 @@ namespace ChimeraTK {
 
   void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
     std::lock_guard<std::mutex> lock(mutex);
-    if(!_opened) {
-      throw ChimeraTK::logic_error("Device is closed.");
-    }
+    assert(_opened);
     if(_hasActiveException) {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
@@ -72,9 +70,7 @@ namespace ChimeraTK {
   void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
     {
       std::lock_guard<std::mutex> lock(mutex);
-      if(!_opened) {
-        throw ChimeraTK::logic_error("Device is closed.");
-      }
+      assert(_opened);
       if(_hasActiveException) {
         throw ChimeraTK::runtime_error("previous, unrecovered fault");
       }
