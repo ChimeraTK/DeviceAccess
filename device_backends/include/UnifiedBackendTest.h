@@ -283,7 +283,7 @@ namespace ChimeraTK {
     BOOST_CHECK_EQUAL(accessor.getNChannels(), expectedValue.size());                                                  \
     BOOST_CHECK_EQUAL(accessor.getNElementsPerChannel(), expectedValue[0].size());                                     \
     for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
-      for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                  \
+      for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {               \
         if(!compareHelper(                                                                                             \
                accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {     \
           if(fail.size() == 0) {                                                                                       \
@@ -308,7 +308,7 @@ namespace ChimeraTK {
     BOOST_CHECK_EQUAL(value.size(), expectedValue.size());                                                             \
     BOOST_CHECK_EQUAL(value[0].size(), expectedValue[0].size());                                                       \
     for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
-      for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                  \
+      for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {               \
         if(!compareHelper(                                                                                             \
                value[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {        \
           if(fail.size() == 0) {                                                                                       \
@@ -337,7 +337,7 @@ namespace ChimeraTK {
       BOOST_CHECK_EQUAL(accessor.getNChannels(), expectedValue.size());                                                \
       BOOST_CHECK_EQUAL(accessor.getNElementsPerChannel(), expectedValue[0].size());                                   \
       for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
-        for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue.size(); ++CHECK_EQUALITY_k) {                \
+        for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {             \
           if(!compareHelper(                                                                                           \
                  accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
             if(fail.size() == 0) {                                                                                     \
