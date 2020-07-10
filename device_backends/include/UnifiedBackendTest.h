@@ -1496,6 +1496,7 @@ namespace ChimeraTK {
 
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+      reg.read(); // initial value
 
       for(size_t i = 0; i < 2; ++i) {
         // execute blocking read in another thread
