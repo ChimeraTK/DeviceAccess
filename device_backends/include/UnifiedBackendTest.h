@@ -1973,10 +1973,10 @@ namespace ChimeraTK {
       reg.read();
       reg2.read();
       BOOST_CHECK(reg.getVersionNumber() == reg2.getVersionNumber());
-
-      // close device again
-      d.close();
     });
+
+    // close device again
+    d.close();
   }
 
   /********************************************************************************************************************/
