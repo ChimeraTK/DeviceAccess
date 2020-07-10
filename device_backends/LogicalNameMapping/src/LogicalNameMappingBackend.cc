@@ -173,7 +173,9 @@ namespace ChimeraTK {
       std::string devName = info_cast.deviceName;
       boost::shared_ptr<RegisterInfo> target_info;
       if(devName != "this") {
-        target_info = _devices.at(devName)->getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
+        auto& cat = _devices.at(devName)->getRegisterCatalogue();
+        if(!cat.hasRegister(info_cast.registerName)) continue;
+        target_info = cat.getRegister(info_cast.registerName);
       }
       else {
         target_info = _catalogue_mutable.getRegister(std::string(info_cast.registerName));
