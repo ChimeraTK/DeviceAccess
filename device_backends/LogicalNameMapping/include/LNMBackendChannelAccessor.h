@@ -26,22 +26,18 @@ namespace ChimeraTK {
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName) {
       // check for unknown flags
-      flags.checkForUnknownFlags({AccessMode::raw});
-      // check for illegal parameter combinations
-      if(flags.has(AccessMode::raw)) {
-        throw ChimeraTK::logic_error("LNMBackendChannelAccessor: raw access not yet supported!");
-      }
+      flags.checkForUnknownFlags({AccessMode::wait_for_new_data});
+
+      // FIXME: use right type in constructor argument...
       _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
+
       // copy the register info and create the internal accessors, if needed
       _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
           _dev->getRegisterCatalogue().getRegister(_registerPathName));
+
       // check for incorrect usage of this accessor
-      if(_info->targetType != LNMBackendRegisterInfo::TargetType::CHANNEL) {
-        throw ChimeraTK::logic_error("LNMBackendChannelAccessor used for wrong "
-                                     "register type."); // LCOV_EXCL_LINE
-                                                        // (impossible to
-                                                        // test...)
-      }
+      assert(_info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
+
       // get target device and accessor
       std::string devName = _info->deviceName;
       boost::shared_ptr<DeviceBackend> targetDevice;
@@ -52,7 +48,8 @@ namespace ChimeraTK {
         targetDevice = dev;
       }
       _accessor = targetDevice->getRegisterAccessor<UserType>(
-          RegisterPath(_info->registerName), numberOfWords, wordOffsetInRegister, false);
+          RegisterPath(_info->registerName), numberOfWords, wordOffsetInRegister, flags);
+
       // verify channel number
       if(_info->channel >= _accessor->getNumberOfChannels()) {
         throw ChimeraTK::logic_error("LNMBackendChannelAccessor: Requested channel number " +
@@ -61,9 +58,13 @@ namespace ChimeraTK {
             " in accesor for register '" +
             registerPathName + "'.");
       }
+
       // allocate the buffer
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
+
+      // set readQueue
+      TransferElement::_readQueue = _accessor->getReadQueue();
     }
 
     void doReadTransferSynchronously() override { _accessor->readTransfer(); }
@@ -107,6 +108,8 @@ namespace ChimeraTK {
       this->_exceptionBackend = exceptionBackend;
       _accessor->setExceptionBackend(exceptionBackend);
     }
+
+    void interrupt() override { _accessor->interrupt(); }
 
    protected:
     /// pointer to underlying accessor
