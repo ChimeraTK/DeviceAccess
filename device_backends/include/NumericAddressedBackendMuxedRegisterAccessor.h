@@ -64,6 +64,10 @@ namespace ChimeraTK {
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
+    void doPreRead(TransferType) override {
+      if(!_ioDevice->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+    }
+
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType>>(other);
       if(!rhsCasted) return false;
@@ -262,7 +266,8 @@ namespace ChimeraTK {
       for(size_t i = 0; i < _converters.size(); ++i) {
         _converters[i].template vectorToCooked<UserType>(_startIterators[i], _endIterators[i], buffer_2D[i].begin());
       }
-      // it is acceptable to create the version number in post read because this accessor does not have wait_for_new_data. It is basically synchronous.
+      // it is acceptable to create the version number in post read because this accessor does not have
+      // wait_for_new_data. It is basically synchronous.
       this->_versionNumber = {};
       this->_dataValidity =
           DataValidity::ok; // we just read good data. Set validity back to ok if someone marked it faulty for writing.
@@ -281,6 +286,7 @@ namespace ChimeraTK {
 
   template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite(TransferType, VersionNumber) {
+    if(!_ioDevice->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
     uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
       for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
