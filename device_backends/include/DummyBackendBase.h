@@ -23,7 +23,8 @@
     errorMessage << "Invalid address offset " << address << " in bar " << static_cast<int>(bar) << "."                 \
                  << "Caught out_of_range exception: " << outOfRangeException.what();                                   \
     throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
-  }
+  }                                                                                                                    \
+  while(false)
 
 namespace ChimeraTK {
 
