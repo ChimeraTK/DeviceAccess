@@ -23,15 +23,23 @@ namespace ChimeraTK {
     ExceptionHandlingResult result;
 
     for(auto& elem : elements) {
-      bool updateUserBuffer{true}; // local variable if this element had an exception, to pass on to postRead();
+      std::exception_ptr lowLevelElementException{nullptr};
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
         if(lowLevelElem->_activeException) {
-          updateUserBuffer = false;
+          if(lowLevelElementException) {
+            std::cout << "Warning: more than one low level exception in  " << elem->getName()
+                      << ". You might lose an exception type!" << std::endl;
+          }
+          else {
+            lowLevelElementException = lowLevelElem->_activeException;
+          }
         }
       }
 
-      result += handlePostExceptions([&] { elem->postRead(TransferType::read, updateUserBuffer); });
+      elem->_activeException =
+          lowLevelElementException; // copy the exception from low level element into the high level element so it is processed in  post-read
+      result += handlePostExceptions([&] { elem->postRead(TransferType::read, lowLevelElementException == nullptr); });
     }
 
     return result;
