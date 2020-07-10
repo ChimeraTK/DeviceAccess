@@ -37,6 +37,7 @@ namespace ChimeraTK {
 - 1. All ChimeraTK::runtime_error exceptions thrown by device register accessors are handled by the framework and are never exposed to user code in ApplicationModules.
   - \anchor b_1_1 1.1 ChimeraTK::logic_error exceptions are left unhandled and will terminate the application. These errors may only occur in the (re-)initialisation phase (up to the point where all devices are opened and initialised) and point to a severe configuration error which is not recoverable. \ref comment_b_1_1 "(*)"
   - \anchor b_1_2 1.2 <b>Exception handling and DataValidity flag propagation is implemented such that it is transparent to a module whether it is directly connected to a device, or whether a fanout or another application module is in between.</b> This is the central requirement from which most other requirements are derived.
+    - \anchor b_1_2_1 1.2.1 The only exception to this rule can occur if the application buffer is changed by the user code between two reads to a TransferElement, see \ref exceptionHandling_b_2_2_6 "2.2.6".
   - \anchor exceptionHandling_b_1_3 1.3 boost::numeric::bad_numeric_cast exceptions are treated like  ChimeraTK::logic_error. They originate from picking the wrong data type in the program code or the configuration and are also not recoverable by re-opening the device.
   - \anchor exceptionHandling_b_1_4 1.4 The only other exception allowed by the DeviceAccess::TransferElement specificaton is boost::thread_interrupted. It must not be caught by the exception handling decorator because it is used to cleanly shut down the application.
 
@@ -45,7 +46,7 @@ namespace ChimeraTK {
   - \anchor exceptionHandling_b_2_1 2.1 The exception status is published as a process variable together with an error message. [\ref testExceptionHandling_b_2_1 "T"]
     - 2.1.1 The variable \c Devices/\<alias\>/status contains a boolean flag whether the device is in an error state.
     - 2.1.2 The variable \c Devices/\<alias\>/message contains an error message, if the device is in an error state, or an empty string otherwise.
-  - \anchor b_2_2 2.2 Read operations will propagate the DataValidity::faulty flag to the owning module / fan out (without changing the actual data value of the process variable):
+  - \anchor b_2_2 2.2 Read operations will propagate the DataValidity::faulty flag to the owning module / fan out:
     - 2.2.1 The normal module algorithm code will be continued, to allow this flag to propagate to the outputs in the same way as if it had been received through the process variable itself (cf. \ref b_1_2 "1.2").
     - 2.2.2 The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a DataValidity::faulty flag already set previously for another reason.
     - \anchor b_2_2_3 2.2.3 Read operations without AccessMode::wait_for_new_data are _skipped_ until the device is fully recovered again (cf. \ref b_3_1 "3.1"). The first skipped read operation will have a new VersionNumber.
@@ -54,6 +55,8 @@ namespace ChimeraTK {
       - blocking read operations (read()) will be _frozen_ until the device is recovered.
       - After the device is fully recovered (cf. \ref b_3_1 "3.1"), the current value will by (synchronously) read from the device. This will be the first value received by the accessor after an exception.
     - \anchor b_2_2_5 2.2.5 The VersionNumbers returned in case of an exception are the same for the same exception, even across variables and modules. It will be generated in the moment the exception is reported. \ref comment_b_2_2_5 "(*)"
+    - \anchor exceptionHandling_b_2_2_6 2.2.6 The data buffer is not updated. This guarantees that the data buffer stays on the last known value if the user code has not modified it since the last read.
+      - 2.2.6.1 This is different to a working device or an implementation without exception handling, where a returning read() has overwritten the data content of the buffer. If an application requires the last read value in the data buffer, it must not change it in the user code. This is the only exception to the *golden rule* \ref b_1_2 "1.2".
   - \anchor b_2_3 2.3 Write operations will be _delayed_ until the device is fully recovered again (cf. \ref b_3_1 "3.1").
     - 2.3.1 In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering.
     - \anchor b_2_3_2 2.3.2 The same mechanism as used for \ref b_3_1_2 "3.1.2" is used here, hence the order of write operations is guaranteed across accessors, but only the latest written value of each accessor prevails. \ref comment_b_2_3_2 "(*)"
