@@ -409,16 +409,6 @@ This documnent is currently still **INCOMPLETE**!
 - 5. The NDRegisterAccessorDecorator base class already contains an implementation which does this in doPreXxx() and doPostXxx(). You usually call it from the Decorators implementation, as mentioned in 3.
 - \anchor transferElement_comment_E_6_1_1 \ref transferElement_E_6_1_1 "6.1.1" This is required for by the ApplicationCore::ExceptionHandlingDecorator, which suppresses exceptions, but requires the meta data to be updated without changing the data buffer.
 
-## F. Implementation in the framework (e.g. class TransferElement itself)
-
-**Note:** This section is biased by the current implementation and mostly lists parts that needs to be changed!
-
-
-- 4. ApplicationCore
-
-  - 4.1 For the TestableModeAccessorDecorator: TransferElement::transferFutureWaitCallback() does no longer exist. Instead preRead() will now be called. In case of readAny, multiple calls to preRead() on different accessors will be made on the first call to readAny - the decorator has to deal with that properly.
-
-
 */
 
 } // end of namespace ChimeraTK
