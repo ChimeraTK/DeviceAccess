@@ -147,5 +147,4 @@ BOOST_AUTO_TEST_CASE(testMultiplexedRegisterAccessor) {
 
 /**********************************************************************************************************************/
 
-// After you finished all test you have to end the test suite.
 BOOST_AUTO_TEST_SUITE_END()
