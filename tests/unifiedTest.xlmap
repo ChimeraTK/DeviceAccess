@@ -3,6 +3,10 @@
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
     </redirectedRegister>
+    <redirectedRegister name="SingleWord_push">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+    </redirectedRegister>
     <redirectedRegister name="FullArea">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>ADC.AREA_DMAABLE</targetRegister>
@@ -18,9 +22,9 @@
         <targetRegister>TEST.NODMA</targetRegister>
         <targetChannel>3</targetChannel>
     </redirectedChannel>
-    <redirectedChannel name="Channel4">
+    <redirectedChannel name="Channel4_push">
         <targetDevice><par>target2</par></targetDevice>
-        <targetRegister>TEST.NODMA</targetRegister>
+        <targetRegister>TEST.NODMA/PUSH_READ</targetRegister>
         <targetChannel>4</targetChannel>
     </redirectedChannel>
     <redirectedChannel name="LastChannelInRegister">
@@ -83,6 +87,11 @@
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <targetBit>2</targetBit>
     </redirectedBit>
+    <redirectedBit name="Bit2ofWordFirmware_push">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+      <targetBit>2</targetBit>
+    </redirectedBit>
     <redirectedRegister name="SingleWord_Scaled">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
@@ -90,9 +99,9 @@
           <parameter name="factor">4.2</parameter>
         </plugin>
     </redirectedRegister>
-    <redirectedRegister name="SingleWord_Scaled_Twice">
+    <redirectedRegister name="SingleWord_Scaled_Twice_push">
         <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+        <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
         <plugin name="multiply">
           <parameter name="factor">2</parameter>
         </plugin>
@@ -113,9 +122,22 @@
       <plugin name="forceReadOnly">
       </plugin>
     </redirectedRegister>
+    <redirectedRegister name="WordFirmwareForcedReadOnly_push">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+      <plugin name="forceReadOnly">
+      </plugin>
+    </redirectedRegister>
     <redirectedRegister name="WordFirmwareWithMath">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">x + 2.345</parameter>
+      </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="WordFirmwareWithMath_push">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
       <plugin name="math">
         <parameter name="formula">x + 2.345</parameter>
       </plugin>

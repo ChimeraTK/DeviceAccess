@@ -26,19 +26,28 @@ static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 /// Base descriptor with defaults, used for all registers
 template<typename Derived>
 struct RegisterDescriptorBase {
+  Derived* derived{static_cast<Derived*>(this)};
+
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
-  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  bool isPush() { return false; }
+  ChimeraTK::AccessModeFlags supportedFlags() {
+    ChimeraTK::AccessModeFlags flags{ChimeraTK::AccessMode::raw};
+    if(derived->isPush()) flags.add(ChimeraTK::AccessMode::wait_for_new_data);
+    return flags;
+  }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   bool testAsyncReadInconsistency() { return false; }
   size_t nRuntimeErrorCases() { return 1; }
 
   void setForceRuntimeError(bool enable, size_t) {
-    exceptionDummy->throwExceptionRead = enable;
-    exceptionDummy->throwExceptionWrite = enable;
+    auto& dummy = dynamic_cast<ExceptionDummy&>(derived->acc.getBackend());
+    dummy.throwExceptionRead = enable;
+    dummy.throwExceptionWrite = enable;
+    if(derived->isPush() && enable) {
+      dummy.triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
+    }
   }
-
-  Derived* derived{static_cast<Derived*>(this)};
 
   [[noreturn]] void setForceDataLossWrite(bool) { assert(false); }
 
@@ -75,6 +84,10 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     auto v = generateValue<typename Derived::minimumUserType>()[0];
     for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
       derived->acc[derived->channel][k] = v[k];
+    }
+    if(derived->isPush()) {
+      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend())
+          .triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
     }
   }
 };
@@ -133,6 +146,10 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     auto v = generateValue<typename Derived::rawUserType>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       derived->acc[i + derived->myOffset()] = v[i];
+    }
+    if(derived->isPush()) {
+      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend())
+          .triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
     }
   }
 };
@@ -253,6 +270,18 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test passing through push-type scalar accessors
+struct RegSingleWord_push : ScalarRegisterDescriptorBase<RegSingleWord_push> {
+  std::string path() { return "/SingleWord_push"; }
+  bool isPush() { return true; }
+
+  const uint32_t increment = 3;
+
+  typedef uint32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
 /// Test passing through 1D array accessors
 struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
   std::string path() { return "/FullArea"; }
@@ -292,8 +321,9 @@ struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
 };
 
 /// Test channel accessors
-struct RegChannel4 : ChannelRegisterDescriptorBase<RegChannel4> {
-  std::string path() { return "/Channel4"; }
+struct RegChannel4_push : ChannelRegisterDescriptorBase<RegChannel4_push> {
+  std::string path() { return "/Channel4_push"; }
+  bool isPush() { return true; }
 
   const int32_t increment = 23;
   size_t nElementsPerChannel() { return 4; }
@@ -396,6 +426,15 @@ struct RegBit2OfWordFirmware : BitRegisterDescriptorBase<RegBit2OfWordFirmware> 
   size_t bit = 2;
 };
 
+/// Test bit accessor with a real dummy accessor as target
+struct RegBit2OfWordFirmware_push : BitRegisterDescriptorBase<RegBit2OfWordFirmware_push> {
+  std::string path() { return "/Bit2ofWordFirmware_push"; }
+  bool isPush() { return true; }
+
+  RegSingleWord target;
+  size_t bit = 2;
+};
+
 /// Test multiply plugin - needs to be done separately for reading and writing (see below)
 template<typename Derived>
 struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
@@ -428,9 +467,10 @@ struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
 };
 
 /// Test multiply plugin applied twice (just one direction for sake of simplicity)
-struct RegSingleWordScaledTwice : ScalarRegisterDescriptorBase<RegSingleWordScaledTwice> {
-  std::string path() { return "/SingleWord_Scaled_Twice"; }
+struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWordScaledTwice_push> {
+  std::string path() { return "/SingleWord_Scaled_Twice_push"; }
   bool isWriteable() { return false; }
+  bool isPush() { return true; }
 
   const double increment = std::exp(3.);
 
@@ -474,6 +514,19 @@ struct RegWordFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWordFirmw
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test force readonly plugin with wait_for_new_data
+struct RegWordFirmwareForcedReadOnly_push : ScalarRegisterDescriptorBase<RegWordFirmwareForcedReadOnly_push> {
+  std::string path() { return "/WordFirmwareForcedReadOnly_push"; }
+  bool isPush() { return true; }
+
+  const uint32_t increment = -47;
+  bool isWriteable() { return false; }
+
+  typedef uint32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
 /// Test math plugin - needs to be done separately for reading and writing (see below)
 template<typename Derived>
 struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
@@ -488,6 +541,17 @@ struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
 
 struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R> {
   bool isWriteable() { return false; }
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value + 2.345;
+  }
+};
+
+struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R_push> {
+  bool isWriteable() { return false; }
+  bool isPush() { return true; }
+  std::string path() { return "/WordFirmwareWithMath_push"; }
 
   template<typename T>
   T convertRawToCooked(T value) {
@@ -558,12 +622,12 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
 
   ChimeraTK::UnifiedBackendTest<>()
       .addRegister<RegSingleWord>()
+      .addRegister<RegSingleWord_push>()
       .addRegister<RegFullArea>()
       .addRegister<RegPartOfArea>()
-      //.addRegister<RegChannel3>() // triggers "BUG: Wrong exception type thrown in transfer function!"
-      //.addRegister<RegChannel4>() // triggers "BUG: Wrong exception type thrown in transfer function!"
-      //.addRegister<RegChannelLast>() // triggers "BUG: Wrong exception type thrown in transfer function!"
-      //.addRegister<RegChannelLast>() // triggers "BUG: Wrong exception type thrown in transfer function!"
+      .addRegister<RegChannel3>()
+      .addRegister<RegChannel4_push>()
+      .addRegister<RegChannelLast>()
       .addRegister<RegConstant>()
       .addRegister<RegConstant2>()
       .addRegister<RegVariable>()
@@ -571,13 +635,16 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegArrayVariable>()
       .addRegister<RegBit0OfVar>()
       .addRegister<RegBit3OfVar>()
-      //.addRegister<RegBit2OfWordFirmware>() // throws wrong exception type, needs investigation...
+      .addRegister<RegBit2OfWordFirmware>()
+      .addRegister<RegBit2OfWordFirmware_push>()
       .addRegister<RegSingleWordScaled_R>()
       .addRegister<RegSingleWordScaled_W>()
-      .addRegister<RegSingleWordScaledTwice>()
+      .addRegister<RegSingleWordScaledTwice_push>()
       .addRegister<RegFullAreaScaled>()
       .addRegister<RegWordFirmwareForcedReadOnly>()
+      .addRegister<RegWordFirmwareForcedReadOnly_push>()
       .addRegister<RegWordFirmwareWithMath_R>()
+      .addRegister<RegWordFirmwareWithMath_R_push>()
       .addRegister<RegWordFirmwareWithMath_W>()
       .addRegister<RegWordFirmwareAsParameterInMath>()
       .addRegister<RegMonostableTrigger>()
