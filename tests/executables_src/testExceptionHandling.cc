@@ -65,7 +65,6 @@ struct Fixture_noTestFacility {
   Fixture_noTestFacility()
   : deviceBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))) {
-
     deviceBackend->open();
     testFacitiy.runApplication();
 
@@ -146,7 +145,7 @@ BOOST_FIXTURE_TEST_CASE(testFaultReporting, Fixture_noTestFacility) {
 
 BOOST_AUTO_TEST_CASE(testBlockingRead) { // wait_for_new_data
                                          // how does the api of the accessor look like
-    //device1DummyBackend["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
+  //device1DummyBackend["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
   // make one with wait_for_new_data
 
   // The framework decides the accessmode flags based on how the wiring looks like:
@@ -698,15 +697,14 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   // wait for the error to be reported in the control system
   CHECK_EQUAL_TIMEOUT(
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "status"), 1, 10000);
-  // the read message is going through a feeding fanout, which adds a \n to the message
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "message"),
-      "DummyException: read throws by request\n", 10000);
+      "DummyException: read throws by request", 10000);
 
   auto theInt = test.getScalar<int32_t>("/Device2/Integers/signed32");
   theInt.write();
   // the read is the first error we see. The second one is not reported any more for this device.
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD2 / "message"),
-      "DummyException: read throws by request\n", 10000);
+      "DummyException: read throws by request", 10000);
 
   // device 2 successfully broken!
 
@@ -739,7 +737,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   CHECK_EQUAL_TIMEOUT(
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "status"), 1, 10000);
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD3 / "message"),
-      "DummyException: read throws by request\n", 10000);
+      "DummyException: read throws by request", 10000);
 
   auto reg4 = test.getScalar<int32_t>("/Device3/MODULE/REG4");
   reg4.write();

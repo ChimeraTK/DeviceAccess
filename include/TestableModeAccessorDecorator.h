@@ -103,10 +103,7 @@ namespace ChimeraTK {
       return dataLost;
     }
 
-    void doReadTransferSynchronously() override {
-      if(_handleRead) releaseLock();
-      _target->readTransfer();
-    }
+    void doReadTransferSynchronously() override { _target->readTransfer(); }
 
     /** Release the testableModeLock */
     void releaseLock() {
