@@ -67,6 +67,10 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void SubdeviceRegisterAccessor::doPreWrite(TransferType, VersionNumber) {
+    if(!_backend->isOpen()) {
+      throw ChimeraTK::logic_error("Device is not opened.");
+    }
+
     if(!_accAddress->isWriteable()) {
       throw ChimeraTK::logic_error("SubdeviceRegisterAccessor[" + this->getName() + "]: address register '" +
           _accAddress->getName() + "' is not writeable.");
