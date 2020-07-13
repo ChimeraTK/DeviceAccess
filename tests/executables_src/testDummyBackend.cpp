@@ -551,10 +551,6 @@ void DummyBackendTest::testFinalClosing() {
   BOOST_CHECK(dummyBackend->_writeCallbackFunctions.size() != 0);
 
   dummyBackend->close();
-
-  // all features lists have to be empty now
-  BOOST_CHECK(dummyBackend->_readOnlyAddresses.size() == 0);
-  BOOST_CHECK(dummyBackend->_writeCallbackFunctions.size() == 0);
 }
 
 void DummyBackendTest::testOpenClose() {
