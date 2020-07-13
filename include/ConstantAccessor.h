@@ -42,8 +42,6 @@ namespace ChimeraTK {
       }
     }
 
-    ~ConstantAccessor() {}
-
     void doReadTransferSynchronously() override {}
 
     void doPostRead(TransferType /*type*/, bool updateUserBuffer) override {

@@ -164,7 +164,8 @@ namespace ChimeraTK {
     void setAppAccessorImplementation(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> impl) const;
 
     template<typename UserType>
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getConstAccessor() const;
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createConstAccessor(
+        AccessModeFlags accessModeFlags) const;
 
     /** Return the unique ID of this node (will change every time the application
      * is started). */
@@ -189,6 +190,22 @@ namespace ChimeraTK {
     // protected:  @todo make protected again (with proper interface extension)
 
     boost::shared_ptr<VariableNetworkNode_data> pdata;
+  };
+
+  /*********************************************************************************************************************/
+
+  /** A helper class to create accessors with the right length and value. We use this
+   *  to create one constant accessor for each consumer so e don't have to use a fanout: The consumers might be mixed
+   *  push or poll type, and as we don't have a sender/receive pair but just one side, it has to be adapted.
+   *  If the constant is the feeder of the network (which conceptually always is push type), the actual implentation is
+   *  the "receiving" part which is plugged into the consumer. And this needs the correct access mode flags.
+   *
+   *  This is the pure virtual base class to be put into the VariableNetworkNode. The actual implementation is
+   *  templated to the user type.
+   */
+  struct ConstantAccessorCreator {
+    virtual boost::shared_ptr<ChimeraTK::TransferElement> create(AccessModeFlags accessModeFlags) = 0;
+    virtual ~ConstantAccessorCreator() {}
   };
 
   /*********************************************************************************************************************/
@@ -222,8 +239,8 @@ namespace ChimeraTK {
     /** The network this node belongs to */
     VariableNetwork* network{nullptr};
 
-    /** Pointer to implementation if type == Constant */
-    boost::shared_ptr<ChimeraTK::TransferElement> constNode;
+    /** Pointer to instance creator if type == Constant */
+    boost::shared_ptr<ConstantAccessorCreator> constNodeCreator;
 
     /** Pointer to implementation if type == Application */
     ChimeraTK::TransferElementAbstractor* appNode{nullptr};
@@ -267,6 +284,21 @@ namespace ChimeraTK {
   };
 
   /*********************************************************************************************************************/
+
+  // Templated implementation of the ConstantAccessorCreator
+  template<typename UserType>
+  struct ConstantAccessorCreatorImpl : public ConstantAccessorCreator {
+    UserType value;
+    size_t length;
+
+    ConstantAccessorCreatorImpl(UserType val, size_t len) : value(val), length(len) {}
+
+    boost::shared_ptr<ChimeraTK::TransferElement> create(AccessModeFlags accessModeFlags) override {
+      return boost::make_shared<ConstantAccessor<UserType>>(value, length, accessModeFlags);
+    }
+  };
+
+  /*********************************************************************************************************************/
   /*** Implementations
    * *************************************************************************************************/
   /*********************************************************************************************************************/
@@ -275,7 +307,7 @@ namespace ChimeraTK {
   VariableNetworkNode VariableNetworkNode::makeConstant(bool makeFeeder, UserType value, size_t length) {
     VariableNetworkNode node;
     node.pdata = boost::make_shared<VariableNetworkNode_data>();
-    node.pdata->constNode.reset(new ConstantAccessor<UserType>(value, length));
+    node.pdata->constNodeCreator.reset(new ConstantAccessorCreatorImpl<UserType>(value, length));
     node.pdata->type = NodeType::Constant;
     node.pdata->valueType = &typeid(UserType);
     node.pdata->nElements = length;
@@ -305,8 +337,10 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> VariableNetworkNode::getConstAccessor() const {
-    return boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<UserType>>(pdata->constNode);
+  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> VariableNetworkNode::createConstAccessor(
+      AccessModeFlags accessModeFlags) const {
+    return boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<UserType>>(
+        pdata->constNodeCreator->create(accessModeFlags));
   }
 
   /*********************************************************************************************************************/

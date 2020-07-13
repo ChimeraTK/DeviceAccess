@@ -371,7 +371,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
 
   // Receiving accessors should be faulty after construction,
   // see data validity propagation spec 2.6.1
-  if(node.getDirection().dir == VariableDirection::feeding){
+  if(node.getDirection().dir == VariableDirection::feeding) {
     accessor->setDataValidity(DataValidity::faulty);
   }
 
@@ -896,7 +896,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
         }
         else if(consumer.getType() == NodeType::Constant) {
-          auto impl = consumer.getConstAccessor<UserType>();
+          auto impl = consumer.createConstAccessor<UserType>({});
           feeder.setAppAccessorImplementation<UserType>(impl);
         }
         else {
@@ -922,10 +922,16 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         std::cout << "  Using constant feeder '" << feeder.getName() << "'..." << std::endl;
       }
       assert(feeder.getType() == NodeType::Constant);
-      auto feedingImpl = feeder.getConstAccessor<UserType>();
-      assert(feedingImpl != nullptr);
 
       for(auto& consumer : consumers) {
+        AccessModeFlags flags{};
+        if(consumer.getMode() == UpdateMode::push) {
+          flags = {AccessMode::wait_for_new_data};
+        }
+
+        // each consumer gets its own implementation
+        auto feedingImpl = feeder.createConstAccessor<UserType>(flags);
+
         if(consumer.getType() == NodeType::Application) {
           if(testableMode) {
             auto varId = getNextVariableId();
