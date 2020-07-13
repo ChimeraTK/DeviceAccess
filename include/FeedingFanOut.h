@@ -17,38 +17,6 @@
 namespace ChimeraTK {
 
   /**
-   * @brief The RuntimeErrorCollector struct
-   * Helper class to be used in loops which catches exceptions
-   * stores the reasons and can then throw an exception with a combined reson
-   * afterwards
-   */
-  struct RuntimeErrorCollector {
-    std::stringstream ss;
-    bool hasException{false};
-
-    // Ideally, this would happen in the destructor
-    void unwrap() {
-      if(not hasException) return;
-
-      auto s = ss.str();
-      s.pop_back();
-
-      throw runtime_error(s);
-    }
-
-    bool wrap(std::function<void(void)> f) {
-      try {
-        f();
-        return true;
-      }
-      catch(runtime_error& ex) {
-        ss << ex.what() << "\n";
-        return false;
-      }
-    }
-  };
-
-  /**
    * NDRegisterAccessor implementation which distributes values written to this
    * accessor out to any number of slaves.
    */
@@ -56,7 +24,8 @@ namespace ChimeraTK {
   class FeedingFanOut : public FanOut<UserType>, public ChimeraTK::NDRegisterAccessor<UserType> {
    public:
     FeedingFanOut(std::string const& name, std::string const& unit, std::string const& description,
-        size_t numberOfElements, bool withReturn, ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
+        size_t numberOfElements, bool withReturn,
+        ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
     : FanOut<UserType>(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>()),
       // We pass default-constructed, empty AccessModeFlags, they may later be determined from _returnSlave
       ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:" + name, AccessModeFlags{}, unit, description),
@@ -68,7 +37,7 @@ namespace ChimeraTK {
 
       // Add the consuming accessors
       // TODO FanOut constructors and addSlave should get refactoring
-      for(auto el : consumerImplementationPairs){
+      for(auto el : consumerImplementationPairs) {
         addSlave(el.first, el.second);
       }
     }
@@ -156,7 +125,7 @@ namespace ChimeraTK {
       this->_dataValidity = _returnSlave->dataValidity();
     }
 
-    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
+    void doPreWrite(TransferType, VersionNumber) override {
       for(auto& slave : FanOut<UserType>::slaves) {       // send out copies to slaves
         if(slave->getNumberOfSamples() != 0) {            // do not send copy if no data is expected (e.g. trigger)
           if(slave == FanOut<UserType>::slaves.front()) { // in case of first slave, swap instead of copy
@@ -169,14 +138,12 @@ namespace ChimeraTK {
         slave->setDataValidity(this->dataValidity());
       }
 
-      // pre write may only be called on the target accessors after we have filled
-      // them all, otherwise the first accessor might take us the data away...
-      RuntimeErrorCollector ec;
-      for(auto& slave : FanOut<UserType>::slaves) {
-        ec.wrap([&] { slave->preWrite(type, versionNumber); });
-      }
-
-      ec.unwrap();
+      // Don't call pre-write on the slaves. Each slave has to do it's own exception handling, so we call the whole operation in doWriteTansfer().
+      // To fulfill the TransferElement specification we would have to check the pre-conditions here so no logic error is thrown in the
+      // transfer phase (logic_errors are predictable and can always pre prevented. They should be thrown here already).
+      // FIXME: At the moment we can be lazy about it. logic_errors are not treated in ApplicationCore and the only effect is that
+      // the logic_error would be delayed after postRead() and terminate the application there, and not after the transfer.
+      // Advantage about being lazy: It safes a few virtual function calls.
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
@@ -186,10 +153,10 @@ namespace ChimeraTK {
         bool ret;
         if(isFirst) {
           isFirst = false;
-          ret = slave->writeTransfer(versionNumber);
+          ret = slave->write(versionNumber);
         }
         else {
-          ret = slave->writeTransferDestructively(versionNumber);
+          ret = slave->writeDestructively(versionNumber);
         }
         if(ret) dataLost = true;
       }
@@ -199,20 +166,16 @@ namespace ChimeraTK {
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
       bool dataLost = false;
       for(auto& slave : FanOut<UserType>::slaves) {
-        bool ret = slave->writeTransferDestructively(versionNumber);
+        bool ret = slave->writeDestructively(versionNumber);
         if(ret) dataLost = true;
       }
       return dataLost;
     }
 
-    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
-      RuntimeErrorCollector ec;
-      for(auto& slave : FanOut<UserType>::slaves) {
-        ec.wrap([&] { slave->postWrite(type, versionNumber); });
-      }
+    void doPostWrite(TransferType, VersionNumber) override {
+      // the postWrite() on the slaves has already been called
 
       FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
-      ec.unwrap();
     }
 
     bool mayReplaceOther(const boost::shared_ptr<const ChimeraTK::TransferElement>&) const override {

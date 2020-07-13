@@ -118,6 +118,7 @@ namespace ChimeraTK {
       // get rid of the active exception do the calling postWrite() does not re-throw
       _activeException = nullptr;
     }
+    assert(_activeException == nullptr);
   }
 
   template<typename UserType>
@@ -155,6 +156,7 @@ namespace ChimeraTK {
       for(size_t i = 0; i < buffer_2D.size(); ++i)
         buffer_2D[i].swap(this->_target->accessChannel(static_cast<unsigned int>(i)));
     }
+    assert(_activeException == nullptr);
   }
 
   template<typename UserType>
