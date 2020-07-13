@@ -45,8 +45,6 @@ namespace ChimeraTK {
   void DummyBackend::close() {
     std::lock_guard<std::mutex> lock(mutex);
 
-    _readOnlyAddresses.clear();
-    _writeCallbackFunctions.clear();
     _opened = false;
   }
 
