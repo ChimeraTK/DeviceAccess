@@ -186,6 +186,12 @@ namespace ChimeraTK {
     /// Return the register path
     const RegisterPath& getRegisterPath() const { return _path; }
 
+    /// Set callback function which is called when the register is written to (through the normal Device interface)
+    void setWriteCallback(const std::function<void()>& writeCallback) {
+      _dev->setWriteCallbackFunction(
+          {uint8_t(registerInfo.bar), registerInfo.address, registerInfo.nBytes}, writeCallback);
+    }
+
    protected:
     /// pointer to VirtualDevice
     DummyBackend* _dev;
