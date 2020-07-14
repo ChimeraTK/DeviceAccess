@@ -10,6 +10,7 @@
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
+#include <ChimeraTK/DummyRegisterAccessor.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
@@ -473,7 +474,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
   BOOST_CHECK(status1 == 0);
 
   // repeat test a couple of times to make sure it works not only once
-  for(size_t i = 0; i < 3; ++i) {
+  for(int i = 0; i < 3; ++i) {
     // enable exception throwing in test device 1
     dummyBackend1->throwExceptionWrite = true;
     actuator1 = 30 + i;
@@ -485,7 +486,12 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
     usleep(10000); // 10ms wait time so potential wrong values could have propagated
-    BOOST_CHECK(dev1.read<int>("MyModule/actuator") == int(30 + i - 1)); // write not done for broken device
+    // while the device is broken none of its accessors work. We have to use the dummy backend directly to look into its data buffer.
+    auto actuatorDummyRaw = dummyBackend1->getRawAccessor("MyModule", "actuator");
+    {
+      auto bufferLock = actuatorDummyRaw.getBufferLock();
+      BOOST_CHECK(actuatorDummyRaw == int(30 + i - 1)); // write not done for broken device
+    }
     // the second device must still be functional
     BOOST_CHECK(!message2.readNonBlocking());
     BOOST_CHECK(!status2.readNonBlocking());
@@ -495,6 +501,10 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     actuator2 = 120 + i;
     actuator2.write();
     CHECK_TIMEOUT(dev2.read<int>("MyModule/actuator") == int(120 + i), 10000); // device 2 still works
+    {
+      auto bufferLock = actuatorDummyRaw.getBufferLock();
+      BOOST_CHECK(actuatorDummyRaw == int(30 + i - 1)); // device 1 is still broken and has not seen the new value yet
+    }
 
     // Now "cure" the device problem
     dummyBackend1->throwExceptionWrite = false;
