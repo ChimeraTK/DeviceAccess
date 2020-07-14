@@ -276,7 +276,12 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   // FixedPointConverter, raw and coocked accessors
   // MODULE0.WORD_USER1 is fixed point, 16 bit, 3 fractional, signed
   auto user1Dummy = dummyBackend->getRawAccessor("MODULE0", "WORD_USER1");
-  user1Dummy = 0x4321;
+  // Demonstrate the correct usage of the raw accessor, with using the lock. It would not be strictly needed here
+  // because this is single threaded, but in general it is required.
+  {
+    auto bufferLock = user1Dummy.getBufferLock();
+    user1Dummy = 0x4321;
+  }
 
   auto user1Coocked = device.getScalarRegisterAccessor<float>("MODULE0/WORD_USER1");
   user1Coocked.read();
@@ -286,7 +291,10 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   user1Coocked = -1;
   user1Coocked.write();
 
-  BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0xfff8);
+  {
+    auto bufferLock = user1Dummy.getBufferLock();
+    BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0xfff8);
+  }
 
   auto user1Raw = device.getScalarRegisterAccessor<int32_t>("MODULE0/WORD_USER1", 0, {AccessMode::raw});
   user1Raw.read();
@@ -298,7 +306,10 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 
   user1Raw.write();
 
-  BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0xffec);
+  {
+    auto bufferLock = user1Dummy.getBufferLock();
+    BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0xffec);
+  }
 
   // special case: int32 does not necessarily mean raw. There is also a cooked version:
   auto user1CoockedInt = device.getScalarRegisterAccessor<int32_t>("MODULE0/WORD_USER1");
@@ -309,7 +320,10 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   user1CoockedInt = 16;
   user1CoockedInt.write();
 
-  BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0x80);
+  {
+    auto bufferLock = user1Dummy.getBufferLock();
+    BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0x80);
+  }
 
   // IEEE754 converter, raw and coocked accessors
   // FLOAT_TEST.ARRAY is IEEE754. We use the 1 D version in constrast to FixedPoint where we use scalar (just because we can)
@@ -317,13 +331,16 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 
   float testValue = 1.1;
   void* warningAvoider = &testValue; // directly reinterpret-casting float gives compiler warnings
-  floatTestDummy[0] = *(reinterpret_cast<int32_t*>(warningAvoider));
-  testValue = 2.2;
-  floatTestDummy[1] = *(reinterpret_cast<int32_t*>(warningAvoider));
-  testValue = 3.3;
-  floatTestDummy[2] = *(reinterpret_cast<int32_t*>(warningAvoider));
-  testValue = 4.4;
-  floatTestDummy[3] = *(reinterpret_cast<int32_t*>(warningAvoider));
+  {
+    auto bufferLock = floatTestDummy.getBufferLock();
+    floatTestDummy[0] = *(reinterpret_cast<int32_t*>(warningAvoider));
+    testValue = 2.2;
+    floatTestDummy[1] = *(reinterpret_cast<int32_t*>(warningAvoider));
+    testValue = 3.3;
+    floatTestDummy[2] = *(reinterpret_cast<int32_t*>(warningAvoider));
+    testValue = 4.4;
+    floatTestDummy[3] = *(reinterpret_cast<int32_t*>(warningAvoider));
+  } // release buffer lock
 
   auto floatTestCoocked = device.getOneDRegisterAccessor<float>("FLOAT_TEST/ARRAY");
   floatTestCoocked.read();
@@ -336,7 +353,10 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   floatTestCoocked[3] = 44.4;
   floatTestCoocked.write();
 
-  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[3];
+  {
+    auto bufferLock = floatTestDummy.getBufferLock();
+    *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[3];
+  }
   BOOST_CHECK_CLOSE(testValue, 44.4, 0.0001);
 
   auto floatTestRaw = device.getOneDRegisterAccessor<int32_t>("FLOAT_TEST/ARRAY", 0, 0, {AccessMode::raw});
@@ -351,8 +371,10 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 
   floatTestRaw.write();
 
-  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[0];
-
+  {
+    auto bufferLock = floatTestDummy.getBufferLock();
+    *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[0];
+  }
   BOOST_CHECK_CLOSE(testValue, -2.5, 0.0001);
 
   // special case: int32 does not necessarily mean raw. There is also a cooked version:
@@ -367,7 +389,10 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   floatTestCoockedInt[1] = 16;
   floatTestCoockedInt.write();
 
-  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[1];
+  {
+    auto bufferLock = floatTestDummy.getBufferLock();
+    *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[1];
+  }
   BOOST_CHECK_CLOSE(testValue, 16.0, 0.001);
 }
 
