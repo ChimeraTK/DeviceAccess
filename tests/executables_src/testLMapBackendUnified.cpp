@@ -386,7 +386,7 @@ struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
 struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
   std::string path() { return "/ArrayConstant"; }
 
-  const std::vector<int32_t> value{1111, 5555, 2222, 4444, 3333};
+  const std::vector<int32_t> value{1111, 2222, 3333, 4444, 5555};
   size_t nElementsPerChannel() { return 5; }
 
   typedef float minimumUserType;
