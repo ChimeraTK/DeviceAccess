@@ -313,6 +313,7 @@ namespace ChimeraTK {
           --owner->testableMode_counter;
         }
       }
+      errorLock.unlock(); // we don't need to hold the lock for now, but we will need it later
 
       for(auto& writeMe : writeRegisterPaths) {
         auto reg = device.getOneDRegisterAccessor<double>(writeMe); // the user data type does not matter here.
@@ -344,9 +345,10 @@ namespace ChimeraTK {
         continue;
       }
 
-      // [Spec: 2.3.4] Write all recovery accessors
+      // Write all recovery accessors
+      // We are now entering the critical recovery section. It is protected by the recovery mutex until the deviceHasError flag has been cleared.
+      boost::unique_lock<boost::shared_mutex> recoveryLock(recoveryMutex);
       try {
-        boost::unique_lock<boost::shared_mutex> uniqueLock(recoveryMutex);
         // sort recovery helpers according to write order
         recoveryHelpers.sort([](boost::shared_ptr<RecoveryHelper>& a, boost::shared_ptr<RecoveryHelper>& b) {
           return a->writeOrder < b->writeOrder;
@@ -373,18 +375,21 @@ namespace ChimeraTK {
       deviceError.setCurrentVersionNumber({});
       deviceError.writeAll();
 
+      errorLock.lock();
       deviceHasError = false;
       // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
       // within one "application step"
       --owner->testableMode_deviceInitialisationCounter;
 
-      // [Spec: 2.3.6+2.3.7] send the trigger that the device is available again
+      // send the trigger that the device is available again
+      device.activateAsyncRead();
       if(isHoldingInitialValueMutex) {
         isHoldingInitialValueMutex = false;
         initialValueMutex.unlock();
       }
       deviceBecameFunctional.write();
       errorLock.unlock();
+      recoveryLock.unlock();
 
       // [Spec: 2.3.8] Wait for an exception being reported by the ExceptionHandlingDecorators
       // release the testable mode mutex for waiting for the exception.
