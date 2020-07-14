@@ -332,6 +332,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
 
   dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 42);
   dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 52);
+  int readback1_expected = 42;
 
   // initially, devices are not opened but errors should be cleared once they are opened
   trigger.write();
@@ -352,11 +353,11 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
 
   CHECK_TIMEOUT(readback1.readLatest(), 10000);
   CHECK_TIMEOUT(readback2.readLatest(), 10000);
-  BOOST_CHECK_EQUAL(readback1, 42);
+  BOOST_CHECK_EQUAL(readback1, readback1_expected);
   BOOST_CHECK_EQUAL(readback2, 52);
 
   // repeat test a couple of times to make sure it works not only once
-  for(size_t i = 0; i < 3; ++i) {
+  for(int i = 0; i < 3; ++i) {
     // enable exception throwing in test device 1
     dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 10 + i);
     dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 20 + i);
@@ -374,40 +375,39 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     CHECK_TIMEOUT(readback2.readNonBlocking(), 10000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 20 + i);
 
-    // even with device 1 failing the second one must process the data, so send a new trigger
-    // before fixing dev1
+    // even with device 1 failing the trigger produces "new" data: The time stamp changes, but the data content does not, and it is flagged as invalid
+    // device 2 is working normaly
     dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 120 + i);
     trigger.write();
-    BOOST_CHECK(!readback1.readNonBlocking());                                // we should not have gotten any new data
+    readback1.read();
+    BOOST_CHECK_EQUAL(readback1, readback1_expected);                         // The value has not changed
     BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::faulty); // But the fault flag should still be set
     CHECK_TIMEOUT(readback2.readNonBlocking(), 10000);                        // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 120 + i);
 
     // Now "cure" the device problem
+    dummyBackend1->throwExceptionRead = false;
+    // we have to wait until the device has recovered. Otherwise the writing will throw.
+    CHECK_TIMEOUT(status1.readLatest(), 10000);
+    BOOST_CHECK_EQUAL(status1, 0);
+
     dev1.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 30 + i);
     dev2.write<int>("MyModule/readBack.DUMMY_WRITEABLE", 40 + i);
-    dummyBackend1->throwExceptionRead = false;
     trigger.write();
-    CHECK_TIMEOUT(message1.readLatest(), 10000);
-    CHECK_TIMEOUT(status1.readLatest(), 10000);
-    CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);
+    message1.read();
+    readback1.read();
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
-    BOOST_CHECK_EQUAL(status1, 0);
-    BOOST_CHECK_EQUAL(readback1, 30 + i);
+    BOOST_CHECK_EQUAL(readback1,
+        30 + i); // the "20+i" is never seen because there was a new vaulue before the next trigger after the recovery
+    readback1_expected = 30 + i; // remember the last good value for the next iteration
     BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::ok); // The fault flag should have been cleared
-    // there are two more copies in the queue, since the two triggers received during the error state is still
-    // processed after recovery
-    CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);
-    BOOST_CHECK_EQUAL(readback1, 30 + i);
-    CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);
-    BOOST_CHECK_EQUAL(readback1, 30 + i);
-    BOOST_CHECK(!readback1.readNonBlocking()); // now the queue should be empty
     // device2
     BOOST_CHECK(!message2.readNonBlocking());
     BOOST_CHECK(!status2.readNonBlocking());
     CHECK_TIMEOUT(readback2.readNonBlocking(), 10000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 40 + i);
   }
+  // FIXME: This test only works for poll-type variables. We also have to test with push type.
 }
 
 /*********************************************************************************************************************/
