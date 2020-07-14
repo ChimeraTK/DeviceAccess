@@ -96,9 +96,9 @@ struct Fixture_noTestFacility {
   }
   ~Fixture_noTestFacility() { deviceBackend->throwExceptionRead = false; }
 
-  ctk::TestFacility testFacitiy{false};
   boost::shared_ptr<ctk::ExceptionDummy> deviceBackend;
   DummyApplication app;
+  ctk::TestFacility testFacitiy{false};
 };
 /* **********************************/
 
