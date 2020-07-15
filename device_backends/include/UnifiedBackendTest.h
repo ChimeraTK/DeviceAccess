@@ -104,6 +104,12 @@ namespace ChimeraTK {
      *    /// This function will only be called if testAsyncReadInconsistency == true. testAsyncReadInconsistency should
      *    /// be set to false if and only if the underlying protocol prevents that such inconsistency could ever occur.
      *    void forceAsyncReadInconsistency();
+     * 
+     *    /// Optional: define the following data member to prevent the test from executing any synchronous read tests.
+     *    /// This should be used only when testing TransferElements which do not support reads without 
+     *    /// AccessMode::wait_for_new_data, like e.g. the ControlSystemAdapter ProcessArray. TransferElements handed
+     *    /// out by real backends must always support this.
+     *    /// bool disableSyncReadTests{true};
      *  };
      * 
      *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
@@ -181,9 +187,23 @@ namespace ChimeraTK {
     /// Utility functions for recurring tasks
     void recoverDevice(ChimeraTK::Device& d);
 
+    /// Helper class for isRead(). This allows us to check whether REG_T::disableSyncReadTests exists. If not, a
+    /// default value of false is assumed.
+    template<class REG_T, class Enable = void>
+    struct RegT_disableSyncReadTests_getter {
+      static bool get(REG_T) { return false; }
+    };
+
+    template<class REG_T>
+    struct RegT_disableSyncReadTests_getter<REG_T,
+        typename std::enable_if<std::is_integral<decltype(REG_T::disableSyncReadTests)>::value>::type> {
+      static bool get(REG_T x) { return x.disableSyncReadTests; }
+    };
+
     /// Utility functions for register traits
     template<typename REG_T>
     bool isRead(REG_T x = {}) {
+      if(RegT_disableSyncReadTests_getter<REG_T>::get(x)) return false;
       return x.isReadable();
     }
     template<typename REG_T>
@@ -513,7 +533,7 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isSyncRead(x)) return;
+      if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
@@ -542,6 +562,13 @@ namespace ChimeraTK {
       auto v2 = x.template getRemoteValue<UserType>();
 
       // Read second value
+      reg.read();
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, v2);
+      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+
+      // Reading again without changing remote value does not block and gives the same value
       reg.read();
 
       // Check application buffer
@@ -650,7 +677,6 @@ namespace ChimeraTK {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
-      VersionNumber ver{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
@@ -658,6 +684,7 @@ namespace ChimeraTK {
       // write some value destructively
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
+      VersionNumber ver;
       reg.writeDestructively(ver);
 
       // check that application data buffer shape is not changed (content may be lost)
