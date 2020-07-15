@@ -15,122 +15,134 @@
 namespace ChimeraTK {
 
   /**
- *  Class to test any backend for correct behavior. Instantiate this class and call all (!) preparatory functions to
- *  provide the tests with the backend-specific test actions etc. Finally call runTests() to execute all tests.
- *  Internally the BOOST unit test framework is used, so this shall be called inside a normal unit test.
- * 
- *  Failing to call all preparatory functions will result in an error. This allows a safe test schema evolution - if
- *  more backend specific actions for enabling and disabling test conditions are needed for the tests and the backend
- *  test has not yet been updated, tests will fail.
- * 
- *  Actions are usually speficied as list of pairs of functors. The pair's first element is always the action to enable
- *  the the test condition, the second is the action to disable it. By providing multiple entries in the lists it is
- *  possible to test several code paths the backend has to end up in the intended test condition.
- *  For example in case of forceRuntimeErrorOnRead(): runtime_errors in a read can be caused by a timeout in the
- *  communication channel, or by a bad reply of the device. Two list entries would be provided in this case, one to make
- *  read operations run into timeouts, and one to make the (dummy) device reply with garbage.
- *  If only one singe code path exists to get to the test condition, it is perfectly fine to have only a single entry
- *  in the list.
- * 
- *  In the same way as for the actions, names of registers etc. are provided as lists, so all test can be repeated for
- *  different registers, if required for full coverage.
- * 
- *  Instatiate with default template argument, then call addRegister() to add any number of registers, i.e.:
- *
- *    auto ubt = UnifiedBackendTest<>.addRegister<RegisterA>().addRegister<RegisterB>().addRegister<RegisterC>()
- *    ubt.runTest("myCDD");
- * 
- *  See addRegister() for more details.
- * 
- *  Note: This is work in progress. Tests are by far not yet complete. Interface changes of the test class are also
- *  likely.
- */
+   *  Class to test any backend for correct behavior. Instantiate this class and call all (!) preparatory functions to
+   *  provide the tests with the backend-specific test actions etc. Finally call runTests() to execute all tests.
+   *  Internally the BOOST unit test framework is used, so this shall be called inside a normal unit test.
+   * 
+   *  Failing to call all preparatory functions will result in an error. This allows a safe test schema evolution - if
+   *  more backend specific actions for enabling and disabling test conditions are needed for the tests and the backend
+   *  test has not yet been updated, tests will fail.
+   * 
+   *  Actions are usually speficied as list of pairs of functors. The pair's first element is always the action to enable
+   *  the the test condition, the second is the action to disable it. By providing multiple entries in the lists it is
+   *  possible to test several code paths the backend has to end up in the intended test condition.
+   *  For example in case of forceRuntimeErrorOnRead(): runtime_errors in a read can be caused by a timeout in the
+   *  communication channel, or by a bad reply of the device. Two list entries would be provided in this case, one to make
+   *  read operations run into timeouts, and one to make the (dummy) device reply with garbage.
+   *  If only one singe code path exists to get to the test condition, it is perfectly fine to have only a single entry
+   *  in the list.
+   * 
+   *  In the same way as for the actions, names of registers etc. are provided as lists, so all test can be repeated for
+   *  different registers, if required for full coverage.
+   * 
+   *  Instatiate with default template argument, then call addRegister() to add any number of registers, i.e.:
+   *
+   *    auto ubt = UnifiedBackendTest<>.addRegister<RegisterA>().addRegister<RegisterB>().addRegister<RegisterC>()
+   *    ubt.runTest("myCDD");
+   * 
+   *  See addRegister() for more details.
+   * 
+   *  Note: This is work in progress. Tests are by far not yet complete. Interface changes of the test class are also
+   *  likely.
+   */
   template<typename VECTOR_OF_REGISTERS_T = boost::mpl::vector<>>
   class UnifiedBackendTest {
    public:
     /**
-   *  Add a register to be used by the test. This function takes a register descriptor in form of a struct type as
-   *  template argument and returns a new UnifiedBackendTest object.
-   * 
-   *  The register descriptor must be of the following form:
-   * 
-   *  struct MyRegisterDescriptor {
-   *    std::string path() {return "/path/of/register";}
-   *    bool isWriteable() {return true;}
-   *    bool isReadable() {return true;}
-   *    ChimeraTK::AccessModeFlags supportedFlags() {return {ChimeraTK::AccessMode::wait_for_new_data};}
-   *    size_t nChannels() {return 1;}
-   *    size_t nElementsPerChannel() {return 5;}
-   *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}  // see setForceDataLossWrite()
-   *    size_t nRuntimeErrorCases() {return 1;}                                 // see setForceRuntimeError()
-   *    bool testAsyncReadInconsistency() {return true;}                        // see forceAsyncReadInconsistency()
-   * 
-   *    typedef int32_t minimumUserType;
-   *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted
-   * 
-   *    /// Generate value which can be represented by the register, convert it to the UserType (e.g. using
-   *    /// ChimeraTK::numericToUserType) and return it.
-   *    template<typename UserType>
-   *    std::vector<std::vector<UserType>> generateValue();
-   *
-   *    /// Obtain the current value of the register, convert it to the UserType (e.g. using
-   *    /// ChimeraTK::numericToUserType) and return it.
-   *    template<typename UserType>
-   *    std::vector<std::vector<UserType>> getRemoteValue();
-   *
-   *    /// Set remote value to a value generated in the same way as in generateValue().
-   *    void setRemoteValue();
-   * 
-   *    /// Force runtime errors when reading or writing (at least) this register. Whether other registers are also
-   *    /// affected by this is not important for the test (i.e. blocking the entire communication is ok).
-   *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
-   *    /// enable = false, without calling setForceRuntimeError() for any other register in between.
-   *    /// The second case argument will be set to a number between 0 and nRuntimeErrorCases()-1. Each case will be
-   *    /// enabled and disabled separately. It is guaranteed that never two cases are enabled at the same time. If
-   *    /// nRuntimeErrorCases() == 0, this function will never be called.
-   *    void setForceRuntimeError(bool enable, size_t case);
-   * 
-   *    /// Force data loss during write operations. It is expected that data loss occurse exactly writeQueueLength
-   *    /// write operations after calling this function with enable=true.
-   *    /// If writeQueueLength == std::numeric_limits<size_t>::max() it is assumed that data loss can never happen and
-   *    /// hence the corresponding test is not executed for this register (and this function is never called).
-   *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
-   *    /// enable = false.
-   *    void setForceDataLossWrite(bool enable);
-   * 
-   *    /// Do whatever necessary that data last received via a push-type subscription is inconsistent with the actual 
-   *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishng
-   *    /// the update to the subscribers.
-   *    /// This function will only be called if testAsyncReadInconsistency == true. testAsyncReadInconsistency should
-   *    /// be set to false if and only if the underlying protocol prevents that such inconsistency could ever occur.
-   *    void forceAsyncReadInconsistency();
-   *  };
-   * 
-   *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
-   *  any data (e.g. seeds for generating values), use static member variables.
-   * 
-   *  Properties of the register are implemented as functions instead of data members to make it easier to override
-   *  values when using a common base clase for multiple descriptors to avoid code duplication (without triggering a
-   *  shadowing warning).
-   */
+     *  Add a register to be used by the test. This function takes a register descriptor in form of a struct type as
+     *  template argument and returns a new UnifiedBackendTest object.
+     * 
+     *  The register descriptor must be of the following form:
+     * 
+     *  struct MyRegisterDescriptor {
+     *    std::string path() {return "/path/of/register";}
+     *    bool isWriteable() {return true;}
+     *    bool isReadable() {return true;}
+     *    ChimeraTK::AccessModeFlags supportedFlags() {return {ChimeraTK::AccessMode::wait_for_new_data};}
+     *    size_t nChannels() {return 1;}
+     *    size_t nElementsPerChannel() {return 5;}
+     *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}  // see setForceDataLossWrite()
+     *    size_t nRuntimeErrorCases() {return 1;}                                 // see setForceRuntimeError()
+     *    bool testAsyncReadInconsistency() {return true;}                        // see forceAsyncReadInconsistency()
+     * 
+     *    typedef int32_t minimumUserType;
+     *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted
+     * 
+     *    /// Generate value which can be represented by the register, convert it to the UserType (e.g. using
+     *    /// ChimeraTK::numericToUserType) and return it.
+     *    template<typename UserType>
+     *    std::vector<std::vector<UserType>> generateValue();
+     *
+     *    /// Obtain the current value of the register, convert it to the UserType (e.g. using
+     *    /// ChimeraTK::numericToUserType) and return it.
+     *    template<typename UserType>
+     *    std::vector<std::vector<UserType>> getRemoteValue();
+     *
+     *    /// Set remote value to a value generated in the same way as in generateValue().
+     *    void setRemoteValue();
+     * 
+     *    /// Force runtime errors when reading or writing (at least) this register. Whether other registers are also
+     *    /// affected by this is not important for the test (i.e. blocking the entire communication is ok).
+     *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
+     *    /// enable = false, without calling setForceRuntimeError() for any other register in between.
+     *    /// The second case argument will be set to a number between 0 and nRuntimeErrorCases()-1. Each case will be
+     *    /// enabled and disabled separately. It is guaranteed that never two cases are enabled at the same time. If
+     *    /// nRuntimeErrorCases() == 0, this function will never be called.
+     *    void setForceRuntimeError(bool enable, size_t case);
+     * 
+     *    /// Force data loss during write operations. It is expected that data loss occurse exactly writeQueueLength
+     *    /// write operations after calling this function with enable=true.
+     *    /// If writeQueueLength == std::numeric_limits<size_t>::max() it is assumed that data loss can never happen and
+     *    /// hence the corresponding test is not executed for this register (and this function is never called).
+     *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
+     *    /// enable = false.
+     *    void setForceDataLossWrite(bool enable);
+     * 
+     *    /// Do whatever necessary that data last received via a push-type subscription is inconsistent with the actual 
+     *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishng
+     *    /// the update to the subscribers.
+     *    /// This function will only be called if testAsyncReadInconsistency == true. testAsyncReadInconsistency should
+     *    /// be set to false if and only if the underlying protocol prevents that such inconsistency could ever occur.
+     *    void forceAsyncReadInconsistency();
+     *  };
+     * 
+     *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
+     *  any data (e.g. seeds for generating values), use static member variables.
+     * 
+     *  Properties of the register are implemented as functions instead of data members to make it easier to override
+     *  values when using a common base clase for multiple descriptors to avoid code duplication (without triggering a
+     *  shadowing warning).
+     */
     template<typename REG_T>
     UnifiedBackendTest<typename boost::mpl::push_back<VECTOR_OF_REGISTERS_T, REG_T>::type> addRegister() {
-      return {};
+      UnifiedBackendTest<typename boost::mpl::push_back<VECTOR_OF_REGISTERS_T, REG_T>::type> x;
+      if(_testOnlyTransferElement) x.testOnlyTransferElement();
+      return x;
     }
 
     /**
-   *  "Strong typedef" for list of pairs of functors for enabling and disbaling a test condition.
-   */
+     *  "Strong typedef" for list of pairs of functors for enabling and disbaling a test condition.
+     */
     class EnableDisableActionList : public std::list<std::pair<std::function<void(void)>, std::function<void(void)>>> {
      public:
       using std::list<std::pair<std::function<void(void)>, std::function<void(void)>>>::list;
     };
 
     /**
-   *  Execute all tests. Call this function within a BOOST_AUTO_TEST_CASE after calling all preparatory functions below.
-   *  The tests are executed for the backend identified by the given CDD.
-   */
+     *  Execute all tests. Call this function within a BOOST_AUTO_TEST_CASE after calling all preparatory functions below.
+     *  The tests are executed for the backend identified by the given CDD.
+     */
     void runTests(const std::string& cdd);
+
+    /**
+     *  Call if not a real backend is tested but just a special TransferElement implementation. This will disable
+     *  those tests which do not make sense in that context. Use this for testing the ControlSystemAdapter's
+     *  ProcessArray, or the NDRegisterAccessorDecorator base class.
+     */
+    UnifiedBackendTest<VECTOR_OF_REGISTERS_T>& testOnlyTransferElement() {
+      _testOnlyTransferElement = true;
+      return *this;
+    }
 
    protected:
     void test_B_3_1_2_1();
@@ -205,7 +217,10 @@ namespace ChimeraTK {
     /// CDD for backend to test
     std::string cdd;
 
-    /// Special DeviceBacked used for testing the exception reporting to the backend
+    /// Flag wheter to disable tests for the backend itself
+    bool _testOnlyTransferElement{false};
+
+    /// Special DeviceBackend used for testing the exception reporting to the backend
     struct ExceptionReportingBackend : DeviceBackendImpl {
       ExceptionReportingBackend(const boost::shared_ptr<DeviceBackend>& target) : _target(target) {}
       ~ExceptionReportingBackend() override {}
@@ -705,9 +720,8 @@ namespace ChimeraTK {
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
       VersionNumber ver;
-      STORE_APPLICATION_BUFFER(UserType, reg);
       te->preWrite(TransferType::write, ver);
-      CHECK_APPLICATION_BUFFER(UserType, reg);
+      STORE_APPLICATION_BUFFER(UserType, reg);
       te->writeTransfer(ver);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->postWrite(TransferType::write, ver);
@@ -766,6 +780,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_6_4() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_6_4 - application buffer unchanged after exception" << std::endl;
     Device d(cdd);
 
@@ -1210,6 +1225,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_4() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_4 - async read consistency heartbeat" << std::endl;
 
     Device d(cdd);
@@ -1274,6 +1290,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_5 - no async transfers until activateAsyncRead() for TEs created before open"
               << std::endl;
     Device d(cdd);
@@ -1335,6 +1352,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5_1() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_5_1 - activateAsynchronousRead" << std::endl;
     Device d(cdd);
 
@@ -1374,6 +1392,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_5_2 - initial value" << std::endl;
     Device d(cdd);
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
@@ -1533,6 +1552,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_1() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_1 - reporting exceptions to exception backend" << std::endl;
     Device d(cdd);
 
@@ -1652,6 +1672,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_2_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_2_2 - repeated setException() has no effect" << std::endl;
     Device d(cdd);
     d.open();
@@ -1704,6 +1725,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_3_1() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_3_1 - setException() disables asynchronous read transfers" << std::endl;
     Device d(cdd);
     d.open();
@@ -1752,6 +1774,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_3_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_3_2 - exactly one runtime_error in the _readQueue per async read accessor" << std::endl;
     Device d(cdd);
     d.open();
@@ -1799,6 +1822,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_4_1() {
+    if(_testOnlyTransferElement) return;
     std::cout
         << "--- test_B_9_4_1 - doReadTransferSynchonously throws runtime_error after setException() until recovery"
         << std::endl;
@@ -1836,6 +1860,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_5() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_5 - write operations throw after setException()" << std::endl;
     Device d(cdd);
     d.open();
@@ -1938,6 +1963,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_11_2_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_11_2_2 - consistent data gets same VersionNumber" << std::endl;
     Device d(cdd);
 
@@ -2009,6 +2035,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_2_1_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_C_5_2_1_2 - logic_error for non-existing register" << std::endl;
 
     // Constructor must throw when device is closed
@@ -2038,6 +2065,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_2_2_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_C_5_2_2_2 - logic_error for exceeding register size" << std::endl;
 
     // Collect register sizes
@@ -2125,6 +2153,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_2_5_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_C_5_2_5_2 - logic_error on operation while backend closed" << std::endl;
     Device d(cdd);
 
