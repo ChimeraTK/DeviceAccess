@@ -513,7 +513,7 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isSyncRead(x)) return;
+      if(!this->isRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
@@ -542,6 +542,13 @@ namespace ChimeraTK {
       auto v2 = x.template getRemoteValue<UserType>();
 
       // Read second value
+      reg.read();
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, v2);
+      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+
+      // Reading again without changing remote value does not block and gives the same value
       reg.read();
 
       // Check application buffer
