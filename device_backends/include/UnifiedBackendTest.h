@@ -115,7 +115,9 @@ namespace ChimeraTK {
      */
     template<typename REG_T>
     UnifiedBackendTest<typename boost::mpl::push_back<VECTOR_OF_REGISTERS_T, REG_T>::type> addRegister() {
-      return {};
+      UnifiedBackendTest<typename boost::mpl::push_back<VECTOR_OF_REGISTERS_T, REG_T>::type> x;
+      if(_testOnlyTransferElement) x.testOnlyTransferElement();
+      return x;
     }
 
     /**
@@ -131,6 +133,16 @@ namespace ChimeraTK {
      *  The tests are executed for the backend identified by the given CDD.
      */
     void runTests(const std::string& cdd);
+
+    /**
+     *  Call if not a real backend is tested but just a special TransferElement implementation. This will disable
+     *  those tests which do not make sense in that context. Use this for testing the ControlSystemAdapter's
+     *  ProcessArray, or the NDRegisterAccessorDecorator base class.
+     */
+    UnifiedBackendTest<VECTOR_OF_REGISTERS_T>& testOnlyTransferElement() {
+      _testOnlyTransferElement = true;
+      return *this;
+    }
 
    protected:
     void test_B_3_1_2_1();
@@ -205,7 +217,10 @@ namespace ChimeraTK {
     /// CDD for backend to test
     std::string cdd;
 
-    /// Special DeviceBacked used for testing the exception reporting to the backend
+    /// Flag wheter to disable tests for the backend itself
+    bool _testOnlyTransferElement{false};
+
+    /// Special DeviceBackend used for testing the exception reporting to the backend
     struct ExceptionReportingBackend : DeviceBackendImpl {
       ExceptionReportingBackend(const boost::shared_ptr<DeviceBackend>& target) : _target(target) {}
       ~ExceptionReportingBackend() override {}
@@ -766,6 +781,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_6_4() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_6_4 - application buffer unchanged after exception" << std::endl;
     Device d(cdd);
 
@@ -1210,6 +1226,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_4() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_4 - async read consistency heartbeat" << std::endl;
 
     Device d(cdd);
@@ -1274,6 +1291,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_5 - no async transfers until activateAsyncRead() for TEs created before open"
               << std::endl;
     Device d(cdd);
@@ -1335,6 +1353,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5_1() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_5_1 - activateAsynchronousRead" << std::endl;
     Device d(cdd);
 
@@ -1374,6 +1393,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_5_2 - initial value" << std::endl;
     Device d(cdd);
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
@@ -1533,6 +1553,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_1() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_1 - reporting exceptions to exception backend" << std::endl;
     Device d(cdd);
 
@@ -1652,6 +1673,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_2_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_2_2 - repeated setException() has no effect" << std::endl;
     Device d(cdd);
     d.open();
@@ -1704,6 +1726,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_3_1() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_3_1 - setException() disables asynchronous read transfers" << std::endl;
     Device d(cdd);
     d.open();
@@ -1752,6 +1775,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_3_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_3_2 - exactly one runtime_error in the _readQueue per async read accessor" << std::endl;
     Device d(cdd);
     d.open();
@@ -1799,6 +1823,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_4_1() {
+    if(_testOnlyTransferElement) return;
     std::cout
         << "--- test_B_9_4_1 - doReadTransferSynchonously throws runtime_error after setException() until recovery"
         << std::endl;
@@ -1836,6 +1861,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_5() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_9_5 - write operations throw after setException()" << std::endl;
     Device d(cdd);
     d.open();
@@ -1938,6 +1964,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_11_2_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_11_2_2 - consistent data gets same VersionNumber" << std::endl;
     Device d(cdd);
 
@@ -2009,6 +2036,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_2_1_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_C_5_2_1_2 - logic_error for non-existing register" << std::endl;
 
     // Constructor must throw when device is closed
@@ -2038,6 +2066,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_2_2_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_C_5_2_2_2 - logic_error for exceeding register size" << std::endl;
 
     // Collect register sizes
@@ -2125,6 +2154,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_2_5_2() {
+    if(_testOnlyTransferElement) return;
     std::cout << "--- test_C_5_2_5_2 - logic_error on operation while backend closed" << std::endl;
     Device d(cdd);
 
