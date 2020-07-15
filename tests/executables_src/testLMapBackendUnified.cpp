@@ -204,8 +204,22 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
 
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue(bool = false) {
+    // For Variables we don't have a backdoor. We have to use the normal read and write
+    // functions which are good enough. It seems like a self consistency test, but all
+    // functionality the variable has to provide is that I can write something, and
+    // read it back, which is tested with it.
+
+    // We might have to open the backend to perform the operation. We have to remember
+    // that we did so and close it again it we did. Some tests require the backend to be closed.
+    bool backendWasOpened = lmapBackend->isOpen();
+    if(!backendWasOpened) {
+      lmapBackend->open();
+    }
     auto acc = lmapBackend->getRegisterAccessor<typename Derived::minimumUserType>(derived->path(), 0, 0, {});
     acc->read();
+    if(!backendWasOpened) {
+      lmapBackend->close();
+    }
     std::vector<UserType> v;
     for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
       v.push_back(acc->accessData(k));
@@ -219,7 +233,14 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
     for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
       acc->accessData(k) = v[k];
     }
+    bool backendWasOpened = lmapBackend->isOpen();
+    if(!backendWasOpened) {
+      lmapBackend->open();
+    }
     acc->write();
+    if(!backendWasOpened) {
+      lmapBackend->close();
+    }
   }
 
   void setForceRuntimeError(bool, size_t) { assert(false); }

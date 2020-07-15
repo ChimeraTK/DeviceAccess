@@ -144,6 +144,8 @@ namespace ChimeraTK { namespace LNMBackend {
             " expected for read operations.");
       }
       buffer_2D[0][0] = numericToUserType<UserType>(valueWhenNotUsingReturn);
+      this->_versionNumber = _target->getVersionNumber();
+      this->_dataValidity = _target->dataValidity();
     }
     else if(results.count() == 1) {
       // return statement has been used to return exactly one value (note: this value might be an array)

@@ -97,6 +97,10 @@ namespace ChimeraTK {
 
     template<typename T>
     friend class LNMBackendVariableAccessor;
+
+    /** Flag storing whether setException has been called. Cleared in open().
+     */
+    bool _hasException{true};
   };
 
 } // namespace ChimeraTK
