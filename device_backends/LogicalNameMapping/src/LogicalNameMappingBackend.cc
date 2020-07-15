@@ -47,6 +47,7 @@ namespace ChimeraTK {
 
     // flag as opened
     _opened = true;
+    _hasException = false;
 
     // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
@@ -239,7 +240,9 @@ namespace ChimeraTK {
     if(not _opened) {
       return false;
     }
-    // FIXME: once the LNM backend remember an active exception to be reported by the variables and constants, it also has to be checked here.
+    if(_hasException) {
+      return false;
+    }
     for(auto& e : _devices) {
       if(not e.second->isFunctional()) {
         return false;
@@ -250,7 +253,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   void LogicalNameMappingBackend::setException() {
-    /// FIXME: This only delegates to the target devices. It does not work for constants and variables that only line in the logical name mapping
+    _hasException = true;
     for(auto& d : _devices) {
       d.second->setException();
     }

@@ -68,18 +68,31 @@ namespace ChimeraTK {
       fillUserBuffer();
     }
 
-    void doReadTransferSynchronously() override {}
+    void doReadTransferSynchronously() override {
+      if(_dev->_hasException) {
+        throw ChimeraTK::runtime_error("previous, unrecovered fault");
+      }
+    }
 
     void doPreWrite(TransferType type, VersionNumber) override {
       std::ignore = type;
-      if(isReadOnly()) {
+      if(_info->targetType ==
+          LNMBackendRegisterInfo::TargetType::
+              CONSTANT) { // repeat the condition in isReadOnly() here to avoid virtual function call.
         throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
                                      "is not possible.");
       }
+      if(!_dev->_opened) { // directly use member variables as friend to avoid virtual function calls
+        throw ChimeraTK::logic_error("Cannot write to a closed device.");
+      }
+
       _valueTableDataValidity = this->_dataValidity;
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override {
+      if(_dev->_hasException) {
+        throw ChimeraTK::runtime_error("previous, unrecovered fault");
+      }
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {
@@ -107,6 +120,12 @@ namespace ChimeraTK {
           this->buffer_2D[0][i] = userTypeToUserType<UserType>(
               boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
         });
+      }
+    }
+
+    void doPreRead(TransferType) override {
+      if(!_dev->_opened) {
+        throw ChimeraTK::logic_error("Cannot read from a closed device.");
       }
     }
 
