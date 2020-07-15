@@ -720,9 +720,8 @@ namespace ChimeraTK {
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
       VersionNumber ver;
-      STORE_APPLICATION_BUFFER(UserType, reg);
       te->preWrite(TransferType::write, ver);
-      CHECK_APPLICATION_BUFFER(UserType, reg);
+      STORE_APPLICATION_BUFFER(UserType, reg);
       te->writeTransfer(ver);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->postWrite(TransferType::write, ver);
