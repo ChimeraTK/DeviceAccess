@@ -326,6 +326,9 @@ namespace ChimeraTK {
    *  want to write to the registers, without having to mess with absoute addresses
    *  (we still depend on the map file parser, but the whole dummy does. The address
    *   translation is re-done in the dummy, we are not using the one from the regular accessors.)
+   *
+   *   WARNING: You must not touch any data content of the accessor without holding a lock to
+   *   the memory mutex for the internal data buffer (see getBufferLock()).
    */
   class DummyRegisterRawAccessor : public DummyRegisterAddressChecker {
    public:
@@ -352,6 +355,11 @@ namespace ChimeraTK {
 
     /// return number of elements
     unsigned int getNumberOfElements() { return registerInfo.nElements; }
+
+    /** Get a lock to safely modify the buffer. You have to release it as soon as possible because it will block all other
+     *  functionaltiy of the Dummy. This is a really low low level debugging interface!
+     */
+    std::unique_lock<std::mutex> getBufferLock() { return std::unique_lock<std::mutex>(_backend->mutex); }
 
    protected:
     /// pointer to dummy backend

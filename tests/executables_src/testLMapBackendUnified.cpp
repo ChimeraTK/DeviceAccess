@@ -51,7 +51,9 @@ struct RegisterDescriptorBase {
 
   [[noreturn]] void setForceDataLossWrite(bool) { assert(false); }
 
-  [[noreturn]] void forceAsyncReadInconsistency() { assert(false); }
+      [[noreturn]] void forceAsyncReadInconsistency() {
+    assert(false);
+  }
 };
 
 /// Base descriptor for channel accessors
@@ -384,7 +386,7 @@ struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
 struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
   std::string path() { return "/ArrayConstant"; }
 
-  const std::vector<int32_t> value{1111, 5555, 2222, 4444, 3333};
+  const std::vector<int32_t> value{1111, 2222, 3333, 4444, 5555};
   size_t nElementsPerChannel() { return 5; }
 
   typedef float minimumUserType;
@@ -602,6 +604,14 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
     return {{0}};
+  }
+
+  // Conceptually the monostable trigger is of data type void. The input value
+  // is not written anywhere. To fulfill the requirements of the test, just return what
+  // was generated so the comparison succeeds.
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue(bool /*getRaw*/ = false) {
+    return generateValue<UserType>();
   }
 
   typedef uint32_t minimumUserType;
