@@ -651,7 +651,6 @@ namespace ChimeraTK {
       if(!this->isWrite(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
-      VersionNumber ver{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
@@ -659,6 +658,7 @@ namespace ChimeraTK {
       // write some value destructively
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
+      VersionNumber ver;
       reg.writeDestructively(ver);
 
       // check that application data buffer shape is not changed (content may be lost)
