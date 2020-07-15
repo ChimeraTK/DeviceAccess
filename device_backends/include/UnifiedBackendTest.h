@@ -104,6 +104,12 @@ namespace ChimeraTK {
      *    /// This function will only be called if testAsyncReadInconsistency == true. testAsyncReadInconsistency should
      *    /// be set to false if and only if the underlying protocol prevents that such inconsistency could ever occur.
      *    void forceAsyncReadInconsistency();
+     * 
+     *    /// Optional: define the following data member to prevent the test from executing any synchronous read tests.
+     *    /// This should be used only when testing TransferElements which do not support reads without 
+     *    /// AccessMode::wait_for_new_data, like e.g. the ControlSystemAdapter ProcessArray. TransferElements handed
+     *    /// out by real backends must always support this.
+     *    /// bool disableSyncReadTests{true};
      *  };
      * 
      *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
@@ -181,9 +187,23 @@ namespace ChimeraTK {
     /// Utility functions for recurring tasks
     void recoverDevice(ChimeraTK::Device& d);
 
+    /// Helper class for isRead(). This allows us to check whether REG_T::disableSyncReadTests exists. If not, a
+    /// default value of false is assumed.
+    template<class REG_T, class Enable = void>
+    struct RegT_disableSyncReadTests_getter {
+      static bool get(REG_T) { return false; }
+    };
+
+    template<class REG_T>
+    struct RegT_disableSyncReadTests_getter<REG_T,
+        typename std::enable_if<std::is_integral<decltype(REG_T::disableSyncReadTests)>::value>::type> {
+      static bool get(REG_T x) { return x.disableSyncReadTests; }
+    };
+
     /// Utility functions for register traits
     template<typename REG_T>
     bool isRead(REG_T x = {}) {
+      if(RegT_disableSyncReadTests_getter<REG_T>::get(x)) return false;
       return x.isReadable();
     }
     template<typename REG_T>
