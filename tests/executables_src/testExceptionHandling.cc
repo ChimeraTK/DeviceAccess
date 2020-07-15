@@ -1,3 +1,4 @@
+#include <ChimeraTK/ScalarRegisterAccessor.h>
 #include <cstring>
 #include <future>
 
@@ -85,6 +86,8 @@ struct Fixture_noTestFacility {
     deviceBackend->open();
     testFacitiy.runApplication();
 
+    hwRegister.replace(application.device.device.getScalarRegisterAccessor<int>("/REG1"));
+
     status.replace(
         testFacitiy.getScalar<int>(ctk::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
     message.replace(testFacitiy.getScalar<std::string>(
@@ -120,6 +123,7 @@ struct Fixture_noTestFacility {
 
   ctk::ScalarRegisterAccessor<int> status;
   ctk::ScalarRegisterAccessor<std::string> message;
+  ctk::ScalarRegisterAccessor<int> hwRegister;
 };
 
 /*
@@ -165,14 +169,83 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testFaultReporting, Fixture_noTestF
   BOOST_CHECK(static_cast<std::string>(message) == "");
 }
 
-BOOST_AUTO_TEST_CASE(testBlockingRead) { // wait_for_new_data
-                                         // how does the api of the accessor look like
-  //device1DummyBackend["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
-  // make one with wait_for_new_data
+/*
+ * Test read operation on poll type variable when a device runtime exception occours; A poll type
+ * variable does not have its AccessMode as wait_for_new_data.
+ * 
+ * For such a variable:
+ *   - read is skipped till device recovers.
+ *   - first skipped instance of read changes datavalidity flag to faulty and generates a new version
+ *     number which stays the same till the device recovers
+ */
+BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture_noTestFacility) {
+  std::cout << "runtimeErrorHandling_testPolledRead" << std::endl;
 
-  // The framework decides the accessmode flags based on how the wiring looks like:
-  //
-  // we will have to make up wiring to get what we desire.
+  // since the testFacility cannot access the poll type process variable directly, we make use of
+  // proxy variable o1 that is linked with this poll type variable.
+  auto proxyVariable = testFacitiy.getScalar<int>("/o1");
+
+  // initialize to known value in deviceBackend register
+  hwRegister = 100;
+  hwRegister.write();
+
+  // verify normal operation
+  /************************************************************************************************/
+  application.pollModule.triggerRead();
+  proxyVariable.read();
+  auto versionNumberBeforeRuntimeError = proxyVariable.getVersionNumber();
+
+  BOOST_CHECK_EQUAL(proxyVariable, 100);
+  BOOST_CHECK(proxyVariable.dataValidity() == ctk::DataValidity::ok);
+  /************************************************************************************************/
+
+  // Behavior on Runtime error on device:
+  /************************************************************************************************/
+  hwRegister = 10;
+  hwRegister.write();
+
+  deviceBackend->throwExceptionRead = true;
+
+  application.pollModule.triggerRead();
+  proxyVariable.read();
+  auto versionNumberOnRuntimeError = proxyVariable.getVersionNumber();
+
+  BOOST_CHECK_EQUAL(proxyVariable, 100);
+  BOOST_CHECK(proxyVariable.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
+  /************************************************************************************************/
+
+  // Behavior on persisting Runtime error:
+  /************************************************************************************************/
+  application.pollModule.triggerRead();
+  proxyVariable.read();
+  auto versionNumber = proxyVariable.getVersionNumber();
+
+  BOOST_CHECK_EQUAL(proxyVariable, 100);
+  BOOST_CHECK(proxyVariable.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(versionNumber == versionNumberOnRuntimeError);
+  /************************************************************************************************/
+
+  deviceBackend->throwExceptionRead = false;
+  // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
+  // device recovered.
+  CHECK_TIMEOUT(
+      [&]() {
+        status.readLatest();
+        return static_cast<int>(status);
+      }() == 0,
+      10000);
+
+  // Behavior on device recovery
+  /************************************************************************************************/
+  application.pollModule.triggerRead();
+  proxyVariable.read();
+  auto versionNumberAfterRecovery = proxyVariable.getVersionNumber();
+
+  BOOST_CHECK_EQUAL((int)proxyVariable, 10);
+  BOOST_CHECK(proxyVariable.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(versionNumberAfterRecovery > versionNumberOnRuntimeError);
+  /************************************************************************************************/
 }
 
 BOOST_AUTO_TEST_CASE(testReadLatest) {}
