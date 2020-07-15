@@ -584,7 +584,6 @@ namespace ChimeraTK {
       // check remote value
       auto v1 = x.template getRemoteValue<UserType>();
       CHECK_EQUALITY_VECTOR(v1, theValue);
-      
     });
 
     // close device again
@@ -2085,6 +2084,7 @@ namespace ChimeraTK {
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
       // number of elements too big
       {
         Device d(cdd);

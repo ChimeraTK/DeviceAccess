@@ -111,6 +111,14 @@ namespace ChimeraTK {
     // obtain register info
     auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue_mutable.getRegister(registerPathName));
 
+    // Check that the requested requested accessor fits into the register as described by the info. It is not enough to let
+    // the target do the check. It might be a sub-register of a much larger one and for the target it is fine.
+    if((numberOfWords + wordOffsetInRegister) > info->length) {
+      throw ChimeraTK::logic_error(
+          std::string("LogicalNameMappingBackend: Error creating accessor. Number of words plus offset too large in ") +
+          registerPathName);
+    }
+
     // implementation for each type
     boost::shared_ptr<NDRegisterAccessor<UserType>> ptr;
     if(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
