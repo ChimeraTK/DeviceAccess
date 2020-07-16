@@ -103,6 +103,11 @@ namespace ChimeraTK {
     /// map from register names to addresses
     boost::shared_ptr<RegisterInfoMap> _registerMap;
 
+    /// Check consistency of the passed sizes and offsets against the information in the map file
+    /// Will adjust numberOfWords to the default value if 0
+    void verifyRegisterAccessorSize(
+        boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords, size_t wordOffsetInRegister);
+
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
