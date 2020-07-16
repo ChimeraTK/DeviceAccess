@@ -43,17 +43,9 @@ namespace ChimeraTK {
             registerPathName + "'.");
       }
       if(flags.has(AccessMode::raw)) {
-        if(typeid(UserType) != typeid(int32_t)) {
-          throw ChimeraTK::logic_error("Given UserType when obtaining the "
-                                       "LNMBackendBufferingVariableAccessor in"
-                                       " raw mode does not match the expected "
-                                       "type. Use an int32_t instead!");
-        }
-        std::cout << "WARNING: You are using AccessMode::raw on a "
-                     "variable/constant-type register in a logical "
-                     "name mapping device. This is DEPRECATED and support for "
-                     "it will be removed soon!"
-                  << std::endl;
+        throw ChimeraTK::logic_error("AccessMode::raw is not supported on a "
+                                     "variable/constant-type register in a logical "
+                                     "name mapping device.");
       }
       // check for incorrect usage of this accessor
       if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
