@@ -2130,6 +2130,11 @@ namespace ChimeraTK {
         BOOST_CHECK_THROW(
             auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, sizeMap[registerName], 1), logic_error);
       }
+      // full length by default(=0) but offset by 1 element (so 1 element too long)
+      {
+        Device d(cdd);
+        BOOST_CHECK_THROW(auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 1), logic_error);
+      }
       // does not throw when full length and no offset specified
       {
         Device d(cdd);

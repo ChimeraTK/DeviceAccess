@@ -113,6 +113,7 @@ namespace ChimeraTK {
 
     // Check that the requested requested accessor fits into the register as described by the info. It is not enough to let
     // the target do the check. It might be a sub-register of a much larger one and for the target it is fine.
+    if(numberOfWords == 0) numberOfWords = info->length;
     if((numberOfWords + wordOffsetInRegister) > info->length) {
       throw ChimeraTK::logic_error(
           std::string("LogicalNameMappingBackend: Error creating accessor. Number of words plus offset too large in ") +
