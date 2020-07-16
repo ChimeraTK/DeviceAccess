@@ -337,10 +337,10 @@ This documnent is currently still **INCOMPLETE**!
    ChimeraTK::runtime_error may only be thrown in
   - 3.1 doXxxTransferYyy(). It is the only exception that can occur in this function
   - 3.2 TransferElement::isReadable(), TransferElement::isWriteable() or TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
-  - 3.3 doPreXxx(), if the information returned by the functions in 3.2 is not yet available and needs to be determined from the running device.
+  - 3.3 (removed)
 
 - \anchor transferElement_C_4 4. boost::numeric::bad_numeric_cast may only be thrown in
-  - 4.1 TransferElement::doPreWrite()
+  - 4.1 (removed)
   - 4.2 TransferElement::doPostRead(), but only if updateDataBuffer == true
   - 4.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 5.2.4).
 
@@ -368,8 +368,12 @@ This documnent is currently still **INCOMPLETE**!
     - 5.2.7 A write operation is executed on a transfer element that cannot be written
       - 5.2.7.1 Check with TransferElement::isWriteable() or TransferElement::isReadOnly()
       - \anchor transferElement_C_5_2_7_2 5.2.7.2 Thrown in doPreWrite() [\ref UnifiedTest_TransferElement_C_5_2_7_2 "U"]
-  - 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant under normal circumstances. Only when open() is called (either for the first time or to recover form a ChimeraTK::runtime_error) the information might change and applications are expected to check it again.
+  - 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant for each TransferElement. Only when a ChimeraTK::runtime_error is thrown by the TransferElement, the information might change and applications are expected to check it again.
     - \anchor transferElement_C_5_3_1 5.3.1 If a device is changing this information on its own (e.g. makes a register read-only which was readable before), and the application hence performes an operation which is no longer possible, a ChimeraTK::runtime_error must be thrown (unexpected behaviour of the device). \ref transferElement_comment_C_5_3_1 "(*)"
+    - 5.3.2 If an implementation needs to obtain the information from the device (and hence the information might potentially change), it caches the information for each TransferElement separately.
+    - 5.3.3 Implementations of the test functions always return the cached information, if available.
+    - 5.3.4 If the test function needs to obtain the information from the device, a runtime_error might occur.
+    - 5.3.5 Implementations of doPreXxx() use these test functions to check the preconditions, but discard any runtime_error exception. The following doXxxTransferYyy() will then either throw a runtime_error (cf. 5.3.1) or succeed.
   - 5.4 Remarks about how to follow these rules:
     - 5.4.1 If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
 
