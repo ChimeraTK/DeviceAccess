@@ -328,6 +328,12 @@ namespace ChimeraTK {
           std::to_string(info->nElements) + " elements.");
     }
 
+    // Check that the requested register fits in the register description. The downstream register might be larger
+    // so we cannot delegate the check
+    if(numberOfWords + wordOffsetInRegister > info->nElements) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested offset + number of words exceeds the size of the register '" + registerPathName + "'!");
+    }
+
     // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
 
@@ -384,6 +390,12 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("SubdeviceBackend: Requested " + std::to_string(numberOfWords) +
           " elements from register '" + registerPathName + "', which only has a length of " +
           std::to_string(info->nElements) + " elements.");
+    }
+
+    // Check that the requested register fits in the register description. The downstream register might be larger
+    // so we cannot delegate the check
+    if(numberOfWords + wordOffsetInRegister > info->nElements) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested offset + number of words exceeds the size of the register '" + registerPathName + "'!");
     }
 
     // check if register access properly specified in map file
@@ -462,6 +474,12 @@ namespace ChimeraTK {
           std::to_string(info->nElements) + " elements.");
     }
 
+    // Check that the requested register fits in the register description. The downstream register might be larger
+    // so we cannot delegate the check
+    if(numberOfWords + wordOffsetInRegister > info->nElements) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested offset + number of words exceeds the size of the register '" + registerPathName + "'!");
+    }
+
     // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
 
@@ -515,6 +533,11 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("SubdeviceBackend: Requested " + std::to_string(numberOfWords) +
           " elements from register '" + registerPathName + "', which only has a length of " +
           std::to_string(info->nElements) + " elements.");
+    }
+    // Check that the requested register fits in the register description. The downstream register might be larger
+    // so we cannot delegate the check
+    if(numberOfWords + wordOffsetInRegister > info->nElements) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested offset + number of words exceeds the size of the register '" + registerPathName + "'!");
     }
 
     // check if register access properly specified in map file
