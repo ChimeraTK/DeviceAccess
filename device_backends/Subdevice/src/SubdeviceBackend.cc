@@ -156,11 +156,8 @@ namespace ChimeraTK {
 
   void SubdeviceBackend::open() {
     obtainTargetBackend();
-    // open target backend
-    if(!targetDevice->isOpen()) { // createBackend may return an already opened
-                                  // instance for some backends
-      targetDevice->open();
-    }
+    // open target backend, unconditionally as it is also used for recovery
+    targetDevice->open();
     _opened = true;
   }
 
