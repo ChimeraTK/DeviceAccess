@@ -43,7 +43,12 @@ namespace ChimeraTK {
             "LNMBackendBitAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
       }
       if(wordOffsetInRegister != 0) {
-        throw ChimeraTK::logic_error("LNMBackendBitAccessors cannot have a word offset");
+        throw ChimeraTK::logic_error("LNMBackendBitAccessors cannot have a word offset.");
+      }
+      if(numberOfWords > 1) {
+        throw ChimeraTK::logic_error("LNMBackendBitAccessors must have size 1.");
+        // The case that the target size actually is 1 if numberOfWords == 0 cannnot be checked here.
+        // 0 is allowed. It is tested after the target has created the accessor with 0 as length parameter.
       }
 
       // get target device and accessor
