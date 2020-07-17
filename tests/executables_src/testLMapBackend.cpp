@@ -1005,4 +1005,113 @@ BOOST_AUTO_TEST_CASE(testIsFunctional) {
   BOOST_CHECK(d.isFunctional() == false);
 }
 
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testWithTransferGroup) {
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  ChimeraTK::Device device, target1, target2;
+
+  device.open("LMAP0");
+  OneDRegisterAccessor<int> a[6];
+  a[0].replace(device.getOneDRegisterAccessor<int>("SingleWord"));
+  a[1].replace(device.getOneDRegisterAccessor<int>("FullArea"));
+  a[2].replace(device.getOneDRegisterAccessor<int>("PartOfArea"));
+  a[3].replace(device.getOneDRegisterAccessor<int>("Channel3"));
+  a[4].replace(device.getOneDRegisterAccessor<int>("Channel4"));
+  a[5].replace(device.getOneDRegisterAccessor<int>("Constant"));
+
+  // obtain the private pointers to the implementation of the accessor
+  boost::shared_ptr<NDRegisterAccessor<int>> impl[6];
+  for(int i = 0; i < 6; i++) {
+    impl[i] = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(a[i].getHighLevelImplElement());
+  }
+
+  // somewhat redundant check: underlying hardware accessors are different for
+  // all accessors
+  for(int i = 0; i < 6; i++) {
+    BOOST_CHECK(impl[i]->getHardwareAccessingElements().size() == 1);
+    for(int k = i + 1; k < 6; k++) {
+      BOOST_CHECK(impl[i]->getHardwareAccessingElements()[0] != impl[k]->getHardwareAccessingElements()[0]);
+    }
+  }
+
+  // add accessors to the transfer group
+  TransferGroup group;
+  for(int i = 0; i < 6; i++) {
+    group.addAccessor(a[i]);
+  }
+
+  // now some accessors share the same underlying accessor
+  BOOST_CHECK(impl[3]->getHardwareAccessingElements()[0] == impl[4]->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(impl[1]->getHardwareAccessingElements()[0] == impl[2]->getHardwareAccessingElements()[0]);
+
+  // the others are still different
+  BOOST_CHECK(impl[0]->getHardwareAccessingElements()[0] != impl[1]->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(impl[0]->getHardwareAccessingElements()[0] != impl[3]->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(impl[0]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(impl[1]->getHardwareAccessingElements()[0] != impl[3]->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(impl[1]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(impl[3]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0]);
+
+  // write some stuff to the registers via the target device
+  // Note: there is only one DMA area in the PCIE dummy which are shared by the
+  // registers accessed by t2 and t3. We
+  //       therefore cannot test those register at the same time!
+  target1.open("PCIE2");
+  target2.open("PCIE3");
+  auto t1 = target1.getOneDRegisterAccessor<int>("BOARD.WORD_USER");
+  auto t2 = target1.getOneDRegisterAccessor<int>("ADC.AREA_DMAABLE");
+  auto t3 = target2.getTwoDRegisterAccessor<int>("TEST/NODMA");
+
+  t1[0] = 120;
+  t1.write();
+  for(unsigned int i = 0; i < t2.getNElements(); i++) {
+    t2[i] = 67890 + 66 * signed(i);
+  }
+  t2.write();
+
+  // read it back via the transfer group
+  group.read();
+
+  BOOST_CHECK(a[0][0] == 120);
+
+  BOOST_CHECK(t2.getNElements() == a[1].getNElements());
+  for(unsigned int i = 0; i < t2.getNElements(); i++) {
+    BOOST_CHECK(a[1][i] == 67890 + 66 * signed(i));
+  }
+
+  BOOST_CHECK(a[2].getNElements() == 20);
+  for(unsigned int i = 0; i < a[2].getNElements(); i++) {
+    BOOST_CHECK(a[2][i] == 67890 + 66 * signed(i + 10));
+  }
+
+  BOOST_CHECK(a[5][0] == 42);
+
+  // write something to the multiplexed 2d register
+  for(unsigned int i = 0; i < t3.getNChannels(); i++) {
+    for(unsigned int k = 0; k < t3[i].size(); k++) {
+      t3[i][k] = signed(i * 10 + k);
+    }
+  }
+  t3.write();
+
+  // read it back via transfer group
+  group.read();
+
+  BOOST_CHECK(a[3].getNElements() == t3[3].size());
+  for(unsigned int i = 0; i < a[3].getNElements(); i++) {
+    BOOST_CHECK(a[3][i] == 3 * 10 + signed(i));
+  }
+
+  BOOST_CHECK(a[4].getNElements() == t3[4].size());
+  for(unsigned int i = 0; i < a[4].getNElements(); i++) {
+    BOOST_CHECK(a[4][i] == 4 * 10 + signed(i));
+  }
+
+  // check that writing to the group fails (has read-only elements)
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

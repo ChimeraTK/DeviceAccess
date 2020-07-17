@@ -156,11 +156,8 @@ namespace ChimeraTK {
 
   void SubdeviceBackend::open() {
     obtainTargetBackend();
-    // open target backend
-    if(!targetDevice->isOpen()) { // createBackend may return an already opened
-                                  // instance for some backends
-      targetDevice->open();
-    }
+    // open target backend, unconditionally as it is also used for recovery
+    targetDevice->open();
     _opened = true;
   }
 
@@ -289,22 +286,13 @@ namespace ChimeraTK {
     return returnValue;
   }
 
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_area(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    assert(type == Type::area);
-
-    // obtain register info
-    auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
-
+  void SubdeviceBackend::verifyRegisterAccessorSize(boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords, size_t wordOffsetInRegister) {
     // check that the bar is 0
     if(info->bar != 0) {
       //       throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
       //           registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
       std::cout << "SubdeviceBackend: WARNING: BAR others then 0 detected. BAR 0 will be used instead. Register "
-                << registerPathName << " is in BAR " << std::to_string(info->bar) << "." << std::endl;
+                << info->name << " is in BAR " << std::to_string(info->bar) << "." << std::endl;
     }
 
     // check that the register is not a 2D multiplexed register, which is not yet
@@ -319,7 +307,6 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("SubdeviceBackend: Only addresses which are a "
                                    "multiple of 4 are supported.");
     }
-    size_t wordOffset = byteOffset / 4;
 
     // compute effective length
     if(numberOfWords == 0) {
@@ -327,9 +314,29 @@ namespace ChimeraTK {
     }
     else if(numberOfWords > info->nElements) {
       throw ChimeraTK::logic_error("SubdeviceBackend: Requested " + std::to_string(numberOfWords) +
-          " elements from register '" + registerPathName + "', which only has a length of " +
+          " elements from register '" + info->name + "', which only has a length of " +
           std::to_string(info->nElements) + " elements.");
     }
+
+    // Check that the requested register fits in the register description. The downstream register might be larger
+    // so we cannot delegate the check
+    if(numberOfWords + wordOffsetInRegister > info->nElements) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested offset + number of words exceeds the size of the register '" + info->name + "'!");
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_area(
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    assert(type == Type::area);
+
+    // obtain register info
+    auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
+
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
+    size_t wordOffset = (info->address + sizeof(int32_t) * wordOffsetInRegister) / 4;
 
     // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
@@ -363,37 +370,14 @@ namespace ChimeraTK {
 
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
-
-    // check that the bar is 0
-    if(info->bar != 0) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
-          registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
-    }
-
-    // check that the register is not a 2D multiplexed register, which is not yet
-    // supported
-    if(info->is2DMultiplexed) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: 2D multiplexed registers are not yet supported.");
-    }
-
-    // compute full offset (from map file and function arguments)
-    size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
-
-    // compute effective length
-    if(numberOfWords == 0) {
-      numberOfWords = info->nElements;
-    }
-    else if(numberOfWords > info->nElements) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: Requested " + std::to_string(numberOfWords) +
-          " elements from register '" + registerPathName + "', which only has a length of " +
-          std::to_string(info->nElements) + " elements.");
-    }
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
 
     // check if register access properly specified in map file
     if(!info->isWriteable()) {
       throw ChimeraTK::logic_error("SubdeviceBackend: Subdevices of type 3reg or "
                                    "2reg must have writeable registers only!");
     }
+
 
     // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
@@ -405,7 +389,9 @@ namespace ChimeraTK {
     if(type == Type::threeRegisters) {
       accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {AccessMode::raw});
     }
-    auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
+
+    size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
+    auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();    
     auto rawAcc =
         boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
             registerPathName, accAddress, accData, accStatus, byteOffset, numberOfWords);
@@ -435,40 +421,13 @@ namespace ChimeraTK {
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
 
-    // check that the bar is 0
-    if(info->bar != 0) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
-          registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
-    }
-
-    // check that the register is not a 2D multiplexed register, which is not yet
-    // supported
-    if(info->is2DMultiplexed) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: 2D multiplexed registers are not yet supported.");
-    }
-
-    // compute full offset (from map file and function arguments)
-    size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
-    if(byteOffset % 4 != 0) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: Only addresses which are a "
-                                   "multiple of 4 are supported.");
-    }
-    size_t wordOffset = byteOffset / 4;
-
-    // compute effective length
-    if(numberOfWords == 0) {
-      numberOfWords = info->nElements;
-    }
-    else if(numberOfWords > info->nElements) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: Requested " + std::to_string(numberOfWords) +
-          " elements from register '" + registerPathName + "', which only has a length of " +
-          std::to_string(info->nElements) + " elements.");
-    }
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
 
     // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
 
     // obtain target accessor in raw mode
+    size_t wordOffset = (info->address + sizeof(int32_t) * wordOffsetInRegister) / 4;
     flags.add(AccessMode::raw);
     auto rawAcc = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
 
@@ -492,33 +451,11 @@ namespace ChimeraTK {
     assert(type == Type::threeRegisters || type == Type::twoRegisters);
     flags.checkForUnknownFlags({AccessMode::raw});
 
+
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
 
-    // check that the bar is 0
-    if(info->bar != 0) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
-          registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
-    }
-
-    // check that the register is not a 2D multiplexed register, which is not yet
-    // supported
-    if(info->is2DMultiplexed) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: 2D multiplexed registers are not yet supported.");
-    }
-
-    // compute full offset (from map file and function arguments)
-    size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
-
-    // compute effective length
-    if(numberOfWords == 0) {
-      numberOfWords = info->nElements;
-    }
-    else if(numberOfWords > info->nElements) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: Requested " + std::to_string(numberOfWords) +
-          " elements from register '" + registerPathName + "', which only has a length of " +
-          std::to_string(info->nElements) + " elements.");
-    }
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
 
     // check if register access properly specified in map file
     if(!info->isWriteable()) {
@@ -536,6 +473,8 @@ namespace ChimeraTK {
     if(type == Type::threeRegisters) {
       accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {AccessMode::raw});
     }
+
+    size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
     auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
     auto rawAcc =
         boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
