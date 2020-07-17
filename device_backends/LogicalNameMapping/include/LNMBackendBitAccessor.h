@@ -42,6 +42,10 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(
             "LNMBackendBitAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
       }
+      if(wordOffsetInRegister != 0) {
+        throw ChimeraTK::logic_error("LNMBackendBitAccessors cannot have a word offset");
+      }
+
       // get target device and accessor
       std::string devName = info->deviceName;
       boost::shared_ptr<DeviceBackend> targetDevice;
@@ -55,7 +59,11 @@ namespace ChimeraTK {
       auto it = map.find(RegisterPath(info->registerName));
       if(it == map.end()) {
         _accessor = targetDevice->getRegisterAccessor<uint64_t>(
-            RegisterPath(info->registerName), numberOfWords, wordOffsetInRegister, false);
+            RegisterPath(info->registerName), numberOfWords, wordOffsetInRegister, {});
+        //
+        if(_accessor->getNumberOfSamples() != 1) {
+          throw ChimeraTK::logic_error("LNMBackendBitAccessors onyl work with registers of size 1");
+        }
         map[RegisterPath(info->registerName)].accessor = _accessor;
       }
       else {
