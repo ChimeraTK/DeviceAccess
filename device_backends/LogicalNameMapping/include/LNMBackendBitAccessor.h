@@ -62,7 +62,7 @@ namespace ChimeraTK {
             RegisterPath(info->registerName), numberOfWords, wordOffsetInRegister, {});
         //
         if(_accessor->getNumberOfSamples() != 1) {
-          throw ChimeraTK::logic_error("LNMBackendBitAccessors onyl work with registers of size 1");
+          throw ChimeraTK::logic_error("LNMBackendBitAccessors only work with registers of size 1");
         }
         map[RegisterPath(info->registerName)].accessor = _accessor;
       }

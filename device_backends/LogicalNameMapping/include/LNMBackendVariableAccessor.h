@@ -57,7 +57,6 @@ namespace ChimeraTK {
       }
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
-      fillUserBuffer();
     }
 
     void doReadTransferSynchronously() override {
@@ -105,16 +104,6 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT; }
 
-    void fillUserBuffer() {
-      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-      for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
-        callForType(_info->valueType, [&, this](auto arg) {
-          this->buffer_2D[0][i] = userTypeToUserType<UserType>(
-              boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
-        });
-      }
-    }
-
     void doPreRead(TransferType) override {
       if(!_dev->_opened) {
         throw ChimeraTK::logic_error("Cannot read from a closed device.");
@@ -123,7 +112,15 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType, bool hasNewData) override {
       if(!hasNewData) return;
-      fillUserBuffer();
+
+      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
+      for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
+        callForType(_info->valueType, [&, this](auto arg) {
+          this->buffer_2D[0][i] = userTypeToUserType<UserType>(
+              boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
+        });
+      }
+
       this->_versionNumber = {};
       this->_dataValidity = _valueTableDataValidity;
     }
