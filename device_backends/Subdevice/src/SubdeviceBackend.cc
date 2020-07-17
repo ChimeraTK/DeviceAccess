@@ -286,7 +286,8 @@ namespace ChimeraTK {
     return returnValue;
   }
 
-  void SubdeviceBackend::verifyRegisterAccessorSize(boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords, size_t wordOffsetInRegister) {
+  void SubdeviceBackend::verifyRegisterAccessorSize(
+      boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords, size_t wordOffsetInRegister, bool forceAlignment) {
     // check that the bar is 0
     if(info->bar != 0) {
       //       throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
@@ -303,7 +304,7 @@ namespace ChimeraTK {
 
     // compute full offset (from map file and function arguments)
     size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
-    if(byteOffset % 4 != 0) {
+    if(forceAlignment && (byteOffset % 4 != 0)) {
       throw ChimeraTK::logic_error("SubdeviceBackend: Only addresses which are a "
                                    "multiple of 4 are supported.");
     }
@@ -335,7 +336,7 @@ namespace ChimeraTK {
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
 
-    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, true);
     size_t wordOffset = (info->address + sizeof(int32_t) * wordOffsetInRegister) / 4;
 
     // check if raw transfer?
@@ -370,7 +371,7 @@ namespace ChimeraTK {
 
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
-    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, false);
 
     // check if register access properly specified in map file
     if(!info->isWriteable()) {
@@ -421,7 +422,7 @@ namespace ChimeraTK {
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
 
-    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, true);
 
     // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
@@ -455,7 +456,7 @@ namespace ChimeraTK {
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
 
-    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister);
+    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, false);
 
     // check if register access properly specified in map file
     if(!info->isWriteable()) {

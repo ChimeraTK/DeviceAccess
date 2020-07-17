@@ -105,8 +105,8 @@ namespace ChimeraTK {
 
     /// Check consistency of the passed sizes and offsets against the information in the map file
     /// Will adjust numberOfWords to the default value if 0
-    void verifyRegisterAccessorSize(
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords, size_t wordOffsetInRegister);
+    void verifyRegisterAccessorSize(boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords,
+        size_t wordOffsetInRegister, bool enforceAlignment);
 
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
