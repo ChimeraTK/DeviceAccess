@@ -10,13 +10,128 @@ using namespace boost::unit_test_framework;
 #include "TransferGroup.h"
 
 #include "ExceptionDummyBackend.h"
+#include "TransferElementTestAccessor.h"
 
 using namespace boost::unit_test_framework;
-namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 
+boost::shared_ptr<TransferElementTestAccessor<int32_t>> makeTETA(AccessModeFlags flags = {}) {
+  return boost::make_shared<TransferElementTestAccessor<int32_t>>(flags);
+}
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/** Tests for single specification points */
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_1_3) {
+  std::cout << "test_B_12_1_3 - replaceTransferElement() called in addElement()" << std::endl;
+  std::map<TransferElementID, bool> foundIds;
+
+  auto A = makeTETA();
+  auto B = makeTETA();
+
+  for(size_t i = 0; i < 3; ++i) A->_internalElements.push_back(makeTETA());
+  for(size_t i = 0; i < 4; ++i) B->_internalElements.push_back(makeTETA());
+
+  TransferGroup group;
+
+  A->resetCounters();
+  group.addAccessor(A);
+  foundIds.clear();
+  for(auto& id : A->_listReplacementElements) foundIds[id] = true;
+  for(auto& e : A->_internalElements) BOOST_CHECK(foundIds[e->getId()] == true);
+
+  A->resetCounters();
+  B->resetCounters();
+  group.addAccessor(B);
+  foundIds.clear();
+  for(auto& id : A->_listReplacementElements) foundIds[id] = true;
+  for(auto& e : A->_internalElements) BOOST_CHECK(foundIds[e->getId()] == true);
+  for(auto& e : B->_internalElements) BOOST_CHECK(foundIds[e->getId()] == true);
+  foundIds.clear();
+  for(auto& id : B->_listReplacementElements) foundIds[id] = true;
+  for(auto& e : A->_internalElements) BOOST_CHECK(foundIds[e->getId()] == true);
+  for(auto& e : B->_internalElements) BOOST_CHECK(foundIds[e->getId()] == true);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_4) {
+  std::cout << "test_B_12_4 - readOnly groups" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_5) {
+  std::cout << "test_B_12_5 - adding same TE twice throws" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_6) {
+  std::cout << "test_B_12_6 - adding same TE to two different groups throws" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_7) {
+  std::cout << "test_B_12_7 - adding TE with wait_for_new_data throws" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_8) {
+  std::cout << "test_B_12_8 - optimisation with copy decorator" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_9) {
+  std::cout << "test_B_12_9 - read/write operations" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_10_1_1) {
+  std::cout << "test_B_12_10_1_1 - runtime_error in precondition check" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_10_1_2) {
+  std::cout << "test_B_12_10_1_2 - precondition not met" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
+  std::cout << "test_B_12_10_3 - all postXxx() called even when exception thrown" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_10_3_1) {
+  std::cout << "test_B_12_10_3_1 - one exception from postXxx() gets through" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_10_3_2) {
+  std::cout << "test_B_12_10_3_2 - runtime_error prioritised over numeric_cast" << std::endl;
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_11_1) {
+  std::cout << "test_B_12_11_1 - updateDataBuffer = false after exception" << std::endl;
+}
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/** Higher-level tests */
+/**********************************************************************************************************************/
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testExceptionHandling) {
