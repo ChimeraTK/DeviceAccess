@@ -280,15 +280,18 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
   Device device;
   device.open(DEVICE_MIXED_ALIAS);
 
-  const size_t nWordsPerBlock = 44 / sizeof(int32_t);
+  // There are 44 bytes per block. In total the area is 4096 bytes long
+  // => There are 372 elements (=4092 bytes) in the area, the last 4 bytes are unused.
+  const size_t nWordsPerBlock = 44 / sizeof(int32_t); // 32 bit raw words on the transport layer
 
-  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 0, 42);
+  // we only request 300 of the 372 elements, with 42 elements offset, so we just cut out an area in the middle
+  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 300, 42);
   auto myRawData = device.getOneDRegisterAccessor<int32_t>(
-      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 0, 42 * nWordsPerBlock, {AccessMode::raw});
+      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 300 * nWordsPerBlock, 42 * nWordsPerBlock, {AccessMode::raw});
 
   BOOST_CHECK(myMixedData.getNChannels() == 17);
-  BOOST_CHECK(myMixedData.getNElementsPerChannel() == 372 - 42);
-  BOOST_CHECK(myMixedData[0].size() == 372 - 42);
+  BOOST_CHECK(myMixedData.getNElementsPerChannel() == 300);
+  BOOST_CHECK(myMixedData[0].size() == 300);
 
   for(unsigned int i = 0; i < myMixedData.getNElementsPerChannel(); ++i) {
     myMixedData[0][i] = -24673; // 1001 1111 1001 1111
@@ -341,7 +344,7 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
     myMixedData.write();
 
     myRawData.read();
-    BOOST_CHECK(myRawData[0 + i * nWordsPerBlock] == (int)i);
+    BOOST_CHECK(myRawData[0 + i * nWordsPerBlock] == static_cast<int>(i));
     BOOST_CHECK(myRawData[1 + i * nWordsPerBlock] == 0);
     BOOST_CHECK(myRawData[2 + i * nWordsPerBlock] == 0);
     BOOST_CHECK(myRawData[3 + i * nWordsPerBlock] == 0);
