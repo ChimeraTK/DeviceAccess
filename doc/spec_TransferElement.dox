@@ -88,7 +88,7 @@ This documnent is currently still **INCOMPLETE**!
 
 - 1. TransferElements are not thread safe
 
-- 2. Data types of the application data buffer.
+- 2. Data types of the application data buffer:
   - 2.1 The following data types are supported for the application data buffer:
     - int8_t
     - uint8_t
@@ -96,7 +96,7 @@ This documnent is currently still **INCOMPLETE**!
     - uint16_t
     - int32_t
     - uint32_t
-    - in64_t
+    - int64_t
     - uint64_t
     - float
     - double
