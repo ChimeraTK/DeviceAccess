@@ -216,7 +216,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("Requested element offset exceeds the size of the register!");
     }
     if(_numberOfElements == 0) {
-      _numberOfElements = _nBlocks - _elementsOffset;
+      _numberOfElements = _nBlocks;
     }
     if(_numberOfElements + _elementsOffset > _nBlocks) {
       throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register!");

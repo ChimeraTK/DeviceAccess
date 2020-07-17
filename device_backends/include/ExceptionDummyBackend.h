@@ -102,7 +102,7 @@ namespace ChimeraTK {
     }
 
     /// Function to trigger sending values for push-type variables
-    void triggerPush(RegisterPath path);
+    void triggerPush(RegisterPath path, VersionNumber v ={});
 
     void activateAsyncRead() noexcept override;
 
@@ -239,10 +239,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /// Function to trigger sending values for push-type variables
-  void ExceptionDummy::triggerPush(RegisterPath path) {
+  void ExceptionDummy::triggerPush(RegisterPath path, VersionNumber v) {
     path.setAltSeparator(".");
     std::unique_lock<std::mutex> lk(_mx_pushDecorators);
-    _pushVersions[path] = {};
+    _pushVersions[path] = v;
     for(auto& acc_weak : _pushDecorators[path]) {
       auto acc = acc_weak.lock();
       if(!acc->_isActive) continue;

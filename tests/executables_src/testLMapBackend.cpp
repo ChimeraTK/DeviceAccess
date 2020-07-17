@@ -111,7 +111,8 @@ BOOST_AUTO_TEST_CASE(testReadWriteConstant) {
   // test with buffering register accessor
   auto acc = device.getOneDRegisterAccessor<int32_t>("Constant");
   BOOST_CHECK(acc.getNElements() == 1);
-  BOOST_CHECK(acc[0] == 42);
+  BOOST_CHECK(acc[0] ==
+      0); // values are only available after the first read, otherwise there is the value after construction (= int32_t() aka. 0)
   acc.read();
   BOOST_CHECK(acc[0] == 42);
   BOOST_CHECK_THROW(acc.write(), ChimeraTK::logic_error);
@@ -131,11 +132,11 @@ BOOST_AUTO_TEST_CASE(testReadWriteConstant) {
 
   auto arrayConstant = device.getOneDRegisterAccessor<int>("/ArrayConstant");
   BOOST_CHECK_EQUAL(arrayConstant.getNElements(), 5);
-  BOOST_CHECK_EQUAL(arrayConstant[0], 1111);
-  BOOST_CHECK_EQUAL(arrayConstant[1], 2222);
-  BOOST_CHECK_EQUAL(arrayConstant[2], 3333);
-  BOOST_CHECK_EQUAL(arrayConstant[3], 4444);
-  BOOST_CHECK_EQUAL(arrayConstant[4], 5555);
+  BOOST_CHECK_EQUAL(arrayConstant[0], 0);
+  BOOST_CHECK_EQUAL(arrayConstant[1], 0);
+  BOOST_CHECK_EQUAL(arrayConstant[2], 0);
+  BOOST_CHECK_EQUAL(arrayConstant[3], 0);
+  BOOST_CHECK_EQUAL(arrayConstant[4], 0);
   arrayConstant.read();
   BOOST_CHECK_EQUAL(arrayConstant[0], 1111);
   BOOST_CHECK_EQUAL(arrayConstant[1], 2222);
@@ -146,8 +147,8 @@ BOOST_AUTO_TEST_CASE(testReadWriteConstant) {
 
   auto partOfArrayConstant = device.getOneDRegisterAccessor<int>("/ArrayConstant", 2, 1);
   BOOST_CHECK_EQUAL(partOfArrayConstant.getNElements(), 2);
-  BOOST_CHECK_EQUAL(partOfArrayConstant[0], 2222);
-  BOOST_CHECK_EQUAL(partOfArrayConstant[1], 3333);
+  BOOST_CHECK_EQUAL(partOfArrayConstant[0], 0);
+  BOOST_CHECK_EQUAL(partOfArrayConstant[1], 0);
   partOfArrayConstant.read();
   BOOST_CHECK_EQUAL(partOfArrayConstant[0], 2222);
   BOOST_CHECK_EQUAL(partOfArrayConstant[1], 3333);
@@ -170,13 +171,13 @@ BOOST_AUTO_TEST_CASE(testReadWriteVariable) {
   BOOST_CHECK(acc.getVersionNumber() == VersionNumber(nullptr));
   BOOST_CHECK(acc2.getVersionNumber() == VersionNumber(nullptr));
   BOOST_CHECK(acc.getNElements() == 1);
-  BOOST_CHECK(acc[0] == 2);
-  BOOST_CHECK(acc2[0] == 2);
+  BOOST_CHECK(acc[0] == 0);
+  BOOST_CHECK(acc2[0] == 0);
   acc.read();
   BOOST_CHECK(acc[0] == 2);
   acc[0] = 3;
   BOOST_CHECK(acc[0] == 3);
-  BOOST_CHECK(acc2[0] == 2);
+  BOOST_CHECK(acc2[0] == 0);
   acc.write();
   acc2.read();
   BOOST_CHECK(acc[0] == 3);
@@ -185,12 +186,12 @@ BOOST_AUTO_TEST_CASE(testReadWriteVariable) {
   // test array access
   auto arrayVariable = device.getOneDRegisterAccessor<int>("/ArrayVariable");
   BOOST_CHECK_EQUAL(arrayVariable.getNElements(), 6);
-  BOOST_CHECK_EQUAL(arrayVariable[0], 11);
-  BOOST_CHECK_EQUAL(arrayVariable[1], 22);
-  BOOST_CHECK_EQUAL(arrayVariable[2], 33);
-  BOOST_CHECK_EQUAL(arrayVariable[3], 44);
-  BOOST_CHECK_EQUAL(arrayVariable[4], 55);
-  BOOST_CHECK_EQUAL(arrayVariable[5], 66);
+  BOOST_CHECK_EQUAL(arrayVariable[0], 0);
+  BOOST_CHECK_EQUAL(arrayVariable[1], 0);
+  BOOST_CHECK_EQUAL(arrayVariable[2], 0);
+  BOOST_CHECK_EQUAL(arrayVariable[3], 0);
+  BOOST_CHECK_EQUAL(arrayVariable[4], 0);
+  BOOST_CHECK_EQUAL(arrayVariable[5], 0);
   arrayVariable.read();
   BOOST_CHECK_EQUAL(arrayVariable[0], 11);
   BOOST_CHECK_EQUAL(arrayVariable[1], 22);
@@ -217,9 +218,9 @@ BOOST_AUTO_TEST_CASE(testReadWriteVariable) {
 
   auto partOfArrayVariable = device.getOneDRegisterAccessor<int>("/ArrayVariable", 3, 2);
   BOOST_CHECK_EQUAL(partOfArrayVariable.getNElements(), 3);
-  BOOST_CHECK_EQUAL(partOfArrayVariable[0], 4);
-  BOOST_CHECK_EQUAL(partOfArrayVariable[1], 3);
-  BOOST_CHECK_EQUAL(partOfArrayVariable[2], 2);
+  BOOST_CHECK_EQUAL(partOfArrayVariable[0], 0);
+  BOOST_CHECK_EQUAL(partOfArrayVariable[1], 0);
+  BOOST_CHECK_EQUAL(partOfArrayVariable[2], 0);
   partOfArrayVariable.read();
   BOOST_CHECK_EQUAL(partOfArrayVariable[0], 4);
   BOOST_CHECK_EQUAL(partOfArrayVariable[1], 3);
@@ -988,8 +989,7 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
 BOOST_AUTO_TEST_CASE(testIsFunctional) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   auto exceptionDummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>(
-      BackendFactory::getInstance().createBackend(
-          "(ExceptionDummy:1?map=test3.map)"));
+      BackendFactory::getInstance().createBackend("(ExceptionDummy:1?map=test3.map)"));
 
   Device d{"LMAP1"};
   d.open();
