@@ -36,7 +36,7 @@ This documnent is currently still **INCOMPLETE**!
     - TransferElement::dataValidity() - returns content of TransferElement::_dataValidity
   - 5.2 If not stated otherwise, the term <i>application buffer</i> refers to **all** components of the buffer.
   - 5.3 The content of the buffer is filled with data from the device in read operations, and transferred to the device in write operations.
-  - 5.4 The content of the buffer can always be modified by the application.(*)
+  - 5.4 The content of the buffer can always be modified by the application. (*)
   - 5.5 NDRegisterAccessor::buffer_2D is referred to as *data buffer*, while TransferElement::_versionNumber and TransferElement::_dataValidity form the *meta data buffer*
 
 - 6. Placeholders are used to summarise various function names:
@@ -88,7 +88,26 @@ This documnent is currently still **INCOMPLETE**!
 
 - 1. TransferElements are not thread safe
 
-- 2. Data types [TODO]
+- 2. Data types of the application data buffer.
+  - 2.1 The following data types are supported for the application data buffer:
+    - int8_t
+    - uint8_t
+    - int16_t
+    - uint16_t
+    - int32_t
+    - uint32_t
+    - in64_t
+    - uint64_t
+    - float
+    - double
+    - std::string
+  - 2.2 Applications select a data type for the buffer via the UserType template argument of Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor().
+  - 2.3 If needed, the register value is converted between the actual register's data type and the application-selected UserType.
+  - 2.4 The UserType must be capable of holding all possible register values. Otherwise, a ChimeraTK::logic_error is thrown at construction, or (for backwards compatibility) a boost::numeric_cast::bad_numeric_cast error is thrown in read operations when the value exceeds the possible range.
+    - 2.4.1 The backwards compatibility option may only be implemented by existing backends.
+  - 2.5 In write operations, values outside the possible range of the actual register's data type are moved to the nearest possible value (rounding and clamping).
+  - 2.6 All values can be converted into std::string, hence it is always possible to obtain an accessor with std::string as UserType.
+  - 2.7 After construction, the data buffer is initialised with default-constructed values (i.e. 0 resp. empty string).
 
 - 3. Modes of transfers
 
