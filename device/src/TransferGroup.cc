@@ -58,30 +58,6 @@ namespace ChimeraTK {
     return badNumericCast;
   }
 
-  template<typename Callable>
-  TransferGroup::ExceptionHandlingResult TransferGroup::handlePostExceptions(Callable function) {
-    try {
-      function();
-    }
-    catch(ChimeraTK::runtime_error& ex) {
-      return ExceptionHandlingResult(true, ex.what());
-    }
-    catch(ChimeraTK::logic_error& ex) {
-      return ExceptionHandlingResult(true, ex.what());
-    }
-    catch(boost::numeric::bad_numeric_cast& ex) {
-      return ExceptionHandlingResult(true, ex.what());
-    }
-    catch(boost::thread_interrupted&) {
-      return ExceptionHandlingResult(true, {}, true); // report that we have seen a thread_interrupted exception
-    }
-    catch(...) {
-      std::cout << "BUG: Wrong exception type thrown in doPostRead() or doPostWrite()!" << std::endl;
-      std::terminate();
-    }
-    return ExceptionHandlingResult(); // result without exceptions
-  }
-
   void TransferGroup::read() {
     // reset exception flags
     for(auto& it : _lowLevelElementsAndExceptionFlags) {

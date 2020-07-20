@@ -85,48 +85,10 @@ namespace ChimeraTK {
     /** Flag if group is read-only */
     bool readOnly;
 
-    // Helper struct to merge several exceptions.
-    // All messages are merged into one. Separate book-keeping for boost::thread_interrupted. It is given priority when throwing.
-    // All other exceptions are merged into a ChimeraTK::runtime_error.
-    struct ExceptionHandlingResult {
-      bool hasSeenException;
-      std::string message;
-      bool hasSeenThreadInterrupted;
-
-      ExceptionHandlingResult(bool hasX = false, std::string m = {}, bool hasThreadIntr = false)
-      : hasSeenException(hasX), message(m), hasSeenThreadInterrupted(hasThreadIntr) {}
-
-      inline ExceptionHandlingResult operator+=(ExceptionHandlingResult const& other) {
-        hasSeenException |= other.hasSeenException;
-        // the if-statements avoid empty lines each time += is called with a result without exceptions
-        if(message.empty()) {
-          // no line to break, just copy the other message
-          message = other.message;
-        }
-        else {
-          if(!other.message.empty()) {
-            message += "\n" + other.message;
-          } // nothing to add if other message is empty
-        }
-        hasSeenThreadInterrupted |= other.hasSeenThreadInterrupted;
-        return *this;
-      }
-
-      // re-throw an exception if there was one.
-      inline void reThrow() {
-        if(hasSeenThreadInterrupted) throw boost::thread_interrupted();
-        if(hasSeenException) throw runtime_error(message);
-      }
-    };
-
     // Helper function to avoid code duplication. Needs to be run for two lists.
     // Returns the first boost::bad_numeric_cast which is caught (nullptr if none)
     std::exception_ptr runPostReads(
         std::set<boost::shared_ptr<TransferElement>>& elements, std::exception_ptr firstDetectedRuntimeError);
-
-    // return whether there has been an exception
-    template<typename Callable>
-    ExceptionHandlingResult handlePostExceptions(Callable function);
   };
 
 } /* namespace ChimeraTK */
