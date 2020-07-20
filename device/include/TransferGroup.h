@@ -67,59 +67,28 @@ namespace ChimeraTK {
    protected:
     /** List of low-level TransferElements in this group, which are directly
      * responsible for the hardware access, and a flag whether there has been an exception in pre-pread */
-    std::map<boost::shared_ptr<TransferElement>, bool /*hasSeenException*/> lowLevelElementsAndExceptionFlags;
+    std::map<boost::shared_ptr<TransferElement>, bool /*hasSeenException*/> _lowLevelElementsAndExceptionFlags;
 
     /** List of all CopyRegisterDecorators in the group. On these elements,
      * postRead() has to be executed before all other elements. */
-    std::set<boost::shared_ptr<TransferElement>> copyDecorators;
+    std::set<boost::shared_ptr<TransferElement>> _copyDecorators;
 
     /** List of high-level TransferElements in this group which are directly used
      * by the user */
-    std::set<boost::shared_ptr<TransferElement>> highLevelElements;
+    std::set<boost::shared_ptr<TransferElement>> _highLevelElements;
+
+    /** List of all exception backens. We check on them whether they are opened, and we want to do it for all accessors
+     *  of the same backend just once.
+     */
+    std::set<boost::shared_ptr<DeviceBackend>> _exceptionBackends;
 
     /** Flag if group is read-only */
     bool readOnly;
 
-    // Helper struct to merge several exceptions.
-    // All messages are merged into one. Separate book-keeping for boost::thread_interrupted. It is given priority when throwing.
-    // All other exceptions are merged into a ChimeraTK::runtime_error.
-    struct ExceptionHandlingResult {
-      bool hasSeenException;
-      std::string message;
-      bool hasSeenThreadInterrupted;
-
-      ExceptionHandlingResult(bool hasX = false, std::string m = {}, bool hasThreadIntr = false)
-      : hasSeenException(hasX), message(m), hasSeenThreadInterrupted(hasThreadIntr) {}
-
-      inline ExceptionHandlingResult operator+=(ExceptionHandlingResult const& other) {
-        hasSeenException |= other.hasSeenException;
-        // the if-statements avoid empty lines each time += is called with a result without exceptions
-        if(message.empty()) {
-          // no line to break, just copy the other message
-          message = other.message;
-        }
-        else {
-          if(!other.message.empty()) {
-            message += "\n" + other.message;
-          } // nothing to add if other message is empty
-        }
-        hasSeenThreadInterrupted |= other.hasSeenThreadInterrupted;
-        return *this;
-      }
-
-      // re-throw an exception if there was one.
-      inline void reThrow() {
-        if(hasSeenThreadInterrupted) throw boost::thread_interrupted();
-        if(hasSeenException) throw runtime_error(message);
-      }
-    };
-
-    // helper function to avoid code duplication. Needs to be run for two lists
-    ExceptionHandlingResult runPostReads(std::set<boost::shared_ptr<TransferElement>>& elements);
-
-    // return whether there has been an exception
-    template<typename Callable>
-    ExceptionHandlingResult handlePostExceptions(Callable function);
+    // Helper function to avoid code duplication. Needs to be run for two lists.
+    // Returns the first boost::bad_numeric_cast which is caught (nullptr if none)
+    std::exception_ptr runPostReads(
+        std::set<boost::shared_ptr<TransferElement>>& elements, std::exception_ptr firstDetectedRuntimeError);
   };
 
 } /* namespace ChimeraTK */
