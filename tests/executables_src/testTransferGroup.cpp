@@ -345,43 +345,13 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   accessor5w.write();
 
   exceptionDummy->throwExceptionRead = true;
-  try {
-    tg.read();
-    BOOST_REQUIRE(false);
-  }
-  catch(runtime_error& ex) {
-    std::stringstream message{ex.what()};
-    int messageCount = 0;
-    while(not message.eof()) {
-      std::string line;
-      std::getline(message, line);
-      messageCount++;
-    }
-    // three exceptions messages from accessor 2, 3 and 4,
-    BOOST_CHECK_EQUAL(messageCount, 3);
-  }
-  catch(...) {
-    BOOST_REQUIRE(false);
-  }
+  BOOST_CHECK_THROW(tg.read(), ChimeraTK::runtime_error);
 
-  /* FIXME: To be clarified in the spec. In general this is not implementable for all exceptions and the implementation
-   * could violate the TransferElement spec.
-   *
-   *  Original code: */
-  // // even if one transfer fails, none of the user buffers must be changed.
-  // BOOST_CHECK_EQUAL(static_cast<int>(accessor1), 1);
-  // BOOST_CHECK_EQUAL(static_cast<int>(accessor2), 2);
-  // BOOST_CHECK_EQUAL(static_cast<int>(accessor3), 3);
-  // BOOST_CHECK_EQUAL(static_cast<int>(accessor4), 4);
-  // BOOST_CHECK_EQUAL(static_cast<int>(accessor5), 5);
-
-  // Currently implemented which is according to spec to my understanding:
-  // Only the devices which have seen exceptions have untouched buffers. The other operations go through
-  BOOST_CHECK_EQUAL(static_cast<int>(accessor1), accessor1w);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor1), 1);
   BOOST_CHECK_EQUAL(static_cast<int>(accessor2), 2);
   BOOST_CHECK_EQUAL(static_cast<int>(accessor3), 3);
   BOOST_CHECK_EQUAL(static_cast<int>(accessor4), 4);
-  BOOST_CHECK_EQUAL(static_cast<int>(accessor5), accessor5w);
+  BOOST_CHECK_EQUAL(static_cast<int>(accessor5), 5);
 }
 
 /**********************************************************************************************************************/
