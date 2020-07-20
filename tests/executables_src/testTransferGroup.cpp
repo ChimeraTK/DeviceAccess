@@ -58,40 +58,201 @@ BOOST_AUTO_TEST_CASE(test_B_12_1_3) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(test_B_12_3) {
+  std::cout << "test_B_12_3 - individual operations throw" << std::endl;
+  auto A = makeTETA();
+  TransferGroup group;
+  group.addAccessor(A);
+  BOOST_CHECK_THROW(A->read(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(A->readNonBlocking(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(A->readLatest(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(A->write(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(A->writeDestructively(), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(test_B_12_4) {
   std::cout << "test_B_12_4 - readOnly groups" << std::endl;
+
+  // situation: all accessors are read-write
+  {
+    auto A = makeTETA();
+    auto B = makeTETA();
+    TransferGroup group;
+    group.addAccessor(A);
+    group.addAccessor(B);
+    BOOST_CHECK(group.isReadOnly() == false);
+  }
+
+  // situation: accessor read-only while adding
+  {
+    auto A = makeTETA();
+    auto B = makeTETA();
+    B->_writeable = false;
+    TransferGroup group;
+    group.addAccessor(A);
+    BOOST_CHECK(group.isReadOnly() == false);
+    group.addAccessor(B);
+    BOOST_CHECK(group.isReadOnly() == true);
+  }
+
+  // situation: accessor becomes read-only only later (at runtime error)
+  {
+    auto A = makeTETA();
+    auto B = makeTETA();
+    TransferGroup group;
+    group.addAccessor(A);
+    group.addAccessor(B);
+    B->_throwRuntimeErrInTransfer = true;
+    BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // no check intended, just catch
+    B->_writeable = false;
+    B->_throwRuntimeErrInTransfer = false;
+    BOOST_CHECK(group.isReadOnly() == true);
+  }
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_5) {
   std::cout << "test_B_12_5 - adding same TE twice throws" << std::endl;
+  auto A = makeTETA();
+  TransferGroup group;
+  group.addAccessor(A);
+  BOOST_CHECK_THROW(group.addAccessor(A), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_6) {
   std::cout << "test_B_12_6 - adding same TE to two different groups throws" << std::endl;
+  auto A = makeTETA();
+  TransferGroup group1;
+  TransferGroup group2;
+  group1.addAccessor(A);
+  BOOST_CHECK_THROW(group2.addAccessor(A), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_7) {
   std::cout << "test_B_12_7 - adding TE with wait_for_new_data throws" << std::endl;
+  auto A = makeTETA({AccessMode::wait_for_new_data});
+  TransferGroup group;
+  BOOST_CHECK_THROW(group.addAccessor(A), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_8) {
   std::cout << "test_B_12_8 - optimisation with copy decorator" << std::endl;
+  auto A = makeTETA();
+  auto B = makeTETA();
+  A->_listMayReplaceElements.insert(B->getId());
+  TwoDRegisterAccessor<int32_t> a(A);
+  TwoDRegisterAccessor<int32_t> b(B);
+
+  TransferGroup group;
+  group.addAccessor(a);
+  group.addAccessor(b);
+
+  BOOST_CHECK(b.getHighLevelImplElement() != B);
+
+  A->_setPostReadData = 42;
+  group.read();
+  BOOST_CHECK_EQUAL(a[0][0], 42);
+  BOOST_CHECK_EQUAL(b[0][0], 42);
+}
+
+/**********************************************************************************************************************/
+
+// helper functions for next test
+template<typename T>
+void checkCountersHighLevel(T& te, bool isWrite, size_t expectedOrderPreMax, size_t expectedOrderPostMin) {
+  if(!isWrite) {
+    BOOST_CHECK_EQUAL(te->_preRead_counter, 1);
+    BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);
+    BOOST_CHECK_EQUAL(te->_postRead_counter, 1);
+    BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);
+  }
+  else {
+    BOOST_CHECK_EQUAL(te->_preRead_counter, 0);
+    BOOST_CHECK_EQUAL(te->_preWrite_counter, 1);
+    BOOST_CHECK_EQUAL(te->_postRead_counter, 0);
+    BOOST_CHECK_EQUAL(te->_postWrite_counter, 1);
+  }
+  BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);
+  BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);
+
+  BOOST_CHECK(te->_preIndex <= expectedOrderPreMax);
+  BOOST_CHECK(te->_postIndex >= expectedOrderPostMin);
+}
+
+template<typename T>
+void checkCountersMidLevel(T& te) {
+  BOOST_CHECK_EQUAL(te->_preRead_counter, 0); // our test accessor does not delegate this...
+  BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);
+  BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);
+  BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);
+  BOOST_CHECK_EQUAL(te->_postRead_counter, 0); // our test accessor does not delegate this...
+  BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);
+}
+
+template<typename T>
+void checkCountersLowLevel(T& te, bool isWrite, size_t expectedOrderMin, size_t expectedOrderMax) {
+  BOOST_CHECK_EQUAL(te->_preRead_counter, 0); // our test accessor does not delegate this...
+  BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);
+  if(!isWrite) {
+    BOOST_CHECK_EQUAL(te->_readTransfer_counter, 1);
+    BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);
+  }
+  else {
+    BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);
+    BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 1);
+  }
+  BOOST_CHECK_EQUAL(te->_postRead_counter, 0); // our test accessor does not delegate this...
+  BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);
+
+  BOOST_CHECK(te->_transferIndex >= expectedOrderMin);
+  BOOST_CHECK(te->_transferIndex <= expectedOrderMax);
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_9) {
   std::cout << "test_B_12_9 - read/write operations" << std::endl;
-}
+  auto A = makeTETA();
+  auto B = makeTETA();
 
+  // A has just one low-level transfer element
+  for(size_t i = 0; i < 1; ++i) {
+    A->_internalElements.push_back(makeTETA());
+    A->_hardwareAccessingElements.push_back(A->_internalElements[i]);
+  }
+  // B has two low-level transfer elements and one additional internal
+  for(size_t i = 0; i < 2; ++i) {
+    B->_internalElements.push_back(makeTETA());
+    B->_hardwareAccessingElements.push_back(B->_internalElements[i]);
+  }
+  B->_internalElements.push_back(makeTETA());
+
+  TransferGroup group;
+
+  group.addAccessor(A);
+  group.addAccessor(B);
+
+  A->resetCounters();
+  B->resetCounters();
+  for(auto& e : A->_internalElements) e->resetCounters();
+  for(auto& e : B->_internalElements) e->resetCounters();
+  group.read();
+  checkCountersHighLevel(A, false, 1, 5);
+  checkCountersHighLevel(B, false, 1, 5);
+  checkCountersMidLevel(B->_internalElements[2]);
+  checkCountersLowLevel(A->_internalElements[0], false, 2, 4);
+  checkCountersLowLevel(B->_internalElements[0], false, 2, 4);
+  checkCountersLowLevel(B->_internalElements[1], false, 2, 4);
+}
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_10_1_1) {

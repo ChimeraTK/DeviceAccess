@@ -11,6 +11,8 @@ namespace ChimeraTK {
     TransferElementTestAccessor(AccessModeFlags flags) : NDRegisterAccessor<UserType>("someName", flags) {
       // this accessor uses a queue length of 3
       this->_readQueue = {3};
+      this->buffer_2D.resize(1);
+      this->buffer_2D[0].resize(1);
     }
 
     ~TransferElementTestAccessor() override {}
@@ -105,6 +107,8 @@ namespace ChimeraTK {
         TransferElement::_versionNumber = _setPostReadVersion;
       }
 
+      this->buffer_2D[0][0] = _setPostReadData;
+
       try {
         if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
       }
@@ -123,7 +127,9 @@ namespace ChimeraTK {
       _seenActiveException = _activeException;
     }
 
-    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override { return false; }
+    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+      return _listMayReplaceElements.count(other->getId());
+    }
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       if(_hardwareAccessingElements.size() == 0) {
         // cannot call shared_from_this() in constructor, so we cannot put it by default into the list...
@@ -131,7 +137,11 @@ namespace ChimeraTK {
       }
       return _hardwareAccessingElements;
     }
-    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return _internalElements; }
+    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override {
+      std::list<boost::shared_ptr<TransferElement>> r;
+      for(auto& e : _internalElements) r.push_back(e);
+      return r;
+    }
     void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
       _listReplacementElements.push_back(newElement->getId());
     }
@@ -155,10 +165,10 @@ namespace ChimeraTK {
     size_t _writeTransferDestructively_counter{0};
     size_t _postRead_counter{0};
     size_t _postWrite_counter{0};
-    size_t _preIndex{999};
-    size_t _transferIndex{999};
-    size_t _postIndex{999};
-    size_t _currentIndex{0};
+    size_t _preIndex{999999};
+    size_t _transferIndex{999999};
+    size_t _postIndex{999999};
+    static std::atomic<size_t> _currentIndex; // allows comparison across transfer elements
 
     // recorded function arguments etc.
     TransferType _transferType_pre, _transferType_post; // TransferType as seen in pre/postXxx()
@@ -176,12 +186,15 @@ namespace ChimeraTK {
     bool _throwRuntimeErrInPre{false};
     bool _throwNumericCast{false};              // in doPreWrite() or doPreRead() depending on operation
     VersionNumber _setPostReadVersion{nullptr}; // if nullptr, a new version will be generated
+    UserType _setPostReadData{UserType()};      // data to be copied into the user buffer in postRead
 
     // lists, counters etc. used for the TransferGroup tests
     std::list<TransferElementID> _listReplacementElements; // list of all arguments of replaceTransferElement()
-    std::list<boost::shared_ptr<TransferElement>> _internalElements; // returned by getInternalElements()
+    std::vector<boost::shared_ptr<TransferElementTestAccessor<UserType>>>
+        _internalElements; // returned by getInternalElements()
     std::vector<boost::shared_ptr<TransferElement>>
         _hardwareAccessingElements; // returned by getHardwareAccessingElements()
+    std::set<TransferElementID> _listMayReplaceElements; // mayReplaceOther() returns true if ID is found in this set
 
     // reset all counters and revert command flags to defaults
     void resetCounters() {
@@ -240,5 +253,8 @@ namespace ChimeraTK {
     using TransferElement::_readQueue;
     using TransferElement::_accessModeFlags;
   };
+
+  template<typename T>
+  std::atomic<size_t> TransferElementTestAccessor<T>::_currentIndex(0);
 
 } // namespace ChimeraTK
