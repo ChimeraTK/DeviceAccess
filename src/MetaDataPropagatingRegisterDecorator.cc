@@ -7,11 +7,9 @@ namespace ChimeraTK {
   void MetaDataPropagatingRegisterDecorator<T>::doPostRead(TransferType type, bool hasNewData) {
     NDRegisterAccessorDecorator<T, T>::doPostRead(type, hasNewData);
 
-    // update the version number if the wrapped target is push-type
-    if (_target->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-      if (hasNewData) {
-        _owner->setCurrentVersionNumber(this->getVersionNumber());
-      }
+    // update the version number
+    if(type == TransferType::read) {
+      _owner->setCurrentVersionNumber(this->getVersionNumber());
     }
 
     // Check if the data validity flag changed. If yes, propagate this information to the owning module.
