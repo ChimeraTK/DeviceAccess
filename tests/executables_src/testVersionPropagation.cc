@@ -83,7 +83,7 @@ struct Fixture {
 
   boost::shared_ptr<ctk::ExceptionDummy> deviceBackend;
   DummyApplication application;
-  ctk::TestFacility testFacitiy{false};
+  ctk::TestFacility testFacitiy{true};
 
   ctk::ScalarRegisterAccessor<int> status;
   ctk::ScalarRegisterAccessor<int> exceptionDummyRegister;
