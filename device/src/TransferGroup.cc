@@ -120,7 +120,7 @@ namespace ChimeraTK {
     }
     // check pre-conditions so preRead() does not throw logic errors
     for(auto& backend : _exceptionBackends) {
-      if(!backend->isOpen()) {
+      if(backend && !backend->isOpen()) {
         throw ChimeraTK::logic_error("DeviceBackend " + backend->readDeviceInfo() + "is not opened!");
       }
     }
