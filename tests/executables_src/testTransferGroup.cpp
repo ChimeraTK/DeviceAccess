@@ -166,56 +166,59 @@ BOOST_AUTO_TEST_CASE(test_B_12_8) {
 
 /**********************************************************************************************************************/
 
-// helper functions for next test
-template<typename T>
-void checkCountersHighLevel(T& te, bool isWrite, size_t expectedOrderPreMax, size_t expectedOrderPostMin) {
-  if(!isWrite) {
-    BOOST_CHECK_EQUAL(te->_preRead_counter, 1);
-    BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);
-    BOOST_CHECK_EQUAL(te->_postRead_counter, 1);
-    BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);
-  }
-  else {
-    BOOST_CHECK_EQUAL(te->_preRead_counter, 0);
-    BOOST_CHECK_EQUAL(te->_preWrite_counter, 1);
-    BOOST_CHECK_EQUAL(te->_postRead_counter, 0);
-    BOOST_CHECK_EQUAL(te->_postWrite_counter, 1);
-  }
-  BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);
-  BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);
+// helper macros for next test
+// we use macros so line numbers make more sens if checks fail
+#define CHECK_COUNTERS_HIGH_LEVEL(te, isWrite, expectedOrderPreMax, expectedOrderPostMin, expectTransfer)              \
+  if(!isWrite) {                                                                                                       \
+    BOOST_CHECK_EQUAL(te->_preRead_counter, 1);                                                                        \
+    BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);                                                                       \
+    BOOST_CHECK_EQUAL(te->_postRead_counter, 1);                                                                       \
+    BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);                                                                      \
+    if(expectTransfer) {                                                                                               \
+      BOOST_CHECK_EQUAL(te->_readTransfer_counter, 1);                                                                 \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  else {                                                                                                               \
+    BOOST_CHECK_EQUAL(te->_preRead_counter, 0);                                                                        \
+    BOOST_CHECK_EQUAL(te->_preWrite_counter, 1);                                                                       \
+    BOOST_CHECK_EQUAL(te->_postRead_counter, 0);                                                                       \
+    BOOST_CHECK_EQUAL(te->_postWrite_counter, 1);                                                                      \
+    if(expectTransfer) {                                                                                               \
+      BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 1);                                                                \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  if(!expectTransfer) {                                                                                                \
+    BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);                                                                   \
+    BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);                                                                  \
+  }                                                                                                                    \
+                                                                                                                       \
+  BOOST_CHECK(te->_preIndex <= expectedOrderPreMax);                                                                   \
+  BOOST_CHECK(te->_postIndex >= expectedOrderPostMin)
 
-  BOOST_CHECK(te->_preIndex <= expectedOrderPreMax);
-  BOOST_CHECK(te->_postIndex >= expectedOrderPostMin);
-}
+#define CHECK_COUNTERS_MID_LEVEL(te)                                                                                   \
+  BOOST_CHECK_EQUAL(te->_preRead_counter, 0); /* our test accessor does not delegate this...*/                         \
+  BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);                                                                         \
+  BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);                                                                     \
+  BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);                                                                    \
+  BOOST_CHECK_EQUAL(te->_postRead_counter, 0); /* our test accessor does not delegate this... */                       \
+  BOOST_CHECK_EQUAL(te->_postWrite_counter, 0)
 
-template<typename T>
-void checkCountersMidLevel(T& te) {
-  BOOST_CHECK_EQUAL(te->_preRead_counter, 0); // our test accessor does not delegate this...
-  BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);
-  BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);
-  BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);
-  BOOST_CHECK_EQUAL(te->_postRead_counter, 0); // our test accessor does not delegate this...
-  BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);
-}
-
-template<typename T>
-void checkCountersLowLevel(T& te, bool isWrite, size_t expectedOrderMin, size_t expectedOrderMax) {
-  BOOST_CHECK_EQUAL(te->_preRead_counter, 0); // our test accessor does not delegate this...
-  BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);
-  if(!isWrite) {
-    BOOST_CHECK_EQUAL(te->_readTransfer_counter, 1);
-    BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);
-  }
-  else {
-    BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);
-    BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 1);
-  }
-  BOOST_CHECK_EQUAL(te->_postRead_counter, 0); // our test accessor does not delegate this...
-  BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);
-
-  BOOST_CHECK(te->_transferIndex >= expectedOrderMin);
-  BOOST_CHECK(te->_transferIndex <= expectedOrderMax);
-}
+#define CHECK_COUNTERS_LOW_LEVEL(te, isWrite, expectedOrderMin, expectedOrderMax)                                      \
+  BOOST_CHECK_EQUAL(te->_preRead_counter, 0); /* our test accessor does not delegate this... */                        \
+  BOOST_CHECK_EQUAL(te->_preWrite_counter, 0);                                                                         \
+  if(!isWrite) {                                                                                                       \
+    BOOST_CHECK_EQUAL(te->_readTransfer_counter, 1);                                                                   \
+    BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 0);                                                                  \
+  }                                                                                                                    \
+  else {                                                                                                               \
+    BOOST_CHECK_EQUAL(te->_readTransfer_counter, 0);                                                                   \
+    BOOST_CHECK_EQUAL(te->_writeTransfer_counter, 1);                                                                  \
+  }                                                                                                                    \
+  BOOST_CHECK_EQUAL(te->_postRead_counter, 0); /* our test accessor does not delegate this... */                       \
+  BOOST_CHECK_EQUAL(te->_postWrite_counter, 0);                                                                        \
+                                                                                                                       \
+  BOOST_CHECK(te->_transferIndex >= expectedOrderMin);                                                                 \
+  BOOST_CHECK(te->_transferIndex <= expectedOrderMax)
 
 /**********************************************************************************************************************/
 
@@ -246,47 +249,280 @@ BOOST_AUTO_TEST_CASE(test_B_12_9) {
   for(auto& e : A->_internalElements) e->resetCounters();
   for(auto& e : B->_internalElements) e->resetCounters();
   group.read();
-  checkCountersHighLevel(A, false, 1, 5);
-  checkCountersHighLevel(B, false, 1, 5);
-  checkCountersMidLevel(B->_internalElements[2]);
-  checkCountersLowLevel(A->_internalElements[0], false, 2, 4);
-  checkCountersLowLevel(B->_internalElements[0], false, 2, 4);
-  checkCountersLowLevel(B->_internalElements[1], false, 2, 4);
+  CHECK_COUNTERS_HIGH_LEVEL(A, false, 1, 5, false);
+  CHECK_COUNTERS_HIGH_LEVEL(B, false, 1, 5, false);
+  CHECK_COUNTERS_MID_LEVEL(B->_internalElements[2]);
+  CHECK_COUNTERS_LOW_LEVEL(A->_internalElements[0], false, 2, 4);
+  CHECK_COUNTERS_LOW_LEVEL(B->_internalElements[0], false, 2, 4);
+  CHECK_COUNTERS_LOW_LEVEL(B->_internalElements[1], false, 2, 4);
 }
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_10_1_1) {
   std::cout << "test_B_12_10_1_1 - runtime_error in precondition check" << std::endl;
+  auto A = makeTETA();
+  A->_throwRuntimeErrInPreconditions = true;
+  TransferGroup group;
+  group.addAccessor(A);
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error);
+  BOOST_CHECK_EQUAL(A->_preRead_counter, 0);
+  BOOST_CHECK_EQUAL(A->_preWrite_counter, 0);
+  BOOST_CHECK_EQUAL(A->_readTransfer_counter, 0);
+  BOOST_CHECK_EQUAL(A->_writeTransfer_counter, 0);
+  BOOST_CHECK_EQUAL(A->_writeTransferDestructively_counter, 0);
+  BOOST_CHECK_EQUAL(A->_postRead_counter, 0);
+  BOOST_CHECK_EQUAL(A->_postWrite_counter, 0);
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_10_1_2) {
   std::cout << "test_B_12_10_1_2 - precondition not met" << std::endl;
+  {
+    auto A = makeTETA();
+    A->_readable = false;
+    TransferGroup group;
+    group.addAccessor(A);
+    BOOST_CHECK_THROW(group.read(), ChimeraTK::logic_error);
+    BOOST_CHECK_EQUAL(A->_preRead_counter, 0);
+    BOOST_CHECK_EQUAL(A->_preWrite_counter, 0);
+    BOOST_CHECK_EQUAL(A->_readTransfer_counter, 0);
+    BOOST_CHECK_EQUAL(A->_writeTransfer_counter, 0);
+    BOOST_CHECK_EQUAL(A->_writeTransferDestructively_counter, 0);
+    BOOST_CHECK_EQUAL(A->_postRead_counter, 0);
+    BOOST_CHECK_EQUAL(A->_postWrite_counter, 0);
+    BOOST_CHECK_NO_THROW(group.write());
+  }
+  {
+    auto A = makeTETA();
+    A->_writeable = false;
+    TransferGroup group;
+    group.addAccessor(A);
+    BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
+    BOOST_CHECK_EQUAL(A->_preRead_counter, 0);
+    BOOST_CHECK_EQUAL(A->_preWrite_counter, 0);
+    BOOST_CHECK_EQUAL(A->_readTransfer_counter, 0);
+    BOOST_CHECK_EQUAL(A->_writeTransfer_counter, 0);
+    BOOST_CHECK_EQUAL(A->_writeTransferDestructively_counter, 0);
+    BOOST_CHECK_EQUAL(A->_postRead_counter, 0);
+    BOOST_CHECK_EQUAL(A->_postWrite_counter, 0);
+    BOOST_CHECK_NO_THROW(group.read());
+  }
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_B_12_10_2) {
+  std::cout << "test_B_12_10_2 - exceptions propagated to high-level elements" << std::endl;
+  auto A = makeTETA();
+  auto B = makeTETA();
+
+  // A has just one low-level transfer element
+  for(size_t i = 0; i < 1; ++i) {
+    A->_internalElements.push_back(makeTETA());
+    A->_hardwareAccessingElements.push_back(A->_internalElements[i]);
+  }
+
+  TransferGroup group;
+
+  group.addAccessor(A);
+  group.addAccessor(B);
+
+  A->resetCounters();
+  B->resetCounters();
+  for(auto& e : A->_internalElements) e->resetCounters();
+  A->_internalElements[0]->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK(A->_seenActiveException == A->_internalElements[0]->_thrownException);
+  BOOST_CHECK(A->_internalElements[0]->_seenActiveException == nullptr); // the test TE does not delegate the exception
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
   std::cout << "test_B_12_10_3 - all postXxx() called even when exception thrown" << std::endl;
+  auto A = makeTETA();
+  auto B = makeTETA();
+
+  TransferGroup group;
+
+  group.addAccessor(A);
+  group.addAccessor(B);
+
+  // A throws in read
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  CHECK_COUNTERS_HIGH_LEVEL(A, false, 1, 4, true);
+  CHECK_COUNTERS_HIGH_LEVEL(B, false, 1, 4, true);
+
+  // B throws in read
+  A->resetCounters();
+  B->resetCounters();
+  B->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  CHECK_COUNTERS_HIGH_LEVEL(A, false, 1, 4, true);
+  CHECK_COUNTERS_HIGH_LEVEL(B, false, 1, 4, true);
+
+  // both throw in read
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  B->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  CHECK_COUNTERS_HIGH_LEVEL(A, false, 1, 4, true);
+  CHECK_COUNTERS_HIGH_LEVEL(B, false, 1, 4, true);
+
+  // A throws in write
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  CHECK_COUNTERS_HIGH_LEVEL(A, true, 1, 4, true);
+  CHECK_COUNTERS_HIGH_LEVEL(B, true, 1, 4, true);
+
+  // B throws in write
+  A->resetCounters();
+  B->resetCounters();
+  B->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  CHECK_COUNTERS_HIGH_LEVEL(A, true, 1, 4, true);
+  CHECK_COUNTERS_HIGH_LEVEL(B, true, 1, 4, true);
+
+  // both throw in write
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  B->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  CHECK_COUNTERS_HIGH_LEVEL(A, true, 1, 4, true);
+  CHECK_COUNTERS_HIGH_LEVEL(B, true, 1, 4, true);
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_10_3_1) {
   std::cout << "test_B_12_10_3_1 - one exception from postXxx() gets through" << std::endl;
+  auto A = makeTETA();
+  auto B = makeTETA();
+
+  TransferGroup group;
+
+  group.addAccessor(A);
+  group.addAccessor(B);
+
+  // A throws in read
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error);
+
+  // A throws in write
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error);
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_10_3_2) {
-  std::cout << "test_B_12_10_3_2 - runtime_error prioritised over numeric_cast" << std::endl;
+  std::cout << "test_B_12_10_3_2 - thrown exception is identical to the first error" << std::endl;
+  auto A = makeTETA();
+  auto B = makeTETA();
+
+  TransferGroup group;
+
+  group.addAccessor(A);
+  group.addAccessor(B);
+
+  // both throw in read
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  B->_throwRuntimeErrInTransfer = true;
+  std::exception_ptr e;
+  try {
+    group.read();
+  }
+  catch(...) {
+    e = std::current_exception();
+  }
+  assert(A->_thrownException != B->_thrownException); // make sure our test is sensitive
+  if(A->_transferIndex < B->_transferIndex) {
+    // A has thrown first
+    BOOST_CHECK(e == A->_thrownException);
+  }
+  else {
+    // B has thrown first
+    BOOST_CHECK(e == B->_thrownException);
+  }
+
+  // both throw in write
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  B->_throwRuntimeErrInTransfer = true;
+  try {
+    group.write();
+  }
+  catch(...) {
+    e = std::current_exception();
+  }
+  assert(A->_thrownException != B->_thrownException); // make sure our test is sensitive
+  if(A->_transferIndex < B->_transferIndex) {
+    // A has thrown first
+    BOOST_CHECK(e == A->_thrownException);
+  }
+  else {
+    // B has thrown first
+    BOOST_CHECK(e == B->_thrownException);
+  }
 }
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test_B_12_11_1) {
   std::cout << "test_B_12_11_1 - updateDataBuffer = false after exception" << std::endl;
+  auto A = makeTETA();
+  auto B = makeTETA();
+
+  TransferGroup group;
+
+  group.addAccessor(A);
+  group.addAccessor(B);
+
+  // A throws in read
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no check intended, just catch)
+  BOOST_CHECK(A->_updateDataBuffer == false);
+  BOOST_CHECK(B->_updateDataBuffer == false);
+
+  // A throws in write
+  A->resetCounters();
+  B->resetCounters();
+  A->_throwRuntimeErrInTransfer = true;
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error); // (no check intended, just catch)
+  BOOST_CHECK(A->_updateDataBuffer == false);
+  BOOST_CHECK(B->_updateDataBuffer == false);
+
+  // Nothing throws in read
+  A->resetCounters();
+  B->resetCounters();
+  group.read();
+  BOOST_CHECK(A->_updateDataBuffer == true);
+  BOOST_CHECK(B->_updateDataBuffer == true);
+
+  // Nothing throws in write
+  A->resetCounters();
+  B->resetCounters();
+  group.write();
+  BOOST_CHECK(A->_updateDataBuffer == true);
+  BOOST_CHECK(B->_updateDataBuffer == true);
 }
 
 /**********************************************************************************************************************/
