@@ -8,7 +8,7 @@ namespace ChimeraTK {
     NDRegisterAccessorDecorator<T, T>::doPostRead(type, hasNewData);
 
     // update the version number
-    if(type == TransferType::read) {
+    if(_target->getAccessModeFlags().has(AccessMode::wait_for_new_data) && type == TransferType::read) {
       _owner->setCurrentVersionNumber(this->getVersionNumber());
     }
 

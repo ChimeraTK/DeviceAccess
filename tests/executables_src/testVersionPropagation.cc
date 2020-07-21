@@ -146,10 +146,13 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking, Fixture)
   BOOST_CHECK(pushInputVersionNumber == pushInput.getVersionNumber());
 
   ctk::VersionNumber nextVersionNumber = {};
+  auto moduleVersion = application.pushModule.getCurrentVersionNumber();
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), nextVersionNumber);
   BOOST_CHECK_EQUAL(pushInput.readNonBlocking(), true);
   BOOST_CHECK(nextVersionNumber == pushInput.getVersionNumber());
-  BOOST_CHECK(nextVersionNumber == application.pushModule.getCurrentVersionNumber());
+
+  // readNonBlocking will not propagete the version to the module
+  BOOST_CHECK(moduleVersion == application.pushModule.getCurrentVersionNumber());
 }
 
 BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeReadLatest, Fixture) {
@@ -166,8 +169,11 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeReadLatest, Fixture) {
 
   ctk::VersionNumber nextVersionNumber = {};
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), nextVersionNumber);
+  auto moduleVersion = application.pushModule.getCurrentVersionNumber();
   BOOST_CHECK_EQUAL(pushInput.readLatest(), true);
   BOOST_CHECK(nextVersionNumber == pushInput.getVersionNumber());
-  BOOST_CHECK(nextVersionNumber == application.pushModule.getCurrentVersionNumber());
+
+  // readLatest will not propagete the version to the module
+  BOOST_CHECK(moduleVersion == application.pushModule.getCurrentVersionNumber());
 }
 BOOST_AUTO_TEST_SUITE_END()
