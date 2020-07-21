@@ -25,8 +25,12 @@ boost::shared_ptr<TransferElementTestAccessor<int32_t>> makeTETA(AccessModeFlags
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 
+/**
+ *  Test that replaceTransferElement() is called in addElement()
+ *  * \anchor testTransferElement_B_12_1_3 \ref transferElement_B_12_1_3 "B.12.1.3"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_1_3) {
-  std::cout << "test_B_12_1_3 - replaceTransferElement() called in addElement()" << std::endl;
+  std::cout << "test_B_12_1_3" << std::endl;
   std::map<TransferElementID, bool> foundIds;
 
   auto A = makeTETA();
@@ -58,8 +62,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_1_3) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that individual operations are not allowed
+ *  * \anchor testTransferElement_B_12_3 \ref transferElement_B_12_3 "B.12.3"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_3) {
-  std::cout << "test_B_12_3 - individual operations throw" << std::endl;
+  std::cout << "test_B_12_3" << std::endl;
   auto A = makeTETA();
   TransferGroup group;
   group.addAccessor(A);
@@ -72,8 +80,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_3) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test readOnly groups
+ *  * \anchor testTransferElement_B_12_4 \ref transferElement_B_12_4 "B.12.4"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_4) {
-  std::cout << "test_B_12_4 - readOnly groups" << std::endl;
+  std::cout << "test_B_12_4" << std::endl;
 
   // situation: all accessors are read-write
   {
@@ -114,8 +126,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_4) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that adding same TE twice throws
+ *  * \anchor testTransferElement_B_12_5 \ref transferElement_B_12_5 "B.12.5"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_5) {
-  std::cout << "test_B_12_5 - adding same TE twice throws" << std::endl;
+  std::cout << "test_B_12_5" << std::endl;
   auto A = makeTETA();
   TransferGroup group;
   group.addAccessor(A);
@@ -124,8 +140,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_5) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that adding same TE to two different groups throws
+ *  * \anchor testTransferElement_B_12_6 \ref transferElement_B_12_6 "B.12.6"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_6) {
-  std::cout << "test_B_12_6 - adding same TE to two different groups throws" << std::endl;
+  std::cout << "test_B_12_6" << std::endl;
   auto A = makeTETA();
   TransferGroup group1;
   TransferGroup group2;
@@ -135,8 +155,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_6) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that adding TE with wait_for_new_data throws
+ *  * \anchor testTransferElement_B_12_7 \ref transferElement_B_12_7 "B.12.7"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_7) {
-  std::cout << "test_B_12_7 - adding TE with wait_for_new_data throws" << std::endl;
+  std::cout << "test_B_12_7" << std::endl;
   auto A = makeTETA({AccessMode::wait_for_new_data});
   TransferGroup group;
   BOOST_CHECK_THROW(group.addAccessor(A), ChimeraTK::logic_error);
@@ -144,8 +168,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_7) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test optimisation with copy decorator on abstractor level
+ *  * \anchor testTransferElement_B_12_8 \ref transferElement_B_12_8 "B.12.8"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_8) {
-  std::cout << "test_B_12_8 - optimisation with copy decorator" << std::endl;
+  std::cout << "test_B_12_8" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
   A->_listMayReplaceElements.insert(B->getId());
@@ -222,8 +250,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_8) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test read/write operations
+ *  * \anchor testTransferElement_B_12_9 \ref transferElement_B_12_9 "B.12.9"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_9) {
-  std::cout << "test_B_12_9 - read/write operations" << std::endl;
+  std::cout << "test_B_12_9" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
@@ -258,8 +290,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_9) {
 }
 /**********************************************************************************************************************/
 
+/**
+ *  Test runtime_error in precondition check
+ *  * \anchor testTransferElement_B_12_10_1_1 \ref transferElement_B_12_10_1_1 "B.12.10.1.1"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_10_1_1) {
-  std::cout << "test_B_12_10_1_1 - runtime_error in precondition check" << std::endl;
+  std::cout << "test_B_12_10_1_1" << std::endl;
   auto A = makeTETA();
   A->_throwRuntimeErrInPreconditions = true;
   TransferGroup group;
@@ -277,8 +313,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_1_1) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that operation throws if precondition not met
+ *  * \anchor testTransferElement_B_12_10_1_2 \ref transferElement_B_12_10_1_2 "B.12.10.1.2"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_10_1_2) {
-  std::cout << "test_B_12_10_1_2 - precondition not met" << std::endl;
+  std::cout << "test_B_12_10_1_2" << std::endl;
   {
     auto A = makeTETA();
     A->_readable = false;
@@ -313,8 +353,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_1_2) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that exceptions are propagated to high-level elements
+ *  * \anchor testTransferElement_B_12_10_2 \ref transferElement_B_12_10_2 "B.12.10.2"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_10_2) {
-  std::cout << "test_B_12_10_2 - exceptions propagated to high-level elements" << std::endl;
+  std::cout << "test_B_12_10_2" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
@@ -340,8 +384,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_2) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that all postXxx() called even when exception thrown
+ *  * \anchor testTransferElement_B_12_10_3 \ref transferElement_B_12_10_3 "B.12.10.3"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
-  std::cout << "test_B_12_10_3 - all postXxx() called even when exception thrown" << std::endl;
+  std::cout << "test_B_12_10_3" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
@@ -403,8 +451,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that one exception from postXxx() gets through
+ *  * \anchor testTransferElement_B_12_10_3_1 \ref transferElement_B_12_10_3_1 "B.12.10.3.1"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_10_3_1) {
-  std::cout << "test_B_12_10_3_1 - one exception from postXxx() gets through" << std::endl;
+  std::cout << "test_B_12_10_3_1" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
@@ -428,8 +480,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3_1) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that thrown exception is identical to the first error
+ *  * \anchor testTransferElement_B_12_10_3_2 \ref transferElement_B_12_10_3_2 "B.12.10.3.2"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_10_3_2) {
-  std::cout << "test_B_12_10_3_2 - thrown exception is identical to the first error" << std::endl;
+  std::cout << "test_B_12_10_3_2" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
@@ -484,8 +540,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3_2) {
 
 /**********************************************************************************************************************/
 
+/**
+ *  Test that updateDataBuffer == false after exception
+ *  * \anchor testTransferElement_B_12_11_1 \ref transferElement_B_12_11_1 "B.12.11.1"
+ */
 BOOST_AUTO_TEST_CASE(test_B_12_11_1) {
-  std::cout << "test_B_12_11_1 - updateDataBuffer = false after exception" << std::endl;
+  std::cout << "test_B_12_11_1" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
