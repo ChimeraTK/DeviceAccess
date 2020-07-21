@@ -40,9 +40,6 @@ namespace ChimeraTK {
    */
   class TransferGroup {
    public:
-    TransferGroup() : readOnly(false) {}
-    ~TransferGroup() {}
-
     /** Add a register accessor to the group. The register accessor might
      * internally be altered so that accessors accessing the same hardware
      * register will share their buffers. Register accessors must not be placed
@@ -59,6 +56,14 @@ namespace ChimeraTK {
     /** Check if transfer group is read-only. A transfer group is read-only, if at
      * least one of its transfer elements is read-only. */
     bool isReadOnly();
+
+    /** All elements are readable.
+     */
+    bool isReadable();
+
+    /** All elements are writeable.
+     */
+    bool isWriteable();
 
     /** Print information about the accessors in this group to screen, which might
      * help to understand which transfers were merged and which were not. */
@@ -82,8 +87,17 @@ namespace ChimeraTK {
      */
     std::set<boost::shared_ptr<DeviceBackend>> _exceptionBackends;
 
-    /** Flag if group is read-only */
-    bool readOnly;
+    /** Cached value whether all elements are readable. */
+    bool _isReadable{false};
+
+    /** Cached value whether all elements are writeable. */
+    bool _isWriteable{false};
+
+    /** Flag whether to update the cached information */
+    bool _cachedReadableWriteableIsValid{false};
+
+    /** Helper function to update the cached state variables */
+    void updateIsReadableWriteable();
 
     // Helper function to avoid code duplication. Needs to be run for two lists.
     // Returns the first boost::bad_numeric_cast which is caught (nullptr if none)

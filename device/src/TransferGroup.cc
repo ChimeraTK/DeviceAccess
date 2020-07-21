@@ -70,11 +70,8 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("DeviceBackend " + backend->readDeviceInfo() + "is not opened!");
       }
     }
-    for(auto& elem : _highLevelElements) {
-      // FIXME: cache this information until the next runtime error to avoid virtual function calls
-      if(!elem->isReadable()) {
-        throw ChimeraTK::logic_error(elem->getName() + "is not readable!");
-      }
+    if(!isReadable()) {
+      throw ChimeraTK::logic_error("TransferGroup::read() called, but not all elements are readable.");
     }
 
     for(auto& elem : _highLevelElements) {
@@ -102,6 +99,7 @@ namespace ChimeraTK {
 
     // re-throw exceptions in the order of occurence
     if(firstDetectedRuntimeError != nullptr) {
+      _cachedReadableWriteableIsValid = false;
       std::rethrow_exception(firstDetectedRuntimeError);
     }
     if(badNumericCast != nullptr) {
@@ -115,20 +113,14 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void TransferGroup::write(VersionNumber versionNumber) {
-    if(isReadOnly()) {
-      throw ChimeraTK::logic_error("TransferGroup::write() called, but the TransferGroup is read-only.");
-    }
     // check pre-conditions so preRead() does not throw logic errors
     for(auto& backend : _exceptionBackends) {
       if(backend && !backend->isOpen()) {
         throw ChimeraTK::logic_error("DeviceBackend " + backend->readDeviceInfo() + "is not opened!");
       }
     }
-    for(auto& elem : _highLevelElements) {
-      // FIXME: cache this information until the next runtime error to avoid virtual function calls
-      if(!elem->isReadable()) {
-        throw ChimeraTK::logic_error(elem->getName() + "is not readable!");
-      }
+    if(!isWriteable()) {
+      throw ChimeraTK::logic_error("TransferGroup::write() called, but not all elements are writeable.");
     }
 
     for(auto& it : _lowLevelElementsAndExceptionFlags) {
@@ -160,13 +152,32 @@ namespace ChimeraTK {
     }
 
     if(firstDetectedRuntimeError != nullptr) {
+      _cachedReadableWriteableIsValid = false;
       std::rethrow_exception(firstDetectedRuntimeError);
     }
   }
 
   /*********************************************************************************************************************/
 
-  bool TransferGroup::isReadOnly() { return readOnly; }
+  bool TransferGroup::isReadOnly() { return isReadable() && !isWriteable(); }
+
+  /*********************************************************************************************************************/
+
+  bool TransferGroup::isReadable() {
+    if(!_cachedReadableWriteableIsValid) {
+      updateIsReadableWriteable();
+    }
+    return _isReadable;
+  }
+
+  /*********************************************************************************************************************/
+
+  bool TransferGroup::isWriteable() {
+    if(!_cachedReadableWriteableIsValid) {
+      updateIsReadableWriteable();
+    }
+    return _isWriteable;
+  }
 
   /*********************************************************************************************************************/
 
@@ -234,9 +245,6 @@ namespace ChimeraTK {
         }
       }
     }
-
-    // Update read-only flag
-    if(accessor.isReadOnly()) readOnly = true;
   }
 
   /*********************************************************************************************************************/
@@ -260,6 +268,18 @@ namespace ChimeraTK {
     /// @todo implement smarter and more efficient!
     auto x = detail::TransferGroupTransferElementAbstractor(accessor);
     addAccessor(x);
+  }
+
+  /*********************************************************************************************************************/
+
+  void TransferGroup::updateIsReadableWriteable() {
+    _isReadable = true;
+    _isWriteable = true;
+    for(auto& elem : _highLevelElements) {
+      if(!elem->isReadable()) _isReadable = false;
+      if(!elem->isWriteable()) _isWriteable = false;
+    }
+    _cachedReadableWriteableIsValid = true;
   }
 
   /*********************************************************************************************************************/
