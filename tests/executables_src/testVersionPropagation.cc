@@ -30,12 +30,6 @@ struct PushModule : ctk::ApplicationModule {
   } reg1{this, "REG1", ""};
 
   void mainLoop() override {}
-  //void mainLoop() override {
-  //  while(true) {
-  //    reg1.pushInput.read();
-  //    std::cout << "PUSH_INPUT" << (int)reg1.pushInput << std::endl;
-  //  }
-  //}
 };
 
 struct DummyApplication : ctk::Application {
