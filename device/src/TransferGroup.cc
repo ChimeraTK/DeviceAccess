@@ -245,6 +245,9 @@ namespace ChimeraTK {
         }
       }
     }
+
+    // read-write flag may need to be updated
+    _cachedReadableWriteableIsValid = false;
   }
 
   /*********************************************************************************************************************/
