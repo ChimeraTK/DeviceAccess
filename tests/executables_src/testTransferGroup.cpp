@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_8) {
 
 /**
  *  Test read/write operations
- *  * \anchor testTransferElement_B_12_9 \ref transferElement_B_12_9 "B.12.9"
+ *  * \anchor testTransferElement_B_12_9 \ref transferElement_B_12_9 "B.12.9" (with sub-points)
  */
 BOOST_AUTO_TEST_CASE(test_B_12_9) {
   std::cout << "test_B_12_9" << std::endl;

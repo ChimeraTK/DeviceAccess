@@ -241,7 +241,7 @@ This documnent is currently still **INCOMPLETE**!
       - \anchor transferElement_B_12_1_2_2 12.1.2.2 Decorator-like implementations use one or more <i>low-level elements</i> which perform the actual register access. All low-level elements of one TransferElement are returned by TransferElement::getHardwareAccessingElements().
       - 12.1.2.3 Low-level elements are not decorator-like, since they directly access the device.
       - 12.1.2.4 There can be any number of decorator-like intermediate elements. The sum of all elements on all levels of one high-level element including the low-level elements but excluding the high-level element itself is called <i>internal elements</i>. All internal elements of one TransferElement are returned by TransferElement::getInternalElements().
-    - 12.1.3 After a TransferElement is added to a TransferGroup, TransferElement::replaceTransferElement() is called for each element in the group, passing each internal element in the group as a replacement.
+    - \anchor transferElement_B_12_1_3 12.1.3 After a TransferElement is added to a TransferGroup, TransferElement::replaceTransferElement() is called for each element in the group, passing each internal element in the group as a replacement. [\ref testTransferElement_B_12_1_3 "T"]
     - 12.1.4 TransferElement::replaceTransferElement() uses the given replacement TransferElement for an optimisation, if possible. Depending on the protocol, this can mean:
       - \anchor transferElement_B_12_1_4_1 12.1.4.1 An internal element is replaced 1:1 by the replacement, because it transfers the same data (cf. \ref transferElement_B_12_1_5 "12.1.5"). This is a common case for decorator-like implementations.
         - \anchor transferElement_B_12_1_4_1_1 12.1.4.1.1 A copy decorator must be placed around the replacement TrasferElement to avoid that the multiple users of the lower-level TransferElements are swapping out the data before it is seen by all users.
@@ -251,28 +251,28 @@ This documnent is currently still **INCOMPLETE**!
       - 12.1.4.4 If no such optimisation is possible, the function simply does nothing.
     - \anchor transferElement_B_12_1_5 12.1.5 TransferElement::mayReplaceOther() returns true, if the given TransferElement behaves identical to the one it is called on in every aspect, i.e. it accesses the same data on the same device, has the same UserType and the same AccessModeFlags, and (if applicable) uses the same data transformations (like fixed point conversion). It returns false otherwise. This is used by implementations of \ref transferElement_B_12_1_4_1 "12.1.4.1".
   - 12.2 Adding TransferElements which cannot merge their transfers to the same TransferGroup is always allowed.
-  - 12.3 If TransferElements have been added to a TransferGroup, individual read/write operations of the TransferElements are no longer allowed and will throw a ChimeraTK::logic_error. Read/write operations are then only possible through the TransferGroup.
-  - 12.4 A TransferGroup is becomes read-only (cf. TransferGroup::isReadOnly()), if at least one of the member TransferElements is read-only.
-  - 12.5 Adding the same TransferElement twice is not allowed (logic_error).
-  - 12.6 Adding one TransferElement to two different TransferGroups is not allowed (logic_error).
-  - 12.7 Adding TransferElements with AccessMode::wait_for_new_data is not allowed (logic_error).
-  - \anchor transferElement_B_12_8 12.8 Adding a copy of the a TransferElement which is already in the group (returned by two different calls to Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor() with the same arguments) will replace one of the identical TransferElement with a decorator which copies the data from the other.
+  - \anchor transferElement_B_12_3 12.3 If TransferElements have been added to a TransferGroup, individual read/write operations of the TransferElements are no longer allowed and will throw a ChimeraTK::logic_error. Read/write operations are then only possible through the TransferGroup. [\ref testTransferElement_B_12_3 "T"]
+  - \anchor transferElement_B_12_4 12.4 A TransferGroup is becomes read-only (cf. TransferGroup::isReadOnly()), if at least one of the member TransferElements is read-only. [\ref testTransferElement_B_12_4 "T"]
+  - \anchor transferElement_B_12_5 12.5 Adding the same TransferElement twice is not allowed (logic_error). [\ref testTransferElement_B_12_5 "T"]
+  - \anchor transferElement_B_12_6 12.6 Adding one TransferElement to two different TransferGroups is not allowed (logic_error). [\ref testTransferElement_B_12_6 "T"]
+  - \anchor transferElement_B_12_7 12.7 Adding TransferElements with AccessMode::wait_for_new_data is not allowed (logic_error). [\ref testTransferElement_B_12_7 "T"]
+  - \anchor transferElement_B_12_8 12.8 Adding a copy of the a TransferElement which is already in the group (returned by two different calls to Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor() with the same arguments) will replace one of the identical TransferElement with a decorator which copies the data from the other. [\ref testTransferElement_B_12_8 "T"]
     - 12.8.1 This avoids an unnecessary transfer of identical data.
     - \anchor transferElement_B_12_8_2 12.8.2 This is only possible, if the TransferElement is added by passing a TransferElementAbstractor to TransferGroup::addAccessor(). \ref transferElement_comment_B_12_8_2 "(*)"
-  - 12.9 Operations executed via TransferGroup::read() and TransferGroup::write():
+  - \anchor transferElement_B_12_9 12.9 Operations executed via TransferGroup::read() and TransferGroup::write():  [\ref testTransferElement_B_12_9 "T" (with sub-points)]
     - 12.9.1 first call preXxx() on all high-level elements (cf. \ref transferElement_B_12_1_2_1 "12.1.2.1"),
     - \anchor transferElement_B_12_9_2 12.9.2 next call the corresponding xxxTransferYyy() on all low-level elements (cf. \ref transferElement_B_12_1_2_2 "12.1.2.2"), and
     - \anchor transferElement_B_12_9_3 12.9.3 finally call postXxx() on all high-level elements.
   - 12.10 The TransferGroup implements a similar exception handling in TransferGroup::read() and TransferGroup::write() as their TransferElement counterparts. This especially means:
-    - 12.10.1 Before preXxx() is called, the TransferGroup checks all pre-conditions (device opened and operation allowed) to make sure no ChimeraTK::logic_error can occur (other exceptions are anyway not allowed in preXxx).
-      - \anchor transferElement_B_12_10_1_1 12.10.1.1 If any ChimeraTK::runtime_error occurs while checking the pre-conditions, it is immediately passed on to the application.
-      - \anchor transferElement_B_12_10_1_2 12.10.1.2 Any pre-condition which is not met will immediately result in a thrown ChimeraTK::logic_error
+    - \anchor transferElement_B_12_10_1 12.10.1 Before preXxx() is called, the TransferGroup checks all pre-conditions (device opened and operation allowed) to make sure no ChimeraTK::logic_error can occur (other exceptions are anyway not allowed in preXxx).
+      - \anchor transferElement_B_12_10_1_1 12.10.1.1 If any ChimeraTK::runtime_error occurs while checking the pre-conditions, it is immediately passed on to the application. [\ref testTransferElement_B_12_10_1_1 "T"]
+      - \anchor transferElement_B_12_10_1_2 12.10.1.2 Any pre-condition which is not met will immediately result in a thrown ChimeraTK::logic_error [\ref testTransferElement_B_12_10_1_2 "T"]
       - 12.10.1.3 The exceptions from \ref transferElement_B_12_10_1_1 "12.10.1.1" and \ref transferElement_B_12_10_1_2 "12.10.1.2" are not prioritised by type. The first detected error throws.
-    - 12.10.2 ChimeraTK::runtime_error exceptions thrown by the low-level elements are propagated to the corresponding high-level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3")
-    - 12.10.3 postXxx() is called for all high level elements, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5").
-      - 12.10.3.1 The first exception that has been caught in \ref transferElement_B_12_9_2 "12.9.2" or \ref transferElement_B_12_9_3 "12.9.3" is re-thrown.
+    - \anchor transferElement_B_12_10_2 12.10.2 ChimeraTK::runtime_error exceptions thrown by the low-level elements are propagated to the corresponding high-level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3") [\ref testTransferElement_B_12_10_2 "T"]
+    - \anchor transferElement_B_12_10_3 12.10.3 postXxx() is called for all high level elements, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5"). [\ref testTransferElement_B_12_10_3 "T"]
+      - \anchor transferElement_B_12_10_3_1 12.10.3.1 The first exception that has been caught in \ref transferElement_B_12_9_2 "12.9.2" or \ref transferElement_B_12_9_3 "12.9.3" is re-thrown. [\ref testTransferElement_B_12_10_3_1 "T"]
   - \anchor transferElement_B_12_11 12.11 If a ChimeraTK::runtime_error is thrown, the content of the application buffers of all elements is not changed. (c.f. \ref transferElement_B_6_4 "6.4")
-    - 12.11.1 The TransferGroup calls postRead() of all elements with `updateDataBuffer = false`, if any element has thrown a ChimeraTK::runtime_error.
+    - \anchor transferElement_B_12_11_1 12.11.1 The TransferGroup calls postRead() of all elements with `updateDataBuffer = false`, if any element has thrown a ChimeraTK::runtime_error. [\ref testTransferElement_B_12_11_1 "T"]
   - 12.12 The TransferGroup calls postRead() on copy decorators first (see \ref transferElement_B_12_1_4_1_1 "12.1.4.1.1" and \ref transferElement_B_12_8 "12.8").
 
 - 13. ReadAnyGroup [TODO]
