@@ -1,12 +1,12 @@
-#include <ChimeraTK/ScalarRegisterAccessor.h>
-#include <cstring>
-#include <future>
-
+#include <ChimeraTK/TransferElement.h>
 #define BOOST_TEST_MODULE testExceptionHandling
 
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 
+#include <chrono>
+#include <cstring>
+#include <future>
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/NDRegisterAccessor.h>
@@ -141,6 +141,60 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   BOOST_CHECK(pollInput.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(versionNumberAfterRecovery > versionNumberOnRuntimeError);
   /************************************************************************************************/
+}
+
+/**
+ * On a runtime error, a push type read operation should:
+ *  - be skipped the first time it is called
+ *  - block for all subsequent calls.
+ */
+BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
+  std::cout << "runtimeErrorHandling_testPushTypeRead" << std::endl;
+  auto& pushInput = application.pushModule.reg1.pushInput;
+  // Make sure we pop out any stray values in the pushInput before test start:
+  CHECK_TIMEOUT(pushInput.readLatest() == false, 10000);
+
+  exceptionDummyRegister = 100;
+  exceptionDummyRegister.write();
+  ctk::VersionNumber version = {};
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
+
+  pushInput.read();
+  BOOST_CHECK_EQUAL(pushInput, 100);
+  BOOST_CHECK(pushInput.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(pushInput.getVersionNumber() == version);
+
+  // Behavior on Runtime error on device:
+  //  - push input read is skipped.
+  /************************************************************************************************/
+  exceptionDummyRegister = 10;
+  exceptionDummyRegister.write();
+
+  deviceBackend->throwExceptionRead = true;
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
+
+  pushInput.read();
+  BOOST_CHECK_EQUAL(pushInput, 100);
+  BOOST_CHECK(pushInput.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(pushInput.getVersionNumber() > version);
+
+  //  - subsequent push input reads should be frozen
+  /************************************************************************************************/
+  auto f = std::async(std::launch::async, [&]() { pushInput.read(); });
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
+
+  // FIXME: is there a better way to confirm read is frozen?
+  auto future_status = f.wait_for(std::chrono::seconds(1));
+  BOOST_CHECK(future_status == std::future_status::timeout);
+
+  //  - Remove Runtime Error
+  /************************************************************************************************/
+  deviceBackend->throwExceptionRead = false;
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
+
+  BOOST_CHECK(f.wait_for(std::chrono::seconds(10)) == std::future_status::ready);
+  BOOST_CHECK_EQUAL(pushInput, 10);
+  BOOST_CHECK(pushInput.dataValidity() == ctk::DataValidity::ok);
 }
 
 BOOST_AUTO_TEST_CASE(testReadLatest) {}
