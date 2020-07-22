@@ -14,12 +14,16 @@
 #include "TestFacility.h"
 #include "check_timeout.h"
 
+#include <future>
+
 
 struct PollModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", "", {"DEVICE"}};
-
-  void mainLoop() override {}
+  std::promise<void> p;
+  void mainLoop() override {
+    p.set_value();
+  }
 };
 
 struct PushModule : ChimeraTK::ApplicationModule {
@@ -29,7 +33,10 @@ struct PushModule : ChimeraTK::ApplicationModule {
     ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
   } reg1{this, "REG1", ""};
 
-  void mainLoop() override {}
+  std::promise<void> p;
+  void mainLoop() override {
+    p.set_value();
+  }
 };
 
 struct DummyApplication : ChimeraTK::Application {
@@ -67,14 +74,11 @@ struct fixture_with_poll_and_push_input {
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message"));
 
     //
-    //  workaround to ensure we exit only after device setup is complete
+    //  workaround to ensure we exit only after initial value propagation is complete. (meaning we
+    //  are in the main loop of the modules)
     /************************************************************************************************/
-    CHECK_TIMEOUT(
-        [&]() {
-          status.readLatest();
-          return static_cast<int>(status);
-        }() == 0,
-        100000);
+    application.pollModule.p.get_future().wait();
+    application.pushModule.p.get_future().wait();
     /************************************************************************************************/
   }
 
