@@ -1,0 +1,24 @@
+namespace ChimeraTK {
+/**
+\page spec_VersionPropagation
+<b>STUB VERSION, COLLECTION OF BITS AND BOBS THAT ARE NOT WRITTEN DOWN ANYWHERE</b>
+
+## ApplicationModule
+- Push-type ProcessArrays will try update their owner's module version
+  (AplicationModule::setCurrentVersion()) on each TransferMode::read transfer
+  - The version update is independent of the availability of new data.
+  - The version will only updated if it is larger than the current version.
+
+- Poll-type ProcessArrays and non-blocking read transfers (TransferMode::readNonBlocking,
+  TransferMode::readLatest) on Push-type ProccessArrays will NOT alter the version of their owner.
+
+- All write transfers on ProcessArrays associated with a module will use ApplicationModule::getCurrentVersion()
+  as the version associated with that transfer.
+
+## Transfer Groups
+
+- Transfer elements that are part of a TransferGroup can share a common version number that can
+  signify data consistency if they are part of a merged transfer (TE 12.1.1.1, TODO needs anchor)
+
+*/
+}
