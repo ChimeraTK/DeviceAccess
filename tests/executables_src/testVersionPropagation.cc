@@ -16,10 +16,10 @@
 #include <ChimeraTK/VersionNumber.h>
 
 namespace ctk = ChimeraTK;
-using Fixture_testFacilityEnabled = fixture_with_poll_and_push_input<true>;
+using Fixture = fixture_with_poll_and_push_input<false>;
 
 
-BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture_testFacilityEnabled)
+BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
   std::cout << "versionPropagation_testPolledRead" << std::endl;
