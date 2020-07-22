@@ -1,6 +1,8 @@
 #ifndef CHECK_TIMEOUT_H
 #define CHECK_TIMEOUT_H
 
+#include <boost/test/test_tools.hpp>
+
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
