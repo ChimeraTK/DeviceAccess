@@ -453,10 +453,10 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
 
 /**
  *  Test that thrown exception is identical to the first error
- *  * \anchor testTransferElement_B_12_10_3_1 \ref transferElement_B_12_10_3_1 "B.12.10.3.1"
+ *  * \anchor testTransferElement_B_12_10_4 \ref transferElement_B_12_10_4 "B.12.10.4"
  */
-BOOST_AUTO_TEST_CASE(test_B_12_10_3_1) {
-  std::cout << "test_B_12_10_3_2" << std::endl;
+BOOST_AUTO_TEST_CASE(test_B_12_10_4) {
+  std::cout << "test_B_12_10_4" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
