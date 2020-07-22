@@ -64,6 +64,7 @@ namespace ChimeraTK {
     - \anchor b_2_3_4 2.3.4 When the delayed value is finally written to the device during the recovery procedure, the return value of the write() is ignored. \ref comment_b_2_3_4 "(*)"
     - 2.3.5 It is guaranteed that the write takes place before the device is considered fully recovered again and other transfers are allowed (cf. \ref b_3_1 "3.1").
   - \anchor b_2_4 2.4 In case of exceptions, there is no guaranteed realtime behaviour, not even for "non-blocking" transfers. \ref comment_b_2_4 "(*)"
+  - \anchor b_2_5 2.5 TransferElement::isReadable(), TransferElement::isWriteable() and TransferElement::isReadonly() return with values as if reading and writing would be allowed. \ref comment_b_2_5 "(*)"
 
 \subsection spec_execptionHandling_behaviour_recovery Recovery
 - 3. The framework tries to resolve an exception state by periodically re-opening the faulty device.
@@ -93,6 +94,9 @@ namespace ChimeraTK {
 - \anchor comment_b_2_3_4 \ref b_2_3_4 "2.3.4" The TransferElement specification B.7.2 guarantees that only old data may be lost in a write transfer, hence the latest data is guaranteed to be written to the device during recovery.
 
 - \anchor comment_b_2_4 \ref b_2_4 "2.4" Even read without wait_for_new_data and write operations are not truely non-blocking, since they are still synchronous. The "non-blocking" guarantee only means that the operation does not block until new data has arrived, and that it is not frozen until the device is recovered. For the duration of the recovery procedure and of course for timeout periods these operations may still block. readNonBlocking() and readLatest() with wait_for_new_data could in theory be truely lock-free and wait-free, but the synchronisation mechanism in case of exceptions are not implemented as such. In case of exceptions, the application usually anway does not behave normally any more. If needed, this limitation could be lifted with a more complicated implementation in the future.
+
+- \anchor comment_b_2_5 \ref b_2_5 "2.5" Suppressing the exception and allowing the operation does not pose the risk of getting a ChimeraTK::logic_error in the preXxx() phase of the
+operation because all transfer elements are tested for this during device recovery (cf. \ref exceptionHandling_c_3_3_3 "C.3.3.3").
 
 - \anchor comment_b_3_1_2 \ref b_3_1_2 "3.1.2" For some applications, the order of writes may be important, e.g. if firmware expects this. Please note that the VersionNumber is insufficient as a sorting criteria, since many writes may have been done with the same VersionNumber (in an ApplicationModule, the VersionNumber used for the writes is determined by the largest VersionNumber of the inputs).
 
@@ -222,6 +226,8 @@ Note: This section defines the internal interface on a low level. Helper functio
   - 2.8.4 Note: The alias name of the device can be obtained from the VariableNetworkNode, which allows to obtain the corresponding DeviceModule via Application::deviceModuleList (change the list into a map).
   - 2.8.5 The code instantiating the decorator (Application::createDeviceVariable()) makes sure that the ExceptionHandlingDecorator is "inside" the MetaDataPropagatingRegisterDecorator, so in case of an exception the dataValidity flag is properly propagated to the owning module/fan out (cf. \ref c_2_6_4 "2.6.4").
 
+- \anchor c_2_9 2.9 When a ChimeraTK::runtime_error is caught in isReadable(), isWriteable() or isReadOnly(), the DeviceModule is informed via DeviceModule::reportException().
+
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_comments (*) Comments
 
 - \anchor comment_c_2_1 \ref c_2_1 "2.1" Possible future change: Output accessors can have the option not to have a RecoveryHelper. This is needed for instance for "trigger registers" which start an operation on the hardware. Also void registers don't have a RecoveryHelper (once the void data type is supported by ChimeraTK).
@@ -267,7 +273,7 @@ The only thing that can happend by not having the DeviceModule::errorMutex is th
     - 3.3.1.1 If the very first attempt to open the device after the application start fails, the error message of the exception is used to overwrite the content of \c Devices/\<alias\>/message. Otherwise error messages of exceptions thrown by Device::open() are not visible.
   - \anchor c_3_3_2 3.3.2 The queue of reported exceptions is cleared. \ref comment_c_3_3_2 "(*)"
 
-  - 3.3.3 Check that all registers on DeviceModule::listOfReadRegisters are isReadable() and all registers on DeviceModule::listOfWriteRegisters are isWriteable().
+  - \anchor exceptionHandling_c_3_3_3 3.3.3 Check that all registers on DeviceModule::listOfReadRegisters are isReadable() and all registers on DeviceModule::listOfWriteRegisters are isWriteable().
     - 3.3.3.1 This involves obtaining an accessor for the register first, which is discarded after the check.
     - 3.3.3.2 If there is an exception, update \c Devices/\<alias\>/message with the error message and go back to \ref c_3_3_1 "3.3.1".
     - 3.3.3.3 If one of the accessors does not meet this condition, throw a ChimeraTK::logic_error.
