@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC10WIP !! Based on RC9.
+\page spec_TransferElement Technical specification: TransferElement V1.0RC10
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -36,7 +36,7 @@ This documnent is currently still **INCOMPLETE**!
     - TransferElement::dataValidity() - returns content of TransferElement::_dataValidity
   - 5.2 If not stated otherwise, the term <i>application buffer</i> refers to **all** components of the buffer.
   - 5.3 The content of the buffer is filled with data from the device in read operations, and transferred to the device in write operations.
-  - 5.4 The content of the buffer can always be modified by the application.(*)
+  - 5.4 The content of the buffer can always be modified by the application. (*)
   - 5.5 NDRegisterAccessor::buffer_2D is referred to as *data buffer*, while TransferElement::_versionNumber and TransferElement::_dataValidity form the *meta data buffer*
 
 - 6. Placeholders are used to summarise various function names:
@@ -88,7 +88,26 @@ This documnent is currently still **INCOMPLETE**!
 
 - 1. TransferElements are not thread safe
 
-- 2. Data types [TODO]
+- 2. Data types of the application data buffer:
+  - 2.1 The following data types are supported for the application data buffer:
+    - int8_t
+    - uint8_t
+    - int16_t
+    - uint16_t
+    - int32_t
+    - uint32_t
+    - int64_t
+    - uint64_t
+    - float
+    - double
+    - std::string
+  - 2.2 Applications select a data type for the buffer via the UserType template argument of Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor().
+  - 2.3 If needed, the register value is converted between the actual register's data type and the application-selected UserType.
+  - 2.4 The UserType must be capable of holding all possible register values. Otherwise, a ChimeraTK::logic_error is thrown at construction, or (for backwards compatibility) a boost::numeric_cast::bad_numeric_cast error is thrown in read operations when the value exceeds the possible range.
+    - 2.4.1 The backwards compatibility option may only be implemented by existing backends.
+  - 2.5 In write operations, values outside the possible range of the actual register's data type are moved to the nearest possible value (rounding and clamping).
+  - 2.6 All values can be converted into std::string, hence it is always possible to obtain an accessor with std::string as UserType.
+  - 2.7 After construction, the data buffer is initialised with default-constructed values (i.e. 0 resp. empty string).
 
 - 3. Modes of transfers
 
@@ -213,9 +232,48 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_11_7_1 11.7.1 *either* do not guarantee that consecutive calls to TransferElement::getVersionNumber() always return a VersionNumber that is equal or greater than the one from the previous call \ref transferElement_comment_B_11_7_1 "(*)"
     - \anchor transferElement_B_11_7_2 11.7.2 *or* discard values with lower version numbers \ref transferElement_comment_B_11_7_2 "(*)"
 
-- 12. TransferGroup
-  - 12.1 TransferGroups are only allowed for TransferElements without AccessMode::wait_for_new_data.
-  -  [TODO]
+- 12. TransferGroup and merging transfers:
+  - 12.1 TransferElements which are put into the same TransferGroup can optionally merge their data transfer to optimise for speed and to offer a best-effort data consistency.
+    - 12.1.1 TransferGroups do not enforce data consistency, since merging transfers is optional.
+      - 12.1.1.1 If a merge happens and consistency of the data can be guaranteed in a read operation, the VersionNumber of the corresponding TransferElements is set to the same value.
+    - 12.1.2 Structure of TransferElements in TransferGroups:
+      - \anchor transferElement_B_12_1_2_1 12.1.2.1 A TransferElement, which is directly added to the TransferGroup, is called <i>high-level element</i>.
+      - \anchor transferElement_B_12_1_2_2 12.1.2.2 Decorator-like implementations use one or more <i>low-level elements</i> which perform the actual register access. All low-level elements of one TransferElement are returned by TransferElement::getHardwareAccessingElements().
+      - 12.1.2.3 Low-level elements are not decorator-like, since they directly access the device.
+      - 12.1.2.4 There can be any number of decorator-like intermediate elements. The sum of all elements on all levels of one high-level element including the low-level elements but excluding the high-level element itself is called <i>internal elements</i>. All internal elements of one TransferElement are returned by TransferElement::getInternalElements().
+    - 12.1.3 After a TransferElement is added to a TransferGroup, TransferElement::replaceTransferElement() is called for each element in the group, passing each internal element in the group as a replacement.
+    - 12.1.4 TransferElement::replaceTransferElement() uses the given replacement TransferElement for an optimisation, if possible. Depending on the protocol, this can mean:
+      - \anchor transferElement_B_12_1_4_1 12.1.4.1 An internal element is replaced 1:1 by the replacement, because it transfers the same data (cf. \ref transferElement_B_12_1_5 "12.1.5"). This is a common case for decorator-like implementations.
+        - \anchor transferElement_B_12_1_4_1_1 12.1.4.1.1 A copy decorator must be placed around the replacement TrasferElement to avoid that the multiple users of the lower-level TransferElements are swapping out the data before it is seen by all users.
+        - 12.1.4.1.2 The use of a copy decorator is not required, if it is guaranteed that no such conflict may happen. This can only be the case if the replacement TransferElement is never used as a stand-alone TransferElement.
+      - 12.1.4.2 The given replacement can be extended such that the data of an internal element is included in the transfer; then the internal element can be replaced by the now-extended replacement.
+      - 12.1.4.3 If such replacement takes place, the behaviour visible to the application of the TransferElement does not change (exception: VersionNumbers in read opertions can reveal now-consistent data, see 12.1.1).
+      - 12.1.4.4 If no such optimisation is possible, the function simply does nothing.
+    - \anchor transferElement_B_12_1_5 12.1.5 TransferElement::mayReplaceOther() returns true, if the given TransferElement behaves identical to the one it is called on in every aspect, i.e. it accesses the same data on the same device, has the same UserType and the same AccessModeFlags, and (if applicable) uses the same data transformations (like fixed point conversion). It returns false otherwise. This is used by implementations of \ref transferElement_B_12_1_4_1 "12.1.4.1".
+  - 12.2 Adding TransferElements which cannot merge their transfers to the same TransferGroup is always allowed.
+  - 12.3 If TransferElements have been added to a TransferGroup, individual read/write operations of the TransferElements are no longer allowed and will throw a ChimeraTK::logic_error. Read/write operations are then only possible through the TransferGroup.
+  - 12.4 A TransferGroup is becomes read-only (cf. TransferGroup::isReadOnly()), if at least one of the member TransferElements is read-only.
+  - 12.5 Adding the same TransferElement twice is not allowed (logic_error).
+  - 12.6 Adding one TransferElement to two different TransferGroups is not allowed (logic_error).
+  - 12.7 Adding TransferElements with AccessMode::wait_for_new_data is not allowed (logic_error).
+  - \anchor transferElement_B_12_8 12.8 Adding a copy of the a TransferElement which is already in the group (returned by two different calls to Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor() with the same arguments) will replace one of the identical TransferElement with a decorator which copies the data from the other.
+    - 12.8.1 This avoids an unnecessary transfer of identical data.
+    - \anchor transferElement_B_12_8_2 12.8.2 This is only possible, if the TransferElement is added by passing a TransferElementAbstractor to TransferGroup::addAccessor(). \ref transferElement_comment_B_12_8_2 "(*)"
+  - 12.9 Operations executed via TransferGroup::read() and TransferGroup::write():
+    - 12.9.1 first call preXxx() on all high-level elements (cf. \ref transferElement_B_12_1_2_1 "12.1.2.1"),
+    - \anchor transferElement_B_12_9_2 12.9.2 next call the corresponding xxxTransferYyy() on all low-level elements (cf. \ref transferElement_B_12_1_2_2 "12.1.2.2"), and
+    - \anchor transferElement_B_12_9_3 12.9.3 finally call postXxx() on all high-level elements.
+  - 12.10 The TransferGroup implements a similar exception handling in TransferGroup::read() and TransferGroup::write() as their TransferElement counterparts. This especially means:
+    - 12.10.1 Before preXxx() is called, the TransferGroup checks all pre-conditions (device opened and operation allowed) to make sure no ChimeraTK::logic_error can occur (other exceptions are anyway not allowed in preXxx).
+      - \anchor transferElement_B_12_10_1_1 12.10.1.1 If any ChimeraTK::runtime_error occurs while checking the pre-conditions, it is immediately passed on to the application.
+      - \anchor transferElement_B_12_10_1_2 12.10.1.2 Any pre-condition which is not met will immediately result in a thrown ChimeraTK::logic_error
+      - 12.10.1.3 The exceptions from \ref transferElement_B_12_10_1_1 "12.10.1.1" and \ref transferElement_B_12_10_1_2 "12.10.1.2" are not prioritised by type. The first detected error throws.
+    - 12.10.2 ChimeraTK::runtime_error exceptions thrown by the low-level elements are propagated to the corresponding high-level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3")
+    - 12.10.3 postXxx() is called for all high level elements, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5").
+      - 12.10.3.1 The first exception that has been caught in \ref transferElement_B_12_9_2 "12.9.2" or \ref transferElement_B_12_9_3 "12.9.3" is re-thrown.
+  - \anchor transferElement_B_12_11 12.11 If a ChimeraTK::runtime_error is thrown, the content of the application buffers of all elements is not changed. (c.f. \ref transferElement_B_6_4 "6.4")
+    - 12.11.1 The TransferGroup calls postRead() of all elements with `updateDataBuffer = false`, if any element has thrown a ChimeraTK::runtime_error.
+  - 12.12 The TransferGroup calls postRead() on copy decorators first (see \ref transferElement_B_12_1_4_1_1 "12.1.4.1.1" and \ref transferElement_B_12_8 "12.8").
 
 - 13. ReadAnyGroup [TODO]
 
@@ -229,29 +287,8 @@ This documnent is currently still **INCOMPLETE**!
 
 - \anchor transferElement_B_16 16. This section will be moved from \ref transferElement_C_2 "C.2"
 
-### New in RC 10. NOT REVIEWED YET! ###
+### UNREVIEWED ADDITIONS ###
 
-- 12. TransferGroup
-  - 12.2 The TransferGroup is not using the xxxYyy() functions of the TransferElement base class because it is calling the postXxx() and preXx() functions of the high level elements, while the transfer itself is executed on the exchanged low level TransferElement. Hence TransferGroup::read() and TransferGroup::write() implement the same exception handling a their TransferElement counterparts. This especially means:
-    - 12.2.1 Before preXxx() is called, the TransferGroup checks all pre-conditions (device opened and operation allowed) to make sure no ChimeraTK::logic_error can occur (other exceptions are anyway not allowed in preXxx).
-      - 12.2.1.1 If any ChimeraTK::runtime_error occurs while checking the pre-conditions, it is immediately passed on to the application.
-      - 12.2.1.2 Any pre-condition which is not met will immediately result in a thrown ChimeraTK::logic_error
-      - 12.2.1.3 The exceptions from 12.2.1.1 and 12.2.1.2 are not prioritised by type. The first detected error throws.
-    - 12.2.2 ChimeraTK::runtime_error exceptions thrown by the low level TransferElement are propagated to the high level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3")
-    - 12.2.3 postXxx() is called for all high level elements, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5").
-      - 12.2.3.1 If exceptions have been caught from any postXxx(), an exception is thrown after all of them have been executed.
-      - 12.2.3.2 If more than one exception type is detected, the exception type with the highest priority is thrown:
-        - boost::thread_interrupted cannot take place inside TransferGroups, since they only occur with AccessMode::wait_for_new_data.
-        - ChimeraTK::logic_error is thrown before any transfer is actually started, so it cannot collide with any other exception.
-        - If a ChimeraTK::runtime_error is thrown by a transfer, it will be passed on to the application.
-        - boost::numeric_cast is lowest priority, since in case of a ChimeraTK::runtime_error the content of the application data buffer is anyway in an undefined state (seee 12.2.4).
-  - 12.3 If a ChimeraTK::runtime_error is thrown, the content of the application buffers of all elements is not changed. (c.f.  \ref transferElement_B_6_4 "6.4")
-    - 12.3.1 The TransferGroup calls postRead() of all elements with updateDataBuffer = false, if any element has thrown a ChimeraTK::runtime_error.
-
-- 16. TransferElement::replaceTransferElement()
-  - 16.1 TransferElement::replaceTransferElement() checks that TransferElement::_exceptionBackend is identical before replacing anything.
-
-- Unreviewed comment to  \anchor transferElement_comment_B_7_4 \ref transferElement_B_7_4 "7.4" This is required by the ApplicationCore::ExceptionHandlingDecorator. It suppresses the exception, but decorators around it must not change their data buffer (c.f. \ref transferElement_E_6_1_1 "E.6.1.1").
 
 
 
@@ -270,6 +307,8 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_B_6_4 \ref transferElement_B_6_4 "6.4" This means that implementations which raise boost::numeric::bad_numeric_cast in their doPostRead() implementation must make sure that the data buffer is either not toched as long as exceptions can occur, or that it is restored in case of an exception.
 
 - \anchor transferElement_comment_B_7_2 \ref transferElement_B_7_2 "7.2" Usually, writes are implemented as synchronous transfers, in which case no previous data can be lost. In case of asynchronous write transfers (as e.g. implemented in the ControlSystemAdapter's ProcessArray), the implementation must ensure the specified behaviour e.g. by using cppext::future_queue::push_overwrite() or a similar functionality. Please keep in mind that the return value of cppext::future_queue::push_overwrite() does not guarantee which data is lost *only* if concurrent push_overwrite() calls are executed in a multi-producer environment. TransferElements are not thread safe anyway, hence push_overwrite() will always overwrite old data in this context.
+
+- \anchor transferElement_comment_B_7_4 \ref transferElement_B_7_4 "7.4" This is required by the ApplicationCore::ExceptionHandlingDecorator. It suppresses the exception, but decorators around it must not change their data buffer (c.f. \ref transferElement_E_6_1_1 "E.6.1.1").
 
 - 8.2.2 This allows to discard values inside a continuation of a cppext::future_queue. It is used e.g. by the ControlSystemAdapter's BidirectionalProcessArray. [TBD: It could be replaced by a feature of the cppext::future_queue allowing to reject values in continuations...]
 
@@ -302,6 +341,7 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_B_11_7_1 \ref transferElement_B_11_7_1 "11.7.1" If a write call is done there might be older data in the read queue, which results in a lower version number once a read is called.
 - \anchor transferElement_comment_B_11_7_2 \ref transferElement_B_11_7_2 "11.7.2" The BiDirectionalProcessArray is implemented like this.
 
+- \anchor transferElement_comment_B_12_8_2 \ref transferElement_B_12_8_2 "12.8.2" The reason is that there needs to be some entity which holds the TransferElement to be replaced. If it is directly used by the calling code, the TransferGroup has no means to replace it.
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
@@ -318,10 +358,10 @@ This documnent is currently still **INCOMPLETE**!
    ChimeraTK::runtime_error may only be thrown in
   - 3.1 doXxxTransferYyy(). It is the only exception that can occur in this function
   - 3.2 TransferElement::isReadable(), TransferElement::isWriteable() or TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
-  - 3.3 doPreXxx(), if the information returned by the functions in 3.2 is not yet available and needs to be determined from the running device.
+  - 3.3 (removed)
 
 - \anchor transferElement_C_4 4. boost::numeric::bad_numeric_cast may only be thrown in
-  - 4.1 TransferElement::doPreWrite()
+  - 4.1 (removed)
   - 4.2 TransferElement::doPostRead(), but only if updateDataBuffer == true
   - 4.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 5.2.4).
 
@@ -349,8 +389,12 @@ This documnent is currently still **INCOMPLETE**!
     - 5.2.7 A write operation is executed on a transfer element that cannot be written
       - 5.2.7.1 Check with TransferElement::isWriteable() or TransferElement::isReadOnly()
       - \anchor transferElement_C_5_2_7_2 5.2.7.2 Thrown in doPreWrite() [\ref UnifiedTest_TransferElement_C_5_2_7_2 "U"]
-  - 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant under normal circumstances. Only when open() is called (either for the first time or to recover form a ChimeraTK::runtime_error) the information might change and applications are expected to check it again.
+  - 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant for each TransferElement. Only when a ChimeraTK::runtime_error is thrown by the TransferElement, the information might change and applications are expected to check it again.
     - \anchor transferElement_C_5_3_1 5.3.1 If a device is changing this information on its own (e.g. makes a register read-only which was readable before), and the application hence performes an operation which is no longer possible, a ChimeraTK::runtime_error must be thrown (unexpected behaviour of the device). \ref transferElement_comment_C_5_3_1 "(*)"
+    - 5.3.2 If an implementation needs to obtain the information from the device (and hence the information might potentially change), it caches the information for each TransferElement separately.
+    - 5.3.3 Implementations of the test functions always return the cached information, if available.
+    - 5.3.4 If the test function needs to obtain the information from the device, a runtime_error might occur.
+    - 5.3.5 Implementations of doPreXxx() use these test functions to check the preconditions, but discard any runtime_error exception. The following doXxxTransferYyy() will then either throw a runtime_error (cf. 5.3.1) or succeed.
   - 5.4 Remarks about how to follow these rules:
     - 5.4.1 If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
 
