@@ -112,6 +112,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
       10000);
 
 
+  pollInput.read();
   auto versionNumberOnRuntimeError = pollInput.getVersionNumber();
 
   BOOST_CHECK_EQUAL(pollInput, 100);
@@ -123,6 +124,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   // Behavior on device recovery
   /************************************************************************************************/
   deviceBackend->throwExceptionRead = false;
+  pollInput.read();
   // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
   // device recovered.
   CHECK_TIMEOUT(
