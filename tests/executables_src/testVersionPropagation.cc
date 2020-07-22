@@ -1,3 +1,5 @@
+#define BOOST_TEST_MODULE testVersionpropagation
+
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
@@ -5,86 +7,21 @@
 #include "TestFacility.h"
 #include "VariableGroup.h"
 #include "check_timeout.h"
-#include <ChimeraTK/VersionNumber.h>
+#include "fixtures.h"
 
-#define BOOST_TEST_MODULE testVersionpropagation
 #include <boost/test/included/unit_test.hpp>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 #include <ChimeraTK/RegisterPath.h>
 #include <future>
+#include <ChimeraTK/VersionNumber.h>
 
 namespace ctk = ChimeraTK;
+using Fixture_testFacilityEnabled = fixture_with_poll_and_push_input<true>;
 
-struct PollModule : ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarPollInput<int> pollInput{this, "REG1", "", "", {"DEVICE"}};
 
-  void mainLoop() override {}
-};
+BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture_testFacilityEnabled)
 
-struct PushModule : ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
-  struct : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG1", ""};
-
-  void mainLoop() override {}
-};
-
-struct DummyApplication : ctk::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
-  DummyApplication() : Application("DummyApplication") {}
-  ~DummyApplication() { shutdown(); }
-
-  PushModule pushModule{this, "", ""};
-  PollModule pollModule{this, "", ""};
-
-  ctk::ControlSystemModule cs;
-  ctk::DeviceModule device{this, ExceptionDummyCDD1};
-
-  void defineConnections() override {
-    findTag("CS").connectTo(cs);
-    findTag("DEVICE").connectTo(device);
-
-    auto push_input = device("REG1/PUSH_READ", typeid(int), 1, ctk::UpdateMode::push);
-    push_input >> pushModule.reg1.pushInput;
-  }
-};
-
-struct Fixture {
-  Fixture()
-  : deviceBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))) {
-    deviceBackend->open();
-    testFacitiy.runApplication();
-
-    exceptionDummyRegister.replace(application.device.device.getScalarRegisterAccessor<int>("/REG1"));
-    status.replace(
-        testFacitiy.getScalar<int>(ctk::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
-
-    //
-    //  workaround to ensure we exit only after device setup is complete
-    /************************************************************************************************/
-    CHECK_TIMEOUT(
-        [&]() {
-          status.readLatest();
-          return static_cast<int>(status);
-        }() == 0,
-        100000);
-    /************************************************************************************************/
-  }
-
-  boost::shared_ptr<ctk::ExceptionDummy> deviceBackend;
-  DummyApplication application;
-  ctk::TestFacility testFacitiy{true};
-
-  ctk::ScalarRegisterAccessor<int> status;
-  ctk::ScalarRegisterAccessor<int> exceptionDummyRegister;
-};
-
-BOOST_AUTO_TEST_SUITE(versionPropagation)
-BOOST_FIXTURE_TEST_CASE(versionPropagation_testPolledRead, Fixture) {
+BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
   std::cout << "versionPropagation_testPolledRead" << std::endl;
   auto& pollVariable = application.pollModule.pollInput;
   auto moduleVersion = application.pollModule.getCurrentVersionNumber();
@@ -96,7 +33,7 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPolledRead, Fixture) {
   BOOST_CHECK(moduleVersion == application.pollModule.getCurrentVersionNumber());
 }
 
-BOOST_FIXTURE_TEST_CASE(versionPropagation_testPolledReadNonBlocking, Fixture) {
+BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
   std::cout << "versionPropagation_testPolledReadNonBlocking" << std::endl;
   auto& pollVariable = application.pollModule.pollInput;
   auto moduleVersion = application.pollModule.getCurrentVersionNumber();
@@ -108,7 +45,7 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPolledReadNonBlocking, Fixture) {
   BOOST_CHECK(moduleVersion == application.pollModule.getCurrentVersionNumber());
 }
 
-BOOST_FIXTURE_TEST_CASE(versionPropagation_testPolledReadLatest, Fixture) {
+BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
   std::cout << "versionPropagation_testPolledReadLatest" << std::endl;
   auto& pollVariable = application.pollModule.pollInput;
   auto moduleVersion = application.pollModule.getCurrentVersionNumber();
@@ -120,7 +57,7 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPolledReadLatest, Fixture) {
   BOOST_CHECK(moduleVersion == application.pollModule.getCurrentVersionNumber());
 }
 
-BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeRead, Fixture) {
+BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeRead) {
   std::cout << "versionPropagation_testPushTypeRead" << std::endl;
   auto& pushInput = application.pushModule.reg1.pushInput;
   // Make sure we pop out any stray values in the pushInput before test start:
@@ -133,7 +70,7 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeRead, Fixture) {
   BOOST_CHECK(application.pushModule.getCurrentVersionNumber() == nextVersionNumber);
 }
 
-BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking, Fixture) {
+BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking) {
   std::cout << "versionPropagation_testPushTypeReadNonBlocking" << std::endl;
   auto& pushInput = application.pushModule.reg1.pushInput;
   // Make sure we pop out any stray values in the pushInput before test start:
@@ -155,7 +92,7 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking, Fixture)
   BOOST_CHECK(moduleVersion == application.pushModule.getCurrentVersionNumber());
 }
 
-BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeReadLatest, Fixture) {
+BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadLatest) {
   std::cout << "versionPropagation_testPushTypeReadLatest" << std::endl;
   auto& pushInput = application.pushModule.reg1.pushInput;
   // Make sure we pop out any stray values in the pushInput before test start:
@@ -176,4 +113,5 @@ BOOST_FIXTURE_TEST_CASE(versionPropagation_testPushTypeReadLatest, Fixture) {
   // readLatest will not propagete the version to the module
   BOOST_CHECK(moduleVersion == application.pushModule.getCurrentVersionNumber());
 }
+
 BOOST_AUTO_TEST_SUITE_END()
