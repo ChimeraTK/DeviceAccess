@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_2) {
 /**********************************************************************************************************************/
 
 /**
- *  Test that all postXxx() called even when exception thrown
+ *  Test that all postXxx() called even when exception thrown, and exception is thrown in the end
  *  * \anchor testTransferElement_B_12_10_3 \ref transferElement_B_12_10_3 "B.12.10.3"
  */
 BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
   A->resetCounters();
   B->resetCounters();
   A->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error);
   CHECK_COUNTERS_HIGH_LEVEL(A, false, 1, 4, true);
   CHECK_COUNTERS_HIGH_LEVEL(B, false, 1, 4, true);
 
@@ -410,7 +410,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
   A->resetCounters();
   B->resetCounters();
   B->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error);
   CHECK_COUNTERS_HIGH_LEVEL(A, false, 1, 4, true);
   CHECK_COUNTERS_HIGH_LEVEL(B, false, 1, 4, true);
 
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
   B->resetCounters();
   A->_throwRuntimeErrInTransfer = true;
   B->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error);
   CHECK_COUNTERS_HIGH_LEVEL(A, false, 1, 4, true);
   CHECK_COUNTERS_HIGH_LEVEL(B, false, 1, 4, true);
 
@@ -427,7 +427,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
   A->resetCounters();
   B->resetCounters();
   A->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error);
   CHECK_COUNTERS_HIGH_LEVEL(A, true, 1, 4, true);
   CHECK_COUNTERS_HIGH_LEVEL(B, true, 1, 4, true);
 
@@ -435,7 +435,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
   A->resetCounters();
   B->resetCounters();
   B->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error);
   CHECK_COUNTERS_HIGH_LEVEL(A, true, 1, 4, true);
   CHECK_COUNTERS_HIGH_LEVEL(B, true, 1, 4, true);
 
@@ -444,7 +444,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
   B->resetCounters();
   A->_throwRuntimeErrInTransfer = true;
   B->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error);
   CHECK_COUNTERS_HIGH_LEVEL(A, true, 1, 4, true);
   CHECK_COUNTERS_HIGH_LEVEL(B, true, 1, 4, true);
 }
@@ -452,39 +452,10 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
 /**********************************************************************************************************************/
 
 /**
- *  Test that one exception from postXxx() gets through
+ *  Test that thrown exception is identical to the first error
  *  * \anchor testTransferElement_B_12_10_3_1 \ref transferElement_B_12_10_3_1 "B.12.10.3.1"
  */
 BOOST_AUTO_TEST_CASE(test_B_12_10_3_1) {
-  std::cout << "test_B_12_10_3_1" << std::endl;
-  auto A = makeTETA();
-  auto B = makeTETA();
-
-  TransferGroup group;
-
-  group.addAccessor(A);
-  group.addAccessor(B);
-
-  // A throws in read
-  A->resetCounters();
-  B->resetCounters();
-  A->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error);
-
-  // A throws in write
-  A->resetCounters();
-  B->resetCounters();
-  A->_throwRuntimeErrInTransfer = true;
-  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error);
-}
-
-/**********************************************************************************************************************/
-
-/**
- *  Test that thrown exception is identical to the first error
- *  * \anchor testTransferElement_B_12_10_3_2 \ref transferElement_B_12_10_3_2 "B.12.10.3.2"
- */
-BOOST_AUTO_TEST_CASE(test_B_12_10_3_2) {
   std::cout << "test_B_12_10_3_2" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
