@@ -2104,7 +2104,6 @@ namespace ChimeraTK {
         std::cout << "... registerName = " << registerName << std::endl;
         auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
         sizeMap[registerName] = reg.getNElementsPerChannel();
-        std::cout << "    NElementsPerChannel = " << sizeMap[registerName] << std::endl;
       });
     }
 
