@@ -1588,6 +1588,7 @@ namespace ChimeraTK {
     std::cout << "... synchronous read" << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isRead(x)) return;
+      if(x.nRuntimeErrorCases() == 0) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
@@ -1621,6 +1622,7 @@ namespace ChimeraTK {
     std::cout << "... asynchronous read" << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
+      if(x.nRuntimeErrorCases() == 0) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
@@ -1656,6 +1658,7 @@ namespace ChimeraTK {
     std::cout << "... write" << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isWrite(x)) return;
+      if(x.nRuntimeErrorCases() == 0) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
@@ -1686,6 +1689,116 @@ namespace ChimeraTK {
       }
     });
 
+    std::cout << "... isReadable" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
+      bool didThrow = false;
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
+
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        try {
+          reg.isReadable();
+        }
+        catch(...) {
+          didThrow = true;
+          BOOST_CHECK(erb->hasSeenException());
+        }
+
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
+      }
+    });
+
+    std::cout << "... isWriteable" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
+
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        try {
+          reg.isWriteable();
+          std::cout << " (doesn't throw)" << std::endl;
+        }
+        catch(...) {
+          std::cout << " (throws)" << std::endl;
+          BOOST_CHECK(erb->hasSeenException());
+        }
+
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+    });
+
+    std::cout << "... isReadOnly" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
+
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        try {
+          reg.isReadOnly();
+          std::cout << " (doesn't throw)" << std::endl;
+        }
+        catch(...) {
+          std::cout << " (throws)" << std::endl;
+          BOOST_CHECK(erb->hasSeenException());
+        }
+
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+    });
     // close device again
     d.close();
   }
