@@ -261,8 +261,8 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_12_8_2 12.8.2 This is only possible, if the TransferElement is added by passing a TransferElementAbstractor to TransferGroup::addAccessor(). \ref transferElement_comment_B_12_8_2 "(*)"
   - 12.9 Operations executed via TransferGroup::read() and TransferGroup::write():
     - 12.9.1 first call preXxx() on all high-level elements (cf. \ref transferElement_B_12_1_2_1 "12.1.2.1"),
-    - 12.9.2 next call the corresponding xxxTransferYyy() on all low-level elements (cf. \ref transferElement_B_12_1_2_2 "12.1.2.2"), and
-    - 12.9.3 finally call postXxx() on all high-level elements.
+    - \anchor transferElement_B_12_9_2 12.9.2 next call the corresponding xxxTransferYyy() on all low-level elements (cf. \ref transferElement_B_12_1_2_2 "12.1.2.2"), and
+    - \anchor transferElement_B_12_9_3 12.9.3 finally call postXxx() on all high-level elements.
   - 12.10 The TransferGroup implements a similar exception handling in TransferGroup::read() and TransferGroup::write() as their TransferElement counterparts. This especially means:
     - 12.10.1 Before preXxx() is called, the TransferGroup checks all pre-conditions (device opened and operation allowed) to make sure no ChimeraTK::logic_error can occur (other exceptions are anyway not allowed in preXxx).
       - \anchor transferElement_B_12_10_1_1 12.10.1.1 If any ChimeraTK::runtime_error occurs while checking the pre-conditions, it is immediately passed on to the application.
@@ -271,7 +271,7 @@ This documnent is currently still **INCOMPLETE**!
     - 12.10.2 ChimeraTK::runtime_error exceptions thrown by the low-level elements are propagated to the corresponding high-level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3")
     - 12.10.3 postXxx() is called for all high level elements, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5").
       - 12.10.3.1 If exceptions have been caught from any postXxx(), an exception is thrown after all of them have been executed.
-      - 12.10.3.2 The thrown exception will be identical to the first thrown exception.
+      - 12.10.3.2 The first exception that has been caught in \ref transferElement_B_12_9_2 "12.9.2" or \ref transferElement_B_12_9_3 "12.9.3" is re-thrown.
   - \anchor transferElement_B_12_11 12.11 If a ChimeraTK::runtime_error is thrown, the content of the application buffers of all elements is not changed. (c.f. \ref transferElement_B_6_4 "6.4")
     - 12.11.1 The TransferGroup calls postRead() of all elements with `updateDataBuffer = false`, if any element has thrown a ChimeraTK::runtime_error.
   - 12.12 The TransferGroup calls postRead() on copy decorators first (see \ref transferElement_B_12_1_4_1_1 "12.1.4.1.1" and \ref transferElement_B_12_8 "12.8").
