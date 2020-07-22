@@ -1,3 +1,5 @@
+#pragma once
+
 #include "BackendFactory.h"
 #include "DeviceAccessVersion.h"
 #include "DummyBackend.h"
