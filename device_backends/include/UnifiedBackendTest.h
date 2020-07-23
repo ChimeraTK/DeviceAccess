@@ -36,7 +36,9 @@ namespace ChimeraTK {
    */
   template<TestCapability _syncRead = TestCapability::enabled,
       TestCapability _forceDataLossWrite = TestCapability::unspecified,
-      TestCapability _asyncReadInconsistency = TestCapability::unspecified>
+      TestCapability _asyncReadInconsistency = TestCapability::unspecified,
+      TestCapability _switchReadOnly = TestCapability::unspecified,
+      TestCapability _switchWriteOnly = TestCapability::unspecified>
   struct TestCapabilities {
     constexpr TestCapabilities() {}
 
@@ -45,32 +47,65 @@ namespace ChimeraTK {
     /// AccessMode::wait_for_new_data, like e.g. the ControlSystemAdapter BidirectionalProcessArray. TransferElements
     /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
     /// backend tests.
-    constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency>
-        disableSyncRead() {
+    constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly>
+        disableSyncRead() const {
       return {};
     }
 
     /// See setForceDataLossWrite() function in the regsiter descriptor.
-    constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency> enableForceDataLossWrite() {
+    constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly>
+        enableForceDataLossWrite() const {
       return {};
     }
-    constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency>
-        disableForceDataLossWrite() {
+    constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly>
+        disableForceDataLossWrite() const {
       return {};
     }
 
     /// See forceAsyncReadInconsistency() function in the register descriptor.
-    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled> enableAsyncReadInconsistency() {
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled, _switchReadOnly,
+        _switchWriteOnly>
+        enableAsyncReadInconsistency() const {
       return {};
     }
-    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled>
-        disableAsyncReadInconsistency() {
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled, _switchReadOnly,
+        _switchWriteOnly>
+        disableAsyncReadInconsistency() const {
+      return {};
+    }
+
+    /// See switchReadOnly() function in the register descriptor.
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::enabled,
+        _switchWriteOnly>
+        enableSwitchReadOnly() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::disabled,
+        _switchWriteOnly>
+        disableSwitchReadOnly() const {
+      return {};
+    }
+
+    /// See switchWriteOnly() function in the register descriptor.
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        TestCapability::enabled>
+        enableSwitchWriteOnly() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        TestCapability::disabled>
+        disableSwitchWriteOnly() const {
       return {};
     }
 
     static constexpr TestCapability syncRead{_syncRead};
     static constexpr TestCapability forceDataLossWrite{_forceDataLossWrite};
     static constexpr TestCapability asyncReadInconsistency{_asyncReadInconsistency};
+    static constexpr TestCapability switchReadOnly{_switchReadOnly};
+    static constexpr TestCapability switchWriteOnly{_switchWriteOnly};
   };
 
   /**
@@ -169,9 +204,17 @@ namespace ChimeraTK {
      *    /// inconsistencies are already prevented by the protocol.
      *    void forceAsyncReadInconsistency();
      * 
-     *    /// Optional: Do whatever necessary that the register changes the isWritable ability. This can be achieved by
-     *    /// making a read-write register read-only. Not all protocols will allow this, hence this function does not
-     *    /// need to be defined.
+     *    /// Do whatever necessary that the register changes into a read-only register.
+     *    /// Can be omitted if TestCapability switchReadOnly = disabled.
+     *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
+     *    /// enable = false.
+     *    void switchReadOnly(bool enable);
+     * 
+     *    /// Do whatever necessary that the register changes into a write-only register.
+     *    /// Can be omitted if TestCapability switchWriteOnly = disabled.
+     *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
+     *    /// enable = false.
+     *    void switchWriteOnly(bool enable);
      *  };
      * 
      *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
@@ -244,6 +287,9 @@ namespace ChimeraTK {
     void test_C_5_2_5_2();
     void test_C_5_2_6_2();
     void test_C_5_2_7_2();
+    void test_C_5_3();
+    void test_C_5_3_1();
+    void test_C_5_3_2();
     void test_NOSPEC_valueAfterConstruction();
 
     /// Utility functions for recurring tasks
@@ -365,6 +411,44 @@ namespace ChimeraTK {
     template<typename T>
     void forceAsyncReadInconsistency(T t) {
       forceAsyncReadInconsistency_proxy_helper<T>{t};
+    }
+
+    // Proxy for calling switchReadOnly() only if allowed by capabilities.
+    template<typename T, bool condition = (T::capabilities.switchReadOnly == TestCapability::enabled)>
+    struct switchReadOnly_proxy_helper {
+      switchReadOnly_proxy_helper(T t, bool enable) { t.switchReadOnly(enable); }
+    };
+
+    template<typename T>
+    struct switchReadOnly_proxy_helper<T, false> {
+      switchReadOnly_proxy_helper(T, bool) {
+        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::terminate();
+      }
+    };
+
+    template<typename T>
+    void switchReadOnly(T t, bool enable) {
+      switchReadOnly_proxy_helper<T>{t, enable};
+    }
+
+    // Proxy for calling switchWriteOnly() only if allowed by capabilities.
+    template<typename T, bool condition = (T::capabilities.switchWriteOnly == TestCapability::enabled)>
+    struct switchWriteOnly_proxy_helper {
+      switchWriteOnly_proxy_helper(T t, bool enable) { t.switchWriteOnly(enable); }
+    };
+
+    template<typename T>
+    struct switchWriteOnly_proxy_helper<T, false> {
+      switchWriteOnly_proxy_helper(T, bool) {
+        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::terminate();
+      }
+    };
+
+    template<typename T>
+    void switchWriteOnly(T t, bool enable) {
+      switchWriteOnly_proxy_helper<T>{t, enable};
     }
   };
 
@@ -525,6 +609,19 @@ namespace ChimeraTK {
       if(this->isWrite(x) && !this->isRead(x)) ++nWriteOnlyRegisters;
       if(!this->isWrite(x) && this->isRead(x)) ++nReadOnlyRegisters;
       if(this->isRaw(x)) ++nRawRegisters;
+      if(x.capabilities.forceDataLossWrite == TestCapability::unspecified) {
+        std::cout << "WARNING: Register " << x.path() << " has unspecified capability forceDataLossWrite!" << std::endl;
+      }
+      if(x.capabilities.asyncReadInconsistency == TestCapability::unspecified) {
+        std::cout << "WARNING: Register " << x.path() << " has unspecified capability asyncReadInconsistency!"
+                  << std::endl;
+      }
+      if(x.capabilities.switchReadOnly == TestCapability::unspecified) {
+        std::cout << "WARNING: Register " << x.path() << " has unspecified capability switchReadOnly!" << std::endl;
+      }
+      if(x.capabilities.switchWriteOnly == TestCapability::unspecified) {
+        std::cout << "WARNING: Register " << x.path() << " has unspecified capability switchWriteOnly!" << std::endl;
+      }
     });
 
     std::cout << "Using " << nSyncReadRegisters << " synchronous and " << nAsyncReadRegisters
@@ -568,7 +665,7 @@ namespace ChimeraTK {
     }
 
     // run the tests
-    test_B_3_1_2_1();
+    /*test_B_3_1_2_1();
     test_NOSPEC_write();
     test_B_3_2_1_2();
     test_B_3_2_2();
@@ -598,8 +695,11 @@ namespace ChimeraTK {
     test_C_5_2_3_2();
     test_C_5_2_5_2();
     test_C_5_2_6_2();
-    test_C_5_2_7_2();
-    test_NOSPEC_valueAfterConstruction();
+    test_C_5_2_7_2();*/
+    test_C_5_3();
+    test_C_5_3_1();
+    test_C_5_3_2();
+    //test_NOSPEC_valueAfterConstruction();
   }
 
   /********************************************************************************************************************/
@@ -2485,6 +2585,126 @@ namespace ChimeraTK {
       BOOST_CHECK_THROW(reg.write(), logic_error);
     });
   }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test read-only/write-only information changes after runtime_error
+   *  * \anchor UnifiedTest_TransferElement_C_5_3 \ref transferElement_C_5_3 "C.5.3"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_3() {
+    std::cout << "--- test_C_5_3 - read-only/write-only information changes after runtime_error" << std::endl;
+    Device d(cdd);
+    d.open();
+
+    // switch to read-only
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchReadOnly != TestCapability::enabled) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      this->switchReadOnly(x, true);
+      BOOST_CHECK(reg.isWriteable() == true);
+      BOOST_CHECK_THROW(reg.write(), runtime_error); // no check intended, just catch
+      BOOST_CHECK(reg.isWriteable() == false);
+      this->switchReadOnly(x, false);
+    });
+
+    // switch to write-only (note: this test is untested, no backend supports this!)
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchWriteOnly != TestCapability::enabled) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      this->switchWriteOnly(x, true);
+      BOOST_CHECK(reg.isReadable() == true);
+      BOOST_CHECK_THROW(reg.read(), runtime_error); // no check intended, just catch
+      BOOST_CHECK(reg.isReadable() == false);
+      this->switchWriteOnly(x, false);
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test runtime_error if register becomes unexpectedly read-only/write-only
+   *  * \anchor UnifiedTest_TransferElement_C_5_3_1 \ref transferElement_C_5_3_1 "C.5.3.1"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_3_1() {
+    std::cout << "--- test_C_5_3_1 - runtime_error if register becomes unexpectedly read-only/write-only" << std::endl;
+    Device d(cdd);
+    d.open();
+
+    // switch to read-only
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchReadOnly != TestCapability::enabled) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      this->switchReadOnly(x, true);
+      BOOST_CHECK_THROW(reg.write(), runtime_error);
+      this->switchReadOnly(x, false);
+    });
+
+    // switch to write-only (note: this test is untested, no backend supports this!)
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchWriteOnly != TestCapability::enabled) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      this->switchWriteOnly(x, true);
+      BOOST_CHECK_THROW(reg.read(), runtime_error);
+      this->switchWriteOnly(x, false);
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test read-only/write-only information cached per accessor
+   *  * \anchor UnifiedTest_TransferElement_C_5_3_2 \ref transferElement_C_5_3_2 "C.5.3.2"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_3_2() {
+    std::cout << "--- test_C_5_3 - read-only/write-only information cached per accessor" << std::endl;
+    Device d(cdd);
+    d.open();
+
+    // switch to read-only
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchReadOnly != TestCapability::enabled) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg1 = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto reg2 = d.getTwoDRegisterAccessor<UserType>(registerName);
+      this->switchReadOnly(x, true);
+      BOOST_CHECK_THROW(reg1.write(), runtime_error); // no check intended, just catch
+      BOOST_CHECK(reg2.isWriteable() == true);
+      this->switchReadOnly(x, false);
+    });
+
+    // switch to write-only (note: this test is untested, no backend supports this!)
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchWriteOnly != TestCapability::enabled) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg1 = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto reg2 = d.getTwoDRegisterAccessor<UserType>(registerName);
+      this->switchWriteOnly(x, true);
+      BOOST_CHECK_THROW(reg1.read(), runtime_error); // no check intended, just catch
+      BOOST_CHECK(reg2.isReadable() == true);
+      this->switchWriteOnly(x, false);
+    });
+  }
+
   /********************************************************************************************************************/
 
   /**
