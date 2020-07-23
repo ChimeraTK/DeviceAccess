@@ -64,7 +64,7 @@ namespace ChimeraTK {
     - \anchor b_2_3_4 2.3.4 When the delayed value is finally written to the device during the recovery procedure, the return value of the write() is ignored. \ref comment_b_2_3_4 "(*)"
     - 2.3.5 It is guaranteed that the write takes place before the device is considered fully recovered again and other transfers are allowed (cf. \ref b_3_1 "3.1").
   - \anchor b_2_4 2.4 In case of exceptions, there is no guaranteed realtime behaviour, not even for "non-blocking" transfers. \ref comment_b_2_4 "(*)"
-  - \anchor b_2_5 2.5 TransferElement::isReadable(), TransferElement::isWriteable() and TransferElement::isReadonly() return with values as if reading and writing would be allowed. \ref comment_b_2_5 "(*)"
+  - \anchor exceptionHandling_b_2_5 2.5 TransferElement::isReadable(), TransferElement::isWriteable() and TransferElement::isReadonly() return with values as if reading and writing would be allowed. \ref exceptionHandling_comment_b_2_5 "(*)"
 
 \subsection spec_execptionHandling_behaviour_recovery Recovery
 - 3. The framework tries to resolve an exception state by periodically re-opening the faulty device.
@@ -95,7 +95,7 @@ namespace ChimeraTK {
 
 - \anchor comment_b_2_4 \ref b_2_4 "2.4" Even read without wait_for_new_data and write operations are not truely non-blocking, since they are still synchronous. The "non-blocking" guarantee only means that the operation does not block until new data has arrived, and that it is not frozen until the device is recovered. For the duration of the recovery procedure and of course for timeout periods these operations may still block. readNonBlocking() and readLatest() with wait_for_new_data could in theory be truely lock-free and wait-free, but the synchronisation mechanism in case of exceptions are not implemented as such. In case of exceptions, the application usually anway does not behave normally any more. If needed, this limitation could be lifted with a more complicated implementation in the future.
 
-- \anchor comment_b_2_5 \ref b_2_5 "2.5" Suppressing the exception and allowing the operation does not pose the risk of getting a ChimeraTK::logic_error in the preXxx() phase of the
+- \anchor exceptionHandling_comment_b_2_5 \ref exceptionHandling_b_2_5 "2.5" These functions can throw runtime errors if the behaviour has to be determined from the running device. In this case readability and writeability can change on the device (cf. <a href="https://chimeratk.github.io/DeviceAccess/master/spec__transfer_element.html">TransferElement specification</a> C.5.3). Suppressing the exception and allowing the operation does not pose the risk of getting a ChimeraTK::logic_error in the preXxx() phase of the
 operation because all transfer elements are tested for this during device recovery (cf. \ref exceptionHandling_c_3_3_3 "C.3.3.3").
 
 - \anchor comment_b_3_1_2 \ref b_3_1_2 "3.1.2" For some applications, the order of writes may be important, e.g. if firmware expects this. Please note that the VersionNumber is insufficient as a sorting criteria, since many writes may have been done with the same VersionNumber (in an ApplicationModule, the VersionNumber used for the writes is determined by the largest VersionNumber of the inputs).
@@ -179,6 +179,8 @@ Note: This section defines the internal interface on a low level. Helper functio
     - RecoveryHelper::writeOrder, an ordering parameter which determines the order of write opereations during recovery.
     - RecoveryHelper::wasWritten, a flag which indicates whether the data in the value buffer of the RecoveryHelper::accessor has already been written to the device. \ref comment_c_2_1_1 "(*)"
   - \anchor c_2_1_2 2.1.2 Ordering can be done per device \ref comment_c_2_1_2 "(*)", hence each DeviceModule has one 64-bit atomic counter DeviceModule::writeCounter which is incremented for each write operation and the value is stored in RecoveryHelper::writeOrder.
+    - 2.1.2.1 The writeOrder of each RecoveryHelper is initialised with 0, which means "not written yet".
+    - 2.1.2.2 The first writeOrder that is given out by the DeviceModule is 1.
   - 2.1.3 The RecoveryHelper objects may be accessed only under a lock, see \ref c_1_3 "1.3".
   
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_behaviour Behaviour
