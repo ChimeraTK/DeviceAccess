@@ -42,9 +42,11 @@ struct Integers_signed32 {
   size_t nElementsPerChannel() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
-  bool testAsyncReadInconsistency() { return false; }
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
+
+  static constexpr TestCapabilities capabilities{
+      TestCapability::enable, TestCapability::disable, TestCapability::disable};
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
@@ -64,10 +66,6 @@ struct Integers_signed32 {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
   }
-
-  void setForceDataLossWrite(bool) { assert(false); }
-
-  void forceAsyncReadInconsistency() { assert(false); }
 };
 
 /**********************************************************************************************************************/
@@ -82,9 +80,11 @@ struct MuxedNodma {
   size_t nElementsPerChannel() { return 4; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
-  bool testAsyncReadInconsistency() { return false; }
   typedef uint16_t minimumUserType;
   typedef minimumUserType rawUserType;
+
+  static constexpr TestCapabilities capabilities{
+      TestCapability::enable, TestCapability::disable, TestCapability::disable};
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 
@@ -125,10 +125,6 @@ struct MuxedNodma {
     exceptionDummyMuxed->throwExceptionRead = enable;
     exceptionDummyMuxed->throwExceptionWrite = enable;
   }
-
-  void setForceDataLossWrite(bool) { assert(false); }
-
-  void forceAsyncReadInconsistency() { assert(false); }
 };
 
 /**********************************************************************************************************************/

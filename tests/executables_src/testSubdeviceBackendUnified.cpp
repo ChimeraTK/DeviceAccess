@@ -27,7 +27,9 @@ struct AreaType : Register {
   size_t nChannels() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
-  bool testAsyncReadInconsistency() { return false; }
+
+  static constexpr TestCapabilities capabilities{
+      TestCapability::enable, TestCapability::disable, TestCapability::disable};
 
   DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
 
@@ -64,10 +66,6 @@ struct AreaType : Register {
     target->throwExceptionRead = enable;
     target->throwExceptionWrite = enable;
   }
-
-  void setForceDataLossWrite(bool) { assert(false); }
-
-  void forceAsyncReadInconsistency() { assert(false); }
 };
 
 /**********************************************************************************************************************/
@@ -106,7 +104,9 @@ struct Regs3Type : Register {
   size_t nChannels() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
-  bool testAsyncReadInconsistency() { return false; }
+
+  static constexpr TestCapabilities capabilities{
+      TestCapability::enable, TestCapability::disable, TestCapability::disable};
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
@@ -139,10 +139,6 @@ struct Regs3Type : Register {
     target->throwExceptionRead = enable;
     target->throwExceptionWrite = enable;
   }
-
-  void setForceDataLossWrite(bool) { assert(false); }
-
-  void forceAsyncReadInconsistency() { assert(false); }
 };
 
 /*********************************************************************************************************************/

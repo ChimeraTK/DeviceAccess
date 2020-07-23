@@ -15,6 +15,43 @@
 namespace ChimeraTK {
 
   /**
+   * Used by the Capabilities descriptor
+   */
+  enum class TestCapability {
+    unspecified, ///< Capability is not specified, hence it is disabled and a warning is printed. Usually default.
+    enable,      ///< Enable tests requiring this capability
+    disable      ///< Disable tests requiring this capability and do not warn.
+  };
+
+  /**
+   *  Descriptor for the test capabilites for each register. This allows a schema evolution of the test. New tests
+   *  which require a new backend-specific function in the test in the register descriptor will be enabled through
+   *  a corresponding Capability flag.
+   */
+  struct TestCapabilities {
+    constexpr TestCapabilities(TestCapability syncReadTests_ = TestCapability::enable,
+        TestCapability forceDataLossWrite_ = TestCapability::unspecified,
+        TestCapability asyncReadInconsistency_ = TestCapability::unspecified)
+    : syncReadTests(syncReadTests_), forceDataLossWrite(forceDataLossWrite_),
+      asyncReadInconsistency(asyncReadInconsistency_) {
+      // Note: New arguments to the constructor must always be added at the end!
+    }
+
+    /// Allows to prevent the test from executing any synchronous read tests.
+    /// This should be used only when testing TransferElements which do not support reads without
+    /// AccessMode::wait_for_new_data, like e.g. the ControlSystemAdapter BidirectionalProcessArray. TransferElements
+    /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
+    /// backend tests.
+    TestCapability syncReadTests;
+
+    /// See setForceDataLossWrite() function in the regsiter descriptor.
+    TestCapability forceDataLossWrite;
+
+    /// See forceAsyncReadInconsistency() function in the register descriptor.
+    TestCapability asyncReadInconsistency;
+  };
+
+  /**
    *  Class to test any backend for correct behavior. Instantiate this class and call all (!) preparatory functions to
    *  provide the tests with the backend-specific test actions etc. Finally call runTests() to execute all tests.
    *  Internally the BOOST unit test framework is used, so this shall be called inside a normal unit test.
@@ -61,12 +98,10 @@ namespace ChimeraTK {
      *    ChimeraTK::AccessModeFlags supportedFlags() {return {ChimeraTK::AccessMode::wait_for_new_data};}
      *    size_t nChannels() {return 1;}
      *    size_t nElementsPerChannel() {return 5;}
-     *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}  // see setForceDataLossWrite()
      *    size_t nRuntimeErrorCases() {return 1;}                                 // see setForceRuntimeError()
-     *    bool testAsyncReadInconsistency() {return true;}                        // see forceAsyncReadInconsistency()
-     * 
+     *
      *    typedef int32_t minimumUserType;
-     *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted
+     *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted, can be omitted otherwise
      * 
      *    /// Generate value which can be represented by the register, convert it to the UserType (e.g. using
      *    /// ChimeraTK::numericToUserType) and return it.
@@ -90,10 +125,16 @@ namespace ChimeraTK {
      *    /// nRuntimeErrorCases() == 0, this function will never be called.
      *    void setForceRuntimeError(bool enable, size_t case);
      * 
+     *    /// Describe which test capabilities are provided by the register descriptor. Disable capabilities which are
+     *    /// intentionally not provided to avoid a warning.
+     *    static constexpr Capabilities capabilities{Capability::enable, Capability::enable, Capability::enable};
+     *
+     *    /// Used by setForceDataLossWrite(). Can be omitted if Capability forceDataLossWrite = disabled.
+     *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}
+     * 
      *    /// Force data loss during write operations. It is expected that data loss occurse exactly writeQueueLength
      *    /// write operations after calling this function with enable=true.
-     *    /// If writeQueueLength == std::numeric_limits<size_t>::max() it is assumed that data loss can never happen and
-     *    /// hence the corresponding test is not executed for this register (and this function is never called).
+     *    /// Can be omitted if Capability forceDataLossWrite = disabled.
      *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
      *    /// enable = false.
      *    void setForceDataLossWrite(bool enable);
@@ -101,15 +142,13 @@ namespace ChimeraTK {
      *    /// Do whatever necessary that data last received via a push-type subscription is inconsistent with the actual 
      *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishng
      *    /// the update to the subscribers.
-     *    /// This function will only be called if testAsyncReadInconsistency == true. testAsyncReadInconsistency should
-     *    /// be set to false if and only if the underlying protocol prevents that such inconsistency could ever occur.
+     *    /// Can be omitted if Capability asyncReadInconsistency = disabled. This should be done only if such
+     *    /// inconsistencies are already prevented by the protocol.
      *    void forceAsyncReadInconsistency();
      * 
-     *    /// Optional: define the following data member to prevent the test from executing any synchronous read tests.
-     *    /// This should be used only when testing TransferElements which do not support reads without 
-     *    /// AccessMode::wait_for_new_data, like e.g. the ControlSystemAdapter ProcessArray. TransferElements handed
-     *    /// out by real backends must always support this.
-     *    /// bool disableSyncReadTests{true};
+     *    /// Optional: Do whatever necessary that the register changes the isWritable ability. This can be achieved by
+     *    /// making a read-write register read-only. Not all protocols will allow this, hence this function does not
+     *    /// need to be defined.
      *  };
      * 
      *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
@@ -266,6 +305,44 @@ namespace ChimeraTK {
       boost::shared_ptr<DeviceBackend> _target;
       bool _hasSeenException{false};
     };
+
+    // Proxy for calling setForceDataLossWrite() only if allowed by capabilities.
+    template<typename T, bool condition = (T::capabilities.forceDataLossWrite == TestCapability::enable)>
+    struct setForceDataLossWrite_proxy_helper {
+      setForceDataLossWrite_proxy_helper(T t, bool enable) { t.setForceDataLossWrite(enable); }
+    };
+
+    template<typename T>
+    struct setForceDataLossWrite_proxy_helper<T, false> {
+      setForceDataLossWrite_proxy_helper(T, bool) {
+        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::terminate();
+      }
+    };
+
+    template<typename T>
+    void setForceDataLossWrite(T t, bool enable) {
+      setForceDataLossWrite_proxy_helper<T>{t, enable};
+    }
+
+    // Proxy for calling forceAsyncReadInconsistency() only if allowed by capabilities.
+    template<typename T, bool condition = (T::capabilities.asyncReadInconsistency == TestCapability::enable)>
+    struct forceAsyncReadInconsistency_proxy_helper {
+      forceAsyncReadInconsistency_proxy_helper(T t) { t.forceAsyncReadInconsistency(); }
+    };
+
+    template<typename T>
+    struct forceAsyncReadInconsistency_proxy_helper<T, false> {
+      forceAsyncReadInconsistency_proxy_helper(T) {
+        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::terminate();
+      }
+    };
+
+    template<typename T>
+    void forceAsyncReadInconsistency(T t) {
+      forceAsyncReadInconsistency_proxy_helper<T>{t};
+    }
   };
 
   /********************************************************************************************************************/
@@ -1009,14 +1086,14 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isWrite(x) || x.writeQueueLength() == std::numeric_limits<size_t>::max()) return;
+      if(!this->isWrite(x) || x.capabilities.forceDataLossWrite != TestCapability::enable) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
       // enable test condition
       size_t attempts = x.writeQueueLength();
-      x.setForceDataLossWrite(true);
+      this->setForceDataLossWrite(x, true);
 
       // open the device
       d.open();
@@ -1042,7 +1119,7 @@ namespace ChimeraTK {
       }
 
       // disable test condition
-      x.setForceDataLossWrite(false);
+      this->setForceDataLossWrite(x, false);
 
       // check remote value, must be the last written value
       auto v1 = x.template getRemoteValue<UserType>();
@@ -1257,7 +1334,7 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isAsyncRead(x) || !x.testAsyncReadInconsistency()) return;
+      if(!this->isAsyncRead(x) || x.capabilities.asyncReadInconsistency != TestCapability::enable) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       VersionNumber someVersion{nullptr};
@@ -1285,7 +1362,7 @@ namespace ChimeraTK {
       someVersion = reg.getVersionNumber();
 
       // Provoke inconsistency
-      x.forceAsyncReadInconsistency();
+      this->forceAsyncReadInconsistency(x);
 
       // Wait for the exception which informs about the problem
       BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);

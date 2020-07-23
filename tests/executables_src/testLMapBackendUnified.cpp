@@ -28,6 +28,9 @@ template<typename Derived>
 struct RegisterDescriptorBase {
   Derived* derived{static_cast<Derived*>(this)};
 
+  static constexpr TestCapabilities capabilities{
+      TestCapability::enable, TestCapability::disable, TestCapability::disable};
+
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
   bool isPush() { return false; }
@@ -37,7 +40,6 @@ struct RegisterDescriptorBase {
     return flags;
   }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
-  bool testAsyncReadInconsistency() { return false; }
   size_t nRuntimeErrorCases() { return 1; }
 
   void setForceRuntimeError(bool enable, size_t) {
@@ -47,16 +49,6 @@ struct RegisterDescriptorBase {
     if(derived->isPush() && enable) {
       dummy.triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
     }
-  }
-
-  [[noreturn]] void setForceDataLossWrite(bool) {
-    std::cout << "setForceDataLossWrite() unexpected." << std::endl;
-    std::terminate();
-  }
-
-  [[noreturn]] void forceAsyncReadInconsistency() {
-    std::cout << "forceAsyncReadInconsistency() unexpected." << std::endl;
-    std::terminate();
   }
 };
 
