@@ -270,6 +270,9 @@ namespace ChimeraTK {
       nElements = registerInfo.nBytes / pitch;
     }
 
+    // declare that we want the default copy constructor. Needed because we have a custom = operator
+    DummyMultiplexedRegisterAccessor(const DummyMultiplexedRegisterAccessor&) = default;
+
     /// return number of elements per sequence
     unsigned int getNumberOfElements() { return nElements; }
 
