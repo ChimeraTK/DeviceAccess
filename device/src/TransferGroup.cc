@@ -43,7 +43,7 @@ namespace ChimeraTK {
         elem->postRead(TransferType::read, firstDetectedRuntimeError == nullptr);
       }
       catch(ChimeraTK::runtime_error&) {
-        // just discard the runtime error. It is only a re-thrown error. We already know about it.
+        ++_nRuntimeErrors;
       }
       catch(boost::numeric::bad_numeric_cast&) {
         if(badNumericCast == nullptr) { // only store first detected exception
@@ -94,11 +94,30 @@ namespace ChimeraTK {
       }
     }
 
+    _nRuntimeErrors = 0;
     auto badNumericCast = runPostReads(_copyDecorators, firstDetectedRuntimeError);
     auto badNumericCast2 = runPostReads(_highLevelElements, firstDetectedRuntimeError);
 
     // re-throw exceptions in the order of occurence
-    if(firstDetectedRuntimeError != nullptr) {
+
+    // The runtime error which was seen as _activeException in the transfer phase might
+    // have been handled in postRead, and thus become invalid (for instance because it
+    // is suppressed by the ApplicationCore::ExceptionHandlingDecorator).
+    // Only re-throw here if an exception has been re-thrown in the postRead step.
+    // FIXME(?): If the firstDetectedRuntimeError has been handled, but another runtime_error
+    // has been thrown, this logic will throw the wrong exception here. It could be
+    // prevented with a complicated logic that loops all lowLevelElements in the order
+    // that was used to execute the transfer, for each of them it loops all its associated high
+    // level element, and for each high level element it loops all the low level elements again
+    // because some might and others might not have exceptions, and if there was an exception for
+    // that high level element on any of its low level elements, postRead must be called with
+    // an exception set each time. (I gues this sentense in close to not understandabel, that's
+    // why I am not trying to implement it).
+    // In practice this will not happen because either all elements will have an ExceptionHandlingDecorator, or none.
+
+    if(_nRuntimeErrors != 0) {
+      assert(firstDetectedRuntimeError !=
+          nullptr); // postRead must only rethrow, so there must be a detected runtime_error
       _cachedReadableWriteableIsValid = false;
       std::rethrow_exception(firstDetectedRuntimeError);
     }
@@ -142,16 +161,18 @@ namespace ChimeraTK {
       }
     }
 
+    _nRuntimeErrors = 0;
     for(auto& elem : _highLevelElements) {
       try {
         elem->postWrite(TransferType::write, versionNumber);
       }
       catch(ChimeraTK::runtime_error&) {
-        // Just discard all runtime errors. They are only re-thrown. We already know the firstDetectedException.
+        ++_nRuntimeErrors;
       }
     }
 
-    if(firstDetectedRuntimeError != nullptr) {
+    if(_nRuntimeErrors != 0) {
+      assert(firstDetectedRuntimeError != nullptr);
       _cachedReadableWriteableIsValid = false;
       std::rethrow_exception(firstDetectedRuntimeError);
     }

@@ -103,6 +103,9 @@ namespace ChimeraTK {
     // Returns the first boost::bad_numeric_cast which is caught (nullptr if none)
     std::exception_ptr runPostReads(
         std::set<boost::shared_ptr<TransferElement>>& elements, std::exception_ptr firstDetectedRuntimeError);
+
+    // Counter how many runtime errors have been thrown.
+    size_t _nRuntimeErrors;
   };
 
 } /* namespace ChimeraTK */
