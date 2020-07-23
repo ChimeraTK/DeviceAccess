@@ -49,10 +49,14 @@ struct RegisterDescriptorBase {
     }
   }
 
-  [[noreturn]] void setForceDataLossWrite(bool) { assert(false); }
+  [[noreturn]] void setForceDataLossWrite(bool) {
+    std::cout << "setForceDataLossWrite() unexpected." << std::endl;
+    std::terminate();
+  }
 
-      [[noreturn]] void forceAsyncReadInconsistency() {
-    assert(false);
+  [[noreturn]] void forceAsyncReadInconsistency() {
+    std::cout << "forceAsyncReadInconsistency() unexpected." << std::endl;
+    std::terminate();
   }
 };
 
