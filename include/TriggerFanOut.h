@@ -90,6 +90,13 @@ namespace ChimeraTK {
         version = externalTrigger->getVersionNumber();
       }
 
+      // Wait until the device has been initialised for the first time. This means it
+      // has been opened, and the check in TransferGroup::read() will not throw a logic_error
+      // We don't have to store the lock. Just need it as a synchronisation point.
+      Application::testableModeUnlock("WaitInitialValueLock");
+      (void)_deviceModule.getInitialValueSharedLock();
+      Application::testableModeLock("Enter while loop");
+
       while(true) {
         transferGroup.read();
         // send the version number to the consumers
