@@ -45,8 +45,7 @@ struct Integers_signed32 {
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
 
-  static constexpr TestCapabilities capabilities{
-      TestCapability::enable, TestCapability::disable, TestCapability::disable};
+  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
@@ -83,8 +82,7 @@ struct MuxedNodma {
   typedef uint16_t minimumUserType;
   typedef minimumUserType rawUserType;
 
-  static constexpr TestCapabilities capabilities{
-      TestCapability::enable, TestCapability::disable, TestCapability::disable};
+  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 

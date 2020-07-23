@@ -28,8 +28,7 @@ struct AreaType : Register {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr TestCapabilities capabilities{
-      TestCapability::enable, TestCapability::disable, TestCapability::disable};
+  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
   DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
 
@@ -105,8 +104,7 @@ struct Regs3Type : Register {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr TestCapabilities capabilities{
-      TestCapability::enable, TestCapability::disable, TestCapability::disable};
+  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {

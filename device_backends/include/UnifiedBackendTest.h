@@ -19,36 +19,58 @@ namespace ChimeraTK {
    */
   enum class TestCapability {
     unspecified, ///< Capability is not specified, hence it is disabled and a warning is printed. Usually default.
-    enable,      ///< Enable tests requiring this capability
-    disable      ///< Disable tests requiring this capability and do not warn.
+    enabled,     ///< Enable tests requiring this capability
+    disabled     ///< Disable tests requiring this capability and do not warn.
   };
 
   /**
    *  Descriptor for the test capabilites for each register. This allows a schema evolution of the test. New tests
    *  which require a new backend-specific function in the test in the register descriptor will be enabled through
    *  a corresponding Capability flag.
+   * 
+   *  Construct object like this:
+   * 
+   *  static constexpr auto capabilities = TestCapabilities<>().enableForceDataLossWrite().disableAsyncReadInconsistency();
+   * 
+   *  Use any number of enable/disable functions.
    */
+  template<TestCapability _syncRead = TestCapability::enabled,
+      TestCapability _forceDataLossWrite = TestCapability::unspecified,
+      TestCapability _asyncReadInconsistency = TestCapability::unspecified>
   struct TestCapabilities {
-    constexpr TestCapabilities(TestCapability syncReadTests_ = TestCapability::enable,
-        TestCapability forceDataLossWrite_ = TestCapability::unspecified,
-        TestCapability asyncReadInconsistency_ = TestCapability::unspecified)
-    : syncReadTests(syncReadTests_), forceDataLossWrite(forceDataLossWrite_),
-      asyncReadInconsistency(asyncReadInconsistency_) {
-      // Note: New arguments to the constructor must always be added at the end!
-    }
+    constexpr TestCapabilities() {}
 
     /// Allows to prevent the test from executing any synchronous read tests.
     /// This should be used only when testing TransferElements which do not support reads without
     /// AccessMode::wait_for_new_data, like e.g. the ControlSystemAdapter BidirectionalProcessArray. TransferElements
     /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
     /// backend tests.
-    TestCapability syncReadTests;
+    constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency>
+        disableSyncRead() {
+      return {};
+    }
 
     /// See setForceDataLossWrite() function in the regsiter descriptor.
-    TestCapability forceDataLossWrite;
+    constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency> enableForceDataLossWrite() {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency>
+        disableForceDataLossWrite() {
+      return {};
+    }
 
     /// See forceAsyncReadInconsistency() function in the register descriptor.
-    TestCapability asyncReadInconsistency;
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled> enableAsyncReadInconsistency() {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled>
+        disableAsyncReadInconsistency() {
+      return {};
+    }
+
+    static constexpr TestCapability syncRead{_syncRead};
+    static constexpr TestCapability forceDataLossWrite{_forceDataLossWrite};
+    static constexpr TestCapability asyncReadInconsistency{_asyncReadInconsistency};
   };
 
   /**
@@ -125,9 +147,10 @@ namespace ChimeraTK {
      *    /// nRuntimeErrorCases() == 0, this function will never be called.
      *    void setForceRuntimeError(bool enable, size_t case);
      * 
-     *    /// Describe which test capabilities are provided by the register descriptor. Disable capabilities which are
+     *    /// Describe which test capabilities are provided by the register descriptor. Enable capabilities for which
+     *    /// the corresponding functions are provided by this register descriptor. Disable capabilities which are
      *    /// intentionally not provided to avoid a warning.
-     *    static constexpr Capabilities capabilities{Capability::enable, Capability::enable, Capability::enable};
+     *    static constexpr auto capabilities = TestCapabilities<>().enableForceDataLossWrite();
      *
      *    /// Used by setForceDataLossWrite(). Can be omitted if Capability forceDataLossWrite = disabled.
      *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}
@@ -307,7 +330,7 @@ namespace ChimeraTK {
     };
 
     // Proxy for calling setForceDataLossWrite() only if allowed by capabilities.
-    template<typename T, bool condition = (T::capabilities.forceDataLossWrite == TestCapability::enable)>
+    template<typename T, bool condition = (T::capabilities.forceDataLossWrite == TestCapability::enabled)>
     struct setForceDataLossWrite_proxy_helper {
       setForceDataLossWrite_proxy_helper(T t, bool enable) { t.setForceDataLossWrite(enable); }
     };
@@ -326,7 +349,7 @@ namespace ChimeraTK {
     }
 
     // Proxy for calling forceAsyncReadInconsistency() only if allowed by capabilities.
-    template<typename T, bool condition = (T::capabilities.asyncReadInconsistency == TestCapability::enable)>
+    template<typename T, bool condition = (T::capabilities.asyncReadInconsistency == TestCapability::enabled)>
     struct forceAsyncReadInconsistency_proxy_helper {
       forceAsyncReadInconsistency_proxy_helper(T t) { t.forceAsyncReadInconsistency(); }
     };
@@ -1086,7 +1109,7 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isWrite(x) || x.capabilities.forceDataLossWrite != TestCapability::enable) return;
+      if(!this->isWrite(x) || x.capabilities.forceDataLossWrite != TestCapability::enabled) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
@@ -1334,7 +1357,7 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isAsyncRead(x) || x.capabilities.asyncReadInconsistency != TestCapability::enable) return;
+      if(!this->isAsyncRead(x) || x.capabilities.asyncReadInconsistency != TestCapability::enabled) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       VersionNumber someVersion{nullptr};

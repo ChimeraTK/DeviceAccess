@@ -28,8 +28,7 @@ template<typename Derived>
 struct RegisterDescriptorBase {
   Derived* derived{static_cast<Derived*>(this)};
 
-  static constexpr TestCapabilities capabilities{
-      TestCapability::enable, TestCapability::disable, TestCapability::disable};
+  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
