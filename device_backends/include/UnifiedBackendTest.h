@@ -371,7 +371,7 @@ namespace ChimeraTK {
     template<typename T>
     struct setForceDataLossWrite_proxy_helper<T, false> {
       setForceDataLossWrite_proxy_helper(T, bool) {
-        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::cout << "Unexpected use of disabled capability." << std::endl;
         std::terminate();
       }
     };
@@ -390,7 +390,7 @@ namespace ChimeraTK {
     template<typename T>
     struct forceAsyncReadInconsistency_proxy_helper<T, false> {
       forceAsyncReadInconsistency_proxy_helper(T) {
-        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::cout << "Unexpected use of disabled capability." << std::endl;
         std::terminate();
       }
     };
@@ -409,7 +409,7 @@ namespace ChimeraTK {
     template<typename T>
     struct switchReadOnly_proxy_helper<T, false> {
       switchReadOnly_proxy_helper(T, bool) {
-        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::cout << "Unexpected use of disabled capability." << std::endl;
         std::terminate();
       }
     };
@@ -428,7 +428,7 @@ namespace ChimeraTK {
     template<typename T>
     struct switchWriteOnly_proxy_helper<T, false> {
       switchWriteOnly_proxy_helper(T, bool) {
-        std::cout << "Unexpected us of disabled capability." << std::endl;
+        std::cout << "Unexpected use of disabled capability." << std::endl;
         std::terminate();
       }
     };
@@ -436,6 +436,27 @@ namespace ChimeraTK {
     template<typename T>
     void switchWriteOnly(T t, bool enable) {
       switchWriteOnly_proxy_helper<T>{t, enable};
+    }
+
+    // Proxy for getting the writeQueueLength only if allowed by capabilities.
+    template<typename T, bool condition = (T::capabilities.forceDataLossWrite == TestCapability::enabled)>
+    struct writeQueueLength_proxy_helper {
+      writeQueueLength_proxy_helper(T t) { result = t.writeQueueLength(); }
+      size_t result;
+    };
+
+    template<typename T>
+    struct writeQueueLength_proxy_helper<T, false> {
+      writeQueueLength_proxy_helper(T) {
+        std::cout << "Unexpected use of disabled capability." << std::endl;
+        std::terminate();
+      }
+      size_t result{0};
+    };
+
+    template<typename T>
+    size_t writeQueueLength(T t) {
+      return writeQueueLength_proxy_helper<T>{t}.result;
     }
   };
 
@@ -1202,7 +1223,7 @@ namespace ChimeraTK {
       std::cout << "... registerName = " << registerName << std::endl;
 
       // enable test condition
-      size_t attempts = x.writeQueueLength();
+      size_t attempts = this->writeQueueLength(x);
       this->setForceDataLossWrite(x, true);
 
       // open the device
