@@ -289,6 +289,7 @@ namespace ChimeraTK {
     void test_C_5_2_7_2();
     void test_C_5_3();
     void test_C_5_3_2();
+    void test_C_5_3_3();
     void test_NOSPEC_valueAfterConstruction();
 
     /// Utility functions for recurring tasks
@@ -684,6 +685,7 @@ namespace ChimeraTK {
     test_C_5_2_7_2();
     test_C_5_3();
     test_C_5_3_2();
+    test_C_5_3_3();
     test_NOSPEC_valueAfterConstruction();
   }
 
@@ -2651,6 +2653,47 @@ namespace ChimeraTK {
       BOOST_CHECK_THROW(reg1.read(), runtime_error); // no check intended, just catch
       BOOST_CHECK(reg2.isReadable() == true);
       this->switchWriteOnly(x, false);
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test read-only/write-only information always returned from cache if available
+   *  * \anchor UnifiedTest_TransferElement_C_5_3_3 \ref transferElement_C_5_3_3 "C.5.3.3"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_3_3() {
+    std::cout << "--- test_C_5_3_3 - read-only/write-only information always returned from cache if available"
+              << std::endl;
+    Device d(cdd);
+    d.open();
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // Obtain information. This also makes sure the TE caches it.
+      auto isReadable = reg.isReadable();
+      auto isWriteable = reg.isWriteable();
+
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
+
+        // Now isReadable and isWriteable are not able to communicate with the device but still should give the same
+        // result.
+        BOOST_CHECK(reg.isReadable() == isReadable);
+        BOOST_CHECK(reg.isWriteable() == isWriteable);
+
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
+
+        // recover shouldn't even be necessary, since no communcation happened
+        BOOST_CHECK(d.isFunctional() == true);
+      }
     });
   }
 
