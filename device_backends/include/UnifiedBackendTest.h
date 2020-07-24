@@ -288,7 +288,6 @@ namespace ChimeraTK {
     void test_C_5_2_6_2();
     void test_C_5_2_7_2();
     void test_C_5_3();
-    void test_C_5_3_1();
     void test_C_5_3_2();
     void test_NOSPEC_valueAfterConstruction();
 
@@ -684,7 +683,6 @@ namespace ChimeraTK {
     test_C_5_2_6_2();
     test_C_5_2_7_2();
     test_C_5_3();
-    test_C_5_3_1();
     test_C_5_3_2();
     test_NOSPEC_valueAfterConstruction();
   }
@@ -2578,6 +2576,7 @@ namespace ChimeraTK {
   /**
    *  Test read-only/write-only information changes after runtime_error
    *  * \anchor UnifiedTest_TransferElement_C_5_3 \ref transferElement_C_5_3 "C.5.3"
+   *  * \anchor UnifiedTest_TransferElement_C_5_3_1 \ref transferElement_C_5_3_1 "C.5.3.1"
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_3() {
@@ -2593,9 +2592,9 @@ namespace ChimeraTK {
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       this->switchReadOnly(x, true);
-      BOOST_CHECK(reg.isWriteable() == true);
-      BOOST_CHECK_THROW(reg.write(), runtime_error); // no check intended, just catch
-      BOOST_CHECK(reg.isWriteable() == false);
+      BOOST_CHECK(reg.isWriteable() == true);        // C.5.3
+      BOOST_CHECK_THROW(reg.write(), runtime_error); // C.5.3.1
+      BOOST_CHECK(reg.isWriteable() == false);       // C.5.3
       this->switchReadOnly(x, false);
     });
 
@@ -2607,46 +2606,9 @@ namespace ChimeraTK {
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       this->switchWriteOnly(x, true);
-      BOOST_CHECK(reg.isReadable() == true);
-      BOOST_CHECK_THROW(reg.read(), runtime_error); // no check intended, just catch
-      BOOST_CHECK(reg.isReadable() == false);
-      this->switchWriteOnly(x, false);
-    });
-  }
-
-  /********************************************************************************************************************/
-
-  /**
-   *  Test runtime_error if register becomes unexpectedly read-only/write-only
-   *  * \anchor UnifiedTest_TransferElement_C_5_3_1 \ref transferElement_C_5_3_1 "C.5.3.1"
-   */
-  template<typename VECTOR_OF_REGISTERS_T>
-  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_3_1() {
-    std::cout << "--- test_C_5_3_1 - runtime_error if register becomes unexpectedly read-only/write-only" << std::endl;
-    Device d(cdd);
-    d.open();
-
-    // switch to read-only
-    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchReadOnly != TestCapability::enabled) return;
-      typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path();
-      std::cout << "    registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-      this->switchReadOnly(x, true);
-      BOOST_CHECK_THROW(reg.write(), runtime_error);
-      this->switchReadOnly(x, false);
-    });
-
-    // switch to write-only (note: this test is untested, no backend supports this!)
-    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isRead(x) || !this->isWrite(x) || x.capabilities.switchWriteOnly != TestCapability::enabled) return;
-      typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path();
-      std::cout << "    registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
-      this->switchWriteOnly(x, true);
-      BOOST_CHECK_THROW(reg.read(), runtime_error);
+      BOOST_CHECK(reg.isReadable() == true);        // C.5.3
+      BOOST_CHECK_THROW(reg.read(), runtime_error); // C.5.3.1
+      BOOST_CHECK(reg.isReadable() == false);       // C.5.3
       this->switchWriteOnly(x, false);
     });
   }
@@ -2659,7 +2621,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_3_2() {
-    std::cout << "--- test_C_5_3 - read-only/write-only information cached per accessor" << std::endl;
+    std::cout << "--- test_C_5_3_2 - read-only/write-only information cached per accessor" << std::endl;
     Device d(cdd);
     d.open();
 
