@@ -413,16 +413,11 @@ namespace ChimeraTK {
       catch(ChimeraTK::logic_error&) {
         _activeException = std::current_exception();
       }
-      catch(ChimeraTK::runtime_error&) {
-        _activeException = std::current_exception();
-        if(_exceptionBackend) {
-          _exceptionBackend->setException();
-        }
-      }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
       }
       catch(...) {
+        // also ChimeraTK::runtime_error is included here. It is not allowed in preRead any more
         std::cout << "BUG: Wrong exception type thrown in doPreRead()!" << std::endl;
         std::terminate();
       }
@@ -500,12 +495,6 @@ namespace ChimeraTK {
       catch(ChimeraTK::logic_error&) {
         _activeException = std::current_exception();
       }
-      catch(ChimeraTK::runtime_error&) {
-        _activeException = std::current_exception();
-        if(_exceptionBackend) {
-          _exceptionBackend->setException();
-        }
-      }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
       }
@@ -514,6 +503,7 @@ namespace ChimeraTK {
         _activeException = std::current_exception();
       }
       catch(...) {
+        // also ChimeraTK::runtime_error is included here. It is not allowed in preWrite() any more.
         std::cout << "BUG: Wrong exception type thrown in doPreWrite()!" << std::endl;
         std::terminate();
       }
