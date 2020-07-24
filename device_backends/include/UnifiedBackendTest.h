@@ -652,7 +652,7 @@ namespace ChimeraTK {
     }
 
     // run the tests
-    /*test_B_3_1_2_1();
+    test_B_3_1_2_1();
     test_NOSPEC_write();
     test_B_3_2_1_2();
     test_B_3_2_2();
@@ -682,11 +682,11 @@ namespace ChimeraTK {
     test_C_5_2_3_2();
     test_C_5_2_5_2();
     test_C_5_2_6_2();
-    test_C_5_2_7_2();*/
+    test_C_5_2_7_2();
     test_C_5_3();
     test_C_5_3_1();
     test_C_5_3_2();
-    //test_NOSPEC_valueAfterConstruction();
+    test_NOSPEC_valueAfterConstruction();
   }
 
   /********************************************************************************************************************/
