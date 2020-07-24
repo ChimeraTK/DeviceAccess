@@ -75,7 +75,7 @@ if(DEFINED DOOCS_DIR)
 endif()
 
 # Work-around for missing rpath on libDOOCSClient - explicitly link against libtine
-list(APPEND DOOCS_FIND_COMPONENTS timemt)
+list(APPEND DOOCS_FIND_COMPONENTS tinemt)
 
 set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
 message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
