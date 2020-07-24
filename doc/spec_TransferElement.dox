@@ -394,9 +394,9 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_C_5_3_2 5.3.2 If an implementation needs to obtain the information from the device (and hence the information might potentially change), it caches the information for each TransferElement separately. [\ref UnifiedTest_TransferElement_C_5_3_2 "U"]
     - \anchor transferElement_C_5_3_3 5.3.3 Implementations of the test functions always return the cached information, if available. [\ref UnifiedTest_TransferElement_C_5_3_3 "U"]
     - 5.3.4 If the test function needs to obtain the information from the device, a runtime_error might occur.
-    - 5.3.5 Implementations of doPreXxx() use these test functions to check the preconditions, but discard any runtime_error exception. The following doXxxTransferYyy() will then either throw a runtime_error (cf. 5.3.1) or succeed.
   - 5.4 Remarks about how to follow these rules:
     - 5.4.1 If there is an error in the map file and the backend does not want to fail on this in backend creation, the register must be hidden from the catalogue.
+    - 5.4.2 Implementations of doPreXxx() use these test functions to check the preconditions, but discard any runtime_error exception. The following doXxxTransferYyy() will then either throw a runtime_error (cf. 5.3.1) or succeed.
 
 ### (*) Comments ###
 - \anchor transferElement_comment_C_2 \ref transferElement_C_2 "2." This concerns all exceptions that were caught, not only ChimeraTK::runtime_error and ChimeraTK::logic_error.
