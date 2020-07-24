@@ -78,13 +78,6 @@ message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
 pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
 
 # Work-around for missing rpath on libDOOCSClient - explicitly link against libtine
-list(APPEND DOOCS_FIND_COMPONENTS timemt)
-
-set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
-message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
-pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
-
-# Work-around for missing rpath on libDOOCSClient - explicitly link against libtine
 list(APPEND DOOCS_FIND_COMPONENTS tinemt)
 
 set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
