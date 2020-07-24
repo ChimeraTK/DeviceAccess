@@ -75,10 +75,6 @@ if(DEFINED DOOCS_DIR)
 endif()
 set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
 message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
-pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
-
-set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
-message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
 
 # Work-around #1: Link explicitly against tinemt because libDOOCSapi links against it
 # but we usually don't have $DOOCS_DIR in ld.so search path and the meson build process
