@@ -91,4 +91,7 @@ struct fixture_with_poll_and_push_input {
   ChimeraTK::ScalarRegisterAccessor<int> status;
   ChimeraTK::ScalarRegisterAccessor<std::string> message;
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
+
+  ChimeraTK::ScalarPushInput<int>& pushVariable{application.pushModule.reg1.pushInput};
+  ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};
 };

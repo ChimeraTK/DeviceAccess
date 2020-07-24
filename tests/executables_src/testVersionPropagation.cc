@@ -23,7 +23,6 @@ BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
   std::cout << "versionPropagation_testPolledRead" << std::endl;
-  auto& pollVariable = application.pollModule.pollInput;
   auto moduleVersion = application.pollModule.getCurrentVersionNumber();
   auto pollVariableVersion = pollVariable.getVersionNumber();
 
@@ -35,7 +34,6 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
   std::cout << "versionPropagation_testPolledReadNonBlocking" << std::endl;
-  auto& pollVariable = application.pollModule.pollInput;
   auto moduleVersion = application.pollModule.getCurrentVersionNumber();
   auto pollVariableVersion = pollVariable.getVersionNumber();
 
@@ -47,7 +45,6 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
   std::cout << "versionPropagation_testPolledReadLatest" << std::endl;
-  auto& pollVariable = application.pollModule.pollInput;
   auto moduleVersion = application.pollModule.getCurrentVersionNumber();
   auto pollVariableVersion = pollVariable.getVersionNumber();
 
@@ -59,34 +56,31 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeRead) {
   std::cout << "versionPropagation_testPushTypeRead" << std::endl;
-  auto& pushInput = application.pushModule.reg1.pushInput;
   // Make sure we pop out any stray values in the pushInput before test start:
-  CHECK_TIMEOUT(pushInput.readLatest() == false, 10000);
+  CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
 
   ctk::VersionNumber nextVersionNumber = {};
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), nextVersionNumber);
-  pushInput.read();
-  BOOST_CHECK(pushInput.getVersionNumber() == nextVersionNumber);
+  pushVariable.read();
+  BOOST_CHECK(pushVariable.getVersionNumber() == nextVersionNumber);
   BOOST_CHECK(application.pushModule.getCurrentVersionNumber() == nextVersionNumber);
 }
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking) {
   std::cout << "versionPropagation_testPushTypeReadNonBlocking" << std::endl;
-  auto& pushInput = application.pushModule.reg1.pushInput;
-  // Make sure we pop out any stray values in the pushInput before test start:
-  CHECK_TIMEOUT(pushInput.readLatest() == false, 10000);
+  CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
 
-  auto pushInputVersionNumber = pushInput.getVersionNumber();
+  auto pushInputVersionNumber = pushVariable.getVersionNumber();
 
   // no version change on readNonBlocking false
-  BOOST_CHECK_EQUAL(pushInput.readNonBlocking(), false);
-  BOOST_CHECK(pushInputVersionNumber == pushInput.getVersionNumber());
+  BOOST_CHECK_EQUAL(pushVariable.readNonBlocking(), false);
+  BOOST_CHECK(pushInputVersionNumber == pushVariable.getVersionNumber());
 
   ctk::VersionNumber nextVersionNumber = {};
   auto moduleVersion = application.pushModule.getCurrentVersionNumber();
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), nextVersionNumber);
-  BOOST_CHECK_EQUAL(pushInput.readNonBlocking(), true);
-  BOOST_CHECK(nextVersionNumber == pushInput.getVersionNumber());
+  BOOST_CHECK_EQUAL(pushVariable.readNonBlocking(), true);
+  BOOST_CHECK(nextVersionNumber == pushVariable.getVersionNumber());
 
   // readNonBlocking will not propagete the version to the module
   BOOST_CHECK(moduleVersion == application.pushModule.getCurrentVersionNumber());
@@ -94,21 +88,20 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking) {
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadLatest) {
   std::cout << "versionPropagation_testPushTypeReadLatest" << std::endl;
-  auto& pushInput = application.pushModule.reg1.pushInput;
   // Make sure we pop out any stray values in the pushInput before test start:
-  CHECK_TIMEOUT(pushInput.readLatest() == false, 10000);
+  CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
 
-  auto pushInputVersionNumber = pushInput.getVersionNumber();
+  auto pushInputVersionNumber = pushVariable.getVersionNumber();
 
   // no version change on readNonBlocking false
-  BOOST_CHECK_EQUAL(pushInput.readLatest(), false);
-  BOOST_CHECK(pushInputVersionNumber == pushInput.getVersionNumber());
+  BOOST_CHECK_EQUAL(pushVariable.readLatest(), false);
+  BOOST_CHECK(pushInputVersionNumber == pushVariable.getVersionNumber());
 
   ctk::VersionNumber nextVersionNumber = {};
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), nextVersionNumber);
   auto moduleVersion = application.pushModule.getCurrentVersionNumber();
-  BOOST_CHECK_EQUAL(pushInput.readLatest(), true);
-  BOOST_CHECK(nextVersionNumber == pushInput.getVersionNumber());
+  BOOST_CHECK_EQUAL(pushVariable.readLatest(), true);
+  BOOST_CHECK(nextVersionNumber == pushVariable.getVersionNumber());
 
   // readLatest will not propagete the version to the module
   BOOST_CHECK(moduleVersion == application.pushModule.getCurrentVersionNumber());

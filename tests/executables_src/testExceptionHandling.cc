@@ -80,7 +80,6 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testFaultReporting, Fixture) {
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPolledRead" << std::endl;
-  auto& pollInput = application.pollModule.pollInput;
 
   // initialize to known value in deviceBackend register
   exceptionDummyRegister = 100;
@@ -88,11 +87,11 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
 
   // verify normal operation
   /************************************************************************************************/
-  pollInput.read();
-  auto versionNumberBeforeRuntimeError = pollInput.getVersionNumber();
+  pollVariable.read();
+  auto versionNumberBeforeRuntimeError = pollVariable.getVersionNumber();
 
-  BOOST_CHECK_EQUAL(pollInput, 100);
-  BOOST_CHECK(pollInput.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(pollVariable, 100);
+  BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::ok);
   /************************************************************************************************/
 
   // Behavior on Runtime error on device:
@@ -101,7 +100,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   exceptionDummyRegister.write();
 
   deviceBackend->throwExceptionRead = true;
-  pollInput.read();
+  pollVariable.read();
 
   // Proceed only after device is gone down.
   CHECK_TIMEOUT(
@@ -112,11 +111,11 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
       10000);
 
 
-  pollInput.read();
-  auto versionNumberOnRuntimeError = pollInput.getVersionNumber();
+  pollVariable.read();
+  auto versionNumberOnRuntimeError = pollVariable.getVersionNumber();
 
-  BOOST_CHECK_EQUAL(pollInput, 100);
-  BOOST_CHECK(pollInput.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(pollVariable, 100);
+  BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
   /************************************************************************************************/
 
@@ -124,7 +123,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   // Behavior on device recovery
   /************************************************************************************************/
   deviceBackend->throwExceptionRead = false;
-  pollInput.read();
+  pollVariable.read();
   // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
   // device recovered.
   CHECK_TIMEOUT(
@@ -134,11 +133,11 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
       }() == 0,
       10000);
 
-  pollInput.read();
-  auto versionNumberAfterRecovery = pollInput.getVersionNumber();
+  pollVariable.read();
+  auto versionNumberAfterRecovery = pollVariable.getVersionNumber();
 
-  BOOST_REQUIRE_EQUAL(pollInput, 10);
-  BOOST_CHECK(pollInput.dataValidity() == ctk::DataValidity::ok);
+  BOOST_REQUIRE_EQUAL(pollVariable, 10);
+  BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(versionNumberAfterRecovery > versionNumberOnRuntimeError);
   /************************************************************************************************/
 }
@@ -150,19 +149,16 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeRead" << std::endl;
-  auto& pushInput = application.pushModule.reg1.pushInput;
-  // Make sure we pop out any stray values in the pushInput before test start:
-  CHECK_TIMEOUT(pushInput.readLatest() == false, 10000);
 
   exceptionDummyRegister = 100;
   exceptionDummyRegister.write();
   ctk::VersionNumber version = {};
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
 
-  pushInput.read();
-  BOOST_CHECK_EQUAL(pushInput, 100);
-  BOOST_CHECK(pushInput.dataValidity() == ctk::DataValidity::ok);
-  BOOST_CHECK(pushInput.getVersionNumber() == version);
+  pushVariable.read();
+  BOOST_CHECK_EQUAL(pushVariable, 100);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(pushVariable.getVersionNumber() == version);
 
   // Behavior on Runtime error on device:
   //  - push input read is skipped.
@@ -173,14 +169,14 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   deviceBackend->throwExceptionRead = true;
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
 
-  pushInput.read();
-  BOOST_CHECK_EQUAL(pushInput, 100);
-  BOOST_CHECK(pushInput.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(pushInput.getVersionNumber() > version);
+  pushVariable.read();
+  BOOST_CHECK_EQUAL(pushVariable, 100);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(pushVariable.getVersionNumber() > version);
 
   //  - subsequent push input reads should be frozen
   /************************************************************************************************/
-  auto f = std::async(std::launch::async, [&]() { pushInput.read(); });
+  auto f = std::async(std::launch::async, [&]() { pushVariable.read(); });
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
 
   // FIXME: is there a better way to confirm read is frozen?
@@ -193,8 +189,8 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
 
   BOOST_CHECK(f.wait_for(std::chrono::seconds(10)) == std::future_status::ready);
-  BOOST_CHECK_EQUAL(pushInput, 10);
-  BOOST_CHECK(pushInput.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(pushVariable, 10);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
 }
 
 BOOST_AUTO_TEST_CASE(testReadLatest) {}
