@@ -355,10 +355,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_1_2) {
 
 /**
  *  Test that exceptions are propagated to high-level elements
- *  * \anchor testTransferElement_B_12_10_2 \ref transferElement_B_12_10_2 "B.12.10.2"
+ *  * \anchor testTransferElement_B_12_10_3 \ref transferElement_B_12_10_3 "B.12.10.3"
+ *  
+ *  INCOMPLETE: Only tested for reading. Test for writing is missing.
  */
-BOOST_AUTO_TEST_CASE(test_B_12_10_2) {
-  std::cout << "test_B_12_10_2" << std::endl;
+BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
+  std::cout << "test_B_12_10_3" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
@@ -386,10 +388,10 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_2) {
 
 /**
  *  Test that all postXxx() called even when exception thrown, and exception is thrown in the end
- *  * \anchor testTransferElement_B_12_10_3 \ref transferElement_B_12_10_3 "B.12.10.3"
+ *  * \anchor testTransferElement_B_12_10_4 \ref transferElement_B_12_10_4 "B.12.10.4"
  */
-BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
-  std::cout << "test_B_12_10_3" << std::endl;
+BOOST_AUTO_TEST_CASE(test_B_12_10_4) {
+  std::cout << "test_B_12_10_4" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
@@ -453,10 +455,12 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_3) {
 
 /**
  *  Test that thrown exception is identical to the first error
- *  * \anchor testTransferElement_B_12_10_4 \ref transferElement_B_12_10_4 "B.12.10.4"
+ *  * \anchor testTransferElement_B_12_10_5 \ref transferElement_B_12_10_5 "B.12.10.5"
+ *
+ *  Attention: With spec V1.RC11 this test has become incomplete! Tests for runtime_errors in preXxx are missing.
  */
-BOOST_AUTO_TEST_CASE(test_B_12_10_4) {
-  std::cout << "test_B_12_10_4" << std::endl;
+BOOST_AUTO_TEST_CASE(test_B_12_10_5) {
+  std::cout << "test_B_12_10_5" << std::endl;
   auto A = makeTETA();
   auto B = makeTETA();
 
