@@ -161,7 +161,7 @@ namespace ChimeraTK {
       pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
     }
 
-    void debugMakeConnections(){ enableDebugMakeConnections = true; };
+    void debugMakeConnections() { enableDebugMakeConnections = true; };
 
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
 
@@ -429,8 +429,10 @@ namespace ChimeraTK {
                                                 // testableMode_counter and the
                                                 // idMap
 
-    friend class TestFacility; // needs access to testableMode_variables
-    friend class DeviceModule; // needs access to testableMode_variables
+    friend class TestFacility;  // needs access to testableMode_variables
+    friend class DeviceModule;  // needs access to testableMode_variables
+    friend class DeviceModule;  // needs access to testableMode_variables
+    friend class TriggerFanOut; // needs access to testableMode_variables
 
     template<typename UserType>
     friend class DebugPrintAccessorDecorator; // needs access to the idMap
