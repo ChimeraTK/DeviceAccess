@@ -22,22 +22,16 @@ namespace ChimeraTK {
       std::set<boost::shared_ptr<TransferElement>>& elements, std::exception_ptr firstDetectedRuntimeError) {
     std::exception_ptr badNumericCast{nullptr}; // first detected bad_numeric_cast
     for(auto& elem : elements) {
-      std::exception_ptr lowLevelElementException{nullptr};
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
+        // In case there are mupliple exceptions we take the last one, but this does not matter. They are all ChimeraTK::runtime_errors and
+        // the first detected runtime error, which is re-thrown, has already been determined by previously.
         if(lowLevelElem->_activeException) {
-          if(lowLevelElementException) {
-            std::cout << "Warning: more than one low level exception in  " << elem->getName()
-                      << ". You might lose an exception type!" << std::endl;
-          }
-          else {
-            lowLevelElementException = lowLevelElem->_activeException;
-          }
+          // copy the runtime error from low level element into the high level element so it is processed in  post-read
+          elem->_activeException = lowLevelElem->_activeException;
         }
       }
 
-      elem->_activeException =
-          lowLevelElementException; // copy the runtime error from low level element into the high level element so it is processed in  post-read
       try {
         // call with updateDataBuffer = false if there has been any ChimeraTK::runtime_error in the transfer phase, true otherwise
         elem->postRead(TransferType::read, firstDetectedRuntimeError == nullptr);
@@ -74,23 +68,30 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("TransferGroup::read() called, but not all elements are readable.");
     }
 
+    std::exception_ptr firstDetectedRuntimeError{nullptr};
+
     for(auto& elem : _highLevelElements) {
       elem->preReadAndHandleExceptions(TransferType::read);
-      assert(elem->_activeException == nullptr);
+      if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
+        firstDetectedRuntimeError = elem->_activeException;
+      }
     }
 
     for(auto& elem : _copyDecorators) {
       elem->preReadAndHandleExceptions(TransferType::read);
-      assert(elem->_activeException == nullptr);
-    }
-
-    std::exception_ptr firstDetectedRuntimeError{nullptr};
-
-    for(auto& it : _lowLevelElementsAndExceptionFlags) {
-      auto& elem = it.first;
-      elem->handleTransferException([&] { elem->readTransfer(); });
       if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
         firstDetectedRuntimeError = elem->_activeException;
+      }
+    }
+
+    if(firstDetectedRuntimeError == nullptr) {
+      // only execute the transfers if there has been no exception yet
+      for(auto& it : _lowLevelElementsAndExceptionFlags) {
+        auto& elem = it.first;
+        elem->handleTransferException([&] { elem->readTransfer(); });
+        if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
+          firstDetectedRuntimeError = elem->_activeException;
+        }
       }
     }
 
@@ -100,7 +101,7 @@ namespace ChimeraTK {
 
     // re-throw exceptions in the order of occurence
 
-    // The runtime error which was seen as _activeException in the transfer phase might
+    // The runtime error which was seen as _activeException in the pre or transfer phase might
     // have been handled in postRead, and thus become invalid (for instance because it
     // is suppressed by the ApplicationCore::ExceptionHandlingDecorator).
     // Only re-throw here if an exception has been re-thrown in the postRead step.
@@ -146,23 +147,36 @@ namespace ChimeraTK {
       it.second = false;
     }
 
+    std::exception_ptr firstDetectedRuntimeError{nullptr};
     for(auto& elem : _highLevelElements) {
       elem->preWriteAndHandleExceptions(TransferType::write, versionNumber);
-      assert(elem->_activeException == nullptr);
-    }
-
-    std::exception_ptr firstDetectedRuntimeError{nullptr};
-
-    for(auto& it : _lowLevelElementsAndExceptionFlags) {
-      auto& elem = it.first;
-      elem->handleTransferException([&] { elem->writeTransfer(versionNumber); });
       if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
         firstDetectedRuntimeError = elem->_activeException;
       }
     }
 
+    if(firstDetectedRuntimeError == nullptr) {
+      for(auto& it : _lowLevelElementsAndExceptionFlags) {
+        auto& elem = it.first;
+        elem->handleTransferException([&] { elem->writeTransfer(versionNumber); });
+        if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
+          firstDetectedRuntimeError = elem->_activeException;
+        }
+      }
+    }
+
     _nRuntimeErrors = 0;
     for(auto& elem : _highLevelElements) {
+      // check for exceptions on any of the element's low level elements
+      for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
+        // In case there are mupliple exceptions we take the last one, but this does not matter. They are all ChimeraTK::runtime_errors and
+        // the first detected runtime error, which is re-thrown, has already been determined by previously.
+        if(lowLevelElem->_activeException) {
+          // copy the runtime error from low level element into the high level element so it is processed in  post-read
+          elem->_activeException = lowLevelElem->_activeException;
+        }
+      }
+
       try {
         elem->postWrite(TransferType::write, versionNumber);
       }
