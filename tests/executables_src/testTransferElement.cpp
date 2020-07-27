@@ -469,6 +469,12 @@ BOOST_AUTO_TEST_CASE(test_B_5_1) {
     BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
 
     accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
+    BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
+
+    accessor.resetCounters();
     accessor._throwRuntimeErrInTransfer = true;
     BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
@@ -482,6 +488,12 @@ BOOST_AUTO_TEST_CASE(test_B_5_1) {
     BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
 
     accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
+    BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
+
+    accessor.resetCounters();
     accessor._throwRuntimeErrInTransfer = true;
     BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
@@ -491,6 +503,12 @@ BOOST_AUTO_TEST_CASE(test_B_5_1) {
     accessor.resetCounters();
     accessor._throwLogicErr = true;
     BOOST_CHECK_THROW(accessor.write(), ChimeraTK::logic_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
+    BOOST_CHECK_EQUAL(accessor._postWrite_counter, 1);
+
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
     BOOST_CHECK_EQUAL(accessor._postWrite_counter, 1);
 
@@ -514,6 +532,12 @@ BOOST_AUTO_TEST_CASE(test_B_5_1) {
     BOOST_CHECK_EQUAL(accessor._postWrite_counter, 1);
 
     accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
+    BOOST_CHECK_EQUAL(accessor._postWrite_counter, 1);
+
+    accessor.resetCounters();
     accessor._throwRuntimeErrInTransfer = true;
     BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
@@ -531,6 +555,12 @@ BOOST_AUTO_TEST_CASE(test_B_5_1) {
     BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
 
     accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
+    BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
+
+    accessor.resetCounters();
     accessor.putRuntimeErrorOnQueue();
     BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
@@ -540,6 +570,12 @@ BOOST_AUTO_TEST_CASE(test_B_5_1) {
     accessor.resetCounters();
     accessor._throwLogicErr = true;
     BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::logic_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
+    BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
+
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._preRead_counter, 1);
     BOOST_CHECK_EQUAL(accessor._postRead_counter, 1);
 
@@ -604,16 +640,31 @@ BOOST_AUTO_TEST_CASE(test_B_6_1) {
     BOOST_CHECK_THROW(accessor.read(), ChimeraTK::logic_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 0);
 
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 0);
+
     // readNonBlocking()
     accessor.resetCounters();
     accessor._throwLogicErr = true;
     BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::logic_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 0);
 
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._readTransfer_counter, 0);
+
     // write()
     accessor.resetCounters();
     accessor._throwLogicErr = true;
     BOOST_CHECK_THROW(accessor.write(), ChimeraTK::logic_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._writeTransfer_counter, 0);
+
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._writeTransfer_counter, 0);
 
     accessor.resetCounters();
@@ -625,6 +676,11 @@ BOOST_AUTO_TEST_CASE(test_B_6_1) {
     accessor.resetCounters();
     accessor._throwLogicErr = true;
     BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::logic_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._writeTransferDestructively_counter, 0);
+
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._writeTransferDestructively_counter, 0);
 
     accessor.resetCounters();
@@ -647,10 +703,20 @@ BOOST_AUTO_TEST_CASE(test_B_6_1) {
     BOOST_CHECK_THROW(accessor.read(), ChimeraTK::logic_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._readQueue.read_available(), 1);
 
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._readQueue.read_available(), 1);
+
     // readNonBlocking()
     accessor.resetCounters();
     accessor._throwLogicErr = true;
     BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::logic_error); // (no test intended, just catch)
+    BOOST_CHECK_EQUAL(accessor._readQueue.read_available(), 1);
+
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.readNonBlocking(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._readQueue.read_available(), 1);
   }
 }
@@ -678,15 +744,15 @@ BOOST_AUTO_TEST_CASE(test_B_6_2) {
   // test preRead
   // ------------
   accessor.resetCounters();
-  accessor._throwLogicErr = true;
-  BOOST_CHECK_THROW(accessor.preRead(TransferType::read), ChimeraTK::logic_error);
+  accessor._throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.preRead(TransferType::read), ChimeraTK::runtime_error);
   accessor.postRead(TransferType::read, false); // just complete the sequence as required by the spec
 
   // test preWrite
   // ------------
   accessor.resetCounters();
-  accessor._throwLogicErr = true;
-  BOOST_CHECK_THROW(accessor.preWrite(TransferType::write, {}), ChimeraTK::logic_error);
+  accessor._throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.preWrite(TransferType::write, {}), ChimeraTK::runtime_error);
   accessor.postWrite(TransferType::write, {}); // just complete the sequence as required by the spec
 
   // test readTransfer (sync)
@@ -873,6 +939,12 @@ BOOST_AUTO_TEST_CASE(test_B_7_4) {
     accessor.resetCounters();
     accessor._throwLogicErr = true;
     BOOST_CHECK_THROW(accessor.read(), ChimeraTK::logic_error); // (no test intended, just catch)
+    BOOST_CHECK(accessor._updateDataBuffer == false);
+
+    // runtime_error in preRead
+    accessor.resetCounters();
+    accessor._throwRuntimeErrInPre = true;
+    BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK(accessor._updateDataBuffer == false);
 
     // runtime_error in readTransfer (sync)
@@ -1218,6 +1290,13 @@ BOOST_AUTO_TEST_CASE(test_B_11_5) {
   BOOST_CHECK_THROW(accessor.write(v), ChimeraTK::logic_error); // (no test intended, just catch)
   BOOST_CHECK(accessor.getVersionNumber() == v1);
 
+  // test with runtime error in preWrite
+  accessor.resetCounters();
+  v = {};
+  accessor._throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.write(v), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK(accessor.getVersionNumber() == v1);
+
   // test with numeric cast in preWrite
   accessor.resetCounters();
   v = {};
@@ -1327,6 +1406,12 @@ BOOST_AUTO_TEST_CASE(test_B_16_1) {
   BOOST_CHECK_THROW(accessor.read(), ChimeraTK::logic_error); // (no test intended, just catch)
   BOOST_CHECK(accessor._seenActiveException == accessor._thrownException);
 
+  // test runtime_error in preRead
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.read(), ChimeraTK::runtime_error); // (no test intended, just catch)
+  BOOST_CHECK(accessor._seenActiveException == accessor._thrownException);
+
   // test runtime_error in readTransfer (sync)
   accessor.resetCounters();
   accessor._throwRuntimeErrInTransfer = true;
@@ -1357,6 +1442,12 @@ BOOST_AUTO_TEST_CASE(test_B_16_1) {
   accessor.resetCounters();
   accessor._throwLogicErr = true;
   BOOST_CHECK_THROW(accessor.write(), ChimeraTK::logic_error); // (no test intended, just catch)
+  BOOST_CHECK(accessor._seenActiveException == accessor._thrownException);
+
+  // test runtime_error in preWrite
+  accessor.resetCounters();
+  accessor._throwRuntimeErrInPre = true;
+  BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
   BOOST_CHECK(accessor._seenActiveException == accessor._thrownException);
 
   // test bad_numeric_cast in preWrite

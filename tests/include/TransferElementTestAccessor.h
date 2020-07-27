@@ -24,6 +24,7 @@ namespace ChimeraTK {
       ++_currentIndex;
       try {
         if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
+        if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
       }
       catch(...) {
         _thrownException = std::current_exception();
@@ -39,6 +40,7 @@ namespace ChimeraTK {
       _preWrite_version = versionNumber;
       try {
         if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
+        if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
         if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
       }
       catch(...) {
@@ -190,17 +192,18 @@ namespace ChimeraTK {
     bool _previousDataLost{false}; // flag to return by writeTransfer()/writeTransferDestructively()
     bool _throwLogicErr{false};    // always in doPreXxx()
     bool _throwRuntimeErrInTransfer{false};
+    bool _throwRuntimeErrInPre{false};
     bool _throwRuntimeErrInPreconditions{false}; // throw in isReadable/isWriteable/isReadOnly
     bool _throwNumericCast{false};               // in doPreWrite() or doPreRead() depending on operation
-    VersionNumber _setPostReadVersion{nullptr};  // if nullptr, a new version will be generated
-    UserType _setPostReadData{UserType()};       // data to be copied into the user buffer in postRead
+    VersionNumber _setPostReadVersion{nullptr}; // if nullptr, a new version will be generated
+    UserType _setPostReadData{UserType()};      // data to be copied into the user buffer in postRead
 
     // lists, counters etc. used for the TransferGroup tests
     std::list<TransferElementID> _listReplacementElements; // list of all arguments of replaceTransferElement()
     std::vector<boost::shared_ptr<TransferElementTestAccessor<UserType>>>
         _internalElements; // returned by getInternalElements()
     std::vector<boost::shared_ptr<TransferElement>>
-        _hardwareAccessingElements;                      // returned by getHardwareAccessingElements()
+        _hardwareAccessingElements; // returned by getHardwareAccessingElements()
     std::set<TransferElementID> _listMayReplaceElements; // mayReplaceOther() returns true if ID is found in this set
 
     // reset all counters and revert command flags to defaults
@@ -217,6 +220,7 @@ namespace ChimeraTK {
       _postIndex = 999;
       _currentIndex = 0;
       _throwLogicErr = false;
+      _throwRuntimeErrInPre = false;
       _throwRuntimeErrInTransfer = false;
       _throwNumericCast = false;
       _preWrite_version = VersionNumber{nullptr};
@@ -227,6 +231,7 @@ namespace ChimeraTK {
       _previousDataLost = false;
       _throwLogicErr = false;
       _throwRuntimeErrInTransfer = false;
+      _throwRuntimeErrInPre = false;
       _throwNumericCast = false;
       _setPostReadVersion = VersionNumber{nullptr};
       _listReplacementElements.clear();
