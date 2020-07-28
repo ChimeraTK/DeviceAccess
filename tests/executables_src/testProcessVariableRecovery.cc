@@ -45,13 +45,13 @@ struct TestModule : public ctk::ApplicationModule {
     mainLoopStarted.wait();
 
     while(true) {
-      trigger.read();
       scalarOutput = int32_t(trigger);
       scalarOutput.write();
       for(uint i = 0; i < 4; i++) {
         arrayOutput[i] = int32_t(trigger);
       }
       arrayOutput.write();
+      trigger.read(); // read the blocking variable at the end so the initial values are propagated
     }
   }
 };
@@ -151,12 +151,15 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   constante >> app.dev["CONSTANT"]("VAR32");
 
   ctk::TestFacility test(false);
+  // Write initial values manually since we do not use the testable mode.
+  // Otherwise the main loops never start.
+
   // initial value for the direct CS->DEV register
   test.writeScalar("/TEST/TO_DEV_SCALAR2", 42);
   std::vector<int32_t> array = {99, 99, 99, 99};
   test.writeArray("/TEST/TO_DEV_ARRAY2", array);
 
-  // write initial values since we do not use the test facility for the app management
+  // initial value for the trigger
   test.writeScalar("/TEST/trigger", 0);
 
   app.run();
@@ -164,6 +167,11 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
 
   ctk::Device dummy;
   dummy.open(deviceCDD);
+
+  // wait for the device to be opened successfully so the access to the dummy does not throw
+  // (as they use the same backend it now throws if there has been an exception somewhere else)
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(std::string("/Devices/") + deviceCDD + "/status"), 0, 10000);
+
   //Check that the initial values are there.
   //auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/TEST/TO_DEV_SCALAR2");
   //CHECK_EQUAL_TIMEOUT([=]()mutable{reg2.readLatest(); return int32_t(reg2);},0,10000);

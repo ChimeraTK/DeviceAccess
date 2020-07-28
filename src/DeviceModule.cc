@@ -411,6 +411,7 @@ namespace ChimeraTK {
 
       auto popResult = errorQueue.pop(error);
       assert(popResult); // this if should always be true, otherwise the waiting did not work.
+      (void)popResult;   // avoid warning in production build. g++5.4 does not support [[maybe_unused]] yet.
       if(owner->isTestableModeEnabled()) {
         assert(owner->testableMode_counter > 0);
         --owner->testableMode_counter;
