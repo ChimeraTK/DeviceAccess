@@ -88,16 +88,8 @@ namespace ChimeraTK {
     }
 
     VersionNumber readInitialValues() {
-      auto hasInitialValue = _network.getFeedingNode().hasInitialValue();
-      if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
-        FanOut<UserType>::impl->readLatest();
-        return FanOut<UserType>::impl->getVersionNumber();
-      }
-      else if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
-        FanOut<UserType>::impl->read();
-        return FanOut<UserType>::impl->getVersionNumber();
-      }
-      return VersionNumber{nullptr};
+      FanOut<UserType>::impl->read();
+      return FanOut<UserType>::impl->getVersionNumber();
     }
 
    protected:
