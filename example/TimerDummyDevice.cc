@@ -1,7 +1,7 @@
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/DeviceAccessVersion.h>
 #include <ChimeraTK/DeviceBackendImpl.h>
-#include <ChimeraTK/SyncNDRegisterAccessor.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 template<typename UserType>
 class TimerDummyRegisterAccessor;
@@ -26,6 +26,8 @@ class TimerDummy : public ChimeraTK::DeviceBackendImpl {
 
   bool isFunctional() const override { return true; }
 
+  void setException() override {}
+
   std::string readDeviceInfo() override { return std::string("Dummy timing device "); }
 
   /** Class to register the backend type with the factory. */
@@ -45,35 +47,32 @@ TimerDummy::BackendRegisterer::BackendRegisterer() {
 }
 
 template<typename UserType>
-class TimerDummyRegisterAccessor : public ChimeraTK::SyncNDRegisterAccessor<UserType> {
+class TimerDummyRegisterAccessor : public ChimeraTK::NDRegisterAccessor<UserType> {
  public:
   TimerDummyRegisterAccessor(const ChimeraTK::RegisterPath& registerPathName)
-  : ChimeraTK::SyncNDRegisterAccessor<UserType>(registerPathName) {
+  : ChimeraTK::NDRegisterAccessor<UserType>(registerPathName, {ChimeraTK::AccessMode::wait_for_new_data}) {
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0][0] = UserType();
+
+    this->_readQueue = {3};
   }
 
-  ~TimerDummyRegisterAccessor() override { this->shutdown(); }
+  ~TimerDummyRegisterAccessor() override {}
 
-  void doReadTransfer() override { usleep(1000000); }
+  void doReadTransferSynchronously() override { usleep(1000000); }
 
   void doPostRead(ChimeraTK::TransferType, bool hasNewData) override {
     if(!hasNewData) return;
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
-    currentVersion = {};
+    this->_versionNumber = {};
   }
 
   bool doWriteTransfer(ChimeraTK::VersionNumber) override { return false; }
 
-  bool doReadTransferNonBlocking() override { return false; }
-
-  bool doReadTransferLatest() override { return false; }
   bool isReadOnly() const override { return true; }
   bool isReadable() const override { return true; }
   bool isWriteable() const override { return false; }
-
-  ChimeraTK::AccessModeFlags getAccessModeFlags() const override { return {ChimeraTK::AccessMode::wait_for_new_data}; }
 
   bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>&) const override { return false; }
 
@@ -85,10 +84,8 @@ class TimerDummyRegisterAccessor : public ChimeraTK::SyncNDRegisterAccessor<User
 
   std::list<boost::shared_ptr<ChimeraTK::TransferElement>> getInternalElements() override { return {}; }
 
-  ChimeraTK::VersionNumber getVersionNumber() const override { return currentVersion; }
-
- protected:
-  ChimeraTK::VersionNumber currentVersion;
+ private:
+  boost::thread _timerThread;
 };
 
 template<>
@@ -98,7 +95,6 @@ template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> TimerDummy::getRegisterAccessor_impl(
     const ChimeraTK::RegisterPath& registerPathName, size_t, size_t, ChimeraTK::AccessModeFlags flags) {
   assert(registerPathName == "/macropulseNr");
-  assert(flags.has(ChimeraTK::AccessMode::wait_for_new_data));
   flags.checkForUnknownFlags({ChimeraTK::AccessMode::wait_for_new_data});
   return boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>(
       new TimerDummyRegisterAccessor<UserType>(registerPathName));
