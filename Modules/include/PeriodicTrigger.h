@@ -26,6 +26,11 @@ namespace ChimeraTK {
         "sent once per the specified duration."};
     ScalarOutput<uint64_t> tick{this, "tick", "", "Timer tick. Counts the trigger number starting from 0."};
 
+    void prepare() override {
+      setCurrentVersionNumber({});
+      tick.write(); // send initial value
+    }
+
     void sendTrigger() {
       setCurrentVersionNumber({});
       ++tick;

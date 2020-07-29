@@ -34,6 +34,7 @@ struct TestApplication : ctk::Application {
       ctk::ScalarOutput<uint64_t> tick{this, "tick", "", ""};
     } name{this, "name", ""};
 
+    void prepare() override { name.tick.write(); /* send initial value */ }
     void mainLoop() override {}
   } name{this, "name", ""};
 
@@ -48,6 +49,8 @@ struct TestApplication : ctk::Application {
       ctk::ScalarPollInput<int> read{this, "readBack", "", ""};
       ctk::ScalarOutput<int> set{this, "actuator", "", ""};
     } vars{this, "vars", "", ctk::HierarchyModifier::hideThis};
+
+    void prepare() override { vars.set.write(); /* send intial value */ }
 
     void mainLoop() override {
       while(true) {
@@ -83,6 +86,7 @@ struct TestApplication : ctk::Application {
 };
 
 BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
+  std::cout << "testDirectConnectOpen" << std::endl;
   for(int readMode = 0; readMode < 2; ++readMode) {
     TestApplication app;
 
@@ -118,6 +122,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
 }
 
 BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
+  std::cout << "testDirectConnectRead" << std::endl;
   TestApplication app;
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
@@ -153,6 +158,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
 }
 
 BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
+  std::cout << "testDirectConnectWrite" << std::endl;
   TestApplication app;
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
