@@ -44,7 +44,8 @@ struct FirstHierarchy : ctk::ModuleGroup {
     ctk::ScalarPushInput<int> varA{this, "varA", "MV/m", "Desc"};
     ctk::ScalarOutput<int> varX{this, "varX", "MV/m", "Desc"};
 
-    void mainLoop() {}
+    void prepare() override { writeAll(); /*send initial values*/ }
+    void mainLoop() override {}
   } testModule{this, "TestModule", ""};
 
   struct SecondModule : ctk::ApplicationModule {
@@ -56,7 +57,8 @@ struct FirstHierarchy : ctk::ModuleGroup {
 
     std::vector<ctk::ScalarPushInput<int>> myVec;
 
-    void mainLoop() {}
+    void prepare() override { writeAll(); /*send initial values*/ }
+    void mainLoop() override {}
 
   } secondModule{this, "SecondModule", ""};
 };
@@ -90,7 +92,8 @@ struct SecondHierarchy : ctk::ModuleGroup {
     } eliminatedGroup{
         this, "eliminatedGroup", "A group whose hierarchy gets eliminated", ctk::HierarchyModifier::hideThis};
 
-    void mainLoop() {}
+    void prepare() override { writeAll(); /*send initial values*/ }
+    void mainLoop() override {}
   } testModule{this, "TestModule", ""};
 
   struct SecondModule : ctk::ApplicationModule {
@@ -107,7 +110,8 @@ struct SecondHierarchy : ctk::ModuleGroup {
 
     std::vector<ctk::ScalarOutput<int>> myVec;
 
-    void mainLoop() {}
+    void prepare() override { writeAll(); /*send initial values*/ }
+    void mainLoop() override {}
 
   } secondModule{this, "SecondModule", ""};
 };
