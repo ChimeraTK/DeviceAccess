@@ -95,17 +95,16 @@ namespace ChimeraTK { namespace history {
   struct AccessorAttacher;
 
   template<typename UserType>
-  struct HistoryEntry{
-    HistoryEntry(bool enableHistory): data(std::vector<ArrayOutput<UserType> >{}),
-                                      timeStamp(std::vector<ArrayOutput<uint64_t> >{}),
-                                      withTimeStamps(enableHistory){  }
-    std::vector<ArrayOutput<UserType> > data;
-    std::vector<ArrayOutput<uint64_t> > timeStamp;
+  struct HistoryEntry {
+    HistoryEntry(bool enableHistory)
+    : data(std::vector<ArrayOutput<UserType>>{}), timeStamp(std::vector<ArrayOutput<uint64_t>>{}),
+      withTimeStamps(enableHistory) {}
+    std::vector<ArrayOutput<UserType>> data;
+    std::vector<ArrayOutput<uint64_t>> timeStamp;
     bool withTimeStamps;
   };
 
   struct ServerHistory : public ApplicationModule {
-
     /**
      * Constructor.
      * Addition parameters to a normal application module constructor:
@@ -119,8 +118,10 @@ namespace ChimeraTK { namespace history {
      * \param tags Module tags passed to ApplicationModule constructor.
      */
     ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
-        size_t historyLength = 1200, bool enableTimeStamps = false, bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, eliminateHierarchy, tags), _historyLength(historyLength), _enbaleTimeStamps(enableTimeStamps) {  }
+        size_t historyLength = 1200, bool enableTimeStamps = false, bool eliminateHierarchy = false,
+        const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, eliminateHierarchy, tags), _historyLength(historyLength),
+      _enbaleTimeStamps(enableTimeStamps) {}
 
     /** Default constructor, creates a non-working module. Can be used for late
      * initialisation. */
@@ -138,12 +139,13 @@ namespace ChimeraTK { namespace history {
      * \param trigger This trigger is used for all poll type variable found in the source module.
      *
      */
-    void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger = {});
+    void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger = {});
 
     /**
      * Overload that calls virtualiseFromCatalog.
      */
-    void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger = {});
+    void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger = {});
+
    protected:
     void mainLoop() override;
 
@@ -158,7 +160,7 @@ namespace ChimeraTK { namespace history {
      * ArrayPushInput and ArrayOutput accessors. These accessors are dynamically
      * created by the AccessorAttacher. */
     template<typename UserType>
-    using AccessorList = std::list<std::pair<ArrayPushInput<UserType>, HistoryEntry<UserType> > >;
+    using AccessorList = std::list<std::pair<ArrayPushInput<UserType>, HistoryEntry<UserType>>>;
     TemplateUserTypeMap<AccessorList> _accessorListMap;
 
     /** boost::fusion::map of UserTypes to std::lists containing the names of the
