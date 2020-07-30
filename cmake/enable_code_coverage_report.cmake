@@ -25,19 +25,22 @@
 #
 #######################################################################################################################
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
-
-# The make coverage command is only available in debug mode.  Also
-# factor in that cmake treats CMAKE_BUILD_TYPE string as case
-# insensitive.
-string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uppercase)
-IF(build_type_uppercase STREQUAL "DEBUG")
-  configure_file(cmake/make_coverage.sh.in
-    ${PROJECT_BINARY_DIR}/make_coverage.sh @ONLY)
-  add_custom_target(coverage
-    ./make_coverage.sh
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating test coverage documentation" VERBATIM
-    )
+string(TOUPPER "${USE_TSAN}" use_tsanitizer_uppercase)
+IF(use_tsanitizer_uppercase STREQUAL "TRUE")
+    message(WARNING "The USE_TSAN set to true. Code coverage cannot be enabled, becasue it requires -O0 flag and USE_TSAN requires -O1.")
+ELSE()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
+    # The make coverage command is only available in debug mode.  Also
+    # factor in that cmake treats CMAKE_BUILD_TYPE string as case
+    # insensitive.
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uppercase)
+    IF(build_type_uppercase STREQUAL "DEBUG")
+        configure_file(cmake/make_coverage.sh.in
+        ${PROJECT_BINARY_DIR}/make_coverage.sh @ONLY)
+        add_custom_target(coverage
+        ./make_coverage.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating test coverage documentation" VERBATIM)
+    ENDIF()
 ENDIF()
 
