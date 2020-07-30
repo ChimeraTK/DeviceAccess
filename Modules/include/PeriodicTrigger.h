@@ -37,7 +37,7 @@ namespace ChimeraTK {
       tick.write();
     }
 
-    void mainLoop() {
+    void mainLoop() override {
       if(Application::getInstance().isTestableModeEnabled()) {
         return;
       }
