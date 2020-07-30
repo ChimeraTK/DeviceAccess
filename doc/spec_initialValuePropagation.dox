@@ -1,6 +1,6 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
-/**
+  /**
 \page spec_initialValuePropagation Technical specification: Propagation of initial values
 
 <b>DRAFT VERSION, WRITE-UP IN PROGRESS!</b>

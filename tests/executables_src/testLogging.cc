@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   /**** Test tail length ****/
   tailLength = 3;
   tailLength.write();
-//  tf.stepApplication();
+  //  tf.stepApplication();
   app.logger->sendMessage("4th test message", LogLevel::ERROR);
   tf.stepApplication();
   tail = tf.readScalar<std::string>("logTail");
