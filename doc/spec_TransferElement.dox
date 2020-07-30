@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC10
+\page spec_TransferElement Technical specification: TransferElement V1.0RC11
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -260,17 +260,21 @@ This documnent is currently still **INCOMPLETE**!
     - 12.8.1 This avoids an unnecessary transfer of identical data.
     - \anchor transferElement_B_12_8_2 12.8.2 This is only possible, if the TransferElement is added by passing a TransferElementAbstractor to TransferGroup::addAccessor(). \ref transferElement_comment_B_12_8_2 "(*)"
   - \anchor transferElement_B_12_9 12.9 Operations executed via TransferGroup::read() and TransferGroup::write():  [\ref testTransferElement_B_12_9 "T" (with sub-points)]
-    - 12.9.1 first call preXxx() on all high-level elements (cf. \ref transferElement_B_12_1_2_1 "12.1.2.1"),
+    - \anchor transferElement_B_12_9_1 12.9.1 first call preXxx() on all high-level elements (cf. \ref transferElement_B_12_1_2_1 "12.1.2.1"),
     - \anchor transferElement_B_12_9_2 12.9.2 next call the corresponding xxxTransferYyy() on all low-level elements (cf. \ref transferElement_B_12_1_2_2 "12.1.2.2"), and
     - \anchor transferElement_B_12_9_3 12.9.3 finally call postXxx() on all high-level elements.
   - 12.10 The TransferGroup implements a similar exception handling in TransferGroup::read() and TransferGroup::write() as their TransferElement counterparts. This especially means:
-    - \anchor transferElement_B_12_10_1 12.10.1 Before preXxx() is called, the TransferGroup checks all pre-conditions (device opened and operation allowed) to make sure no ChimeraTK::logic_error can occur (other exceptions are anyway not allowed in preXxx).
+    - \anchor transferElement_B_12_10_1 12.10.1 Before preXxx() is called, the TransferGroup checks all pre-conditions (device opened and operation allowed) to make sure no ChimeraTK::logic_error can occur.
       - \anchor transferElement_B_12_10_1_1 12.10.1.1 If any ChimeraTK::runtime_error occurs while checking the pre-conditions, it is immediately passed on to the application. [\ref testTransferElement_B_12_10_1_1 "T"]
       - \anchor transferElement_B_12_10_1_2 12.10.1.2 Any pre-condition which is not met will immediately result in a thrown ChimeraTK::logic_error [\ref testTransferElement_B_12_10_1_2 "T"]
       - 12.10.1.3 The exceptions from \ref transferElement_B_12_10_1_1 "12.10.1.1" and \ref transferElement_B_12_10_1_2 "12.10.1.2" are not prioritised by type. The first detected error throws.
-    - \anchor transferElement_B_12_10_2 12.10.2 ChimeraTK::runtime_error exceptions thrown by the low-level elements are propagated to the corresponding high-level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3") [\ref testTransferElement_B_12_10_2 "T"]
-    - \anchor transferElement_B_12_10_3 12.10.3 postXxx() is called for all high level elements, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5"). [\ref testTransferElement_B_12_10_3 "T"]
-    - \anchor transferElement_B_12_10_4 12.10.4 The first exception that has been caught in \ref transferElement_B_12_9_2 "12.9.2" or \ref transferElement_B_12_9_3 "12.9.3" is re-thrown. [\ref testTransferElement_B_12_10_4 "T"]
+    - \anchor transferElement_B_12_10_2 12.10.2 If ChimeraTK::runtime_error exceptions occur during preXxx()
+      - \anchor transferElement_B_12_10_2_1 12.10.2.1 still all preXxx() are executed.
+      - \anchor transferElement_B_12_10_2_2 12.10.2.2 the whole transfer phase is skipped.
+      - \anchor transferElement_B_12_10_2_3 12.10.2.3 This implies that TransferElements in TransferGroups must expect that the transfer is not executed, even if preXxx() has not thrown an exception.
+    - \anchor transferElement_B_12_10_3 12.10.3 ChimeraTK::runtime_error exceptions thrown by the low-level elements are propagated to the corresponding high-level elements so they are seen by their postXxx() functions (c.f. \ref transferElement_B_6_3 "6.3") [\ref testTransferElement_B_12_10_3 "INCOMPLETE T"]
+    - \anchor transferElement_B_12_10_4 12.10.4 postXxx() is called for all high level elements, even if some postXxx() throw exceptions (c.f. \ref transferElement_B_5 "5"). [\ref testTransferElement_B_12_10_4 "T"]
+    - \anchor transferElement_B_12_10_5 12.10.5 The first exception that has been caught in \ref transferElement_B_12_9_1 "12.9.1", \ref transferElement_B_12_9_2 "12.9.2" or \ref transferElement_B_12_9_3 "12.9.3" is re-thrown. [\ref testTransferElement_B_12_10_5 "INCOMPLETE T"]
   - \anchor transferElement_B_12_11 12.11 If a ChimeraTK::runtime_error is thrown, the content of the application buffers of all elements is not changed. (c.f. \ref transferElement_B_6_4 "6.4")
     - \anchor transferElement_B_12_11_1 12.11.1 The TransferGroup calls postRead() of all elements with `updateDataBuffer = false`, if any element has thrown a ChimeraTK::runtime_error. [\ref testTransferElement_B_12_11_1 "T"]
   - 12.12 The TransferGroup calls postRead() on copy decorators first (see \ref transferElement_B_12_1_4_1_1 "12.1.4.1.1" and \ref transferElement_B_12_8 "12.8").
@@ -286,10 +290,6 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_15_3_1 15.3.1 The constructor argument does not have a default value. It must be set correctly by the TransferElement implementation in their constructor. [\ref testTransferElement_B_15_3_1 "T"]
 
 - \anchor transferElement_B_16 16. This section will be moved from \ref transferElement_C_2 "C.2"
-
-### UNREVIEWED ADDITIONS ###
-
-
 
 
 ### (*) Comments ###
@@ -358,7 +358,8 @@ This documnent is currently still **INCOMPLETE**!
    ChimeraTK::runtime_error may only be thrown in
   - 3.1 doXxxTransferYyy(). It is the only exception that can occur in this function
   - 3.2 TransferElement::isReadable(), TransferElement::isWriteable() or TransferElement::isReadOnly() if there is no map file or such, and it needs to be determined from the running device.
-  - 3.3 (removed)
+  - \anchor transferElement_C_3_3 3.3 doPreXxx(), if the device is not functional and the transfer needs to be skipped so it does not interfere with a device recovery procedure.  \ref transferElement_comment_C_3_3 "(*)"
+
 
 - \anchor transferElement_C_4 4. boost::numeric::bad_numeric_cast may only be thrown in
   - 4.1 (removed)
@@ -403,6 +404,7 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_C_2_3a \ref transferElement_C_2_3 "2.3" It is important that after calling the target's setActiveException(), the decorator has a nullptr in its _activeException. This is for instance required if the target is the ApplicationCore::ExceptionHandlingDecorator. It suppresses the exception and then the outer layers must not throw any more.
 - \anchor transferElement_comment_C_2_3b \ref transferElement_C_2_3 "2.3" Notice that if both the decorator and the target TransferElement have an active exception, the exception in the target is replaced. This is intentional. It can only happen if the same low level TransferElement is used by several high level elements in a TransferGroup. In this case the tranfer had not been executed because the high level elements had already seen the exception in preXxx, and the exception in the target can only be the exception which had been put in by another high level element in its doPostXxx, and thus has already been thrown.
 - \anchor transferElement_comment_C_2_3c \ref transferElement_C_2_3 "2.3" This behaviour is implemented in doPostXxx() of the NDRegisterAccessorDecorator base class, which is usually called by decorator implementations.
+- \anchor transferElement_comment_C_3_3 \ref transferElement_C_3_3 "3.3" This is for instance required by the ApplicationCore ExceptionHandlingDecorator, but also can in general be required in a multi-threaded scenario where the transfers happen in a different thread than the device recovery.
 - 5.1 Test functions do not yet exist for everything. This needs to be changed!
 - \anchor transferElement_comment_C_5_2 \ref transferElement_C_5_2 "5.2" Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
 - \anchor transferElement_comment_C_5_2_1_1 \ref transferElement_C_5_2_1_1  "5.2.1.1" It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
@@ -444,12 +446,9 @@ This documnent is currently still **INCOMPLETE**!
 - 6. TransferElement::_versionNumber and  TransferElement::_dataValitiy are also part of the applicaton buffer. They also must be synchronised.
   - 6.1 When reading, TransferElement::_versionNumber and  TransferElement::_dataValidity have to be copied over in doPostRead(), after a delegating to the target postRead() and only if there has been no exception.
     -  \anchor transferElement_E_6_1_1 6.1.1 Decorators then must always copy the meta data from their target, even if updateDataBuffer is false and NDRegisterAccessors<USER_TYPE>::buffer_2D is not updated. \ref transferElement_comment_E_6_1_1 "(*)"
+    - 6.1.2 The data buffer is updated if there has been no exception and if updateDataBuffer is true.
   - 6.2 When writing, TransferElement::_dataValidity has to be copied to the target in doPreWrite() before delegating. Do **not** manually synchonise the version number. This is done by the TransferElement base
      class in postWrite according to  \ref transferElement_B_4_3_2 "B.4.3.2".
-
-### New in RC 10. NOT REVIEWED YET! ###
-
-- 6.1.2 The data buffer is updated if there has been no exception and if updateDataBuffer is true.
 
 ### (*) Comments ###
 
