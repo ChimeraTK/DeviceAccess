@@ -277,6 +277,9 @@ namespace ChimeraTK {
     std::string error;
     owner->testableModeLock("Startup");
 
+    // We have the testable mode lock. The device has not been initialised yet, but from now on the testableMode_deviceInitialisationCounter will take care or it
+    testableModeReached = true;
+
     // flag whether the deviceError.message has already been initialised with a sensible value
     bool firstAttempt = true;
 

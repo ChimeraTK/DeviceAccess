@@ -239,6 +239,11 @@ namespace ChimeraTK {
      *  @todo This should be moved to a more proper place in the hierarchy (e.g. ModuleImpl) after InternalModule class
      *  has been properly unified with the normal Module class. */
     std::atomic<bool> testableModeReached{false};
+
+   public:
+    /** Check whether this module has declared that it reached the testable mode. */
+
+    bool hasReachedTestableMode();
   };
 
 } /* namespace ChimeraTK */

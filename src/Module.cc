@@ -41,6 +41,11 @@ namespace ChimeraTK {
     // called next after any move operation
     return *this;
   }
+  /*********************************************************************************************************************/
+
+  void Module::run() {
+    testableModeReached = true; // Modules which don't implement run() have now reached testable mode
+  }
 
   /*********************************************************************************************************************/
 

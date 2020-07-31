@@ -55,7 +55,7 @@ namespace ChimeraTK {
     virtual void prepare(){};
 
     /** Execute the module. */
-    virtual void run(){};
+    virtual void run();
 
     /** Terminate the module. Must/will be called before destruction, if run() was
      * called previously. */

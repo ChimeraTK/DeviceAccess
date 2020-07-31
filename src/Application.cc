@@ -207,6 +207,37 @@ void Application::run() {
   for(auto& module : getSubmoduleListRecursive()) {
     module->run();
   }
+
+  // When in testable mode, wait for all modules to report that they have reched the testable mode.
+  // We have to start all module threads first because some modules might only send the initial
+  // values in their main loop, and following modules need them to enter testable mode.
+
+  // just a small helper lambda to avoid code repetition
+  auto waitForTestableMode = [](EntityOwner* module) {
+    std::cout << "  waiting for testable mode for " << module->getName() << std::endl;
+    while(!module->hasReachedTestableMode()) {
+      Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
+      usleep(100);
+      Application::getInstance().testableModeLock("acquireForReachTestableMode");
+    }
+  };
+
+  if(Application::getInstance().isTestableModeEnabled()) {
+    std::cout << "Testable mode waiting for internal modules " << std::endl;
+
+    for(auto& internalModule : internalModuleList) {
+      waitForTestableMode(internalModule.get());
+    }
+    std::cout << "Testable mode waiting for device modules " << std::endl;
+    for(auto& deviceModule : deviceModuleMap) {
+      waitForTestableMode(deviceModule.second);
+    }
+    std::cout << "Testable mode waiting for application modules " << std::endl;
+    for(auto& module : getSubmoduleListRecursive()) {
+      waitForTestableMode(module);
+    }
+    std::cout << "Testable mode reached in all modules " << std::endl;
+  }
 }
 
 /*********************************************************************************************************************/

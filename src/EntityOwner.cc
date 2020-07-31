@@ -235,7 +235,7 @@ namespace ChimeraTK {
         }
       }
     }
-  } // namespace ChimeraTK
+  }
 
   /*********************************************************************************************************************/
 
@@ -306,5 +306,7 @@ namespace ChimeraTK {
     }
     return nextmodule;
   }
+
+  bool EntityOwner::hasReachedTestableMode() { return testableModeReached; }
 
 } /* namespace ChimeraTK */
