@@ -92,7 +92,14 @@ struct TestModule : public ctk::ApplicationModule {
   //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
   boost::barrier mainLoopStarted;
 
-  void mainLoop() { mainLoopStarted.wait(); }
+  void prepare() override {
+    incrementDataFaultCounter(); // force data to be flagged as faulty
+    feedingToDevice = 13;        // the initial value
+    writeAll();
+    decrementDataFaultCounter(); // data validity depends on inputs
+  }
+
+  void mainLoop() override { mainLoopStarted.wait(); }
 };
 
 /*********************************************************************************************************************/
@@ -137,19 +144,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToApp, T, test_types) {
   app.dev["MyModule"]("readBack")[app.testModule.theTrigger] >> app.testModule.consumingPush;
   app.initialise();
 
-  ctk::Device dev("Dummy0");
-  dev.open();
-  dev.write("MyModule/actuator", 1); // write initial value
-
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
+  // check for initial value. Should be there when entering the main loop.
+  BOOST_CHECK_EQUAL(static_cast<T>(app.testModule.consumingPush), 13);
+
   // single theaded test
   app.testModule.feedingToDevice = 42;
-  CHECK_TIMEOUT((app.testModule.consumingPush.readLatest(), app.testModule.consumingPush == 1), 10000);
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
-  BOOST_CHECK(app.testModule.consumingPush == 1);
+  BOOST_CHECK_EQUAL(static_cast<T>(app.testModule.consumingPush), 13);
   app.testModule.theTrigger.write();
   app.testModule.consumingPush.read();
   BOOST_CHECK(app.testModule.consumingPush == 42);
