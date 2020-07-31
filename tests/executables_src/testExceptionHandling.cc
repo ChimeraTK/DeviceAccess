@@ -1,4 +1,3 @@
-#include <ChimeraTK/TransferElement.h>
 #define BOOST_TEST_MODULE testExceptionHandling
 
 #include <boost/mpl/list.hpp>
@@ -110,7 +109,6 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
       }() == 1,
       10000);
 
-
   pollVariable.read();
   auto versionNumberOnRuntimeError = pollVariable.getVersionNumber();
 
@@ -118,7 +116,6 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
   /************************************************************************************************/
-
 
   // Behavior on device recovery
   /************************************************************************************************/
@@ -193,7 +190,50 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testReadLatest) {}
+/*
+ *  - On first call after a runtime error :
+ *  - Subsequent calls are skipped
+ */
+BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixture) {
+  std::cout << "runtimeErrorHandling_testPushTypeReadNonBlocking" << std::endl;
+
+  // precondition: no pending data to be read on the push type variable
+  BOOST_CHECK_EQUAL(pushVariable.readNonBlocking(), false);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
+
+  //  On runtime error
+  //    - return true.
+  //    - generates a new version number.
+  /************************************************************************************************/
+  exceptionDummyRegister = 100;
+  exceptionDummyRegister.write();
+  ctk::VersionNumber version = {};
+
+  deviceBackend->throwExceptionRead = true;
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
+
+  CHECK_TIMEOUT(pushVariable.readNonBlocking()== true, 10000);
+  BOOST_CHECK_NE(pushVariable, 100);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
+  auto versionNumberOnRuntimeError = pushVariable.getVersionNumber();
+  BOOST_CHECK(versionNumberOnRuntimeError > version);
+
+  //  subsequent calls to readNonBlocking on runtime error are skipped.
+  /************************************************************************************************/
+  BOOST_CHECK_EQUAL(pushVariable.readNonBlocking(), false);
+  BOOST_CHECK(versionNumberOnRuntimeError == pushVariable.getVersionNumber());
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
+
+  // On recovery
+  /************************************************************************************************/
+  deviceBackend->throwExceptionRead = false;
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
+
+  CHECK_TIMEOUT(pushVariable.readNonBlocking() == true, 10000);
+  BOOST_CHECK_EQUAL(pushVariable, 100);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(pushVariable.getVersionNumber() > versionNumberOnRuntimeError);
+}
 
 BOOST_AUTO_TEST_CASE(testReadNonBlocking) {}
 
