@@ -65,7 +65,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
 10. \anchor initialValue_d_10 Constants (`Application::makeConstant()`):
   1. Constant accessors only have one value, which is propagates as the intitial value. They conceptually behave like a process array that is written exactly once by the framework.
     1. This implies that in case of `AccessMode::wait_for_new_data` the value can be read exactly once. This is enough to propagate the initial value. Any further read() to the variable will block infinitely.
-  2. Values are propagated before the `ApplicationModule` threads are starting (just like initial values written in `ApplicationModule::prepare())
+  2. Values are propagated before the `ApplicationModule` threads are starting (just like initial values written in `ApplicationModule::prepare()`)
   3. Devices are not opened yet at this point in time. Delaying the write is done with the same mechanism as described in 7.c.
 11. Variables with a return channel ("bidirectional variables", `ScalarPushInputWB`, `ScalarOutputPushRB` and the array variants) behave like their unidirectional pendants, i.e. the existence of the return channel is ignored during the initial value propagation.
 

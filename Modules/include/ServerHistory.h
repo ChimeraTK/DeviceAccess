@@ -146,9 +146,11 @@ namespace ChimeraTK { namespace history {
      */
     void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger = {});
 
-   protected:
+   public:
+    void prepare() override;
     void mainLoop() override;
 
+   protected:
     template<typename UserType>
     VariableNetworkNode getAccessor(const std::string& variableName, const size_t& nElements);
 

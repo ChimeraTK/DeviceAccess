@@ -156,6 +156,12 @@ namespace ChimeraTK { namespace history {
     TransferElementID _id;
   };
 
+  void ServerHistory::prepare() {
+    incrementDataFaultCounter(); // the written data is flagged as faulty
+    writeAll();                  // send out initial values of all outputs.
+    decrementDataFaultCounter(); // when entering the main loop calculate the validiy from the inputs. No artificial increase.
+  }
+
   void ServerHistory::mainLoop() {
     auto group = readAnyGroup();
     while(true) {
