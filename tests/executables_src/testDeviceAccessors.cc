@@ -56,7 +56,13 @@ struct TestModule : public ctk::ApplicationModule {
 
   ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
-  void mainLoop() {}
+  void prepare() override {
+    incrementDataFaultCounter(); // force data to be flagged as faulty
+    writeAll();
+    decrementDataFaultCounter(); // data validity depends on inputs
+  }
+
+  void mainLoop() override {}
 };
 
 /*********************************************************************************************************************/
