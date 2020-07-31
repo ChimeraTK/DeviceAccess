@@ -32,7 +32,7 @@ struct testApp : public ChimeraTK::Application {
     boost::filesystem::remove("/tmp/testLogging/test.log");
     boost::filesystem::remove("/tmp/testLogging/");
   }
-  ~testApp() {
+  ~testApp() override {
     shutdown();
     if(fileCreated) {
       BOOST_CHECK_EQUAL(boost::filesystem::remove("/tmp/testLogging/test.log"), true);
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(testLogMsg) {
   tailLength.write();
   app.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
-  std::string ss = (std::string)tf.readScalar<std::string>("logTail");
+  std::string ss = tf.readScalar<std::string>("logTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("test\n"));
 }
 
@@ -88,6 +88,7 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
 BOOST_AUTO_TEST_CASE(testLogfile) {
   testApp app;
   ChimeraTK::TestFacility tf;
+  app.dumpConnections();
 
   auto logFile = tf.getScalar<std::string>("logFile");
 

@@ -143,7 +143,7 @@ namespace logging {
      * needed to allow constructor inheritance of modules owning other modules.
      * This constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    Logger(){}
+    Logger() {}
 
     /**
      * \brief Constructor to be used.
@@ -185,17 +185,17 @@ namespace logging {
    private:
     ctk::VariableNetworkNode getAccessorPair(const std::string& sender);
 
-    struct MessageSource{
+    struct MessageSource {
       ctk::ScalarPushInput<std::string> msg;
       std::string sendingModule;
-      MessageSource(const std::string &moduleName, Module* module):
-        msg{module, moduleName + "Msg", "", ""},sendingModule(moduleName){}
+      MessageSource(const std::string& moduleName, Module* module)
+      : msg{module, moduleName + "Msg", "", ""}, sendingModule(moduleName) {}
     };
     /** List of senders. */
-    std::vector<MessageSource > sources;
+    std::vector<MessageSource> sources;
 
     /** Map key is the transfer id of the ScalarPushInput variable pointed to */
-    std::map<ChimeraTK::TransferElementID, MessageSource* > id_list;
+    std::map<ChimeraTK::TransferElementID, MessageSource*> id_list;
 
     /** Number of messages stored in the tail */
     size_t messageCounter;
@@ -204,37 +204,36 @@ namespace logging {
      * \param msg The mesage
      * \param isError If true cerr is used. Else cout is used.
      */
-    void broadcastMessage(std::string msg, const bool &isError = false);
+    void broadcastMessage(std::string msg, const bool& isError = false);
 
    public:
     using ctk::ApplicationModule::ApplicationModule;
 
     ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
-      "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
-      "(cout/cerr), 3 (none)",
-      {"CS", getName()}};
+        "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
+        "(cout/cerr), 3 (none)",
+        {"CS", getName()}};
 
     ctk::ScalarPollInput<std::string> logFile{this, "logFile", "",
-      "Name of the external logfile. If empty messages are pushed to "
-      "cout/cerr",
-      {"CS", getName()}};
+        "Name of the external logfile. If empty messages are pushed to "
+        "cout/cerr",
+        {"CS", getName()}};
 
     ctk::ScalarPollInput<uint> tailLength{this, "maxTailLength", "",
-      "Maximum number of messages to be shown in the logging stream tail.",
-      {"CS", getName()}};
+        "Maximum number of messages to be shown in the logging stream tail.", {"CS", getName()}};
 
-    ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "",
-      "Current log level used for messages.",
-      {"CS", getName()}};
+    ctk::ScalarPollInput<uint> logLevel{
+        this, "logLevel", "", "Current log level used for messages.", {"CS", getName()}};
 
-    ctk::ScalarOutput<std::string> logTail{this, "logTail", "",
-      "Tail of the logging stream.",
-      {"CS", "PROCESS", getName()}};
+    ctk::ScalarOutput<std::string> logTail{
+        this, "logTail", "", "Tail of the logging stream.", {"CS", "PROCESS", getName()}};
 
     std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
     /** Add a Module as a source to this DAQ. */
     void addSource(boost::shared_ptr<Logger> logger);
+
+    void prepare() override;
 
     /**
      * Application core main loop.

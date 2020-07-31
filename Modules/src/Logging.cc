@@ -64,7 +64,7 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
   }
 }
 
-void LoggingModule::broadcastMessage(std::string msg, const bool &isError) {
+void LoggingModule::broadcastMessage(std::string msg, const bool& isError) {
   if(msg.back() != '\n') {
     msg.append("\n");
   }
@@ -98,6 +98,12 @@ void LoggingModule::broadcastMessage(std::string msg, const bool &isError) {
   logTail.write();
 }
 
+void LoggingModule::prepare() {
+  incrementDataFaultCounter(); // force data to be flagged as faulty
+  writeAll();
+  decrementDataFaultCounter(); // data validity depends on inputs
+}
+
 void LoggingModule::mainLoop() {
   file.reset(new std::ofstream());
   messageCounter = 0;
@@ -105,7 +111,7 @@ void LoggingModule::mainLoop() {
   greeter << getName() << " " << getTime() << "There are " << sources.size()
           << " modules registered for logging:" << std::endl;
   broadcastMessage(greeter.str());
-  for(auto module = sources.begin(); module != sources.end();module++) {
+  for(auto module = sources.begin(); module != sources.end(); module++) {
     broadcastMessage(std::string("\t - ") + module->sendingModule);
     id_list[module->msg.getId()] = &(*module);
   }
@@ -113,35 +119,37 @@ void LoggingModule::mainLoop() {
   std::string msg;
   MessageSource* currentSender;
   LogLevel level;
-  
+
   while(1) {
     auto id = group.readAny();
-    if(id_list.count(id) == 0){
+    if(id_list.count(id) == 0) {
       throw ChimeraTK::logic_error("Cannot find  element id"
-                                     "when updating logging variables.");
+                                   "when updating logging variables.");
     }
-    try{
+    try {
       currentSender = id_list.at(id);
       msg = (std::string)(currentSender->msg);
-    } catch (std::out_of_range &e){
+    }
+    catch(std::out_of_range& e) {
       throw ChimeraTK::logic_error("Cannot find  element id"
-                                           "when updating logging variables.");
+                                   "when updating logging variables.");
     }
     // if message is empty assume someone called writeAll() in a module containing the Logger -> ignore
-    if(msg.empty()){
+    if(msg.empty()) {
       continue;
     }
-    try{
-      level = static_cast<LogLevel>(std::strtoul(&msg.at(0),NULL, 0));
-    } catch (std::out_of_range &e){
+    try {
+      level = static_cast<LogLevel>(std::strtoul(&msg.at(0), NULL, 0));
+    }
+    catch(std::out_of_range& e) {
       throw ChimeraTK::logic_error("Cannot find  message level"
-                                           "when updating logging variables.");
+                                   "when updating logging variables.");
     }
     if(targetStream == 3) continue;
     LogLevel setLevel = static_cast<LogLevel>((uint)logLevel);
     std::string tmpStr = msg;
     // remove message level
-    tmpStr = tmpStr.substr(1,tmpStr.size());
+    tmpStr = tmpStr.substr(1, tmpStr.size());
     std::stringstream ss;
     ss << level << getName() << "/" << currentSender->sendingModule << " " << getTime() << tmpStr;
     if(targetStream == 0 || targetStream == 1) {
@@ -174,12 +182,10 @@ void LoggingModule::addSource(boost::shared_ptr<Logger> logger) {
   logger->message >> acc;
 }
 
-ctk::VariableNetworkNode LoggingModule::getAccessorPair(
-    const std::string& sender) {
-  auto it = std::find_if(sources.begin(), sources.end(),
-      boost::bind(&MessageSource::sendingModule, _1) == sender);
+ctk::VariableNetworkNode LoggingModule::getAccessorPair(const std::string& sender) {
+  auto it = std::find_if(sources.begin(), sources.end(), boost::bind(&MessageSource::sendingModule, _1) == sender);
   if(it == sources.end()) {
-    sources.emplace_back(MessageSource{sender,this});
+    sources.emplace_back(MessageSource{sender, this});
   }
   else {
     throw ChimeraTK::logic_error(
