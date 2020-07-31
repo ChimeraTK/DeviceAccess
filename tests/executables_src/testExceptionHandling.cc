@@ -191,8 +191,10 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
 }
 
 /*
- *  - On first call after a runtime error :
- *  - Subsequent calls are skipped
+ * On runtime error:
+ *  - readNonBlocking on pushVariable returns true with a new version
+ *    number.
+ *  - subsequent calls are ignored till recovery.
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeReadNonBlocking" << std::endl;
@@ -212,7 +214,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
   deviceBackend->throwExceptionRead = true;
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
 
-  CHECK_TIMEOUT(pushVariable.readNonBlocking()== true, 10000);
+  CHECK_TIMEOUT(pushVariable.readNonBlocking() == true, 10000);
   BOOST_CHECK_NE(pushVariable, 100);
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
   auto versionNumberOnRuntimeError = pushVariable.getVersionNumber();
