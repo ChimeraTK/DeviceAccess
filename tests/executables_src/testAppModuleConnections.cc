@@ -65,7 +65,13 @@ struct TestModule : public ctk::ApplicationModule {
   //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
   boost::barrier mainLoopStarted;
 
-  void mainLoop() { mainLoopStarted.wait(); }
+  void prepare() override {
+    incrementDataFaultCounter(); // foce all outputs  to invalid
+    writeAll();                  // write initial values
+    decrementDataFaultCounter(); // validity according to input validity
+  }
+
+  void mainLoop() override { mainLoopStarted.wait(); }
 };
 
 /*********************************************************************************************************************/
