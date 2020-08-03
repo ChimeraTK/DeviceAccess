@@ -111,6 +111,12 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<uint32_t> index{
       this, "index", "", "The index (1..4) of the input where the last value was received"};
 
+  void prepare() override {
+    incrementDataFaultCounter(); // foce all outputs  to invalid
+    writeAll();
+    decrementDataFaultCounter(); // validity according to input validity
+  }
+
   void mainLoop() {
     auto group = inputs.readAnyGroup();
     while(true) {
@@ -159,7 +165,13 @@ struct PollingReadModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<T> valuePoll{this, "valuePoll", "cm", "The last value received for 'poll'"};
   ctk::ScalarOutput<int> state{this, "state", "", "State of the test mainLoop"};
 
-  void mainLoop() {
+  void prepare() override {
+    incrementDataFaultCounter(); // foce all outputs  to invalid
+    writeAll();
+    decrementDataFaultCounter(); // validity according to input validity
+  }
+
+  void mainLoop() override {
     while(true) {
       push.read();
       poll.read();
