@@ -35,7 +35,13 @@ struct ModuleA : public ctk::ApplicationModule {
   ctk::ScalarPushInputWB<int> var1{this, "var1", "inches", "A length, for some reason rounded to integer"};
   ctk::ScalarOutputPushRB<double> var2{this, "var2", "centimeters", "Same length converted to centimeters"};
 
-  void mainLoop() {
+  void prepare() override {
+    incrementDataFaultCounter(); // foce all outputs  to invalid
+    writeAll();                  // write initial values
+    decrementDataFaultCounter(); // validity according to input validity
+  }
+
+  void mainLoop() override {
     auto group = readAnyGroup();
     while(true) {
       auto var = group.readAny();
@@ -59,7 +65,13 @@ struct ModuleB : public ctk::ApplicationModule {
   ctk::ScalarPushInput<double> max{this, "max", "centimeters", "Maximum length"};
   ctk::ScalarOutput<double> var3{this, "var3", "centimeters", "The limited length"};
 
-  void mainLoop() {
+  void prepare() override {
+    incrementDataFaultCounter(); // foce all outputs  to invalid
+    writeAll();                  // write initial values
+    decrementDataFaultCounter(); // validity according to input validity
+  }
+
+  void mainLoop() override {
     auto group = readAnyGroup();
     while(true) {
       auto var = group.readAny();
