@@ -204,7 +204,6 @@ void Application::run() {
 
   // just a small helper lambda to avoid code repetition
   auto waitForTestableMode = [](EntityOwner* module) {
-    std::cout << "  waiting for testable mode for " << module->getName() << std::endl;
     while(!module->hasReachedTestableMode()) {
       Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
       usleep(100);
@@ -213,20 +212,15 @@ void Application::run() {
   };
 
   if(Application::getInstance().isTestableModeEnabled()) {
-    std::cout << "Testable mode waiting for internal modules " << std::endl;
-
     for(auto& internalModule : internalModuleList) {
       waitForTestableMode(internalModule.get());
     }
-    std::cout << "Testable mode waiting for device modules " << std::endl;
     for(auto& deviceModule : deviceModuleMap) {
       waitForTestableMode(deviceModule.second);
     }
-    std::cout << "Testable mode waiting for application modules " << std::endl;
     for(auto& module : getSubmoduleListRecursive()) {
       waitForTestableMode(module);
     }
-    std::cout << "Testable mode reached in all modules " << std::endl;
   }
 }
 
