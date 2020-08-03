@@ -36,7 +36,6 @@ struct TestModule1 : ctk::ApplicationModule {
   void mainLoop() override {
     auto group = readAnyGroup();
     while(true) {
-      group.readAny();
       if(i3 > 10) {
         i3 = 10;
         i3.write();
@@ -46,6 +45,7 @@ struct TestModule1 : ctk::ApplicationModule {
       o2[1] = i2[1];
       o1.write();
       o2.write();
+      group.readAny();
     }
   }
 };
@@ -354,9 +354,9 @@ struct Module1 : ctk::ApplicationModule {
 
   void mainLoop() override {
     while(true) {
-      readAll();
       result = fromConsumingFanout + fromThreadedFanout + fromDevice;
       writeAll();
+      readAll(); // read last, so initial values are written in the first round
     }
   }
 };
@@ -373,9 +373,9 @@ struct Module2 : ctk::ApplicationModule {
 
   void mainLoop() override {
     while(true) {
-      readAll();
       result = static_cast<int>(m1VarsFromCS.result);
       writeAll();
+      readAll(); // read last, so initial values are written in the first round
     }
   }
 };
@@ -713,6 +713,8 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
   auto result = test.getScalar<int>("m1/Module1_result");
+  fromConsumingFanout.read(); // initial value, don't care for this test
+  result.read();              // initial value, don't care for this test
 
   auto pollRegisterSource = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
   pollRegisterSource = 100;
@@ -728,11 +730,11 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   // no device module exception
   threadedFanoutInput.write();
 
-  CHECK_TIMEOUT(result.readLatest(), 10000);
+  result.read();
   BOOST_CHECK_EQUAL(result, 111);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 
-  CHECK_TIMEOUT(fromConsumingFanout.readLatest(), 10000);
+  fromConsumingFanout.read();
   BOOST_CHECK_EQUAL(fromConsumingFanout, 1);
   BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
 
@@ -902,10 +904,9 @@ struct Module3 : ctk::ApplicationModule {
 
   void mainLoop() override {
     while(true) {
-      pushTypeInputFromCS.read();
-      pollInputFromDevice.read();
       result = pushTypeInputFromCS + pollInputFromDevice;
       result.write();
+      readAll(); // read last, so initial values are written in the first round
     }
   }
 };

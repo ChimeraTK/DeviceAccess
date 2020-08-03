@@ -30,9 +30,10 @@ struct Dummy : public ChimeraTK::ApplicationModule {
 
   void mainLoop() override {
     while(true) {
-      in.read();
-      out = (UserType)in;
+      // write first so initial values are propagated
+      out = static_cast<UserType>(in);
       out.write();
+      in.read(); // read at the end of the loop
     }
   }
 };
@@ -45,9 +46,11 @@ struct DummyArray : public ChimeraTK::ApplicationModule {
 
   void mainLoop() override {
     while(true) {
-      in.read();
-      for(size_t i = 0; i < 3; i++) out[i] = (UserType)in[i];
+      for(unsigned int i = 0; i < 3; i++) {
+        out[i] = in[i];
+      }
       out.write();
+      in.read();
     }
   }
 };
@@ -58,7 +61,7 @@ struct DummyArray : public ChimeraTK::ApplicationModule {
 template<typename UserType>
 struct testApp : public ChimeraTK::Application {
   testApp() : Application("test") {}
-  ~testApp() { shutdown(); }
+  ~testApp() override { shutdown(); }
 
   Dummy<UserType> dummy{this, "Dummy", "Dummy module"};
   ChimeraTK::history::ServerHistory hist{this, "ServerHistory", "History of selected process variables.", 20};
@@ -78,7 +81,7 @@ struct testApp : public ChimeraTK::Application {
 template<typename UserType>
 struct testAppArray : public ChimeraTK::Application {
   testAppArray() : Application("test") {}
-  ~testAppArray() { shutdown(); }
+  ~testAppArray() override { shutdown(); }
 
   DummyArray<UserType> dummy{this, "Dummy", "Dummy module"};
   ChimeraTK::history::ServerHistory hist{this, "ServerHistory", "History of selected process variables.", 20};
@@ -97,7 +100,7 @@ struct testAppArray : public ChimeraTK::Application {
  */
 struct testAppDev : public ChimeraTK::Application {
   testAppDev() : Application("test") { ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap"); }
-  ~testAppDev() { shutdown(); }
+  ~testAppDev() override { shutdown(); }
 
   ChimeraTK::history::ServerHistory hist{this, "ServerHistory", "History of selected process variables.", 20};
 
@@ -115,6 +118,7 @@ struct testAppDev : public ChimeraTK::Application {
 };
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(testScalarHistory, T, test_types) {
+  std::cout << "testScalarHistory " << typeid(T).name() << std::endl;
   testApp<T> app;
   ChimeraTK::TestFacility tf;
   auto i = tf.getScalar<T>("in");
@@ -138,6 +142,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testScalarHistory, T, test_types) {
  * add string case manually.
  */
 BOOST_AUTO_TEST_CASE(testScalarHistoryString) {
+  std::cout << "testScalarHistoryString" << std::endl;
   testApp<std::string> app;
   ChimeraTK::TestFacility tf;
   auto i = tf.getScalar<std::string>("in");
@@ -158,6 +163,7 @@ BOOST_AUTO_TEST_CASE(testScalarHistoryString) {
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(testArrayHistory, T, test_types) {
+  std::cout << "testArrayHistory " << typeid(T).name() << std::endl;
   testAppArray<T> app;
   ChimeraTK::TestFacility tf;
   auto arr = tf.getArray<T>("in");
@@ -194,6 +200,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testArrayHistory, T, test_types) {
  * add string case manually.
  */
 BOOST_AUTO_TEST_CASE(testArrayHistoryString) {
+  std::cout << "testArrayHistoryString" << std::endl;
   testAppArray<std::string> app;
   ChimeraTK::TestFacility tf;
   auto arr = tf.getArray<std::string>("in");
@@ -227,6 +234,7 @@ BOOST_AUTO_TEST_CASE(testArrayHistoryString) {
 }
 
 BOOST_AUTO_TEST_CASE(testDeviceHistory) {
+  std::cout << "testDeviceHistory" << std::endl;
   testAppDev app;
   ChimeraTK::TestFacility tf;
 
@@ -238,6 +246,7 @@ BOOST_AUTO_TEST_CASE(testDeviceHistory) {
 
   // Trigger the reading of the device
   auto i = tf.getScalar<int>("in");
+  BOOST_CHECK(true);
   tf.runApplication();
   i = 1.;
   i.write();

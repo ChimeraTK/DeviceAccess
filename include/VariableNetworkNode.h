@@ -280,7 +280,7 @@ namespace ChimeraTK {
     /** Flag whether an initial value has been provided by the application in prepare(). This flag is only used for
      *  NodeType::Application, since the presence of an initial value for other types is fixed by the type. The flags
      *  also is only meaningful for VariableDirection::feeding. */
-    bool hasInitialValue{false};
+    bool hasInitialValue{true};
   };
 
   /*********************************************************************************************************************/

@@ -56,12 +56,12 @@ struct BlockingReadTestModule : public ctk::ApplicationModule {
 
   void mainLoop() {
     while(true) {
-      someInput.read();
       T val = someInput;
       someOutput = val;
       usleep(10000); // wait some extra time to make sure we are really blocking
                      // the test procedure thread
       someOutput.write();
+      someInput.read(); // read at the end to propagate the initial value
     }
   }
 };

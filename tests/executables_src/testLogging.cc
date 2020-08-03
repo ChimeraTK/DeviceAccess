@@ -88,7 +88,6 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
 BOOST_AUTO_TEST_CASE(testLogfile) {
   testApp app;
   ChimeraTK::TestFacility tf;
-  app.dumpConnections();
 
   auto logFile = tf.getScalar<std::string>("logFile");
 

@@ -403,6 +403,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::InitialValueMode VariableNetworkNode::hasInitialValue() const {
+    //return InitialValueMode::Push;
     if(getDirection().dir == VariableDirection::feeding) {
       if(getType() == NodeType::ControlSystem) {
         return InitialValueMode::Push;
@@ -422,6 +423,8 @@ namespace ChimeraTK {
         return InitialValueMode::Push;
       }
       else {
+        std::cout << "Returning initial value mode NONE for " + getName() << std::endl;
+        assert(false);
         return InitialValueMode::None;
       }
     }
