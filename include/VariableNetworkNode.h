@@ -133,9 +133,6 @@ namespace ChimeraTK {
      * enforce this!*/
     void addTag(const std::string& tag);
 
-    /** Set the hasInitialValue flag for Application-type feeding nodes. */
-    void setHasInitialValue(bool hasInitialValue);
-
     /** Getter for the properties */
     NodeType getType() const;
     UpdateMode getMode() const;
@@ -179,13 +176,6 @@ namespace ChimeraTK {
     void setOwningModule(EntityOwner* newOwner) const;
 
     void accept(Visitor<VariableNetworkNode>& visitor) const;
-
-    /** Enum required for hasInitialValue() */
-    enum class InitialValueMode { None = 0, Poll, Push };
-
-    /** Check whether an initial value is present. This flag is valid for all NodeTypes and VariableDirections. It
-     *  specifies whether an initial value is present and if yes, whether to read it with poll or push transfer mode. */
-    InitialValueMode hasInitialValue() const;
 
     // protected:  @todo make protected again (with proper interface extension)
 
@@ -276,11 +266,6 @@ namespace ChimeraTK {
 
     /** Pointer to the module owning this node */
     EntityOwner* owningModule{nullptr};
-
-    /** Flag whether an initial value has been provided by the application in prepare(). This flag is only used for
-     *  NodeType::Application, since the presence of an initial value for other types is fixed by the type. The flags
-     *  also is only meaningful for VariableDirection::feeding. */
-    bool hasInitialValue{true};
   };
 
   /*********************************************************************************************************************/

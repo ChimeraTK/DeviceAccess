@@ -181,16 +181,6 @@ void Application::run() {
     deviceModule.second->prepare();
   }
 
-  // check for application PVs which have a value, which needs to be propagated as initial value
-  for(auto& module : getSubmoduleListRecursive()) {
-    for(auto& var : module->getAccessorList()) {
-      if(!var.getAppAccessorNoType().isWriteable()) continue;
-      if(var.getAppAccessorNoType().getVersionNumber() >= getStartVersion()) {
-        var.setHasInitialValue(true);
-      }
-    }
-  }
-
   // Switch life-cycle state to run
   lifeCycleState = LifeCycleState::run;
 

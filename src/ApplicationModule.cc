@@ -86,22 +86,13 @@ namespace ChimeraTK {
     for(auto& variable : getAccessorListRecursive()) {
       if(variable.getDirection().dir != VariableDirection::consuming) continue;
       if(variable.getMode() == UpdateMode::poll) {
-        auto hasInitialValue = variable.hasInitialValue();
-        if(hasInitialValue != VariableNetworkNode::InitialValueMode::None) {
-          variable.getAppAccessorNoType().readLatest();
-        }
+        variable.getAppAccessorNoType().read();
       }
     }
     for(auto& variable : getAccessorListRecursive()) {
       if(variable.getDirection().dir != VariableDirection::consuming) continue;
       if(variable.getMode() == UpdateMode::push) {
-        auto hasInitialValue = variable.hasInitialValue();
-        if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
-          variable.getAppAccessorNoType().readLatest();
-        }
-        else if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
-          variable.getAppAccessorNoType().read();
-        }
+        variable.getAppAccessorNoType().read();
       }
     }
 

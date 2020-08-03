@@ -75,17 +75,8 @@ namespace ChimeraTK {
       ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
 
       // Wait for the initial value of the trigger. There always will be one, and if we don't read it here we would trigger the loop twice.
-      auto hasInitialValue = _network.getFeedingNode().getExternalTrigger().hasInitialValue();
-      if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
-        std::cout << " waiting for initial value of trigger" << std::endl;
-        externalTrigger->read();
-        version = externalTrigger->getVersionNumber();
-        std::cout << " initial value of trigger received" << std::endl;
-      }
-      else {
-        std::cout << "Error: Varible " << externalTrigger->getName() << " has wrong initial value mode." << std::endl;
-        assert(false);
-      }
+      externalTrigger->read();
+      version = externalTrigger->getVersionNumber();
 
       // Wait until the device has been initialised for the first time. This means it
       // has been opened, and the check in TransferGroup::read() will not throw a logic_error
