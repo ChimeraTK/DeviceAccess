@@ -237,7 +237,52 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
   BOOST_CHECK(pushVariable.getVersionNumber() > versionNumberOnRuntimeError);
 }
 
-BOOST_AUTO_TEST_CASE(testReadNonBlocking) {}
+/*
+ * On runtime error:
+ *  - readLatest on pushVariable returns true with a new version number.
+ *  - subsequent calls are ignored till recovery.
+ */
+BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
+  std::cout << "runtimeErrorHandling_testPushTypeReadLatest" << std::endl;
+
+  // precondition: no pending data to be read on the push type 
+  BOOST_CHECK_EQUAL(pushVariable.readLatest(), false);
+  BOOST_CHECK_EQUAL(pushVariable, 0);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
+
+  //  On runtime error
+  //    - return true.
+  //    - generates a new version number.
+  /************************************************************************************************/
+  exceptionDummyRegister = 100;
+  exceptionDummyRegister.write();
+  ctk::VersionNumber version = {};
+
+  deviceBackend->throwExceptionRead = true;
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
+
+  CHECK_TIMEOUT(pushVariable.readLatest() == true, 10000);
+  BOOST_CHECK_NE(pushVariable, 100);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
+  auto versionNumberOnRuntimeError = pushVariable.getVersionNumber();
+  BOOST_CHECK(versionNumberOnRuntimeError > version);
+
+  //  subsequent calls to readLatest on runtime error are skipped.
+  /************************************************************************************************/
+  BOOST_CHECK_EQUAL(pushVariable.readLatest(), false);
+  BOOST_CHECK(versionNumberOnRuntimeError == pushVariable.getVersionNumber());
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
+
+  // On recovery
+  /************************************************************************************************/
+  deviceBackend->throwExceptionRead = false;
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
+
+  CHECK_TIMEOUT(pushVariable.readLatest() == true, 10000);
+  BOOST_CHECK_EQUAL(pushVariable, 100);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(pushVariable.getVersionNumber() > versionNumberOnRuntimeError);
+}
 
 BOOST_AUTO_TEST_CASE(testWrite) {}
 
