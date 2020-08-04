@@ -161,8 +161,28 @@ namespace ChimeraTK {
         handleTransferException([&] { updateDataBuffer = readTransferNonBlocking(); });
       }
 
-      postRead(TransferType::readNonBlocking, updateDataBuffer);
-      return updateDataBuffer;
+      bool retVal = updateDataBuffer;
+      if(_activeException) {
+        auto previousVersionNumber = _versionNumber;
+        auto previousDataValidity = _dataValidity;
+        // always call postRead with updateDataBuffer = false in case of an exception
+        postRead(TransferType::readNonBlocking, false);
+        // Usually we do not reach this point because postRead() is re-throwing the _activeExeption.
+        // If we reach this point the exception has been suppressed. We have to calculate a
+        // new return value because the dataBuffer has not changed, but the meta data
+        // could have, in which case we have to return true.
+        if((previousVersionNumber != _versionNumber) || (previousDataValidity != _dataValidity)) {
+          retVal = true;
+        }
+        else {
+          retVal = false;
+        }
+      }
+      else {
+        // call postRead with updateDataBuffer as returned by readTransferNonBlocking
+        postRead(TransferType::readNonBlocking, updateDataBuffer);
+      }
+      return retVal;
     }
 
     /** Read the latest value, discarding any other update since the last read if

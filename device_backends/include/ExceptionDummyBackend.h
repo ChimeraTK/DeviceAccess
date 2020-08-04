@@ -86,7 +86,7 @@ namespace ChimeraTK {
 
       auto acc = DummyBackendBase::getRegisterAccessor_impl<UserType>(path, numberOfWords, wordOffsetInRegister, flags);
       if(pushRead) {
-        std::unique_lock<std::mutex> lk(_mx_pushDecorators);
+        std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
 
         auto decorator = boost::make_shared<ExceptionDummyPushDecorator<UserType>>(
             acc, boost::dynamic_pointer_cast<ExceptionDummy>(this->shared_from_this()));
@@ -104,14 +104,14 @@ namespace ChimeraTK {
     }
 
     /// Function to trigger sending values for push-type variables
-    void triggerPush(RegisterPath path, VersionNumber v ={});
+    void triggerPush(RegisterPath path, VersionNumber v = {});
 
     void activateAsyncRead() noexcept override;
 
     void setException() override;
 
     /// Map of active ExceptionDummyPushDecorator
-    std::mutex _mx_pushDecorators;
+    std::mutex _pushDecoratorsMutex;
     std::map<RegisterPath, std::list<boost::weak_ptr<ExceptionDummyPushDecoratorBase>>> _pushDecorators;
     std::map<RegisterPath, VersionNumber> _pushVersions;
 
@@ -160,12 +160,10 @@ namespace ChimeraTK {
       _path = _target->getName();
       _path.setAltSeparator(".");
       _path /= "PUSH_READ";
-
     }
 
     ~ExceptionDummyPushDecorator() override {
-
-      std::unique_lock<std::mutex> lk(_backend->_mx_pushDecorators);
+      std::unique_lock<std::mutex> lk(_backend->_pushDecoratorsMutex);
       auto& list = _backend->_pushDecorators.at(_path);
       for(auto it = list.begin(); it != list.end(); ++it) {
         if(it->lock().get() == nullptr) { // weak_ptr is already not lockable any more
@@ -243,7 +241,7 @@ namespace ChimeraTK {
   /// Function to trigger sending values for push-type variables
   void ExceptionDummy::triggerPush(RegisterPath path, VersionNumber v) {
     path.setAltSeparator(".");
-    std::unique_lock<std::mutex> lk(_mx_pushDecorators);
+    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
     _pushVersions[path] = v;
     for(auto& acc_weak : _pushDecorators[path]) {
       auto acc = acc_weak.lock();
@@ -257,7 +255,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void ExceptionDummy::activateAsyncRead() noexcept {
-    std::unique_lock<std::mutex> lk(_mx_pushDecorators);
+    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
     for(auto& pair : _pushDecorators) {
       _pushVersions[pair.first] = {};
       for(auto& acc_weak : pair.second) {
@@ -278,7 +276,7 @@ namespace ChimeraTK {
     DummyBackend::setException();
 
     // deactivate async transfers
-    std::unique_lock<std::mutex> lk(_mx_pushDecorators);
+    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
     for(auto& pair : _pushDecorators) {
       _pushVersions[pair.first] = {};
       for(auto& acc_weak : pair.second) {
