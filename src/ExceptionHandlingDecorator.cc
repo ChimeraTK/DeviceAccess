@@ -123,7 +123,6 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    bool hasException = false;
     // preRead has not been called when the transfer was not allowed. Don't call postRead in this case.
     if(!_hasThrownToInhibitTransfer) {
       try {
@@ -132,19 +131,25 @@ namespace ChimeraTK {
         }
         _target->setActiveException(this->_activeException);
         _target->postRead(type, hasNewData);
+        if(hasNewData) {
+          // Reset the flag after a successful read. It might have been true in pre-read,  and a read has been waiting for the device to send the next valid data
+          // It is only reset if there was new data. Otherwise calls to readNonBlocking on a recovered device would turn the data validity back to good, although
+          // nothing new has been received and the data is still the invalid stuff from the last exception.
+          _hasReportedException = false;
+        }
       }
       catch(ChimeraTK::runtime_error& e) {
         _deviceModule->reportException(e.what());
-        hasException = true;
+        _hasReportedException = true;
       }
     }
     else {
       _activeException = nullptr;
     }
 
-    if(hasException || _hasThrownToInhibitTransfer) {
+    if(_hasReportedException || _hasThrownToInhibitTransfer) {
       _dataValidity = DataValidity::faulty;
-      _versionNumber = {};
+      _versionNumber = _deviceModule->getExceptionVersionNumber();
     }
     else {
       _dataValidity = _target->dataValidity();
@@ -180,7 +185,8 @@ namespace ChimeraTK {
         _hasThrownToInhibitTransfer = true;
         throw ChimeraTK::runtime_error("ExceptionHandlingDecorator has thrown to skip read transfer");
       }
-
+      // must hold the errorMutex while modifying the counter, and it must not be given up
+      // after the decision to do the transfer until here
       ++_deviceModule->synchronousTransferCounter;
     }
 

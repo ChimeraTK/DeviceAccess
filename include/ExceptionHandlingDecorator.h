@@ -58,6 +58,7 @@ namespace ChimeraTK {
     bool _hasThrownToInhibitTransfer{false};
     bool _hasThrownLogicError{false};
     bool _dataLostInPreviousWrite{false};
+    bool _hasReportedException{false}; // valid only with wait_forNewData
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
