@@ -237,8 +237,15 @@ namespace ChimeraTK {
         Attention: In testable mode this mutex must only be locked when holding the testable mode mutex!*/
     boost::shared_mutex errorMutex;
 
+    /** Version number of the last exception. Only access under the error mutex. */
+    VersionNumber exceptionVersionNumber = {};
+    //Intentionally not initialised with nullptr. It is propagated as long as the device is not successfully opened.
+
     /** The error flag whether the device is functional. protected by the errorMutex. */
     bool deviceHasError{true};
+
+    /** Use this function to read the exception version number. It is locking the variable mutex correctly for you. */
+    VersionNumber getExceptionVersionNumber();
 
     /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
      *  The function is running an endless loop inside its own thread (moduleThread). */

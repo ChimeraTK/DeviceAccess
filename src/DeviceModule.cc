@@ -241,11 +241,19 @@ namespace ChimeraTK {
       } // else do nothing. There are plenty of errors reported already: The queue is full.
       // set the error flag and notify the other threads
       deviceHasError = true;
+      exceptionVersionNumber = {}; // generate a new exception version number
       errorLock.unlock();
     }
     else {
       errorLock.unlock();
     }
+  }
+
+  /*********************************************************************************************************************/
+
+  VersionNumber DeviceModule::getExceptionVersionNumber() {
+    boost::shared_lock<boost::shared_mutex> errorLock(errorMutex);
+    return exceptionVersionNumber;
   }
 
   /*********************************************************************************************************************/
