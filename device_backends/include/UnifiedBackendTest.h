@@ -1572,6 +1572,13 @@ namespace ChimeraTK {
         // no value must have arrived
         BOOST_CHECK(reg.readNonBlocking() == false);
 
+        // Check again for possible side effects (automatic subscription on read) of reg.readNonBlocking()
+        // wait 2 times longer than the time until initial value was received before
+        std::this_thread::sleep_for(timeToInitialValue * 2);
+
+        // no value must have arrived
+        BOOST_CHECK(reg.readNonBlocking() == false);
+
         // close device again
         d.close();
       }
