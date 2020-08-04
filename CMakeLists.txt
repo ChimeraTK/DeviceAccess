@@ -5,8 +5,8 @@ include(cmake/add_dependency.cmake)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
-set(${PROJECT_NAME}_MAJOR_VERSION 01)
-set(${PROJECT_NAME}_MINOR_VERSION 12)
+set(${PROJECT_NAME}_MAJOR_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 00)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
@@ -14,7 +14,7 @@ option(BUILD_TESTS "Build tests." ON)
 option(BUILD_MICRODAQ "Build MicroDAQ module, which depends on HDF5 (libhdf5-dev)." ON)
 
 # Find the ControlSystemAdapter
-add_dependency(ChimeraTK-ControlSystemAdapter 01.06 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 02.00 REQUIRED)
 
 # Find the DeviceAccess
 # Although all the linker flags are added again, the include path might be different
