@@ -117,7 +117,7 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
     decrementDataFaultCounter(); // validity according to input validity
   }
 
-  void mainLoop() {
+  void mainLoop() override {
     auto group = inputs.readAnyGroup();
     while(true) {
       auto justRead = group.readAny();
