@@ -259,9 +259,19 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
 }
 
 /*
- * On runtime error:
- *  - readLatest on pushVariable returns true with a new version number.
- *  - subsequent calls are ignored till recovery.
+ * Test reaLatest from a device in error using a push type Process
+ * Variable
+ *
+ * Expected Behavior:
+ *
+ *  - First call to readNonBlocking after device error:
+ *    - Returns true.
+ *    - Generates a new version number.
+ *    - Sets Process Variable data validity to faulty
+ *
+ *  - Subsequent calls till recovery are skipped and return false.
+ *
+ * \anchor testExceptionHandling_b_2_2_4_c \ref exceptionHandling_b_2_2_4 "B.2.2.4"
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeReadLatest" << std::endl;
