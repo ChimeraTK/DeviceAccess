@@ -69,13 +69,17 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testFaultReporting, Fixture) {
 }
 
 /*
- * Test read operation on poll type variable when a device runtime exception occours; A poll type
- * variable does not have its AccessMode as wait_for_new_data.
+ * Read from a device in error, using pollType Process Variable.
  * 
- * For such a variable:
- *   - read is skipped till device recovers.
- *   - first skipped instance of read changes datavalidity flag to faulty and generates a new version
- *     number. 
+ * Expected behavior:
+
+ *   - Calls to read are skipped till the device recovers.
+ *
+ *   - The first skipped read request:
+ *     - Sets the process variable data validity flag to faulty
+ *     - Generates a new version number. 
+ *
+  * \anchor testExceptionHandling_b_2_2_3 \ref exceptionHandling_b_2_2_3 "B.2.2.3"
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPolledRead" << std::endl;
@@ -140,22 +144,30 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
 }
 
 /**
- * On a runtime error, a push type read operation should:
- *  - be skipped the first time it is called
- *  - block for all subsequent calls.
+ * Read from a device in error using a pushType Process Variable (PV)
+ *
+ * Expected Behavior:
+ *
+ *  - First call on pushType PV read is skipped. This:
+ *    - Generates a new version number
+ *    - Sets PV data validity flag to faulty.
+ *
+ *  - The subsequent call on read blocks till device recovery.
+ *
+ * \anchor testExceptionHandling_b_2_2_4_a \ref exceptionHandling_b_2_2_4 "B.2.2.4"
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeRead" << std::endl;
 
   exceptionDummyRegister = 100;
   exceptionDummyRegister.write();
-  ctk::VersionNumber version = {};
-  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
+  ctk::VersionNumber versionBeforeRuntimeError = {};
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionBeforeRuntimeError);
 
   pushVariable.read();
   BOOST_CHECK_EQUAL(pushVariable, 100);
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
-  BOOST_CHECK(pushVariable.getVersionNumber() == version);
+  BOOST_CHECK(pushVariable.getVersionNumber() == versionBeforeRuntimeError);
 
   // Behavior on Runtime error on device:
   //  - push input read is skipped.
@@ -169,7 +181,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   pushVariable.read();
   BOOST_CHECK_EQUAL(pushVariable, 100);
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(pushVariable.getVersionNumber() > version);
+  BOOST_CHECK(pushVariable.getVersionNumber() > versionBeforeRuntimeError);
 
   //  - subsequent push input reads should be frozen
   /************************************************************************************************/
