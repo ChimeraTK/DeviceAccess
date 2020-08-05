@@ -132,9 +132,9 @@ namespace ChimeraTK {
         _target->setActiveException(this->_activeException);
         _target->postRead(type, hasNewData);
         if(hasNewData) {
-          // Reset the flag after a successful read. It might have been true in pre-read,  and a read has been waiting for the device to send the next valid data
-          // It is only reset if there was new data. Otherwise calls to readNonBlocking on a recovered device would turn the data validity back to good, although
-          // nothing new has been received and the data is still the invalid stuff from the last exception.
+          // Reset the flag after a successful read.
+          // It is only reset if there was new data. A readNonBlocking on a faulty device is not different to a readNonBlocking on working device: There just
+          // is no new data. We only reset it on the next successful read with the initial value, otherwise keep the exception flag.
           _hasReportedException = false;
         }
       }
