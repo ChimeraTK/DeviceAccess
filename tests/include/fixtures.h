@@ -39,6 +39,15 @@ struct PushModule : ChimeraTK::ApplicationModule {
   }
 };
 
+struct UpdateModule:ChimeraTK::ApplicationModule{
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  ChimeraTK::ScalarOutput<int> deviceRegister{this, "REG1", "", "", {"DEVICE"}};
+  std::promise<void> p;
+  void mainLoop() override {
+    p.set_value();
+  }
+};
+
 struct DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
   DummyApplication() : Application("DummyApplication") {}
@@ -46,6 +55,7 @@ struct DummyApplication : ChimeraTK::Application {
 
   PushModule pushModule{this, "", ""};
   PollModule pollModule{this, "", ""};
+  UpdateModule updateModule{this, "", ""};
 
   ChimeraTK::ControlSystemModule cs;
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
@@ -79,10 +89,14 @@ struct fixture_with_poll_and_push_input {
     /************************************************************************************************/
     application.pollModule.p.get_future().wait();
     application.pushModule.p.get_future().wait();
+    application.updateModule.p.get_future().wait();
     /************************************************************************************************/
   }
 
-  ~fixture_with_poll_and_push_input() { deviceBackend->throwExceptionRead = false; }
+  ~fixture_with_poll_and_push_input() {
+    deviceBackend->throwExceptionRead = false;
+    deviceBackend->throwExceptionWrite = false;
+  }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   DummyApplication application;
@@ -94,4 +108,5 @@ struct fixture_with_poll_and_push_input {
 
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.pushModule.reg1.pushInput};
   ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};
+  ChimeraTK::ScalarOutput<int>& outputVariable{application.updateModule.deviceRegister};
 };
