@@ -3,7 +3,7 @@ namespace ChimeraTK {
 /**
 \page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.0RC1WIP
 
-> **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
+> **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behaviour is working as intended.**
 
 > **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
@@ -53,7 +53,7 @@ namespace ChimeraTK {
     - \anchor b_2_2_4 2.2.4 Read operations with AccessMode::wait_for_new_data will be _skipped_ once for each accessor to propagate the DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true (= hasNewData), and a new VersionNumber is obtained). In the following:
       - non-blocking read operations (readNonBlocking() and readLatest()) are _skipped_ and return false (= no new data), until the device is recovered, and
       - blocking read operations (read()) will be _frozen_ until the device is recovered.
-      - After the device is fully recovered (cf. \ref b_3_1 "3.1"), the current value will by (synchronously) read from the device. This will be the first value received by the accessor after an exception.
+      - After the device is fully recovered (cf. \ref b_3_1 "3.1"), the current value is (synchronously) read from the device. This is the first value received by the accessor after an exception.
     - \anchor b_2_2_5 2.2.5 The VersionNumbers returned in case of an exception are the same for the same exception, even across variables and modules. It will be generated in the moment the exception is reported. \ref comment_b_2_2_5 "(*)"
     - \anchor exceptionHandling_b_2_2_6 2.2.6 The data buffer is not updated. This guarantees that the data buffer stays on the last known value if the user code has not modified it since the last read.
       - 2.2.6.1 This is different to a working device or an implementation without exception handling, where a returning read() has overwritten the data content of the buffer. If an application requires the last read value in the data buffer, it must not change it in the user code. This is the only exception to the *golden rule* \ref b_1_2 "1.2".
