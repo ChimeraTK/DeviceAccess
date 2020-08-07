@@ -309,7 +309,44 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   BOOST_CHECK(pushVariable.getVersionNumber() > versionNumberOnRuntimeError);
 }
 
-BOOST_AUTO_TEST_CASE(testWrite) {}
+/*
+ * Verify write operations are written asynchronously on device recovery.
+ *
+ * \anchor testExceptionHandling_b_2_3_1 \ref exceptionHandling_b_2_3_1 "B.2.3.1"
+ */
+BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
+  std::cout << "runtimeErrorHandling_testWrite" << std::endl;
+
+  // trigger runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // write when device is faulty
+  /************************************************************************************************/
+  outputVariable = 100;
+  outputVariable.write();
+  BOOST_CHECK_NE(read<int>(exceptionDummyRegister), 100);
+  /************************************************************************************************/
+
+  // Recover
+  deviceBackend->throwExceptionRead = false;
+  pollVariable.read();
+  // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
+  // device recovered.
+  CHECK_TIMEOUT(
+      [&]() {
+        status.readLatest();
+        return static_cast<int>(status);
+      }() == 0,
+      10000);
+
+  // see value reflected on recovery
+  /************************************************************************************************/
+  BOOST_CHECK_EQUAL(read<int>(exceptionDummyRegister), 100);
+}
+
+/*
+    2.3.3 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true (= data lost) if a previously delayed and not-yet written value is discarded in the process, false (= no data lost) otherwise.*/
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -56,7 +56,7 @@ namespace ChimeraTK {
       - After the device is fully recovered (cf. \ref b_3_1 "3.1"), the current value will by (synchronously) read from the device. This will be the first value received by the accessor after an exception.
     - \anchor b_2_2_5 2.2.5 The VersionNumbers returned in case of an exception are the same for the same exception, even across variables and modules. It will be generated in the moment the exception is reported. \ref comment_b_2_2_5 "(*)"
   - \anchor b_2_3 2.3 Write operations will be _delayed_ until the device is fully recovered again (cf. \ref b_3_1 "3.1").
-    - 2.3.1 In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering.
+    - \anchor exceptionHandling_b_2_3_1 2.3.1 In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering. [\ref testExceptionHandling_b_2_3_1 "T"]
     - \anchor b_2_3_2 2.3.2 The same mechanism as used for \ref b_3_1_2 "3.1.2" is used here, hence the order of write operations is guaranteed across accessors, but only the latest written value of each accessor prevails. \ref comment_b_2_3_2 "(*)"
     - 2.3.3 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true (= data lost) if a previously delayed and not-yet written value is discarded in the process, false (= no data lost) otherwise.
     - \anchor b_2_3_4 2.3.4 When the delayed value is finally written to the device during the recovery procedure, the return value of the write() is ignored. \ref comment_b_2_3_4 "(*)"
