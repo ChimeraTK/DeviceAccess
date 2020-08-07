@@ -43,6 +43,11 @@ namespace ChimeraTK {
       thereHaveBeenExceptions = false;
     }
 
+    void close() override {
+      setException();
+      DummyBackend::close();
+    }
+
     void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
       if(throwExceptionRead) {
         thereHaveBeenExceptions = true;
@@ -93,7 +98,7 @@ namespace ChimeraTK {
 
         _pushDecorators[registerPathName].push_back(decorator);
 
-        if(isFunctional()) {
+        if(_activateNewPushAccessors) {
           decorator->_isActive = true;
           decorator->trigger(); // initial value
         }
@@ -114,6 +119,8 @@ namespace ChimeraTK {
     std::mutex _pushDecoratorsMutex;
     std::map<RegisterPath, std::list<boost::weak_ptr<ExceptionDummyPushDecoratorBase>>> _pushDecorators;
     std::map<RegisterPath, VersionNumber> _pushVersions;
+    bool _activateNewPushAccessors{
+        false}; // flag is toggled by activateAsyncRead (true), setException (false) and close (false). Protected by _pushDecoratorMutex
 
     class BackendRegisterer {
      public:
@@ -268,6 +275,7 @@ namespace ChimeraTK {
         acc->_hasException = false;
       }
     }
+    _activateNewPushAccessors = true;
   }
 
   /********************************************************************************************************************/
@@ -290,6 +298,7 @@ namespace ChimeraTK {
         lk.lock();
       }
     }
+    _activateNewPushAccessors = false;
   }
 
 } // namespace ChimeraTK

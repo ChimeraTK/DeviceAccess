@@ -1275,8 +1275,9 @@ namespace ChimeraTK {
     std::cout << "--- test_B_8_2 - async read fills _readQueue" << std::endl;
     Device d(cdd);
 
-    // open the device
+    // open the device and activate asynchronous reads
     d.open();
+    d.activateAsyncRead();
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
@@ -1412,6 +1413,9 @@ namespace ChimeraTK {
     Device d(cdd);
     d.open();
 
+    // Activate async read
+    d.activateAsyncRead();
+
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
@@ -1444,9 +1448,12 @@ namespace ChimeraTK {
 
         // recover
         this->recoverDevice(d);
+        // Activate async read again
+        d.activateAsyncRead();
       }
     });
 
+    std::cout << "DEBUG closing" << std::endl;
     // close device again
     d.close();
   }
@@ -1519,14 +1526,13 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /**
-   *  Test no async transfers until activateAsyncRead() for TEs created before open.
+   *  Test no async transfers until activateAsyncRead().
    *  * \anchor UnifiedTest_TransferElement_B_8_5 \ref transferElement_B_8_5 "B.8.5"
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5() {
     if(_testOnlyTransferElement) return;
-    std::cout << "--- test_B_8_5 - no async transfers until activateAsyncRead() for TEs created before open"
-              << std::endl;
+    std::cout << "--- test_B_8_5 - no async transfers until activateAsyncRead()" << std::endl;
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
@@ -1544,6 +1550,7 @@ namespace ChimeraTK {
 
         // open the device
         d.open();
+        d.activateAsyncRead();
 
         // obtain accessor
         auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
@@ -1561,10 +1568,10 @@ namespace ChimeraTK {
 
       // Second step: Check if no data arrives without activateAsyncRead()
       {
-        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
-
-        // open the device
+        // open the device, but don't call activateAsyncRead() yet
         d.open();
+
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
         // wait 2 times longer than the time until initial value was received before
         std::this_thread::sleep_for(timeToInitialValue * 2);
@@ -1648,8 +1655,9 @@ namespace ChimeraTK {
         x.setRemoteValue();
         auto v1 = x.template getRemoteValue<UserType>();
 
-        // open the device
+        // open the device and activate async read
         d.open();
+        d.activateAsyncRead();
 
         auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
@@ -1669,8 +1677,9 @@ namespace ChimeraTK {
         // Set initial remote value, to make sure it is different from the next remote value set below
         x.setRemoteValue();
 
-        // open the device
+        // open the device and activate async read
         d.open();
+        d.activateAsyncRead();
 
         auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
@@ -1690,35 +1699,22 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /**
-   *  Test no activation required for accessors created after open
+   *  Accessors created after activateAsyncRead() are immediately active
    *  * \anchor UnifiedTest_TransferElement_B_8_5_3 \ref transferElement_B_8_5_3 "B.8.5.3"
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5_3() {
-    std::cout << "--- test_B_8_5_3 - no activation required for accessors created after open" << std::endl;
+    std::cout << "--- test_B_8_5_3 - accessors created after activateAsyncRead() are immediately active" << std::endl;
     Device d(cdd);
 
-    // obtain deactivated accessors
-    std::list<TransferElementAbstractor> deactivatedAccessors;
-    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isAsyncRead(x)) return;
-      typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path();
-      VersionNumber someVersion{nullptr};
-
-      std::cout << "... registerName = " << registerName << " (deactivated async read)" << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
-      deactivatedAccessors.push_back(reg);
-    });
-
-    // open the device
+    // open the device and activate async read
     d.open();
+    d.activateAsyncRead();
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
-      VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << " (activated async read)" << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
@@ -1835,6 +1831,7 @@ namespace ChimeraTK {
     });
 
     std::cout << "... asynchronous read" << std::endl;
+    d.activateAsyncRead();
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       if(x.nRuntimeErrorCases() == 0) return;
@@ -1862,6 +1859,7 @@ namespace ChimeraTK {
 
         // recover
         this->recoverDevice(d);
+        d.activateAsyncRead(); // turn async read back on
 
         // make a successful readNonBlocking (no data) to make sure the exception state is gone. no reporting must take
         // place here.
@@ -2030,6 +2028,7 @@ namespace ChimeraTK {
     std::cout << "--- test_B_9_2_2 - repeated setException() has no effect" << std::endl;
     Device d(cdd);
     d.open();
+    d.activateAsyncRead();
 
     // obtain accessors and read initial value
     std::list<TransferElementAbstractor> accessors;
@@ -2083,6 +2082,7 @@ namespace ChimeraTK {
     std::cout << "--- test_B_9_3_1 - setException() disables asynchronous read transfers" << std::endl;
     Device d(cdd);
     d.open();
+    d.activateAsyncRead();
 
     // obtain accessors and read initial value
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
@@ -2114,6 +2114,7 @@ namespace ChimeraTK {
 
       // recover device
       this->recoverDevice(d);
+      d.activateAsyncRead(); // re-activate asyn read after recovery
     });
 
     // close device again
@@ -2132,6 +2133,7 @@ namespace ChimeraTK {
     std::cout << "--- test_B_9_3_2 - exactly one runtime_error in the _readQueue per async read accessor" << std::endl;
     Device d(cdd);
     d.open();
+    d.activateAsyncRead();
 
     // obtain accessors and read initial value
     std::list<TransferElementAbstractor> accessors;
@@ -2280,6 +2282,7 @@ namespace ChimeraTK {
     });
 
     // asynchronous read
+    d.activateAsyncRead();
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
@@ -2321,8 +2324,9 @@ namespace ChimeraTK {
     std::cout << "--- test_B_11_2_2 - consistent data gets same VersionNumber" << std::endl;
     Device d(cdd);
 
-    // open the device
+    // open the device and activate async read
     d.open();
+    d.activateAsyncRead();
 
     // CASE 1: consistency with the same register in async read
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
