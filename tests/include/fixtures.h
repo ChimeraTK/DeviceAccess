@@ -73,19 +73,20 @@ template<bool enableTestFacility>
 struct fixture_with_poll_and_push_input {
   fixture_with_poll_and_push_input()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))) {
+        ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))),
+    exceptionDummyRegister(deviceBackend->getRawAccessor("", "REG1")) {
     deviceBackend->open();
     testFacitiy.runApplication();
 
-    exceptionDummyRegister.replace(application.device.device.getScalarRegisterAccessor<int>("/REG1"));
-    status.replace(
-        testFacitiy.getScalar<int>(ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
+
+    status.replace(testFacitiy.getScalar<int>(
+        ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
     message.replace(testFacitiy.getScalar<std::string>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message"));
 
     //
     //  workaround to ensure we exit only after initial value propagation is complete. (meaning we
-    //  are in the main loop of the modules)
+    //  are in the main loop of all modules)
     /************************************************************************************************/
     application.pollModule.p.get_future().wait();
     application.pushModule.p.get_future().wait();
@@ -98,13 +99,33 @@ struct fixture_with_poll_and_push_input {
     deviceBackend->throwExceptionWrite = false;
   }
 
+  template<typename T>
+  auto read(ChimeraTK::DummyRegisterRawAccessor& accessor) {
+    auto lock = accessor.getBufferLock();
+    return static_cast<T>(accessor);
+  }
+  template<typename T>
+  auto read(ChimeraTK::DummyRegisterRawAccessor&& accessor) {
+    read<T>(accessor);
+  }
+
+  template<typename T>
+  void write(ChimeraTK::DummyRegisterRawAccessor& accessor, T value) {
+    auto lock = accessor.getBufferLock();
+    accessor = static_cast<int32_t>(value);
+  }
+  template<typename T>
+  void write(ChimeraTK::DummyRegisterRawAccessor&& accessor, T value) {
+    write(accessor, value);
+  }
+
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{enableTestFacility};
 
   ChimeraTK::ScalarRegisterAccessor<int> status;
   ChimeraTK::ScalarRegisterAccessor<std::string> message;
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
+  ChimeraTK::DummyRegisterRawAccessor exceptionDummyRegister;
 
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.pushModule.reg1.pushInput};
   ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};

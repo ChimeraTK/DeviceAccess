@@ -85,8 +85,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPolledRead" << std::endl;
 
   // initialize to known value in deviceBackend register
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 100);
 
   // verify normal operation
   /************************************************************************************************/
@@ -99,8 +98,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
 
   // Behavior on Runtime error on device:
   /************************************************************************************************/
-  exceptionDummyRegister = 10;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 10);
 
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
@@ -159,8 +157,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeRead" << std::endl;
 
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 100);
   ctk::VersionNumber versionBeforeRuntimeError = {};
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionBeforeRuntimeError);
 
@@ -172,8 +169,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   // Behavior on Runtime error on device:
   //  - push input read is skipped.
   /************************************************************************************************/
-  exceptionDummyRegister = 10;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 10);
 
   deviceBackend->throwExceptionRead = true;
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
@@ -228,8 +224,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
   //    - return true.
   //    - generates a new version number.
   /************************************************************************************************/
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 100);
   ctk::VersionNumber version = {};
 
   deviceBackend->throwExceptionRead = true;
@@ -285,8 +280,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   //    - return true.
   //    - generates a new version number.
   /************************************************************************************************/
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 100);
   ctk::VersionNumber version = {};
 
   deviceBackend->throwExceptionRead = true;
