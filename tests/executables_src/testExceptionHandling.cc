@@ -104,12 +104,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   pollVariable.read();
 
   // Proceed only after device is gone down.
-  CHECK_TIMEOUT(
-      [&]() {
-        status.readLatest();
-        return static_cast<int>(status);
-      }() == 1,
-      10000);
+  CHECK_TIMEOUT(isDeviceInError() == true, 10000);
 
   pollVariable.read();
   auto versionNumberOnRuntimeError = pollVariable.getVersionNumber();
@@ -123,14 +118,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   /************************************************************************************************/
   deviceBackend->throwExceptionRead = false;
   pollVariable.read();
-  // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
-  // device recovered.
-  CHECK_TIMEOUT(
-      [&]() {
-        status.readLatest();
-        return static_cast<int>(status);
-      }() == 0,
-      10000);
+  CHECK_TIMEOUT(isDeviceInError() == false, 10000);
 
   pollVariable.read();
   auto versionNumberAfterRecovery = pollVariable.getVersionNumber();
@@ -331,14 +319,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
   // Recover
   deviceBackend->throwExceptionRead = false;
   pollVariable.read();
-  // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
-  // device recovered.
-  CHECK_TIMEOUT(
-      [&]() {
-        status.readLatest();
-        return static_cast<int>(status);
-      }() == 0,
-      10000);
+  CHECK_TIMEOUT(isDeviceInError() == false, 10000);
 
   // see value reflected on recovery
   /************************************************************************************************/

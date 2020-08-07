@@ -119,6 +119,13 @@ struct fixture_with_poll_and_push_input {
     write(accessor, value);
   }
 
+  bool isDeviceInError() {
+    // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
+    // device recovered.
+    status.readLatest();
+    return static_cast<int>(status);
+  }
+
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{enableTestFacility};
