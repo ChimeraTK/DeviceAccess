@@ -39,6 +39,15 @@ struct PushModule : ChimeraTK::ApplicationModule {
   }
 };
 
+struct UpdateModule:ChimeraTK::ApplicationModule{
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  ChimeraTK::ScalarOutput<int> deviceRegister{this, "REG1", "", "", {"DEVICE"}};
+  std::promise<void> p;
+  void mainLoop() override {
+    p.set_value();
+  }
+};
+
 struct DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
   DummyApplication() : Application("DummyApplication") {}
@@ -46,6 +55,7 @@ struct DummyApplication : ChimeraTK::Application {
 
   PushModule pushModule{this, "", ""};
   PollModule pollModule{this, "", ""};
+  UpdateModule updateModule{this, "", ""};
 
   ChimeraTK::ControlSystemModule cs;
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
@@ -63,26 +73,58 @@ template<bool enableTestFacility>
 struct fixture_with_poll_and_push_input {
   fixture_with_poll_and_push_input()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))) {
+        ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))),
+    exceptionDummyRegister(deviceBackend->getRawAccessor("", "REG1")) {
     deviceBackend->open();
     testFacitiy.runApplication();
 
-    exceptionDummyRegister.replace(application.device.device.getScalarRegisterAccessor<int>("/REG1"));
-    status.replace(
-        testFacitiy.getScalar<int>(ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
+
+    status.replace(testFacitiy.getScalar<int>(
+        ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
     message.replace(testFacitiy.getScalar<std::string>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message"));
 
     //
     //  workaround to ensure we exit only after initial value propagation is complete. (meaning we
-    //  are in the main loop of the modules)
+    //  are in the main loop of all modules)
     /************************************************************************************************/
     application.pollModule.p.get_future().wait();
     application.pushModule.p.get_future().wait();
+    application.updateModule.p.get_future().wait();
     /************************************************************************************************/
   }
 
-  ~fixture_with_poll_and_push_input() { deviceBackend->throwExceptionRead = false; }
+  ~fixture_with_poll_and_push_input() {
+    deviceBackend->throwExceptionRead = false;
+    deviceBackend->throwExceptionWrite = false;
+  }
+
+  template<typename T>
+  auto read(ChimeraTK::DummyRegisterRawAccessor& accessor) {
+    auto lock = accessor.getBufferLock();
+    return static_cast<T>(accessor);
+  }
+  template<typename T>
+  auto read(ChimeraTK::DummyRegisterRawAccessor&& accessor) {
+    read<T>(accessor);
+  }
+
+  template<typename T>
+  void write(ChimeraTK::DummyRegisterRawAccessor& accessor, T value) {
+    auto lock = accessor.getBufferLock();
+    accessor = static_cast<int32_t>(value);
+  }
+  template<typename T>
+  void write(ChimeraTK::DummyRegisterRawAccessor&& accessor, T value) {
+    write(accessor, value);
+  }
+
+  bool isDeviceInError() {
+    // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
+    // device recovered.
+    status.readLatest();
+    return static_cast<int>(status);
+  }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   DummyApplication application;
@@ -90,8 +132,9 @@ struct fixture_with_poll_and_push_input {
 
   ChimeraTK::ScalarRegisterAccessor<int> status;
   ChimeraTK::ScalarRegisterAccessor<std::string> message;
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
+  ChimeraTK::DummyRegisterRawAccessor exceptionDummyRegister;
 
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.pushModule.reg1.pushInput};
   ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};
+  ChimeraTK::ScalarOutput<int>& outputVariable{application.updateModule.deviceRegister};
 };

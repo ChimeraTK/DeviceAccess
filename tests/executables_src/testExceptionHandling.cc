@@ -69,20 +69,23 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testFaultReporting, Fixture) {
 }
 
 /*
- * Test read operation on poll type variable when a device runtime exception occours; A poll type
- * variable does not have its AccessMode as wait_for_new_data.
+ * Read from a device in error, using pollType Process Variable.
  * 
- * For such a variable:
- *   - read is skipped till device recovers.
- *   - first skipped instance of read changes datavalidity flag to faulty and generates a new version
- *     number. 
+ * Expected behavior:
+
+ *   - Calls to read are skipped till the device recovers.
+ *
+ *   - The first skipped read request:
+ *     - Sets the process variable data validity flag to faulty
+ *     - Generates a new version number. 
+ *
+  * \anchor testExceptionHandling_b_2_2_3 \ref exceptionHandling_b_2_2_3 "B.2.2.3"
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPolledRead" << std::endl;
 
   // initialize to known value in deviceBackend register
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 100);
 
   // verify normal operation
   /************************************************************************************************/
@@ -95,19 +98,13 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
 
   // Behavior on Runtime error on device:
   /************************************************************************************************/
-  exceptionDummyRegister = 10;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 10);
 
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
 
   // Proceed only after device is gone down.
-  CHECK_TIMEOUT(
-      [&]() {
-        status.readLatest();
-        return static_cast<int>(status);
-      }() == 1,
-      10000);
+  CHECK_TIMEOUT(isDeviceInError() == true, 10000);
 
   pollVariable.read();
   auto versionNumberOnRuntimeError = pollVariable.getVersionNumber();
@@ -121,14 +118,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   /************************************************************************************************/
   deviceBackend->throwExceptionRead = false;
   pollVariable.read();
-  // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
-  // device recovered.
-  CHECK_TIMEOUT(
-      [&]() {
-        status.readLatest();
-        return static_cast<int>(status);
-      }() == 0,
-      10000);
+  CHECK_TIMEOUT(isDeviceInError() == false, 10000);
 
   pollVariable.read();
   auto versionNumberAfterRecovery = pollVariable.getVersionNumber();
@@ -140,28 +130,34 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
 }
 
 /**
- * On a runtime error, a push type read operation should:
- *  - be skipped the first time it is called
- *  - block for all subsequent calls.
+ * Read from a device in error using a pushType Process Variable (PV)
+ *
+ * Expected Behavior:
+ *
+ *  - First call on pushType PV read is skipped. This:
+ *    - Generates a new version number
+ *    - Sets PV data validity flag to faulty.
+ *
+ *  - The subsequent call on read blocks till device recovery.
+ *
+ * \anchor testExceptionHandling_b_2_2_4_a \ref exceptionHandling_b_2_2_4 "B.2.2.4"
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeRead" << std::endl;
 
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
-  ctk::VersionNumber version = {};
-  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
+  write(exceptionDummyRegister, 100);
+  ctk::VersionNumber versionBeforeRuntimeError = {};
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionBeforeRuntimeError);
 
   pushVariable.read();
   BOOST_CHECK_EQUAL(pushVariable, 100);
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
-  BOOST_CHECK(pushVariable.getVersionNumber() == version);
+  BOOST_CHECK(pushVariable.getVersionNumber() == versionBeforeRuntimeError);
 
   // Behavior on Runtime error on device:
   //  - push input read is skipped.
   /************************************************************************************************/
-  exceptionDummyRegister = 10;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 10);
 
   deviceBackend->throwExceptionRead = true;
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
@@ -169,7 +165,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   pushVariable.read();
   BOOST_CHECK_EQUAL(pushVariable, 100);
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(pushVariable.getVersionNumber() > version);
+  BOOST_CHECK(pushVariable.getVersionNumber() > versionBeforeRuntimeError);
 
   //  - subsequent push input reads should be frozen
   /************************************************************************************************/
@@ -191,10 +187,19 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
 }
 
 /*
- * On runtime error:
- *  - readNonBlocking on pushVariable returns true with a new version
- *    number.
- *  - subsequent calls are ignored till recovery.
+ * Test reaNonblocking from a device in error using a push type Process
+ * Variable
+ *
+ * Expected Behavior:
+ *
+ *  - First call to readNonBlocking after device error:
+ *    - Returns true.
+ *    - Generates a new version number.
+ *    - Sets Process Variable data validity to faulty
+ *
+ *  - Subsequent calls till recovery are skipped and return false.
+ *
+ * \anchor testExceptionHandling_b_2_2_4_b \ref exceptionHandling_b_2_2_4 "B.2.2.4"
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeReadNonBlocking" << std::endl;
@@ -207,8 +212,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
   //    - return true.
   //    - generates a new version number.
   /************************************************************************************************/
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 100);
   ctk::VersionNumber version = {};
 
   deviceBackend->throwExceptionRead = true;
@@ -238,9 +242,19 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
 }
 
 /*
- * On runtime error:
- *  - readLatest on pushVariable returns true with a new version number.
- *  - subsequent calls are ignored till recovery.
+ * Test readLatest from a device in error using a push type Process
+ * Variable
+ *
+ * Expected Behavior:
+ *
+ *  - First call to readLatest after device error:
+ *    - Returns true.
+ *    - Generates a new version number.
+ *    - Sets Process Variable data validity to faulty
+ *
+ *  - Subsequent calls till recovery are skipped and return false.
+ *
+ * \anchor testExceptionHandling_b_2_2_4_c \ref exceptionHandling_b_2_2_4 "B.2.2.4"
  */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeReadLatest" << std::endl;
@@ -254,8 +268,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   //    - return true.
   //    - generates a new version number.
   /************************************************************************************************/
-  exceptionDummyRegister = 100;
-  exceptionDummyRegister.write();
+  write(exceptionDummyRegister, 100);
   ctk::VersionNumber version = {};
 
   deviceBackend->throwExceptionRead = true;
@@ -284,7 +297,37 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   BOOST_CHECK(pushVariable.getVersionNumber() > versionNumberOnRuntimeError);
 }
 
-BOOST_AUTO_TEST_CASE(testWrite) {}
+/*
+ * Verify write operations are written asynchronously on device recovery.
+ *
+ * \anchor testExceptionHandling_b_2_3_1 \ref exceptionHandling_b_2_3_1 "B.2.3.1"
+ */
+BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
+  std::cout << "runtimeErrorHandling_testWrite" << std::endl;
+
+  // trigger runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // write when device is faulty
+  /************************************************************************************************/
+  outputVariable = 100;
+  outputVariable.write();
+  BOOST_CHECK_NE(read<int>(exceptionDummyRegister), 100);
+  /************************************************************************************************/
+
+  // Recover
+  deviceBackend->throwExceptionRead = false;
+  pollVariable.read();
+  CHECK_TIMEOUT(isDeviceInError() == false, 10000);
+
+  // see value reflected on recovery
+  /************************************************************************************************/
+  BOOST_CHECK_EQUAL(read<int>(exceptionDummyRegister), 100);
+}
+
+/*
+    2.3.3 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true (= data lost) if a previously delayed and not-yet written value is discarded in the process, false (= no data lost) otherwise.*/
 
 BOOST_AUTO_TEST_SUITE_END()
 

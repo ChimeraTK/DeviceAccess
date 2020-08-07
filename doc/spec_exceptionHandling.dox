@@ -46,14 +46,17 @@ namespace ChimeraTK {
   - \anchor b_2_2 2.2 Read operations will propagate the DataValidity::faulty flag to the owning module / fan out (without changing the actual data value of the process variable):
     - 2.2.1 The normal module algorithm code will be continued, to allow this flag to propagate to the outputs in the same way as if it had been received through the process variable itself (cf. \ref b_1_2 "1.2").
     - 2.2.2 The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a DataValidity::faulty flag already set previously for another reason.
-    - \anchor b_2_2_3 2.2.3 Read operations without AccessMode::wait_for_new_data are _skipped_ until the device is fully recovered again (cf. \ref b_3_1 "3.1"). The first skipped read operation will have a new VersionNumber.
-    - \anchor b_2_2_4 2.2.4 Read operations with AccessMode::wait_for_new_data will be _skipped_ once for each accessor to propagate the DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true (= hasNewData), and a new VersionNumber is obtained). In the following:
-      - non-blocking read operations (readNonBlocking() and readLatest()) are _skipped_ and return false (= no new data), until the device is recovered, and
-      - blocking read operations (read()) will be _frozen_ until the device is recovered.
+    - \anchor exceptionHandling_b_2_2_3 2.2.3 Read operations without AccessMode::wait_for_new_data are _skipped_ until the device is fully recovered again (cf. \ref b_3_1 "3.1"). The first skipped read operation will have a new VersionNumber. [\ref testExceptionHandling_b_2_2_3 "T"]
+    - \anchor exceptionHandling_b_2_2_4 2.2.4 Read operations with AccessMode::wait_for_new_data will be _skipped_ once for each accessor to propagate the DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true (= hasNewData), and a new VersionNumber is obtained). In the following:
+      - non-blocking read operations (readNonBlocking() and readLatest()) are _skipped_ and return false (= no new data), until the device is recovered[\ref testExceptionHandling_b_2_2_4_b "T1"] [\ref testExceptionHandling_b_2_2_4_c "T2"]
+
+, and
+      - blocking read operations (read()) will be _frozen_ until the device is recovered. [\ref testExceptionHandling_b_2_2_4_a "T"]
+
       - After the device is fully recovered (cf. \ref b_3_1 "3.1"), the current value will by (synchronously) read from the device. This will be the first value received by the accessor after an exception.
     - \anchor b_2_2_5 2.2.5 The VersionNumbers returned in case of an exception are the same for the same exception, even across variables and modules. It will be generated in the moment the exception is reported. \ref comment_b_2_2_5 "(*)"
   - \anchor b_2_3 2.3 Write operations will be _delayed_ until the device is fully recovered again (cf. \ref b_3_1 "3.1").
-    - 2.3.1 In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering.
+    - \anchor exceptionHandling_b_2_3_1 2.3.1 In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the device is recovering. [\ref testExceptionHandling_b_2_3_1 "T"]
     - \anchor b_2_3_2 2.3.2 The same mechanism as used for \ref b_3_1_2 "3.1.2" is used here, hence the order of write operations is guaranteed across accessors, but only the latest written value of each accessor prevails. \ref comment_b_2_3_2 "(*)"
     - 2.3.3 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true (= data lost) if a previously delayed and not-yet written value is discarded in the process, false (= no data lost) otherwise.
     - \anchor b_2_3_4 2.3.4 When the delayed value is finally written to the device during the recovery procedure, the return value of the write() is ignored. \ref comment_b_2_3_4 "(*)"
@@ -183,7 +186,7 @@ Note: This section defines the internal interface on a low level. Helper functio
    - 2.3.1 This is done as the first thing unconditionally for all read types, as no read must return with the "value after constuction". (For further details, see the \ref spec_initialValuePropagation "intial value propagation specfication")
    - \anchor c_2_3_2 2.3.2 If there has not been an initial value yet, the read is frozen by acquiring a shared lock on the DeviceModule::initialValueMutex. \ref comment_c_2_3_2 "(*)"
    - \anchor c_2_3_3 2.3.3 As soon as the lock has been acquired it can be released immediately. The device should now be functional and an initial value can be read. \ref comment_c_2_3_3 "(*)"
-   - 2.3.4 A check whether to freeze for a recovery of asynchronous transfers as rescribed in \ref b_2_2_4 "B.2.2.4"  is not done in doPreRead(). The backend takes care of
+   - 2.3.4 A check whether to freeze for a recovery of asynchronous transfers as rescribed in \ref exceptionHandling_b_2_2_4 "B.2.2.4"  is not done in doPreRead(). The backend takes care of
      this and the operation automatically freezes when waiting for data from the decorated transfer element, and resumes once the backend starts sending data again.
      There is nothing extra to do for the ExceptionHandlingDecorator in this case.
    - \anchor c_2_3_5 2.3.5 The lock on the DeviceModule::errorMutex must not be held in this step to prevent dead-lock with the DeviceModule::initialValueMutex. \ref comment_c_2_3_5 "(*)"
@@ -191,7 +194,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 - \anchor c_2_4 2.4 In doPreRead()/doPreWrite(), it is decided whether to execute the target's transfer.
   - \anchor c_2_4_1 2.4.1 This is only applicable to read operations without AccessMode::wait_for_new_data, and to write operations \ref comment_c_2_4_1 "(*)".
   - 2.4.2 This part requires a shared lock on the DeviceModule::errorMutex.
-  - \anchor c_2_4_3 2.4.3 Transfers are only executed if DeviceModule::deviceHasError == false (cf. \ref b_2_3 "B.2.3" and \ref b_2_2_3 "B.2.2.3").
+  - \anchor c_2_4_3 2.4.3 Transfers are only executed if DeviceModule::deviceHasError == false (cf. \ref b_2_3 "B.2.3" and \ref exceptionHandling_b_2_2_3 "B.2.2.3").
   - 2.4.4 If a transfer is not executed, none of the pre/transfer/post functions must be delegated to the target accessor.
   - \anchor c_2_4_5 2.4.5 If the transfer is executed, the DeviceModule::synchronousTransferCounter must be incremented.
   - \anchor c_2_4_6 2.4.6 To prevent the execution of the transfer, a ChimeraTK::runtime_error is thrown before calling _target::preXxx() \ref exceptionHandling_comment_c_2_4_6 "(*)".
@@ -237,7 +240,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 - \anchor comment_c_2_3_5 \ref c_2_3_5 "2.3.5" If the shared lock on the DeviceModule::errorMutex would be held while waiting for the shared lock for the DeviceModule::initialValueMutex it would dead-lock with the DeviceModule, which needs the exclusive lock of DeviceModule::errorMutex to release the DeviceModule::initialValueMutex in \ref c_3_3_10 "3.3.10".
 The only thing that can happend by not having the DeviceModule::errorMutex is that in case of a device error the transfer is already skipped in  \ref c_2_4 "2.4" and not by an exception in the transfer.
 
-- \anchor comment_c_2_4_1 \ref c_2_4_1 "2.4.1" In case of read operations with AccessMode::wait_for_new_data, there is no doXxxTransferYyy() called by the TransferElement. The requirement in \ref b_2_2_4 "B.2.2.4" is fullfilled by the backend implementations, see the TransferElement specification in DeviceAccess.
+- \anchor comment_c_2_4_1 \ref c_2_4_1 "2.4.1" In case of read operations with AccessMode::wait_for_new_data, there is no doXxxTransferYyy() called by the TransferElement. The requirement in \ref exceptionHandling_b_2_2_4 "B.2.2.4" is fullfilled by the backend implementations, see the TransferElement specification in DeviceAccess.
 
 - \anchor exceptionHandling_comment_c_2_4_6 \ref c_2_4_6 "2.4.6" The actual implementation to skip the transfer is done in the TransferElement and the TransferGroup. If the ExceptionHandlingDecorator would implement it by overriding doXxxTransferYyy() it would not work for the TransferGroup, which instead calls the transfer function of the LowLevelTransferElement.
 
