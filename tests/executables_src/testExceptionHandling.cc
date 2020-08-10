@@ -338,6 +338,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
  * \anchor testExceptionHandling_b_2_3_3 \ref exceptionHandling_b_2_3_3 "B.2.3.3"
 */
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testMultipleWrites, Fixture) {
+  std::cout << "runtimeErrorHandling_testMultipleWrites" << std::endl;
   // trigger runtime error
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
