@@ -327,7 +327,40 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
 }
 
 /*
-    2.3.3 The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to an exception, the return value will be true (= data lost) if a previously delayed and not-yet written value is discarded in the process, false (= no data lost) otherwise.*/
+ * Test multiple calls to Process Variable write, when device is in error.
+ * 
+ * Expected Behavior:
+ * - First call to write returns false, indicating  no data loss
+ * - Subsequent calls replaces the last written value with the new one; this write returns true (
+ *   the old value is lost). 
+ * - On recovery, the latest value written, is restored to the device.
+ *
+ * \anchor testExceptionHandling_b_2_3_3 \ref exceptionHandling_b_2_3_3 "B.2.3.3"
+*/
+BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testMultipleWrites, Fixture) {
+  // trigger runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // multiple writes on faulty device.
+  /************************************************************************************************/
+  outputVariable = 100;
+  BOOST_CHECK_EQUAL(outputVariable.write(), false);
+
+  outputVariable = 101;
+  BOOST_CHECK_EQUAL(outputVariable.write(), true); // data lost
+  /************************************************************************************************/
+
+  // Recover
+  deviceBackend->throwExceptionRead = false;
+  pollVariable.read();
+  CHECK_TIMEOUT(isDeviceInError() == false, 10000);
+
+  // see value reflected on recovery
+  /************************************************************************************************/
+  BOOST_CHECK_EQUAL(read<int>(exceptionDummyRegister), 101);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
