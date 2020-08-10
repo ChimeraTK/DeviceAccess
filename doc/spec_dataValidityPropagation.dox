@@ -12,12 +12,12 @@ namespace ChimeraTK {
 ---------------
 
 - 1.1 In ApplicationCore each variable has a data validiy flag attached to it. DataValidity can be 'ok' or 'faulty'.
-- 1.2 This flag is automatically propagated: If one of the inputs of an ApplicationModule is faulty, the data validity of the module becomes faulty, which means
+- 1.2 This flag is automatically propagated: If any of the inputs of an ApplicationModule is faulty, the data validity of the module becomes faulty, which means
 all outputs of this module will automatically be flagged as faulty.
       Fan-outs might be special cases (see 2.4).
 - 1.3 If a device is in error state, all variables which are read from it shall be marked as 'faulty'. This flag is then propagated through all the modules (via 1.1.2) so it shows up in the control system.
 - 1.4 The user code has the possibility to query the data validity of the module
-- 1.5 The user code has the possibility to set the data validity of the module to 'faulty'. However, the user code cannot actively set the module to 'ok' if one of the inputs is 'faulty'.
+- 1.5 The user code has the possibility to set the data validity of the module to 'faulty'. However, the user code cannot actively set the module to 'ok' if any of the module inputs are 'faulty'.
 - \anchor dataValidity_1_6 1.6 The user code can flag individual outputs as bad. However, the user code cannot actively set an output to 'ok' if the data validity of the module is 'faulty'. \ref dataValidity_comment_1_6 "(*)"
 - 1.7 The user code can get the data validity flag of individual inputs and take special actions.
 - 1.8 The data validity of receiving variables is set to 'faulty' on construction. Like this, data is marked as faulty as long as no sensible initial values have been propagated.
@@ -55,13 +55,13 @@ The TriggerFanOut is special in the sense that it does not compute anything, but
 - \anchor dataValidity_2_4_2 2.4.2 The poll-type data inputs do not have a MetaDataPropagatingRegisterDecorator. \ref dataValidity_comment_2_4_2 "(*)".
 
 - 2.4.3 The individual poll-type inputs propagate the data validity flag only to the corresponding outputs.
-- \anchor dataValidity_2_4_4 2.4.4 Although the trigger conceptually has data type 'void', it can also be `faulty` \ref dataValidity_comment_2_4_4 "(*)". An invalid trigger will result be processed, but all data that is being read out is flagged as `faulty`.
+- \anchor dataValidity_2_4_4 2.4.4 Although the trigger conceptually has data type 'void', it can also be `faulty` \ref dataValidity_comment_2_4_4 "(*)". An invalid trigger is processed, but all read out data is flagged as `faulty`.
 
 ### 2.5 Interaction with exception handling
 
 See @ref spec_execptionHandling.
 
-- 2.5.1 When creating the objects, ApplicationCore takes care that the MetaDataPropagatingRegisterDecorator is always placed around the ExceptionHandlingDecorator if both decorators are used. Like this a `faulty` flag raised by the ExceptionHandlingDecorator is automatically picked up by the MetaDataPropagatingRegisterDecorator.
+- 2.5.1 The MetaDataPropagatingRegisterDecorator is always placed *around* the ExceptionHandlingDecorator if both decorators are used on a process variable. Like this a `faulty` flag raised by the ExceptionHandlingDecorator is automatically picked up by the MetaDataPropagatingRegisterDecorator.
 - 2.5.2 The first failing read returns with the old data and the 'faulty' flag. Like this the flag is propagated to the outputs. Only further reads might freeze until the device is available again.
 
 ### 2.6 Application class
@@ -71,7 +71,7 @@ See @ref spec_execptionHandling.
 ### Comments:
 
 - 2.1 The MetaDataPropagatingRegisterDecorator also propagates the version number, not only the data validity flag. Hence it's not called DataValidityPropagatingRegisterDecorator.
-- \anchor dataValidity_comment_2_3_3a \ref dataValidity_2_3_3 "2.3.3" If there would be some outputs which are still valid if a particular input is faulty it means that they are not connected to that input. This usualy is an indicator that the module is doing unrelated things and should be split.
+- \anchor dataValidity_comment_2_3_3a \ref dataValidity_2_3_3 "2.3.3" If a module has an output that would still be valid, even though one of the inputs is faulty, it means that the output is not connected to that particular input. This is an indicator that the module is doing unrelated things and probably should be split.
 - \anchor dataValidity_comment_2_3_3b \ref dataValidity_2_3_3 "2.3.3" A change of the data validity of the module does not automatically change the validity on all outputs. A module might not always write all of its outputs. If the module's data validity is 'faulty', those outputs which are not written stay valid. This is correct because their calculation was not affected by the faulty data yet. And if an output which has faulty data is not updated when the data validity goes back to 'ok' it also stays 'faulty', which is correct as well.
 
 - \anchor dataValidity_comment_2_4_2 \ref dataValidity_2_4_2 "2.4.2" The data validities of the different poll type inputs are not correlated, so they shall not be propagated to the TriggerFanOuts data fault counter. The version numbers of poll-type inputs are not propagated anyway, so there is nothing for the decorator to do.
