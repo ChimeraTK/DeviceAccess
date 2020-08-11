@@ -38,7 +38,8 @@ namespace ChimeraTK {
       TestCapability _forceDataLossWrite = TestCapability::unspecified,
       TestCapability _asyncReadInconsistency = TestCapability::unspecified,
       TestCapability _switchReadOnly = TestCapability::unspecified,
-      TestCapability _switchWriteOnly = TestCapability::unspecified>
+      TestCapability _switchWriteOnly = TestCapability::unspecified,
+      TestCapability _writeNeverLosesData = TestCapability::unspecified>
   struct TestCapabilities {
     constexpr TestCapabilities() {}
 
@@ -48,56 +49,74 @@ namespace ChimeraTK {
     /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
     /// backend tests.
     constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly>
+        _switchWriteOnly, _writeNeverLosesData>
         disableSyncRead() const {
       return {};
     }
 
-    /// See setForceDataLossWrite() function in the regsiter descriptor.
+    /// See setForceDataLossWrite() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly>
+        _switchWriteOnly, TestCapability::disabled>
         enableForceDataLossWrite() const {
+      static_assert(_writeNeverLosesData != TestCapability::enabled,
+          "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly>
+        _switchWriteOnly, _writeNeverLosesData>
         disableForceDataLossWrite() const {
       return {};
     }
 
     /// See forceAsyncReadInconsistency() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled, _switchReadOnly,
-        _switchWriteOnly>
+        _switchWriteOnly, _writeNeverLosesData>
         enableAsyncReadInconsistency() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled, _switchReadOnly,
-        _switchWriteOnly>
+        _switchWriteOnly, _writeNeverLosesData>
         disableAsyncReadInconsistency() const {
       return {};
     }
 
     /// See switchReadOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::enabled,
-        _switchWriteOnly>
+        _switchWriteOnly, _writeNeverLosesData>
         enableSwitchReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::disabled,
-        _switchWriteOnly>
+        _switchWriteOnly, _writeNeverLosesData>
         disableSwitchReadOnly() const {
       return {};
     }
 
     /// See switchWriteOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::enabled>
+        TestCapability::enabled, _writeNeverLosesData>
         enableSwitchWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::disabled>
+        TestCapability::disabled, _writeNeverLosesData>
         disableSwitchWriteOnly() const {
+      return {};
+    }
+
+    /// Enable/disable test whether write transfers never report lost data (part of B.7.2). A series of writeQueueLength
+    /// writes is performed and no data loss must be reported.
+    /// Mutually exclusive with enableForceDataLossWrite().
+    constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, TestCapability::enabled>
+        enableTestWriteNeverLosesData() const {
+      static_assert(_forceDataLossWrite != TestCapability::enabled,
+          "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, TestCapability::disabled>
+        disableTestWriteNeverLosesData() const {
       return {};
     }
 
@@ -106,6 +125,7 @@ namespace ChimeraTK {
     static constexpr TestCapability asyncReadInconsistency{_asyncReadInconsistency};
     static constexpr TestCapability switchReadOnly{_switchReadOnly};
     static constexpr TestCapability switchWriteOnly{_switchWriteOnly};
+    static constexpr TestCapability writeNeverLosesData{_writeNeverLosesData};
   };
 
   /**
@@ -439,7 +459,9 @@ namespace ChimeraTK {
     }
 
     // Proxy for getting the writeQueueLength only if allowed by capabilities.
-    template<typename T, bool condition = (T::capabilities.forceDataLossWrite == TestCapability::enabled)>
+    template<typename T,
+        bool condition = (T::capabilities.forceDataLossWrite == TestCapability::enabled ||
+            T::capabilities.writeNeverLosesData == TestCapability::enabled)>
     struct writeQueueLength_proxy_helper {
       writeQueueLength_proxy_helper(T t) { result = t.writeQueueLength(); }
       size_t result;
@@ -629,6 +651,10 @@ namespace ChimeraTK {
       }
       if(x.capabilities.switchWriteOnly == TestCapability::unspecified) {
         std::cout << "WARNING: Register " << x.path() << " has unspecified capability switchWriteOnly!" << std::endl;
+      }
+      if(x.capabilities.writeNeverLosesData == TestCapability::unspecified) {
+        std::cout << "WARNING: Register " << x.path() << " has unspecified capability writeNeverLosesData!"
+                  << std::endl;
       }
     });
 
@@ -1217,47 +1243,78 @@ namespace ChimeraTK {
     Device d(cdd);
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(!this->isWrite(x) || x.capabilities.forceDataLossWrite != TestCapability::enabled) return;
-      typedef typename decltype(x)::minimumUserType UserType;
-      auto registerName = x.path();
-      std::cout << "... registerName = " << registerName << std::endl;
+      if(!this->isWrite(x)) return;
+      if(x.capabilities.forceDataLossWrite == TestCapability::enabled) {
+        typedef typename decltype(x)::minimumUserType UserType;
+        auto registerName = x.path();
+        std::cout << "... registerName = " << registerName << " (data loss expected)" << std::endl;
 
-      // enable test condition
-      size_t attempts = this->writeQueueLength(x);
-      this->setForceDataLossWrite(x, true);
+        // enable test condition
+        size_t attempts = this->writeQueueLength(x) + 1;
+        this->setForceDataLossWrite(x, true);
 
-      // open the device
-      d.open();
+        // open the device
+        d.open();
 
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
-      // write some value the requested number of attempts
-      for(size_t i = 0; i < attempts; ++i) {
-        auto theValue = x.template generateValue<UserType>();
-        reg = theValue;
-        VersionNumber someVersion;
-        bool dataLost = reg.write(someVersion);
-        if(i < attempts - 1) {
+        // write some value the requested number of attempts
+        for(size_t i = 0; i < attempts; ++i) {
+          auto theValue = x.template generateValue<UserType>();
+          reg = theValue;
+          VersionNumber someVersion;
+          bool dataLost = reg.write(someVersion);
+          if(i < attempts - 1) {
+            BOOST_CHECK(dataLost == false);
+          }
+          else {
+            BOOST_CHECK(dataLost == true);
+          }
+          // User buffer must be intact even when value was lost somewhere
+          CHECK_EQUALITY(reg, theValue);
+          BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+          BOOST_CHECK(reg.getVersionNumber() == someVersion);
+        }
+
+        // disable test condition
+        this->setForceDataLossWrite(x, false);
+
+        // check remote value, must be the last written value
+        auto v1 = x.template getRemoteValue<UserType>();
+        CHECK_EQUALITY(reg, v1);
+
+        // close device again
+        d.close();
+      }
+      else if(x.capabilities.writeNeverLosesData == TestCapability::enabled) {
+        typedef typename decltype(x)::minimumUserType UserType;
+        auto registerName = x.path();
+        std::cout << "... registerName = " << registerName << " (data loss never expected)" << std::endl;
+
+        // obtain number of attempts to make
+        size_t attempts = this->writeQueueLength(x) + 1;
+
+        // open the device
+        d.open();
+
+        auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+        // write some value the requested number of attempts
+        for(size_t i = 0; i < attempts; ++i) {
+          auto theValue = x.template generateValue<UserType>();
+          reg = theValue;
+          VersionNumber someVersion;
+          bool dataLost = reg.write(someVersion);
           BOOST_CHECK(dataLost == false);
         }
-        else {
-          BOOST_CHECK(dataLost == true);
-        }
-        // User buffer must be intact even when value was lost somewhere
-        CHECK_EQUALITY(reg, theValue);
-        BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
-        BOOST_CHECK(reg.getVersionNumber() == someVersion);
+
+        // check remote value, must be the last written value
+        auto v1 = x.template getRemoteValue<UserType>();
+        CHECK_EQUALITY(reg, v1);
+
+        // close device again
+        d.close();
       }
-
-      // disable test condition
-      this->setForceDataLossWrite(x, false);
-
-      // check remote value, must be the last written value
-      auto v1 = x.template getRemoteValue<UserType>();
-      CHECK_EQUALITY(reg, v1);
-
-      // close device again
-      d.close();
     });
   }
 
