@@ -259,7 +259,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
 BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   std::cout << "runtimeErrorHandling_testPushTypeReadLatest" << std::endl;
 
-  // precondition: no pending data to be read on the push type 
+  // precondition: no pending data to be read on the push type
   BOOST_CHECK_EQUAL(pushVariable.readLatest(), false);
   BOOST_CHECK_EQUAL(pushVariable, 0);
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
@@ -313,6 +313,8 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
   /************************************************************************************************/
   outputVariable = 100;
   outputVariable.write();
+  usleep(
+      100000); // some time for the data to propagate. Not very long, but we are testing for nothing to happen, so what else can we do?
   BOOST_CHECK_NE(read<int>(exceptionDummyRegister), 100);
   /************************************************************************************************/
 
@@ -323,7 +325,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
 
   // see value reflected on recovery
   /************************************************************************************************/
-  BOOST_CHECK_EQUAL(read<int>(exceptionDummyRegister), 100);
+  CHECK_EQUAL_TIMEOUT(read<int>(exceptionDummyRegister), 100, 10000);
 }
 
 /*
@@ -346,7 +348,8 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testMultipleWrites, Fixture) {
   // multiple writes on faulty device.
   /************************************************************************************************/
   outputVariable = 100;
-  BOOST_CHECK_EQUAL(outputVariable.write(), false);
+  auto testval = outputVariable.write();
+  BOOST_CHECK_EQUAL(testval, false);
 
   outputVariable = 101;
   BOOST_CHECK_EQUAL(outputVariable.write(), true); // data lost
@@ -359,9 +362,8 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testMultipleWrites, Fixture) {
 
   // see value reflected on recovery
   /************************************************************************************************/
-  BOOST_CHECK_EQUAL(read<int>(exceptionDummyRegister), 101);
+  CHECK_EQUAL_TIMEOUT(read<int>(exceptionDummyRegister), 101, 10000);
 }
-
 
 BOOST_AUTO_TEST_SUITE_END()
 

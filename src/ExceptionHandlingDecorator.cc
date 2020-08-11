@@ -53,7 +53,7 @@ namespace ChimeraTK {
      * modify the recoveryAcessor's user buffer while data is written to the device.
      */
     {
-      _hasThrownToInhibitTransfer = false;
+      _inhibitWriteTransfer = false;
       _hasThrownLogicError = false;
       _dataLostInPreviousWrite = false;
       auto recoverylock{_deviceModule->getRecoverySharedLock()};
@@ -79,9 +79,8 @@ namespace ChimeraTK {
 
       boost::shared_lock<boost::shared_mutex> errorLock(_deviceModule->errorMutex);
       if(_deviceModule->deviceHasError) {
-        _hasThrownToInhibitTransfer = true;
-        throw ChimeraTK::runtime_error(
-            "ExceptionHandlingDecorator is preventing the write transfer."); // writing will be delayed, done by the recovery accessor
+        _inhibitWriteTransfer = true;
+        return;
       }
 
       ++_deviceModule->synchronousTransferCounter; // must be under the lock
@@ -100,23 +99,20 @@ namespace ChimeraTK {
       // postWrite() throw the active exception we have. Don't clear logic erros here.
       return;
     }
-    if(!_hasThrownToInhibitTransfer) {
-      {
-        auto recoverylock{_deviceModule->getRecoverySharedLock()};
-        _recoveryHelper->wasWritten = true; // the transfer was successful, so this data was written
-      }                                     // end scope for recovery lock
-
+    if(!_inhibitWriteTransfer) {
       --_deviceModule->synchronousTransferCounter;
       try {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(type, versionNumber);
+        {
+          auto recoverylock{_deviceModule->getRecoverySharedLock()};
+          // the transfer was successful or doPostRead did not throw and we reach this point,
+          // so we matk these data as written
+          _recoveryHelper->wasWritten = true;
+        } // end scope for recovery lock
       }
       catch(ChimeraTK::runtime_error& e) {
         _deviceModule->reportException(e.what());
       }
-    }
-    else {
-      // get rid of the active exception do the calling postWrite() does not re-throw
-      _activeException = nullptr;
     }
     assert(_activeException == nullptr);
   }
@@ -195,18 +191,29 @@ namespace ChimeraTK {
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(VersionNumber versionNumber) {
-    bool transferLostData = _target->writeTransfer(versionNumber);
-    return transferLostData || _dataLostInPreviousWrite;
+    return genericWriteWrapper([&] { return _target->writeTransferDestructively(versionNumber); });
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(VersionNumber versionNumber) {
-    bool transferLostData = _target->writeTransferDestructively(versionNumber);
-    return transferLostData || _dataLostInPreviousWrite;
+    return genericWriteWrapper([&] { return _target->writeTransferDestructively(versionNumber); });
   }
 
+  template<typename UserType>
   template<typename Callable>
-  bool genericWriteWrapper(Callable writeFunction, VersionNumber versionNumber);
+  bool ExceptionHandlingDecorator<UserType>::genericWriteWrapper(Callable writeFunction) {
+    if(_inhibitWriteTransfer) {
+      return _dataLostInPreviousWrite;
+    }
+    bool transferReportsPreviousDataLost = false;
+    try {
+      transferReportsPreviousDataLost = writeFunction();
+    }
+    catch(ChimeraTK::runtime_error&) {
+      _activeException = std::current_exception();
+    }
+    return (transferReportsPreviousDataLost || _dataLostInPreviousWrite);
+  }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 

@@ -55,10 +55,16 @@ namespace ChimeraTK {
 
     VariableDirection _direction;
 
+    // We have to throw in read transfers because the outermost TransferElement has to see the exception
     bool _hasThrownToInhibitTransfer{false};
+    // For writing we must not throw. The overridden doWriteTransfer() must return the correct data loss flag.
+    bool _inhibitWriteTransfer{false};
     bool _hasThrownLogicError{false};
     bool _dataLostInPreviousWrite{false};
     bool _hasReportedException{false}; // valid only with wait_forNewData
+
+    template<typename Callable>
+    bool genericWriteWrapper(Callable writeFunction);
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
