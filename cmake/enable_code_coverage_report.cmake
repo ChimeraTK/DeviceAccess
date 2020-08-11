@@ -25,9 +25,9 @@
 #
 #######################################################################################################################
 
-string(TOUPPER "${USE_TSAN}" use_tsanitizer_uppercase)
-IF(use_tsanitizer_uppercase STREQUAL "TRUE")
-    message(WARNING "The USE_TSAN set to true. Code coverage cannot be enabled, becasue it requires -O0 flag and USE_TSAN requires -O1.")
+string(TOUPPER "${ENABLE_TSAN}" enable_tsanitizer_uppercase)
+IF(enable_tsanitizer_uppercase STREQUAL "TRUE")
+    message(WARNING "The ENABLE_TSAN set to true. Code coverage cannot be enabled, becasue it requires -O0 flag and ENABLE_TSAN requires -O1.")
 ELSE()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
     # The make coverage command is only available in debug mode.  Also
