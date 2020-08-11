@@ -50,4 +50,13 @@ endforeach( SOURCE_FILE )
 # To run the examples we need the map files. Copy them to the build folder.
 FILE(COPY example.dmap my_device.map DESTINATION ${PROJECT_BINARY_DIR})
 
+string(TOUPPER "${ENABLE_TSAN}" enable_tsanitizer_uppercase)
+IF(enable_tsanitizer_uppercase STREQUAL "TRUE")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O1 -fsanitize=thread")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O1 -fsanitize=thread")
+ELSE()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 --coverage")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0 --coverage")
+ENDIF()
+
 #add_subdirectory ("custom_backend_registration")
