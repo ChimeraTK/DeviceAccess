@@ -29,8 +29,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${${PROJECT_NAME}_C_FLAGS} -Wall -Wextra -Ws
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -O3 -g")
 
-string(TOUPPER "${USE_TSAN}" use_tsanitizer_uppercase)
-IF(use_tsanitizer_uppercase STREQUAL "TRUE")
+string(TOUPPER "${ENABLE_TSAN}" enable_tsanitizer_uppercase)
+IF(enable_tsanitizer_uppercase STREQUAL "TRUE")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O1 -fsanitize=thread")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O1 -fsanitize=thread")
 ELSE()
