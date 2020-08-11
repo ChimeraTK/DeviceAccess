@@ -33,8 +33,9 @@ namespace ChimeraTK { namespace LNMBackend {
 
   void MonostableTriggerPlugin::updateRegisterInfo() {
     // Change register info to write-only and data type nodata
-    _info->readable = false;
-    _info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::nodata);
+    auto info = _info.lock();
+    info->readable = false;
+    info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::nodata);
   }
 
   /********************************************************************************************************************/

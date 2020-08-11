@@ -17,7 +17,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   void ForceReadOnlyPlugin::updateRegisterInfo() {
     // Change register info to read-only
-    _info->writeable = false;
+    _info.lock()->writeable = false;
   }
 
   /********************************************************************************************************************/

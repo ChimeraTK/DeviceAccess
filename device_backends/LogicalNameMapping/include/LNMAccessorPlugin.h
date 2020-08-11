@@ -84,7 +84,7 @@ namespace ChimeraTK { namespace LNMBackend {
         AccessModeFlags flags, size_t pluginIndex) const;
 
     /** RegisterInfo describing the the target register for which this plugin instance should work. */
-    boost::shared_ptr<LNMBackendRegisterInfo> _info;
+    boost::weak_ptr<LNMBackendRegisterInfo> _info;
   };
 
   /********************************************************************************************************************/
@@ -239,7 +239,7 @@ namespace ChimeraTK { namespace LNMBackend {
     callForType(type, [&](auto T) {
       // obtain target accessor with desired type
       auto target = backend->getRegisterAccessor_impl<decltype(T)>(
-          _info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
+          _info.lock()->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
       decorated = static_cast<const Derived*>(this)->template decorateAccessor<UserType>(backend, target);
     });
 

@@ -72,7 +72,7 @@ namespace ChimeraTK {
         map[RegisterPath(info->registerName)].accessor = _accessor;
       }
       else {
-        _accessor = map[RegisterPath(info->registerName)].accessor;
+        _accessor = map[RegisterPath(info->registerName)].accessor.lock();
       }
       _mutex = &map[RegisterPath(info->registerName)].mutex;
       // allocate and initialise the buffer

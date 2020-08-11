@@ -24,14 +24,11 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
   void TypeHintModifierPlugin::updateRegisterInfo() {
-    auto d = _info->_dataDescriptor;
+    auto info = _info.lock();
+    auto d = info->_dataDescriptor;
     auto newDescriptor = RegisterInfo::DataDescriptor(_dataType);
-    _info->_dataDescriptor = RegisterInfo::DataDescriptor(newDescriptor.fundamentalType(),
-        newDescriptor.isIntegral(),
-        newDescriptor.isSigned(),
-        newDescriptor.nDigits(),
-        _dataType.isIntegral() ? 0 : newDescriptor.nFractionalDigits(),
-        d.rawDataType(),
-        d.transportLayerDataType());
+    info->_dataDescriptor = RegisterInfo::DataDescriptor(newDescriptor.fundamentalType(), newDescriptor.isIntegral(),
+        newDescriptor.isSigned(), newDescriptor.nDigits(),
+        _dataType.isIntegral() ? 0 : newDescriptor.nFractionalDigits(), d.rawDataType(), d.transportLayerDataType());
   }
 }} // namespace ChimeraTK::LNMBackend

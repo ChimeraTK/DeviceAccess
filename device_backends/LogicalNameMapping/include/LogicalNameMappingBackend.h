@@ -75,7 +75,7 @@ namespace ChimeraTK {
     /** Struct holding shared accessors together with a mutex for thread safety. See sharedAccessorMap data member. */
     template<typename UserType>
     struct SharedAccessor {
-      boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
+      boost::weak_ptr<NDRegisterAccessor<UserType>> accessor;
       std::mutex mutex;
     };
 

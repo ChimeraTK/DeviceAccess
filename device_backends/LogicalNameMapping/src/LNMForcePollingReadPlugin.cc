@@ -16,8 +16,9 @@ namespace ChimeraTK { namespace LNMBackend {
 
   void ForcePollingReadPlugin::updateRegisterInfo() {
     // remove wait_for_new_data flag, if present
-    if(_info->supportedFlags.has(AccessMode::wait_for_new_data)) {
-      _info->supportedFlags.remove(AccessMode::wait_for_new_data);
+    auto info = _info.lock();
+    if(info->supportedFlags.has(AccessMode::wait_for_new_data)) {
+      info->supportedFlags.remove(AccessMode::wait_for_new_data);
     }
   }
 
