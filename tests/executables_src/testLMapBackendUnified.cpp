@@ -111,7 +111,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     typedef typename Derived::minimumUserType T;
     auto cv = derived->template getRemoteValue<Traw>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      Traw e = cv[i + derived->myOffset()] + derived->increment * (static_cast<T>(i) + 1);
+      Traw e = cv[i] + derived->increment * (static_cast<T>(i) + 1);
       if(!getRaw) {
         v.push_back(derived->template convertRawToCooked<T>(e));
       }
