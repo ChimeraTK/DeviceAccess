@@ -166,7 +166,10 @@ namespace {
     dev.close();
   }
 
+  /*********************************************************************************************************************/
+
   BOOST_FIXTURE_TEST_CASE(testCreateBackend, TestFixture) {
+    setDMapFilePath("shareddummyTest.dmap");
     auto backendInst1 = BackendFactory::getInstance().createBackend("SHDMEMDEV");
     auto backendInst2 = BackendFactory::getInstance().createBackend("SHDMEMDEV");
     auto backendInst3 = BackendFactory::getInstance().createBackend("SHDMEMDEV2");
