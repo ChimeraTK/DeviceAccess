@@ -37,11 +37,8 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
 
   BOOST_CHECK_EQUAL(session->_helloCount, 1);
 
-  // startup of the sleeping: get the lock, then tell the application it can try
-  // to get the lock The app will continue once we free the lock
-  RebotSleepSynchroniser::_lock.lock();
-  RebotSleepSynchroniser::_clientMayGetLock = true;
-  std::cout << "test locked manually , mayget is true" << std::endl;
+  testable_rebot_sleep::waitForClientTestableMode();
+  // We now have locked the mutex
 
   for(uint32_t i = 1; i < 5; ++i) {
     d.write("BOARD.WORD_USER", 42);
@@ -98,7 +95,7 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
   BOOST_CHECK(d.isFunctional() == true);
   rebotServer.stop();
-  testable_rebot_sleep::advance_until( boost::chrono::milliseconds( 62505 +  2500 ) );
+  testable_rebot_sleep::advance_until(boost::chrono::milliseconds(62505 + 2500));
   BOOST_CHECK(d.isFunctional() == false);
 
   std::cout << "test done" << std::endl;

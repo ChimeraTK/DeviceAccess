@@ -33,14 +33,22 @@ namespace ChimeraTK {
   // for each thread) in a loopup table. For now we the members static.
   struct RebotSleepSynchroniser {
     static std::mutex _lock;
-    // only modify this variable while holding the lock
+    // only modify this variable while holding the lock. You may read it without, that's why it's atomic.
     static std::atomic<bool> _clientMayGetLock;
+    // may only be accessed while holding the lock.
     static boost::chrono::steady_clock::time_point _nextRequestedWakeup;
+    // may only be modified once (set to true) by the client code (in sleep_until)
+    static std::atomic<bool> _clientHasReachedTestableMode;
+
+    // only used in the test thread
+    static bool _testHasReachedTestableMode;
   };
 
   std::mutex RebotSleepSynchroniser::_lock;
   std::atomic<bool> RebotSleepSynchroniser::_clientMayGetLock(false);
   boost::chrono::steady_clock::time_point RebotSleepSynchroniser::_nextRequestedWakeup = RebotTestableClock::_epoch;
+  std::atomic<bool> RebotSleepSynchroniser::_clientHasReachedTestableMode(false);
+  bool RebotSleepSynchroniser::_testHasReachedTestableMode(false);
 
   namespace testable_rebot_sleep {
     boost::chrono::steady_clock::time_point now() {
@@ -63,7 +71,14 @@ namespace ChimeraTK {
       // The application is done with whatever it was doing and going to sleep.
       // This is the synchronisation point where we hand the lock back to the
       // test thread.
-      RebotSleepSynchroniser::_lock.unlock();
+      if(RebotSleepSynchroniser::_clientHasReachedTestableMode) {
+        RebotSleepSynchroniser::_lock.unlock();
+      }
+      else {
+        // We don't hold the lock yet, so we cannot unlock it. But the next time we reach this place we will.
+        RebotSleepSynchroniser::_clientHasReachedTestableMode = true;
+      }
+
       std::cout << "application unlocked" << std::endl;
 
       // Yield the thread (give away the rest of the time slice) until we are
@@ -111,6 +126,7 @@ namespace ChimeraTK {
 
     template<class Rep, class Period>
     void advance_until(boost::chrono::duration<Rep, Period> targetTimeRelativeMyEpoch) {
+      assert(RebotSleepSynchroniser::_testHasReachedTestableMode);
       auto absoluteTargetTime = static_cast<TimePoint>(RebotTestableClock::_epoch) + targetTimeRelativeMyEpoch;
       std::cout << "advanving to " << (absoluteTargetTime - static_cast<TimePoint>(RebotTestableClock::_epoch)).count()
                 << std::endl;
@@ -128,6 +144,20 @@ namespace ChimeraTK {
           RebotTestableClock::_now = absoluteTargetTime;
         }
       }
+    }
+
+    // The client always starts without the lock because it starts a new thread and is only interacting with sleep_until().
+    // So we have to wait in the test until the is waiting in sleep_until, then get the lock.
+    void waitForClientTestableMode() {
+      boost::this_thread::yield();
+      while(!RebotSleepSynchroniser::_clientHasReachedTestableMode) {
+        boost::this_thread::yield();
+      }
+      RebotSleepSynchroniser::_lock.lock();
+      RebotSleepSynchroniser::_clientMayGetLock = true; // client may get the lock the next time the tests releases it.
+      RebotSleepSynchroniser::_testHasReachedTestableMode =
+          true; // make sure this function is called first by an assertion in advance_until.
+      std::cout << "test locked initially , mayget is true" << std::endl;
     }
 
   } // namespace testable_rebot_sleep
