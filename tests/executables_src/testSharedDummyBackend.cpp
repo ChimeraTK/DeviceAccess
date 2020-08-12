@@ -52,18 +52,12 @@ namespace {
   };
   static TestLocker testLocker;
 
-  // Helpers to test the catalogue
-  class TestableSharedDummyBackend : public SharedDummyBackend {
-   public:
-    friend struct TestFixture;
-  };
-
   struct TestFixture {
     bool testRegisterNotInCatalogue(const std::string& registerPath) {
       // Also get the backend to test the catalogue
       auto backendInstance = BackendFactory::getInstance().createBackend("SHDMEMDEV");
 
-      auto catalogue = static_cast<TestableSharedDummyBackend*>(backendInstance.get())->getRegisterCatalogue();
+      auto catalogue = backendInstance->getRegisterCatalogue();
 
       return !catalogue.hasRegister(registerPath);
     }
