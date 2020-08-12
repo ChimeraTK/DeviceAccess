@@ -62,7 +62,7 @@ namespace ChimeraTK {
       }
       auto& map = boost::fusion::at_key<uint64_t>(_dev->sharedAccessorMap.table);
       auto it = map.find(RegisterPath(info->registerName));
-      if(it == map.end()) {
+      if(it == map.end() || map[RegisterPath(info->registerName)].accessor.expired()) {
         _accessor = targetDevice->getRegisterAccessor<uint64_t>(
             RegisterPath(info->registerName), numberOfWords, wordOffsetInRegister, {});
         //
