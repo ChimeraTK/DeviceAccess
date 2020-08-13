@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.0RC1WIP
+\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.0RC2WIP
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behaviour is working as intended.**
 
@@ -136,14 +136,14 @@ Note: This section defines the internal interface on a low level. Helper functio
 - 1.5 DeviceModule::listOfReadRegisters resp. DeviceModule::listOfWriteRegisters
   - 1.5.1 are used to check that all used registers are existing and have the right direction after (re-)opening the device.
   - 1.5.2 No lock for accessing is required, since the lists are filled in the constructors of the ExceptionHandlingDecorator and in the following only used by the DeviceModule thread.
-  
+
 - 1.6 The following mutexes govern critical sections (besides variable access listed above):
   - \anchor c_1_6_1 1.6.1 DeviceModule::errorMutex protects \ref comment_c_1_6_1 "(*)"
     - the (positive) decision to start a transfer followed by incrementing the DeviceModule::synchronousTransferCounter in \ref c_2_4_3 "2.4.3" to \ref c_2_4_5 "2.4.5", against
     - setting DeviceModule::deviceHasError flag in \ref c_2_7_1 "2.7.1".
 
   - \anchor c_1_6_2 1.6.2 DeviceModule::recoveryMutex protects \ref comment_c_1_6_2 "(*)"
-    - writing the DeviceModule::recoveryHelpers to the device and clearing the DeviceModule::deviceHasError flag in \ref c_3_3_6 "3.3.6" to \ref c_3_3_8 "3.3.8", against
+    - writing the DeviceModule::recoveryHelpers to the device and clearing the DeviceModule::deviceHasError flag in \ref c_3_3_6 "3.3.6" to \ref c_3_3_7 "3.3.7", against
     - updating the DeviceModule::recoveryHelpers in \ref c_2_2 "2.2" and deciding whether to skip the write operation in \ref c_2_4 "2.4".
 
   - \anchor c_1_6_3 1.6.3 DeviceModule::initialValueMutex protects \ref comment_c_1_6_3 "(*)"
@@ -168,7 +168,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - \anchor comment_c_1_6_1 \ref c_1_6_1 "1.6.1" This prevents a race condition in \ref c_3_3_15 "3.3.15". If a (synchronous) transfer might be started after DeviceModule::deviceHasError has been set, the barrier for new transfers in \ref c_3_3_15 "3.3.15" would not be effective and the transfer might be even executed only after the device has been re-openend (\ref c_3_3_1 "3.3.1") but before the recovery is complete.
 
-- \anchor comment_c_1_6_2 \ref c_1_6_2 "1.6.2" This prevents data loss due to a race condition. If the ExceptionHandlingDecorator would update the corresponding DeviceModule::RecoveryHelpers list entry only after it has been written to the device in \ref c_3_3_6 "3.3.6", but the ExceptionHandlingDecorator would decide not to execute the write operation (\ref c_2_4 "2.4") because the DeviceModule thread is still before \ref c_3_3_8 "3.3.8", the data would not be written to the device at all. **FIXME: This comment is completely unclear to me. M.K.**
+- \anchor comment_c_1_6_2 \ref c_1_6_2 "1.6.2" This prevents data loss due to a race condition. If the ExceptionHandlingDecorator would update the corresponding DeviceModule::RecoveryHelpers list entry only after it has been written to the device in \ref c_3_3_6 "3.3.6", but the ExceptionHandlingDecorator would decide not to execute the write operation (\ref c_2_4 "2.4") because the DeviceModule thread is still before \ref c_3_3_7 "3.3.7", the data would not be written to the device at all. **FIXME: This comment is completely unclear to me. M.K.**
 
 - \anchor comment_c_1_6_3 \ref c_1_6_3 "1.6.3" This implements freezing reads until the initial value can be read, cf. \ref b_4_2 "B.4.2".
 
@@ -185,7 +185,7 @@ Note: This section defines the internal interface on a low level. Helper functio
     - 2.1.2.1 The writeOrder of each RecoveryHelper is initialised with 0, which means "not written yet".
     - 2.1.2.2 The first writeOrder that is given out by the DeviceModule is 1.
   - 2.1.3 The RecoveryHelper objects may be accessed only under a lock, see \ref c_1_3 "1.3".
-  
+
 \subsubsection spec_execptionHandling_high_level_implmentation_decorator_behaviour Behaviour
 - \anchor c_2_2 2.2 In doPreWrite() the RecoveryHelper is updated while holding a shared lock on DeviceModule::recoveryMutex:
   - \anchor c_2_2_1 2.2.1 These steps need to be done unconditionally at the very beginning of doPreWrite(), before \ref c_2_4 "2.4" and before delegating to preWrite(). \ref comment_c_2_2_1 "(*)"
@@ -292,9 +292,9 @@ The only thing that can happend by not having the DeviceModule::errorMutex is th
     - 3.3.6.1 A RecoveryHelper::accessor is considered "valid", if it has already received a value, i.e. RecoveryHelper::versionNumber != {nullptr}
     - 3.3.6.2 If there is an exception, update \c Devices/\<alias\>/message with the error message, release the lock and go back to \ref c_3_3_1 "3.3.1".
     - 3.3.6.3 If successful, set RecoveryHelper::wasWritten to true.
-  
-  - 3.3.7 \c Devices/\<alias\>/status is set to 0 and \c Devices/\<alias\>/message is set to an empty string. \c Devices/\<alias\>/deviceBecameFunctional is written.
-  - \anchor c_3_3_8 3.3.8 Clear the DeviceModule::deviceHasError flag to allow the ExceptionHandlingDecorator to execute read/write operations again (cf. \ref c_3_3_13 "3.3.13")
+
+  - \anchor c_3_3_7 3.3.7 Clear the DeviceModule::deviceHasError flag to allow the ExceptionHandlingDecorator to execute read/write operations again (cf. \ref c_3_3_13 "3.3.13")
+  - 3.3.8 \c Devices/\<alias\>/status is set to 0 and \c Devices/\<alias\>/message is set to an empty string. \c Devices/\<alias\>/deviceBecameFunctional is written.
   - 3.3.9 (Re-)activate the asynchronous read transfers of the device by calling Device::activateAsyncReads().
   - \anchor c_3_3_10 3.3.10 Release the DeviceModule::initialValueMutex, if this point is passed for the very first time (was obtained in \ref c_3_2 "3.2", cf. \ref c_2_3 "2.3"). \ref comment_c_3_3_10 "(*)"
   - \anchor c_3_3_11 3.3.11 Release lock on DeviceModule::recoveryMutex (was obtained in \ref c_3_3_5 "3.3.5").
@@ -306,9 +306,9 @@ The only thing that can happend by not having the DeviceModule::errorMutex is th
 
 \subsubsection spec_execptionHandling_high_level_implmentation_deviceModule_comments (*) Comments
 
-- \anchor comment_c_3_3_2 \ref c_3_3_2 "3.3.2" The exact place when this is done does not matter, as long as it is done after \ref c_3_3_15 "3.3.15" (no ongoing synchronous transfers) and before \ref c_3_3_8 "3.3.8" (resetting deciveHasError). As soon as DeviceModule::deviceHasError is cleared, new exceptions can be reported, which would be lost if the list was cleared afterwards. As DeviceModule::reportException() will only write to the exception queue if DeviceModule::deviceHasError is true, and then sets DeviceModule::deviceHasError to true while holding a lock, there will only be one exception in the queue anyway. There are race conditions if exceptions reported by the backend from the same error arrive late. It can trigger a second, unnecessary recovery. But an exception cannot be missed if the error queue is cleared before resetting DeviceModule::deviceHasError.
+- \anchor comment_c_3_3_2 \ref c_3_3_2 "3.3.2" The exact place when this is done does not matter, as long as it is done after \ref c_3_3_15 "3.3.15" (no ongoing synchronous transfers) and before \ref c_3_3_7 "3.3.7" (resetting deciveHasError). As soon as DeviceModule::deviceHasError is cleared, new exceptions can be reported, which would be lost if the list was cleared afterwards. As DeviceModule::reportException() will only write to the exception queue if DeviceModule::deviceHasError is true, and then sets DeviceModule::deviceHasError to true while holding a lock, there will only be one exception in the queue anyway. There are race conditions if exceptions reported by the backend from the same error arrive late. It can trigger a second, unnecessary recovery. But an exception cannot be missed if the error queue is cleared before resetting DeviceModule::deviceHasError.
 
-- \anchor comment_c_3_3_10 \ref c_3_3_10 "3.3.10" Releasing the DeviceModule::initialValueMutex has to happen after \ref c_3_3_8 "3.3.8" (clearing DeviceModule::deviceHasError) to prevent the ExceptionHandlingDecorator from erroneously detecting a device error in \ref c_2_4_3 "2.4.3" after waiting for the  DeviceModule::initialValueMutex in \ref c_2_3 "2.3".
+- \anchor comment_c_3_3_10 \ref c_3_3_10 "3.3.10" Releasing the DeviceModule::initialValueMutex has to happen after \ref c_3_3_7 "3.3.7" (clearing DeviceModule::deviceHasError) to prevent the ExceptionHandlingDecorator from erroneously detecting a device error in \ref c_2_4_3 "2.4.3" after waiting for the  DeviceModule::initialValueMutex in \ref c_2_3 "2.3".
 
 - \anchor comment_c_3_3_13 \ref c_3_3_13 "3.3.13" Setting the DeviceModule::deviceHasError flag has to be done in the application thread which has caught the exception. If you just send a message and let the device module do both setting and clearing of the flag you can have a race condition: Another accessor can still start a transfer until the DeviceModule has woken up and set the flag, which can be avoided. Note that the original, severe race condition that let to this design (the same thread would not freeze because the desicion to do so was done in pre-read) does not exist any more since the backend has taken over the responsibility not to send any new data to the queue after an exception has been reported.
 
