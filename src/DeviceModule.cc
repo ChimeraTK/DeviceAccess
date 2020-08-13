@@ -380,17 +380,8 @@ namespace ChimeraTK {
         continue;
       }
 
-      // [Spec: 2.3.5] Reset exception state and wait for the next error to be reported.
-      deviceError.status = 0;
-      deviceError.message = "";
-      deviceError.setCurrentVersionNumber({});
-      deviceError.writeAll();
-
       errorLock.lock();
       deviceHasError = false;
-      // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
-      // within one "application step"
-      --owner->testableMode_deviceInitialisationCounter;
 
       // send the trigger that the device is available again
       device.activateAsyncRead();
@@ -398,9 +389,20 @@ namespace ChimeraTK {
         isHoldingInitialValueMutex = false;
         initialValueMutex.unlock();
       }
-      deviceBecameFunctional.write();
+
       errorLock.unlock();
       recoveryLock.unlock();
+
+      // [Spec: 2.3.5] Reset exception state and wait for the next error to be reported.
+      deviceError.status = 0;
+      deviceError.message = "";
+      deviceError.setCurrentVersionNumber({});
+      deviceError.writeAll();
+      deviceBecameFunctional.write();
+
+      // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
+      // within one "application step"
+      --owner->testableMode_deviceInitialisationCounter;
 
       // [Spec: 2.3.8] Wait for an exception being reported by the ExceptionHandlingDecorators
       // release the testable mode mutex for waiting for the exception.
