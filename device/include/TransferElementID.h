@@ -31,6 +31,9 @@ namespace ChimeraTK {
     bool operator==(const TransferElementID& other) const { return (_id != 0) && (_id == other._id); }
     bool operator!=(const TransferElementID& other) const { return !(operator==(other)); }
 
+    /** Check whether the ID is valid. */
+    bool isValid() const { return _id != 0; }
+
     /** Assign ID from another. */
     TransferElementID& operator=(const TransferElementID& other) {
       _id = other._id;
