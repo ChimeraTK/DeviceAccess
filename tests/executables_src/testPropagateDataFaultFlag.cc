@@ -578,18 +578,23 @@ struct Fixture_noTestableMode {
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
     device1Status.replace(
         test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD1 / "status"));
+    device2Status.replace(
+        test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD2 / "status"));
 
     device1DummyBackend->open();
     device2DummyBackend->open();
+  }
 
+  void waitForDevices() {
     // the block below is a work around for a race condition; make sure
     // all values are propagated to the device registers before starting
     // the test.
-    static const int DEFAULT = 1;
+    static const int DEFAULT = 1234567;
     test.setScalarDefault("m1/o1", DEFAULT);
 
     test.runApplication();
     CHECK_EQUAL_TIMEOUT((device1Status.readLatest(), device1Status), 0, 100000);
+    CHECK_EQUAL_TIMEOUT((device2Status.readLatest(), device2Status), 0, 100000);
 
     // Making sure the default is written to the device before proceeding.
     auto m1o1 = device1DummyBackend->getRegisterAccessor<int>("m1/o1", 1, 0, false);
@@ -606,20 +611,22 @@ struct Fixture_noTestableMode {
   TestApplication3 app;
   ctk::TestFacility test{false};
   ChimeraTK::ScalarRegisterAccessor<int> device1Status;
+  ChimeraTK::ScalarRegisterAccessor<int> device2Status;
 };
 
-BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestableMode)
+/*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
+BOOST_AUTO_TEST_SUITE(data_validity_propagation_noTestFacility)
+
+BOOST_FIXTURE_TEST_CASE(testDeviceReadFailure, Fixture_noTestableMode) {
   std::cout << "testDeviceReadFailure" << std::endl;
+  waitForDevices();
+
   auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1_DUMMY_WRITEABLE");
   auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
 
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto result = test.getScalar<int>("m1/Module1_result");
-
-  auto device2Status =
-      test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD2 / "status");
 
   threadedFanoutInput = 10000;
   consumingFanoutSource = 1000;
@@ -649,6 +656,9 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   BOOST_CHECK_EQUAL(result, 21001);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
+  // make sure the device module has seen the exception
+  CHECK_EQUAL_TIMEOUT((device2Status.readLatest(), device2Status), 1, 100000);
+
   // -------------------------------------------------------------//
 
   threadedFanoutInput = 30000;
@@ -673,8 +683,12 @@ BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
+/*********************************************************************************************************************/
+
+BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
   std::cout << "testReadDeviceWithTrigger" << std::endl;
+  waitForDevices();
+
   auto trigger = test.getScalar<int>("trigger");
   auto fromDevice = test.getScalar<int>("i3"); // cs side display: m1.i3
   //----------------------------------------------------------------//
@@ -723,8 +737,12 @@ BOOST_AUTO_TEST_CASE(testReadDeviceWithTrigger) {
   BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testConsumingFanout) {
+/*********************************************************************************************************************/
+
+BOOST_FIXTURE_TEST_CASE(testConsumingFanout, Fixture_noTestableMode) {
   std::cout << "testConsumingFanout" << std::endl;
+  waitForDevices();
+
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto fromConsumingFanout = test.getScalar<int>("m1/i1"); // consumingfanout variable on cs side
   auto result = test.getScalar<int>("m1/Module1_result");
@@ -791,33 +809,42 @@ BOOST_AUTO_TEST_CASE(testConsumingFanout) {
   BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
+/*********************************************************************************************************************/
+
+BOOST_FIXTURE_TEST_CASE(testDataFlowOnDeviceException, Fixture_noTestableMode) {
   std::cout << "testDataFlowOnDeviceException" << std::endl;
+
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto m1_result = test.getScalar<int>("m1/Module1_result");
   auto m2_result = test.getScalar<int>("m2/Module2_result");
 
-  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1_DUMMY_WRITEABLE");
+  auto consumingFanoutSource = ctk::ScalarRegisterAccessor<int>(
+      device1DummyBackend->getRegisterAccessor<int>("/m1/i1_DUMMY_WRITEABLE", 0, 0, {}));
   consumingFanoutSource = 1000;
   consumingFanoutSource.write();
 
-  auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE");
+  auto pollRegister = ctk::ScalarRegisterAccessor<int>(
+      device2DummyBackend->getRegisterAccessor<int>("/m1/i2_DUMMY_WRITEABLE", 0, 0, {}));
   pollRegister = 100;
   pollRegister.write();
+
+  waitForDevices();
+
+  // get rid of initial values
+  m1_result.read();
+  m2_result.read();
 
   threadedFanoutInput = 1;
 
   // ------------------------------------------------------------------//
   // without exception
   threadedFanoutInput.write();
-  // Read till the value we want; there is a chance of spurious values
-  // sneaking in due to a race condition when dealing with device
-  // modules. These spurious entries (with value: PV defaults) do
-  // not matter for a real application.
-  CHECK_EQUAL_TIMEOUT((m1_result.readNonBlocking(), m1_result), 1101, 10000);
+
+  CHECK_TIMEOUT(m1_result.readNonBlocking(), 10000);
+  BOOST_CHECK_EQUAL(m1_result, 1101);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
 
-  CHECK_EQUAL_TIMEOUT((m2_result.readLatest(), m2_result), 1101, 10000);
+  CHECK_TIMEOUT(m2_result.readNonBlocking(), 10000);
   BOOST_CHECK_EQUAL(m2_result, 1101);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
 
@@ -826,7 +853,7 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
   threadedFanoutInput.setDataValidity(ctk::DataValidity::faulty);
   threadedFanoutInput.write();
 
-  CHECK_TIMEOUT(m1_result.readLatest(), 10000);
+  CHECK_TIMEOUT(m1_result.readNonBlocking(), 10000);
   BOOST_CHECK_EQUAL(m1_result, 1101);
   BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
 
