@@ -1013,6 +1013,9 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   BOOST_CHECK_EQUAL(result, 53);
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
+  // Device status should report fault. We need to wait for it here to make sure the DeviceModule has seen the fault.
+  CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 1, 10000);
+
   // Also set pushInputValidity to faulty
   pushInput = 60;
   pushInput.setDataValidity(ctk::DataValidity::faulty);
