@@ -484,12 +484,12 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
   if(consumer.getType() != NodeType::invalid)
     assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
   if(!node.getDirection().withReturn) {
-    pvarPair = createSynchronizedProcessArray<UserType>(
-        nElements, name, node.getUnit(), node.getDescription(), {}, 3, {}, flags);
+    pvarPair =
+        createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(), {}, 3, flags);
   }
   else {
     pvarPair = createBidirectionalSynchronizedProcessArray<UserType>(
-        nElements, name, node.getUnit(), node.getDescription(), {}, 3, {}, {}, flags);
+        nElements, name, node.getUnit(), node.getDescription(), {}, 3, flags);
   }
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
