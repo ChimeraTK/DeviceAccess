@@ -26,6 +26,9 @@ namespace ctk = ChimeraTK;
 
 /* dummy application */
 
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
 struct TestModule1 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   ctk::ScalarPushInput<int> i1{this, "i1", "", ""};
@@ -72,6 +75,7 @@ struct TestApplication2 : ctk::Application {
   TestModule1 t1{this, "t1", ""};
   ctk::ControlSystemModule cs;
 };
+
 /*********************************************************************************************************************/
 
 // first test without FanOuts of any kind
@@ -333,6 +337,7 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
 }
 
 /*********************************************************************************************************************/
+/*********************************************************************************************************************/
 /*
  * Tests below verify data fault flag propagation on:
  * - Threaded FanOut
@@ -426,6 +431,9 @@ struct TestApplication3 : ctk::Application {
   }
 };
 
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
 struct Fixture_testFacility {
   Fixture_testFacility()
   : device1DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
@@ -449,6 +457,8 @@ struct Fixture_testFacility {
 };
 
 BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, Fixture_testFacility)
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   std::cout << "testThreadedFanout" << std::endl;
@@ -502,6 +512,8 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
 }
 
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   std::cout << "testInvalidTrigger" << std::endl;
 
@@ -554,6 +566,9 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
 struct Fixture_noTestableMode {
   Fixture_noTestableMode()
@@ -894,6 +909,9 @@ BOOST_AUTO_TEST_CASE(testDataFlowOnDeviceException) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
 // Module and Application for test case "testDataValidPropagationOnException"
 struct Module3 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -930,6 +948,8 @@ struct TestApplication4 : ctk::Application {
     findTag("DEVICE2").flatten().connectTo(device2["m1"]);
   }
 };
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   std::cout << "testDataValidPropagationOnException" << std::endl;
@@ -1050,3 +1070,5 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   // nothing more in the queue
   BOOST_CHECK(result.readLatest() == false);
 }
+
+/*********************************************************************************************************************/
