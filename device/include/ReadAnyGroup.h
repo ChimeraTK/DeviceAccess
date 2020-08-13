@@ -169,6 +169,13 @@ namespace ChimeraTK {
      * the behaviour is undefined. */
     TransferElementID readAny();
 
+    /** Read the next available update in the group, but do not block if no update is available. If no update is
+     *  available, a default-constructed TransferElementID is returned after all poll-type elements in the group
+     *  have been updated.
+     * 
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+    TransferElementID readAnyNonBlocking();
+
     /** Wait until the given TransferElement has received an update and store it
      * to its user buffer. All updates of other elements which are received before
      * the update of the given element will be processed and are thus visible in
@@ -211,6 +218,12 @@ namespace ChimeraTK {
      *  Before calling this function, finalise() must have been called, otherwise
      * the behaviour is undefined. */
     Notification waitAny();
+
+    /** Check if an update is available in the group, but do not block if no update is available. If no update is
+     *  available, an invalid Notification object is returned (i.e. Notification::isReady() will return false).
+     * 
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+    Notification waitAnyNonBlocking();
 
     /** Process polled transfer elements (update them if new values are
      * available).
@@ -415,6 +428,23 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  inline TransferElementID ReadAnyGroup::readAnyNonBlocking() {
+    Notification notification;
+    do {
+      notification = this->waitAnyNonBlocking();
+      if(!notification.isReady()) {
+        this->processPolled();
+        return {};
+      }
+    } while(!notification.accept());
+
+    this->processPolled();
+
+    return notification.getId();
+  }
+
+  /********************************************************************************************************************/
+
   inline ReadAnyGroup::Notification ReadAnyGroup::waitAny() {
     // preRead() and postRead() must be called in pairs. Hence we call all preReads here before waiting for transfers to finish.
     // postRead() will be called when accepting the notification.
@@ -429,6 +459,26 @@ namespace ChimeraTK {
     // Wait for notification
     std::size_t index;
     notification_queue.pop_wait(index);
+    return Notification(push_elements[index], index);
+  }
+
+  /********************************************************************************************************************/
+
+  inline ReadAnyGroup::Notification ReadAnyGroup::waitAnyNonBlocking() {
+    // preRead() and postRead() must be called in pairs. Hence we call all preReads here before waiting for transfers to finish.
+    // postRead() will be called when accepting the notification.
+    // We can call preRead() repeatedly on the same element, even if no transfer and call to postRead() have happened. It is just ignored
+    // (see Transfer element spec B.5.2). So we just always call all preReads.
+
+    // Notice : This has the side effect that decorators can block here, for instance for the setup phase. This is used by ApplicationCore in testable mode.
+    for(auto& elem : push_elements) {
+      elem.getHighLevelImplElement()->preRead(TransferType::read);
+    }
+
+    // Wait for notification
+    std::size_t index;
+    bool hasUpdate = notification_queue.pop(index);
+    if(!hasUpdate) return {};
     return Notification(push_elements[index], index);
   }
 
