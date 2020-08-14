@@ -60,7 +60,7 @@ This specification goes beyond ApplicationCore. It has impact on other ChimeraTK
     3. \anchor initialValue_D_8_b_iii Constants can be read exactly once in case of `AccessMode::wait_for_new_data`, so the initial value can be received. (see. \ref initialValue_d_10 "10") [ \ref testInitialValue_D_8_b_iii "T"]
 9. The module-like fan outs `ThreadedFanOut` and `TriggerFanOut` (does not apply to the accessor-like fan outs `FeedingFanOut` and `ConsumingFanOut`)
   1. The fan outs have a transparent behaviour, i.e. an entity that receives an initial value through a fan out sees the same behaviour as if a direct connection would have been realised.
-  2. This implies that the inputs are treated like described in 8.b.
+  2. \anchor initialValueThreaddedFanOut_D_9_b This implies that the inputs are treated like described in 8.b. [ \ref testInitialValueThreaddedFanOut_D_9_b "T for ThreadedFanOut"] [ \ref testInitialValueTriggerFanOut_D_9_b "T for TriggerFanOut"]
   3. \anchor initialValue_d_9_3 The initial value is propagated immediately to the outputs.  \ref initialValue_comment_d_9_3 "(*)"
 10. \anchor initialValue_d_10 Constants (`Application::makeConstant()`):
   1. Constant accessors only have one value, which is propagates as the intitial value. They conceptually behave like a process array that is written exactly once by the framework.

@@ -319,4 +319,107 @@ BOOST_AUTO_TEST_CASE(testConstantPollInitValueAtDevice8biii) {
   BOOST_CHECK(d.constantPollInput.getVersionNumber() != ctk::VersionNumber( std::nullptr_t() ));
 
 }
+
+
+struct PushModuleD9_1 : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  struct : ChimeraTK::VariableGroup {
+    using ChimeraTK::VariableGroup::VariableGroup;
+    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
+  } reg1{this, "REG1", ""};
+  std::promise<void> p;
+  std::atomic_bool enteredTheMainLoop{false};
+  void mainLoop() override {
+    enteredTheMainLoop = true;
+    p.set_value();
+  }
+};
+struct PushModuleD9_2 : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  struct : ChimeraTK::VariableGroup {
+    using ChimeraTK::VariableGroup::VariableGroup;
+    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
+  } reg1{this, "REG2", ""};
+  std::promise<void> p;
+  std::atomic_bool enteredTheMainLoop{false};
+  void mainLoop() override {
+    enteredTheMainLoop = true;
+    p.set_value();
+  }
+};
+
+struct PushD9DummyApplication : ChimeraTK::Application {
+  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  PushD9DummyApplication() : Application("DummyApplication") {}
+  ~PushD9DummyApplication() { shutdown(); }
+
+  PushModuleD9_1 pushModuleD9_1{this, "", ""};
+  PushModuleD9_2 pushModuleD9_2{this, "", ""};
+  ChimeraTK::ControlSystemModule cs;
+  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+
+  void defineConnections() override {
+    findTag("CS").connectTo(cs);
+    findTag("DEVICE").connectTo(device);
+    auto push_input1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
+    auto push_input2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
+    push_input1 >> pushModuleD9_1.reg1.pushInput;
+    push_input2 >> pushModuleD9_2.reg1.pushInput;
+  }
+};
+
+struct D9InitialValueEceptionDummy {
+  D9InitialValueEceptionDummy()
+    : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
+                      ChimeraTK::BackendFactory::getInstance().createBackend(PushDummyApplication::ExceptionDummyCDD1))) {}
+  ~D9InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+
+  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
+  PushD9DummyApplication application;
+  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
+  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.reg1.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.reg1.pushInput};
+};
+
+/**
+  *  D 9 b for ThreaddedFanOut
+  * \anchor testInitialValueThreaddedFanOut_D_9_b \ref initialValueThreaddedFanOut_D_9_b
+  */
+BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
+  std::cout << "===   testPushInitValueAtDeviceD9   === " << std::endl;
+  std::chrono::time_point<std::chrono::steady_clock> start, end;
+  {
+    D9InitialValueEceptionDummy dummyToStopTimeUntilOpen;
+    start = std::chrono::steady_clock::now();
+    dummyToStopTimeUntilOpen.application.run();
+    dummyToStopTimeUntilOpen.application.pushModuleD9_1.p.get_future().wait();
+    dummyToStopTimeUntilOpen.application.pushModuleD9_2.p.get_future().wait();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    end = std::chrono::steady_clock::now();
+  }
+  {
+    D9InitialValueEceptionDummy d;
+    d.deviceBackend->throwExceptionOpen = true;
+    BOOST_CHECK_THROW(d.deviceBackend->open(),std::exception);
+    d.application.run();
+    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == false);
+    std::this_thread::sleep_for(2*(end-start));
+    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == false);
+    BOOST_CHECK(d.pushVariable1.getVersionNumber() == ctk::VersionNumber( std::nullptr_t() ));
+    d.deviceBackend->throwExceptionOpen = false;
+    d.application.pushModuleD9_1.p.get_future().wait();
+    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == true);
+    BOOST_CHECK(d.pushVariable1.getVersionNumber() != ctk::VersionNumber( std::nullptr_t() ));
+  }
+}
+
+
+
+/**
+  * TODO
+  *  D 9 b for TriggerFanOut
+  * \anchor testInitialValueThreaddedFanOut_D_9_b \ref initialValueThreaddedFanOut_D_9_b
+  */
+
 BOOST_AUTO_TEST_SUITE_END()
