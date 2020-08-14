@@ -243,7 +243,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - \anchor comment_c_2_2_1 \ref c_2_2_1 "2.2.1" Updating the recoveryHelper first ensures that no data is lost, even if the write operation attempt is concurrent with a recovery. See \ref c_1_6_2 "1.6.2".
 
-- \anchor comment_c_2_2_4 \ref c_2_2_4 "2.2.4" Extending the duration of the lock until the decision whether to skip the transfer will prevent unncessary duplicate writes, which otherwise could occur if the DeviceModule went through the whole critical section \ref c_3_3_5 "3.3.5" to \ref c_3_3_11 "3.3.11" in between. Two mutexes have to be shared-locked in \ref c_2_4 "2.4" then at the same time (DeviceModule::recoveryMutex and DeviceModule::errorMutex, which is acquired second). This does not present any risk of dead locks, since the only place where the DeviceModule::errorMutex is unique-locked (see DeviceModule::reportException()) no other mutex is acquired.
+- \anchor comment_c_2_2_4 \ref c_2_2_4 "2.2.4" Extending the duration of the lock until the decision whether to skip the transfer will prevent unncessary duplicate writes, which otherwise could occur if the DeviceModule went through the whole critical section \ref c_3_3_5 "3.3.5" to \ref c_3_3_8 "3.3.8" in between. Two mutexes have to be shared-locked in \ref c_2_4 "2.4" then at the same time (DeviceModule::recoveryMutex and DeviceModule::errorMutex, which is acquired second). This does not present any risk of dead locks, since the only place where the DeviceModule::errorMutex is unique-locked (see DeviceModule::reportException()) no other mutex is acquired.
 
 - \anchor comment_c_2_3_2 \ref c_2_3_2 "2.3.2" In principle just getting and releasing the shared lock on DeviceModule::initialValueMutex unconditionally would be a sufficient
   implementation. The version number cannot be valid if the lock cannot be acquired yet, and after this the exclusive lock is never acquired again after it has been relased in  \ref c_3_3_10 "3.3.10". However, checking the version number is probably cheaper than acquiring the lock in each doPreRead().
@@ -293,11 +293,11 @@ The only thing that can happend by not having the DeviceModule::errorMutex is th
     - 3.3.6.2 If there is an exception, update \c Devices/\<alias\>/message with the error message, release the lock and go back to \ref c_3_3_1 "3.3.1".
     - 3.3.6.3 If successful, set RecoveryHelper::wasWritten to true.
 
-  - \anchor c_3_3_7 3.3.7 Clear the DeviceModule::deviceHasError flag to allow the ExceptionHandlingDecorator to execute read/write operations again (cf. \ref c_3_3_13 "3.3.13")
-  - 3.3.8 \c Devices/\<alias\>/status is set to 0 and \c Devices/\<alias\>/message is set to an empty string. \c Devices/\<alias\>/deviceBecameFunctional is written.
-  - 3.3.9 (Re-)activate the asynchronous read transfers of the device by calling Device::activateAsyncReads().
+  - \anchor c_3_3_7 3.3.7 While holding the DeviceModule::errorMutex: Clear the DeviceModule::deviceHasError flag to allow the ExceptionHandlingDecorator to execute read/write operations again (cf. \ref c_3_3_13 "3.3.13")
+  - \anchor c_3_3_8 3.3.8 Release lock on DeviceModule::recoveryMutex (was obtained in \ref c_3_3_5 "3.3.5").
+  - 3.3.9 (Re-)activate the asynchronous read transfers of the device by calling Device::activateAsyncRead().
   - \anchor c_3_3_10 3.3.10 Release the DeviceModule::initialValueMutex, if this point is passed for the very first time (was obtained in \ref c_3_2 "3.2", cf. \ref c_2_3 "2.3"). \ref comment_c_3_3_10 "(*)"
-  - \anchor c_3_3_11 3.3.11 Release lock on DeviceModule::recoveryMutex (was obtained in \ref c_3_3_5 "3.3.5").
+  - 3.3.11 \c Devices/\<alias\>/status is set to 0 and \c Devices/\<alias\>/message is set to an empty string. \c Devices/\<alias\>/deviceBecameFunctional is written.
   - 3.3.12 The DeviceModuleThread waits for the next reported exception.
   - \anchor c_3_3_13 3.3.13 An exception is received. The call to reportException (cf. \ref spec_execptionHandling_high_level_implmentation_reportException "C.4") in the other thread has already set deviceHasError to true \ref comment_c_3_3_13 "(*)". From this point on, no new transfers will be started.
   - 3.3.14 \c Devices/\<alias\>/status is set to 1 and \c Devices/\<alias\>/message is set to the first received exception message.
