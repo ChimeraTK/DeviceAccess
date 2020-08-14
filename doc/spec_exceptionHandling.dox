@@ -168,7 +168,7 @@ Note: This section defines the internal interface on a low level. Helper functio
 
 - \anchor comment_c_1_6_1 \ref c_1_6_1 "1.6.1" This prevents a race condition in \ref c_3_3_15 "3.3.15". If a (synchronous) transfer might be started after DeviceModule::deviceHasError has been set, the barrier for new transfers in \ref c_3_3_15 "3.3.15" would not be effective and the transfer might be even executed only after the device has been re-openend (\ref c_3_3_1 "3.3.1") but before the recovery is complete.
 
-- \anchor comment_c_1_6_2 \ref c_1_6_2 "1.6.2" This prevents data loss due to a race condition. If the ExceptionHandlingDecorator would update the corresponding DeviceModule::RecoveryHelpers list entry only after it has been written to the device in \ref c_3_3_6 "3.3.6", but the ExceptionHandlingDecorator would decide not to execute the write operation (\ref c_2_4 "2.4") because the DeviceModule thread is still before \ref c_3_3_7 "3.3.7", the data would not be written to the device at all. **FIXME: This comment is completely unclear to me. M.K.**
+- \anchor comment_c_1_6_2 \ref c_1_6_2 "1.6.2" This prevents data loss due to a race condition. If the ExceptionHandlingDecorator would update the corresponding DeviceModule::recoveryHelpers list entry only after it has been written to the device by the DeviceModule thread in \ref c_3_3_6 "3.3.6", but the ExceptionHandlingDecorator would decide not to execute the write operation (\ref c_2_4 "2.4") because the DeviceModule thread has not yet cleared the error flag in \ref c_3_3_7 "3.3.7", the data would not be written to the device at all.
 
 - \anchor comment_c_1_6_3 \ref c_1_6_3 "1.6.3" This implements freezing reads until the initial value can be read, cf. \ref b_4_2 "B.4.2".
 
