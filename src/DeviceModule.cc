@@ -382,6 +382,9 @@ namespace ChimeraTK {
 
       errorLock.lock();
       deviceHasError = false;
+      errorLock.unlock();
+
+      recoveryLock.unlock();
 
       // send the trigger that the device is available again
       device.activateAsyncRead();
@@ -389,9 +392,6 @@ namespace ChimeraTK {
         isHoldingInitialValueMutex = false;
         initialValueMutex.unlock();
       }
-
-      errorLock.unlock();
-      recoveryLock.unlock();
 
       // [Spec: 2.3.5] Reset exception state and wait for the next error to be reported.
       deviceError.status = 0;
