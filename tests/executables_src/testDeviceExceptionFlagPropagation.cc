@@ -50,11 +50,21 @@ struct TestApplication : ctk::Application {
       ctk::ScalarOutput<int> set{this, "actuator", "", ""};
     } vars{this, "vars", "", ctk::HierarchyModifier::hideThis};
 
-    void prepare() override { vars.set.write(); /* send intial value */ }
+    std::atomic<ctk::DataValidity> readDataValidity;
+
+    void prepare() override {
+      readDataValidity = vars.read.dataValidity();
+      // The receiving end of all accessor implementations should be constructed with faulty (Initial value propagation
+      // spec, D.1)
+      BOOST_CHECK(readDataValidity == ctk::DataValidity::faulty);
+      vars.set.write(); /* send intial value */
+    }
 
     void mainLoop() override {
+      readDataValidity = vars.read.dataValidity();
       while(true) {
         vars.tick.read();
+        readDataValidity = vars.read.dataValidity();
         switch(readMode) {
           case 0:
             vars.read.readNonBlocking();
@@ -99,9 +109,6 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
 
     ctk::TestFacility test(false);
 
-    // The receiving end of all accessor implementations should be constructed with faulty (Initial value propagation spec, D.1)
-    BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
-
     // Throw on device open and check if DataValidity::faulty gets propagated
     dummyBackend1->throwExceptionOpen = true;
     // set the read mode
@@ -113,11 +120,11 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     // Trigger and check
     app.name.name.tick.write();
     usleep(10000);
-    BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
+    BOOST_CHECK(app.module.readDataValidity == ctk::DataValidity::faulty);
 
     // recover from error state
     dummyBackend1->throwExceptionOpen = false;
-    CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::ok, 10000);
+    CHECK_TIMEOUT(app.module.readDataValidity == ctk::DataValidity::ok, 10000);
   }
 }
 
