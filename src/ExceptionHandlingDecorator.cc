@@ -176,7 +176,7 @@ namespace ChimeraTK {
     }
 
     if(!TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-      boost::shared_lock<boost::shared_mutex> recoveryLock(_deviceModule->errorMutex);
+      boost::shared_lock<boost::shared_mutex> errorLock(_deviceModule->errorMutex);
       if(_deviceModule->deviceHasError) {
         _hasThrownToInhibitTransfer = true;
         throw ChimeraTK::runtime_error("ExceptionHandlingDecorator has thrown to skip read transfer");
