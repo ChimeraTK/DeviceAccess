@@ -270,9 +270,7 @@ struct ConstantPollModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarPollInput<int> constantPollInput{this, "REG1", "", "", {"DEVICE"}};
   std::promise<void> p;
-  std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
-    enteredTheMainLoop = true;
     p.set_value();
   }
 };
@@ -301,7 +299,6 @@ struct ConstantPollTypeInitialValueEceptionDummy {
   ConstantPollDummyApplication application;
   ChimeraTK::TestFacility testFacitiy{false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPollInput<int>& constantPollInput{application.constantPollModule.constantPollInput};
 };
 /**
   * Constants can be read exactly once in case of `AccessMode::wait_for_new_data`, so the initial value can be received.
@@ -311,15 +308,16 @@ BOOST_AUTO_TEST_CASE(testConstantPollInitValueAtDevice8biii) {
   std::cout << "===   testConstantPollInitValueAtDevice8biii   === " << std::endl;
   ConstantPollTypeInitialValueEceptionDummy d;
 
+  BOOST_CHECK(
+      d.application.constantPollModule.constantPollInput.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+
   d.application.run();
-  BOOST_CHECK(d.constantPollInput.getVersionNumber() == ctk::VersionNumber( std::nullptr_t() ));
-  BOOST_CHECK(d.application.constantPollModule.enteredTheMainLoop == false);
+
   d.application.constantPollModule.p.get_future().wait();
-  BOOST_CHECK(d.application.constantPollModule.enteredTheMainLoop == true);
-  BOOST_CHECK(d.constantPollInput.getVersionNumber() != ctk::VersionNumber( std::nullptr_t() ));
 
+  BOOST_CHECK(
+      d.application.constantPollModule.constantPollInput.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
-
 
 struct PushModuleD9_1 : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
