@@ -82,11 +82,11 @@ namespace ChimeraTK {
       // has been opened, and the check in TransferGroup::read() will not throw a logic_error
       // We don't have to store the lock. Just need it as a synchronisation point.
       // But we have to increase the testable mode counter because we don't want to fall out of testable mode at this point already.
-      ++Application::getInstance().testableMode_deviceInitialisationCounter;
+      if(Application::getInstance().testableMode) ++Application::getInstance().testableMode_deviceInitialisationCounter;
       Application::testableModeUnlock("WaitInitialValueLock");
       (void)_deviceModule.getInitialValueSharedLock();
       Application::testableModeLock("Enter while loop");
-      --Application::getInstance().testableMode_deviceInitialisationCounter;
+      if(Application::getInstance().testableMode) --Application::getInstance().testableMode_deviceInitialisationCounter;
 
       while(true) {
         transferGroup.read();

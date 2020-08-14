@@ -402,7 +402,7 @@ namespace ChimeraTK {
 
       // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
       // within one "application step"
-      --owner->testableMode_deviceInitialisationCounter;
+      if(Application::getInstance().testableMode) --owner->testableMode_deviceInitialisationCounter;
 
       // [Spec: 2.3.8] Wait for an exception being reported by the ExceptionHandlingDecorators
       // release the testable mode mutex for waiting for the exception.
@@ -418,7 +418,9 @@ namespace ChimeraTK {
       owner->testableModeLock("Process exception");
       // increment special testable mode counter to make sure the initialisation completes within one
       // "application step"
-      ++owner->testableMode_deviceInitialisationCounter; // matched above with a decrement
+      if(Application::getInstance().testableMode) {
+        ++owner->testableMode_deviceInitialisationCounter; // matched above with a decrement
+      }
 
       errorLock.lock(); // we need both locks to modify the queue
 
@@ -463,7 +465,9 @@ namespace ChimeraTK {
     // Increment special testable mode counter to make sure the initialisation completes within one
     // "application step". Start with counter increased (device not initialised yet, wait).
     // We can to this here without testable mode lock because the application is still single threaded.
-    ++owner->testableMode_deviceInitialisationCounter; // released and increased in handeException loop
+    if(Application::getInstance().testableMode) {
+      ++owner->testableMode_deviceInitialisationCounter; // released and increased in handeException loop
+    }
   }
 
   /*********************************************************************************************************************/

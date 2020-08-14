@@ -167,11 +167,11 @@ namespace ChimeraTK {
     if(TransferElement::_versionNumber == VersionNumber(nullptr)) {
       // don't drop out of the testable mode while waiting for device initialisation,
       // unless explicitly reqested by the test.
-      ++Application::getInstance().testableMode_deviceInitialisationCounter;
+      if(Application::getInstance().testableMode) ++Application::getInstance().testableMode_deviceInitialisationCounter;
       Application::testableModeUnlock("ExceptionHandling_doPreRead");
       _deviceModule->getInitialValueSharedLock();
       Application::testableModeLock("ExceptionHandling_doPreRead");
-      --Application::getInstance().testableMode_deviceInitialisationCounter;
+      if(Application::getInstance().testableMode) --Application::getInstance().testableMode_deviceInitialisationCounter;
       // we don't have to store the shared lock. Once we acquired it the deviceModule will never take it again.
     }
 
