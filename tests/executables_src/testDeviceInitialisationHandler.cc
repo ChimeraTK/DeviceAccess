@@ -23,7 +23,7 @@ namespace ctk = ChimeraTK;
 static constexpr char deviceCDD[] = "(ExceptionDummy?map=test.map)";
 static constexpr char exceptionMessage[] = "DEBUG: runtime error intentionally cased in device initialisation";
 
-static std::atomic<bool> throwInInitialisation = false;
+static std::atomic<bool> throwInInitialisation{false};
 static std::atomic<int32_t> var1{0};
 static std::atomic<int32_t> var2{0};
 static std::atomic<int32_t> var3{0};
