@@ -84,9 +84,7 @@ struct fixture_with_poll_and_push_input {
     message.replace(testFacitiy.getScalar<std::string>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message"));
 
-    //
-    //  workaround to ensure we exit only after initial value propagation is complete. (meaning we
-    //  are in the main loop of all modules)
+    //  wait until all modules have been properly started, to ensure the initial value propagation is complete
     /************************************************************************************************/
     application.pollModule.p.get_future().wait();
     application.pushModule.p.get_future().wait();
