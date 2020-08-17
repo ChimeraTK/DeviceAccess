@@ -102,7 +102,7 @@ namespace ChimeraTK {
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
     std::mutex mutex;
 
-    bool _hasActiveException{false};
+    std::atomic<bool> _hasActiveException{false};
 
     void resizeBarContents();
 
