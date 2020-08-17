@@ -120,8 +120,7 @@ struct fixture_with_poll_and_push_input {
   }
 
   bool isDeviceInError() {
-    // workaround: wait till device module recovey completes; assumption: status variable == 0 =>
-    // device recovered.
+    // By definition, the DeviceModule has finished the recovery procedure when the status is 0 again.
     status.readLatest();
     return static_cast<int>(status);
   }
