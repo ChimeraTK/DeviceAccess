@@ -14,20 +14,19 @@ namespace ChimeraTK {
   class RebotTestableClock {
    public:
     static boost::chrono::steady_clock::time_point now() {
-      std::cout << "TestIMPL:: returning now = "
-                << (static_cast<TimePoint>(_epoch) - static_cast<TimePoint>(_now)).count() << std::endl;
+      std::cout << "TestIMPL:: returning now = " << (_epoch - _now).count() << std::endl;
       return _now;
     }
-    static std::atomic<boost::chrono::steady_clock::time_point> _now;
-    static std::atomic<boost::chrono::steady_clock::time_point> _epoch;
+    static boost::chrono::steady_clock::time_point _now;
+    static boost::chrono::steady_clock::time_point _epoch;
 
     template<class Rep, class Period>
     static void setTime(boost::chrono::duration<Rep, Period> timeSinceMyEpoch) {
       _now = _epoch + timeSinceMyEpoch;
     }
   };
-  std::atomic<TimePoint> RebotTestableClock::_epoch(boost::chrono::steady_clock::now());
-  std::atomic<TimePoint> RebotTestableClock::_now(static_cast<TimePoint>(RebotTestableClock::_epoch));
+  TimePoint RebotTestableClock::_epoch(boost::chrono::steady_clock::now());
+  TimePoint RebotTestableClock::_now(RebotTestableClock::_epoch);
 
   // In a future implementation we might want to hold several synchronisers (one
   // for each thread) in a loopup table. For now we the members static.
@@ -53,10 +52,7 @@ namespace ChimeraTK {
   namespace testable_rebot_sleep {
     boost::chrono::steady_clock::time_point now() {
       std::cout << "function TestIMPL:: returning now = "
-                << (static_cast<TimePoint>(RebotTestableClock::_now) -
-                       static_cast<TimePoint>(RebotTestableClock::_epoch))
-                       .count()
-                << std::endl;
+                << (RebotTestableClock::_now - RebotTestableClock::_epoch).count() << std::endl;
       return RebotTestableClock::_now;
     }
 
@@ -127,15 +123,12 @@ namespace ChimeraTK {
     template<class Rep, class Period>
     void advance_until(boost::chrono::duration<Rep, Period> targetTimeRelativeMyEpoch) {
       assert(RebotSleepSynchroniser::_testHasReachedTestableMode);
-      auto absoluteTargetTime = static_cast<TimePoint>(RebotTestableClock::_epoch) + targetTimeRelativeMyEpoch;
-      std::cout << "advanving to " << (absoluteTargetTime - static_cast<TimePoint>(RebotTestableClock::_epoch)).count()
-                << std::endl;
+      auto absoluteTargetTime = RebotTestableClock::_epoch + targetTimeRelativeMyEpoch;
+      std::cout << "advanving to " << (absoluteTargetTime - RebotTestableClock::_epoch).count() << std::endl;
       std::cout << "next wakeup requested for "
-                << (RebotSleepSynchroniser::_nextRequestedWakeup - static_cast<TimePoint>(RebotTestableClock::_epoch))
-                       .count()
-                << std::endl;
+                << (RebotSleepSynchroniser::_nextRequestedWakeup - RebotTestableClock::_epoch).count() << std::endl;
 
-      while(static_cast<TimePoint>(RebotTestableClock::_now) < absoluteTargetTime) {
+      while(RebotTestableClock::_now < absoluteTargetTime) {
         if(RebotSleepSynchroniser::_nextRequestedWakeup <= absoluteTargetTime) {
           RebotTestableClock::_now = RebotSleepSynchroniser::_nextRequestedWakeup;
           wake_up_application();
