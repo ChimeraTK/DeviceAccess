@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     CHECK_TIMEOUT(status1.readLatest(), 10000);
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
-    BOOST_CHECK(readback1.readNonBlocking());                                 // we have been signalized new data
+    CHECK_TIMEOUT(readback1.readNonBlocking(), 10000);                        // we have been signalized new data
     BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::faulty); // But the fault flag should be set
     // the second device must still be functional
     BOOST_CHECK(!message2.readNonBlocking());
