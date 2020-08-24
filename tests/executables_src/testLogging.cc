@@ -9,6 +9,8 @@
 #define BOOST_TEST_MODULE LoggingTest
 
 #include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -25,19 +27,24 @@ using namespace boost::unit_test_framework;
 
 /**
  * Define a test app to test the SoftwareMasterModule.
+ *
+ * A temporary directory /tmp/testLogging.XXXXXX will be created. Here XXXXXX will
+ * be replaced by a unique string. Once the testApp object is deleted that directory is removed.
  */
 struct testApp : public ChimeraTK::Application {
   testApp() : Application("test"), fileCreated(false) {
-    // remove possible left overs
-    boost::filesystem::remove("/tmp/testLogging/test.log");
-    boost::filesystem::remove("/tmp/testLogging/");
+    char temName[] = "/tmp/testLogging.XXXXXX";
+    char *dir_name = mkdtemp(temName);
+    dir = std::string(dir_name);
+    filename = dir + "/testLogging.log";
   }
   ~testApp() override {
     shutdown();
     if(fileCreated) {
-      BOOST_CHECK_EQUAL(boost::filesystem::remove("/tmp/testLogging/test.log"), true);
-      BOOST_CHECK_EQUAL(boost::filesystem::remove("/tmp/testLogging/"), true);
+      BOOST_CHECK_EQUAL(boost::filesystem::remove(filename.c_str()), true);
     }
+    // do not check if removing the folder fails. If the test is run in parallel other instances might have file in the directory
+    BOOST_CHECK_EQUAL(boost::filesystem::remove(dir), true);
   }
 
   LoggingModule log{this, "LoggingModule", "LoggingModule test"};
@@ -52,6 +59,11 @@ struct testApp : public ChimeraTK::Application {
   }
 
   bool fileCreated;
+  std::string dir;
+  std::string filename;
+
+  const char* directory = "/tmp/testLogging/";
+  const char* fileprefix = "test";
 };
 
 BOOST_AUTO_TEST_CASE(testLogMsg) {
@@ -73,7 +85,9 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
 
   auto logFile = tf.getScalar<std::string>("logFile");
   tf.runApplication();
-  logFile = std::string("/tmp/testLogging/test.log");
+  auto tmpStr = app.filename;
+  tmpStr.replace(tmpStr.find("testLogging"), 18, "wrongFolder");
+  logFile = tmpStr;
   logFile.write();
   // message not considered here but used to step through the application
   app.logger->sendMessage("test", LogLevel::DEBUG);
@@ -82,7 +96,7 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
   std::vector<std::string> strs;
   boost::split(strs, ss, boost::is_any_of("\n"), boost::token_compress_on);
   BOOST_CHECK_EQUAL(strs.at(2).substr(strs.at(2).find("->") + 3),
-      std::string("Failed to open log file for writing: /tmp/testLogging/test.log"));
+      std::string("Failed to open log file for writing: ") + tmpStr);
 }
 
 BOOST_AUTO_TEST_CASE(testLogfile) {
@@ -93,20 +107,21 @@ BOOST_AUTO_TEST_CASE(testLogfile) {
 
   if(!boost::filesystem::is_directory("/tmp/testLogging/")) boost::filesystem::create_directory("/tmp/testLogging/");
   tf.runApplication();
-  logFile = std::string("/tmp/testLogging/test.log");
+  logFile = app.filename;
   logFile.write();
+  app.fileCreated = true;
   // message not considered here but used to step through the application
   app.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
   std::fstream file;
-  file.open("/tmp/testLogging/test.log");
+  file.open(app.filename.c_str());
   BOOST_CHECK_EQUAL(file.good(), true);
   if(file.good()) app.fileCreated = true;
   std::string line;
 
   std::getline(file, line);
   BOOST_CHECK_EQUAL(
-      line.substr(line.find("->") + 3), std::string("Opened log file for writing: /tmp/testLogging/test.log"));
+      line.substr(line.find("->") + 3), std::string("Opened log file for writing: ") + app.filename);
   std::getline(file, line);
   BOOST_CHECK_EQUAL(line.substr(line.find("->") + 3), std::string("test"));
 }
