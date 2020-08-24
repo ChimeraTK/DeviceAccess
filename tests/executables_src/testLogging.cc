@@ -9,7 +9,6 @@
 #define BOOST_TEST_MODULE LoggingTest
 
 #include <fstream>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <boost/algorithm/string.hpp>
