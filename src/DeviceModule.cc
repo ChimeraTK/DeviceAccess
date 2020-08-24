@@ -327,14 +327,14 @@ namespace ChimeraTK {
       errorLock.unlock(); // we don't need to hold the lock for now, but we will need it later
 
       for(auto& writeMe : writeRegisterPaths) {
-        auto reg = device.getOneDRegisterAccessor<double>(writeMe); // the user data type does not matter here.
+        auto reg = device.getOneDRegisterAccessor<std::string>(writeMe); // the user data type does not matter here.
         if(!reg.isWriteable()) {
           throw ChimeraTK::logic_error(std::string(writeMe) + " is not writeable!");
         }
       }
 
       for(auto& readMe : readRegisterPaths) {
-        auto reg = device.getOneDRegisterAccessor<double>(readMe); // the user data type does not matter here.
+        auto reg = device.getOneDRegisterAccessor<std::string>(readMe); // the user data type does not matter here.
         if(!reg.isReadable()) {
           throw ChimeraTK::logic_error(std::string(readMe) + " is not readable!");
         }

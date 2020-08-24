@@ -76,6 +76,7 @@ namespace ChimeraTK {
     /** Move assignment */
     DeviceModule& operator=(DeviceModule&& other) {
       assert(!moduleThread.joinable());
+      assert(other.isHoldingInitialValueMutex);
       Module::operator=(std::move(other));
       device = std::move(other.device);
       deviceAliasOrURI = std::move(other.deviceAliasOrURI);
@@ -85,6 +86,7 @@ namespace ChimeraTK {
       proxies = std::move(other.proxies);
       deviceHasError = other.deviceHasError;
       for(auto& proxy : proxies) proxy.second._myowner = this;
+      initialValueMutex.lock();
       owner->registerDeviceModule(this);
       return *this;
     }
