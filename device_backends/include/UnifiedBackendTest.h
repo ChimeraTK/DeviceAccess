@@ -260,10 +260,12 @@ namespace ChimeraTK {
     };
 
     /**
-     *  Execute all tests. Call this function within a BOOST_AUTO_TEST_CASE after calling all preparatory functions below.
-     *  The tests are executed for the backend identified by the given CDD.
+     *  Execute all tests. Call this function within a BOOST_AUTO_TEST_CASE after calling all preparatory functions
+     *  below. The tests are executed for the backend identified by the given CDD.
+     * 
+     *  A second CDD should be specified, if it is possible to reach the same registers through a different backend.
      */
-    void runTests(const std::string& cdd);
+    void runTests(const std::string& cdd, const std::string& cdd2 = "");
 
     /**
      *  Call if not a real backend is tested but just a special TransferElement implementation. This will disable
@@ -350,7 +352,7 @@ namespace ChimeraTK {
     VECTOR_OF_REGISTERS_T registers;
 
     /// CDD for backend to test
-    std::string cdd;
+    std::string cdd, cdd2;
 
     /// Flag wheter to disable tests for the backend itself
     bool _testOnlyTransferElement{false};
@@ -622,9 +624,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename VECTOR_OF_REGISTERS_T>
-  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::runTests(const std::string& backend) {
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::runTests(const std::string& backend, const std::string& backend2) {
     cdd = backend;
-    std::cout << "=== UnifiedBackendTest for " << cdd << std::endl;
+    cdd2 = backend2;
+    std::cout << "=== UnifiedBackendTest for " << cdd;
+    if(cdd2 != "") std::cout << " and " << cdd2;
+    std::cout << std::endl;
 
     size_t nSyncReadRegisters = 0;
     size_t nAsyncReadRegisters = 0;
@@ -1627,7 +1632,6 @@ namespace ChimeraTK {
       {
         // open the device, but don't call activateAsyncRead() yet
         d.open();
-
         auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
         // wait 2 times longer than the time until initial value was received before
@@ -1660,6 +1664,11 @@ namespace ChimeraTK {
     if(_testOnlyTransferElement) return;
     std::cout << "--- test_B_8_5_1 - activateAsynchronousRead" << std::endl;
     Device d(cdd);
+    Device d2;
+    if(cdd2 != "") {
+      d2.open(cdd2);
+      d2.close();
+    }
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(!this->isAsyncRead(x)) return;
@@ -1668,12 +1677,20 @@ namespace ChimeraTK {
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
+      TwoDRegisterAccessor<UserType> reg2;
+      if(cdd2 != "") {
+        d2.open();
+        reg2.replace(d2.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data}));
+        if(cdd2 != "") BOOST_CHECK(reg2.readNonBlocking() == false); /// REMOVE
+      }
+
       // Set remote value to be read.
       x.setRemoteValue();
       auto v1 = x.template getRemoteValue<UserType>();
 
       // open the device
       d.open();
+      if(cdd2 != "") BOOST_CHECK(reg2.readNonBlocking() == false); /// REMOVE
 
       // Activate async read
       d.activateAsyncRead();
@@ -1683,6 +1700,18 @@ namespace ChimeraTK {
 
       // Check application buffer
       CHECK_EQUALITY(reg, v1);
+
+      if(cdd2 != "") {
+        // wait a bit, check that accessor of second device does not receive data
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
+        BOOST_CHECK(reg2.readNonBlocking() == false);
+
+        // activate async read on second device and check again
+        d2.activateAsyncRead();
+        reg2.read();
+        CHECK_EQUALITY(reg2, v1);
+      }
 
       // close device again
       d.close();
