@@ -418,7 +418,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
     if(node.getOwner().getConsumingNodes().size() == 1 &&
         node.getOwner().getConsumingNodes().front().getType() == NodeType::Application) {
       // exactly one consumer which is an ApplicationModule input: decide flag depending on input type
-      auto& consumer = node.getOwner().getConsumingNodes().front();
+      auto consumer = node.getOwner().getConsumingNodes().front();
       if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
     }
     else {
@@ -506,9 +506,8 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
   size_t varIdReturn;
   if(node.getDirection().withReturn) varIdReturn = getNextVariableId();
 
-  // decorate the process variable if testable mode is enabled and mode is
-  // push-type
-  if(testableMode && node.getMode() == UpdateMode::push) {
+  // decorate the process variable if testable mode is enabled and mode is push-type
+  if(testableMode && flags.has(AccessMode::wait_for_new_data)) {
     if(!node.getDirection().withReturn) {
       pvarPair.first =
           boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, false, true, varId, varId);
@@ -955,7 +954,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         auto feedingImpl = feeder.createConstAccessor<UserType>(flags);
 
         if(consumer.getType() == NodeType::Application) {
-          if(testableMode) {
+          if(testableMode && consumer.getMode() == UpdateMode::push) {
             auto varId = getNextVariableId();
             auto pvarDec =
                 boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);

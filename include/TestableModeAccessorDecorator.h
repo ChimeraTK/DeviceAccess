@@ -30,6 +30,7 @@ namespace ChimeraTK {
       // if receiving end, register for testable mode (stall detection)
       if(this->isReadable() && handleRead) {
         Application::getInstance().testableMode_processVars[_variableIdRead] = accessor;
+        assert(accessor->getAccessModeFlags().has(AccessMode::wait_for_new_data));
       }
 
       // if this decorating a bidirectional process variable, set the
