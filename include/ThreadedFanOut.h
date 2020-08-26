@@ -26,6 +26,7 @@ namespace ChimeraTK {
     ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl, VariableNetwork& network,
         ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
     : FanOut<UserType>(feedingImpl), _network(network) {
+      assert(feedingImpl->getAccessModeFlags().has(AccessMode::wait_for_new_data));
       for(auto el : consumerImplementationPairs) {
         FanOut<UserType>::addSlave(el.first, el.second);
       }
