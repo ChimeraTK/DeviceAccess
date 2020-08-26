@@ -86,7 +86,9 @@ namespace ChimeraTK {
     for(auto& variable : getAccessorListRecursive()) {
       if(variable.getDirection().dir != VariableDirection::consuming) continue;
       if(variable.getMode() == UpdateMode::poll) {
+        Application::testableModeUnlock("Initial value read for poll-type " + variable.getName());
         variable.getAppAccessorNoType().read();
+        Application::testableModeLock("Initial value read for poll-type " + variable.getName());
       }
     }
     for(auto& variable : getAccessorListRecursive()) {
