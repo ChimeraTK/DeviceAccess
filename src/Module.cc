@@ -8,6 +8,7 @@
 #include "Module.h"
 #include "Application.h"
 #include "VirtualModule.h"
+#include "ApplicationModule.h"
 
 namespace ChimeraTK {
 
@@ -218,5 +219,26 @@ namespace ChimeraTK {
 
     return virtualQualifiedName;
   }
+
+  /*********************************************************************************************************************/
+
+  ApplicationModule* Module::findApplicationModule() {
+    if(getModuleType() == ModuleType::ApplicationModule) {
+      auto* ret = dynamic_cast<ApplicationModule*>(this);
+      assert(ret != nullptr);
+      return ret;
+    }
+    else if(getModuleType() == ModuleType::VariableGroup) {
+      auto* owningModule = dynamic_cast<Module*>(getOwner());
+      assert(owningModule != nullptr);
+      return owningModule->findApplicationModule();
+    }
+    else {
+      throw ChimeraTK::logic_error(
+          "EntityOwner::findApplicationModule() called on neither an ApplicationModule nor a VariableGroup.");
+    }
+  }
+
+  /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

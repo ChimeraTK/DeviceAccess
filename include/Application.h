@@ -29,6 +29,7 @@ namespace ChimeraTK {
   class TriggerFanOut;
   class TestFacility;
   class DeviceModule;
+  class ApplicationModule;
 
   template<typename UserType>
   class Accessor;
@@ -208,6 +209,23 @@ namespace ChimeraTK {
     LifeCycleState getLifeCycleState() const { return lifeCycleState; }
 
     VersionNumber getStartVersion() const { return _startVersion; }
+
+    /** Detection mechanism for cirular dependencies of initial values in ApplicationModules */
+    struct CircularDependencyDetector {
+      /// Call before an ApplicationModule waits for an initial value on the given node. Calls with
+      /// non-Application-typed nodes are ignored.
+      void registerDependencyWait(VariableNetworkNode& node);
+
+      /// Call after an ApplicationModule has received an initial value on the given node. Calls with
+      /// non-Application-typed nodes are ignored.
+      void unregisterDependencyWait(VariableNetworkNode& node);
+
+     protected:
+      std::mutex _mutex;
+      std::map<ApplicationModule*, ApplicationModule*> _waitMap;
+      std::map<ApplicationModule*, std::string> _awaitedVariables;
+
+    } circularDependencyDetector;
 
    protected:
     friend class Module;

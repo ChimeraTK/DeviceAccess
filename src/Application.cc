@@ -1243,11 +1243,65 @@ std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
 }
 
 /*********************************************************************************************************************/
+
 void Application::registerDeviceModule(DeviceModule* deviceModule) {
   deviceModuleMap[deviceModule->deviceAliasOrURI] = deviceModule;
 }
 
 /*********************************************************************************************************************/
+
 void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
   deviceModuleMap.erase(deviceModule->deviceAliasOrURI);
+}
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::registerDependencyWait(VariableNetworkNode& node) {
+  std::cout << "(registerDependencyWait) " << node.getQualifiedName() << std::endl;
+  assert(node.getType() == NodeType::Application);
+  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
+  std::cout << "registerDependencyWait " << node.getQualifiedName() << std::endl;
+  std::lock_guard<std::mutex> lock(_mutex);
+  auto* dependent = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
+  auto* dependency = dynamic_cast<Module*>(node.getOwner().getFeedingNode().getOwningModule())->findApplicationModule();
+  _waitMap[dependent] = dependency;
+  _awaitedVariables[dependent] = node.getQualifiedName();
+  auto* depdep = dependency;
+  while(_waitMap.find(depdep) != _waitMap.end()) {
+    depdep = _waitMap[depdep];
+    std::cout << "registerDependencyWait " << node.getQualifiedName() << " depdep = " << depdep->getQualifiedName()
+              << std::endl;
+    if(depdep == dependent) {
+      std::cerr << "*** Cirular dependency of ApplicationModules found while waiting for initial values!" << std::endl;
+      std::cerr << std::endl;
+
+      std::cerr << dependent->getQualifiedName() << " waits for " << node.getQualifiedName() << " from:" << std::endl;
+      auto* depdep2 = dependency;
+      while(_waitMap.find(depdep2) != _waitMap.end()) {
+        std::cerr << depdep2->getQualifiedName() << " waits for " << _awaitedVariables[depdep2];
+        if(depdep2 == dependent) break;
+        depdep2 = _waitMap[depdep2];
+        std::cerr << " from:" << std::endl;
+      }
+      std::cerr << "." << std::endl;
+
+      std::cerr << std::endl;
+      std::cerr
+          << "Please provide an initial value in the prepare() function of one of the involved ApplicationModules!"
+          << std::endl;
+
+      throw ChimeraTK::logic_error("Cirular dependency of ApplicationModules while waiting for initial values");
+    }
+  }
+}
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::unregisterDependencyWait(VariableNetworkNode& node) {
+  assert(node.getType() == NodeType::Application);
+  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
+  std::lock_guard<std::mutex> lock(_mutex);
+  auto* mod = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
+  _waitMap.erase(mod);
+  _awaitedVariables.erase(mod);
 }
