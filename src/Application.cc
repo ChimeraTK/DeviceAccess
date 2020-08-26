@@ -415,8 +415,15 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
     flags = {AccessMode::wait_for_new_data};
   }
   else {
-    for(auto& consumer : node.getOwner().getConsumingNodes()) {
+    if(node.getOwner().getConsumingNodes().size() == 1 &&
+        node.getOwner().getConsumingNodes().front().getType() == NodeType::Application) {
+      // exactly one consumer which is an ApplicationModule input: decide flag depending on input type
+      auto& consumer = node.getOwner().getConsumingNodes().front();
       if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+    }
+    else {
+      // multiple consumers (or a single Device/CS consumer) result in a ThreadedFanOut which requires push-type input
+      flags = {AccessMode::wait_for_new_data};
     }
   }
 
