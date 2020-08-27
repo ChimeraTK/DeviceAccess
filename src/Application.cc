@@ -1155,35 +1155,35 @@ void Application::testableModeLock(const std::string& name) {
     if(getInstance().testableMode_repeatingMutexOwner > 100) {
       // print an informative message first, which lists also all variables
       // currently containing unread data.
-      std::cout << "*** Tests are stalled due to data which has been sent but "
+      std::cerr << "*** Tests are stalled due to data which has been sent but "
                    "not received."
                 << std::endl;
-      std::cout << "    The following variables still contain unread values or "
+      std::cerr << "    The following variables still contain unread values or "
                    "had data loss due to a queue overflow:"
                 << std::endl;
       for(auto& pair : Application::getInstance().testableMode_perVarCounter) {
         if(pair.second > 0) {
-          std::cout << "    - " << Application::getInstance().testableMode_names[pair.first] << " ["
+          std::cerr << "    - " << Application::getInstance().testableMode_names[pair.first] << " ["
                     << getInstance().testableMode_processVars[pair.first]->getId() << "]";
           // check if process variable still has data in the queue
           try {
             if(getInstance().testableMode_processVars[pair.first]->readNonBlocking()) {
-              std::cout << " (unread data in queue)";
+              std::cerr << " (unread data in queue)";
             }
             else {
-              std::cout << " (data loss)";
+              std::cerr << " (data loss)";
             }
           }
           catch(std::logic_error&) {
             // if we receive a logic_error in readNonBlocking() it just means
             // another thread is waiting on a TransferFuture of this variable,
             // and we actually were not allowed to read...
-            std::cout << " (data loss)";
+            std::cerr << " (data loss)";
           }
-          std::cout << std::endl;
+          std::cerr << std::endl;
         }
       }
-      std::cout << "(end of list)" << std::endl;
+      std::cerr << "(end of list)" << std::endl;
       // Check for modules waiting for initial values (prints nothing if there are no such modules)
       getInstance().circularDependencyDetector.printWaiters();
       // throw a specialised exception to make sure whoever catches it really
