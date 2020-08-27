@@ -220,6 +220,8 @@ namespace ChimeraTK {
       /// non-Application-typed nodes are ignored.
       void unregisterDependencyWait(VariableNetworkNode& node);
 
+      void printWaiters();
+
      protected:
       std::mutex _mutex;
       std::map<ApplicationModule*, ApplicationModule*> _waitMap;

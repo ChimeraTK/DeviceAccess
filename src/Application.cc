@@ -1184,6 +1184,8 @@ void Application::testableModeLock(const std::string& name) {
         }
       }
       std::cout << "(end of list)" << std::endl;
+      // Check for modules waiting for initial values (prints nothing if there are no such modules)
+      getInstance().circularDependencyDetector.printWaiters();
       // throw a specialised exception to make sure whoever catches it really
       // knows what he does...
       throw TestsStalled();
@@ -1290,6 +1292,18 @@ void Application::CircularDependencyDetector::registerDependencyWait(VariableNet
       throw ChimeraTK::logic_error("Cirular dependency of ApplicationModules while waiting for initial values");
     }
   }
+}
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::printWaiters() {
+  if(_waitMap.size() == 0) return;
+  std::cerr << "The following modules are still waiting for initial values:" << std::endl;
+  for(auto& waiters : getInstance().circularDependencyDetector._waitMap) {
+    std::cerr << waiters.first->getQualifiedName() << " waits for " << _awaitedVariables[waiters.first] << " from "
+              << waiters.second->getQualifiedName() << std::endl;
+  }
+  std::cerr << "(end of list)" << std::endl;
 }
 
 /*********************************************************************************************************************/
