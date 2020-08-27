@@ -1261,15 +1261,37 @@ void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
 void Application::CircularDependencyDetector::registerDependencyWait(VariableNetworkNode& node) {
   assert(node.getType() == NodeType::Application);
   if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
-  std::lock_guard<std::mutex> lock(_mutex);
+  std::unique_lock<std::mutex> lock(_mutex);
+
   auto* dependent = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
   auto* dependency = dynamic_cast<Module*>(node.getOwner().getFeedingNode().getOwningModule())->findApplicationModule();
+
+  // If a module depends on itself, the detector would always detect a circular dependency, even if it is resolved
+  // by writing initial values in prepare(). Hence we do not check anything in this case.
+  if(dependent == dependency) return;
+
+  // register the dependency wait in the map
   _waitMap[dependent] = dependency;
   _awaitedVariables[dependent] = node.getQualifiedName();
+
+  // check for circular dependencies
   auto* depdep = dependency;
   while(_waitMap.find(depdep) != _waitMap.end()) {
+    auto* depdep_prev = depdep;
     depdep = _waitMap[depdep];
     if(depdep == dependent) {
+      // The detected circular dependency might still resolve itself, because registerDependencyWait() is called even
+      // if initial values are already present in the queues.
+      for(size_t i = 0; i < 1000; ++i) {
+        // give other thread a chance to read their initial value
+        lock.unlock();
+        usleep(10000);
+        lock.lock();
+        // if the module depending on an initial value for "us" is no longer waiting for us to send an initial value,
+        // the circular dependency is resolved.
+        if(_waitMap.find(depdep_prev) == _waitMap.end() || _waitMap[depdep] != dependent) return;
+      }
+
       std::cerr << "*** Cirular dependency of ApplicationModules found while waiting for initial values!" << std::endl;
       std::cerr << std::endl;
 
