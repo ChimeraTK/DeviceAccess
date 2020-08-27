@@ -1278,10 +1278,11 @@ void Application::CircularDependencyDetector::registerDependencyWait(VariableNet
       std::cerr << dependent->getQualifiedName() << " waits for " << node.getQualifiedName() << " from:" << std::endl;
       auto* depdep2 = dependency;
       while(_waitMap.find(depdep2) != _waitMap.end()) {
-        std::cerr << depdep2->getQualifiedName() << " waits for " << _awaitedVariables[depdep2];
+        auto waitsFor = _awaitedVariables[depdep2];
+        std::cerr << depdep2->getQualifiedName();
         if(depdep2 == dependent) break;
         depdep2 = _waitMap[depdep2];
-        std::cerr << " from:" << std::endl;
+        std::cerr << " waits for " << waitsFor << " from:" << std::endl;
       }
       std::cerr << "." << std::endl;
 
