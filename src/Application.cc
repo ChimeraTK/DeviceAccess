@@ -1257,10 +1257,8 @@ void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
 /*********************************************************************************************************************/
 
 void Application::CircularDependencyDetector::registerDependencyWait(VariableNetworkNode& node) {
-  std::cout << "(registerDependencyWait) " << node.getQualifiedName() << std::endl;
   assert(node.getType() == NodeType::Application);
   if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
-  std::cout << "registerDependencyWait " << node.getQualifiedName() << std::endl;
   std::lock_guard<std::mutex> lock(_mutex);
   auto* dependent = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
   auto* dependency = dynamic_cast<Module*>(node.getOwner().getFeedingNode().getOwningModule())->findApplicationModule();
@@ -1269,8 +1267,6 @@ void Application::CircularDependencyDetector::registerDependencyWait(VariableNet
   auto* depdep = dependency;
   while(_waitMap.find(depdep) != _waitMap.end()) {
     depdep = _waitMap[depdep];
-    std::cout << "registerDependencyWait " << node.getQualifiedName() << " depdep = " << depdep->getQualifiedName()
-              << std::endl;
     if(depdep == dependent) {
       std::cerr << "*** Cirular dependency of ApplicationModules found while waiting for initial values!" << std::endl;
       std::cerr << std::endl;
