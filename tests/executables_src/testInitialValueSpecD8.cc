@@ -172,59 +172,38 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testProcessArrayInitValueAtDevice8bii, INPUT_TYPE,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct ConstantPollModule : ChimeraTK::ApplicationModule {
-  using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarPollInput<int> constantPollInput{this, "REG1", "", ""};
-  std::promise<void> p;
-  void mainLoop() override { p.set_value(); }
-};
-
-struct ConstantPushModule : ChimeraTK::ApplicationModule {
-  using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarPushInput<int> constantPushInput{this, "REG2", "", "", {"DEVICE"}};
-  std::promise<void> p;
-  void mainLoop() override { p.set_value(); }
-};
-
-struct ConstantPollDummyApplication : ChimeraTK::Application {
+template<class INPUT_TYPE>
+struct ConstantTestApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
-  ConstantPollDummyApplication() : Application("DummyApplication") {}
-  ~ConstantPollDummyApplication() override { shutdown(); }
+  ConstantTestApplication() : Application("DummyApplication") {}
+  ~ConstantTestApplication() override { shutdown(); }
 
-  ConstantPollModule constantPollModule{this, "constantPollModule", ""};
-
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+  InputModule<INPUT_TYPE> inputModule{this, "constantPollModule", ""};
 
   void defineConnections() override {}
 };
 
-struct ConstantPollTypeInitialValueEceptionDummy {
-  ConstantPollTypeInitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(ConstantPollDummyApplication::ExceptionDummyCDD1))) {}
-  ~ConstantPollTypeInitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
-
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
-  ConstantPollDummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-};
 /**
   * Constants can be read exactly once in case of `AccessMode::wait_for_new_data`, so the initial value can be received.
   * \anchor testInitialValue_D_8_b_iii \ref initialValue_D_8_b_iii
   */
-BOOST_AUTO_TEST_CASE(testConstantPollInitValueAtDevice8biii) {
-  std::cout << "===   testConstantPollInitValueAtDevice8biii   === " << std::endl;
-  ConstantPollTypeInitialValueEceptionDummy d;
+BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantInitValueAtDevice8biii, INPUT_TYPE, TestInputTypes) {
+  std::cout << "===   testConstantInitValueAtDevice8biii " << typeid(INPUT_TYPE).name() << "  === " << std::endl;
+  TestFixtureWithEceptionDummy<ConstantTestApplication<INPUT_TYPE>> d;
 
-  BOOST_CHECK(
-      d.application.constantPollModule.constantPollInput.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  BOOST_CHECK(d.application.inputModule.input.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
 
   d.application.run();
-  d.application.constantPollModule.p.get_future().wait();
+  d.application.inputModule.p.get_future().wait();
 
-  BOOST_CHECK(
-      d.application.constantPollModule.constantPollInput.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+  BOOST_CHECK(d.application.inputModule.input.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+  if(d.application.inputModule.input.getAccessModeFlags().has(ctk::AccessMode::wait_for_new_data)) {
+    BOOST_CHECK(d.application.inputModule.input.readNonBlocking() ==
+        false); // no new data. Calling read() would block infinitely
+  }
+  else {
+    BOOST_CHECK(d.application.inputModule.input.readNonBlocking() == true);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
