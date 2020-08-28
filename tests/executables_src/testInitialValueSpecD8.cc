@@ -27,9 +27,12 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-struct PollModule : ChimeraTK::ApplicationModule {
+// A generic module with just one input. It is connected manually, so we just call the register "REG1" so we easily connect to that register in the device
+// It has a flag and a promise to check whether the module has entered the main loop, and to wait for it.
+template<class INPUT_TYPE>
+struct InputModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", ""};
+  INPUT_TYPE input{this, "REG1", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -43,24 +46,25 @@ struct PollDummyApplication : ChimeraTK::Application {
   PollDummyApplication() : Application("DummyApplication") {}
   ~PollDummyApplication() override { shutdown(); }
 
-  PollModule pollModule{this, "PollModule", ""};
+  InputModule<ctk::ScalarPollInput<int>> inputModule{this, "PollModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override { pollModule.connectTo(device); }
+  void defineConnections() override { inputModule.connectTo(device); }
 };
 
-struct PollTypeInitialValueEceptionDummy {
-  PollTypeInitialValueEceptionDummy()
+template<class APPLICATION_TYPE, class INPUT_TYPE>
+struct TestFixtureWithEceptionDummy {
+  TestFixtureWithEceptionDummy()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(PollDummyApplication::ExceptionDummyCDD1))) {}
-  ~PollTypeInitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+  ~TestFixtureWithEceptionDummy() { deviceBackend->throwExceptionRead = false; }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
-  PollDummyApplication application;
+  APPLICATION_TYPE application;
   ChimeraTK::TestFacility testFacitiy{false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};
+  INPUT_TYPE& inputVariable{application.inputModule.input};
 };
 /**
   *  Test Initial Values - Inputs of `ApplicationModule`s
@@ -76,101 +80,74 @@ BOOST_AUTO_TEST_CASE(testPollInitValueAtDevice8bi) {
   std::cout << "===   testPollInitValueAtDevice8bi   === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   { // Here the time is stopped until you reach the mainloop.
-    PollTypeInitialValueEceptionDummy dummyToStopTimeUntilOpen;
+    TestFixtureWithEceptionDummy<PollDummyApplication, ctk::ScalarPollInput<int>> dummyToStopTimeUntilOpen;
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
-    dummyToStopTimeUntilOpen.application.pollModule.p.get_future().wait();
+    dummyToStopTimeUntilOpen.application.inputModule.p.get_future().wait();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     end = std::chrono::steady_clock::now();
   }
   { // waiting 2 x the time stoped above, in the assumption that it is then freezed,
     // as it is described in the spec.
-    PollTypeInitialValueEceptionDummy d;
+    TestFixtureWithEceptionDummy<PollDummyApplication, ctk::ScalarPollInput<int>> d;
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
     d.application.run();
     auto elapsed_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
     std::this_thread::sleep_for(std::chrono::milliseconds(2 * elapsed_milliseconds));
-    BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
-    BOOST_CHECK(d.pollVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
+    BOOST_CHECK(d.inputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
     d.deviceBackend->throwExceptionOpen = false;
     d.exceptionDummyRegister.replace(d.application.device.device.getScalarRegisterAccessor<int>("/REG1")); //
-    d.application.pollModule.p.get_future().wait();
-    BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == true);
-    BOOST_CHECK(d.pollVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+    d.application.inputModule.p.get_future().wait();
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == true);
+    BOOST_CHECK(d.inputVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct PushModule : ChimeraTK::ApplicationModule {
-  using ChimeraTK::ApplicationModule::ApplicationModule;
-  struct : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG1", ""};
-  std::promise<void> p;
-  std::atomic_bool enteredTheMainLoop{false};
-  void mainLoop() override {
-    enteredTheMainLoop = true;
-    p.set_value();
-  }
-};
 
 struct PushDummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
   PushDummyApplication() : Application("DummyApplication") {}
   ~PushDummyApplication() override { shutdown(); }
 
-  PushModule pushModule{this, "PushModule", ""};
+  InputModule<ctk::ScalarPushInput<int>> inputModule{this, "PushModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
   void defineConnections() override {
-    auto push_input = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    push_input >> pushModule.reg1.pushInput;
+    auto push_register = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
+    push_register >> inputModule.input;
   }
-};
-
-struct PushTypeInitialValueEceptionDummy {
-  PushTypeInitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(PushDummyApplication::ExceptionDummyCDD1))) {}
-  ~PushTypeInitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
-
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
-  PushDummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.pushModule.reg1.pushInput};
 };
 
 BOOST_AUTO_TEST_CASE(testPushInitValueAtDevice8bi) {
   std::cout << "===   testPushInitValueAtDevice8bi   === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   {
-    PushTypeInitialValueEceptionDummy dummyToStopTimeUntilOpen;
+    TestFixtureWithEceptionDummy<PushDummyApplication, ctk::ScalarPushInput<int>> dummyToStopTimeUntilOpen;
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
-    dummyToStopTimeUntilOpen.application.pushModule.p.get_future().wait();
+    dummyToStopTimeUntilOpen.application.inputModule.p.get_future().wait();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     end = std::chrono::steady_clock::now();
   }
   {
-    PushTypeInitialValueEceptionDummy d;
+    TestFixtureWithEceptionDummy<PushDummyApplication, ctk::ScalarPushInput<int>> d;
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
     d.application.run();
     auto elapsed_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    BOOST_CHECK(d.application.pushModule.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
     std::this_thread::sleep_for(std::chrono::milliseconds(2 * elapsed_milliseconds));
-    BOOST_CHECK(d.application.pushModule.enteredTheMainLoop == false);
-    BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
+    BOOST_CHECK(d.inputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
     d.deviceBackend->throwExceptionOpen = false;
-    d.application.pushModule.p.get_future().wait();
-    BOOST_CHECK(d.application.pushModule.enteredTheMainLoop == true);
-    BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+    d.application.inputModule.p.get_future().wait();
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == true);
+    BOOST_CHECK(d.inputVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   }
 }
 
@@ -192,7 +169,7 @@ struct PollProcessArryDummyApplication : ChimeraTK::Application {
   PollProcessArryDummyApplication() : Application("DummyApplication") {}
   ~PollProcessArryDummyApplication() override { shutdown(); }
 
-  PollModule pollModule{this, "PollModule", ""};
+  InputModule<ctk::ScalarPollInput<int>> pollModule{this, "PollModule", ""};
   ScalarOutputModule scalarOutputModule{this, "ScalarOutputModule", ""};
   void defineConnections() override { scalarOutputModule.connectTo(pollModule); }
 };
@@ -210,7 +187,7 @@ struct PollProcessArrayTypeInitialValueEceptionDummy {
   PollProcessArryDummyApplication application;
   ChimeraTK::TestFacility testFacitiy{false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPollInput<int>& pollInputVariable{application.pollModule.pollInput};
+  ChimeraTK::ScalarPollInput<int>& pollInputVariable{application.pollModule.input};
   ChimeraTK::ScalarOutput<int>& pollOutputVariable{application.scalarOutputModule.output};
 };
 /**
