@@ -4,25 +4,18 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include <chrono>
-#include <cstring>
 #include <future>
+#include <functional>
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
-#include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
-#include <ChimeraTK/DummyRegisterAccessor.h>
-#include <ChimeraTK/ControlSystemAdapter/DevicePVManager.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
-#include "check_timeout.h"
-
-#include <future>
-#include <functional>
+//#include "check_timeout.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -134,58 +127,46 @@ struct ScalarOutputModule : ChimeraTK::ApplicationModule {
   }
 };
 
-struct PollProcessArryDummyApplication : ChimeraTK::Application {
+template<class INPUT_TYPE>
+struct ProcessArryDummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
-  PollProcessArryDummyApplication() : Application("DummyApplication") {}
-  ~PollProcessArryDummyApplication() override { shutdown(); }
+  ProcessArryDummyApplication() : Application("DummyApplication") {}
+  ~ProcessArryDummyApplication() override { shutdown(); }
 
-  InputModule<ctk::ScalarPollInput<int>> pollModule{this, "PollModule", ""};
+  InputModule<INPUT_TYPE> inputModule{this, "PollModule", ""};
   ScalarOutputModule scalarOutputModule{this, "ScalarOutputModule", ""};
-  void defineConnections() override { scalarOutputModule.connectTo(pollModule); }
+  void defineConnections() override { scalarOutputModule.connectTo(inputModule); }
 };
 
-struct PollProcessArrayTypeInitialValueEceptionDummy {
-  PollProcessArrayTypeInitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(PollDummyApplication::ExceptionDummyCDD1))) {}
-  ~PollProcessArrayTypeInitialValueEceptionDummy() {
-    deviceBackend->throwExceptionRead = false;
-    deviceBackend->throwExceptionOpen = false;
-  }
+typedef boost::mpl::list<ctk::ScalarPollInput<int>, ctk::ScalarPushInput<int>> TestInputTypes;
 
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
-  PollProcessArryDummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPollInput<int>& pollInputVariable{application.pollModule.input};
-  ChimeraTK::ScalarOutput<int>& pollOutputVariable{application.scalarOutputModule.output};
-};
 /**
   *  ProcessArray freeze in their implementation until the initial value is received
   * \anchor testInitialValue_D_8_b_ii \ref initialValue_D_8_b_ii
   */
-BOOST_AUTO_TEST_CASE(testPollProcessArrayInitValueAtDevice8bii) {
-  std::cout << "===   testPollProcessArrayInitValueAtDevice8bii   === " << std::endl;
+BOOST_AUTO_TEST_CASE_TEMPLATE(testProcessArrayInitValueAtDevice8bii, INPUT_TYPE, TestInputTypes) {
+  std::cout << "===   testPollProcessArrayInitValueAtDevice8bii " << typeid(INPUT_TYPE).name() << "  === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   {
-    PollProcessArrayTypeInitialValueEceptionDummy dummyToStopTimeUntilOpen;
+    // we don't need the exception dummy in this test. But no need to write a new fixture for it.
+    TestFixtureWithEceptionDummy<ProcessArryDummyApplication<INPUT_TYPE>> dummyToStopTimeForApplicationStart;
     start = std::chrono::steady_clock::now();
-    dummyToStopTimeUntilOpen.application.run();
-    dummyToStopTimeUntilOpen.pollOutputVariable.write();
-    dummyToStopTimeUntilOpen.application.pollModule.p.get_future().wait();
+    dummyToStopTimeForApplicationStart.application.run();
+    dummyToStopTimeForApplicationStart.application.scalarOutputModule.output.write();
+    dummyToStopTimeForApplicationStart.application.inputModule.p.get_future().wait();
     end = std::chrono::steady_clock::now();
   }
   {
-    PollProcessArrayTypeInitialValueEceptionDummy d;
+    TestFixtureWithEceptionDummy<ProcessArryDummyApplication<INPUT_TYPE>> d;
     d.application.run();
-    BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
     std::this_thread::sleep_for(end - start);
-    BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
-    BOOST_CHECK(d.pollInputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
-    d.pollOutputVariable.write();
-    d.application.pollModule.p.get_future().wait();
-    BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == true);
-    BOOST_CHECK(d.pollInputVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+    d.application.scalarOutputModule.output.write();
+    d.application.inputModule.p.get_future().wait();
+    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == true);
+    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   }
 }
 
@@ -240,7 +221,6 @@ BOOST_AUTO_TEST_CASE(testConstantPollInitValueAtDevice8biii) {
       d.application.constantPollModule.constantPollInput.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
 
   d.application.run();
-
   d.application.constantPollModule.p.get_future().wait();
 
   BOOST_CHECK(
