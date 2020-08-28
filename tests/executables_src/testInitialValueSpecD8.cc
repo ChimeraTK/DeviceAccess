@@ -86,12 +86,14 @@ struct TestFixtureWithEceptionDummy {
   */
 BOOST_AUTO_TEST_SUITE(testInitialValuesInputsOfApplicationCore_D_8)
 
+typedef boost::mpl::list<PollDummyApplication, PushDummyApplication> DeviceTestApplicationTypes;
+
 /**
   *  For device variables the ExeptionHandlingDecorator freezes the variable until the device is available
   * \anchor testInitialValue_D_8_b_i \ref initialValue_D_8_b_i
   */
-BOOST_AUTO_TEST_CASE(testPollInitValueAtDevice8bi) {
-  std::cout << "===   testPollInitValueAtDevice8bi   === " << std::endl;
+BOOST_AUTO_TEST_CASE_TEMPLATE(testInitValueAtDevice8bi, APPLICATION_TYPE, DeviceTestApplicationTypes) {
+  std::cout << "===   testInitValueAtDevice8bi " << typeid(APPLICATION_TYPE).name() << "  ===" << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   { // Here the time is stopped until you reach the mainloop.
     TestFixtureWithEceptionDummy<PollDummyApplication> dummyToStopTimeUntilOpen;
@@ -104,36 +106,6 @@ BOOST_AUTO_TEST_CASE(testPollInitValueAtDevice8bi) {
   { // waiting 2 x the time stoped above, in the assumption that it is then freezed,
     // as it is described in the spec.
     TestFixtureWithEceptionDummy<PollDummyApplication> d;
-    d.deviceBackend->throwExceptionOpen = true;
-    BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
-    d.application.run();
-    auto elapsed_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
-    std::this_thread::sleep_for(std::chrono::milliseconds(2 * elapsed_milliseconds));
-    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
-    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
-    d.deviceBackend->throwExceptionOpen = false;
-    d.application.inputModule.p.get_future().wait();
-    BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == true);
-    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-BOOST_AUTO_TEST_CASE(testPushInitValueAtDevice8bi) {
-  std::cout << "===   testPushInitValueAtDevice8bi   === " << std::endl;
-  std::chrono::time_point<std::chrono::steady_clock> start, end;
-  {
-    TestFixtureWithEceptionDummy<PushDummyApplication> dummyToStopTimeUntilOpen;
-    start = std::chrono::steady_clock::now();
-    dummyToStopTimeUntilOpen.application.run();
-    dummyToStopTimeUntilOpen.application.inputModule.p.get_future().wait();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    end = std::chrono::steady_clock::now();
-  }
-  {
-    TestFixtureWithEceptionDummy<PushDummyApplication> d;
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
     d.application.run();
