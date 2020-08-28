@@ -47,13 +47,27 @@ struct PollDummyApplication : ChimeraTK::Application {
   ~PollDummyApplication() override { shutdown(); }
 
   InputModule<ctk::ScalarPollInput<int>> inputModule{this, "PollModule", ""};
-
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
   void defineConnections() override { inputModule.connectTo(device); }
 };
 
-template<class APPLICATION_TYPE, class INPUT_TYPE>
+// for the push type we need different connection code
+struct PushDummyApplication : ChimeraTK::Application {
+  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  PushDummyApplication() : Application("DummyApplication") {}
+  ~PushDummyApplication() override { shutdown(); }
+
+  InputModule<ctk::ScalarPushInput<int>> inputModule{this, "PushModule", ""};
+  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+
+  void defineConnections() override {
+    auto push_register = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
+    push_register >> inputModule.input;
+  }
+};
+
+template<class APPLICATION_TYPE>
 struct TestFixtureWithEceptionDummy {
   TestFixtureWithEceptionDummy()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
@@ -64,8 +78,8 @@ struct TestFixtureWithEceptionDummy {
   APPLICATION_TYPE application;
   ChimeraTK::TestFacility testFacitiy{false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  INPUT_TYPE& inputVariable{application.inputModule.input};
 };
+
 /**
   *  Test Initial Values - Inputs of `ApplicationModule`s
   *  \anchor testInitialValuesInputsOfApplicationCore \ref InitialValuesInputsOfApplicationCore_D_8 "D.8"
@@ -80,7 +94,7 @@ BOOST_AUTO_TEST_CASE(testPollInitValueAtDevice8bi) {
   std::cout << "===   testPollInitValueAtDevice8bi   === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   { // Here the time is stopped until you reach the mainloop.
-    TestFixtureWithEceptionDummy<PollDummyApplication, ctk::ScalarPollInput<int>> dummyToStopTimeUntilOpen;
+    TestFixtureWithEceptionDummy<PollDummyApplication> dummyToStopTimeUntilOpen;
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
     dummyToStopTimeUntilOpen.application.inputModule.p.get_future().wait();
@@ -89,7 +103,7 @@ BOOST_AUTO_TEST_CASE(testPollInitValueAtDevice8bi) {
   }
   { // waiting 2 x the time stoped above, in the assumption that it is then freezed,
     // as it is described in the spec.
-    TestFixtureWithEceptionDummy<PollDummyApplication, ctk::ScalarPollInput<int>> d;
+    TestFixtureWithEceptionDummy<PollDummyApplication> d;
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
     d.application.run();
@@ -97,37 +111,21 @@ BOOST_AUTO_TEST_CASE(testPollInitValueAtDevice8bi) {
     BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
     std::this_thread::sleep_for(std::chrono::milliseconds(2 * elapsed_milliseconds));
     BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
-    BOOST_CHECK(d.inputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
     d.deviceBackend->throwExceptionOpen = false;
-    d.exceptionDummyRegister.replace(d.application.device.device.getScalarRegisterAccessor<int>("/REG1")); //
     d.application.inputModule.p.get_future().wait();
     BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == true);
-    BOOST_CHECK(d.inputVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct PushDummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
-  PushDummyApplication() : Application("DummyApplication") {}
-  ~PushDummyApplication() override { shutdown(); }
-
-  InputModule<ctk::ScalarPushInput<int>> inputModule{this, "PushModule", ""};
-
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  void defineConnections() override {
-    auto push_register = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    push_register >> inputModule.input;
-  }
-};
-
 BOOST_AUTO_TEST_CASE(testPushInitValueAtDevice8bi) {
   std::cout << "===   testPushInitValueAtDevice8bi   === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   {
-    TestFixtureWithEceptionDummy<PushDummyApplication, ctk::ScalarPushInput<int>> dummyToStopTimeUntilOpen;
+    TestFixtureWithEceptionDummy<PushDummyApplication> dummyToStopTimeUntilOpen;
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
     dummyToStopTimeUntilOpen.application.inputModule.p.get_future().wait();
@@ -135,7 +133,7 @@ BOOST_AUTO_TEST_CASE(testPushInitValueAtDevice8bi) {
     end = std::chrono::steady_clock::now();
   }
   {
-    TestFixtureWithEceptionDummy<PushDummyApplication, ctk::ScalarPushInput<int>> d;
+    TestFixtureWithEceptionDummy<PushDummyApplication> d;
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
     d.application.run();
@@ -143,11 +141,11 @@ BOOST_AUTO_TEST_CASE(testPushInitValueAtDevice8bi) {
     BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
     std::this_thread::sleep_for(std::chrono::milliseconds(2 * elapsed_milliseconds));
     BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
-    BOOST_CHECK(d.inputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
     d.deviceBackend->throwExceptionOpen = false;
     d.application.inputModule.p.get_future().wait();
     BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == true);
-    BOOST_CHECK(d.inputVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+    BOOST_CHECK(d.application.inputModule.input.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   }
 }
 
