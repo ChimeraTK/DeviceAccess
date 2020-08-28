@@ -15,6 +15,8 @@
 
 namespace ChimeraTK {
 
+  class ApplicationModule;
+
   /** Base class for ApplicationModule, DeviceModule and ControlSystemModule, to
    * have a common interface for these module types. */
   class Module : public EntityOwner {
@@ -157,6 +159,11 @@ namespace ChimeraTK {
     DataValidity getDataValidity() const override { return _owner->getDataValidity(); }
     void incrementDataFaultCounter() override { _owner->incrementDataFaultCounter(); }
     void decrementDataFaultCounter() override { _owner->decrementDataFaultCounter(); }
+
+    /** Find ApplicationModule owner. If "this" is an ApplicationModule, "this" is returned. If "this" is a
+     *  VariableGroup, the tree of owners is followed, until the ApplicationModule is found. If "this" is neither an
+     *  ApplicationModule nor a VariableGroup, a ChimeraTK::logic_error is thrown. */
+    ApplicationModule* findApplicationModule();
 
    protected:
     /** Owner of this instance */

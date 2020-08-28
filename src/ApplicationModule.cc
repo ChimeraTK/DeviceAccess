@@ -89,14 +89,23 @@ namespace ChimeraTK {
         assert(!variable.getAppAccessorNoType().getHighLevelImplElement()->getAccessModeFlags().has(
             AccessMode::wait_for_new_data));
         Application::testableModeUnlock("Initial value read for poll-type " + variable.getName());
+        Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
         variable.getAppAccessorNoType().read();
-        Application::testableModeLock("Initial value read for poll-type " + variable.getName());
+        Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
+        if(!Application::testableModeTestLock()) {
+          // The lock may have already been acquired if the above read() goes to a ConsumingFanOut, which sends out
+          // the data to a slave decorated by a TestableModeAccessorDecorator. Hence we heer must acquire the lock only
+          // if we do not have it.
+          Application::testableModeLock("Initial value read for poll-type " + variable.getName());
+        }
       }
     }
     for(auto& variable : getAccessorListRecursive()) {
       if(variable.getDirection().dir != VariableDirection::consuming) continue;
       if(variable.getMode() == UpdateMode::push) {
+        Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
         variable.getAppAccessorNoType().read();
+        Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
       }
     }
 

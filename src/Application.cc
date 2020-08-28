@@ -1155,35 +1155,37 @@ void Application::testableModeLock(const std::string& name) {
     if(getInstance().testableMode_repeatingMutexOwner > 100) {
       // print an informative message first, which lists also all variables
       // currently containing unread data.
-      std::cout << "*** Tests are stalled due to data which has been sent but "
+      std::cerr << "*** Tests are stalled due to data which has been sent but "
                    "not received."
                 << std::endl;
-      std::cout << "    The following variables still contain unread values or "
+      std::cerr << "    The following variables still contain unread values or "
                    "had data loss due to a queue overflow:"
                 << std::endl;
       for(auto& pair : Application::getInstance().testableMode_perVarCounter) {
         if(pair.second > 0) {
-          std::cout << "    - " << Application::getInstance().testableMode_names[pair.first] << " ["
+          std::cerr << "    - " << Application::getInstance().testableMode_names[pair.first] << " ["
                     << getInstance().testableMode_processVars[pair.first]->getId() << "]";
           // check if process variable still has data in the queue
           try {
             if(getInstance().testableMode_processVars[pair.first]->readNonBlocking()) {
-              std::cout << " (unread data in queue)";
+              std::cerr << " (unread data in queue)";
             }
             else {
-              std::cout << " (data loss)";
+              std::cerr << " (data loss)";
             }
           }
           catch(std::logic_error&) {
             // if we receive a logic_error in readNonBlocking() it just means
             // another thread is waiting on a TransferFuture of this variable,
             // and we actually were not allowed to read...
-            std::cout << " (data loss)";
+            std::cerr << " (data loss)";
           }
-          std::cout << std::endl;
+          std::cerr << std::endl;
         }
       }
-      std::cout << "(end of list)" << std::endl;
+      std::cerr << "(end of list)" << std::endl;
+      // Check for modules waiting for initial values (prints nothing if there are no such modules)
+      getInstance().circularDependencyDetector.printWaiters();
       // throw a specialised exception to make sure whoever catches it really
       // knows what he does...
       throw TestsStalled();
@@ -1243,11 +1245,96 @@ std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
 }
 
 /*********************************************************************************************************************/
+
 void Application::registerDeviceModule(DeviceModule* deviceModule) {
   deviceModuleMap[deviceModule->deviceAliasOrURI] = deviceModule;
 }
 
 /*********************************************************************************************************************/
+
 void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
   deviceModuleMap.erase(deviceModule->deviceAliasOrURI);
+}
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::registerDependencyWait(VariableNetworkNode& node) {
+  assert(node.getType() == NodeType::Application);
+  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
+  std::unique_lock<std::mutex> lock(_mutex);
+
+  auto* dependent = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
+  auto* dependency = dynamic_cast<Module*>(node.getOwner().getFeedingNode().getOwningModule())->findApplicationModule();
+
+  // If a module depends on itself, the detector would always detect a circular dependency, even if it is resolved
+  // by writing initial values in prepare(). Hence we do not check anything in this case.
+  if(dependent == dependency) return;
+
+  // register the dependency wait in the map
+  _waitMap[dependent] = dependency;
+  _awaitedVariables[dependent] = node.getQualifiedName();
+
+  // check for circular dependencies
+  auto* depdep = dependency;
+  while(_waitMap.find(depdep) != _waitMap.end()) {
+    auto* depdep_prev = depdep;
+    depdep = _waitMap[depdep];
+    if(depdep == dependent) {
+      // The detected circular dependency might still resolve itself, because registerDependencyWait() is called even
+      // if initial values are already present in the queues.
+      for(size_t i = 0; i < 1000; ++i) {
+        // give other thread a chance to read their initial value
+        lock.unlock();
+        usleep(10000);
+        lock.lock();
+        // if the module depending on an initial value for "us" is no longer waiting for us to send an initial value,
+        // the circular dependency is resolved.
+        if(_waitMap.find(depdep_prev) == _waitMap.end() || _waitMap[depdep] != dependent) return;
+      }
+
+      std::cerr << "*** Cirular dependency of ApplicationModules found while waiting for initial values!" << std::endl;
+      std::cerr << std::endl;
+
+      std::cerr << dependent->getQualifiedName() << " waits for " << node.getQualifiedName() << " from:" << std::endl;
+      auto* depdep2 = dependency;
+      while(_waitMap.find(depdep2) != _waitMap.end()) {
+        auto waitsFor = _awaitedVariables[depdep2];
+        std::cerr << depdep2->getQualifiedName();
+        if(depdep2 == dependent) break;
+        depdep2 = _waitMap[depdep2];
+        std::cerr << " waits for " << waitsFor << " from:" << std::endl;
+      }
+      std::cerr << "." << std::endl;
+
+      std::cerr << std::endl;
+      std::cerr
+          << "Please provide an initial value in the prepare() function of one of the involved ApplicationModules!"
+          << std::endl;
+
+      throw ChimeraTK::logic_error("Cirular dependency of ApplicationModules while waiting for initial values");
+    }
+  }
+}
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::printWaiters() {
+  if(_waitMap.size() == 0) return;
+  std::cerr << "The following modules are still waiting for initial values:" << std::endl;
+  for(auto& waiters : getInstance().circularDependencyDetector._waitMap) {
+    std::cerr << waiters.first->getQualifiedName() << " waits for " << _awaitedVariables[waiters.first] << " from "
+              << waiters.second->getQualifiedName() << std::endl;
+  }
+  std::cerr << "(end of list)" << std::endl;
+}
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::unregisterDependencyWait(VariableNetworkNode& node) {
+  assert(node.getType() == NodeType::Application);
+  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
+  std::lock_guard<std::mutex> lock(_mutex);
+  auto* mod = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
+  _waitMap.erase(mod);
+  _awaitedVariables.erase(mod);
 }
