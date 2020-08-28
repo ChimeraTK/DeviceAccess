@@ -29,7 +29,7 @@ namespace ctk = ChimeraTK;
 
 struct PollModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", "", {"DEVICE"}};
+  ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -43,11 +43,11 @@ struct PollDummyApplication : ChimeraTK::Application {
   PollDummyApplication() : Application("DummyApplication") {}
   ~PollDummyApplication() override { shutdown(); }
 
-  PollModule pollModule{this, "", ""};
+  PollModule pollModule{this, "PollModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override { findTag("DEVICE").connectTo(device); }
+  void defineConnections() override { pollModule.connectTo(device); }
 };
 
 struct PollTypeInitialValueEceptionDummy {
@@ -106,7 +106,6 @@ BOOST_AUTO_TEST_CASE(testPollInitValueAtDevice8bi) {
 
 struct PushModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  //  ChimeraTK::ScalarPushInput<int> pushInput{this, "REG1", "", "", {"DEVICE"}};
   struct : ChimeraTK::VariableGroup {
     using ChimeraTK::VariableGroup::VariableGroup;
     ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
@@ -124,12 +123,11 @@ struct PushDummyApplication : ChimeraTK::Application {
   PushDummyApplication() : Application("DummyApplication") {}
   ~PushDummyApplication() override { shutdown(); }
 
-  PushModule pushModule{this, "", ""};
+  PushModule pushModule{this, "PushModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
   void defineConnections() override {
-    findTag("DEVICE").connectTo(device);
     auto push_input = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     push_input >> pushModule.reg1.pushInput;
   }
@@ -180,7 +178,7 @@ BOOST_AUTO_TEST_CASE(testPushInitValueAtDevice8bi) {
 
 struct ScalarOutputModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarOutput<int> output{this, "REG1", "", "", {"DEVICE"}};
+  ChimeraTK::ScalarOutput<int> output{this, "REG1", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -194,8 +192,8 @@ struct PollProcessArryDummyApplication : ChimeraTK::Application {
   PollProcessArryDummyApplication() : Application("DummyApplication") {}
   ~PollProcessArryDummyApplication() override { shutdown(); }
 
-  PollModule pollModule{this, "", ""};
-  ScalarOutputModule scalarOutputModule{this, "", ""};
+  PollModule pollModule{this, "PollModule", ""};
+  ScalarOutputModule scalarOutputModule{this, "ScalarOutputModule", ""};
   void defineConnections() override { scalarOutputModule.connectTo(pollModule); }
 };
 
@@ -248,7 +246,7 @@ BOOST_AUTO_TEST_CASE(testPollProcessArrayInitValueAtDevice8bii) {
 
 struct ConstantPollModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarPollInput<int> constantPollInput{this, "REG1", "", "", {"DEVICE"}};
+  ChimeraTK::ScalarPollInput<int> constantPollInput{this, "REG1", "", ""};
   std::promise<void> p;
   void mainLoop() override { p.set_value(); }
 };
@@ -265,7 +263,7 @@ struct ConstantPollDummyApplication : ChimeraTK::Application {
   ConstantPollDummyApplication() : Application("DummyApplication") {}
   ~ConstantPollDummyApplication() override { shutdown(); }
 
-  ConstantPollModule constantPollModule{this, "", ""};
+  ConstantPollModule constantPollModule{this, "constantPollModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
@@ -336,13 +334,12 @@ struct PushD9DummyApplication : ChimeraTK::Application {
   PushD9DummyApplication() : Application("DummyApplication") {}
   ~PushD9DummyApplication() override { shutdown(); }
 
-  PushModuleD9_1 pushModuleD9_1{this, "", ""};
-  PushModuleD9_2 pushModuleD9_2{this, "", ""};
+  PushModuleD9_1 pushModuleD9_1{this, "PushModule1", ""};
+  PushModuleD9_2 pushModuleD9_2{this, "PushModule2", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
   void defineConnections() override {
-    findTag("DEVICE").connectTo(device);
     auto push_input1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     auto push_input2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     push_input1 >> pushModuleD9_1.reg1.pushInput;
@@ -417,14 +414,13 @@ struct TriggerFanOutD9DummyApplication : ChimeraTK::Application {
   TriggerFanOutD9DummyApplication() : Application("DummyApplication") {}
   ~TriggerFanOutD9DummyApplication() override { shutdown(); }
 
-  PushModuleD9_1 pushModuleD9_1{this, "", ""};
-  PushModuleD9_2 pushModuleD9_2{this, "", ""};
-  TriggerModule triggerModule{this, "", ""};
+  PushModuleD9_1 pushModuleD9_1{this, "PushModule1", ""};
+  PushModuleD9_2 pushModuleD9_2{this, "PushModule2", ""};
+  TriggerModule triggerModule{this, "TriggerModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
   void defineConnections() override {
-    findTag("DEVICE").connectTo(device);
     auto pollInput1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
     auto pollInput2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
     auto trigger = triggerModule["TRIG1"]("PUSH_OUT");
