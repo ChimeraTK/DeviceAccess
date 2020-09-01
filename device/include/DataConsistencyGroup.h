@@ -120,6 +120,7 @@ namespace ChimeraTK {
       return false;
     }
     auto getVNFromElement = push_elements[transferElementID].getVersionNumber();
+    assert(getVNFromElement != VersionNumber{nullptr});
     if(getVNFromElement < versionNumberToBeConsistentTo){
       return false;
     }
