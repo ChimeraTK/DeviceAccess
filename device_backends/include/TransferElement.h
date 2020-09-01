@@ -796,6 +796,12 @@ namespace ChimeraTK {
       }
     }
 
+    /** Check whether a read transaction is in progress, i.e. preRead() has been called but not yet postRead(). */
+    bool isReadTransactionInProgress() const { return readTransactionInProgress; }
+
+    /** Check whether a write transaction is in progress, i.e. preWrite() has been called but not yet postWrite(). */
+    bool isWriteTransactionInProgress() const { return writeTransactionInProgress; }
+
    protected:
     /** Identifier uniquely identifying the TransferElement */
     std::string _name;

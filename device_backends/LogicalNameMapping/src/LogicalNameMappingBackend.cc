@@ -280,4 +280,20 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
+  namespace {
+    thread_local std::map<TransferElementID, bool> tl_operationInProgressInSameThread;
+  }
+
+  template<typename T>
+  bool& LogicalNameMappingBackend::SharedAccessor<T>::operationInProgressInSameThread() {
+    // No lock required here, because the map is thread-local and the weak_ptr is thread-safe.
+    return tl_operationInProgressInSameThread[accessor.lock()->getId()];
+  }
+
+  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LogicalNameMappingBackend::SharedAccessor);
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK

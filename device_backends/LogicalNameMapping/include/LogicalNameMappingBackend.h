@@ -77,6 +77,12 @@ namespace ChimeraTK {
     struct SharedAccessor {
       boost::weak_ptr<NDRegisterAccessor<UserType>> accessor;
       std::mutex mutex;
+      /// Returns a reference to a thread-local flag which indicates whether an operation on the shared accessor is
+      /// currently in progress by the same thread. This flag is used to avoid dead-locks when attempting to lock
+      /// the mutex in preXxx of the decorator-like accessor, which would occur e.g. in TransferGroups when preXxx is
+      /// called for all decorator-likes using the same accessor.
+      /// When calling this function, the accessor weak_ptr must be locked, e.g. a shared_ptr must be held.
+      bool& operationInProgressInSameThread();
     };
 
     /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of

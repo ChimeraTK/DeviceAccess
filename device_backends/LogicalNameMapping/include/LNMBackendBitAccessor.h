@@ -75,6 +75,7 @@ namespace ChimeraTK {
         }
         map[RegisterPath(info->registerName)].accessor = _accessor;
       }
+      _sharedAccessor = &(map[RegisterPath(info->registerName)]);
       lock = std::move(std::unique_lock<std::mutex>(map[RegisterPath(info->registerName)].mutex, std::defer_lock));
       // allocate and initialise the buffer
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
@@ -95,12 +96,24 @@ namespace ChimeraTK {
     }
 
     void doPreRead(TransferType type) override {
+      bool& inProgress = _sharedAccessor->operationInProgressInSameThread();
+      if(inProgress) {
+        assert(_accessor->isReadTransactionInProgress());
+        return;
+      }
+      inProgress = true;
       lock.lock();
       _accessor->preRead(type);
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
-      auto unlock = cppext::finally([this] { this->lock.unlock(); });
+      auto unlock = cppext::finally([this] {
+        if(this->lock.owns_lock()) {
+          assert(_sharedAccessor->operationInProgressInSameThread());
+          _sharedAccessor->operationInProgressInSameThread() = false;
+          this->lock.unlock();
+        }
+      });
       _accessor->postRead(type, hasNewData);
       if(!hasNewData) return;
       if(_accessor->accessData(0) & _bitMask) {
@@ -114,7 +127,15 @@ namespace ChimeraTK {
     }
 
     void doPreWrite(TransferType type, VersionNumber) override {
-      lock.lock();
+      bool& inProgress = _sharedAccessor->operationInProgressInSameThread();
+      if(inProgress) {
+        assert(_accessor->isWriteTransactionInProgress());
+      }
+      else {
+        inProgress = true;
+        lock.lock();
+      }
+
       if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
         _accessor->accessData(0) &= ~(_bitMask);
       }
@@ -128,7 +149,13 @@ namespace ChimeraTK {
     }
 
     void doPostWrite(TransferType type, VersionNumber) override {
-      auto unlock = cppext::finally([this] { this->lock.unlock(); });
+      auto unlock = cppext::finally([this] {
+        if(this->lock.owns_lock()) {
+          assert(_sharedAccessor->operationInProgressInSameThread());
+          _sharedAccessor->operationInProgressInSameThread() = false;
+          this->lock.unlock();
+        }
+      });
       _accessor->postWrite(type, _versionNumberTemp);
     }
 
@@ -169,6 +196,9 @@ namespace ChimeraTK {
     /// Since we have a shared pointer to that backend, the mutex is always valid.
     std::unique_lock<std::mutex> lock;
 
+    /// Pointer to the SharedAccessor object, needed to call operationInProgressInSameThread().
+    LogicalNameMappingBackend::SharedAccessor<uint64_t>* _sharedAccessor;
+
     /// register and module name
     RegisterPath _registerPathName;
 
@@ -188,7 +218,17 @@ namespace ChimeraTK {
     size_t _bitMask;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
-      std::lock_guard<std::mutex> guard(*lock.mutex());
+      // cannot lock with a lock_guard, since this might be called inside the TransfereGroup during an ongoing operation
+      // which has already locked the mutex.
+      bool& inProgress = _sharedAccessor->operationInProgressInSameThread();
+      if(!inProgress) {
+        lock.lock();
+      }
+      auto unlock = cppext::finally([&] {
+        if(!inProgress) {
+          this->lock.unlock();
+        }
+      });
       return _accessor->getHardwareAccessingElements();
     }
 
