@@ -339,10 +339,6 @@ namespace ChimeraTK {
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
       }
-      catch(...) {
-        std::cout << "BUG: Wrong exception type thrown in transfer function!" << std::endl;
-        std::terminate();
-      }
     }
 
    private:
@@ -442,10 +438,6 @@ namespace ChimeraTK {
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
       }
-      catch(...) {
-        std::cout << "BUG: Wrong exception type thrown in doPreRead()!" << std::endl;
-        std::terminate();
-      }
     }
 
    public:
@@ -532,10 +524,6 @@ namespace ChimeraTK {
       // Needed for throwing TypeChangingDecorator. Is this even a good concept?
       catch(boost::numeric::bad_numeric_cast&) {
         _activeException = std::current_exception();
-      }
-      catch(...) {
-        std::cout << "BUG: Wrong exception type thrown in doPreWrite()!" << std::endl;
-        std::terminate();
       }
     }
 
