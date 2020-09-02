@@ -76,7 +76,8 @@ namespace ChimeraTK {
         map[RegisterPath(info->registerName)].accessor = _accessor;
       }
       _sharedAccessor = &(map[RegisterPath(info->registerName)]);
-      lock = std::move(std::unique_lock<std::mutex>(map[RegisterPath(info->registerName)].mutex, std::defer_lock));
+      lock = std::move(
+          std::unique_lock<std::recursive_mutex>(map[RegisterPath(info->registerName)].mutex, std::defer_lock));
       // allocate and initialise the buffer
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
@@ -96,24 +97,12 @@ namespace ChimeraTK {
     }
 
     void doPreRead(TransferType type) override {
-      bool& inProgress = _sharedAccessor->operationInProgressInSameThread();
-      if(inProgress) {
-        assert(_accessor->isReadTransactionInProgress());
-        return;
-      }
-      inProgress = true;
       lock.lock();
       _accessor->preRead(type);
     }
 
     void doPostRead(TransferType type, bool hasNewData) override {
-      auto unlock = cppext::finally([this] {
-        if(this->lock.owns_lock()) {
-          assert(_sharedAccessor->operationInProgressInSameThread());
-          _sharedAccessor->operationInProgressInSameThread() = false;
-          this->lock.unlock();
-        }
-      });
+      auto unlock = cppext::finally([this] { this->lock.unlock(); });
       _accessor->postRead(type, hasNewData);
       if(!hasNewData) return;
       if(_accessor->accessData(0) & _bitMask) {
@@ -127,14 +116,7 @@ namespace ChimeraTK {
     }
 
     void doPreWrite(TransferType type, VersionNumber) override {
-      bool& inProgress = _sharedAccessor->operationInProgressInSameThread();
-      if(inProgress) {
-        assert(_accessor->isWriteTransactionInProgress());
-      }
-      else {
-        inProgress = true;
-        lock.lock();
-      }
+      lock.lock();
 
       if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
         _accessor->accessData(0) &= ~(_bitMask);
@@ -149,13 +131,7 @@ namespace ChimeraTK {
     }
 
     void doPostWrite(TransferType type, VersionNumber) override {
-      auto unlock = cppext::finally([this] {
-        if(this->lock.owns_lock()) {
-          assert(_sharedAccessor->operationInProgressInSameThread());
-          _sharedAccessor->operationInProgressInSameThread() = false;
-          this->lock.unlock();
-        }
-      });
+      auto unlock = cppext::finally([this] { this->lock.unlock(); });
       _accessor->postWrite(type, _versionNumberTemp);
     }
 
@@ -168,22 +144,22 @@ namespace ChimeraTK {
     }
 
     bool isReadOnly() const override {
-      std::lock_guard<std::mutex> guard(*lock.mutex());
+      std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       return _accessor->isReadOnly();
     }
 
     bool isReadable() const override {
-      std::lock_guard<std::mutex> guard(*lock.mutex());
+      std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       return _accessor->isReadable();
     }
 
     bool isWriteable() const override {
-      std::lock_guard<std::mutex> guard(*lock.mutex());
+      std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       return _accessor->isWriteable();
     }
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
-      std::lock_guard<std::mutex> guard(*lock.mutex());
+      std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       this->_exceptionBackend = exceptionBackend;
       _accessor->setExceptionBackend(exceptionBackend);
     }
@@ -194,7 +170,7 @@ namespace ChimeraTK {
 
     /// Lock to be held during a transfer. The mutex lives in the targetAccessorMap of the LogicalNameMappingBackend.
     /// Since we have a shared pointer to that backend, the mutex is always valid.
-    std::unique_lock<std::mutex> lock;
+    std::unique_lock<std::recursive_mutex> lock;
 
     /// Pointer to the SharedAccessor object, needed to call operationInProgressInSameThread().
     LogicalNameMappingBackend::SharedAccessor<uint64_t>* _sharedAccessor;
@@ -218,29 +194,19 @@ namespace ChimeraTK {
     size_t _bitMask;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
-      // cannot lock with a lock_guard, since this might be called inside the TransfereGroup during an ongoing operation
-      // which has already locked the mutex.
-      bool& inProgress = _sharedAccessor->operationInProgressInSameThread();
-      if(!inProgress) {
-        lock.lock();
-      }
-      auto unlock = cppext::finally([&] {
-        if(!inProgress) {
-          this->lock.unlock();
-        }
-      });
+      std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       return _accessor->getHardwareAccessingElements();
     }
 
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override {
-      std::lock_guard<std::mutex> guard(*lock.mutex());
+      std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       auto result = _accessor->getInternalElements();
       result.push_front(_accessor);
       return result;
     }
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-      std::lock_guard<std::mutex> guard(*lock.mutex());
+      std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       auto casted = boost::dynamic_pointer_cast<NDRegisterAccessor<uint64_t>>(newElement);
       if(casted && _accessor->mayReplaceOther(newElement)) {
         _accessor = detail::createCopyDecorator<uint64_t>(casted);
