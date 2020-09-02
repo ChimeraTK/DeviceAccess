@@ -75,7 +75,6 @@ namespace ChimeraTK {
         }
         map[RegisterPath(info->registerName)].accessor = _accessor;
       }
-      _sharedAccessor = &(map[RegisterPath(info->registerName)]);
       lock = std::move(
           std::unique_lock<std::recursive_mutex>(map[RegisterPath(info->registerName)].mutex, std::defer_lock));
       // allocate and initialise the buffer
@@ -171,9 +170,6 @@ namespace ChimeraTK {
     /// Lock to be held during a transfer. The mutex lives in the targetAccessorMap of the LogicalNameMappingBackend.
     /// Since we have a shared pointer to that backend, the mutex is always valid.
     std::unique_lock<std::recursive_mutex> lock;
-
-    /// Pointer to the SharedAccessor object, needed to call operationInProgressInSameThread().
-    LogicalNameMappingBackend::SharedAccessor<uint64_t>* _sharedAccessor;
 
     /// register and module name
     RegisterPath _registerPathName;
