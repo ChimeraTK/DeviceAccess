@@ -65,6 +65,15 @@ struct TestModule : ctk::ApplicationModule {
 
   } module1{this, "module1", ""};
 
+  struct Module2 : ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+
+    struct AnotherSubModule : ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      ctk::ScalarPushInput<double> var1{this, "var1", "m", "Desc"};
+      ctk::ScalarPushInput<double> var2{this, "var2", "kg", "Desc"};
+    } submodule1{this, "submodule1", ""}, submodule{this, "submodule2", ""};
+  } module2{this, "module2", ""};
 
   std::atomic<bool> done{false};
 
@@ -229,6 +238,7 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
   for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
 
+  //app.config.virtualise().dump();
   app.config.connectTo(app.testModule);
 
   app.initialise();

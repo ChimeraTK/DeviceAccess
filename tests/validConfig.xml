@@ -72,6 +72,18 @@
       </variable>
     </module>
   </module>
+
+  <module name="module2">
+    <module name ="submodule1">
+      <variable name="var1" type="double" value="42.0"/>
+      <variable name="var2" type="double" value="24.0"/>
+    </module>
+    <module name ="submodule2">
+      <variable name="var1" type="double" value="42.0"/>
+      <variable name="var2" type="double" value="24.0"/>
+    </module>
+
+  </module>
   <!-- Just a random comment -->
 </configuration>
 <!-- Just a random comment -->
