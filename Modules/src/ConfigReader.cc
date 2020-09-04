@@ -13,6 +13,8 @@ namespace ChimeraTK {
   }
 
   static std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string& fileName);
+  static std::string root(std::string flattened_name);
+  static std::string branchWithoutRoot(std::string flattened_name);
   static std::string branch(std::string flattened_name);
   static std::string leaf(std::string flattened_name);
 
@@ -58,14 +60,27 @@ namespace ChimeraTK {
     std::map<size_t, std::string> gettArrayValues(const xmlpp::Element* element);
   };
 
-  class ModuleList {
-    std::unordered_map<std::string, ChimeraTK::VariableGroup> map_;
-    ChimeraTK::Module* owner_;
-
+  class ModuleTree : public VariableGroup {
    public:
-    ModuleList(ChimeraTK::Module* o) : owner_(o) {}
+    // Note: This has hideThis as default modifier, because we want the level of
+    // the ModuleTree to vanish in its owner.
+    ModuleTree(EntityOwner* owner, std::string name, std::string description,
+        HierarchyModifier modifier = HierarchyModifier::hideThis)
+    : VariableGroup{owner, name, description, modifier} /*, _parent{nullptr}*/ {}
+
+    void addChildNode(std::string name) {
+      if(_children.find(name) == _children.end()) {
+        _children[name] = std::make_unique<ModuleTree>(this, name, "", HierarchyModifier::none);
+        registerModule(_children[name].get());
+      }
+    }
+
     ChimeraTK::Module* lookup(std::string flattened_module_name);
-    ChimeraTK::Module* get(std::string flattened_name);
+
+   private:
+    ChimeraTK::ModuleTree* get(std::string flattened_name);
+
+    std::unordered_map<std::string, std::unique_ptr<ModuleTree>> _children;
   };
 
   /*********************************************************************************************************************/
@@ -144,7 +159,7 @@ namespace ChimeraTK {
 
     auto moduleName = branch(name);
     auto varName = leaf(name);
-    auto varOwner = _moduleList->lookup(moduleName);
+    auto varOwner = _moduleTree->lookup(moduleName);
 
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(variableMap.table);
@@ -157,7 +172,7 @@ namespace ChimeraTK {
   void ConfigReader::createVar<std::string>(const std::string& name, const std::string& value) {
     auto moduleName = branch(name);
     auto varName = leaf(name);
-    auto varOwner = _moduleList->lookup(moduleName);
+    auto varOwner = _moduleTree->lookup(moduleName);
 
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Var<std::string>>& theMap =
@@ -201,7 +216,7 @@ namespace ChimeraTK {
 
     auto moduleName = branch(name);
     auto arrayName = leaf(name);
-    auto arrayOwner = _moduleList->lookup(moduleName);
+    auto arrayOwner = _moduleTree->lookup(moduleName);
 
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(arrayMap.table);
@@ -230,7 +245,7 @@ namespace ChimeraTK {
 
     auto moduleName = branch(name);
     auto arrayName = leaf(name);
-    auto arrayOwner = _moduleList->lookup(moduleName);
+    auto arrayOwner = _moduleTree->lookup(moduleName);
 
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Array<std::string>>& theMap =
@@ -243,7 +258,7 @@ namespace ChimeraTK {
   ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", hierarchyModifier, tags),
-    _fileName(fileName), _moduleList(std::make_unique<ModuleList>(this)) {
+    _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, name + "-ModuleTree", "")) {
     construct(fileName);
   }
 
@@ -252,7 +267,7 @@ namespace ChimeraTK {
   ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
       const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", HierarchyModifier::none, tags),
-    _fileName(fileName), _moduleList(std::make_unique<ModuleList>(this)) {
+    _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, name + "-ModuleTree", "")) {
     construct(fileName);
   }
 
@@ -349,23 +364,36 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ChimeraTK::Module* ModuleList::lookup(std::string flattened_module_name) { return get(flattened_module_name); }
+  ChimeraTK::Module* ModuleTree::lookup(std::string flattened_module_name) {
+    // Root node, return pointer to the ConfigReader
+    if(flattened_module_name == "") {
+      return dynamic_cast<Module*>(_owner);
+    }
+    // else look up the tree
+    return get(flattened_module_name);
+  }
 
   /*********************************************************************************************************************/
 
-  ChimeraTK::Module* ModuleList::get(std::string flattened_name) {
-    if(flattened_name == "") {
-      return owner_;
-    }
-    auto e = map_.find(flattened_name);
-    if(e == map_.end()) {
-      auto module_name = leaf(flattened_name);
-      auto owner = get(branch(flattened_name));
+  ChimeraTK::ModuleTree* ModuleTree::get(std::string flattened_name) {
+    auto root_name = root(flattened_name);
+    auto remaining_branch_name = branchWithoutRoot(flattened_name);
 
-      map_[flattened_name] = ChimeraTK::VariableGroup(owner, module_name, "");
-      return &map_[flattened_name];
+    ModuleTree* module;
+
+    auto r = _children.find(root_name);
+    if(r == _children.end()) {
+      addChildNode(root_name);
     }
-    return &e->second;
+
+    if(remaining_branch_name != "") {
+      module = _children[root_name]->get(remaining_branch_name);
+    }
+    else {
+      module = _children[root_name].get();
+    }
+
+    return module;
   }
 
   /*********************************************************************************************************************/
@@ -575,6 +603,22 @@ namespace ChimeraTK {
     catch(xmlpp::exception& e) { /// @todo change exception!
       throw ChimeraTK::logic_error("ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
     }
+  }
+
+  /*********************************************************************************************************************/
+
+  std::string root(std::string flattened_name) {
+    auto pos = flattened_name.find_first_of('/');
+    pos = (pos == std::string::npos) ? flattened_name.size() : pos;
+    return flattened_name.substr(0, pos);
+  }
+
+  /*********************************************************************************************************************/
+
+  std::string branchWithoutRoot(std::string flattened_name) {
+    auto pos = flattened_name.find_first_of('/');
+    pos = (pos == std::string::npos) ? flattened_name.size() : pos + 1;
+    return flattened_name.substr(pos, flattened_name.size());
   }
 
   /*********************************************************************************************************************/

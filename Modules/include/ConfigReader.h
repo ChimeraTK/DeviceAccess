@@ -83,7 +83,7 @@ namespace ChimeraTK {
   struct ArrayFunctorFill;
   struct FunctorSetValues;
   struct FunctorSetValuesArray;
-  class ModuleList;
+  class ModuleTree;
 
   /** Generic module to read an XML config file and provide the defined values as
    *  constant variables. The config file should look like this:
@@ -139,7 +139,7 @@ namespace ChimeraTK {
     std::string _fileName;
 
     /** List to hold VariableNodes corresponding to xml modules **/
-    std::unique_ptr<ModuleList> _moduleList;
+    std::unique_ptr<ModuleTree> _moduleTree;
 
     /** throw a parsing error with more information */
     void parsingError(const std::string& message);
