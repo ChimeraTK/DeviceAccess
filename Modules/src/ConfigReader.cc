@@ -66,18 +66,17 @@ namespace ChimeraTK {
     // the ModuleTree to vanish in its owner.
     ModuleTree(EntityOwner* owner, std::string name, std::string description,
         HierarchyModifier modifier = HierarchyModifier::hideThis)
-    : VariableGroup{owner, name, description, modifier} /*, _parent{nullptr}*/ {}
-
-    void addChildNode(std::string name) {
-      if(_children.find(name) == _children.end()) {
-        _children[name] = std::make_unique<ModuleTree>(this, name, "", HierarchyModifier::none);
-        registerModule(_children[name].get());
-      }
-    }
+    : VariableGroup{owner, name, description, modifier} {}
 
     ChimeraTK::Module* lookup(std::string flattened_module_name);
 
    private:
+    void addChildNode(std::string name) {
+      if(_children.find(name) == _children.end()) {
+        _children[name] = std::make_unique<ModuleTree>(this, name, "", HierarchyModifier::none);
+      }
+    }
+
     ChimeraTK::ModuleTree* get(std::string flattened_name);
 
     std::unordered_map<std::string, std::unique_ptr<ModuleTree>> _children;
