@@ -61,6 +61,12 @@ struct TestModule : ctk::ApplicationModule {
       ctk::ScalarPushInput<uint32_t> var32u{this, "var32u", "MV/m", "Desc"};
       ctk::ArrayPushInput<int32_t> intArray{this, "intArray", "MV/m", 10, "Desc"};
       ctk::ArrayPushInput<std::string> stringArray{this, "stringArray", "", 8, "Desc"};
+
+      struct SubSubModule : ctk::VariableGroup {
+        using ctk::VariableGroup::VariableGroup;
+        ctk::ScalarPushInput<int32_t> var32{this, "var32", "MV/m", "Desc"};
+        ctk::ScalarPushInput<uint32_t> var32u{this, "var32u", "MV/m", "Desc"};
+      }subsubmodule{this, "subsubmodule", ""};
     } submodule{this, "submodule", ""};
 
   } module1{this, "module1", ""};
@@ -72,7 +78,7 @@ struct TestModule : ctk::ApplicationModule {
       using ctk::VariableGroup::VariableGroup;
       ctk::ScalarPushInput<double> var1{this, "var1", "m", "Desc"};
       ctk::ScalarPushInput<double> var2{this, "var2", "kg", "Desc"};
-    } submodule1{this, "submodule1", ""}, submodule{this, "submodule2", ""};
+    } submodule1{this, "submodule1", ""}, submodule2{this, "submodule2", ""};
   } module2{this, "module2", ""};
 
   std::atomic<bool> done{false};
@@ -229,6 +235,7 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   BOOST_CHECK_EQUAL(app.config.get<int32_t>("module1/var32"), -345678);
   BOOST_CHECK_EQUAL(app.config.get<uint32_t>("module1/var32u"), 234567);
   BOOST_CHECK_EQUAL(app.config.get<uint32_t>("module1/submodule/var32u"), 234567);
+  BOOST_CHECK_EQUAL(app.config.get<uint32_t>("module1/submodule/subsubmodule/var32u"), 234568);
 
   arrayValue = app.config.get<std::vector<int>>("module1/submodule/intArray");
   BOOST_CHECK_EQUAL(arrayValue.size(), 10);
