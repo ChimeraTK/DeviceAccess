@@ -273,6 +273,9 @@ namespace ChimeraTK {
       else if(isOpened && _owner->enable == 0) {
         outFile.close();
         isOpened = false;
+
+        // force new file if DAQ is re-enabled
+        ++currentBuffer;
       }
 
       // if file is opened, this trigger should be included in the DAQ
