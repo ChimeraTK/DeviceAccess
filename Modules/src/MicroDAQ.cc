@@ -230,16 +230,15 @@ namespace ChimeraTK {
 
         // some things to be done only on first trigger
         if(firstTrigger) {
-          // create sub-directory
-          boost::filesystem::create_directory("uDAQ");
 
           // determine current buffer number
-          bufferNumber.open("uDAQ/currentBuffer", std::ofstream::in);
+          bufferNumber.open(_owner->fileNamePrefix_ + ".currentBuffer", std::ofstream::in);
           bufferNumber.seekg(0);
           if(!bufferNumber.eof()) {
             bufferNumber >> currentBuffer;
-            char filename[64];
-            std::sprintf(filename, "uDAQ/data%04d.h5", currentBuffer);
+            char suffix[64];
+            std::sprintf(suffix, ".data%04d.h5", currentBuffer);
+            std::string filename = _owner->fileNamePrefix_ + suffix;
             if(boost::filesystem::exists(filename) && boost::filesystem::file_size(filename) > 1000) currentBuffer++;
             if(currentBuffer >= _owner->nMaxFiles) currentBuffer = 0;
           }
@@ -250,10 +249,11 @@ namespace ChimeraTK {
         }
 
         // store current buffer number to disk
-        char filename[64];
-        std::sprintf(filename, "uDAQ/data%04d.h5", currentBuffer);
+        char suffix[64];
+        std::sprintf(suffix, ".data%04d.h5", currentBuffer);
+        std::string filename = _owner->fileNamePrefix_ + suffix;
         std::cout << "uDAQ: Starting with file: " << filename << std::endl;
-        bufferNumber.open("uDAQ/currentBuffer", std::ofstream::out);
+        bufferNumber.open(_owner->fileNamePrefix_ + ".currentBuffer", std::ofstream::out);
         bufferNumber << currentBuffer << std::endl;
         bufferNumber.close();
 

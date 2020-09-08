@@ -37,10 +37,18 @@ namespace ChimeraTK {
      *  before writing to the HDF5 file.
      */
     MicroDAQ(EntityOwner* owner, const std::string& name, const std::string& description,
-        uint32_t decimationFactor = 10, uint32_t decimationThreshold = 1000, bool eliminateHierarchy = false,
+        uint32_t decimationFactor = 10, uint32_t decimationThreshold = 1000,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {},
+        const std::string fileNamePrefix = "uDAQ/")
+    : ApplicationModule(owner, name, description, hierarchyModifier, tags), decimationFactor_(decimationFactor),
+      decimationThreshold_(decimationThreshold), fileNamePrefix_(fileNamePrefix) {}
+
+    /** Deprecated constructor signature. Use the above signature instead. */
+    [[deprecated]] MicroDAQ(EntityOwner* owner, const std::string& name, const std::string& description,
+        uint32_t decimationFactor, uint32_t decimationThreshold, bool eliminateHierarchy,
         const std::unordered_set<std::string>& tags = {})
     : ApplicationModule(owner, name, description, eliminateHierarchy, tags), decimationFactor_(decimationFactor),
-      decimationThreshold_(decimationThreshold) {}
+      decimationThreshold_(decimationThreshold), fileNamePrefix_("uDAQ/") {}
 
     /** Default constructor, creates a non-working module. Can be used for late
      * initialisation. */
@@ -97,6 +105,9 @@ namespace ChimeraTK {
 
     /** Parameters for the data decimation */
     uint32_t decimationFactor_, decimationThreshold_;
+
+    /** Prefix for the output files */
+    std::string fileNamePrefix_;
 
     friend struct detail::AccessorAttacher<TRIGGERTYPE>;
     friend struct detail::H5storage<TRIGGERTYPE>;
