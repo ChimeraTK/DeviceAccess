@@ -85,10 +85,10 @@ namespace ChimeraTK {
     std::map<std::string, VariableGroup> groupMap;
 
     /** boost::fusion::map of UserTypes to std::lists containing the
-     * ArrayPollInput accessors. These accessors are dynamically created by the
+     * ArrayPushInput accessors. These accessors are dynamically created by the
      * AccessorAttacher. */
     template<typename UserType>
-    using AccessorList = std::list<ArrayPollInput<UserType>>;
+    using AccessorList = std::list<ArrayPushInput<UserType>>;
     TemplateUserTypeMap<AccessorList> accessorListMap;
 
     /** boost::fusion::map of UserTypes to std::lists containing the names of the

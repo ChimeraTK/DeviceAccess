@@ -337,7 +337,7 @@ namespace ChimeraTK {
       }
 
       template<typename UserType>
-      void write2hdf(ArrayPollInput<UserType>& accessor, std::string& name, size_t decimationFactor,
+      void write2hdf(ArrayPushInput<UserType>& accessor, std::string& name, size_t decimationFactor,
           H5::DataSpace& dataSpace) const;
 
       H5storage<TRIGGERTYPE>& _storage;
@@ -347,7 +347,7 @@ namespace ChimeraTK {
 
     template<typename TRIGGERTYPE>
     template<typename UserType>
-    void DataWriter<TRIGGERTYPE>::write2hdf(ArrayPollInput<UserType>& accessor, std::string& dataSetName,
+    void DataWriter<TRIGGERTYPE>::write2hdf(ArrayPushInput<UserType>& accessor, std::string& dataSetName,
         size_t decimationFactor, H5::DataSpace& dataSpace) const {
       // prepare decimated buffer
       size_t n = accessor.getNElements() / decimationFactor;
