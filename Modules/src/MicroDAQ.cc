@@ -210,8 +210,9 @@ namespace ChimeraTK {
     storage.groupList.unique();
 
     // loop: process incoming triggers
+    auto group = readAnyGroup();
     while(true) {
-      trigger.read();
+      group.readUntil(trigger.getId());
       storage.processTrigger();
     }
 
@@ -224,11 +225,6 @@ namespace ChimeraTK {
 
     template<typename TRIGGERTYPE>
     void H5storage<TRIGGERTYPE>::processTrigger() {
-      // update configuration variables
-      _owner->enable.readLatest();
-      _owner->nMaxFiles.readLatest();
-      _owner->nTriggersPerFile.readLatest();
-
       // need to open or close file?
       if(!isOpened && _owner->enable != 0) {
         std::fstream bufferNumber;
@@ -388,9 +384,6 @@ namespace ChimeraTK {
         isOpened = false; // will re-open file on next trigger
         return;
       }
-
-      // read all input data
-      _owner->readAllLatest();
 
       // write all data to file
       boost::fusion::for_each(_owner->accessorListMap.table, DataWriter<TRIGGERTYPE>(*this));
