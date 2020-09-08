@@ -103,7 +103,13 @@ namespace ChimeraTK {
     auto& nameList = boost::fusion::at_key<UserType>(nameListMap.table);
     auto dirName = variableName.substr(0, variableName.find_last_of("/"));
     auto baseName = variableName.substr(variableName.find_last_of("/") + 1);
-    tmpAccessorList.emplace_back(&groupMap[dirName], baseName, "", 0, "");
+    if(dirName != "") {
+      tmpAccessorList.emplace_back(&groupMap[dirName], baseName, "", 0, "");
+    }
+    else {
+      // on top level there is no VariableGroup...
+      tmpAccessorList.emplace_back(this, baseName, "", 0, "");
+    }
     nameList.push_back(variableName);
 
     // return the accessor
