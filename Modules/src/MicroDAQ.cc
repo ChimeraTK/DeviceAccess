@@ -202,8 +202,6 @@ namespace ChimeraTK {
 
   template<typename TRIGGERTYPE>
   void MicroDAQ<TRIGGERTYPE>::mainLoop() {
-    std::cout << "Initialising MicroDAQ system...";
-
     // storage object
     detail::H5storage<TRIGGERTYPE> storage(this);
 
@@ -220,8 +218,6 @@ namespace ChimeraTK {
       group.readUntil(trigger.getId());
       storage.processTrigger();
     }
-
-    std::cout << " done." << std::endl;
   }
 
   /*********************************************************************************************************************/
