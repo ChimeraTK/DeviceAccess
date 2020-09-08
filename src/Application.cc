@@ -60,9 +60,16 @@ void Application::initialise() {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");
   }
 
-  // call the user-defined defineConnections() function which describes the
-  // structure of the application
+  // call the user-defined defineConnections() function which describes the structure of the application
   defineConnections();
+  for(auto& module : getSubmoduleListRecursive()) {
+    module->defineConnections();
+  }
+
+  // call defineConnections() for alldevice modules
+  for(auto& devModule : deviceModuleMap) {
+    devModule.second->defineConnections();
+  }
 
   // connect any unconnected accessors with constant values
   processUnconnectedNodes();
@@ -260,15 +267,18 @@ void Application::generateXML() {
 
   // define the connections
   defineConnections();
-
-  // also search for unconnected nodes - this is here only executed to print the
-  // warnings
-  processUnconnectedNodes();
+  for(auto& module : getSubmoduleListRecursive()) {
+    module->defineConnections();
+  }
 
   // create connections for exception handling
   for(auto& devModule : deviceModuleMap) {
     devModule.second->defineConnections();
   }
+
+  // also search for unconnected nodes - this is here only executed to print the
+  // warnings
+  processUnconnectedNodes();
 
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
@@ -555,9 +565,6 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
-  for(auto& devModule : deviceModuleMap) {
-    devModule.second->defineConnections();
-  }
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
   finaliseNetworks();
