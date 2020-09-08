@@ -32,9 +32,9 @@ namespace ChimeraTK {
    public:
     /**
      *  Constructor. decimationFactor and decimationThreshold are configuration
-     * constants which determine how the data reduction is working. Arrays with a
-     * size bigger than decimationThreshold will be decimated by decimationFactor
-     * before writing to the HDF5 file.
+     *  constants which determine how the data reduction is working. Arrays with a
+     *  size bigger than decimationThreshold will be decimated by decimationFactor
+     *  before writing to the HDF5 file.
      */
     MicroDAQ(EntityOwner* owner, const std::string& name, const std::string& description,
         uint32_t decimationFactor = 10, uint32_t decimationThreshold = 1000, bool eliminateHierarchy = false,
@@ -47,16 +47,12 @@ namespace ChimeraTK {
     MicroDAQ() : decimationFactor_(0), decimationThreshold_(0) {}
 
     ScalarPushInput<TRIGGERTYPE> trigger{this, "trigger", "",
-        "When written, the MicroDAQ write snapshot of all variables "
-        "to the file",
-        {"MicroDAQ.CONFIG"}};
-    ScalarPollInput<int> enable{
+        "When written, the MicroDAQ write snapshot of all variables to the file", {"MicroDAQ.CONFIG"}};
+    ScalarPushInput<int> enable{
         this, "enable", "", "DAQ is active when set to 0 and disabled when set to 0.", {"MicroDAQ.CONFIG"}};
 
     ScalarPollInput<uint32_t> nMaxFiles{this, "nMaxFiles", "",
-        "Maximum number of files in the ring buffer "
-        "(oldest file will be overwritten).",
-        {"MicroDAQ.CONFIG"}};
+        "Maximum number of files in the ring buffer (oldest file will be overwritten).", {"MicroDAQ.CONFIG"}};
     ScalarPollInput<uint32_t> nTriggersPerFile{
         this, "nTriggersPerFile", "", "Number of triggers stored in each file.", {"MicroDAQ.CONFIG"}};
 

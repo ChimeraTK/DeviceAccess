@@ -92,9 +92,8 @@ namespace ChimeraTK {
     // check if variable name already registered
     for(auto& name : overallVariableList) {
       if(name == variableName) {
-        throw ChimeraTK::logic_error("Cannot add '" + variableName +
-            "' to MicroDAQ since a variable with that "
-            "name is already registered.");
+        throw ChimeraTK::logic_error(
+            "Cannot add '" + variableName + "' to MicroDAQ since a variable with that name is already registered.");
       }
     }
     overallVariableList.push_back(variableName);
