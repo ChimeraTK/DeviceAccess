@@ -303,6 +303,7 @@ namespace ChimeraTK {
         catch(ChimeraTK::runtime_error& e) {
           assert(deviceError.status != 0); // any error must already be reported...
           if(firstAttempt) {
+            std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
             // set proper error message in very first attempt to open the device
             deviceError.message = e.what();
             deviceError.setCurrentVersionNumber({});
@@ -312,6 +313,9 @@ namespace ChimeraTK {
           continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
         }
       } while(!device.isFunctional());
+      if(!firstAttempt) {
+        std::cerr << "Device " << deviceAliasOrURI << " error cleared." << std::endl;
+      }
       firstAttempt = false;
       owner->testableModeLock("Initialise device");
 
@@ -349,6 +353,7 @@ namespace ChimeraTK {
       catch(ChimeraTK::runtime_error& e) {
         assert(deviceError.status != 0); // any error must already be reported...
         // update error message, since it might have been changed...
+        std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
         deviceError.message = e.what();
         deviceError.setCurrentVersionNumber({});
         deviceError.message.write();
@@ -373,6 +378,7 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error& e) {
         // update error message, since it might have been changed...
+        std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
         deviceError.message = e.what();
         deviceError.setCurrentVersionNumber({});
         deviceError.message.write();
@@ -435,6 +441,7 @@ namespace ChimeraTK {
       errorLock.unlock(); // we must not hold the lock while waiting for the synchronousTransferCounter to go back to 0
 
       // [ExceptionHandling Spec: C.3.3.14] report exception to the control system
+      std::cerr << "Device " << deviceAliasOrURI << " reports error: " << error << std::endl;
       deviceError.status = 1;
       deviceError.message = error;
       deviceError.setCurrentVersionNumber({});
