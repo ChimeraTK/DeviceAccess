@@ -111,7 +111,7 @@ namespace ChimeraTK {
         } // end scope for recovery lock
       }
       catch(ChimeraTK::runtime_error& e) {
-        _deviceModule->reportException(e.what());
+        _deviceModule->reportException(std::string(e.what()) + " (seen by '" + _target->getName() + "')");
       }
     }
     assert(_activeException == nullptr);
@@ -135,7 +135,7 @@ namespace ChimeraTK {
         }
       }
       catch(ChimeraTK::runtime_error& e) {
-        _deviceModule->reportException(e.what());
+        _deviceModule->reportException(std::string(e.what()) + " (seen by '" + _target->getName() + "')");
         _hasReportedException = true;
       }
     }
