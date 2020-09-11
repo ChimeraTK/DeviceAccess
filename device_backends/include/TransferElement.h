@@ -123,9 +123,8 @@ namespace ChimeraTK {
      * might block for a short time until the data transfer was complete. */
     void read() {
       if(TransferElement::_isInTransferGroup) {
-        throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
-                                     "which is part of a TransferGroup "
-                                     "is not allowed.");
+        throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
+            "' which is part of a TransferGroup is not allowed.");
       }
       this->readTransactionInProgress = false;
 
@@ -150,9 +149,8 @@ namespace ChimeraTK {
      */
     bool readNonBlocking() {
       if(TransferElement::_isInTransferGroup) {
-        throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
-                                     "which is part of a TransferGroup "
-                                     "is not allowed.");
+        throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
+            "' which is part of a TransferGroup is not allowed.");
       }
       this->readTransactionInProgress = false;
       preReadAndHandleExceptions(TransferType::readNonBlocking);
@@ -212,9 +210,8 @@ namespace ChimeraTK {
      * unbuffered write transfer, the return value will always be false. */
     bool write(ChimeraTK::VersionNumber versionNumber = {}) {
       if(TransferElement::_isInTransferGroup) {
-        throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
-                                     "which is part of a TransferGroup "
-                                     "is not allowed.");
+        throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
+            "' which is part of a TransferGroup is not allowed.");
       }
       this->writeTransactionInProgress = false;
       bool previousDataLost =
@@ -235,9 +232,8 @@ namespace ChimeraTK {
      *  undefined data after calling this function. */
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
       if(TransferElement::_isInTransferGroup) {
-        throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
-                                     "which is part of a TransferGroup "
-                                     "is not allowed.");
+        throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
+            "' which is part of a TransferGroup is not allowed.");
       }
       this->writeTransactionInProgress = false;
 
@@ -540,7 +536,8 @@ namespace ChimeraTK {
 
       _activeException = {};
       if(versionNumber < getVersionNumber()) {
-        throw ChimeraTK::logic_error("The version number passed to write() is less than the last version number used.");
+        throw ChimeraTK::logic_error("The version number passed to write() of TransferElement '" + _name +
+            "' is less than the last version number used.");
       }
       writeTransactionInProgress = true; // must not be set, if the logic_error is thrown above due to the old version
       doPreWrite(type, versionNumber);
@@ -775,10 +772,11 @@ namespace ChimeraTK {
     virtual void interrupt() {
       if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error(
-            "TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
+            "TransferElement::interrupt() called on '" + _name + "' but AccessMode::wait_for_new_data is not set.");
       }
-      throw ChimeraTK::logic_error(
-          "TransferElement::interrupt() must be overridden by all implementations with AccessMode::wait_for_new_data.");
+      throw ChimeraTK::logic_error("TransferElement::interrupt() must be overridden by all implementations with "
+                                   "AccessMode::wait_for_new_data. (TransferElement '" +
+          _name + "')");
     }
 
     /** Implementation of interrupt() for TransferElements which support AccessMode::wait_for_new_data */
@@ -786,7 +784,7 @@ namespace ChimeraTK {
     void interrupt_impl(QUEUE_TYPE& dataTransportQueue) {
       if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error(
-            "TransferElement::interrupt() called but AccessMode::wait_for_new_data is not set.");
+            "TransferElement::interrupt() called on '" + _name + "' but AccessMode::wait_for_new_data is not set.");
       }
       try {
         throw boost::thread_interrupted();
