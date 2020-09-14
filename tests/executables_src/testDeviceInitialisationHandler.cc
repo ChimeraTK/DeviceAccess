@@ -223,8 +223,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 10000);
   // First we see the message from the failing write
-  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"),
-      "DummyException: write throws by request", 10000);
+  BOOST_CHECK(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message") != "");
   dummyBackend->throwExceptionWrite = false;
   // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write exception because write does not throw any more)
   CHECK_EQUAL_TIMEOUT(
