@@ -107,6 +107,42 @@ struct TestApplication : public ctk::Application {
 
 /*********************************************************************************************************************/
 
+struct ModuleC : public ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInputWB<int> var1{this, "var1", "", ""};
+
+  void mainLoop() override {
+    auto group = readAnyGroup();
+
+    var1 = 42;
+    var1.write();
+    std::cout << "Value of var1: " << (int)var1 << std::endl;
+
+    while(true) {
+      auto var = group.readAny();
+      if(var == var1.getId()) {
+        var1 = var1 + 1;
+        var1.write();
+      }
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
+struct InitTestApplication : public ctk::Application {
+  InitTestApplication() : Application("testSuite") {}
+  ~InitTestApplication() { shutdown(); }
+
+  void defineConnections() { findTag(".*").connectTo(cs); }
+
+  ctk::ControlSystemModule cs;
+  ModuleC c{this, "ModuleC", ""};
+};
+
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
   std::cout << "*** testDirectAppToCSConnections" << std::endl;
 
@@ -312,6 +348,21 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
     BOOST_CHECK(var2.readNonBlocking() == false);
     BOOST_CHECK(var3.readNonBlocking() == false);
   }
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testInitialisation) {
+  InitTestApplication testApp;
+  ChimeraTK::TestFacility testFacility;
+
+  //  testApp.dump();
+  //  testApp.dumpConnections();
+
+  testFacility.setScalarDefault<int>("/ModuleC/var1", 22);
+
+  testFacility.runApplication();
+  BOOST_CHECK_EQUAL(testFacility.readScalar<int>("ModuleC/var1"), 42);
 }
 
 /*********************************************************************************************************************/
