@@ -103,7 +103,10 @@ namespace ChimeraTK {
       if(Application::getInstance().isTestableModeEnabled()) {
         for(auto& pv : pvManager->getAllProcessVariables()) {
           if(!pv->isReadable()) continue;
-          pv->readNonBlocking();
+          callForType(pv->getValueType(), [&](auto t) {
+            typedef decltype(t) UserType;
+            this->getArray<UserType>(pv->getName()).readNonBlocking();
+          });
         }
       }
     }
@@ -124,8 +127,8 @@ namespace ChimeraTK {
     template<typename T>
     ChimeraTK::ScalarRegisterAccessor<T> getScalar(const ChimeraTK::RegisterPath& name) const {
       // check for existing accessor in cache
-      if(boost::fusion::at_key<T>(scalarMap.table).count(name) > 0) {
-        return boost::fusion::at_key<T>(scalarMap.table)[name];
+      if(boost::fusion::at_key<T>(accessorMap.table).count(name) > 0) {
+        return boost::fusion::at_key<T>(accessorMap.table)[name];
       }
 
       // obtain accessor from ControlSystemPVManager
@@ -143,14 +146,14 @@ namespace ChimeraTK {
       if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
         auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
         Application::getInstance().testableMode_names[varId] = "ControlSystem:" + name;
-        boost::fusion::at_key<T>(scalarMap.table)[name].replace(ChimeraTK::ScalarRegisterAccessor<T>(deco));
+        boost::fusion::at_key<T>(accessorMap.table)[name] = deco;
       }
       else {
-        boost::fusion::at_key<T>(scalarMap.table)[name].replace(ChimeraTK::ScalarRegisterAccessor<T>(pv));
+        boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
       }
 
       // return the accessor as stored in the cache
-      return boost::fusion::at_key<T>(scalarMap.table)[name];
+      return boost::fusion::at_key<T>(accessorMap.table)[name];
     }
 
     /** Obtain an array-type process variable from the application, which is
@@ -158,8 +161,8 @@ namespace ChimeraTK {
     template<typename T>
     ChimeraTK::OneDRegisterAccessor<T> getArray(const ChimeraTK::RegisterPath& name) const {
       // check for existing accessor in cache
-      if(boost::fusion::at_key<T>(arrayMap.table).count(name) > 0) {
-        return boost::fusion::at_key<T>(arrayMap.table)[name];
+      if(boost::fusion::at_key<T>(accessorMap.table).count(name) > 0) {
+        return boost::fusion::at_key<T>(accessorMap.table)[name];
       }
 
       // obtain accessor from ControlSystemPVManager
@@ -177,14 +180,14 @@ namespace ChimeraTK {
       if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
         auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
         Application::getInstance().testableMode_names[varId] = "ControlSystem:" + name;
-        boost::fusion::at_key<T>(arrayMap.table)[name].replace(ChimeraTK::OneDRegisterAccessor<T>(deco));
+        boost::fusion::at_key<T>(accessorMap.table)[name] = deco;
       }
       else {
-        boost::fusion::at_key<T>(arrayMap.table)[name].replace(ChimeraTK::OneDRegisterAccessor<T>(pv));
+        boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
       }
 
       // return the accessor as stored in the cache
-      return boost::fusion::at_key<T>(arrayMap.table)[name];
+      return boost::fusion::at_key<T>(accessorMap.table)[name];
     }
 
     /** Convenience function to write a scalar process variable in a single call
@@ -246,19 +249,13 @@ namespace ChimeraTK {
    protected:
     boost::shared_ptr<ControlSystemPVManager> pvManager;
 
-    // Cache (possible decorated) accessors to avoid the need to create accessors
-    // multiple times. This would not work if the accessor is decorated, since the
-    // buffer would be lost and thus the current value could no longer be
-    // obtained. This has to be done separately for scalar and array accessors and
-    // in dependence of the user type. Since this is a cache and does not change
-    // the logical behaviour of the class, the maps are defined mutable.
+    // Cache (possible decorated) accessors to avoid the need to create accessors multiple times. This would not work
+    // if the accessor is decorated, since the buffer would be lost and thus the current value could no longer be
+    // obtained. This has to be done in dependence of the user type. Since this is a cache and does not change the
+    // logical behaviour of the class, the maps are defined mutable.
     template<typename UserType>
-    using ScalarMap = std::map<std::string, ChimeraTK::ScalarRegisterAccessor<UserType>>;
-    mutable ChimeraTK::TemplateUserTypeMap<ScalarMap> scalarMap;
-
-    template<typename UserType>
-    using ArrayMap = std::map<std::string, ChimeraTK::OneDRegisterAccessor<UserType>>;
-    mutable ChimeraTK::TemplateUserTypeMap<ArrayMap> arrayMap;
+    using AccessorMap = std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>;
+    mutable ChimeraTK::TemplateUserTypeMap<AccessorMap> accessorMap;
 
     // default values for process variables
     template<typename UserType>
