@@ -208,6 +208,7 @@ This documnent is currently still **INCOMPLETE**!
     - 9.3.4 The backend makes sure 9.3.2 is finished for each TransferElement before a call to Device::activateAsyncRead() re-activates its asynchronous transfer again (*).
   - \anchor transferElement_B_9_4 9.4 TransferElements without wait_for_new_data
      - \anchor transferElement_B_9_4_1 9.4.1 Each call to doReadTransferSynchonously() throws a ChimeraTK::runtime error until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_4_1 "U"]
+     - \anchor transferElement_B_9_4_2 9.4.2 The first successful read operation after recovery must have a new VersionNumber (generated earliest when Device::open() is called to recover the device). \ref transferElement_comment_B_9_3_3_1 "(*)"
   - \anchor transferElement_B_9_5 9.5 Write operations throw a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_5 "U"]
 
 - \anchor transferElement_B_10 10. Removed. Became part of 9.
@@ -332,7 +333,7 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_B_9_2_3 \ref transferElement_B_9_2_3 "9.2.3" For instance a watchdog which monitors a reference register to detect firmware reboots that is not seen on the transport layer can trigger the exception state to inhibit asynchronous transfers while running a recovery procedure.
 - 9.3.1 Open can be called again on an already opened backend to start error recovery.
 - 9.3.2 If an asynchronous read transfer is the first one to detect the exception, the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put into the queue.
-- \anchor transferElement_comment_B_9_3_3_1 \ref transferElement_B_9_3_3_1 "9.3.3.1" This is neccessary since ApplicationCore's ExceptionHandlingDecorator will notify about the exception by inserting the last-known value with DataValidity::faulty and the DeviceModule::exceptionVersionNumber, which is gueranteed to be generated before the call to Device::open() for recovery.
+- \anchor transferElement_comment_B_9_3_3_1 \ref transferElement_B_9_3_3_1 "9.3.3.1" and \ref transferElement_B_9_4_2 "9.4.2" This is neccessary since ApplicationCore's ExceptionHandlingDecorator will notify about the exception by inserting the last-known value with DataValidity::faulty and the DeviceModule::exceptionVersionNumber, which is gueranteed to be generated before the call to Device::open() for recovery.
 - 9.3.4 Avoid race conditions here. The call to Device::activateAsyncRead() usually is done from a different thread than the transfer which caused the exception.
 
 
