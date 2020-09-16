@@ -149,16 +149,7 @@ namespace ChimeraTK {
     }
     else {
       _dataValidity = _target->dataValidity();
-
-      // Only update version number if not smaller than the current one. If the current one is originating from
-      // _deviceModule->getExceptionVersionNumber(), it might happen that the intial value after recovery has the same
-      // version as the last value before the exception, which is smaller than the exception version number.
-      if(_target->getVersionNumber() >= _versionNumber) {
-        _versionNumber = _target->getVersionNumber();
-      }
-      else {
-        assert(_target->getVersionNumber() < _deviceModule->getExceptionVersionNumber());
-      }
+      _versionNumber = _target->getVersionNumber();
     }
 
     // only replace the user buffer if there really is new data
