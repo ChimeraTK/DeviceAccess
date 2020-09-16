@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC12
+\page spec_TransferElement Technical specification: TransferElement V1.0RC13
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -204,6 +204,7 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_9_3_1 9.3.1 Each transfer element deactivates asynchronous reads so no further data is pushed into the \ref transferElement_A_8_2 "implementation-specific data transport queue" until open() has been called successfully in the backend (*) and Device::activateAsyncRead() has been called [\ref UnifiedTest_TransferElement_B_9_3_1 "U"]
     - \anchor transferElement_B_9_3_2 9.3.2 Exactly one ChimeraTK::runtime_error is pushed into the queue of *each* transfer elements of the backend with wait_for_new_data (*). This must happen after 9.3.1. to avoid race conditions. [\ref UnifiedTest_TransferElement_B_9_3_2 "U"]
     - 9.3.3 The first data on the queue after the exception is the initial value sent when calling Device::activateAsyncRead() (see 8.5.2).
+      - \anchor transferElement_B_9_3_3_1  9.3.3.1 The initial value must have a new VersionNumber (generated earliest when Device::open() is called to recover the device), even if the value is unchanged w.r.t. the last received value before the exception. \ref transferElement_comment_B_9_3_3_1 "(*)"
     - 9.3.4 The backend makes sure 9.3.2 is finished for each TransferElement before a call to Device::activateAsyncRead() re-activates its asynchronous transfer again (*).
   - \anchor transferElement_B_9_4 9.4 TransferElements without wait_for_new_data
      - \anchor transferElement_B_9_4_1 9.4.1 Each call to doReadTransferSynchonously() throws a ChimeraTK::runtime error until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_4_1 "U"]
@@ -331,6 +332,7 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_B_9_2_3 \ref transferElement_B_9_2_3 "9.2.3" For instance a watchdog which monitors a reference register to detect firmware reboots that is not seen on the transport layer can trigger the exception state to inhibit asynchronous transfers while running a recovery procedure.
 - 9.3.1 Open can be called again on an already opened backend to start error recovery.
 - 9.3.2 If an asynchronous read transfer is the first one to detect the exception, the implementation must make sure that it is only pushed once into the queue, and informing "all" transfer elememnts with wait_for_new data does not send it again if it was already put into the queue.
+- \anchor transferElement_comment_B_9_3_3_1 \ref transferElement_B_9_3_3_1 "9.3.3.1" This is neccessary since ApplicationCore's ExceptionHandlingDecorator will notify about the exception by inserting the last-known value with DataValidity::faulty and the DeviceModule::exceptionVersionNumber, which is gueranteed to be generated before the call to Device::open() for recovery.
 - 9.3.4 Avoid race conditions here. The call to Device::activateAsyncRead() usually is done from a different thread than the transfer which caused the exception.
 
 
