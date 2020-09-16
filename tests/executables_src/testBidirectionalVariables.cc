@@ -117,7 +117,6 @@ struct ModuleC : public ctk::ApplicationModule {
 
     var1 = 42;
     var1.write();
-    std::cout << "Value of var1: " << (int)var1 << std::endl;
 
     while(true) {
       auto var = group.readAny();
@@ -352,7 +351,9 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testInitialisation) {
+BOOST_AUTO_TEST_CASE(testStartup) {
+  std::cout << "*** testStartup" << std::endl;
+
   InitTestApplication testApp;
   ChimeraTK::TestFacility testFacility;
 
@@ -362,6 +363,9 @@ BOOST_AUTO_TEST_CASE(testInitialisation) {
   testFacility.setScalarDefault<int>("/ModuleC/var1", 22);
 
   testFacility.runApplication();
+
+  // The default value should be overwritten when ModuleC
+  // enters its mainLoop
   BOOST_CHECK_EQUAL(testFacility.readScalar<int>("ModuleC/var1"), 42);
 }
 
