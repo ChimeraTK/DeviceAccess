@@ -32,8 +32,8 @@ namespace ChimeraTK {
     OneDRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
     : NDRegisterAccessorAbstractor<UserType>(impl) {
       if(get()->getNumberOfChannels() != 1) {
-        throw ChimeraTK::logic_error("The OneDRegisterAccessor has a too low "
-                                     "dimension to access this register.");
+        throw ChimeraTK::logic_error(std::string("The OneDRegisterAccessor has a too low ") +
+            "dimension to access the register " + impl->getName());
       }
     }
 
