@@ -100,7 +100,7 @@ namespace ChimeraTK {
 
     /** Flag storing whether setException has been called. Cleared in open().
      */
-    bool _hasException{true};
+    std::atomic<bool> _hasException{true};
   };
 
 } // namespace ChimeraTK

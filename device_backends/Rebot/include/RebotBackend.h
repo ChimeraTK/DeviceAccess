@@ -78,7 +78,7 @@ namespace ChimeraTK {
 
     const static uint32_t DEFAULT_CONNECTION_TIMEOUT_sec{5};
 
-    bool _hasActiveException{false};
+    std::atomic<bool> _hasActiveException{false};
   };
 
 } // namespace ChimeraTK

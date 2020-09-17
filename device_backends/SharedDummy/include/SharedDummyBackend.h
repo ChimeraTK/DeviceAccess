@@ -71,7 +71,7 @@ namespace ChimeraTK {
     // Naming of bars as shared memory elements
     const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";
 
-    bool _hasActiveException{false};
+    std::atomic<bool> _hasActiveException{false};
 
     // Helper class to manage the shared memory: automatically construct if
     // necessary, automatically destroy if last using process closes.

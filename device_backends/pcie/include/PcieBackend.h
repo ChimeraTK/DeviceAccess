@@ -20,7 +20,7 @@ namespace ChimeraTK {
     unsigned long _ioctlDMA;
     std::string _deviceNodeName;
 
-    bool _hasActiveException{false};
+    std::atomic<bool> _hasActiveException{false};
 
     /// A function pointer which calls the correct dma read function (via ioctl or
     /// via struct)
