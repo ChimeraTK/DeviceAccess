@@ -145,11 +145,21 @@ namespace ChimeraTK {
 
     if(_hasReportedException || _hasThrownToInhibitTransfer) {
       _dataValidity = DataValidity::faulty;
-      _versionNumber = _deviceModule->getExceptionVersionNumber();
+      // Note: This assertion does not hold
+      // See discussion in https://github.com/ChimeraTK/DeviceAccess/pull/178
+      // assert(_deviceModule->getExceptionVersionNumber() > _versionNumber);
+      if(_deviceModule->getExceptionVersionNumber() > _versionNumber) {
+        _versionNumber = _deviceModule->getExceptionVersionNumber();
+      }
     }
     else {
       _dataValidity = _target->dataValidity();
-      _versionNumber = _target->getVersionNumber();
+      // Note: This assertion does not hold
+      // See discussion in https://github.com/ChimeraTK/DeviceAccess/pull/178
+      //assert(_target->getVersionNumber() >= _versionNumber);
+      if(_target->getVersionNumber() > _versionNumber) {
+        _versionNumber = _target->getVersionNumber();
+      }
     }
 
     // only replace the user buffer if there really is new data
