@@ -95,9 +95,14 @@ namespace ChimeraTK {
       }
     }
 
+    // Exceptions from copy decorators are ignored. The same exception will be thrown by their target accessors in the
+    // second call to runPostReads() anyway. In case the target is decorated with an ExceptionHandlingDecorator (in
+    // ApplicationCore), the copy decorators exception would not be handled by an ExceptionHandlingDecorator and hence
+    // terminate the application.
     _nRuntimeErrors = 0;
-    auto badNumericCast = runPostReads(_copyDecorators, firstDetectedRuntimeError);
-    auto badNumericCast2 = runPostReads(_highLevelElements, firstDetectedRuntimeError);
+    runPostReads(_copyDecorators, firstDetectedRuntimeError);
+    _nRuntimeErrors = 0;
+    auto badNumericCast = runPostReads(_highLevelElements, firstDetectedRuntimeError);
 
     // re-throw exceptions in the order of occurence
 
@@ -124,9 +129,6 @@ namespace ChimeraTK {
     }
     if(badNumericCast != nullptr) {
       std::rethrow_exception(badNumericCast);
-    }
-    if(badNumericCast2 != nullptr) {
-      std::rethrow_exception(badNumericCast2);
     }
   } // namespace ChimeraTK
 
