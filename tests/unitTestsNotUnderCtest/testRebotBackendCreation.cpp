@@ -22,7 +22,15 @@ BOOST_AUTO_TEST_SUITE(RebotDeviceTestSuite)
 BOOST_AUTO_TEST_CASE(testFactoryForRebotDeviceCreation) {
   // set dmap file path
   auto dmapPathBackup = ChimeraTK::getDMapFilePath();
-  ChimeraTK::setDMapFilePath("./dummies.dmap");
+  std::string dmapPath{"./dummies.dmap"};
+  if(framework::master_test_suite().argc > 1) {
+    dmapPath = framework::master_test_suite().argv[1];
+  }
+  ChimeraTK::setDMapFilePath(dmapPath);
+  std::string port{"5001"};
+  if(framework::master_test_suite().argc > 2) {
+    port = framework::master_test_suite().argv[2];
+  }
 
   // There are four situations where the map-file information is coming from
   // 1. From the dmap file (old way, third column in dmap file)
@@ -49,13 +57,13 @@ BOOST_AUTO_TEST_CASE(testFactoryForRebotDeviceCreation) {
   // creation because we have to bypass the dmap file parser which at the time
   // of writing this requires a map file as third column
   ChimeraTK::Device secondDevice;
-  secondDevice.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+  secondDevice.open("sdm://./rebot=localhost," + port + ",mtcadummy_rebot.map");
   BOOST_CHECK(secondDevice.read<double>("BOARD/WORD_USER") == 48);
   secondDevice.close();
 
   // 3. We don't have a map file, so we have to use numerical addressing
   ChimeraTK::Device thirdDevice;
-  thirdDevice.open("sdm://./rebot=localhost,5001");
+  thirdDevice.open("sdm://./rebot=localhost," + port);
   BOOST_CHECK(thirdDevice.read<int32_t>(ChimeraTK::numeric_address::BAR / 0 / 0xC) == 48 << 3); // The user register
                                                                                                 // is on bar 0,
                                                                                                 // address 0xC. We

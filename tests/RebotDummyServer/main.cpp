@@ -19,6 +19,7 @@ int main(int, char** argv) {
   });
 
   std::cout << "Rebot dummy server started" << std::endl;
+  std::cout << "PORT " << testServer.port() << std::endl;
   testServer.start();
   std::cout << "Rebot dummy server stopped" << std::endl;
 

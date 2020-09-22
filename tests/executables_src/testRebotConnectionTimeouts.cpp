@@ -15,7 +15,7 @@ using namespace ChimeraTK;
 // Test fixture for setup and teardown
 struct F {
   F()
-  : rebotServer{5001 /*port*/, "./mtcadummy_rebot.map", 1 /*protocol version*/},
+  : rebotServer{0 /*use random port*/, "./mtcadummy_rebot.map", 1 /*protocol version*/},
     serverThread([&]() { rebotServer.start(); }) {
     while(not rebotServer.is_running()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -35,7 +35,7 @@ BOOST_FIXTURE_TEST_CASE(testOpenConnection, F) {
 
   uint32_t timeout_sec = 1;
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
-  Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
+  Device d("sdm://./rebot=localhost," + std::to_string(rebotServer.port()) + ",mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
   BOOST_CHECK(d.isFunctional() == false);
 
@@ -52,7 +52,7 @@ BOOST_FIXTURE_TEST_CASE(testOpenConnection, F) {
 BOOST_FIXTURE_TEST_CASE(testReadTimeout, F) {
   uint32_t timeout_sec = 1;
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
-  Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
+  Device d("sdm://./rebot=localhost," + std::to_string(rebotServer.port()) + ",mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
   BOOST_CHECK(d.isFunctional() == false);
 
@@ -74,7 +74,7 @@ BOOST_FIXTURE_TEST_CASE(testReadTimeout, F) {
 BOOST_FIXTURE_TEST_CASE(testWriteTimeout, F) {
   uint32_t timeout_sec = 1;
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
-  Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
+  Device d("sdm://./rebot=localhost," + std::to_string(rebotServer.port()) + ",mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
   BOOST_CHECK(d.isFunctional() == false);
 
