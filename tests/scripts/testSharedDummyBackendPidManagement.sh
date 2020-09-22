@@ -80,7 +80,7 @@
     BGPIDS+=("$!")
 
 
-    MAX_EVAL_CNT=10
+    MAX_EVAL_CNT=20
     TIMEOUT_CNT=0
     while [ $TIMEOUT_CNT -lt $MAX_EVAL_CNT  ]; do 
         if ps -p $PID_SURPLUS >/dev/null ; # Process still exists
@@ -93,7 +93,8 @@
         let TIMEOUT_CNT+=1
 
         if [ $TIMEOUT_CNT -eq $MAX_EVAL_CNT ]; then
-            echo "Testing PID Management of SharedDummyBackend failed. Starting a supernumerous process has not been catched."
+            echo "Testing PID Management of SharedDummyBackend failed. Starting a supernumerous process has not been caught."
+            ps -p $PID_SURPLUS ; # Show child status before killing it
             kill -s SIGINT $PID_SURPLUS
             TEST_RESULT=$(( $TEST_RESULT + 2 ))
         fi
