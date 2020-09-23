@@ -280,6 +280,12 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
     // Test getting nonexisting varibale
     BOOST_CHECK_THROW(app.config.get<int>("nonexistentVariable"), ctk::logic_error);
+
+    try {
+      app.config.get<int>("nonexistentVariable");
+    } catch (ctk::logic_error &e) {
+      std::cout << "Using get with incorrect type. Exception message: " << e.what() << std::endl;
+    }
   }
 }
 
