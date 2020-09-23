@@ -172,7 +172,9 @@ namespace ChimeraTK {
     template<typename T>
     void createArray(const std::string& name, const std::map<size_t, std::string>& values);
 
-    std::string getTypeOfVariable(std::string const& name) const;
+    /** Check if variable exists in the config and if type of var name in the config file matches the given type.
+     * Throws logic_errors otherwise. */
+    void checkVariable(std::string const& name, std::string const& type) const;
 
     /** Define type for map of std::string to Var, so we can put it into the
      * TemplateUserTypeMap */
@@ -222,23 +224,8 @@ namespace ChimeraTK {
 
   template<typename T>
   const T& ConfigReader::get_impl(const std::string& variableName, T*) const {
-    try {
-      auto typeOfVar = getTypeOfVariable(variableName);
-      auto typeOfThis{boost::fusion::at_key<T>(typeMap)};
-      if(typeOfVar != typeOfThis) {
-        throw(ChimeraTK::logic_error("ConfigReader: Attempting to read scalar configuration variable '" + variableName +
-            "' with type '" + typeOfThis + "'. This does not match type '" + typeOfVar + "' defined in the config file."));
-      }
-
-      //std::cout << "get_impl: Getting '" << variableName << "' with type '" << getTypeOfVariable(variableName) << "'" << std::endl;
-
-      return boost::fusion::at_key<T>(variableMap.table).at(variableName)._value;
-    }
-    catch(std::out_of_range& e) {
-      throw(ChimeraTK::logic_error("ConfigReader: Cannot find a scalar "
-                                   "configuration variable of the name '" +
-          variableName + "' in the config file '" + _fileName + "'."));
-    }
+    checkVariable(variableName, boost::fusion::at_key<T>(typeMap));
+    return boost::fusion::at_key<T>(variableMap.table).at(variableName)._value;
   }
 
   /*********************************************************************************************************************/

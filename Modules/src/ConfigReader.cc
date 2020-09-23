@@ -154,10 +154,9 @@ namespace ChimeraTK {
       assert(numberOfMatches <= 1);
       bool hasMatch{numberOfMatches == 1};
 
-      if(hasMatch){
+      if(hasMatch) {
         _type = boost::fusion::at_key<T>(_owner->typeMap);
       }
-      //std::cout << "Key: " << _type << "pair = " << pair.second.count(_name) << std::endl;
 
       return hasMatch;
     }
@@ -167,11 +166,24 @@ namespace ChimeraTK {
     std::string& _type;
   };
 
-  std::string ConfigReader::getTypeOfVariable(std::string const& name) const {
-    std::string type{"NotFound"};
-//        boost::fusion::for_each(variableMap.table, FunctorHasKey {this, name, type});
-    boost::fusion::any(variableMap.table, FunctorGetTypeForName{this, name, type});
-    return type;
+  /*********************************************************************************************************************/
+
+  void ConfigReader::checkVariable(std::string const& name, std::string const& typeOfThis) const {
+    std::string typeOfVar{""};
+
+    bool varExists = boost::fusion::any(variableMap.table, FunctorGetTypeForName{this, name, typeOfVar});
+
+    if(!varExists){
+      throw(ChimeraTK::logic_error("ConfigReader: Cannot find a scalar "
+                                   "configuration variable of the name '" +
+          name + "' in the config file '" + _fileName + "'."));
+    }
+
+    if(typeOfVar != typeOfThis) {
+      throw(ChimeraTK::logic_error("ConfigReader: Attempting to read scalar configuration variable '" + name +
+          "' with type '" + typeOfThis + "'. This does not match type '" + typeOfVar +
+          "' defined in the config file."));
+    }
   }
 
   /*********************************************************************************************************************/
