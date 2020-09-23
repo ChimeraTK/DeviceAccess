@@ -66,7 +66,7 @@ struct TestModule : ctk::ApplicationModule {
         using ctk::VariableGroup::VariableGroup;
         ctk::ScalarPushInput<int32_t> var32{this, "var32", "MV/m", "Desc"};
         ctk::ScalarPushInput<uint32_t> var32u{this, "var32u", "MV/m", "Desc"};
-      }subsubmodule{this, "subsubmodule", ""};
+      } subsubmodule{this, "subsubmodule", ""};
     } submodule{this, "submodule", ""};
 
   } module1{this, "module1", ""};
@@ -274,7 +274,8 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
     try {
       app.config.get<uint16_t>("var32u");
-    } catch (ctk::logic_error &e) {
+    }
+    catch(ctk::logic_error& e) {
       std::cout << "Using get with incorrect type. Exception message: " << e.what() << std::endl;
     }
 
@@ -283,7 +284,29 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
     try {
       app.config.get<int>("nonexistentVariable");
-    } catch (ctk::logic_error &e) {
+    }
+    catch(ctk::logic_error& e) {
+      std::cout << "Using get with incorrect type. Exception message: " << e.what() << std::endl;
+    }
+
+    // Same for arrays
+    // Test get with types mismatch
+    BOOST_CHECK_THROW(app.config.get<std::vector<float>>("module1/submodule/intArray"), ctk::logic_error);
+
+    try {
+      app.config.get<std::vector<float>>("module1/submodule/intArray");
+    }
+    catch(ctk::logic_error& e) {
+      std::cout << "Using get with incorrect type. Exception message: " << e.what() << std::endl;
+    }
+
+    // Test getting nonexisting varibale
+    BOOST_CHECK_THROW(app.config.get<std::vector<int>>("nonexistentVariable"), ctk::logic_error);
+
+    try {
+      app.config.get<std::vector<int>>("nonexistentVariable");
+    }
+    catch(ctk::logic_error& e) {
       std::cout << "Using get with incorrect type. Exception message: " << e.what() << std::endl;
     }
   }
