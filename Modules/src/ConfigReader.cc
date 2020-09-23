@@ -188,6 +188,26 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void ConfigReader::checkArray(std::string const& name, std::string const& typeOfThis) const {
+    std::string typeOfVar{""};
+
+    bool varExists = boost::fusion::any(arrayMap.table, FunctorGetTypeForName{this, name, typeOfVar});
+
+    if(!varExists){
+      throw(ChimeraTK::logic_error("ConfigReader: Cannot find a array "
+                                   "configuration variable of the name '" +
+          name + "' in the config file '" + _fileName + "'."));
+    }
+
+    if(typeOfVar != typeOfThis) {
+      throw(ChimeraTK::logic_error("ConfigReader: Attempting to read array configuration variable '" + name +
+          "' with type '" + typeOfThis + "'. This does not match type '" + typeOfVar +
+          "' defined in the config file."));
+    }
+  }
+
+  /*********************************************************************************************************************/
+
   template<typename T>
   void ConfigReader::createVar(const std::string& name, const std::string& value) {
     // convert value into user type

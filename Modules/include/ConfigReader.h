@@ -176,6 +176,10 @@ namespace ChimeraTK {
      * Throws logic_errors otherwise. */
     void checkVariable(std::string const& name, std::string const& type) const;
 
+    /** Check if array exists in the config and if type of array name in the config file matches the given type.
+     * Throws logic_errors otherwise. */
+    void checkArray(std::string const& name, std::string const& type) const;
+
     /** Define type for map of std::string to Var, so we can put it into the
      * TemplateUserTypeMap */
     template<typename T>
@@ -233,14 +237,8 @@ namespace ChimeraTK {
 
   template<typename T>
   const std::vector<T>& ConfigReader::get_impl(const std::string& variableName, std::vector<T>*) const {
-    try {
-      return boost::fusion::at_key<T>(arrayMap.table).at(variableName)._value;
-    }
-    catch(std::out_of_range& e) {
-      throw(ChimeraTK::logic_error("ConfigReader: Cannot find an array "
-                                   "configuration variable of the name '" +
-          variableName + "' in the config file '" + _fileName + "'."));
-    }
+    checkArray(variableName, boost::fusion::at_key<T>(typeMap));
+    return boost::fusion::at_key<T>(arrayMap.table).at(variableName)._value;
   }
 
 } // namespace ChimeraTK
