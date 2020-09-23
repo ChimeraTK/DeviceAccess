@@ -141,6 +141,41 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  struct FunctorGetTypeForName {
+    FunctorGetTypeForName(const ConfigReader* owner, std::string const& name, std::string& type)
+    : _owner(owner), _name(name), _type(type) {}
+
+    template<typename PAIR>
+    bool operator()(PAIR const& pair) const {
+      // extract the user type from the pair
+      typedef typename PAIR::first_type T;
+
+      size_t numberOfMatches{pair.second.count(_name)};
+      assert(numberOfMatches <= 1);
+      bool hasMatch{numberOfMatches == 1};
+
+      if(hasMatch){
+        _type = boost::fusion::at_key<T>(_owner->typeMap);
+      }
+      //std::cout << "Key: " << _type << "pair = " << pair.second.count(_name) << std::endl;
+
+      return hasMatch;
+    }
+
+    const ConfigReader* _owner;
+    const std::string& _name;
+    std::string& _type;
+  };
+
+  std::string ConfigReader::getTypeOfVariable(std::string const& name) const {
+    std::string type{"NotFound"};
+//        boost::fusion::for_each(variableMap.table, FunctorHasKey {this, name, type});
+    boost::fusion::any(variableMap.table, FunctorGetTypeForName{this, name, type});
+    return type;
+  }
+
+  /*********************************************************************************************************************/
+
   template<typename T>
   void ConfigReader::createVar(const std::string& name, const std::string& value) {
     // convert value into user type
