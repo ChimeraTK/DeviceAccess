@@ -267,6 +267,20 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
     TestApplicationNoConfigs app;
     BOOST_CHECK(app.testModule.appConfig_has_thrown);
   }
+  {
+    TestApplication app;
+    // Test get with types mismatch
+    BOOST_CHECK_THROW(app.config.get<uint16_t>("var32u"), ctk::logic_error);
+
+    try {
+      app.config.get<uint16_t>("var32u");
+    } catch (ctk::logic_error &e) {
+      std::cout << "Using get with incorrect type. Exception message: " << e.what() << std::endl;
+    }
+
+    // Test getting nonexisting varibale
+    BOOST_CHECK_THROW(app.config.get<int>("nonexistentVariable"), ctk::logic_error);
+  }
 }
 
 /*********************************************************************************************************************/
