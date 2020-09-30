@@ -1,0 +1,47 @@
+namespace ChimeraTK {
+/**
+\page whats_new_AC_2_0 What's new in ApplicationCore 2.0
+
+\section whats_new_2_0_initial_value Initial value propagation
+
+- Initial values are propagated from the control system, from all application modules and all device variles.
+- ApplicationModules are waiting to receive an initial value for *all* variables before entering the main loop. The code in the main loop can rely on having initial values for all inputs.
+- As a consequence all ApplicationModules have to write initial values to all of their outputs at application start because these outputs usually are inputs to other modules.
+
+\subsection whats_new_2_0_initial_value_app_change Required changes to existing applications
+
+- Each application module has to **write all of its outputs** once **before the first blocking read**
+- This can be done in two places
+  - Normally the initial values of the outputs are computed from the inital values of the inputs at the beginning of the ApplicationModule::mainLoop(). This is the preferred way.
+  - For constants or to break circulat dependencies between modules, initial values of the outpus can be written in ApplicationModule::prepare(). In this case they cannot be based in the initial values of the inputs, which are not available at this point in time. That's why sending initial values in ApplicationModule::prepare() should be avoided if possible.
+
+@code
+// Usual layout of an ApplicationModule::mainLoop() in AppclicationCore 1.x
+// This can cause a blocking server in  AppclicationCore 2.0
+
+void mainLoop(){
+  while(true){
+    readAll(); // start with a blocking read
+    doComputationsFromInputs();
+    writeAll(); // write at the end of the loop
+  }
+}
+@endcode
+
+@code
+// Typical layout of an ApplicationModule::mainLoop() in AppclicationCore 2.0
+
+void mainLoop(){
+  // when entering the main loop, all inputs have valid initial values
+  while(true){
+    doComputationsFromInputs(); // in the first round calcuations are based on initial values
+    writeAll();
+    readAll(); // blocking read before returning to the beginning of the loop
+  }
+}
+@endcode
+
+
+
+*/ // end of doxygen comment
+} // end of namespace
