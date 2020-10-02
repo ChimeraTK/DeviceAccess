@@ -3,7 +3,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
-
+#include "LNMDoubleBufferPlugin.h"
 namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
@@ -27,6 +27,9 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     else if(name == "typeHintModifier") {
       return boost::make_shared<TypeHintModifierPlugin>(info, parameters);
+    }
+    else if(name == "doubleBuffer") {
+      return boost::make_shared<DoubleBufferPlugin>(info, parameters);
     }
     else {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
