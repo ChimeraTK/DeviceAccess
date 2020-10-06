@@ -29,16 +29,16 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType, typename TargetType>
   struct DoubleBufferPlugin_Helper {
     static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>&,
+        boost::shared_ptr<LogicalNameMappingBackend>& /*backend*/, boost::shared_ptr<NDRegisterAccessor<TargetType>>&,
         const std::map<std::string, std::string>&) {
       assert(false); // only specialisation is valid
       return {};
     }
   };
   template<typename UserType>
-  struct DoubleBufferPlugin_Helper<UserType, double> {
+  struct DoubleBufferPlugin_Helper<UserType, UserType> {
     static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<double>>& target,
+        boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
         const std::map<std::string, std::string>& parameters) {
       return boost::make_shared<DoubleBufferAccessor<UserType>>(backend, target, parameters);
     }
@@ -53,36 +53,42 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   DoubleBufferAccessor<UserType>::DoubleBufferAccessor(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-      boost::shared_ptr<NDRegisterAccessor<double>>& target, const std::map<std::string, std::string>& parameters)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType, double>(target) {
-    _bufferRegister = backend->getRegisterAccessor<double>(getValue(parameters, "bufferregister"), 0, 0, false);
-    _controlRegister = backend->getRegisterAccessor<double>(getValue(parameters, "controlregister"), 0, 0, false);
-    _statusRegister = backend->getRegisterAccessor<double>(getValue(parameters, "statusregister"), 0, 0, false);
+      boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target) {
+    _bufferRegister = backend->getRegisterAccessor<UserType>(getValue(parameters, "bufferregister"), 0, 0, false);
+    _controlRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "controlregister"), 0, 0, false);
+    _statusRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "statusregister"), 0, 0, false);
   }
 
   template<typename UserType>
   void DoubleBufferAccessor<UserType>::doPreRead(TransferType type) {
-    _controlRegister = 0;
-    _controlRegister->write();
     _target->preRead(type);
   }
 
   template<typename UserType>
   void DoubleBufferAccessor<UserType>::doReadTransferSynchronously() {
+
+    _controlRegister->accessData(0) = 0;
+    _controlRegister->write();
+
     _statusRegister->read();
     if(_statusRegister == 0) {
       _bufferRegister->read();
-      buffer_2D[0][0] = static_cast<double>(_bufferRegister);
+      for(size_t i=0; i<_bufferRegister->getNumberOfChannels(); ++i){
+        ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i] = _bufferRegister->accessChannel(i);
+      }
     }
-    else if(_statusRegister == 1) {
+    else if(_statusRegister->accessData(0) == 1) {
       _target->read();
     }
+
+    _controlRegister->accessData(0) = 1;
+    _controlRegister->write();
   } 
 
   template<typename UserType>
-  void DoubleBufferAccessor<UserType>:: doPostRead(TransferType type, bool hasNewData) override{
-    _controlRegister = 1;
-    _controlRegister->write();
+  void DoubleBufferAccessor<UserType>:: doPostRead(TransferType type, bool hasNewData) {
+    _target->postRead(type, hasNewData);
   }
 
 }} // namespace ChimeraTK::LNMBackend
