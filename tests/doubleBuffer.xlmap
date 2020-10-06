@@ -1,0 +1,28 @@
+<logicalNameMap>
+
+  <redirectedRegister name="enableDoubleBuffer">
+    <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+    <targetRegister>ADC.1.WORD_DUB_BUF_ENA</targetRegister>
+  </redirectedRegister>
+
+  <redirectedRegister name="currentlyWrittenBuffer">
+    <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+    <targetRegister>ADC.1.WORD_DUB_BUF_CURR</targetRegister>
+  </redirectedRegister>
+
+  <redirectedRegister name="pulseNumberOfNonWrittenBuffer">
+    <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+    <targetRegister>ADC.1.WORD_DUB_BUF_PNUM</targetRegister>
+  </redirectedRegister>
+
+  <redirectedRegister name="doubleBuffer">
+    <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+    <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
+    <plugin name="doubleBuffer">
+      <parameter name="bufferregister"> APP.0.DAQ0_BUF1 </parameter>
+      <parameter name="controlregister"> APP.1.WORD_DUB_BUF_ENA </parameter>
+      <parameter name="statusregister"> APP.1.WORD_DUB_BUF_CURR </parameter>
+    </plugin>
+  </redirectedRegister>
+
+</logicalNameMap>

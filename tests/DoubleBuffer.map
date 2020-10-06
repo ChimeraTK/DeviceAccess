@@ -1,0 +1,10 @@
+# name                    number of elements       address          size           bar    width   fracbits  signed
+APP.0.THE_AREA            10                       1024             40             3      32      0         0
+APP.1.ADDRESS             1                        0                4              1      32      0         0
+APP.1.DATA                1                        4                4              1      32      0         0
+APP.1.STATUS              1                        8                4              1      32      0         0
+APP.1.WORD_DUB_BUF_ENA    3                        12               4              1      32      0         0
+APP.1.WORD_DUB_BUF_CURR   1                        24               4              1      32      0         0
+APP.1.WORD_DUB_BUF_PNUM   1                        28               4              1      32      0         0
+APP.0.DAQ0_BUF0           5                        1024             40             3      32      0         0
+APP.0.DAQ0_BUF1           5                        1224             40             3      32      0         0

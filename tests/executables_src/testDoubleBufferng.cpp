@@ -16,7 +16,10 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
 /**********************************************************************************************************************/
 
 static std::string cdd("(ExceptionDummy:1?map=SubdeviceTarget.map)");
+static std::string dbdevice("(ExceptionDummy:1?map=DoubleBuffer.map)");
+static std::string db("(logicalNameMap?map=mathPlugin.xlmap)");
 static auto target = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
+static auto device = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(db));
 
 /**********************************************************************************************************************/
 
