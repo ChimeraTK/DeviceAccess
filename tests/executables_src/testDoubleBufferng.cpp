@@ -7,6 +7,7 @@ using namespace boost::unit_test_framework;
 #include "ExceptionDummyBackend.h"
 #include "UnifiedBackendTest.h"
 #include "DummyRegisterAccessor.h"
+#include "DummyBackend.h"
 
 using namespace ChimeraTK;
 
@@ -73,6 +74,7 @@ struct StaticCore {
   StaticCore() {
     assert(target != nullptr);
     data.setWriteCallback([this] { this->writeCallback(); });
+    data.setReadCallback([this] { this->readCallback(); });
   }
 
   DummyRegisterAccessor<uint32_t> address{target.get(), "APP.1", "ADDRESS"};
@@ -82,6 +84,10 @@ struct StaticCore {
   std::vector<uint32_t> currentValue{std::vector<uint32_t>(lastAddress)};
 
   bool useStatus{true};
+
+  void readCallback() {
+    std::cout << "******   Hallo!" << std::endl;
+  }
 
   void writeCallback() {
     if(useStatus) status = 1;
