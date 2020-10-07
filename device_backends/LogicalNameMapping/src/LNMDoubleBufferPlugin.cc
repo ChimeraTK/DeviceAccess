@@ -55,9 +55,9 @@ namespace ChimeraTK { namespace LNMBackend {
   DoubleBufferAccessor<UserType>::DoubleBufferAccessor(boost::shared_ptr<LogicalNameMappingBackend>& backend,
       boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target) {
-    _bufferRegister = backend->getRegisterAccessor<UserType>(getValue(parameters, "bufferregister"), 0, 0, false);
-    _controlRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "controlregister"), 0, 0, false);
-    _statusRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "statusregister"), 0, 0, false);
+    _bufferRegister = backend->getRegisterAccessor<UserType>(getValue(parameters, "secondBuffer"), 0, 0, false);
+    _controlRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "controlRegister"), 0, 0, false);
+    _statusRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "statusRegister"), 0, 0, false);
   }
 
   template<typename UserType>
