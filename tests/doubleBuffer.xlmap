@@ -19,9 +19,9 @@
     <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
     <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
     <plugin name="doubleBuffer">
-      <parameter name="bufferregister"> APP.0.DAQ0_BUF1 </parameter>
-      <parameter name="controlregister"> APP.1.WORD_DUB_BUF_ENA </parameter>
-      <parameter name="statusregister"> APP.1.WORD_DUB_BUF_CURR </parameter>
+      <parameter name="secondBuffer"> APP.0.DAQ0_BUF1 </parameter>
+      <parameter name="controlRegister"> APP.1.WORD_DUB_BUF_ENA </parameter>
+      <parameter name="statusRegister"> APP.1.WORD_DUB_BUF_CURR </parameter>
     </plugin>
   </redirectedRegister>
 

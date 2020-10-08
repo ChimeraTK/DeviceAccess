@@ -8,6 +8,7 @@ using namespace boost::unit_test_framework;
 #include "UnifiedBackendTest.h"
 #include "DummyRegisterAccessor.h"
 #include "DummyBackend.h"
+#include "LogicalNameMappingBackend.h"
 
 using namespace ChimeraTK;
 
@@ -15,26 +16,28 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
 
 /**********************************************************************************************************************/
 
-static std::string cdd("(ExceptionDummy:1?map=SubdeviceTarget.map)");
-static std::string dbdevice("(ExceptionDummy:1?map=DoubleBuffer.map)");
-static std::string db("(logicalNameMap?map=mathPlugin.xlmap)");
-static auto target = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
-static auto device = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(db));
-
+//static std::string dbdevice("(ExceptionDummy:1?map=DoubleBuffer.map)");
+static std::string db("(logicalNameMap?map=doubleBuffer.xlmap)");
+static auto target = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(db));
+//static auto device = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dbdevice));
+static boost::shared_ptr<ExceptionDummy> exceptionDummy;
+static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 /**********************************************************************************************************************/
 
 template<typename Register>
 struct AreaType : Register {
+  Register* derived{static_cast<Register*>(this)};
+
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
   size_t nChannels() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
-  size_t nRuntimeErrorCases() { return 1; }
+  size_t nRuntimeErrorCases() { return 0; }
 
   static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
-  DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
+  DummyRegisterAccessor<uint32_t> acc{target.get(), "/doubleBuffer", "doubleBuffer"};
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
@@ -48,126 +51,60 @@ struct AreaType : Register {
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue(bool = false) {
+    // For Variables we don't have a backdoor. We have to use the normal read and write
+    // functions which are good enough. It seems like a self consistency test, but all
+    // functionality the variable has to provide is that I can write something, and
+    // read it back, which is tested with it.
+
+    // We might have to open the backend to perform the operation. We have to remember
+    // that we did so and close it again it we did. Some tests require the backend to be closed.
+    bool backendWasOpened = lmapBackend->isOpen();
+    if(!backendWasOpened) {
+      lmapBackend->open();
+    }
+    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(derived->path(), 0, 0, {});
+    acc->read();
+    if(!backendWasOpened) {
+      lmapBackend->close();
+    }
     std::vector<UserType> v;
-    for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      assert(i + this->address() / 4 < 10);
-      v.push_back(this->fromRaw(acc[i + this->address() / 4]));
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
+      v.push_back(acc->accessData(k));
     }
     return {v};
   }
 
   void setRemoteValue() {
-    auto v = generateValue<typename Register::minimumUserType>()[0];
-    for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      assert(i + this->address() / 4 < 10);
-      acc[i + this->address() / 4] = this->toRaw(v[i]);
+    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(derived->path(), 0, 0, {});
+    auto v = getRemoteValue<typename Register::minimumUserType>()[0];
+//    auto v = derived->template generateValue<typename Register::minimumUserType>()[0];
+    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
+      acc->accessData(k) = v[k];
+    }
+    bool backendWasOpened = lmapBackend->isOpen();
+    if(!backendWasOpened) {
+      lmapBackend->open();
+    }
+    acc->write();
+    if(!backendWasOpened) {
+      lmapBackend->close();
     }
   }
 
   void setForceRuntimeError(bool enable, size_t) {
-    target->throwExceptionRead = enable;
-    target->throwExceptionWrite = enable;
+//    target->throwExceptionRead = enable;
+//    target->throwExceptionWrite = enable;
+    assert(false);
   }
-};
-
-/**********************************************************************************************************************/
-
-struct StaticCore {
-  StaticCore() {
-    assert(target != nullptr);
-    data.setWriteCallback([this] { this->writeCallback(); });
-    data.setReadCallback([this] { this->readCallback(); });
-  }
-
-  DummyRegisterAccessor<uint32_t> address{target.get(), "APP.1", "ADDRESS"};
-  DummyRegisterAccessor<uint32_t> data{target.get(), "APP.1", "DATA"};
-  DummyRegisterAccessor<uint32_t> status{target.get(), "APP.1", "STATUS"};
-  size_t lastAddress{32};
-  std::vector<uint32_t> currentValue{std::vector<uint32_t>(lastAddress)};
-
-  bool useStatus{true};
-
-  void readCallback() {
-    std::cout << "******   Hallo!" << std::endl;
-  }
-
-  void writeCallback() {
-    if(useStatus) status = 1;
-    BOOST_REQUIRE(address <= lastAddress);
-    currentValue[address] = data;
-    usleep(1234);
-    if(useStatus) status = 0;
-  }
-};
-static StaticCore core;
-
-/**********************************************************************************************************************/
-
-template<typename Register>
-struct Regs3Type : Register {
-  bool isWriteable() { return true; }
-  bool isReadable() { return false; }
-  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
-  size_t nChannels() { return 1; }
-  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
-  size_t nRuntimeErrorCases() { return 1; }
-
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
-
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    std::vector<UserType> v;
-    for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      typename Register::minimumUserType e =
-          this->fromRaw(core.currentValue[i * 4 + this->address()]) + this->increment * (i + 1);
-      v.push_back(this->limitGenerated(e));
-    }
-    return {v};
-  }
-
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    std::vector<UserType> v;
-    for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      v.push_back(this->fromRaw(core.currentValue[i * 4 + this->address()]));
-    }
-    return {v};
-  }
-
-  void setRemoteValue() {
-    auto v = generateValue<typename Register::minimumUserType>()[0];
-    for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      core.currentValue[i * 4 + this->address()] = this->toRaw(v[i]);
-    }
-  }
-
-  void setForceRuntimeError(bool enable, size_t) {
-    target->throwExceptionRead = enable;
-    target->throwExceptionWrite = enable;
-  }
-};
-
-/*********************************************************************************************************************/
-
-struct MyRegister1 {
-  std::string path() { return "/APP.0/MY_REGISTER1"; }
-  size_t nElementsPerChannel() { return 1; }
-  size_t address() { return 0; }
-  uint32_t toRaw(uint32_t v) { return v; }
-  uint32_t fromRaw(uint32_t v) { return v; }
-  uint32_t limitGenerated(uint32_t e) { return e; }
-  uint32_t increment = 7;
-  typedef uint32_t minimumUserType;
-  typedef int32_t rawUserType;
 };
 
 /*********************************************************************************************************************/
 
 struct MyArea1 {
-  std::string path() { return "/APP.0/MY_AREA1"; }
-  size_t nElementsPerChannel() { return 6; }
-  size_t address() { return 8; }
+  std::string path() { return "/doubleBuffer"; }
+  size_t nElementsPerChannel() { return 10; }
+  size_t address() { return 20; }
   uint32_t toRaw(float v) { return v * 65536.F; }
   float fromRaw(uint32_t v) { return v / 65536.F; }
   float limitGenerated(float e) {
@@ -184,19 +121,14 @@ struct MyArea1 {
 
 BOOST_AUTO_TEST_CASE(testUnified) {
   // test area type
-  ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyRegister1>>().addRegister<AreaType<MyArea1>>().runTests(
-      "(subdevice?type=area&device=" + cdd + "&area=APP.0.THE_AREA&map=Subdevice.map)");
+  std::string dummy = "(ExceptionDummy?map=DoubleBuffer.map)";
+  std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + dummy + ")";
+  exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy));
 
-  // test 3regs type
-  ChimeraTK::UnifiedBackendTest<>().addRegister<Regs3Type<MyRegister1>>().addRegister<Regs3Type<MyArea1>>().runTests(
-      "(subdevice?type=3regs&device=" + cdd +
-      "&address=APP.1.ADDRESS&data=APP.1.DATA&status=APP.1.STATUS&map=Subdevice.map)");
 
-  // test 2regs type
-  core.useStatus = false;
-  ChimeraTK::UnifiedBackendTest<>().addRegister<Regs3Type<MyRegister1>>().addRegister<Regs3Type<MyArea1>>().runTests(
-      "(subdevice?type=2regs&device=" + cdd +
-      "&address=APP.1.ADDRESS&data=APP.1.DATA&sleep=1000000&map=Subdevice.map)");
+  ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyArea1>>().runTests(lmap);
+
+
 }
 
 /*********************************************************************************************************************/
