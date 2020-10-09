@@ -205,7 +205,9 @@ namespace ChimeraTK {
         assert(existingChild != nullptr);
         submodule->findTagAndAppendToModule(
             //                                      true = eliminateFirstHierarchy, just add to existingChild
-            *existingChild, tag, eliminateAllHierarchies, true, negate, root, parentOfModuleToAddTo);
+            //                                                                if we add to existingChild, whe have to put to ITS parent here,
+            //                                                                which is moduleToAddTo
+            *existingChild, tag, eliminateAllHierarchies, true, negate, root, moduleToAddTo);
       }
       else {
         // does not yet exist: add as new submodule to the current module
