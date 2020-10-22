@@ -163,7 +163,7 @@ namespace ChimeraTK {
      *  Note: Avoid using this in application code, since it will break the
      * abstraction!
      */
-    boost::shared_ptr<TransferElement> getHighLevelImplElement() { return _impl; }
+    const boost::shared_ptr<TransferElement>& getHighLevelImplElement() { return _impl; }
 
     /** Return if the accessor is properly initialised. It is initialised if it
      * was constructed passing the pointer to an implementation (a
