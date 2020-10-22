@@ -446,29 +446,37 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
   auto varId = getNextVariableId();
   pvIdMap[pvar->getUniqueId()] = varId;
 
-  // Decorate the process variable if testable mode is enabled and this is the
-  // receiving end of the variable (feeding to the network). Also don't decorate, if the mode is polling.
-  // Instead flag the variable to be polling, so the TestFacility is aware of
-  // this.
-  if(testableMode && node.getDirection().dir == VariableDirection::feeding) {
-    // The transfer mode of this process variable is considered to be polling,
-    // if only one consumer exists and this consumer is polling. Reason:
-    // mulitple consumers will result in the use of a FanOut, so the
-    // communication up to the FanOut will be push-type, even if all consumers
-    // are poll-type.
-    /// @todo Check if this is true!
-    auto mode = UpdateMode::push;
-    if(node.getOwner().countConsumingNodes() == 1) {
-      if(node.getOwner().getConsumingNodes().front().getMode() == UpdateMode::poll) mode = UpdateMode::poll;
-    }
+  // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable (feeding
+  // to the network), or a bidirectional consumer. Also don't decorate, if the mode is polling. Instead flag the
+  // variable to be polling, so the TestFacility is aware of this.
+  if(testableMode) {
+    if(node.getDirection().dir == VariableDirection::feeding) {
+      // The transfer mode of this process variable is considered to be polling,
+      // if only one consumer exists and this consumer is polling. Reason:
+      // mulitple consumers will result in the use of a FanOut, so the
+      // communication up to the FanOut will be push-type, even if all consumers
+      // are poll-type.
+      /// @todo Check if this is true!
+      auto mode = UpdateMode::push;
+      if(node.getOwner().countConsumingNodes() == 1) {
+        if(node.getOwner().getConsumingNodes().front().getMode() == UpdateMode::poll) mode = UpdateMode::poll;
+      }
 
-    if(mode != UpdateMode::poll) {
+      if(mode != UpdateMode::poll) {
+        auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
+        testableMode_names[varId] = "ControlSystem:" + node.getPublicName();
+        return pvarDec;
+      }
+      else {
+        testableMode_isPollMode[varId] = true;
+      }
+    }
+    else if(node.getDirection().withReturn) {
+      // Return channels are always push. The decorator must handle only reads on the return channel, since writes into
+      // the control system do not block the testable mode.
       auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
       testableMode_names[varId] = "ControlSystem:" + node.getPublicName();
       return pvarDec;
-    }
-    else {
-      testableMode_isPollMode[varId] = true;
     }
   }
 
