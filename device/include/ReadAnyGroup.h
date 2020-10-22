@@ -307,16 +307,15 @@ namespace ChimeraTK {
       throw std::logic_error("This notification has already been accepted.");
     }
     this->accepted = true;
-    _owner->_lastOperationIndex = index;
     try {
       _owner->push_elements[index].getHighLevelImplElement()->_readQueue.pop_wait();
     }
     catch(detail::DiscardValueException&) {
-      // FIXME : Does transferType::read together with hasNewData == false violate the spec?
-      // In normal operation the implementation would retry here. Don't know if this works with the wait_any mechanism, because there was notification.
-      _owner->push_elements[index].getHighLevelImplElement()->postRead(TransferType::read, false);
+      // we must not call postRead() in this case, hence we do not call preRead()
+      _owner->_lastOperationIndex = std::numeric_limits<size_t>::max() - 1;
       return false;
     }
+    _owner->_lastOperationIndex = index;
     _owner->push_elements[index].getHighLevelImplElement()->postRead(TransferType::read, true);
     return true;
   }
@@ -470,7 +469,9 @@ namespace ChimeraTK {
         elem.getHighLevelImplElement()->preRead(TransferType::read);
       }
     }
-    else {
+    else if(_lastOperationIndex != std::numeric_limits<size_t>::max() - 1) {
+      // Note: _lastOperationIndex is set to std::numeric_limits<size_t>::max() - 1 in case a DiscardValueException
+      // has been seen, in which case no postRead() is called.
       push_elements[_lastOperationIndex].getHighLevelImplElement()->preRead(TransferType::read);
     }
   }
