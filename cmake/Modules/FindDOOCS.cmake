@@ -76,19 +76,6 @@ endif()
 set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
 message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
 
-# Work-around #1: Link explicitly against tinemt because libDOOCSapi links against it
-# but we usually don't have $DOOCS_DIR in ld.so search path and the meson build process
-# does not set a rpath (rt #979328)
-#
-# Work-around #2: dev-libtine is missing the pkg-config file so use find-library if
-# pkg-config fails, otherwise append it to DOOCS_FIND_COMPONENTS (rt #979516)
-pkg_check_modules(tinemt tinemt)
-if(tinemt_FOUND)
-    list(APPEND DOOCS_FIND_COMPONENTS tinemt)
-else()
-    find_library(TINEMTLIB tinemt REQUIRED)
-endif()
-
 pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
 
 string(REPLACE ";" " " DOOCS_CFLAGS "${DOOCS_CFLAGS}")
