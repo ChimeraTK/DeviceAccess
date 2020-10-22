@@ -58,17 +58,14 @@ namespace ChimeraTK {
         ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                    << "]: testableMode_counter "
-                       "increased, now at value "
+                    << "]: testableMode_counter increased, now at value "
                     << Application::getInstance().testableMode_counter << std::endl;
         }
       }
       else {
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                    << "]: testableMode_counter not "
-                       "increased due to lost data"
-                    << std::endl;
+                    << "]: testableMode_counter not increased due to lost data" << std::endl;
         }
       }
       return dataLost;
@@ -88,17 +85,14 @@ namespace ChimeraTK {
         ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                    << "]: testableMode_counter "
-                       "increased, now at value "
+                    << "]: testableMode_counter increased, now at value "
                     << Application::getInstance().testableMode_counter << std::endl;
         }
       }
       else {
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                    << "]: testableMode_counter not "
-                       "increased due to lost data"
-                    << std::endl;
+                    << "]: testableMode_counter not increased due to lost data" << std::endl;
         }
       }
       return dataLost;
@@ -132,8 +126,7 @@ namespace ChimeraTK {
         --Application::getInstance().testableMode_perVarCounter[_variableIdRead];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-                    << "]: testableMode_counter "
-                       "decreased, now at value "
+                    << "]: testableMode_counter decreased, now at value "
                     << Application::getInstance().testableMode_counter << " / "
                     << Application::getInstance().testableMode_perVarCounter[_variableIdRead] << std::endl;
         }
@@ -141,8 +134,7 @@ namespace ChimeraTK {
       else {
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-                    << "]: testableMode_counter "
-                       "NOT decreased, was already at value "
+                    << "]: testableMode_counter NOT decreased, was already at value "
                     << Application::getInstance().testableMode_counter << " / "
                     << Application::getInstance().testableMode_perVarCounter[_variableIdRead] << std::endl;
           std::cout << Application::getInstance().testableMode_names[_variableIdRead] << std::endl;
