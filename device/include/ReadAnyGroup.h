@@ -88,7 +88,7 @@ namespace ChimeraTK {
      private:
       /** Private constructor used by ReadAnyGroup::waitAny(). This is the only
        * constructor that can construct a new, valid notification. */
-      Notification(TransferElementAbstractor const& transferElement, std::size_t index);
+      Notification(std::size_t index, ReadAnyGroup* owner);
 
       /** Notifications cannot be copied because each notification can only be
        * accepted once. */
@@ -101,11 +101,11 @@ namespace ChimeraTK {
       // Index of the transfer element in the list of transfer elements.
       std::size_t index;
 
-      // Transfer element for which this notification was generated..
-      TransferElementAbstractor transferElement;
-
       // Flag indicating whether this notification is valid.
       bool valid{false};
+
+      // Pointer to owning ReadAnyGroup
+      ReadAnyGroup* _owner{nullptr};
     };
 
     /** Construct empty group. Elements can later be added using the add()
@@ -215,14 +215,19 @@ namespace ChimeraTK {
      *
      *  This allows e.g. to acquire a lock before executing accept().
      *
-     *  Before calling this function, finalise() must have been called, otherwise
-     * the behaviour is undefined. */
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined.
+     * 
+     *  The returned Notification object is only valid as long as the ReadAnyGroup still exists.
+     */
     Notification waitAny();
 
     /** Check if an update is available in the group, but do not block if no update is available. If no update is
      *  available, an invalid Notification object is returned (i.e. Notification::isReady() will return false).
      * 
-     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined.
+     * 
+     *  The returned Notification object is only valid as long as the ReadAnyGroup still exists.
+     */
     Notification waitAnyNonBlocking();
 
     /** Process polled transfer elements (update them if new values are
@@ -233,6 +238,9 @@ namespace ChimeraTK {
     void processPolled();
 
    private:
+    /// Call preRead() on the push_elements which need it
+    void handlePreRead();
+
     /// Flag if this group has been finalised already
     bool isFinalised{false};
 
@@ -244,6 +252,11 @@ namespace ChimeraTK {
 
     /// The notification queue, will be valid only if isFinalised == true
     cppext::future_queue<size_t> notification_queue;
+
+    /// Index into push_elements pointing to the last operation's TransferElementAbstractor, or
+    /// std::numeric_limits<size_t>::max() in case there was not yet an operation.
+    /// This is used to call preRead() at the beginning of the next operation.
+    size_t _lastOperationIndex{std::numeric_limits<size_t>::max()};
   };
 
   /********************************************************************************************************************/
@@ -253,9 +266,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::Notification::Notification(Notification&& other)
-  : accepted(other.accepted), index(other.index), transferElement(other.transferElement), valid(other.valid) {
+  : accepted(other.accepted), index(other.index), valid(other.valid), _owner(other._owner) {
     other.valid = false;
-    other.transferElement = TransferElementAbstractor();
   }
 
   /********************************************************************************************************************/
@@ -279,10 +291,9 @@ namespace ChimeraTK {
     }
     this->accepted = other.accepted;
     this->index = other.index;
-    this->transferElement = other.transferElement;
     this->valid = other.valid;
+    this->_owner = other._owner;
     other.valid = false;
-    other.transferElement = TransferElementAbstractor();
     return *this;
   }
 
@@ -296,16 +307,17 @@ namespace ChimeraTK {
       throw std::logic_error("This notification has already been accepted.");
     }
     this->accepted = true;
+    _owner->_lastOperationIndex = index;
     try {
-      this->transferElement.getHighLevelImplElement()->_readQueue.pop_wait();
+      _owner->push_elements[index].getHighLevelImplElement()->_readQueue.pop_wait();
     }
     catch(detail::DiscardValueException&) {
       // FIXME : Does transferType::read together with hasNewData == false violate the spec?
       // In normal operation the implementation would retry here. Don't know if this works with the wait_any mechanism, because there was notification.
-      this->transferElement.getHighLevelImplElement()->postRead(TransferType::read, false);
+      _owner->push_elements[index].getHighLevelImplElement()->postRead(TransferType::read, false);
       return false;
     }
-    this->transferElement.getHighLevelImplElement()->postRead(TransferType::read, true);
+    _owner->push_elements[index].getHighLevelImplElement()->postRead(TransferType::read, true);
     return true;
   }
 
@@ -315,7 +327,7 @@ namespace ChimeraTK {
     if(!this->valid) {
       throw std::logic_error("This notification object is invalid.");
     }
-    return this->transferElement.getId();
+    return _owner->push_elements[index].getId();
   }
 
   /********************************************************************************************************************/
@@ -333,7 +345,7 @@ namespace ChimeraTK {
     if(!this->valid) {
       throw std::logic_error("This notification object is invalid.");
     }
-    return this->transferElement;
+    return _owner->push_elements[index];
   }
 
   /********************************************************************************************************************/
@@ -342,8 +354,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline ReadAnyGroup::Notification::Notification(TransferElementAbstractor const& transferElement_, std::size_t index_)
-  : index(index_), transferElement(transferElement_), valid(true) {}
+  inline ReadAnyGroup::Notification::Notification(std::size_t index_, ReadAnyGroup* owner)
+  : index(index_), valid(true), _owner(owner) {}
 
   /********************************************************************************************************************/
 
@@ -442,44 +454,48 @@ namespace ChimeraTK {
 
     return notification.getId();
   }
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::handlePreRead() {
+    // preRead() and postRead() must be called in pairs. Hence we call all preReads here before waiting for transfers to
+    // finish. postRead() will be called when accepting the notification. We can call preRead() repeatedly on the same
+    // element, even if no transfer and call to postRead() have happened. It is just ignored (see Transfer element spec
+    // B.5.2). Since this has a performance impact which might be significant on big applications, we try to avoid
+    // unnecessary calls anyway.
+
+    // Notice : This has the side effect that decorators can block here, for instance for the setup phase. This is used
+    // by ApplicationCore in testable mode.
+    if(_lastOperationIndex == std::numeric_limits<size_t>::max()) {
+      for(auto& elem : push_elements) {
+        elem.getHighLevelImplElement()->preRead(TransferType::read);
+      }
+    }
+    else {
+      push_elements[_lastOperationIndex].getHighLevelImplElement()->preRead(TransferType::read);
+    }
+  }
 
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::Notification ReadAnyGroup::waitAny() {
-    // preRead() and postRead() must be called in pairs. Hence we call all preReads here before waiting for transfers to finish.
-    // postRead() will be called when accepting the notification.
-    // We can call preRead() repeatedly on the same element, even if no transfer and call to postRead() have happened. It is just ignored
-    // (see Transfer element spec B.5.2). So we just always call all preReads.
-
-    // Notice : This has the side effect that decorators can block here, for instance for the setup phase. This is used by ApplicationCore in testable mode.
-    for(auto& elem : push_elements) {
-      elem.getHighLevelImplElement()->preRead(TransferType::read);
-    }
+    handlePreRead();
 
     // Wait for notification
     std::size_t index;
     notification_queue.pop_wait(index);
-    return Notification(push_elements[index], index);
+    return Notification(index, this);
   }
 
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::Notification ReadAnyGroup::waitAnyNonBlocking() {
-    // preRead() and postRead() must be called in pairs. Hence we call all preReads here before waiting for transfers to finish.
-    // postRead() will be called when accepting the notification.
-    // We can call preRead() repeatedly on the same element, even if no transfer and call to postRead() have happened. It is just ignored
-    // (see Transfer element spec B.5.2). So we just always call all preReads.
-
-    // Notice : This has the side effect that decorators can block here, for instance for the setup phase. This is used by ApplicationCore in testable mode.
-    for(auto& elem : push_elements) {
-      elem.getHighLevelImplElement()->preRead(TransferType::read);
-    }
+    handlePreRead();
 
     // Wait for notification
     std::size_t index;
     bool hasUpdate = notification_queue.pop(index);
     if(!hasUpdate) return {};
-    return Notification(push_elements[index], index);
+    return Notification(index, this);
   }
 
   /********************************************************************************************************************/
