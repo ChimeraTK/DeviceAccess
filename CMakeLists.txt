@@ -7,7 +7,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${C
 
 set(${PROJECT_NAME}_MAJOR_VERSION 02)
 set(${PROJECT_NAME}_MINOR_VERSION 00)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 include(cmake/set_version_numbers.cmake)
 
 option(BUILD_TESTS "Build tests." ON)
@@ -19,7 +19,7 @@ add_dependency(ChimeraTK-ControlSystemAdapter 02.00 REQUIRED)
 # Find the DeviceAccess
 # Although all the linker flags are added again, the include path might be different
 # if the libraries are installed in different directories for development purposes.
-add_dependency(ChimeraTK-DeviceAccess 01.11 REQUIRED)
+add_dependency(ChimeraTK-DeviceAccess 02.00 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
