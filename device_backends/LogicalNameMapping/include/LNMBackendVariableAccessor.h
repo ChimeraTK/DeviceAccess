@@ -154,7 +154,7 @@ namespace ChimeraTK {
     std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
     for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
       callForType(_info->valueType, [&, this](auto arg) {
-        boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister] =
+        boost::fusion::at_key<decltype(arg)>(_info->valueTable.table).latestValue[i + _wordOffsetInRegister] =
             userTypeToUserType<decltype(arg)>(this->buffer_2D[0][i]);
       });
     }
@@ -208,7 +208,7 @@ namespace ChimeraTK {
     for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
       callForType(_info->valueType, [&, this](auto arg) {
         this->buffer_2D[0][i] = userTypeToUserType<UserType>(
-            boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
+            boost::fusion::at_key<decltype(arg)>(_info->valueTable.table).latestValue[i + _wordOffsetInRegister]);
       });
     }
 

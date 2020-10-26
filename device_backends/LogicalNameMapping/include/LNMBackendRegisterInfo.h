@@ -84,8 +84,10 @@ namespace ChimeraTK {
      *  Note: We cannot directly put the std::vector in a TemplateUserTypeMap, since it has more than one template
      *  arguments (with defaults). */
     template<typename T>
-    using myVector = std::vector<T>;
-    TemplateUserTypeMap<myVector> valueTable;
+    struct ValueTable {
+      std::vector<T> latestValue;
+    };
+    TemplateUserTypeMap<ValueTable> valueTable;
 
     /** Mutex one needs to hold while accessing valueTable */
     std::mutex valueTable_mutex;

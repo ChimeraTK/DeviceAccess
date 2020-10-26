@@ -56,7 +56,7 @@ namespace ChimeraTK {
             // put to stream buffer
             callForType(reg_casted->valueType, [&](auto arg) {
               std::stringstream buf;
-              buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table)[0];
+              buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table).latestValue[0];
               value = buf.str();
             });
             continue;
@@ -173,8 +173,9 @@ namespace ChimeraTK {
             }
             // convert via string
             std::stringstream buf;
-            callForType(reg_casted->valueType,
-                [&](auto arg) { buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table)[0]; });
+            callForType(reg_casted->valueType, [&](auto arg) {
+              buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table).latestValue[0];
+            });
             buf >> valueVector[index];
             continue;
           }
@@ -310,7 +311,7 @@ namespace ChimeraTK {
         info->targetType = LNMBackendRegisterInfo::TargetType::CONSTANT;
         info->valueType = DataType(constantType);
         callForType(info->valueType, [&](auto arg) {
-          boost::fusion::at_key<decltype(arg)>(info->valueTable.table) =
+          boost::fusion::at_key<decltype(arg)>(info->valueTable.table).latestValue =
               this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value");
         });
         info->firstIndex = 0;
@@ -327,7 +328,7 @@ namespace ChimeraTK {
         info->targetType = LNMBackendRegisterInfo::TargetType::VARIABLE;
         info->valueType = DataType(constantType);
         callForType(info->valueType, [&](auto arg) {
-          boost::fusion::at_key<decltype(arg)>(info->valueTable.table) =
+          boost::fusion::at_key<decltype(arg)>(info->valueTable.table).latestValue =
               this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value");
         });
         info->firstIndex = 0;
