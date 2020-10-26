@@ -25,101 +25,25 @@ namespace ChimeraTK {
   class LNMBackendVariableAccessor : public NDRegisterAccessor<UserType> {
    public:
     LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
-      _wordOffsetInRegister(wordOffsetInRegister), _fixedPointConverter(registerPathName, 32, 0, 1) {
-      // cast device
-      _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
-      // check for unknown flags
-      flags.checkForUnknownFlags({AccessMode::raw});
-      // obtain the register info
-      _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
-          _dev->getRegisterCatalogue().getRegister(_registerPathName));
-      if(numberOfWords == 0) numberOfWords = _info->length;
-      // check for illegal parameter combinations
-      if(wordOffsetInRegister + numberOfWords > _info->length) {
-        throw ChimeraTK::logic_error(
-            "Requested number of words and/or offset exceeds length of register '" + registerPathName + "'.");
-      }
-      if(flags.has(AccessMode::raw)) {
-        throw ChimeraTK::logic_error(
-            "AccessMode::raw is not supported on a variable/constant-type register in a logical name mapping device.");
-      }
-      // check for incorrect usage of this accessor
-      if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
-          _info->targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
-        throw ChimeraTK::logic_error(
-            "LNMBackendVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
-      }
-      NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-      NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
-    }
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    void doReadTransferSynchronously() override {
-      if(_dev->_hasException) {
-        throw ChimeraTK::runtime_error("previous, unrecovered fault");
-      }
-    }
+    void doReadTransferSynchronously() override;
 
-    void doPreWrite(TransferType type, VersionNumber) override {
-      std::ignore = type;
-      if(_info->targetType ==
-          LNMBackendRegisterInfo::TargetType::
-              CONSTANT) { // repeat the condition in isReadOnly() here to avoid virtual function call.
-        throw ChimeraTK::logic_error(
-            "Writing to constant-type registers of logical name mapping devices is not possible.");
-      }
-      if(!_dev->_opened) { // directly use member variables as friend to avoid virtual function calls
-        throw ChimeraTK::logic_error("Cannot write to a closed device.");
-      }
+    void doPreWrite(TransferType type, VersionNumber) override;
 
-      _valueTableDataValidity = this->_dataValidity;
-    }
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override;
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
-      if(_dev->_hasException) {
-        throw ChimeraTK::runtime_error("previous, unrecovered fault");
-      }
-      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-      for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
-        callForType(_info->valueType, [&, this](auto arg) {
-          boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister] =
-              userTypeToUserType<decltype(arg)>(this->buffer_2D[0][i]);
-        });
-      }
-      return false;
-    }
+    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override;
 
-    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override {
-      return false; // never replace, since it does not optimise anything
-    }
+    bool isReadOnly() const override;
 
-    bool isReadOnly() const override { return _info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT; }
+    bool isReadable() const override;
 
-    bool isReadable() const override { return true; }
+    bool isWriteable() const override;
 
-    bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT; }
+    void doPreRead(TransferType) override;
 
-    void doPreRead(TransferType) override {
-      if(!_dev->_opened) {
-        throw ChimeraTK::logic_error("Cannot read from a closed device.");
-      }
-    }
-
-    void doPostRead(TransferType, bool hasNewData) override {
-      if(!hasNewData) return;
-
-      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-      for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
-        callForType(_info->valueType, [&, this](auto arg) {
-          this->buffer_2D[0][i] = userTypeToUserType<UserType>(
-              boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
-        });
-      }
-
-      this->_versionNumber = {};
-      this->_dataValidity = _valueTableDataValidity;
-    }
+    void doPostRead(TransferType, bool hasNewData) override;
 
    protected:
     /// register and module name
@@ -155,6 +79,142 @@ namespace ChimeraTK {
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LNMBackendVariableAccessor);
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  LNMBackendVariableAccessor<UserType>::LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev,
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
+  : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
+    _wordOffsetInRegister(wordOffsetInRegister), _fixedPointConverter(registerPathName, 32, 0, 1) {
+    // cast device
+    _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
+    // check for unknown flags
+    flags.checkForUnknownFlags({AccessMode::raw});
+    // obtain the register info
+    _info =
+        boost::static_pointer_cast<LNMBackendRegisterInfo>(_dev->getRegisterCatalogue().getRegister(_registerPathName));
+    if(numberOfWords == 0) numberOfWords = _info->length;
+    // check for illegal parameter combinations
+    if(wordOffsetInRegister + numberOfWords > _info->length) {
+      throw ChimeraTK::logic_error(
+          "Requested number of words and/or offset exceeds length of register '" + registerPathName + "'.");
+    }
+    if(flags.has(AccessMode::raw)) {
+      throw ChimeraTK::logic_error(
+          "AccessMode::raw is not supported on a variable/constant-type register in a logical name mapping device.");
+    }
+    // check for incorrect usage of this accessor
+    if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
+        _info->targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
+      throw ChimeraTK::logic_error(
+          "LNMBackendVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
+    }
+    NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+    NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void LNMBackendVariableAccessor<UserType>::doReadTransferSynchronously() {
+    if(_dev->_hasException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void LNMBackendVariableAccessor<UserType>::doPreWrite(TransferType type, VersionNumber) {
+    std::ignore = type;
+    if(_info->targetType ==
+        LNMBackendRegisterInfo::TargetType::
+            CONSTANT) { // repeat the condition in isReadOnly() here to avoid virtual function call.
+      throw ChimeraTK::logic_error(
+          "Writing to constant-type registers of logical name mapping devices is not possible.");
+    }
+    if(!_dev->_opened) { // directly use member variables as friend to avoid virtual function calls
+      throw ChimeraTK::logic_error("Cannot write to a closed device.");
+    }
+
+    _valueTableDataValidity = this->_dataValidity;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool LNMBackendVariableAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber) {
+    if(_dev->_hasException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    }
+    std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
+    for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
+      callForType(_info->valueType, [&, this](auto arg) {
+        boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister] =
+            userTypeToUserType<decltype(arg)>(this->buffer_2D[0][i]);
+      });
+    }
+    return false;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool LNMBackendVariableAccessor<UserType>::mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const {
+    return false; // never replace, since it does not optimise anything
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool LNMBackendVariableAccessor<UserType>::isReadOnly() const {
+    return _info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool LNMBackendVariableAccessor<UserType>::isReadable() const {
+    return true;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool LNMBackendVariableAccessor<UserType>::isWriteable() const {
+    return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void LNMBackendVariableAccessor<UserType>::doPreRead(TransferType) {
+    if(!_dev->_opened) {
+      throw ChimeraTK::logic_error("Cannot read from a closed device.");
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void LNMBackendVariableAccessor<UserType>::doPostRead(TransferType, bool hasNewData) {
+    if(!hasNewData) return;
+
+    std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
+    for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
+      callForType(_info->valueType, [&, this](auto arg) {
+        this->buffer_2D[0][i] = userTypeToUserType<UserType>(
+            boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
+      });
+    }
+
+    this->_versionNumber = {};
+    this->_dataValidity = _valueTableDataValidity;
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK
 

@@ -193,7 +193,9 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
 
   size_t nChannels() { return 1; }
-  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
+
+  bool isPush() { return true; }
 
   size_t nRuntimeErrorCases() { return 0; }
 
