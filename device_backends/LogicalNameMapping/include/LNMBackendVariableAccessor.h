@@ -90,12 +90,15 @@ namespace ChimeraTK {
     _wordOffsetInRegister(wordOffsetInRegister), _fixedPointConverter(registerPathName, 32, 0, 1) {
     // cast device
     _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
+
     // check for unknown flags
     flags.checkForUnknownFlags({AccessMode::raw});
+
     // obtain the register info
     _info =
         boost::static_pointer_cast<LNMBackendRegisterInfo>(_dev->getRegisterCatalogue().getRegister(_registerPathName));
     if(numberOfWords == 0) numberOfWords = _info->length;
+
     // check for illegal parameter combinations
     if(wordOffsetInRegister + numberOfWords > _info->length) {
       throw ChimeraTK::logic_error(
@@ -105,6 +108,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error(
           "AccessMode::raw is not supported on a variable/constant-type register in a logical name mapping device.");
     }
+
     // check for incorrect usage of this accessor
     if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
         _info->targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
@@ -129,9 +133,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void LNMBackendVariableAccessor<UserType>::doPreWrite(TransferType type, VersionNumber) {
     std::ignore = type;
-    if(_info->targetType ==
-        LNMBackendRegisterInfo::TargetType::
-            CONSTANT) { // repeat the condition in isReadOnly() here to avoid virtual function call.
+    if(!LNMBackendVariableAccessor<UserType>::isWriteable()) {
       throw ChimeraTK::logic_error(
           "Writing to constant-type registers of logical name mapping devices is not possible.");
     }
