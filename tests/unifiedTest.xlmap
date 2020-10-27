@@ -143,8 +143,8 @@
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="WordFirmwareAsParameterInMath">
-      <targetDevice>this</targetDevice>
-      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_STATUS</targetRegister>
       <plugin name="math">
         <parameter name="formula">word_firmware - 42</parameter>
         <parameter name="word_firmware">/SingleWord</parameter>

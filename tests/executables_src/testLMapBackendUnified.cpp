@@ -412,10 +412,10 @@ struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
 };
 
 /// Test variable accessor with arrays
-struct RegArrayVariable : ConstantRegisterDescriptorBase<RegArrayVariable> {
+struct RegArrayVariable : VariableRegisterDescriptorBase<RegArrayVariable> {
   std::string path() { return "/ArrayVariable"; }
 
-  const std::vector<int32_t> value{11, 22, 33, 44, 55, 66};
+  const int increment = 121;
   size_t nElementsPerChannel() { return 6; }
 
   typedef float minimumUserType;
