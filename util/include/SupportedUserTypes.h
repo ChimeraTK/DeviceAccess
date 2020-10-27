@@ -455,7 +455,7 @@ namespace ChimeraTK {
     }
 
     /** Return string representation of the data type */
-    inline bool getAsString() const {
+    inline std::string getAsString() const {
       switch(_value) {
         case int8:
           return "int8";
@@ -480,7 +480,7 @@ namespace ChimeraTK {
         case string:
           return "string";
         default:
-          return false;
+          return "unknown";
       }
     }
 
