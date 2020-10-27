@@ -195,8 +195,6 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   size_t nChannels() { return 1; }
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
 
-  bool isPush() { return true; }
-
   size_t nRuntimeErrorCases() { return 0; }
 
   template<typename UserType>
@@ -206,16 +204,20 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
     // functionality the variable has to provide is that I can write something, and
     // read it back, which is tested with it.
 
-    // We might have to open the backend to perform the operation. We have to remember
-    // that we did so and close it again it we did. Some tests require the backend to be closed.
+    // We might have to open/recover the backend to perform the operation. We have to remember
+    // that we did so and close/set-exception it again it we did. Some tests require the backend to be closed.
     bool backendWasOpened = lmapBackend->isOpen();
-    if(!backendWasOpened) {
+    bool backendWasFunctional = lmapBackend->isFunctional();
+    if(!backendWasOpened || !backendWasFunctional) {
       lmapBackend->open();
     }
     auto acc = lmapBackend->getRegisterAccessor<typename Derived::minimumUserType>(derived->path(), 0, 0, {});
     acc->read();
     if(!backendWasOpened) {
       lmapBackend->close();
+    }
+    else if(!backendWasFunctional) {
+      lmapBackend->setException();
     }
     std::vector<UserType> v;
     for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
@@ -234,7 +236,13 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
     if(!backendWasOpened) {
       lmapBackend->open();
     }
-    acc->write();
+    try {
+      acc->write();
+    }
+    catch(...) {
+      // ignore any exceptions: if the device is in an exception state, this write must not take place but the exception
+      // must not get through.
+    }
     if(!backendWasOpened) {
       lmapBackend->close();
     }

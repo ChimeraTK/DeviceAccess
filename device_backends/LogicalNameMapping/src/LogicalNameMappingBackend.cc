@@ -48,6 +48,7 @@ namespace ChimeraTK {
     // flag as opened
     _opened = true;
     _hasException = false;
+    _asyncReadActive = false;
 
     // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
@@ -62,6 +63,7 @@ namespace ChimeraTK {
     }
     // flag as closed
     _opened = false;
+    _asyncReadActive = false;
   }
 
   /********************************************************************************************************************/
@@ -270,13 +272,56 @@ namespace ChimeraTK {
     for(auto& d : _devices) {
       d.second->setException();
     }
+
+    // iterate all push subscriptions of variables and place exception into queue
+    if(_asyncReadActive) {
+      VersionNumber v{};
+      for(auto& r : _catalogue_mutable) {
+        auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
+        if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
+          callForType(info.valueType, [&](auto arg) {
+            auto& vtEntry = boost::fusion::at_key<decltype(arg)>(info.valueTable.table);
+            for(auto& sub : vtEntry.subscriptions) {
+              try {
+                throw ChimeraTK::runtime_error("previous, unrecovered fault");
+              }
+              catch(...) {
+                sub.second.push_overwrite_exception(std::current_exception());
+              }
+            }
+          });
+        }
+      }
+    }
+
+    // deactivate async read
+    _asyncReadActive = false;
   }
 
   /********************************************************************************************************************/
   void LogicalNameMappingBackend::activateAsyncRead() noexcept {
-    // the logical name mapping itself does not have asynchronous read, but some target devices might have
+    if(!_opened || _hasException) return;
+
+    // store information locally, as variable accessors have async read
+    _asyncReadActive = true;
+
+    // delegate to target devices
     for(auto& d : _devices) {
       d.second->activateAsyncRead();
+    }
+
+    // iterate all push subscriptions of variables and place initial value into queue
+    VersionNumber v{};
+    for(auto& r : _catalogue_mutable) {
+      auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
+      if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
+        callForType(info.valueType, [&](auto arg) {
+          auto& vtEntry = boost::fusion::at_key<decltype(arg)>(info.valueTable.table);
+          for(auto& sub : vtEntry.subscriptions) {
+            sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, v});
+          }
+        });
+      }
     }
   }
 

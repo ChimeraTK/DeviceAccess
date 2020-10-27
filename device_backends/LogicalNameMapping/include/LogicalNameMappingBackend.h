@@ -101,6 +101,9 @@ namespace ChimeraTK {
     /** Flag storing whether setException has been called. Cleared in open().
      */
     std::atomic<bool> _hasException{true};
+
+    /// Flag storing whether asynchronous read has been activated.
+    std::atomic<bool> _asyncReadActive{false};
   };
 
 } // namespace ChimeraTK

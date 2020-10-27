@@ -14,6 +14,7 @@
 
 #include "ForwardDeclarations.h"
 #include "RegisterInfo.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -86,10 +87,18 @@ namespace ChimeraTK {
     template<typename T>
     struct ValueTable {
       std::vector<T> latestValue;
+      DataValidity latestValidity;
+      VersionNumber latestVersion;
+      struct QueuedValue {
+        std::vector<T> value;
+        DataValidity validity;
+        VersionNumber version;
+      };
+      std::map<TransferElementID, cppext::future_queue<QueuedValue>> subscriptions;
     };
     TemplateUserTypeMap<ValueTable> valueTable;
 
-    /** Mutex one needs to hold while accessing valueTable */
+    /** Mutex one needs to hold while accessing valueTable. */
     std::mutex valueTable_mutex;
 
     /** Flag if the register is readable. Might be derived from the target
