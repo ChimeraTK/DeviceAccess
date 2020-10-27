@@ -9,7 +9,16 @@
     <value>0</value>
   </variable>
 
-  <redirectedRegister name="SimpleScalarReadWrite">
+  <redirectedRegister name="SimpleScalarRead">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleScalar</targetRegister>
+    <plugin name="forceReadOnly"/>
+    <plugin name="math">
+      <parameter name="formula">x/7 + 13</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="SimpleScalarWrite">
     <targetDevice>this</targetDevice>
     <targetRegister>SimpleScalar</targetRegister>
     <plugin name="math">
@@ -17,7 +26,16 @@
     </plugin>
   </redirectedRegister>
 
-  <redirectedRegister name="ReturnedScalarReadWrite">
+  <redirectedRegister name="ReturnedScalarRead">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleScalar</targetRegister>
+    <plugin name="forceReadOnly"/>
+    <plugin name="math">
+      <parameter name="formula">return [ x/7 + 13 ];</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="ReturnedScalarWrite">
     <targetDevice>this</targetDevice>
     <targetRegister>SimpleScalar</targetRegister>
     <plugin name="math">
@@ -25,7 +43,18 @@
     </plugin>
   </redirectedRegister>
 
-  <redirectedRegister name="ScalarWithParameters">
+  <redirectedRegister name="ScalarWithParametersRead">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleScalar</targetRegister>
+    <plugin name="forceReadOnly"/>
+    <plugin name="math">
+      <parameter name="formula">x/scalarPar + sum(arrayPar)</parameter>
+      <parameter name="scalarPar">ScalarParameter</parameter>
+      <parameter name="arrayPar">SimpleArray</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="ScalarWithParametersWrite">
     <targetDevice>this</targetDevice>
     <targetRegister>SimpleScalar</targetRegister>
     <plugin name="math">
@@ -46,7 +75,16 @@
     <numberOfElements>6</numberOfElements>
   </variable>
 
-  <redirectedRegister name="ArrayReadWrite">
+  <redirectedRegister name="ArrayRead">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleArray</targetRegister>
+    <plugin name="forceReadOnly"/>
+    <plugin name="math">
+      <parameter name="formula">return [ x/7 + 13 ];</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="ArrayWrite">
     <targetDevice>this</targetDevice>
     <targetRegister>SimpleArray</targetRegister>
     <plugin name="math">

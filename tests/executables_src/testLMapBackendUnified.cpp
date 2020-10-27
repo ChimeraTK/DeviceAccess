@@ -558,7 +558,6 @@ struct RegWordFirmwareForcedReadOnly_push : ScalarRegisterDescriptorBase<RegWord
 /// Test math plugin - needs to be done separately for reading and writing (see below)
 template<typename Derived>
 struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
-  std::string path() { return "/WordFirmwareWithMath"; }
 
   const double increment = 7;
 
@@ -568,6 +567,7 @@ struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
 };
 
 struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R> {
+  std::string path() { return "/WordFirmwareWithMath_r"; }
   bool isWriteable() { return false; }
 
   template<typename T>
@@ -588,6 +588,7 @@ struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareW
 };
 
 struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMath_W> {
+  std::string path() { return "/WordFirmwareWithMath_w"; }
   bool isReadable() { return false; }
 
   // the math plugin applies the same formula in both directions, so we have to reverse the formula for write tests

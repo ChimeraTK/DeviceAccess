@@ -23,12 +23,18 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   void MathPlugin::updateRegisterInfo() {
-    // Change data type to non-integral
     auto info = _info.lock();
     auto d = info->_dataDescriptor;
+    
+    // Change data type to non-integral
     info->_dataDescriptor =
         RegisterInfo::DataDescriptor(d.fundamentalType(), false, false, std::numeric_limits<double>::max_digits10,
             -std::numeric_limits<double>::min_exponent10, DataType::none, d.transportLayerDataType());
+
+    // Fix to unidirectional operation
+    if(info->writeable && info->readable) {
+      info->readable = false;
+    }
   }
 
   /********************************************************************************************************************/
@@ -39,9 +45,14 @@ namespace ChimeraTK { namespace LNMBackend {
 
     MathPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
-        const std::map<std::string, std::string>& parameters);
+        const std::map<std::string, std::string>& parameters, bool isWrite);
 
-    void doPreRead(TransferType type) override { _target->preRead(type); }
+    void doPreRead(TransferType type) override {
+      if(_isWrite) {
+        throw ChimeraTK::logic_error("This register with MathPlugin enabled is not readable: " + _target->getName());
+      }
+      _target->preRead(type);
+    }
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
@@ -55,6 +66,7 @@ namespace ChimeraTK { namespace LNMBackend {
     exprtk::symbol_table<double> symbols;
     std::unique_ptr<exprtk::vector_view<double>> valueView;
     std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
+    bool _isWrite;
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::_target;
 
@@ -66,8 +78,8 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   MathPluginDecorator<UserType>::MathPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
       const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
-      const std::map<std::string, std::string>& parameters)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType, double>(target) {
+      const std::map<std::string, std::string>& parameters, bool isWrite)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType, double>(target), _isWrite(isWrite) {
     // 2D arrays are not yet supported
     if(_target->getNumberOfChannels() != 1) {
       throw ChimeraTK::logic_error(
@@ -184,6 +196,10 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void MathPluginDecorator<UserType>::doPreWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+    if(!_isWrite) {
+      throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
+    }
+
     // convert from UserType to double - use the target accessor's buffer as a temporary buffer (this is a bit a hack,
     // but it is safe to overwrite the buffer and we can avoid the need for an additional permanent buffer which might
     // not even be used if the register is never written).
@@ -263,7 +279,7 @@ namespace ChimeraTK { namespace LNMBackend {
   struct MathPlugin_Helper {
     static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>&,
-        const std::map<std::string, std::string>&) {
+        const std::map<std::string, std::string>&, bool) {
       assert(false); // only specialisation is valid
       return {};
     }
@@ -275,8 +291,8 @@ namespace ChimeraTK { namespace LNMBackend {
   struct MathPlugin_Helper<UserType, double> {
     static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<double>>& target,
-        const std::map<std::string, std::string>& parameters) {
-      return boost::make_shared<MathPluginDecorator<UserType>>(backend, target, parameters);
+        const std::map<std::string, std::string>& parameters, bool isWrite) {
+      return boost::make_shared<MathPluginDecorator<UserType>>(backend, target, parameters, isWrite);
     }
   };
 
@@ -286,7 +302,8 @@ namespace ChimeraTK { namespace LNMBackend {
   boost::shared_ptr<NDRegisterAccessor<UserType>> MathPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>& backend,
       boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
-    return MathPlugin_Helper<UserType, TargetType>::decorateAccessor(backend, target, _parameters);
+    return MathPlugin_Helper<UserType, TargetType>::decorateAccessor(
+        backend, target, _parameters, _info.lock()->writeable);
   }
 
   /********************************************************************************************************************/

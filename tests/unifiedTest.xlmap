@@ -128,9 +128,17 @@
       <plugin name="forceReadOnly">
       </plugin>
     </redirectedRegister>
-    <redirectedRegister name="WordFirmwareWithMath">
+    <redirectedRegister name="WordFirmwareWithMath_w">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">x + 2.345</parameter>
+      </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="WordFirmwareWithMath_r">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <plugin name="forceReadOnly"/>
       <plugin name="math">
         <parameter name="formula">x + 2.345</parameter>
       </plugin>
@@ -138,6 +146,7 @@
     <redirectedRegister name="WordFirmwareWithMath_push">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+      <plugin name="forceReadOnly"/>
       <plugin name="math">
         <parameter name="formula">x + 2.345</parameter>
       </plugin>
@@ -145,6 +154,7 @@
     <redirectedRegister name="WordFirmwareAsParameterInMath">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD.WORD_STATUS</targetRegister>
+      <plugin name="forceReadOnly"/>
       <plugin name="math">
         <parameter name="formula">word_firmware - 42</parameter>
         <parameter name="word_firmware">/SingleWord</parameter>
