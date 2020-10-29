@@ -75,7 +75,7 @@ namespace Rebot {
     disconnectTimer_.cancel();
     if (ec) {
       close();
-      throw ChimeraTK::runtime_error(ec.message());
+      throw ChimeraTK::runtime_error("Rebot connection timed out");
     }
   }
 
