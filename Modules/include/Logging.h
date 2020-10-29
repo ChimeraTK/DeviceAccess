@@ -12,7 +12,8 @@
  *   - 0: cout/cerr+logfile
  *   - 1: logfile
  *   - 2: cout/cerr
- *   - 3: nowhere
+ *   - 3: controlsystem only
+ *   - 4: nowhere
  * - logFile: Give the logfile name. If the file is not empty logging messages
  will be appended. If
  *   you choose targetStream 0 or 1 and don't set a logFile the Logging module
@@ -24,7 +25,7 @@
  dropped (e.g. message level is
  *   DEBUG and Module level is ERROR) or broadcasted.
  * - maxTailLength: The number of messages published by the Logging module (see
- logTail), i.e. to the control system.
+ logTail), i.e. to the control system. If set to 0 the number of messages defaults to 20.
  *   This length has no influence on the targetStreams, that receive all
  messages (depending on the logLevel). The
  *   logLevel also applies to messages that are published by the Logging module
@@ -93,6 +94,10 @@
  Logging module, one could also consider using only one Logger object.
  *  This is not thread safe and would not work for multiple modules trying to
  send messages via the Logger object to the Logging module at the same time.
+ *
+ *  \attention If sendMessage is called multiple times in a sequence some messages might get lost.
+ *  This is because of the internal buffer used by ChimeraTK, that has a size of 3. If the LoggingModule
+ *  is not done processing a message, the internal buffer is full and a new message arrives it is dropped.
 
  */
 
@@ -211,7 +216,7 @@ namespace logging {
 
     ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
         "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
-        "(cout/cerr), 3 (none)",
+        "(cout/cerr), 3 (Controls System only), 4 (nowhere)",
         {"CS", getName()}};
 
     ctk::ScalarPollInput<std::string> logFile{this, "logFile", "",
@@ -220,7 +225,7 @@ namespace logging {
         {"CS", getName()}};
 
     ctk::ScalarPollInput<uint> tailLength{this, "maxTailLength", "",
-        "Maximum number of messages to be shown in the logging stream tail.", {"CS", getName()}};
+        "Maximum number of messages to be shown in the logging stream tail. 0 is treated as 20.", {"CS", getName()}};
 
     ctk::ScalarPollInput<uint> logLevel{
         this, "logLevel", "", "Current log level used for messages.", {"CS", getName()}};

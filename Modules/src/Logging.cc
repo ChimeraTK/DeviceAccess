@@ -145,7 +145,7 @@ void LoggingModule::mainLoop() {
       throw ChimeraTK::logic_error("Cannot find  message level"
                                    "when updating logging variables.");
     }
-    if(targetStream == 3) continue;
+    if(targetStream == 4) continue;
     LogLevel setLevel = static_cast<LogLevel>((uint)logLevel);
     std::string tmpStr = msg;
     // remove message level
