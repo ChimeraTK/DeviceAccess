@@ -39,7 +39,8 @@ namespace ChimeraTK {
       TestCapability _asyncReadInconsistency = TestCapability::unspecified,
       TestCapability _switchReadOnly = TestCapability::unspecified,
       TestCapability _switchWriteOnly = TestCapability::unspecified,
-      TestCapability _writeNeverLosesData = TestCapability::unspecified>
+      TestCapability _writeNeverLosesData = TestCapability::unspecified,
+      TestCapability _testWriteOnly = TestCapability::disabled, TestCapability _testReadOnly = TestCapability::disabled>
   struct TestCapabilities {
     constexpr TestCapabilities() {}
 
@@ -49,57 +50,57 @@ namespace ChimeraTK {
     /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
     /// backend tests.
     constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableSyncRead() const {
       return {};
     }
 
     /// See setForceDataLossWrite() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
         enableForceDataLossWrite() const {
       static_assert(_writeNeverLosesData != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableForceDataLossWrite() const {
       return {};
     }
 
     /// See forceAsyncReadInconsistency() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         enableAsyncReadInconsistency() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableAsyncReadInconsistency() const {
       return {};
     }
 
     /// See switchReadOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::enabled,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         enableSwitchReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::disabled,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableSwitchReadOnly() const {
       return {};
     }
 
     /// See switchWriteOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::enabled, _writeNeverLosesData>
+        TestCapability::enabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         enableSwitchWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::disabled, _writeNeverLosesData>
+        TestCapability::disabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableSwitchWriteOnly() const {
       return {};
     }
@@ -108,15 +109,39 @@ namespace ChimeraTK {
     /// writes is performed and no data loss must be reported.
     /// Mutually exclusive with enableForceDataLossWrite().
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::enabled>
+        _switchWriteOnly, TestCapability::enabled, _testWriteOnly, _testReadOnly>
         enableTestWriteNeverLosesData() const {
       static_assert(_forceDataLossWrite != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
         disableTestWriteNeverLosesData() const {
+      return {};
+    }
+
+    /// Enable/disable testing only write operations, even if the register is readable
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::enabled, _testReadOnly>
+        enableTestWriteOnly() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::disabled, _testReadOnly>
+        disableTestWriteOnly() const {
+      return {};
+    }
+
+    /// Enable/disable testing only read operations, even if the register is readable
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::enabled>
+        enableTestReadOnly() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::disabled>
+        disableTestReadOnly() const {
       return {};
     }
 
@@ -126,6 +151,8 @@ namespace ChimeraTK {
     static constexpr TestCapability switchReadOnly{_switchReadOnly};
     static constexpr TestCapability switchWriteOnly{_switchWriteOnly};
     static constexpr TestCapability writeNeverLosesData{_writeNeverLosesData};
+    static constexpr TestCapability testWriteOnly{_testWriteOnly};
+    static constexpr TestCapability testReadOnly{_testReadOnly};
   };
 
   /**
@@ -321,18 +348,22 @@ namespace ChimeraTK {
     template<typename REG_T>
     bool isRead(REG_T x = {}) {
       if(x.capabilities.syncRead == TestCapability::disabled) return false;
+      if(x.capabilities.testWriteOnly == TestCapability::enabled) return false;
       return x.isReadable();
     }
     template<typename REG_T>
     bool isWrite(REG_T x = {}) {
+      if(x.capabilities.testReadOnly == TestCapability::enabled) return false;
       return x.isWriteable();
     }
     template<typename REG_T>
     bool isSyncRead(REG_T x = {}) {
+      if(x.capabilities.testWriteOnly == TestCapability::enabled) return false;
       return x.isReadable() && !x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data);
     }
     template<typename REG_T>
     bool isAsyncRead(REG_T x = {}) {
+      if(x.capabilities.testWriteOnly == TestCapability::enabled) return false;
       return x.isReadable() && x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data);
     }
     template<typename REG_T>
@@ -2578,7 +2609,7 @@ namespace ChimeraTK {
 
     Device d(cdd);
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(this->isAsyncRead(x)) return;
+      if(x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << " (wait_for_new_data throws)" << std::endl;
@@ -2586,7 +2617,7 @@ namespace ChimeraTK {
           d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data}), logic_error);
     });
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(this->isRaw(x)) return;
+      if(x.supportedFlags().has(ChimeraTK::AccessMode::raw)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << " (raw throws)" << std::endl;
