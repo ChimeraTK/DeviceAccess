@@ -557,6 +557,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  size_t CHECK_REPEAT_COUNT = 0;
+
   // Helper macro to compare the value on an accessor and the expected 2D value
   // Note: we use a macro and not a function, so BOOST_ERROR prints us the line number of the actual test!
 #define CHECK_EQUALITY(accessor, expectedValue)                                                                        \
@@ -626,6 +628,37 @@ namespace ChimeraTK {
               fail = "Accessor content differs from expected value. First difference at index [" +                     \
                   std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
                   "]: " + std::to_string(accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
+                  " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                          \
+            }                                                                                                          \
+          }                                                                                                            \
+        }                                                                                                              \
+      }                                                                                                                \
+      if(fail.size() == 0) break;                                                                                      \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK_MESSAGE(!timeout_reached, fail);                                                                     \
+      if(timeout_reached) break;                                                                                       \
+      usleep(10000);                                                                                                   \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  (void)(0)
+
+// Similar to CHECK_EQUALITY_TIMEOUT, but compares two 2D vectors
+#define CHECK_EQUALITY_VECTOR_TIMEOUT(value, expectedValue, maxMilliseconds)                                           \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(true) {                                                                                                      \
+      std::string fail;                                                                                                \
+      auto theValue = value; /* Copy value for consistency and performance in the following code */                    \
+      BOOST_CHECK_EQUAL(theValue.size(), expectedValue.size());                                                        \
+      BOOST_CHECK_EQUAL(theValue[0].size(), expectedValue[0].size());                                                  \
+      for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
+        for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {             \
+          if(!compareHelper(                                                                                           \
+                 theValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
+            if(fail.size() == 0) {                                                                                     \
+              fail = "Data content differs from expected value. First difference at index [" +                         \
+                  std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
+                  "]: " + std::to_string(theValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
                   " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                          \
             }                                                                                                          \
           }                                                                                                            \
@@ -878,9 +911,8 @@ namespace ChimeraTK {
       reg = theValue;
       reg.write();
 
-      // check remote value
-      auto v1 = x.template getRemoteValue<UserType>();
-      CHECK_EQUALITY_VECTOR(v1, theValue);
+      // check remote value (with timeout, because the write might complete asynchronously)
+      CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
     });
 
     // close device again
@@ -965,8 +997,7 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.getVersionNumber() == ver);
 
       // check remote value
-      auto v1 = x.template getRemoteValue<UserType>();
-      CHECK_EQUALITY_VECTOR(v1, theValue);
+      CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
     });
 
     // close device again
