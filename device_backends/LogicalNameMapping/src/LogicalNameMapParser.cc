@@ -338,6 +338,7 @@ namespace ChimeraTK {
         info->writeable = true;
         info->readable = true;
         info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(info->valueType);
+        info->supportedFlags = {AccessMode::wait_for_new_data};
       }
       else {
         parsingError(element, "Wrong logical register type: " + type);

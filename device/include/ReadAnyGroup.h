@@ -237,6 +237,12 @@ namespace ChimeraTK {
      * the behaviour is undefined. */
     void processPolled();
 
+    /**
+     *  Convenience function to interrupt any running readAny/waitAny by calling interrupt on one of the push-type
+     *  TransferElements in the group.
+     */
+    void interrupt() { push_elements.front().getHighLevelImplElement()->interrupt(); }
+
    private:
     /// Call preRead() on the push_elements which need it
     void handlePreRead();

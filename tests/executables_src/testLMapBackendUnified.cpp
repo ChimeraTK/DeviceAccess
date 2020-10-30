@@ -28,7 +28,12 @@ template<typename Derived>
 struct RegisterDescriptorBase {
   Derived* derived{static_cast<Derived*>(this)};
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData();
 
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
@@ -104,6 +109,8 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     return value;
   }
 
+  void generateValueHook() {} // override in derived if needed
+
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue(bool getRaw = false) {
     std::vector<UserType> v;
@@ -119,6 +126,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
         v.push_back(static_cast<T>(e));
       }
     }
+    derived->generateValueHook();
     return {v};
   }
 
@@ -617,6 +625,42 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test math plugin with push-type parameter. In this test we write to the variable /VariableForMathTest which is
+/// a parameter to the Math plugin in /VariableAsPushParameterInMath. The result is then observed in the WORD_FIRMWARE
+/// register of the target. VariableAsPushParameterInMath is never directly used in this test.
+struct RegVariableAsPushParameterInMath : ScalarRegisterDescriptorBase<RegVariableAsPushParameterInMath> {
+  std::string path() { return "/VariableForMathTest"; }
+
+  // test only write direction, as we are writing to the variable parameter in this test
+  static constexpr auto capabilities =
+      ScalarRegisterDescriptorBase<RegVariableAsPushParameterInMath>::capabilities.enableTestWriteOnly();
+
+  // no runtime error test cases, as writes happen to the variable only!
+  size_t nRuntimeErrorCases() { return 0; }
+  void setForceRuntimeError(bool, size_t) { assert(false); }
+
+  // the test "sees" the variable which supports wait_for_new_data
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
+
+  const double increment = 17;
+
+  void generateValueHook() {
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->activateAsyncRead();
+  }
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    return value * 120;
+  }
+
+  typedef double minimumUserType;
+  typedef uint32_t rawUserType;
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
 /// Test monostable trigger plugin (rather minimal test, needs extension!)
 struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger> {
   std::string path() { return "/MonostableTrigger"; }
@@ -643,7 +687,8 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
 
   typedef uint32_t minimumUserType;
   typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 /********************************************************************************************************************/
@@ -684,6 +729,7 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegWordFirmwareWithMath_R_push>()
       .addRegister<RegWordFirmwareWithMath_W>()
       .addRegister<RegWordFirmwareAsParameterInMath>()
+      .addRegister<RegVariableAsPushParameterInMath>()
       .addRegister<RegMonostableTrigger>()
       .runTests(lmapCdd);
 }

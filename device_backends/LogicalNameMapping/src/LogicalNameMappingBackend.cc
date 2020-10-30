@@ -38,6 +38,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMappingBackend::open() {
+    if(_opened && !_hasException) return;
     parse();
 
     // open all referenced devices (unconditionally, open() is also used for recovery)
@@ -52,11 +53,27 @@ namespace ChimeraTK {
 
     // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
+
+    // call the openHook for all plugins
+    for(auto& reg : _catalogue_mutable) {
+      for(auto& plug : dynamic_cast<LNMBackendRegisterInfo&>(reg).plugins) {
+        plug->openHook(boost::dynamic_pointer_cast<LogicalNameMappingBackend>(shared_from_this()));
+      }
+    }
   }
 
   /********************************************************************************************************************/
 
   void LogicalNameMappingBackend::close() {
+    if(!_opened) return;
+
+    // call the closeHook for all plugins
+    for(auto& reg : _catalogue_mutable) {
+      for(auto& plug : dynamic_cast<LNMBackendRegisterInfo&>(reg).plugins) {
+        plug->closeHook();
+      }
+    }
+
     // close all referenced devices
     for(auto device = _devices.begin(); device != _devices.end(); ++device) {
       if(device->second->isOpen()) device->second->close();
@@ -296,6 +313,13 @@ namespace ChimeraTK {
 
     // deactivate async read
     _asyncReadActive = false;
+
+    // call the exceptionHook for all plugins
+    for(auto& reg : _catalogue_mutable) {
+      for(auto& plug : dynamic_cast<LNMBackendRegisterInfo&>(reg).plugins) {
+        plug->exceptionHook();
+      }
+    }
   }
 
   /********************************************************************************************************************/

@@ -39,7 +39,8 @@ namespace ChimeraTK {
       TestCapability _asyncReadInconsistency = TestCapability::unspecified,
       TestCapability _switchReadOnly = TestCapability::unspecified,
       TestCapability _switchWriteOnly = TestCapability::unspecified,
-      TestCapability _writeNeverLosesData = TestCapability::unspecified>
+      TestCapability _writeNeverLosesData = TestCapability::unspecified,
+      TestCapability _testWriteOnly = TestCapability::disabled, TestCapability _testReadOnly = TestCapability::disabled>
   struct TestCapabilities {
     constexpr TestCapabilities() {}
 
@@ -49,57 +50,57 @@ namespace ChimeraTK {
     /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
     /// backend tests.
     constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableSyncRead() const {
       return {};
     }
 
     /// See setForceDataLossWrite() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
         enableForceDataLossWrite() const {
       static_assert(_writeNeverLosesData != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableForceDataLossWrite() const {
       return {};
     }
 
     /// See forceAsyncReadInconsistency() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         enableAsyncReadInconsistency() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableAsyncReadInconsistency() const {
       return {};
     }
 
     /// See switchReadOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::enabled,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         enableSwitchReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::disabled,
-        _switchWriteOnly, _writeNeverLosesData>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableSwitchReadOnly() const {
       return {};
     }
 
     /// See switchWriteOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::enabled, _writeNeverLosesData>
+        TestCapability::enabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         enableSwitchWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::disabled, _writeNeverLosesData>
+        TestCapability::disabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
         disableSwitchWriteOnly() const {
       return {};
     }
@@ -108,15 +109,39 @@ namespace ChimeraTK {
     /// writes is performed and no data loss must be reported.
     /// Mutually exclusive with enableForceDataLossWrite().
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::enabled>
+        _switchWriteOnly, TestCapability::enabled, _testWriteOnly, _testReadOnly>
         enableTestWriteNeverLosesData() const {
       static_assert(_forceDataLossWrite != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
         disableTestWriteNeverLosesData() const {
+      return {};
+    }
+
+    /// Enable/disable testing only write operations, even if the register is readable
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::enabled, _testReadOnly>
+        enableTestWriteOnly() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::disabled, _testReadOnly>
+        disableTestWriteOnly() const {
+      return {};
+    }
+
+    /// Enable/disable testing only read operations, even if the register is readable
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::enabled>
+        enableTestReadOnly() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::disabled>
+        disableTestReadOnly() const {
       return {};
     }
 
@@ -126,6 +151,8 @@ namespace ChimeraTK {
     static constexpr TestCapability switchReadOnly{_switchReadOnly};
     static constexpr TestCapability switchWriteOnly{_switchWriteOnly};
     static constexpr TestCapability writeNeverLosesData{_writeNeverLosesData};
+    static constexpr TestCapability testWriteOnly{_testWriteOnly};
+    static constexpr TestCapability testReadOnly{_testReadOnly};
   };
 
   /**
@@ -321,18 +348,22 @@ namespace ChimeraTK {
     template<typename REG_T>
     bool isRead(REG_T x = {}) {
       if(x.capabilities.syncRead == TestCapability::disabled) return false;
+      if(x.capabilities.testWriteOnly == TestCapability::enabled) return false;
       return x.isReadable();
     }
     template<typename REG_T>
     bool isWrite(REG_T x = {}) {
+      if(x.capabilities.testReadOnly == TestCapability::enabled) return false;
       return x.isWriteable();
     }
     template<typename REG_T>
     bool isSyncRead(REG_T x = {}) {
+      if(x.capabilities.testWriteOnly == TestCapability::enabled) return false;
       return x.isReadable() && !x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data);
     }
     template<typename REG_T>
     bool isAsyncRead(REG_T x = {}) {
+      if(x.capabilities.testWriteOnly == TestCapability::enabled) return false;
       return x.isReadable() && x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data);
     }
     template<typename REG_T>
@@ -526,6 +557,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  size_t CHECK_REPEAT_COUNT = 0;
+
   // Helper macro to compare the value on an accessor and the expected 2D value
   // Note: we use a macro and not a function, so BOOST_ERROR prints us the line number of the actual test!
 #define CHECK_EQUALITY(accessor, expectedValue)                                                                        \
@@ -595,6 +628,37 @@ namespace ChimeraTK {
               fail = "Accessor content differs from expected value. First difference at index [" +                     \
                   std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
                   "]: " + std::to_string(accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
+                  " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                          \
+            }                                                                                                          \
+          }                                                                                                            \
+        }                                                                                                              \
+      }                                                                                                                \
+      if(fail.size() == 0) break;                                                                                      \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK_MESSAGE(!timeout_reached, fail);                                                                     \
+      if(timeout_reached) break;                                                                                       \
+      usleep(10000);                                                                                                   \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  (void)(0)
+
+// Similar to CHECK_EQUALITY_TIMEOUT, but compares two 2D vectors
+#define CHECK_EQUALITY_VECTOR_TIMEOUT(value, expectedValue, maxMilliseconds)                                           \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(true) {                                                                                                      \
+      std::string fail;                                                                                                \
+      auto theValue = value; /* Copy value for consistency and performance in the following code */                    \
+      BOOST_CHECK_EQUAL(theValue.size(), expectedValue.size());                                                        \
+      BOOST_CHECK_EQUAL(theValue[0].size(), expectedValue[0].size());                                                  \
+      for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
+        for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {             \
+          if(!compareHelper(                                                                                           \
+                 theValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
+            if(fail.size() == 0) {                                                                                     \
+              fail = "Data content differs from expected value. First difference at index [" +                         \
+                  std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
+                  "]: " + std::to_string(theValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
                   " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                          \
             }                                                                                                          \
           }                                                                                                            \
@@ -847,9 +911,8 @@ namespace ChimeraTK {
       reg = theValue;
       reg.write();
 
-      // check remote value
-      auto v1 = x.template getRemoteValue<UserType>();
-      CHECK_EQUALITY_VECTOR(v1, theValue);
+      // check remote value (with timeout, because the write might complete asynchronously)
+      CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
     });
 
     // close device again
@@ -934,8 +997,7 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.getVersionNumber() == ver);
 
       // check remote value
-      auto v1 = x.template getRemoteValue<UserType>();
-      CHECK_EQUALITY_VECTOR(v1, theValue);
+      CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
     });
 
     // close device again
@@ -1502,6 +1564,10 @@ namespace ChimeraTK {
         // Check for runtime_error as it is popped of the queue
         BOOST_CHECK_THROW(reg.getHighLevelImplElement()->readTransfer(), ChimeraTK::runtime_error);
 
+        // Need to report the exception to the exception backend, because this is normally done in
+        // TransferElement::read() etc.
+        d.setException();
+
         // complete the operation
         reg.getHighLevelImplElement()->postRead(TransferType::read, false);
 
@@ -1515,7 +1581,6 @@ namespace ChimeraTK {
       }
     });
 
-    std::cout << "DEBUG closing" << std::endl;
     // close device again
     d.close();
   }
@@ -2042,6 +2107,7 @@ namespace ChimeraTK {
       auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
+      bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
@@ -2050,10 +2116,9 @@ namespace ChimeraTK {
         BOOST_CHECK(!erb->hasSeenException());
         try {
           reg.isWriteable();
-          std::cout << " (doesn't throw)" << std::endl;
         }
         catch(...) {
-          std::cout << " (throws)" << std::endl;
+          didThrow = true;
           BOOST_CHECK(erb->hasSeenException());
         }
 
@@ -2062,6 +2127,13 @@ namespace ChimeraTK {
 
         // recover
         this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
       }
     });
 
@@ -2076,6 +2148,7 @@ namespace ChimeraTK {
       auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
+      bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
@@ -2084,10 +2157,9 @@ namespace ChimeraTK {
         BOOST_CHECK(!erb->hasSeenException());
         try {
           reg.isReadOnly();
-          std::cout << " (doesn't throw)" << std::endl;
         }
         catch(...) {
-          std::cout << " (throws)" << std::endl;
+          didThrow = true;
           BOOST_CHECK(erb->hasSeenException());
         }
 
@@ -2096,6 +2168,13 @@ namespace ChimeraTK {
 
         // recover
         this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
       }
     });
     // close device again
@@ -2578,7 +2657,7 @@ namespace ChimeraTK {
 
     Device d(cdd);
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(this->isAsyncRead(x)) return;
+      if(x.supportedFlags().has(ChimeraTK::AccessMode::wait_for_new_data)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << " (wait_for_new_data throws)" << std::endl;
@@ -2586,7 +2665,7 @@ namespace ChimeraTK {
           d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data}), logic_error);
     });
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(this->isRaw(x)) return;
+      if(x.supportedFlags().has(ChimeraTK::AccessMode::raw)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << " (raw throws)" << std::endl;

@@ -3,6 +3,7 @@
 
 #include "VirtualFunctionTemplate.h"
 #include "LogicalNameMappingBackend.h"
+#include "ReadAnyGroup.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -15,7 +16,7 @@ namespace ChimeraTK { namespace LNMBackend {
     /** Called by the backend when obtaining a register accessor. */
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getAccessor(boost::shared_ptr<LogicalNameMappingBackend> backend,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags, size_t pluginIndex) const {
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags, size_t pluginIndex) {
       return CALL_VIRTUAL_FUNCTION_TEMPLATE(
           getAccessor_impl, UserType, backend, numberOfWords, wordOffsetInRegister, flags, pluginIndex);
     }
@@ -34,6 +35,23 @@ namespace ChimeraTK { namespace LNMBackend {
      *  info must be updated here instead of the constructor.
      */
     virtual void updateRegisterInfo() = 0;
+
+    /**
+     *  Hook called when the backend is openend, at the end of the open() function after all backend work has been done
+     *  already.
+     */
+    virtual void openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) { std::ignore = backend; }
+
+    /**
+     *  Hook called when the backend is closed, at the beginning of the close() function when the device is still open.
+     */
+    virtual void closeHook() {}
+
+    /**
+     *  Hook called when an exception is reported to the the backend via setException(), after the backend has been
+     *  moved into the exception state.
+     */
+    virtual void exceptionHook() {}
   };
 
   /** Base class for plugins that modify the behaviour of accessors in the logical name mapping backend. Plugins need to
@@ -75,13 +93,13 @@ namespace ChimeraTK { namespace LNMBackend {
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target);
 
     /** This function is called by the backend. Do not override in implementations. */
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getAccessor_impl(
         boost::shared_ptr<LogicalNameMappingBackend>& backend, size_t numberOfWords, size_t wordOffsetInRegister,
-        AccessModeFlags flags, size_t pluginIndex) const;
+        AccessModeFlags flags, size_t pluginIndex);
 
     /** RegisterInfo describing the the target register for which this plugin instance should work. */
     boost::weak_ptr<LNMBackendRegisterInfo> _info;
@@ -109,10 +127,13 @@ namespace ChimeraTK { namespace LNMBackend {
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target);
 
     double _factor;
   };
+
+  // forward declaration needed for MathPlugin
+  struct MathPluginFormulaHelper;
 
   /** Math Plugin: Apply mathematical formula to register's data. The formula is parsed by the exprtk library. */
   class MathPlugin : public AccessorPlugin<MathPlugin> {
@@ -125,7 +146,23 @@ namespace ChimeraTK { namespace LNMBackend {
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target);
+
+    void openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) override;
+    void closeHook() override;
+    void exceptionHook() override;
+
+    bool _isWrite{false};
+    bool _hasPushParameter{false};                       // can only be true if _isWrite == true
+    boost::thread _pushParameterWriteThread;             // only used if _hasPushParameter == true
+    ReadAnyGroup _pushParameterReadGroup;                // only used if _hasPushParameter == true
+    std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>>
+        _pushParameterAccessorMap;                       // only used if _hasPushParameter == true
+    boost::shared_ptr<MathPluginFormulaHelper> _h;       // only used if _hasPushParameter == true
+    std::vector<double> _lastWrittenValue;               // only used if _hasPushParameter == true
+    std::mutex _mx_lastWrittenValue;                     // only used if _hasPushParameter == true
+    boost::weak_ptr<LogicalNameMappingBackend> _backend; // set in openHook()
+    boost::weak_ptr<LNMBackendRegisterInfo> _info;
 
     std::map<std::string, std::string> _parameters;
   };
@@ -142,7 +179,7 @@ namespace ChimeraTK { namespace LNMBackend {
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target);
 
     double _milliseconds;
     uint32_t _active{1};
@@ -160,7 +197,7 @@ namespace ChimeraTK { namespace LNMBackend {
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target);
   };
 
   /** ForcePollingRead Plugin: Forces a register to not allow setting the AccessMode::wait_for_new_data flag. */
@@ -174,7 +211,7 @@ namespace ChimeraTK { namespace LNMBackend {
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target);
   };
 
   /** TypeHintModifier Plugin: Change the catalog type of the mapped register. No actual type conversion takes place */
@@ -221,7 +258,7 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename Derived>
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) {
     return AccessorPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
 
@@ -231,7 +268,7 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::getAccessor_impl(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, size_t numberOfWords, size_t wordOffsetInRegister,
-      AccessModeFlags flags, size_t pluginIndex) const {
+      AccessModeFlags flags, size_t pluginIndex) {
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorated;
 
     // obtain desired target type from plugin implementation
@@ -240,7 +277,7 @@ namespace ChimeraTK { namespace LNMBackend {
       // obtain target accessor with desired type
       auto target = backend->getRegisterAccessor_impl<decltype(T)>(
           _info.lock()->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
-      decorated = static_cast<const Derived*>(this)->template decorateAccessor<UserType>(backend, target);
+      decorated = static_cast<Derived*>(this)->template decorateAccessor<UserType>(backend, target);
     });
 
     decorated->setExceptionBackend(backend);

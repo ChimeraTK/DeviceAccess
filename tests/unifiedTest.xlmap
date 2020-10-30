@@ -153,11 +153,23 @@
     </redirectedRegister>
     <redirectedRegister name="WordFirmwareAsParameterInMath">
       <targetDevice><par>target</par></targetDevice>
-      <targetRegister>BOARD.WORD_STATUS</targetRegister>
+      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <plugin name="forceReadOnly"/>
       <plugin name="math">
         <parameter name="formula">word_firmware - 42</parameter>
         <parameter name="word_firmware">/SingleWord</parameter>
+      </plugin>
+    </redirectedRegister>
+    <variable name="VariableForMathTest">
+      <type>integer</type>
+      <value>12</value>
+    </variable>
+    <redirectedRegister name="VariableAsPushParameterInMath">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_STATUS</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">variable * 120</parameter>
+        <parameter name="variable">/VariableForMathTest</parameter>
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="MonostableTrigger">
