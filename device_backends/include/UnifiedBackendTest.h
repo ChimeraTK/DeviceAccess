@@ -1564,6 +1564,10 @@ namespace ChimeraTK {
         // Check for runtime_error as it is popped of the queue
         BOOST_CHECK_THROW(reg.getHighLevelImplElement()->readTransfer(), ChimeraTK::runtime_error);
 
+        // Need to report the exception to the exception backend, because this is normally done in
+        // TransferElement::read() etc.
+        d.setException();
+
         // complete the operation
         reg.getHighLevelImplElement()->postRead(TransferType::read, false);
 
