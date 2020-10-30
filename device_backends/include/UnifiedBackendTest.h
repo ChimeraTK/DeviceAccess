@@ -1581,7 +1581,6 @@ namespace ChimeraTK {
       }
     });
 
-    std::cout << "DEBUG closing" << std::endl;
     // close device again
     d.close();
   }
@@ -2108,6 +2107,7 @@ namespace ChimeraTK {
       auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
+      bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
@@ -2116,10 +2116,9 @@ namespace ChimeraTK {
         BOOST_CHECK(!erb->hasSeenException());
         try {
           reg.isWriteable();
-          std::cout << " (doesn't throw)" << std::endl;
         }
         catch(...) {
-          std::cout << " (throws)" << std::endl;
+          didThrow = true;
           BOOST_CHECK(erb->hasSeenException());
         }
 
@@ -2128,6 +2127,13 @@ namespace ChimeraTK {
 
         // recover
         this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
       }
     });
 
@@ -2142,6 +2148,7 @@ namespace ChimeraTK {
       auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
+      bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
@@ -2150,10 +2157,9 @@ namespace ChimeraTK {
         BOOST_CHECK(!erb->hasSeenException());
         try {
           reg.isReadOnly();
-          std::cout << " (doesn't throw)" << std::endl;
         }
         catch(...) {
-          std::cout << " (throws)" << std::endl;
+          didThrow = true;
           BOOST_CHECK(erb->hasSeenException());
         }
 
@@ -2162,6 +2168,13 @@ namespace ChimeraTK {
 
         // recover
         this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
       }
     });
     // close device again
