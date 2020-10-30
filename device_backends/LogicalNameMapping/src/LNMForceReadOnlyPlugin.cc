@@ -67,7 +67,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> ForceReadOnlyPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) {
     return ForceReadOnlyPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
 }} // namespace ChimeraTK::LNMBackend

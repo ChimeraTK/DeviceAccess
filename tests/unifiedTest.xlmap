@@ -166,7 +166,7 @@
     </variable>
     <redirectedRegister name="VariableAsPushParameterInMath">
       <targetDevice><par>target</par></targetDevice>
-      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <targetRegister>BOARD.WORD_STATUS</targetRegister>
       <plugin name="math">
         <parameter name="formula">variable * 120</parameter>
         <parameter name="variable">/VariableForMathTest</parameter>

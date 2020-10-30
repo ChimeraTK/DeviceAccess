@@ -43,7 +43,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> ForcePollingReadPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) {
     if(target->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
       throw ChimeraTK::logic_error(
           "AccessMode::wait_for_new_data is disallowed through ForcePollingReadPlugin for register '" +

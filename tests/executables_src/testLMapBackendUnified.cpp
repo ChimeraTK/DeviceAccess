@@ -640,7 +640,7 @@ struct RegVariableAsPushParameterInMath : ScalarRegisterDescriptorBase<RegVariab
   const double increment = 17;
 
   void generateValueHook() {
-    // this is a bit a hack: we know that the test has to generate a value before writing, so we cann activate
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
@@ -682,7 +682,8 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
 
   typedef uint32_t minimumUserType;
   typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 /********************************************************************************************************************/
