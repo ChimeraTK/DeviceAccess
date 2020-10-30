@@ -34,6 +34,17 @@ namespace ChimeraTK { namespace LNMBackend {
      *  info must be updated here instead of the constructor.
      */
     virtual void updateRegisterInfo() = 0;
+
+    /**
+     *  Hook called when the backend is openend, at the end of the open() function after all backend work has been done
+     *  already.
+     */
+    virtual void openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) { std::ignore = backend; }
+
+    /**
+     *  Hook called when the backend is closed, at the beginning of the close() function when the device is still open.
+     */
+    virtual void closeHook() {}
   };
 
   /** Base class for plugins that modify the behaviour of accessors in the logical name mapping backend. Plugins need to
