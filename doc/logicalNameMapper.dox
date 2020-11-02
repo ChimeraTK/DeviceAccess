@@ -73,6 +73,24 @@ Example with most features:
 </logicalNameMap>
 \endcode
 
+\subsection variables_and_constants Variables and constants
+
+It is possible to define variables and constants that do not exist in the target device. They can be used to parameterize other registers or plugins.
+\code{.xml}
+<variable name="Variable">
+  <type>integer</type>
+  <value>2</value>
+</variable>
+
+<constant name="Constant">
+    <type>integer</type>
+    <value>42</value>
+</constant>
+\endcode
+The types available are defined by the ChimeraTK::DataType class:
+<code>int8, uint8, int16, uint16, int32, uint32, int64,  uint64, float32, float64, string</code>
+
+
 \subsection internal_redirect Self-referencing redirects
 It is possible to redirect registers to other registers in the same xlmap file using the special device <code>this</code>:
 \code{.xml}
@@ -183,5 +201,5 @@ The <code>typeHintModifier</code> is a simple plugin to change the type of the m
 catalogue. It does, however, <strong>NOT</strong> perform any type conversion on its own.
 
 Parameters:
-- <code>type</code>: New type. The same type names as for varibles and constants are supported
+- <code>type</code>: New type. The same type names as for \ref variables_and_constants are supported.
 */
