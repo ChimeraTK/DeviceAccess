@@ -111,7 +111,14 @@ namespace ChimeraTK { namespace LNMBackend {
         }
 
         // compile formula
-        _h->compileFormula(_parameters.at("formula"), _backend.lock(), _pushParameterAccessorMap, _info.lock()->length);
+        try {
+          _h->compileFormula(
+              _parameters.at("formula"), _backend.lock(), _pushParameterAccessorMap, _info.lock()->length);
+        }
+        catch(...) {
+          // Do not throw errors at this point, only when accessing the register directly
+          _hasPushParameter = false;
+        }
       }
     }
 
