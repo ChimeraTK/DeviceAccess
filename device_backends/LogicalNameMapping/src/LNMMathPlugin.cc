@@ -107,6 +107,7 @@ namespace ChimeraTK { namespace LNMBackend {
             _pushParameterAccessorMap[parpair.first] = acc;
           }
           _pushParameterReadGroup.finalise();
+          _lastWrittenValue.resize(_info.lock()->length);
         }
 
         // compile formula
