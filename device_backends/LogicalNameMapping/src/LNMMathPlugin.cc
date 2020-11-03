@@ -76,6 +76,8 @@ namespace ChimeraTK { namespace LNMBackend {
       _backend = backend;
 
       // If write direction, check for push-type parameters
+      // NOTE: This feature does not work at the moment. See issue #186
+#if 0      
       if(_isWrite) {
         for(auto& parpair : _parameters) {
           if(parpair.first == "formula") continue;
@@ -120,8 +122,10 @@ namespace ChimeraTK { namespace LNMBackend {
           _hasPushParameter = false;
         }
       }
+#endif
     }
 
+#if 0
     // if we have push-type parameters triggering a write of the target, start the _pushParameterWriteThread
     if(_hasPushParameter) {
       assert(_isWrite); // we do not set hasPushParameter if !isWrite
@@ -150,6 +154,7 @@ namespace ChimeraTK { namespace LNMBackend {
           }
         }
         assert(!_backend.lock()->_asyncReadActive);
+        assert(_lastWrittenValue.size() == target->getNumberOfSamples());
 
         // need to get to this point before the openHook completes
         waitUntilThreadLaunched.wait();
@@ -174,6 +179,7 @@ namespace ChimeraTK { namespace LNMBackend {
       // do not proceed before the thread is ready to receive new data
       waitUntilThreadLaunched.wait();
     }
+#endif
   }
 
   /********************************************************************************************************************/

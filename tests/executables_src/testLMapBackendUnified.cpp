@@ -729,7 +729,7 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegWordFirmwareWithMath_R_push>()
       .addRegister<RegWordFirmwareWithMath_W>()
       .addRegister<RegWordFirmwareAsParameterInMath>()
-      .addRegister<RegVariableAsPushParameterInMath>()
+      /*.addRegister<RegVariableAsPushParameterInMath>()*/
       .addRegister<RegMonostableTrigger>()
       .runTests(lmapCdd);
 }
