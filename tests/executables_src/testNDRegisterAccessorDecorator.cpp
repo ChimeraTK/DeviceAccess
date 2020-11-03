@@ -327,13 +327,6 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   targetAccessor->_throwThreadInterruptedInPre = true;
   BOOST_CHECK_THROW(accessor.writeDestructively(), boost::thread_interrupted);
 
-  targetAccessor->resetCounters();
-  targetAccessor->_throwNumericCast = true;
-  BOOST_CHECK_THROW(accessor.write(), boost::numeric::bad_numeric_cast);
-  targetAccessor->resetCounters();
-  targetAccessor->_throwNumericCast = true;
-  BOOST_CHECK_THROW(accessor.writeDestructively(), boost::numeric::bad_numeric_cast);
-
   // tests B.7.4 (exception thrown in read transfer), and B.6.3 (active exception is seen in the layer which raised it)
   targetAccessor->resetCounters();
   targetAccessor->_throwRuntimeErrInTransfer = true;

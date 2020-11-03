@@ -513,12 +513,6 @@ BOOST_AUTO_TEST_CASE(test_B_5_1) {
     BOOST_CHECK_EQUAL(accessor._postWrite_counter, 1);
 
     accessor.resetCounters();
-    accessor._throwNumericCast = true;
-    BOOST_CHECK_THROW(accessor.write(), boost::numeric::bad_numeric_cast); // (no test intended, just catch)
-    BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
-    BOOST_CHECK_EQUAL(accessor._postWrite_counter, 1);
-
-    accessor.resetCounters();
     accessor._throwRuntimeErrInTransfer = true;
     BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._preWrite_counter, 1);
@@ -667,11 +661,6 @@ BOOST_AUTO_TEST_CASE(test_B_6_1) {
     BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._writeTransfer_counter, 0);
 
-    accessor.resetCounters();
-    accessor._throwNumericCast = true;
-    BOOST_CHECK_THROW(accessor.write(), boost::numeric::bad_numeric_cast); // (no test intended, just catch)
-    BOOST_CHECK_EQUAL(accessor._writeTransfer_counter, 0);
-
     // writeDestructively()
     accessor.resetCounters();
     accessor._throwLogicErr = true;
@@ -681,12 +670,6 @@ BOOST_AUTO_TEST_CASE(test_B_6_1) {
     accessor.resetCounters();
     accessor._throwRuntimeErrInPre = true;
     BOOST_CHECK_THROW(accessor.writeDestructively(), ChimeraTK::runtime_error); // (no test intended, just catch)
-    BOOST_CHECK_EQUAL(accessor._writeTransferDestructively_counter, 0);
-
-    accessor.resetCounters();
-    accessor._throwNumericCast = true;
-    BOOST_CHECK_THROW(
-        accessor.writeDestructively(), boost::numeric::bad_numeric_cast); // (no test intended, just catch)
     BOOST_CHECK_EQUAL(accessor._writeTransferDestructively_counter, 0);
   }
   {
@@ -1297,13 +1280,6 @@ BOOST_AUTO_TEST_CASE(test_B_11_5) {
   BOOST_CHECK_THROW(accessor.write(v), ChimeraTK::runtime_error); // (no test intended, just catch)
   BOOST_CHECK(accessor.getVersionNumber() == v1);
 
-  // test with numeric cast in preWrite
-  accessor.resetCounters();
-  v = {};
-  accessor._throwNumericCast = true;
-  BOOST_CHECK_THROW(accessor.write(v), boost::numeric::bad_numeric_cast); // (no test intended, just catch)
-  BOOST_CHECK(accessor.getVersionNumber() == v1);
-
   // test with runtime error in doWriteTransfer
   accessor.resetCounters();
   v = {};
@@ -1448,12 +1424,6 @@ BOOST_AUTO_TEST_CASE(test_B_16_1) {
   accessor.resetCounters();
   accessor._throwRuntimeErrInPre = true;
   BOOST_CHECK_THROW(accessor.write(), ChimeraTK::runtime_error); // (no test intended, just catch)
-  BOOST_CHECK(accessor._seenActiveException == accessor._thrownException);
-
-  // test bad_numeric_cast in preWrite
-  accessor.resetCounters();
-  accessor._throwNumericCast = true;
-  BOOST_CHECK_THROW(accessor.write(), boost::numeric::bad_numeric_cast); // (no test intended, just catch)
   BOOST_CHECK(accessor._seenActiveException == accessor._thrownException);
 
   // test runtime_error in writeTransfer
