@@ -88,7 +88,7 @@ It is possible to define variables and constants that do not exist in the target
 </constant>
 \endcode
 The types available are defined by the ChimeraTK::DataType class:
-<code>int8, uint8, int16, uint16, int32, uint32, int64,  uint64, float32, float64, string</code>
+<code>int8, uint8, int16, uint16, int32, uint32, int64,  uint64, float32, float64, string</code>. In addition, <code>integer</code> can be used as an alias for <code>int32</code>.
 
 
 \subsection internal_redirect Self-referencing redirects
