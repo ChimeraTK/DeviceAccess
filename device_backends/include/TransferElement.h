@@ -517,10 +517,6 @@ namespace ChimeraTK {
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
       }
-      // Needed for throwing TypeChangingDecorator. Is this even a good concept?
-      catch(boost::numeric::bad_numeric_cast&) {
-        _activeException = std::current_exception();
-      }
     }
 
    public:

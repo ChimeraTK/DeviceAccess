@@ -18,14 +18,14 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  std::exception_ptr TransferGroup::runPostReads(
-      std::set<boost::shared_ptr<TransferElement>>& elements, std::exception_ptr firstDetectedRuntimeError) {
-    std::exception_ptr badNumericCast{nullptr}; // first detected bad_numeric_cast
+  void TransferGroup::runPostReads(
+      std::set<boost::shared_ptr<TransferElement>>& elements, std::exception_ptr firstDetectedRuntimeError) noexcept {
     for(auto& elem : elements) {
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
-        // In case there are mupliple exceptions we take the last one, but this does not matter. They are all ChimeraTK::runtime_errors and
-        // the first detected runtime error, which is re-thrown, has already been determined by previously.
+        // In case there are mupliple exceptions we take the last one, but this does not matter. They are all
+        // ChimeraTK::runtime_errors and the first detected runtime error, which is re-thrown, has already been
+        // determined by previously.
         if(lowLevelElem->_activeException) {
           // copy the runtime error from low level element into the high level element so it is processed in  post-read
           elem->_activeException = lowLevelElem->_activeException;
@@ -33,23 +33,14 @@ namespace ChimeraTK {
       }
 
       try {
-        // call with updateDataBuffer = false if there has been any ChimeraTK::runtime_error in the transfer phase, true otherwise
+        // call with updateDataBuffer = false if there has been any ChimeraTK::runtime_error in the transfer phase,
+        // true otherwise
         elem->postRead(TransferType::read, firstDetectedRuntimeError == nullptr);
       }
       catch(ChimeraTK::runtime_error&) {
         ++_nRuntimeErrors;
       }
-      catch(boost::numeric::bad_numeric_cast&) {
-        if(badNumericCast == nullptr) { // only store first detected exception
-          badNumericCast = std::current_exception();
-        }
-      }
-      catch(...) {
-        std::cout << "BUG: Wrong exception type thrown in doPostRead() or doPostWrite()!" << std::endl;
-        std::terminate();
-      }
     }
-    return badNumericCast;
   }
 
   void TransferGroup::read() {
@@ -102,7 +93,7 @@ namespace ChimeraTK {
     _nRuntimeErrors = 0;
     runPostReads(_copyDecorators, firstDetectedRuntimeError);
     _nRuntimeErrors = 0;
-    auto badNumericCast = runPostReads(_highLevelElements, firstDetectedRuntimeError);
+    runPostReads(_highLevelElements, firstDetectedRuntimeError);
 
     // re-throw exceptions in the order of occurence
 
@@ -126,9 +117,6 @@ namespace ChimeraTK {
           nullptr); // postRead must only rethrow, so there must be a detected runtime_error
       _cachedReadableWriteableIsValid = false;
       std::rethrow_exception(firstDetectedRuntimeError);
-    }
-    if(badNumericCast != nullptr) {
-      std::rethrow_exception(badNumericCast);
     }
   } // namespace ChimeraTK
 
