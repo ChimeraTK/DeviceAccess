@@ -65,38 +65,12 @@ DEF_TYPENAME(std::string)
 
 template<typename T>
 void checkToCookedOverflowNeg(FixedPointConverter const& converter, uint32_t input) {
-  std::stringstream message;
-  message << "checkToCookedOverflowNeg failed for type " << typeName<T>();
-
-  bool hasThrown = false;
-  try {
-    converter.scalarToCooked<T>(input);
-  }
-  catch(boost::numeric::negative_overflow& e) {
-    // Although we do not check the content of the what() message, we execute it
-    // here to see that it's working. We leave the printout in here to have the
-    // code covarage and the possibility to manually check the output of the
-    // test.
-    std::cout << "Caught exception where it was expected: " << e.what() << std::endl;
-    hasThrown = true;
-  }
-  if(!hasThrown) BOOST_FAIL(message.str());
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<T>(input), std::numeric_limits<T>::min());
 }
 
 template<typename T>
 void checkToCookedOverflowPos(FixedPointConverter const& converter, uint32_t input) {
-  std::stringstream message;
-  message << "checkToCookedOverflowPos failed for type " << typeName<T>();
-
-  bool hasThrown = false;
-  try {
-    converter.scalarToCooked<T>(input);
-  }
-  catch(boost::numeric::positive_overflow& e) {
-    std::cout << "Caught exception where it was expected: " << e.what() << std::endl;
-    hasThrown = true;
-  }
-  if(!hasThrown) BOOST_FAIL(message.str());
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<T>(input), std::numeric_limits<T>::max());
 }
 
 template<typename T>

@@ -100,7 +100,18 @@ namespace ChimeraTK {
     typedef boost::numeric::converter<UserType, NUMERIC, boost::numeric::conversion_traits<UserType, NUMERIC>,
         boost::numeric::def_overflow_handler, Round<NUMERIC>>
         converter;
-    return converter::convert(value);
+    // There seems to be no other way to alter the value on negative/positive overflow than using a try-catch-block
+    // here. The overflow_handler is a stateless class and hence can either throw another exception or do nothing.
+    // It does not have any influence on the converted value, and it cannot transport the information out differently.
+    try {
+      return converter::convert(value);
+    }
+    catch(boost::numeric::negative_overflow&) {
+      return std::numeric_limits<UserType>::min();
+    }
+    catch(boost::numeric::positive_overflow&) {
+      return std::numeric_limits<UserType>::max();
+    }
   }
 
   /********************************************************************************************************************/
@@ -110,7 +121,18 @@ namespace ChimeraTK {
     typedef boost::numeric::converter<NUMERIC, UserType, boost::numeric::conversion_traits<NUMERIC, UserType>,
         boost::numeric::def_overflow_handler, Round<UserType>>
         converter;
-    return converter::convert(value);
+    // There seems to be no other way to alter the value on negative/positive overflow than using a try-catch-block
+    // here. The overflow_handler is a stateless class and hence can either throw another exception or do nothing.
+    // It does not have any influence on the converted value, and it cannot transport the information out differently.
+    try {
+      return converter::convert(value);
+    }
+    catch(boost::numeric::negative_overflow&) {
+      return std::numeric_limits<NUMERIC>::min();
+    }
+    catch(boost::numeric::positive_overflow&) {
+      return std::numeric_limits<NUMERIC>::max();
+    }
   }
 
   /********************************************************************************************************************/
@@ -147,8 +169,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /** Helper function to convert any UserType data into any other UserType (even if it is a string etc.). The conversion
-   *  is done with proper rounding and range checking for numeric types. It will throw boost::numeric::positive_overflow
-   *  resp. boost::numeric::negative_overflow if the data is out of range. */
+   *  is done with proper rounding and range checking for numeric types. It will return the closed possible value if
+   *  the value is out of range. */
   template<typename UserTypeReturn, typename UserTypeParameter>
   UserTypeReturn userTypeToUserType(UserTypeParameter value) {
     return detail::userTypeToUserType_impl<UserTypeReturn, UserTypeParameter>::impl(value);
