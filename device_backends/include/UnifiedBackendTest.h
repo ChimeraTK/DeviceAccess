@@ -648,17 +648,17 @@ namespace ChimeraTK {
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
     while(true) {                                                                                                      \
       std::string fail;                                                                                                \
-      auto theValue = value; /* Copy value for consistency and performance in the following code */                    \
+      auto CHECK_EQUALITY_value = value; /* Copy value for consistency and performance in the following code */        \
       BOOST_CHECK_EQUAL(theValue.size(), expectedValue.size());                                                        \
       BOOST_CHECK_EQUAL(theValue[0].size(), expectedValue[0].size());                                                  \
       for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
         for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {             \
-          if(!compareHelper(                                                                                           \
-                 theValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
+          if(!compareHelper(CHECK_EQUALITY_value[CHECK_EQUALITY_i][CHECK_EQUALITY_k],                                  \
+                 expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {                                                 \
             if(fail.size() == 0) {                                                                                     \
               fail = "Data content differs from expected value. First difference at index [" +                         \
                   std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
-                  "]: " + std::to_string(theValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
+                  "]: " + std::to_string(CHECK_EQUALITY_value[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                   \
                   " != " + std::to_string(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]);                          \
             }                                                                                                          \
           }                                                                                                            \

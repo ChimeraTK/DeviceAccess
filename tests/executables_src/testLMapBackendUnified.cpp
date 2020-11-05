@@ -658,7 +658,7 @@ struct RegVariableAsPushParameterInMath : ScalarRegisterDescriptorBase<RegVariab
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 /// Test monostable trigger plugin (rather minimal test, needs extension!)
