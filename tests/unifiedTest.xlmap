@@ -161,7 +161,7 @@
       </plugin>
     </redirectedRegister>
     <variable name="VariableForMathTest">
-      <type>integer</type>
+      <type>float64</type>
       <value>12</value>
     </variable>
     <redirectedRegister name="VariableAsPushParameterInMath">

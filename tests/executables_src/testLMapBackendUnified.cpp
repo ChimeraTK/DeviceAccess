@@ -653,7 +653,7 @@ struct RegVariableAsPushParameterInMath : ScalarRegisterDescriptorBase<RegVariab
 
   template<typename T>
   T convertRawToCooked(T value) {
-    return value * 120;
+    return value / 120;
   }
 
   typedef double minimumUserType;
