@@ -109,7 +109,8 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     return value;
   }
 
-  void generateValueHook() {} // override in derived if needed
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {} // override in derived if needed
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue(bool getRaw = false) {
@@ -126,7 +127,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
         v.push_back(static_cast<T>(e));
       }
     }
-    derived->generateValueHook();
+    derived->generateValueHook(v);
     return {v};
   }
 
@@ -625,15 +626,16 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
-/// Test math plugin with push-type parameter. In this test we write to the variable /VariableForMathTest which is
-/// a parameter to the Math plugin in /VariableAsPushParameterInMath. The result is then observed in the WORD_FIRMWARE
-/// register of the target. VariableAsPushParameterInMath is never directly used in this test.
-struct RegVariableAsPushParameterInMath : ScalarRegisterDescriptorBase<RegVariableAsPushParameterInMath> {
-  std::string path() { return "/VariableForMathTest"; }
+/// Test math plugin with push-type parameter. In this test we write to one of the variables which is
+/// a parameter to the Math plugin in /VariableAsPushParameterInMath. The result is then observed in the WORD_STATUS
+/// register of the target. VariableAsPushParameterInMath is only directly written in the test with the
+/// RegVariableAsPushParameterInMath_x definition.
+static double RegVariableAsPushParameterInMathBase_lastX;
 
+template<typename Derived>
+struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Derived> {
   // test only write direction, as we are writing to the variable parameter in this test
-  static constexpr auto capabilities =
-      ScalarRegisterDescriptorBase<RegVariableAsPushParameterInMath>::capabilities.enableTestWriteOnly();
+  static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.enableTestWriteOnly();
 
   // no runtime error test cases, as writes happen to the variable only!
   size_t nRuntimeErrorCases() { return 0; }
@@ -642,23 +644,67 @@ struct RegVariableAsPushParameterInMath : ScalarRegisterDescriptorBase<RegVariab
   // the test "sees" the variable which supports wait_for_new_data
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
 
-  const double increment = 17;
-
-  void generateValueHook() {
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {
     // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
   }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
-    return value / 120;
-  }
-
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
+};
+
+struct RegVariableAsPushParameterInMath_var1
+: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var1> {
+  std::string path() { return "/VariableForMathTest1"; }
+
+  const double increment = 17;
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    variable2->read();
+    return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
+  }
+};
+
+struct RegVariableAsPushParameterInMath_var2
+: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var2> {
+  std::string path() { return "/VariableForMathTest2"; }
+
+  const double increment = 23;
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
+    variable1->read();
+    return (value - variable1->accessData(0) * 120 - RegVariableAsPushParameterInMathBase_lastX) / 121;
+  }
+};
+
+struct RegVariableAsPushParameterInMath_x : RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_x> {
+  std::string path() { return "/VariableAsPushParameterInMath"; }
+
+  const double increment = 42;
+
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>& v) {
+    // Note: This in particular is a hack, since we have no guarantee that this gets actually written!
+    // FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    RegVariableAsPushParameterInMathBase_lastX = v[0];
+  }
+
+  template<typename T>
+  T convertRawToCooked(T value) {
+    auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
+    variable1->read();
+    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    variable2->read();
+    return value - variable1->accessData(0) * 120 - variable2->accessData(0) * 121;
+  }
 };
 
 /// Test monostable trigger plugin (rather minimal test, needs extension!)
@@ -729,7 +775,9 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegWordFirmwareWithMath_R_push>()
       .addRegister<RegWordFirmwareWithMath_W>()
       .addRegister<RegWordFirmwareAsParameterInMath>()
-      /*.addRegister<RegVariableAsPushParameterInMath>()*/
+      .addRegister<RegVariableAsPushParameterInMath_var1>()
+      .addRegister<RegVariableAsPushParameterInMath_var2>()
+      .addRegister<RegVariableAsPushParameterInMath_x>()
       .addRegister<RegMonostableTrigger>()
       .runTests(lmapCdd);
 }

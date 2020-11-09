@@ -160,16 +160,22 @@
         <parameter name="word_firmware">/SingleWord</parameter>
       </plugin>
     </redirectedRegister>
-    <variable name="VariableForMathTest">
+    <variable name="VariableForMathTest1">
       <type>float64</type>
       <value>12</value>
+    </variable>
+    <variable name="VariableForMathTest2">
+      <type>float64</type>
+      <value>11</value>
     </variable>
     <redirectedRegister name="VariableAsPushParameterInMath">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD.WORD_STATUS</targetRegister>
       <plugin name="math">
-        <parameter name="formula">variable * 120</parameter>
-        <parameter name="variable">/VariableForMathTest</parameter>
+        <parameter name="formula">variable1 * 120 + variable2 * 121 + x</parameter>
+        <parameter name="variable1">/VariableForMathTest1</parameter>
+        <parameter name="variable2">/VariableForMathTest2</parameter>
+        <parameter name="enable_push_parameters"/>
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="MonostableTrigger">
