@@ -949,7 +949,6 @@ namespace ChimeraTK {
       // write some value
       for(size_t iter = 0; iter < this->nValuesToTest(x); ++iter) {
         auto theValue = x.template generateValue<UserType>();
-        std::cout << " test writes " << theValue[0][0] << std::endl;
 
         reg = theValue;
         reg.write();
