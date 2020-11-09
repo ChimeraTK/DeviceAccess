@@ -141,7 +141,8 @@ namespace ChimeraTK { namespace LNMBackend {
       boost::barrier waitUntilThreadLaunched(2);
       _pushParameterWriteThread = boost::thread([this, &waitUntilThreadLaunched] {
         // obtain target accessor
-        auto target = _backend.lock()->getRegisterAccessor<double>(_info.lock()->name, 0, 0, {});
+        auto targetDevice = BackendFactory::getInstance().createBackend(_info.lock()->deviceName);
+        auto target = targetDevice->getRegisterAccessor<double>(_info.lock()->registerName, 0, 0, {});
         // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
         while(true) {
           auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();

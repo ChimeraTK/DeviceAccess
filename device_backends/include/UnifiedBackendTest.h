@@ -203,6 +203,11 @@ namespace ChimeraTK {
      *    size_t nChannels() {return 1;}
      *    size_t nElementsPerChannel() {return 5;}
      *    size_t nRuntimeErrorCases() {return 1;}                                 // see setForceRuntimeError()
+     * 
+     *    /// Number of values to test in read and write tests. Put in how many calls to generateValue() are necessary
+     *    /// to cover all corner cases to be tested. Should be at least 2 even if no corner cases are to be tested.
+     *    /// Optional, defaults to 2.
+     *    size_t nValuesToTest() {return 2;}
      *
      *    typedef int32_t minimumUserType;
      *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted, can be omitted otherwise
@@ -512,6 +517,39 @@ namespace ChimeraTK {
     template<typename T>
     size_t writeQueueLength(T t) {
       return writeQueueLength_proxy_helper<T>{t}.result;
+    }
+
+    // Proxy for getting nValuesToTest() if defined, and otherwise use the default
+    template<typename T>
+    class has_nValuesToTest {
+      typedef char one;
+      struct two {
+        char x[2];
+      };
+
+      template<typename C>
+      static one test(decltype(&C::nValuesToTest));
+      template<typename C>
+      static two test(...);
+
+     public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+    };
+
+    template<typename T, bool hasFn = has_nValuesToTest<T>::value>
+    struct nValuesToTest_proxy_helper {
+      nValuesToTest_proxy_helper(T t) { result = t.nValuesToTest(); }
+      size_t result;
+    };
+    template<typename T>
+    struct nValuesToTest_proxy_helper<T, false> {
+      nValuesToTest_proxy_helper(T) { result = 2; }
+      size_t result;
+    };
+
+    template<typename T>
+    size_t nValuesToTest(T t) {
+      return nValuesToTest_proxy_helper<T>{t}.result;
     }
   };
 
@@ -860,16 +898,19 @@ namespace ChimeraTK {
       x.setRemoteValue();
       usleep(100000); // give potential race conditions a chance to pop up more easily...
 
-      // Set another remote value to be read.
-      x.setRemoteValue();
-      auto v2 = x.template getRemoteValue<UserType>();
+      std::vector<std::vector<UserType>> v2;
+      for(size_t iter = 0; iter < this->nValuesToTest(x); ++iter) {
+        // Set another remote value to be read.
+        x.setRemoteValue();
+        v2 = x.template getRemoteValue<UserType>();
 
-      // Read second value
-      reg.read();
+        // Read second value
+        reg.read();
 
-      // Check application buffer
-      CHECK_EQUALITY(reg, v2);
-      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+        // Check application buffer
+        CHECK_EQUALITY(reg, v2);
+        BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+      }
 
       // Reading again without changing remote value does not block and gives the same value
       reg.read();
@@ -906,13 +947,16 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // write some value
-      auto theValue = x.template generateValue<UserType>();
+      for(size_t iter = 0; iter < this->nValuesToTest(x); ++iter) {
+        auto theValue = x.template generateValue<UserType>();
+        std::cout << " test writes " << theValue[0][0] << std::endl;
 
-      reg = theValue;
-      reg.write();
+        reg = theValue;
+        reg.write();
 
-      // check remote value (with timeout, because the write might complete asynchronously)
-      CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
+        // check remote value (with timeout, because the write might complete asynchronously)
+        CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
+      }
     });
 
     // close device again
@@ -1083,7 +1127,7 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       auto te = reg.getHighLevelImplElement();
 
-      // write some value, calling the stages manually
+      // read some value, calling the stages manually
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
       VersionNumber ver;
