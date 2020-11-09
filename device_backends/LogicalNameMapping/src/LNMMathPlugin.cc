@@ -7,6 +7,7 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
 #include "ReadAnyGroup.h"
+#include "BackendFactory.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -33,8 +34,14 @@ namespace ChimeraTK { namespace LNMBackend {
       boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin(info), _parameters(parameters) {
     // extract parameters
-    if(parameters.find("formula") == parameters.end()) {
+    if(_parameters.find("formula") == _parameters.end()) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MultiplierPlugin: Missing parameter 'formula'.");
+    }
+    _formula = _parameters.at("formula");
+    _parameters.erase("formula");
+    if(_parameters.find("enable_push_parameters") != _parameters.end()) {
+      _enablePushParameters = true;
+      _parameters.erase("enable_push_parameters");
     }
     // create MathPluginFormulaHelper and set name
     _h = boost::make_shared<MathPluginFormulaHelper>();
@@ -75,12 +82,9 @@ namespace ChimeraTK { namespace LNMBackend {
       // store backend as weak pointer for later use
       _backend = backend;
 
-      // If write direction, check for push-type parameters
-      // NOTE: This feature does not work at the moment. See issue #186
-#if 0      
-      if(_isWrite) {
+      // If write direction, check for push-type parameters if enabled
+      if(_isWrite && _enablePushParameters) {
         for(auto& parpair : _parameters) {
-          if(parpair.first == "formula") continue;
           auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second)->getSupportedAccessModes();
           if(paramFlags.has(AccessMode::wait_for_new_data)) {
             _hasPushParameter = true;
@@ -92,7 +96,6 @@ namespace ChimeraTK { namespace LNMBackend {
         if(_hasPushParameter) {
           // fill the _pushParameterReadGroup
           for(auto& parpair : _parameters) {
-            if(parpair.first == "formula") continue;
             // push-type parameters need to be obtained with wait_for_new_data, others without
             AccessModeFlags flags{};
             auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second)->getSupportedAccessModes();
@@ -114,18 +117,15 @@ namespace ChimeraTK { namespace LNMBackend {
 
         // compile formula
         try {
-          _h->compileFormula(
-              _parameters.at("formula"), _backend.lock(), _pushParameterAccessorMap, _info.lock()->length);
+          _h->compileFormula(_formula, _backend.lock(), _pushParameterAccessorMap, _info.lock()->length);
         }
         catch(...) {
           // Do not throw errors at this point, only when accessing the register directly
           _hasPushParameter = false;
         }
       }
-#endif
     }
 
-#if 0
     // if we have push-type parameters triggering a write of the target, start the _pushParameterWriteThread
     if(_hasPushParameter) {
       assert(_isWrite); // we do not set hasPushParameter if !isWrite
@@ -179,7 +179,6 @@ namespace ChimeraTK { namespace LNMBackend {
       // do not proceed before the thread is ready to receive new data
       waitUntilThreadLaunched.wait();
     }
-#endif
   }
 
   /********************************************************************************************************************/
@@ -260,13 +259,12 @@ namespace ChimeraTK { namespace LNMBackend {
     // obtain accessors for parameters
     std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>> accessorMap;
     for(auto& par : parameters) {
-      if(par.first == "formula") continue;
       accessorMap[par.first] = backend->getRegisterAccessor<double>(par.second, 0, 0, {});
     }
 
     // compile formula
     h.varName = this->getName();
-    h.compileFormula(parameters.at("formula"), backend, accessorMap, target->getNumberOfSamples());
+    h.compileFormula(_p->_formula, backend, accessorMap, target->getNumberOfSamples());
   }
 
   /********************************************************************************************************************/

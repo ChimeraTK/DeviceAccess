@@ -165,6 +165,8 @@ namespace ChimeraTK { namespace LNMBackend {
     boost::weak_ptr<LNMBackendRegisterInfo> _info;
 
     std::map<std::string, std::string> _parameters;
+    std::string _formula;              // extracted from _parameters
+    bool _enablePushParameters{false}; // extracted from _parameters
   };
 
   /** Monostable Trigger Plugin: Write value to target which falls back to another value after defined time. */
