@@ -229,7 +229,8 @@ namespace ChimeraTK {
           }
           else {
             throw logic_error(std::string("Module ") + virtualParent.getName() +
-                ": cannot have hierarchy modifier 'oneLevelUp' or oneUpAndHide in root of the application.");
+                ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
+                "\nNon-virtual path to the offending module: " + getQualifiedName());
           }
         }
         else {
