@@ -139,13 +139,22 @@ The <code>math</code> plugin allows to apply an arbitrary mathematical formula t
 to parse the library. For an exact documentation of the possible syntax, please refer to its documentation:
 http://www.partow.net/programming/exprtk/index.html
 
-Similar to the <code>multiply</code> plugin, the same formula is applied for both reading and writing, which usually
-makes only sense if the register is used in a single direction. The shape of the register cannot be changed, i.e.
-the number of elements returned by the formula must be equal to the number of elements of the target register.
+The math plugin enforces the register to be used in a single direction (read or write). If the target register is
+writable, the logical register will be write-only, otherwise read-only. In case a writeable regiser shall be read
+through the math plugin, the \ref plugins_reference_force_read_only "forceReadOnly" plugin shall be specified before the
+math plugin.
+
+The shape of the register cannot be changed, i.e. the number of elements returned by the formula must be equal to the
+number of elements of the target register. All calculations will be done internally as double-precision floating point.
 
 Parameters:
 - <code>formula</code>: The formula to apply to the data. Within the formula, the parameter <code>x</code> can be used
   to reference the current register value.
+- <code>enable_push_parameters</code>: This parameter takes no value. If the parameter is present, the target
+  register is writeable and there is at least one parameter which supports AccessMode::wait_for_new_data, a thread will
+  be launched when opening the device. This thread will wait for any of the push-type parameters to change. If a change
+  is received, all poll-type parameters are polled, the result of the formula is computed (based on the last data
+  written to the logical register) and the target register is written.
 - Any additional parameter value will be interpreted as a register name of the logical name mapper device. The register
   value will be made available to the formula by the name of the parameter. Everytime the formula is evaluated, the
   registers will be read, so the current values are provided.
@@ -157,9 +166,8 @@ Examples for formulae:
 
 - <code>return [ x/7 + 13 ];</code>
 
-  Can be used for both scalars and arrays. In case of an array, the formula will be
-  applied to each element of the array, since exprtk supports processing of arrays (or vectors as they call it in their
-  documentation).
+  Can be used for both scalars and arrays. In case of an array, the formula will be applied to each element of the
+  array, since exprtk supports processing of arrays (or vectors as they call it in their documentation).
 
 - Full example with parameters:
 \code{.xml}
@@ -174,7 +182,9 @@ Examples for formulae:
   Parameter registers can be scalar or 1D arrays.
 
   Hint: If the parameter register is a variable, it can be written by the application. This allows e.g. the use of
-  calibration value otherwise not known to the device.
+  calibration value otherwise not known to the device. Variables support AccessMode::wait_for_new_data, hence in
+  combination with the <code>enable_push_parameters</code> parameter, writing to variables can trigger a write to the
+  target register.
 
 \subsubsection plugins_reference_force_read_only forceReadOnly
 The <code>forceReadOnly</code> plugin changes the access mode of a register to read-only. The target register has to be
