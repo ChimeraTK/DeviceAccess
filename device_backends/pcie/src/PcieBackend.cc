@@ -30,7 +30,7 @@ namespace ChimeraTK {
 #endif
     if(_opened) {
       if(isFunctional()) return;
-      close();
+      ::close(_deviceID);
     }
     _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
     if(_deviceID < 0) {
