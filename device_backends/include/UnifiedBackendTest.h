@@ -345,6 +345,7 @@ namespace ChimeraTK {
     void test_C_5_3_2();
     void test_C_5_3_3();
     void test_NOSPEC_valueAfterConstruction();
+    void test_NOSPEC_backendNotClosedAfterException();
 
     /// Utility functions for recurring tasks
     void recoverDevice(ChimeraTK::Device& d);
@@ -841,6 +842,7 @@ namespace ChimeraTK {
     test_C_5_3_2();
     test_C_5_3_3();
     test_NOSPEC_valueAfterConstruction();
+    test_NOSPEC_backendNotClosedAfterException();
   }
 
   /********************************************************************************************************************/
@@ -2959,6 +2961,257 @@ namespace ChimeraTK {
       std::vector<UserType> v(reg.getNElementsPerChannel(), UserType());
       for(size_t i = 0; i < reg.getNChannels(); ++i) BOOST_CHECK(reg[i] == v);
     });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test that the backend does not close itself after seeing an exception
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_backendNotClosedAfterException() {
+    if(_testOnlyTransferElement) return;
+    std::cout << "--- test_NOSPEC_backendNotClosedAfterException - backend not closed after exception" << std::endl;
+    Device d(cdd);
+
+    // open the device, then let it throw runtime_error exceptions
+    d.open();
+
+    std::cout << "... synchronous read" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x)) return;
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
+
+        // trigger runtime error
+        BOOST_CHECK_THROW(reg.read(), runtime_error); // no test intended, just catch
+
+        // check device is still open but in error state
+        BOOST_CHECK(d.isOpened());
+        BOOST_CHECK(!d.isFunctional());
+
+        // check a failed attept to recover does not change this
+        BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
+        BOOST_CHECK(d.isOpened());
+        BOOST_CHECK(!d.isFunctional());
+
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+    });
+
+    std::cout << "... asynchronous read" << std::endl;
+    d.activateAsyncRead();
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isAsyncRead(x)) return;
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+      reg.read(); // initial value
+
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
+
+        // trigger runtime error
+        BOOST_CHECK_THROW(reg.read(), runtime_error); // no test intended, just catch
+
+        // check device is still open but in error state
+        BOOST_CHECK(d.isOpened());
+        BOOST_CHECK(!d.isFunctional());
+
+        // check a failed attept to recover does not change this
+        BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
+        BOOST_CHECK(d.isOpened());
+        BOOST_CHECK(!d.isFunctional());
+
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+        d.activateAsyncRead(); // turn async read back on
+      }
+    });
+
+    std::cout << "... write" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isWrite(x)) return;
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
+
+        // trigger runtime error
+        BOOST_CHECK_THROW(reg.write(), runtime_error); // no test intended, just catch
+
+        // check device is still open but in error state
+        BOOST_CHECK(d.isOpened());
+        BOOST_CHECK(!d.isFunctional());
+
+        // check a failed attept to recover does not change this
+        BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
+        BOOST_CHECK(d.isOpened());
+        BOOST_CHECK(!d.isFunctional());
+
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+    });
+
+    std::cout << "... isReadable" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      bool didThrow = false;
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
+
+        // attempt to trigger runtime error (no obligation to throw...)
+        try {
+          reg.isReadable();
+        }
+        catch(...) {
+          didThrow = true;
+          // check device is still open but in error state
+          BOOST_CHECK(d.isOpened());
+          BOOST_CHECK(!d.isFunctional());
+
+          // check a failed attept to recover does not change this
+          BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
+          BOOST_CHECK(d.isOpened());
+          BOOST_CHECK(!d.isFunctional());
+        }
+
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
+      }
+    });
+
+    std::cout << "... isWriteable" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      bool didThrow = false;
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
+
+        // attempt to trigger runtime error (no obligation to throw...)
+        try {
+          reg.isWriteable();
+        }
+        catch(...) {
+          didThrow = true;
+          // check device is still open but in error state
+          BOOST_CHECK(d.isOpened());
+          BOOST_CHECK(!d.isFunctional());
+
+          // check a failed attept to recover does not change this
+          BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
+          BOOST_CHECK(d.isOpened());
+          BOOST_CHECK(!d.isFunctional());
+        }
+
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
+      }
+    });
+
+    std::cout << "... isReadOnly" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      bool didThrow = false;
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on write
+        x.setForceRuntimeError(true, i);
+
+        // attempt to trigger runtime error (no obligation to throw...)
+        try {
+          reg.isReadOnly();
+        }
+        catch(...) {
+          didThrow = true;
+          // check device is still open but in error state
+          BOOST_CHECK(d.isOpened());
+          BOOST_CHECK(!d.isFunctional());
+
+          // check a failed attept to recover does not change this
+          BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
+          BOOST_CHECK(d.isOpened());
+          BOOST_CHECK(!d.isFunctional());
+        }
+
+        // disable exceptions on write
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+      }
+
+      if(!didThrow) {
+        std::cout << " (doesn't throw)" << std::endl;
+      }
+      else {
+        std::cout << " (throws)" << std::endl;
+      }
+    });
+    // close device again
+    d.close();
   }
 
   /********************************************************************************************************************/
