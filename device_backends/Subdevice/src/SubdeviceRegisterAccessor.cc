@@ -26,23 +26,29 @@ namespace ChimeraTK {
 
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
-    size_t idx = 0;
-    for(size_t adr = _byteOffset; adr < _byteOffset + 4 * _numberOfWords; adr += 4) {
-      if(_backend->type == SubdeviceBackend::Type::threeRegisters) {
-        while(true) {
-          _accStatus->read();
-          if(_accStatus->accessData(0) == 0) break;
+    try {
+      size_t idx = 0;
+      for(size_t adr = _byteOffset; adr < _byteOffset + 4 * _numberOfWords; adr += 4) {
+        if(_backend->type == SubdeviceBackend::Type::threeRegisters) {
+          while(true) {
+            _accStatus->read();
+            if(_accStatus->accessData(0) == 0) break;
+            usleep(_backend->sleepTime);
+          }
+        }
+        else {
           usleep(_backend->sleepTime);
         }
+        _accAddress->accessData(0) = adr;
+        _accAddress->write();
+        _accData->accessData(0) = _buffer[idx];
+        _accData->write();
+        ++idx;
       }
-      else {
-        usleep(_backend->sleepTime);
-      }
-      _accAddress->accessData(0) = adr;
-      _accAddress->write();
-      _accData->accessData(0) = _buffer[idx];
-      _accData->write();
-      ++idx;
+    }
+    catch(ChimeraTK::runtime_error&) {
+      _exceptionBackend->setException();
+      throw;
     }
     return false;
   }
