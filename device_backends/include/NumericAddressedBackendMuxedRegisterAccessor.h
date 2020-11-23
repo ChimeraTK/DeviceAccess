@@ -134,6 +134,7 @@ namespace ChimeraTK {
     void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
 
     using NDRegisterAccessor<UserType>::buffer_2D;
+    using TransferElement::_exceptionBackend;
   };
 
   /********************************************************************************************************************/
@@ -255,7 +256,13 @@ namespace ChimeraTK {
 
   template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransferSynchronously() {
-    _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
+    try {
+      _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
+    }
+    catch(ChimeraTK::runtime_error&) {
+      _exceptionBackend->setException();
+      throw;
+    }
   }
 
   /********************************************************************************************************************/
@@ -278,8 +285,14 @@ namespace ChimeraTK {
 
   template<class UserType>
   bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(VersionNumber) {
-    _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
-    return false;
+    try {
+      _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
+      return false;
+    }
+    catch(ChimeraTK::runtime_error&) {
+      _exceptionBackend->setException();
+      throw;
+    }
   }
 
   /********************************************************************************************************************/
