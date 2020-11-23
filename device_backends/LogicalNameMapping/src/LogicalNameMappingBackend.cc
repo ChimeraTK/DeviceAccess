@@ -38,7 +38,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMappingBackend::open() {
-    if(_opened && !_hasException) return;
+    if(isFunctional()) return;
     parse();
 
     // open all referenced devices (unconditionally, open() is also used for recovery)
