@@ -47,23 +47,11 @@ namespace ChimeraTK {
     virtual ~NumericAddressedLowLevelTransferElement() {}
 
     void doReadTransferSynchronously() override {
-      try {
-        _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
-      }
-      catch(ChimeraTK::runtime_error&) {
-        _exceptionBackend->setException();
-        throw;
-      }
+      _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override {
-      try {
-        _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
-      }
-      catch(ChimeraTK::runtime_error&) {
-        _exceptionBackend->setException();
-        throw;
-      }
+      _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       return false;
     }
 

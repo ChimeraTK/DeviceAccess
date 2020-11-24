@@ -256,13 +256,7 @@ namespace ChimeraTK {
 
   template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransferSynchronously() {
-    try {
-      _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
-    }
-    catch(ChimeraTK::runtime_error&) {
-      _exceptionBackend->setException();
-      throw;
-    }
+    _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
   }
 
   /********************************************************************************************************************/
@@ -285,14 +279,8 @@ namespace ChimeraTK {
 
   template<class UserType>
   bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(VersionNumber) {
-    try {
-      _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
-      return false;
-    }
-    catch(ChimeraTK::runtime_error&) {
-      _exceptionBackend->setException();
-      throw;
-    }
+    _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
+    return false;
   }
 
   /********************************************************************************************************************/
