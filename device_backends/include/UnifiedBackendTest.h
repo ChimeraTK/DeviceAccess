@@ -2009,16 +2009,10 @@ namespace ChimeraTK {
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
-        // Runtime error should be reported via setException() on the innermost TransferElement (in case there is a
-        // decorator-like structure)
-        auto hwe = reg.getHardwareAccessingElements();
-        reg.getHighLevelImplElement()->preRead(TransferType::read);
+        // Runtime error should be reported via setException()
         BOOST_CHECK(!erb->hasSeenException());
-        for(auto& e : hwe) {
-          BOOST_CHECK_THROW(e->readTransfer(), runtime_error);
-        }
+        BOOST_CHECK_THROW(reg.read(), runtime_error);
         BOOST_CHECK(erb->hasSeenException());
-        reg.getHighLevelImplElement()->postRead(TransferType::read, false);
 
         // disable exceptions on read
         x.setForceRuntimeError(false, i);
@@ -2032,7 +2026,43 @@ namespace ChimeraTK {
       }
     });
 
-    // asynchronous read is fully covered by the base class, hence no test here.
+    std::cout << "... asynchronous read" << std::endl;
+    d.activateAsyncRead();
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isAsyncRead(x)) return;
+      if(x.nRuntimeErrorCases() == 0) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "    registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+      reg.read(); // initial value
+
+      // set exception reporting backend
+      auto erb = boost::make_shared<ExceptionReportingBackend>(d.getBackend());
+      reg.getHighLevelImplElement()->setExceptionBackend(erb);
+
+      for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        // enable exceptions on read
+        x.setForceRuntimeError(true, i);
+
+        // Runtime error should be reported via setException()
+        BOOST_CHECK(!erb->hasSeenException());
+        BOOST_CHECK_THROW(reg.read(), runtime_error);
+        BOOST_CHECK(erb->hasSeenException());
+
+        // disable exceptions on read
+        x.setForceRuntimeError(false, i);
+
+        // recover
+        this->recoverDevice(d);
+        d.activateAsyncRead(); // turn async read back on
+
+        // make a successful readNonBlocking (no data) to make sure the exception state is gone. no reporting must take
+        // place here.
+        BOOST_CHECK_NO_THROW(reg.readNonBlocking());
+        BOOST_CHECK(!erb->hasSeenException());
+      }
+    });
 
     std::cout << "... write" << std::endl;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
@@ -2051,17 +2081,10 @@ namespace ChimeraTK {
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
-        // Runtime error should be reported via setException() on the innermost TransferElement (in case there is a
-        // decorator-like structure)
-        auto hwe = reg.getHardwareAccessingElements();
-        VersionNumber v;
-        reg.getHighLevelImplElement()->preWrite(TransferType::write, v);
+        // Runtime error should be reported via setException()
         BOOST_CHECK(!erb->hasSeenException());
-        for(auto& e : hwe) {
-          BOOST_CHECK_THROW(e->writeTransfer(v), runtime_error);
-        }
+        BOOST_CHECK_THROW(reg.write(), runtime_error);
         BOOST_CHECK(erb->hasSeenException());
-        reg.getHighLevelImplElement()->postWrite(TransferType::write, v);
 
         // disable exceptions on write
         x.setForceRuntimeError(false, i);
