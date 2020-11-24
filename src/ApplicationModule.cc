@@ -103,9 +103,13 @@ namespace ChimeraTK {
     for(auto& variable : getAccessorListRecursive()) {
       if(variable.getDirection().dir != VariableDirection::consuming) continue;
       if(variable.getMode() == UpdateMode::push) {
+        Application::testableModeUnlock("Initial value read for push-type " + variable.getName());
         Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
+        Application::testableModeLock("Initial value read for push-type " + variable.getName());
         variable.getAppAccessorNoType().read();
+        Application::testableModeUnlock("Initial value read for push-type " + variable.getName());
         Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
+        Application::testableModeLock("Initial value read for push-type " + variable.getName());
       }
     }
 
