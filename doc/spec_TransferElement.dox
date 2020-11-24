@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0RC12
+\page spec_TransferElement Technical specification: TransferElement V1.0RC13
 
 > **This is a release candidate in implementation. The official V1.0 release will be done once the implementation is ready and we know that the specified behavious is working as intended.**
 
@@ -103,9 +103,10 @@ This documnent is currently still **INCOMPLETE**!
     - std::string
   - 2.2 Applications select a data type for the buffer via the UserType template argument of Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor().
   - 2.3 If needed, the register value is converted between the actual register's data type and the application-selected UserType.
-  - 2.4 The UserType must be capable of holding all possible register values. Otherwise, a ChimeraTK::logic_error is thrown at construction, or (for backwards compatibility) a boost::numeric_cast::bad_numeric_cast error is thrown in read operations when the value exceeds the possible range.
-    - 2.4.1 The backwards compatibility option may only be implemented by existing backends.
+  - 2.4  In read operations, values outside the possible range of the UserType are moved to the nearest possible value (rounding and clamping).
+    - 2.4.1 The data is marked with DataValidity::faulty in case of an overflow/underflow.
   - 2.5 In write operations, values outside the possible range of the actual register's data type are moved to the nearest possible value (rounding and clamping).
+    - \anchor transferElement_B_2_5_1 2.5.1 If the transfer protocol supports data validity flags, the data is flagged with DataValidity::faulty in case of an overflow/underflow. \ref transferElement_comment_B_2_5_1 "(*)"
   - 2.6 All values can be converted into std::string, hence it is always possible to obtain an accessor with std::string as UserType.
   - 2.7 After construction, the data buffer is initialised with default-constructed values (i.e. 0 resp. empty string).
 
@@ -147,14 +148,14 @@ This documnent is currently still **INCOMPLETE**!
     - \anchor transferElement_B_4_3_2 4.3.2 In write transfers, postWrite() updates the version number of the application buffer TransferElement::_versionNumber to the version number provided to the write() call, if no exception is (re-)thrown in doPostWrite() (cf. \ref transferElement_B_11_3 "B.11.3"). [\ref testTransferElement_B_4_3_2 "T"]
 
 - \anchor transferElement_B_5 5. preXxx() and postXxx(), resp. doPreXxx() and doPostXxx(), are always called in pairs. (*)
-  - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error, and also boost::numeric::bad_numeric_cast) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1 "T"]
+  - \anchor transferElement_B_5_1 5.1 This holds even if exceptions (both ChimeraTK::logic_error and ChimeraTK::runtime_error) are thrown (see 6). \ref transferElement_comment_B_5_1 "(*)" [\ref testTransferElement_B_5_1 "T"]
   - \anchor transferElement_B_5_2 5.2 The implementations of preXxx() and postXxx() ignore duplicate calls, such that a call to doPreXxx() is never followed by another call to doPreXxx() before doPostXxx() has been called, and vice versa. [\ref testTransferElement_B_5_2 "T"]
 
 - \anchor transferElement_B_6 6. Exceptions thrown in doPreXxx(), doXxxTransferYyy() or received on the TransferElement::_readQueue (see \ref transferElement_A_8_1 "A.8.1") are caught and delayed until postXxx() by the framework. This ensures that preXxx() and postXxx() are always called in pairs
   - \anchor transferElement_B_6_1 6.1 If in preXxx() an exception is thrown, the corresponding xxxTransferYyy() is not called, instead directly postXxx() is called. [\ref testTransferElement_B_6_1 "T"]
   - \anchor transferElement_B_6_2 6.2 To ensure \ref  transferElement_B_6_1 "6.1" is guaranteed with decorators, the exception has to be caught and stored in the outermost decorator, i.e. in the public xxxYyy() which delegate to the transfers. [\ref testTransferElement_B_6_2 "T"]
   - \anchor transferElement_B_6_3 6.3 To ensure that the ApplicationCore ExeptionHandlingDecorator works in combination with other decorators, each decorator has to pass the stored exception to its target, and it has to be re-thrown in the doPostRead() of the layer where the exception originated (see \ref transferElement_C_2 "C.2")
-  - \anchor transferElement_B_6_4 6.4 When an exception is finally thrown by a TransferElement, the application buffer must still be unchanged. \ref  transferElement_comment_B_6_4 "(*)" [\ref UnifiedTest_TransferElement_B_6_4 "U"]
+  - \anchor transferElement_B_6_4 6.4 When an exception is finally thrown by a TransferElement, the application buffer must still be unchanged. [\ref UnifiedTest_TransferElement_B_6_4 "U"]
 
 - \anchor transferElement_B_7 7. Return values of xxxTransferYyy():
   - 7.1 readTransferNonBlocking() returns whether new data has been received (see 4.2.2)
@@ -293,6 +294,8 @@ This documnent is currently still **INCOMPLETE**!
 
 
 ### (*) Comments ###
+- \anchor transferElement_comment_B_2_5_1  \ref transferElement_B_2_5_1 "2.5.1" Backends which don't support data validity flags (like the PCIe backend) just get the clampled value. The DOOCS backend however, which supports data validity, sets the outgoing data to invalid in addition.
+
 - \anchor transferElement_comment_B_3_2_2_2 \ref transferElement_B_3_2_2_2 "3.2.2.2" The optimisation is still optional, backends are allowed to not make use of it. In this case, the content of the application buffer will be intact after writeDestructively(). Applications still are not allowed to use the content of the application buffer after writeDestructively().
 
 
@@ -303,8 +306,6 @@ This documnent is currently still **INCOMPLETE**!
 - 5. Reason: It might be that the user buffer has to be swapped out during the transfer (while taking away the ownership of the calling code), and this must be restored in the postXxx action.
 
 -  \anchor transferElement_comment_B_5_1 \ref transferElement_B_5_1 "5.1" The boost::thread_interrupted exception, which is thrown internally as described in \ref transferElement_B_8_6 "8.6", is treated equally.
-
-- \anchor transferElement_comment_B_6_4 \ref transferElement_B_6_4 "6.4" This means that implementations which raise boost::numeric::bad_numeric_cast in their doPostRead() implementation must make sure that the data buffer is either not toched as long as exceptions can occur, or that it is restored in case of an exception.
 
 - \anchor transferElement_comment_B_7_2 \ref transferElement_B_7_2 "7.2" Usually, writes are implemented as synchronous transfers, in which case no previous data can be lost. In case of asynchronous write transfers (as e.g. implemented in the ControlSystemAdapter's ProcessArray), the implementation must ensure the specified behaviour e.g. by using cppext::future_queue::push_overwrite() or a similar functionality. Please keep in mind that the return value of cppext::future_queue::push_overwrite() does not guarantee which data is lost *only* if concurrent push_overwrite() calls are executed in a multi-producer environment. TransferElements are not thread safe anyway, hence push_overwrite() will always overwrite old data in this context.
 
@@ -323,7 +324,6 @@ This documnent is currently still **INCOMPLETE**!
 
 - \anchor transferElement_comment_B_9a \ref transferElement_B_9 "9." The ChimeraTK::runtime_error is the only exception that conceptually is recoverable. This is done by calling DeviceBackend::open(). Other exceptions are not recoverable by the running application:
   - ChimeraTK::logic_error is a programming or configuration mistake.
-  - The boost::numeric::bad_numeric_cast conceptually also is a logical error (wrong data type) which only shows at run time when the data is overflowing.
   - The boost::thread_interrupted is thrown when TransferElement::interrupt() is called. It means that a blocking read() has been interrupted on request. It is not an error and hence there is nothing to recover.
 - \anchor transferElement_comment_B_9b \ref transferElement_B_9 "9." It does not matter if the exception occured in an asynchronous or synchronous read, or in a write operation.
 - \anchor transferElement_comment_B_9_1 \ref transferElement_B_9_1 "9.1" It depends on the implementation whether the backend already has done 9.3 and 9.4 when the transfer elements first sees the exeption and then reports it back again via DeviceBackend::setException(), or if it only happend in that function. The important part is that meta-backends and the user application can trigger this situation (see \ref transferElement_B_9_2_1 "9.2.1" and \ref transferElement_B_9_2_3 "9.2.3")
@@ -345,7 +345,7 @@ This documnent is currently still **INCOMPLETE**!
 
 ## C. Requirements for all implementations (full and decorator-like) ##
 
-- 1. Other exceptions than ChimeraTK::logic_error, ChimeraTK::runtime_error and boost::numeric::bad_numeric_cast are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
+- 1. Other exceptions than ChimeraTK::logic_error and ChimeraTK::runtime_error are not allowed to be thrown or passed through at any place under any circumstance (unless of course they are guaranteed to be caught before they become visible to the application, like the detail::DiscardValueException). The framework (in particular ApplicationCore) may use "uncatchable" exceptions in some places to force the termination of the application. Backend implementations etc. may not do this, since it would lead to uncontrollable behaviour.
 - \anchor transferElement_C_2 2. **This section wil be moved to** \ref transferElement_B_16 "B.16".
 
   In doPostXxx no new ChimeraTK::runtime_error or ChimeraTK::logic_error are thrown. Exceptions that were risen in doPreXxx or doXxxTransferYyy, or that were received from the queue (see B.8.3) are rethrown. \ref transferElement_comment_C_2 "(*)"
@@ -361,10 +361,7 @@ This documnent is currently still **INCOMPLETE**!
   - \anchor transferElement_C_3_3 3.3 doPreXxx(), if the device is not functional and the transfer needs to be skipped so it does not interfere with a device recovery procedure.  \ref transferElement_comment_C_3_3 "(*)"
 
 
-- \anchor transferElement_C_4 4. boost::numeric::bad_numeric_cast may only be thrown in
-  - 4.1 (removed)
-  - 4.2 TransferElement::doPostRead(), but only if updateDataBuffer == true
-  - 4.3 This exception can in principle be avoided by chosing a user data type that can fit the data without overflow when reading, or small enough so the process variable can hold the data without overflow when writing. New implementations should not throw this exception. Instead a check should be done in the constructor and a ChimeraTK::logic_error should be thrown (see 5.2.4).
+- \anchor transferElement_C_4 4. (removed)
 
 - 5. ChimeraTK::logic_error must follow strict conditions. It is thrown, if the application (including its configuration files) does not behave as expected.
   - 5.1 logic_errors must be deterministic. They must always be avoidable by calling the corresponding test functions before executing a potentially failing action (*), and must occur if the logical condition is not fulfilled and the function is called anyway.
@@ -378,9 +375,7 @@ This documnent is currently still **INCOMPLETE**!
     - 5.2.3 The wrong AccessMode flags are provided
       - 5.2.3.1 Can be checked in the catalogue.
       - \anchor transferElement_C_5_2_3_2 5.2.3.2 Thrown in the constructor. [\ref UnifiedTest_TransferElement_C_5_2_3_2 "U"]
-    - \anchor transferElement_C_5_2_4 5.2.4 The requested user data type is too small to hold the data without range overflow when reading \ref transferElement_comment_C_5_2_4 "(*)".
-      - 5.2.4.1 ToDo: cannot be checked in the catalogue to a sufficient degree
-      - 5.2.4.2 Thrown in the constructor.
+    - \anchor transferElement_C_5_2_4 5.2.4 (removed)
     - 5.2.5 A read/write operation is started while the backend is still closed
       - 5.2.5.1 Check with DeviceBackend::isOpen().
       - \anchor transferElement_C_5_2_5_2 5.2.5.2 Thrown in doPreXxx() \ref transferElement_comment_C_5_2_5_2 "(*)". [\ref UnifiedTest_TransferElement_C_5_2_5_2 "U"]
@@ -409,7 +404,6 @@ This documnent is currently still **INCOMPLETE**!
 - \anchor transferElement_comment_C_5_2 \ref transferElement_C_5_2 "5.2" Especially no logic_error must be thrown in doXxxTransferYyy() or doPostXxx(). All tests for logical consistency must be done in doPreXxx() latest.
 - \anchor transferElement_comment_C_5_2_1_1 \ref transferElement_C_5_2_1_1  "5.2.1.1" It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
 - \anchor transferElement_comment_C_5_2_2 \ref transferElement_C_5_2_2  "5.2.2" This also includes that the offset in a one dimensional case is so large that there are not enough elements left to provide the requested data.
-- \anchor transferElement_comment_C_5_2_4 \ref transferElement_C_5_2_4 "5.2.4" Some backends currenty throw a boost::numeric::bad_numeric_cast instead as described in \ref transferElement_C_4 "4".
 - \anchor transferElement_comment_C_5_2_5_2 \ref transferElement_C_5_2_5_2 "5.2.5.2" The generic tests if a backend is opened, or if an accessor readable or writeable are intentionally not implemented in TransferElement because they would invovle additional virtual function calls. To avoid these each implementation has to implement the checks in doPreXxx().
 - \anchor transferElement_comment_C_5_3_1 \ref transferElement_C_5_3_1 "5.3.1" To recover from the ChimeraTK::runtime_error, the application must call open(). At that point, the information is allowed to be changed. If the application fails to recheck the information, a retry of the failed operation will result in a ChimeraTK::logic_error. This behaviour follows the requirement to throw logic_errors only in doPreXxx(): if during a transfer the backend discovers that the operation is no longer allowed, a runtime_error must be thrown.
 
