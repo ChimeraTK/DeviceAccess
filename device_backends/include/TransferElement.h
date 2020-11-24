@@ -133,7 +133,7 @@ namespace ChimeraTK {
         handleTransferException([&] { readTransfer(); });
       }
 
-      postRead(TransferType::read, !_activeException);
+      postReadAndHandleExceptions(TransferType::read, !_activeException);
     }
 
     /** 
@@ -164,7 +164,7 @@ namespace ChimeraTK {
         auto previousVersionNumber = _versionNumber;
         auto previousDataValidity = _dataValidity;
         // always call postRead with updateDataBuffer = false in case of an exception
-        postRead(TransferType::readNonBlocking, false);
+        postReadAndHandleExceptions(TransferType::readNonBlocking, false);
         // Usually we do not reach this point because postRead() is re-throwing the _activeExeption.
         // If we reach this point the exception has been suppressed. We have to calculate a
         // new return value because the dataBuffer has not changed, but the meta data
@@ -178,7 +178,7 @@ namespace ChimeraTK {
       }
       else {
         // call postRead with updateDataBuffer as returned by readTransferNonBlocking
-        postRead(TransferType::readNonBlocking, updateDataBuffer);
+        postReadAndHandleExceptions(TransferType::readNonBlocking, updateDataBuffer);
       }
       return retVal;
     }
@@ -222,7 +222,7 @@ namespace ChimeraTK {
         handleTransferException([&] { previousDataLost = writeTransfer(versionNumber); });
       }
 
-      postWrite(TransferType::write, versionNumber);
+      postWriteAndHandleExceptions(TransferType::write, versionNumber);
       return previousDataLost;
     }
 
@@ -244,7 +244,7 @@ namespace ChimeraTK {
         handleTransferException([&] { previousDataLost = writeTransferDestructively(versionNumber); });
       }
 
-      postWrite(TransferType::writeDestructively, versionNumber);
+      postWriteAndHandleExceptions(TransferType::writeDestructively, versionNumber);
       return previousDataLost;
     }
 
@@ -328,9 +328,6 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error&) {
         _activeException = std::current_exception();
-        if(_exceptionBackend) {
-          _exceptionBackend->setException();
-        }
       }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
@@ -427,9 +424,6 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error&) {
         _activeException = std::current_exception();
-        if(_exceptionBackend) {
-          _exceptionBackend->setException();
-        }
       }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
@@ -458,6 +452,21 @@ namespace ChimeraTK {
      *  no exception is thrown. */
    protected:
     virtual void doPreRead(TransferType) {}
+
+   private:
+    /** Helper function to catch the exceptions. Avoids code duplication. Here, the exception is actually coming
+     *  through, but before setException is called. */
+    void postReadAndHandleExceptions(TransferType type, bool updateDataBuffer) {
+      try {
+        postRead(type, updateDataBuffer);
+      }
+      catch(ChimeraTK::runtime_error&) {
+        if(_exceptionBackend) {
+          _exceptionBackend->setException();
+        }
+        throw;
+      }
+    }
 
    public:
     /** Transfer the data from the device receive buffer into the user buffer,
@@ -510,9 +519,6 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error&) {
         _activeException = std::current_exception();
-        if(_exceptionBackend) {
-          _exceptionBackend->setException();
-        }
       }
       catch(boost::thread_interrupted&) {
         _activeException = std::current_exception();
@@ -547,6 +553,21 @@ namespace ChimeraTK {
      *  no exception is thrown. */
    protected:
     virtual void doPreWrite(TransferType, VersionNumber) {}
+
+   private:
+    /** Helper function to catch the exceptions. Avoids code duplication. Here, the exception is actually coming
+     *  through, but before setException is called. */
+    void postWriteAndHandleExceptions(TransferType type, VersionNumber versionNumber) {
+      try {
+        postWrite(type, versionNumber);
+      }
+      catch(ChimeraTK::runtime_error&) {
+        if(_exceptionBackend) {
+          _exceptionBackend->setException();
+        }
+        throw;
+      }
+    }
 
    public:
     /** Perform any post-write cleanups if necessary. If during preWrite() e.g.
