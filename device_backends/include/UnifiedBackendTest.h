@@ -1982,6 +1982,7 @@ namespace ChimeraTK {
   /**
    *  Test reporting exceptions to exception backend
    *  * \anchor UnifiedTest_TransferElement_B_9_1 \ref transferElement_B_9_1 "B.9.1"
+   *  FIXME: This test is testing base class functionality, so it should be moved to testTransferElement!
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_1() {
