@@ -135,7 +135,10 @@ namespace ChimeraTK { namespace LNMBackend {
       // which results in putting the device back into exception state.
       // The reason why we might need to wait here is that we cannot wait for the thread to terminate in the exception
       // hook, because it might be called from inside the thread.
-      if(_pushParameterWriteThread.joinable()) _pushParameterWriteThread.join();
+      while(_pushParameterWriteThread.joinable()) {
+        _pushParameterReadGroup.interrupt();
+        _pushParameterWriteThread.try_join_for(boost::chrono::milliseconds(100));
+      }
 
       // start write thread
       boost::barrier waitUntilThreadLaunched(2);
