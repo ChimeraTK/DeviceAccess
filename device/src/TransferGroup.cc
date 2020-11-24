@@ -35,7 +35,7 @@ namespace ChimeraTK {
       try {
         // call with updateDataBuffer = false if there has been any ChimeraTK::runtime_error in the transfer phase,
         // true otherwise
-        elem->postRead(TransferType::read, firstDetectedRuntimeError == nullptr);
+        elem->postReadAndHandleExceptions(TransferType::read, firstDetectedRuntimeError == nullptr);
       }
       catch(ChimeraTK::runtime_error&) {
         ++_nRuntimeErrors;
