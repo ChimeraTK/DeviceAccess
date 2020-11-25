@@ -26,6 +26,11 @@ namespace ChimeraTK {
    * enviromenents where no sufficient logging of data is possible through the
    * control system. Any ChimeraTK::Module can act as a data source. Which
    * variables should be logged can be selected through EntityOwner::findTag().
+   * 
+   * ****************************************************************************************************************
+   * IMPORTANT NOTE FOR ALL DEVELOPERS: This module is currently in the process of being moved into its own
+   * repository and package. Please refrain from modifying the code here, as the changes might get lost!
+   * ****************************************************************************************************************
    */
   template<typename TRIGGERTYPE = int32_t>
   class MicroDAQ : public ApplicationModule {
