@@ -111,6 +111,10 @@ namespace ChimeraTK {
         } // end scope for recovery lock
       }
       catch(ChimeraTK::runtime_error& e) {
+        // Report exception to the exception backend. This would be done by the TransferElement base class only if we
+        // would let the exception through, hence we have to take care of this here.
+        this->_exceptionBackend->setException();
+        // Report exception to the DeviceModule
         _deviceModule->reportException(std::string(e.what()) + " (seen by '" + _target->getName() + "')");
       }
     }
@@ -135,6 +139,10 @@ namespace ChimeraTK {
         }
       }
       catch(ChimeraTK::runtime_error& e) {
+        // Report exception to the exception backend. This would be done by the TransferElement base class only if we
+        // would let the exception through, hence we have to take care of this here.
+        this->_exceptionBackend->setException();
+        // Report exception to the DeviceModule
         _deviceModule->reportException(std::string(e.what()) + " (seen by '" + _target->getName() + "')");
         _hasReportedException = true;
       }
