@@ -92,7 +92,10 @@ namespace ChimeraTK {
     StatusMonitorImpl(StatusMonitorImpl&&) = default;
 
     ~StatusMonitorImpl() override {}
-    void prepare() override {}
+    void prepare() override {
+      StatusMonitorImpl<T>::status = OK;
+      StatusMonitorImpl<T>::status.write();
+    }
 
     /**Input value that should be monitored. It is moved one level up, so it's parallel to this monitor object.*/
     struct OneUp : public VariableGroup {
