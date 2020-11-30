@@ -143,6 +143,10 @@ namespace ChimeraTK {
       }
     }
 
+    // determine the offset and length
+    size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
+    size_t actualLength = (numberOfWords > 0 ? numberOfWords : size_t(info->length));
+
     // implementation for each type
     boost::shared_ptr<NDRegisterAccessor<UserType>> ptr;
     if(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
@@ -159,25 +163,22 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Target device for this logical register is not opened. See "
                                      "exception thrown in open()!");
       }
-      // determine the offset and length
-      size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
-      size_t actualLength = (numberOfWords > 0 ? numberOfWords : size_t(info->length));
       // obtain underlying register accessor
       ptr = _targetDevice->getRegisterAccessor<UserType>(
           RegisterPath(info->registerName), actualLength, actualOffset, flags);
     }
     else if(info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
       ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(new LNMBackendChannelAccessor<UserType>(
-          shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          shared_from_this(), registerPathName, actualLength, actualOffset, flags));
     }
     else if(info->targetType == LNMBackendRegisterInfo::TargetType::BIT) {
-      ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(new LNMBackendBitAccessor<UserType>(
-          shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+      ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+          new LNMBackendBitAccessor<UserType>(shared_from_this(), registerPathName, actualLength, actualOffset, flags));
     }
     else if(info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT ||
         info->targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
       ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(new LNMBackendVariableAccessor<UserType>(
-          shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          shared_from_this(), registerPathName, actualLength, actualOffset, flags));
     }
     else {
       throw ChimeraTK::logic_error("For this register type, a RegisterAccessor cannot be obtained (name "

@@ -290,8 +290,8 @@ namespace ChimeraTK {
         info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
         info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
         info->channel = getValueFromXmlSubnode<unsigned int>(element, "targetChannel");
-        info->firstIndex = 0;
-        info->length = 0;
+        info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "targetStartIndex", true, 0);
+        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 0);
         info->nDimensions = 1;
         info->nChannels = 1;
       }
