@@ -266,8 +266,8 @@ namespace ChimeraTK {
     // We have the testable mode lock. The device has not been initialised yet, but from now on the testableMode_deviceInitialisationCounter will take care or it
     testableModeReached = true;
 
-    // flag whether the deviceError.message has already been initialised with a sensible value
-    bool firstAttempt = true;
+    // flag whether the devices was opened+initialised for the first time
+    bool firstSuccess = true;
 
     while(true) {
       // [Spec: 2.3.1] (Re)-open the device.
@@ -280,21 +280,16 @@ namespace ChimeraTK {
         }
         catch(ChimeraTK::runtime_error& e) {
           assert(deviceError.status != 0); // any error must already be reported...
-          if(firstAttempt) {
+          if(std::string(deviceError.message) != e.what()) {
             std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
             // set proper error message in very first attempt to open the device
             deviceError.message = e.what();
             deviceError.setCurrentVersionNumber({});
             deviceError.message.write();
-            firstAttempt = false;
           }
           continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
         }
       } while(!device.isFunctional());
-      if(!firstAttempt) {
-        std::cerr << "Device " << deviceAliasOrURI << " error cleared." << std::endl;
-      }
-      firstAttempt = false;
       owner->testableModeLock("Initialise device");
 
       boost::unique_lock<boost::shared_mutex> errorLock(errorMutex);
@@ -331,10 +326,12 @@ namespace ChimeraTK {
       catch(ChimeraTK::runtime_error& e) {
         assert(deviceError.status != 0); // any error must already be reported...
         // update error message, since it might have been changed...
-        std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
-        deviceError.message = e.what();
-        deviceError.setCurrentVersionNumber({});
-        deviceError.message.write();
+        if(std::string(deviceError.message) != e.what()) {
+          std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+          deviceError.message = e.what();
+          deviceError.setCurrentVersionNumber({});
+          deviceError.message.write();
+        }
         // Jump back to re-opening the device
         continue;
       }
@@ -356,10 +353,12 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error& e) {
         // update error message, since it might have been changed...
-        std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
-        deviceError.message = e.what();
-        deviceError.setCurrentVersionNumber({});
-        deviceError.message.write();
+        if(std::string(deviceError.message) != e.what()) {
+          std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+          deviceError.message = e.what();
+          deviceError.setCurrentVersionNumber({});
+          deviceError.message.write();
+        }
         // Jump back to re-opening the device
         continue;
       }
@@ -383,6 +382,11 @@ namespace ChimeraTK {
       deviceError.setCurrentVersionNumber({});
       deviceError.writeAll();
       deviceBecameFunctional.write();
+
+      if(!firstSuccess) {
+        std::cerr << "Device " << deviceAliasOrURI << " error cleared." << std::endl;
+      }
+      firstSuccess = false;
 
       // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
       // within one "application step"
