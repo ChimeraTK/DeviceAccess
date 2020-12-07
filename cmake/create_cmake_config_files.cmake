@@ -61,6 +61,12 @@ foreach(DEPENDENCY ${${PROJECT_NAME}_PUBLIC_DEPENDENCIES})
     string(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES_L "find_package(${DEPENDENCY} REQUIRED)\n")
 endforeach()
 
+if(TARGET ${PROJECT_NAME})
+  set(${PROJECT_NAME}_HAS_LIBRARY 1)
+else()
+  set(${PROJECT_NAME}_HAS_LIBRARY 0)
+endif()
+
 # we have nested @-statements, so we have to parse twice:
 
 # create the cmake find_package configuration file
