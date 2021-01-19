@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<device_server xmlns="https://github.com/ChimeraTK/ControlSystemAdapter-DoocsAdapter">
+  <location name="Bakery">
+    <property source="/Oven/temperatureReadback">
+      <publish_ZMQ>true</publish_ZMQ>
+    </property>
+    <import>/</import>
+  </location>
+</device_server>

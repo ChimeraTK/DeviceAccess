@@ -1,0 +1,18 @@
+/**
+\page wait_for_new_data Using push-type inputs with AccessMode::wait_for_new_data
+
+Usually the content of device registers are read out synchronously: Whe read() is called in an accessor the hardware is accessed. We call this "poll type" mode. The data transfer is initiated by the application code. The read() operation return immediately after the data transfer, which was initiated by the read operation itself, has finished (non-blocking).
+
+Some accessors provide the possibity to have "push type" operation. In this case the data transfer is initialised by the device. Typical scenarios are interrupts or publish-subcribe patterns where new data is send to the subscriber as soon as it is available.
+In this case the code does not know when the read() operation will return. It is waiting for new data to arrive (blocking).
+
+To activate the push-type behaviour, the flag AccessMode::wait_for_new_data is used when requesting the accessor. You can check in the catalogue whether the particular accors supports  AccessMode::wait_for_new_data. If you reqest this mode but the accessor does not support it, a ChimeraTK::logic_error is thrown.
+
+\include read_temperature_doocs_zmq.cpp
+
+*/
+
+/**
+\example read_temperature_doocs_zmq.cpp
+Example how to activate AccessMode::wait_for_new_data.
+*/
