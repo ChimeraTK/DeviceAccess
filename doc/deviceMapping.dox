@@ -11,7 +11,7 @@ columns:
 Example:
 \li A PCI express device (device node /dev/pciedevs5) with the map file "mps_v00.07.map" get the alias name "MPS"
 \li A pure software dummy device with the map file "DFMC_MD22_v3.0.map" gets the alias name "DUMMY"
-\li A DOOCS control system server with the address "XFEL.RF/TIMER/LLA6M/*" gets the alias name "TIMER"
+\li A DOOCS control system server with the address "XFEL.RF/TIMER/LLA6M" gets the alias name "TIMER"
 
 \verbatim
 MPS (pci:pciedevs5?map=mps_v00.07.map)
