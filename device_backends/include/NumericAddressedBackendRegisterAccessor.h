@@ -47,6 +47,7 @@ namespace ChimeraTK {
       size_t& _startAddress;
       DataConverterType& _dataConverter;
       const bool& _isNotWriteable;
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<UserType>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -59,7 +60,7 @@ namespace ChimeraTK {
       void doPostWrite() {}
     };
 
-    // only int32_t as raw needs special treatment
+    // int32_t as raw needs special treatment
     template<typename DataConverterType>
     struct NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true> {
       // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
@@ -67,6 +68,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int32_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -78,56 +80,136 @@ namespace ChimeraTK {
       void doPostWrite();
     };
 
+    // int16_t as raw needs special treatment
+    template<typename DataConverterType>
+    struct NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true> {
+      // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
+      std::vector<std::vector<int16_t>>& _buffer_2D;
+      boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
+      size_t& _startAddress;
+      const bool& _isNotWriteable;
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
+
+      NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int16_t>>& buffer,
+          boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
+          DataConverterType&, const bool& isNotWriteable)
+      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _isNotWriteable(isNotWriteable) {}
+
+      void doPostRead();
+      void doPreWrite();
+      void doPostWrite();
+    };
+
+    // int8_t as raw needs special treatment
+    template<typename DataConverterType>
+    struct NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true> {
+      // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
+      std::vector<std::vector<int8_t>>& _buffer_2D;
+      boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
+      size_t& _startAddress;
+      const bool& _isNotWriteable;
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
+
+      NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int8_t>>& buffer,
+          boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
+          DataConverterType&, const bool& isNotWriteable)
+      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _isNotWriteable(isNotWriteable) {}
+
+      void doPostRead();
+      void doPreWrite();
+      void doPostWrite();
+    };
+
     template<typename UserType, typename DataConverterType, bool isRaw>
     void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPostRead() {
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      _dataConverter.template vectorToCooked<UserType>(itsrc, itsrc + _buffer_2D[0].size(), _buffer_2D[0].begin());
+      callForRawType(_registerInfo->getDataDescriptor().rawDataType(), [this](auto t) {
+        typedef decltype(t) RawType;
+        auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
+        _dataConverter.template vectorToCooked<UserType>(itsrc, itsrc + _buffer_2D[0].size(), _buffer_2D[0].begin());
+      });
     }
 
     template<typename UserType, typename DataConverterType, bool isRaw>
     void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPreWrite() {
       if(_isNotWriteable) {
-        throw ChimeraTK::logic_error("NumericAddressedBackend: "
-                                     "Writeing to a non-writeable register is not allowed"
-                                     /*"(Register name: " + _registerPathName + ")*/ ".");
+        throw ChimeraTK::logic_error(
+            "NumericAddressedBackend: Writeing to a non-writeable register is not allowed (Register name: " +
+            _registerInfo->getRegisterName() + ").");
       }
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      for(auto itdst = _buffer_2D[0].begin(); itdst != _buffer_2D[0].end(); ++itdst) {
-        *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
-        ++itsrc;
-      }
+      callForRawType(_registerInfo->getDataDescriptor().rawDataType(), [this](auto t) {
+        typedef decltype(t) RawType;
+        auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
+        for(auto itdst = _buffer_2D[0].begin(); itdst != _buffer_2D[0].end(); ++itdst) {
+          *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
+          ++itsrc;
+        }
+      });
     }
 
     // special implementations for int32 raw
     template<typename DataConverterType>
     void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPostRead() {
-      if(!_rawAccessor->isShared) {
-        _buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
-      }
-      else {
-        auto itsrc = _rawAccessor->begin(_startAddress);
-        auto itdst = _buffer_2D[0].begin();
-        memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
-      }
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      auto itdst = _buffer_2D[0].begin();
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
     }
 
     template<typename DataConverterType>
     void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPreWrite() {
-      if(!_rawAccessor->isShared) {
-        _buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
-      }
-      else {
-        auto itdst = _rawAccessor->begin(_startAddress);
-        auto itsrc = _buffer_2D[0].begin();
-        memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
-      }
+      auto itdst = _rawAccessor->begin(_startAddress);
+      auto itsrc = _buffer_2D[0].begin();
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
     }
 
     template<typename DataConverterType>
     void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPostWrite() {
-      if(!_rawAccessor->isShared) {
-        _buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
-      }
+      auto itdst = _buffer_2D[0].begin();
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
+    }
+
+    // special implementations for int16 raw
+    template<typename DataConverterType>
+    void NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true>::doPostRead() {
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      auto itdst = _buffer_2D[0].begin();
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int16_t));
+    }
+
+    template<typename DataConverterType>
+    void NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true>::doPreWrite() {
+      auto itdst = _rawAccessor->begin(_startAddress);
+      auto itsrc = _buffer_2D[0].begin();
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int16_t));
+    }
+
+    template<typename DataConverterType>
+    void NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true>::doPostWrite() {
+      auto itdst = _buffer_2D[0].begin();
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int16_t));
+    }
+
+    // special implementations for int8 raw
+    template<typename DataConverterType>
+    void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPostRead() {
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      auto itdst = _buffer_2D[0].begin();
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int8_t));
+    }
+
+    template<typename DataConverterType>
+    void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPreWrite() {
+      auto itdst = _rawAccessor->begin(_startAddress);
+      auto itsrc = _buffer_2D[0].begin();
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int8_t));
+    }
+
+    template<typename DataConverterType>
+    void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPostWrite() {
+      auto itdst = _buffer_2D[0].begin();
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int8_t));
     }
 
   } // namespace detail
@@ -158,9 +240,10 @@ namespace ChimeraTK {
 
       // obtain register information
       boost::shared_ptr<RegisterInfo> info = _dev->getRegisterInfo(registerPathName);
+      _prePostActionsImplementor._registerInfo = info;
       _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
       _bar = _registerInfo->bar;
-      _startAddress = _registerInfo->address + wordOffsetInRegister * sizeof(int32_t);
+      _startAddress = _registerInfo->address + wordOffsetInRegister * _registerInfo->nBytesPerElement();
 
       // check number of words
       if(_numberOfWords == 0) {
@@ -179,7 +262,8 @@ namespace ChimeraTK {
 
       // create low-level transfer element handling the actual data transfer to
       // the hardware with raw data
-      _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev, _bar, _startAddress, _numberOfWords));
+      _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(
+          _dev, _bar, _startAddress, _numberOfWords * _registerInfo->nBytesPerElement()));
 
       // allocated the buffers
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
@@ -191,12 +275,11 @@ namespace ChimeraTK {
       _dataConverter = detail::createDataConverter<DataConverterType>(_registerInfo);
 
       if(flags.has(AccessMode::raw)) {
-        if(typeid(UserType) != typeid(int32_t)) {
-          throw ChimeraTK::logic_error("Given UserType when obtaining the "
-                                       "NumericAddressedBackendRegisterAccessor in raw mode does not "
-                                       "match the expected type. Use an int32_t instead! (Register "
-                                       "name: " +
-              _registerPathName + "')");
+        if(DataType(typeid(UserType)) != _registerInfo->getDataDescriptor().rawDataType()) {
+          throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in "
+                                       "raw mode does not match the expected type. Use an " +
+              _registerInfo->getDataDescriptor().rawDataType().getAsString() +
+              " instead! (Register name: " + _registerPathName + "')");
         }
         // FIXME: this has to move to the creation
         //isRaw = true;
@@ -334,8 +417,8 @@ namespace ChimeraTK {
         size_t newStartAddress = std::min(casted->_startAddress, _rawAccessor->_startAddress);
         size_t newStopAddress = std::max(
             casted->_startAddress + casted->_numberOfBytes, _rawAccessor->_startAddress + _rawAccessor->_numberOfBytes);
-        size_t newNumberOfWords = (newStopAddress - newStartAddress) / sizeof(int32_t);
-        casted->changeAddress(newStartAddress, newNumberOfWords);
+        size_t newNumberOfBytes = newStopAddress - newStartAddress;
+        casted->changeAddress(newStartAddress, newNumberOfBytes);
         _rawAccessor = casted;
       }
       _rawAccessor->setExceptionBackend(this->_exceptionBackend);
@@ -354,6 +437,26 @@ namespace ChimeraTK {
       static RawT toRaw(DataConverterType&, CookedT&) {
         throw ChimeraTK::logic_error("Seting as cooked is only available for raw accessors!");
       }
+    };
+    template<typename CookedT>
+    struct dataConverterTemplateSpecialisationHelper<int8_t, CookedT> {
+      static void vectorToCooked(DataConverterType& dataConverter,
+          const typename std::vector<int8_t>::const_iterator& start,
+          const typename std::vector<int8_t>::const_iterator& end,
+          const typename std::vector<CookedT>::iterator& cooked) {
+        dataConverter.template vectorToCooked<CookedT>(start, end, cooked);
+      }
+      static int8_t toRaw(DataConverterType& dataConverter, CookedT& value) { return dataConverter.toRaw(value); }
+    };
+    template<typename CookedT>
+    struct dataConverterTemplateSpecialisationHelper<int16_t, CookedT> {
+      static void vectorToCooked(DataConverterType& dataConverter,
+          const typename std::vector<int16_t>::const_iterator& start,
+          const typename std::vector<int16_t>::const_iterator& end,
+          const typename std::vector<CookedT>::iterator& cooked) {
+        dataConverter.template vectorToCooked<CookedT>(start, end, cooked);
+      }
+      static int16_t toRaw(DataConverterType& dataConverter, CookedT& value) { return dataConverter.toRaw(value); }
     };
     template<typename CookedT>
     struct dataConverterTemplateSpecialisationHelper<int32_t, CookedT> {

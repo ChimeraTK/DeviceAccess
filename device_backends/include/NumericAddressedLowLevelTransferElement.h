@@ -34,24 +34,24 @@ namespace ChimeraTK {
   class NumericAddressedLowLevelTransferElement : public TransferElement {
    public:
     NumericAddressedLowLevelTransferElement(
-        boost::shared_ptr<NumericAddressedBackend> dev, size_t bar, size_t startAddress, size_t numberOfWords)
+        boost::shared_ptr<NumericAddressedBackend> dev, size_t bar, size_t startAddress, size_t numberOfBytes)
     : TransferElement("", {AccessMode::raw}), _dev(dev), _bar(bar), isShared(false) {
       if(bar > 5 && bar != 13) {
         std::stringstream errorMessage;
         errorMessage << "Invalid bar number: " << bar << std::endl;
         throw ChimeraTK::logic_error(errorMessage.str());
       }
-      setAddress(startAddress, numberOfWords);
+      setAddress(startAddress, numberOfBytes);
     }
 
     virtual ~NumericAddressedLowLevelTransferElement() {}
 
     void doReadTransferSynchronously() override {
-      _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
+      _dev->read(_bar, _startAddress, (int32_t*)rawDataBuffer.data(), _numberOfBytes);
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override {
-      _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
+      _dev->write(_bar, _startAddress, (int32_t*)rawDataBuffer.data(), _numberOfBytes);
       return false;
     }
 
@@ -98,16 +98,14 @@ namespace ChimeraTK {
 
     bool isWriteable() const override { return true; }
 
-    /** Return accessor to the begin of the raw buffer matching the given address.
+    /** Return pointer to the begin of the raw buffer matching the given address.
      * No end() is provided, since the NumericAddressedBackendRegisterAccessor
      * using this functionality uses the cooked buffer for this check. Only
      * addresses within the range specified in the constructor or changeAddress()
      * may be passed. The address must also have an integer multiple of the word
      * size as an offset w.r.t. the start address specified in the constructor.
      * Otherwise an undefined behaviour will occur! */
-    std::vector<int32_t>::iterator begin(size_t addressInBar) {
-      return rawDataBuffer.begin() + (addressInBar - _startAddress) / sizeof(int32_t);
-    }
+    uint8_t* begin(size_t addressInBar) { return rawDataBuffer.data() + (addressInBar - _startAddress); }
 
     /** Change the start address (inside the bar given in the constructor) and
      * number of words of this accessor,  and set the shared flag. */
@@ -124,16 +122,13 @@ namespace ChimeraTK {
    protected:
     /** Set the start address (inside the bar given in the constructor) and number
      * of words of this accessor. */
-    void setAddress(size_t startAddress, size_t numberOfWords) {
+    void setAddress(size_t startAddress, size_t numberOfBytes) {
       // change address
       _startAddress = startAddress;
-      _numberOfWords = numberOfWords;
+      _numberOfBytes = numberOfBytes;
 
-      // allocated the buffer
-      rawDataBuffer.resize(_numberOfWords);
-
-      // compute number of bytes
-      _numberOfBytes = _numberOfWords * sizeof(int32_t);
+      // Allocated the buffer
+      rawDataBuffer.resize(numberOfBytes);
 
       // update the name
       _name = "NALLTE:" + std::to_string(_startAddress) + "+" + std::to_string(_numberOfBytes);
@@ -148,9 +143,6 @@ namespace ChimeraTK {
     /** start address w.r.t. the PCIe bar */
     size_t _startAddress;
 
-    /** number of 4-byte words to access */
-    size_t _numberOfWords;
-
     /** number of bytes to access */
     size_t _numberOfBytes;
 
@@ -159,7 +151,7 @@ namespace ChimeraTK {
     bool isShared;
 
     /** raw buffer */
-    std::vector<int32_t> rawDataBuffer;
+    std::vector<uint8_t> rawDataBuffer;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};

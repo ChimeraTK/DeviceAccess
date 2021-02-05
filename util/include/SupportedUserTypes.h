@@ -642,6 +642,35 @@ namespace ChimeraTK {
     }
   }
 
+  /**
+   *  callForRawType() is similar to callForType(), just with a subset of supported data types which can be raw types
+   *  in the NumericAddressedBackend.
+   */
+  template<typename LAMBDATYPE>
+  void callForRawType(const DataType& type, LAMBDATYPE lambda) {
+    switch(DataType::TheType(type)) {
+      case DataType::int8: {
+        lambda(int8_t());
+      } break;
+      case DataType::int16: {
+        lambda(int16_t());
+      } break;
+      case DataType::int32: {
+        lambda(int32_t());
+      } break;
+      default:
+        class myBadCast : public std::bad_cast {
+         public:
+          myBadCast(const std::string& desc) : _desc(desc) {}
+          const char* what() const noexcept override { return _desc.c_str(); }
+
+         private:
+          std::string _desc;
+        };
+        throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
+    }
+  }
+
 } /* namespace ChimeraTK */
 
 #endif /* CHIMERA_TK_SUPPORTED_USER_TYPES_H */
