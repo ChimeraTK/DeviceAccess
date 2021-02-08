@@ -10,3 +10,13 @@
 /FixedPoint/value                 1 32 4 1 32 8 1 RW
 /Deep/Hierarchies/Need/Tests/As/well  1 36 4 1 32 0 1 RW
 /Deep/Hierarchies/Need/Another/test   1 40 4 1 32 0 1 RW
+
+# These registers are only 16 rep. 8 bit wide. They overlap with /Integers/unsigned32 to allow cross checks
+/ShortRaw/signed16                1 12 2 1 16 0 1 RW
+/ShortRaw/unsigned16              1 14 2 1 16 0 0 RW
+/ShortRaw/fixedPoint16_8u         1 12 2 1 16 8 0 RW
+/ShortRaw/fixedPoint16_8s         1 14 2 1 16 8 1 RW
+/ByteRaw/signed8                  1 12 1 1  8 0 1 RW
+/ByteRaw/unsigned8                1 13 1 1  8 0 0 RW
+/ByteRaw/fixedPoint8_4u           1 14 1 1  8 4 0 RW
+/ByteRaw/fixedPoint8_4s           1 15 1 1  8 4 1 RW
