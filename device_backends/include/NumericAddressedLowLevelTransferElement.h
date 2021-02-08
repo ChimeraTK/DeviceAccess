@@ -127,8 +127,19 @@ namespace ChimeraTK {
       _startAddress = startAddress;
       _numberOfBytes = numberOfBytes;
 
+      // make sure access is properly aligned
+      auto alignment = _dev->minimumTransferAlignment();
+      auto start_padding = _startAddress % alignment;
+      assert(_startAddress >= start_padding);
+      _startAddress -= start_padding;
+      _numberOfBytes += start_padding;
+      auto end_padding = alignment - _numberOfBytes % alignment;
+      if(end_padding != alignment) {
+        _numberOfBytes += end_padding;
+      }
+
       // Allocated the buffer
-      rawDataBuffer.resize(numberOfBytes);
+      rawDataBuffer.resize(_numberOfBytes);
 
       // update the name
       _name = "NALLTE:" + std::to_string(_startAddress) + "+" + std::to_string(_numberOfBytes);
