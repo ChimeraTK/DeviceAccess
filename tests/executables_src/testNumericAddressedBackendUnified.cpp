@@ -83,7 +83,9 @@ struct ShortRaw_base {
 
   static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
-  DummyRegisterRawAccessor acc{exceptionDummy, "", derived->path()};
+  // This register shares the address space with all our test registers. It gives us direct access to the 4 byte
+  // address range, so we can test the correct placement of the unaligned values.
+  DummyRegisterRawAccessor acc{exceptionDummy, "", "/Integers/unsigned32"};
 
   rawUserType get() { return (acc & derived->bitmask) >> derived->bitshift; }
   void set(rawUserType val) {
@@ -93,20 +95,23 @@ struct ShortRaw_base {
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
-    UserType v = (get() + derived->rawIncrement) * derived->rawToCooked;
+    UserType v = ((rawUserType)(get() + derived->rawIncrement)) * derived->rawToCooked;
+    /* std::cout << "generateValue " << derived->path() << " " << float(rawUserType(get() + derived->rawIncrement))
+              << " -> " << float(v) << std::endl; */
     return {{v}};
   }
 
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue() {
     UserType v = get() * derived->rawToCooked;
+    /* std::cout << "getRemoteValue " << derived->path() << " " << float(get()) << " -> " << float(v) << std::endl; */
     return {{v}};
   }
 
   void setRemoteValue() {
     set(get() + derived->rawIncrement);
-    std::cout << "setRemoteValue " << derived->path() << " " << float(get()) << " -> " << getRemoteValue<float>()[0][0]
-              << std::endl;
+    /* std::cout << "setRemoteValue " << derived->path() << " " << float(get()) << " -> " << getRemoteValue<float>()[0][0]
+              << std::endl; */
   }
 
   void setForceRuntimeError(bool enable, size_t) {
@@ -122,7 +127,10 @@ struct ShortRaw_signed16 : ShortRaw_base<ShortRaw_signed16, int16_t> {
   typedef int16_t minimumUserType;
 
   int16_t rawToCooked = 1;
-  int16_t rawIncrement = 5;
+  // The rawIncrements are chosen such that we generate different values for different variables, and to cover the
+  // specific value range with very few values (to check signed vs. unsigned). Uncomment the above couts in the base
+  // class to check the generated values.
+  int16_t rawIncrement = 17117;
   int bitshift = 0;
   int32_t bitmask = 0x0000FFFF;
 };
@@ -134,7 +142,7 @@ struct ShortRaw_unsigned16 : ShortRaw_base<ShortRaw_unsigned16, uint16_t> {
   typedef uint16_t minimumUserType;
 
   int16_t rawToCooked = 1;
-  int16_t rawIncrement = 11;
+  int16_t rawIncrement = 17119;
   int bitshift = 16;
   int32_t bitmask = 0xFFFF0000;
 };
@@ -146,7 +154,7 @@ struct ShortRaw_fixedPoint16_8u : ShortRaw_base<ShortRaw_fixedPoint16_8u, uint16
   typedef float minimumUserType;
 
   float rawToCooked = 1. / 256.;
-  int16_t rawIncrement = 17;
+  int16_t rawIncrement = 17121;
   int bitshift = 0;
   int32_t bitmask = 0x0000FFFF;
 };
@@ -158,7 +166,7 @@ struct ShortRaw_fixedPoint16_8s : ShortRaw_base<ShortRaw_fixedPoint16_8s, int16_
   typedef float minimumUserType;
 
   float rawToCooked = 1. / 256.;
-  int16_t rawIncrement = 19;
+  int16_t rawIncrement = 17123;
   int bitshift = 16;
   int32_t bitmask = 0xFFFF0000;
 };
@@ -170,7 +178,7 @@ struct ByteRaw_signed8 : ShortRaw_base<ByteRaw_signed8, int8_t> {
   typedef int8_t minimumUserType;
 
   int8_t rawToCooked = 1;
-  int8_t rawIncrement = 23;
+  int8_t rawIncrement = 119;
   int bitshift = 0;
   int32_t bitmask = 0x000000FF;
 };
@@ -182,7 +190,7 @@ struct ByteRaw_unsigned8 : ShortRaw_base<ByteRaw_unsigned8, uint8_t> {
   typedef uint8_t minimumUserType;
 
   uint8_t rawToCooked = 1;
-  int8_t rawIncrement = 29;
+  int8_t rawIncrement = 121;
   int bitshift = 8;
   int32_t bitmask = 0x0000FF00;
 };
@@ -194,7 +202,7 @@ struct ByteRaw_fixedPoint8_4u : ShortRaw_base<ByteRaw_fixedPoint8_4u, uint8_t> {
   typedef float minimumUserType;
 
   float rawToCooked = 1. / 16.;
-  int8_t rawIncrement = 37;
+  int8_t rawIncrement = 123;
   int bitshift = 16;
   int32_t bitmask = 0x00FF0000;
 };
@@ -206,7 +214,7 @@ struct ByteRaw_fixedPoint8_4s : ShortRaw_base<ByteRaw_fixedPoint8_4s, int8_t> {
   typedef float minimumUserType;
 
   float rawToCooked = 1. / 16.;
-  int8_t rawIncrement = 41;
+  int8_t rawIncrement = 125;
   int bitshift = 24;
   int32_t bitmask = 0xFF000000;
 };
