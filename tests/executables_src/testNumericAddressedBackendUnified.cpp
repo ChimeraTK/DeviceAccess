@@ -49,6 +49,7 @@ struct Integers_signed32 {
                                            .disableForceDataLossWrite()
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
                                            .disableTestWriteNeverLosesData();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
@@ -99,6 +100,7 @@ struct ShortRaw_base {
                                            .disableForceDataLossWrite()
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
                                            .disableTestWriteNeverLosesData();
 
   // This register shares the address space with all our test registers. It gives us direct access to the 4 byte
@@ -270,6 +272,7 @@ struct MuxedNodma {
                                            .disableForceDataLossWrite()
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
                                            .disableTestWriteNeverLosesData();
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
