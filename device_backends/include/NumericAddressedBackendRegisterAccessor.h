@@ -57,7 +57,6 @@ namespace ChimeraTK {
 
       void doPostRead();
       void doPreWrite();
-      void doPostWrite() {}
     };
 
     // int32_t as raw needs special treatment
@@ -77,7 +76,6 @@ namespace ChimeraTK {
 
       void doPostRead();
       void doPreWrite();
-      void doPostWrite();
     };
 
     // int16_t as raw needs special treatment
@@ -97,7 +95,6 @@ namespace ChimeraTK {
 
       void doPostRead();
       void doPreWrite();
-      void doPostWrite();
     };
 
     // int8_t as raw needs special treatment
@@ -117,7 +114,6 @@ namespace ChimeraTK {
 
       void doPostRead();
       void doPreWrite();
-      void doPostWrite();
     };
 
     template<typename UserType, typename DataConverterType, bool isRaw>
@@ -161,13 +157,6 @@ namespace ChimeraTK {
       memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
     }
 
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPostWrite() {
-      auto itdst = _buffer_2D[0].begin();
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
-    }
-
     // special implementations for int16 raw
     template<typename DataConverterType>
     void NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true>::doPostRead() {
@@ -183,13 +172,6 @@ namespace ChimeraTK {
       memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int16_t));
     }
 
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true>::doPostWrite() {
-      auto itdst = _buffer_2D[0].begin();
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int16_t));
-    }
-
     // special implementations for int8 raw
     template<typename DataConverterType>
     void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPostRead() {
@@ -202,13 +184,6 @@ namespace ChimeraTK {
     void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPreWrite() {
       auto itdst = _rawAccessor->begin(_startAddress);
       auto itsrc = _buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int8_t));
-    }
-
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPostWrite() {
-      auto itdst = _buffer_2D[0].begin();
-      auto itsrc = _rawAccessor->begin(_startAddress);
       memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int8_t));
     }
 
@@ -325,9 +300,6 @@ namespace ChimeraTK {
     }
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override {
-      // execute the implementor's doPostWrite unconditionally (swaps back the buffers) at the end of
-      // this functnion, even if the delegated postWrite() throws.
-      auto _ = cppext::finally([&] { _prePostActionsImplementor.doPostWrite(); });
       if(!_dev->isOpen()) return; // do not delegate if exception was thrown by us in doPreWrite
       _rawAccessor->setActiveException(this->_activeException);
       _rawAccessor->postWrite(type, versionNumber);
