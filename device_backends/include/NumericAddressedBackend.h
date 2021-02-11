@@ -5,10 +5,13 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "DeviceBackendImpl.h"
 
 namespace ChimeraTK {
+
+  class NumericAddressedLowLevelTransferElement;
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
@@ -70,9 +73,14 @@ namespace ChimeraTK {
     /// map from register names to addresses
     boost::shared_ptr<RegisterInfoMap> _registerMap;
 
+    /// mutex for protecting unaligned access
+    std::mutex _unalignedAccess;
+
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
+    friend NumericAddressedLowLevelTransferElement;
   };
 
 } // namespace ChimeraTK

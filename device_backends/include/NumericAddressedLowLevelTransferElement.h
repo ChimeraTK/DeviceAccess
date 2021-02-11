@@ -35,7 +35,8 @@ namespace ChimeraTK {
    public:
     NumericAddressedLowLevelTransferElement(
         boost::shared_ptr<NumericAddressedBackend> dev, size_t bar, size_t startAddress, size_t numberOfBytes)
-    : TransferElement("", {AccessMode::raw}), _dev(dev), _bar(bar), isShared(false) {
+    : TransferElement("", {AccessMode::raw}), _dev(dev), _bar(bar), isShared(false),
+      _unalignedAccess(_dev->_unalignedAccess, std::defer_lock) {
       if(bar > 5 && bar != 13) {
         std::stringstream errorMessage;
         errorMessage << "Invalid bar number: " << bar << std::endl;
@@ -47,11 +48,11 @@ namespace ChimeraTK {
     virtual ~NumericAddressedLowLevelTransferElement() {}
 
     void doReadTransferSynchronously() override {
-      _dev->read(_bar, _startAddress, (int32_t*)rawDataBuffer.data(), _numberOfBytes);
+      _dev->read(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override {
-      _dev->write(_bar, _startAddress, (int32_t*)rawDataBuffer.data(), _numberOfBytes);
+      _dev->write(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
       return false;
     }
 
@@ -59,6 +60,19 @@ namespace ChimeraTK {
       if(hasNewData) {
         // it is aceptable to create a new version numerber only in doPostRead because the LowLevelTransferElement never has wait_for_new_data.
         _versionNumber = {};
+      }
+    }
+
+    void doPreWrite(TransferType, VersionNumber) override {
+      if(_isUnaligned) {
+        _unalignedAccess.lock();
+        _dev->read(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
+      }
+    }
+
+    void doPostWrite(TransferType, VersionNumber) override {
+      if(_unalignedAccess.owns_lock()) {
+        _unalignedAccess.unlock();
       }
     }
 
@@ -128,13 +142,16 @@ namespace ChimeraTK {
       _numberOfBytes = numberOfBytes;
 
       // make sure access is properly aligned
+      _isUnaligned = false;
       auto alignment = _dev->minimumTransferAlignment();
       auto start_padding = _startAddress % alignment;
       assert(_startAddress >= start_padding);
+      if(start_padding > 0) _isUnaligned = true;
       _startAddress -= start_padding;
       _numberOfBytes += start_padding;
       auto end_padding = alignment - _numberOfBytes % alignment;
       if(end_padding != alignment) {
+        _isUnaligned = true;
         _numberOfBytes += end_padding;
       }
 
@@ -160,6 +177,12 @@ namespace ChimeraTK {
     /** flag if changeAddress() has been called, which is this low-level transfer
      * element is shared between multiple accessors */
     bool isShared;
+
+    /** flag whether access is unaligned */
+    bool _isUnaligned{false};
+
+    /** Lock to protect unaligned access (with mutex from backend) */
+    std::unique_lock<std::mutex> _unalignedAccess;
 
     /** raw buffer */
     std::vector<uint8_t> rawDataBuffer;

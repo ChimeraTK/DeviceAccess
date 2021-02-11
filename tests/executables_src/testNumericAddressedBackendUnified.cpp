@@ -45,7 +45,11 @@ struct Integers_signed32 {
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableTestWriteNeverLosesData();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
@@ -81,15 +85,32 @@ struct ShortRaw_base {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  // The padding (i.e. the bits of the 32 bit word which are not part of the register under test but of the neighbouring
+  // registers) needs to be checked to be unchanged in write operations. This test assumes that in between the calls to
+  // generateValue() and getRemoteValue() the padding bits are not *intentionally* changed (e.g. by testing another
+  // register in between). This is true for the UnifiedBackendTest right now.
+  // TODO: In future it may be better to foresee a "no-side-effect" test in the UnifiedBackendTest, which tests that
+  // other registers stay unchanged (caveat: need to specify which registers to look at! We have intentionally
+  // overlapping registers in this test which of course will change!)
+  int32_t lastPadding{0};
+  bool printPaddingChangedMessage{true};
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableTestWriteNeverLosesData();
 
   // This register shares the address space with all our test registers. It gives us direct access to the 4 byte
   // address range, so we can test the correct placement of the unaligned values.
   DummyRegisterRawAccessor acc{exceptionDummy, "", "/Integers/unsigned32"};
 
   rawUserType get() { return (acc & derived->bitmask) >> derived->bitshift; }
+
   void set(rawUserType val) {
     acc &= ~derived->bitmask;
+    lastPadding = acc;
+    printPaddingChangedMessage = true;
     acc |= (val << derived->bitshift) & derived->bitmask;
   }
 
@@ -98,12 +119,23 @@ struct ShortRaw_base {
     UserType v = ((rawUserType)(get() + derived->rawIncrement)) * derived->rawToCooked;
     /* std::cout << "generateValue " << derived->path() << " " << float(rawUserType(get() + derived->rawIncrement))
               << " -> " << float(v) << std::endl; */
+    lastPadding = acc & ~derived->bitmask;
+    printPaddingChangedMessage = true;
     return {{v}};
   }
 
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue() {
     UserType v = get() * derived->rawToCooked;
+    if((acc & ~derived->bitmask) != lastPadding) {
+      if(printPaddingChangedMessage) {
+        std::cerr << "getRemoteValue(): Padding data has changed. Test will be failed by returing a false remote value "
+                  << "(off by one)." << std::endl;
+        printPaddingChangedMessage = false;
+      }
+      v++;
+      return {{v}};
+    }
     /* std::cout << "getRemoteValue " << derived->path() << " " << float(get()) << " -> " << float(v) << std::endl; */
     return {{v}};
   }
@@ -234,7 +266,11 @@ struct MuxedNodma {
   typedef uint16_t minimumUserType;
   typedef minimumUserType rawUserType;
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableTestWriteNeverLosesData();
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 

@@ -264,11 +264,11 @@ namespace ChimeraTK {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
     }
 
-    void doReadTransferSynchronously() override { _rawAccessor->read(); }
+    void doReadTransferSynchronously() override { _rawAccessor->readTransfer(); }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
       assert(!TransferElement::_isInTransferGroup);
-      _rawAccessor->write(versionNumber);
+      _rawAccessor->writeTransfer(versionNumber);
       return false;
     }
 
@@ -289,9 +289,11 @@ namespace ChimeraTK {
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+      // raw accessor preWrite must be called before our _prePostActionsImplementor.doPreWrite(), as it needs to
+      // prepare the buffer in case of unaligned access and acquire the lock.
+      _rawAccessor->preWrite(type, versionNumber);
       _prePostActionsImplementor.doPreWrite();
       _rawAccessor->setDataValidity(this->_dataValidity);
-      _rawAccessor->preWrite(type, versionNumber);
     }
 
     void doPreRead(TransferType type) override {
