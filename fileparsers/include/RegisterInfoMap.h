@@ -109,6 +109,8 @@ namespace ChimeraTK {
                                         and write */
       Type dataType;           /**< Data type (fixpoint, floating point)*/
 
+      uint32_t nBytesPerElement() const { return nElements > 0 ? nBytes / nElements : 0; }
+
       friend std::ostream& operator<<(std::ostream& os, const RegisterInfo& registerInfo);
 
       /// Constructor to set all data members. They all have default values, so

@@ -280,6 +280,27 @@ namespace ChimeraTK {
   : name(name_), nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_), address(address_),
     nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_), signedFlag(signedFlag_),
     module(module_), registerAccess(dataAccess_), dataType(dataType_) {
+    if(nBytes_ > 0 && nElements_ > 0) {
+      if(nBytes_ % nElements_ != 0) {
+        // nBytes_ must be divisible by nElements_
+        throw logic_error(
+            "Number of bytes is not a multiple of number of elements for register " + name_ + ". Check your map file!");
+      }
+    }
+    DataType rawDataInfo;
+    if(nBytesPerElement() == 1 && !is2DMultiplexed_) {
+      rawDataInfo = DataType::int8;
+    }
+    else if(nBytesPerElement() == 2 && !is2DMultiplexed_) {
+      rawDataInfo = DataType::int16;
+    }
+    else if(nBytesPerElement() == 4 && !is2DMultiplexed_) {
+      rawDataInfo = DataType::int32;
+    }
+    else {
+      rawDataInfo = DataType::none;
+    }
+
     if(dataType == IEEE754) {
       if(width == 32) {
         // Largest possible number +- 3e38, smallest possible number 1e-45
@@ -303,12 +324,11 @@ namespace ChimeraTK {
             DataType::int64);
       }
       else {
-        throw logic_error("Wrong data width for data type IEEE754. Check your map file!");
+        throw logic_error("Wrong data width for data type IEEE754 for register " + name_ + ". Check your map file!");
       }
     }
     else if(dataType == FIXED_POINT) {
       if(width > 1) { // numeric type
-        DataType rawDataInfo = (is2DMultiplexed_ ? DataType::none : DataType::int32);
 
         if(nFractionalBits_ > 0) {
           size_t nDigits =

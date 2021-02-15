@@ -200,10 +200,13 @@ namespace ChimeraTK {
         maxWidth = std::max(maxWidth, subInfo.width);
       }
       if(nChannels == 0) continue;
+      // Compute number of elements. Note that there may be additional padding bytes specified in the map file. The
+      // integer division is then rounding down, so it may be that nElements * nBytesPerEntry != info.nBytes.
       nElements = info.nBytes / nBytesPerEntry;
       // add it to the map
-      RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, info.nBytes, info.bar, maxWidth,
-          (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, info.module, nChannels, true, info.registerAccess);
+      RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, nElements * nBytesPerEntry, info.bar,
+          maxWidth, (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, info.module, nChannels, true,
+          info.registerAccess);
       newInfos.push_back(newEntry);
     }
     // insert the new entries to the catalogue

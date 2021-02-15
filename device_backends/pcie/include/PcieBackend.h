@@ -51,6 +51,8 @@ namespace ChimeraTK {
     /** This function is the same for one or multiple words */
     void directRead(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
 
+    size_t minimumTransferAlignment() const override { return 4; }
+
     /** constructor called through createInstance to create device object */
 
    public:

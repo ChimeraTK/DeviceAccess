@@ -47,6 +47,8 @@ namespace ChimeraTK {
 
     virtual ~DummyBackendBase() {}
 
+    size_t minimumTransferAlignment() const override { return 4; }
+
    protected:
     RegisterInfoMapPointer _registerMapping;
 

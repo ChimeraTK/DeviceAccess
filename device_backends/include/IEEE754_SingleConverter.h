@@ -32,8 +32,12 @@ namespace ChimeraTK {
     template<typename CookedType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
     void vectorToCooked(
         const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end, const COOKED_ITERATOR& cooked_begin) const {
-      static_assert(std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value,
-          "RAW_ITERATOR template argument must be an iterator with value type equal to int32_t.");
+      // Note: IEEE754_SingleConverter must be instantiable for all raw user types but can only be used for int32_t
+      assert((std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value));
+      static_assert(std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int8_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int16_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value,
+          "RAW_ITERATOR template argument must be an iterator with value type equal to int8_t, int16_t or int32_t.");
       static_assert(std::is_same<typename std::iterator_traits<COOKED_ITERATOR>::value_type, CookedType>::value,
           "COOKED_ITERATOR template argument must be an iterator with value type equal to the CookedType template "
           "argument.");

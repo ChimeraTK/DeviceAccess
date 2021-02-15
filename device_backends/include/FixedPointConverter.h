@@ -65,8 +65,10 @@ namespace ChimeraTK {
       static_assert(std::is_same<typename std::iterator_traits<COOKED_ITERATOR>::iterator_category,
                         std::random_access_iterator_tag>::value,
           "COOKED_ITERATOR template argument must be a random access iterator.");
-      static_assert(std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value,
-          "RAW_ITERATOR template argument must be an iterator with value type equal to int32_t");
+      static_assert(std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int8_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int16_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value,
+          "RAW_ITERATOR template argument must be an iterator with value type equal to int8_t, int16_t or int32_t");
       static_assert(std::is_same<typename std::iterator_traits<COOKED_ITERATOR>::value_type, UserType>::value,
           "COOKED_ITERATOR template argument must be an iterator with value type equal to the UserType template "
           "argument.");
@@ -241,14 +243,14 @@ namespace ChimeraTK {
     // Handle integer and floating-point types differently.
     switch(boost::fusion::at_key<UserType>(fpc.conversionBranch_toCooked.table)) {
       case 1: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](auto rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](int32_t rawValue) {
           fpc.padUnusedBits(rawValue);
           return numericToUserType<UserType>(*(reinterpret_cast<uint32_t*>(&rawValue)));
         });
         break;
       }
       case 2: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](auto rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](int32_t rawValue) {
           fpc.padUnusedBits(rawValue);
           return numericToUserType<UserType>(rawValue);
         });
@@ -296,7 +298,7 @@ namespace ChimeraTK {
       }
       case 3: { // !_fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](auto rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](int32_t rawValue) {
           fpc.padUnusedBits(rawValue);
           return numericToUserType<UserType>(f * *(reinterpret_cast<uint32_t*>(&rawValue)));
         });
@@ -304,7 +306,7 @@ namespace ChimeraTK {
       }
       case 4: { // _fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](auto rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](int32_t rawValue) {
           fpc.padUnusedBits(rawValue);
           auto ttt = numericToUserType<UserType>(f * rawValue);
           return ttt;

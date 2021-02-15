@@ -72,6 +72,8 @@ namespace ChimeraTK {
 
     void setException() override { _hasActiveException = true; }
 
+    size_t minimumTransferAlignment() const override { return 4; }
+
    protected:
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
     boost::thread _heartbeatThread;

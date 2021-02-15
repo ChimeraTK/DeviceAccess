@@ -5,10 +5,13 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "DeviceBackendImpl.h"
 
 namespace ChimeraTK {
+
+  class NumericAddressedLowLevelTransferElement;
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
@@ -42,6 +45,20 @@ namespace ChimeraTK {
      */
     virtual bool canMergeRequests() const { return true; }
 
+    /**
+     * @brief Determines the supported minimum alignment for any read/write requests.
+     *
+     * If the backend expects a particular alignment for read()/write() calls it should return a value biggern than 1.
+     * The address and sizeInBytes arguments of the read()/write() calls will be always an integer multiple of this
+     * number. Any unaligned transfers will be changed to meet these criteria (additional padding data will be thrown
+     * away).
+     *
+     * The default implementation returns 1, which means no special alignment is required.
+     *
+     * @return Minimum alignment in bytes
+     */
+    virtual size_t minimumTransferAlignment() const { return 1; }
+
     boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
     std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> getRegistersInModule(const std::string& moduleName) const;
@@ -56,9 +73,14 @@ namespace ChimeraTK {
     /// map from register names to addresses
     boost::shared_ptr<RegisterInfoMap> _registerMap;
 
+    /// mutex for protecting unaligned access
+    std::mutex _unalignedAccess;
+
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
+    friend NumericAddressedLowLevelTransferElement;
   };
 
 } // namespace ChimeraTK
