@@ -97,7 +97,7 @@ install( TARGETS ${PROJECT_NAME}
 
 # Generate configuration files for dependencies
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS} ${ChimeraTK-cppext_INCLUDE_DIRS}")
-set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES} ${ChimeraTK-cppext_LIBRARIES}")
+set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES} ${ChimeraTK-cppext_LIBRARIES} ${RT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS} ${ChimeraTK-cppext_LIBRARY_DIRS}")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
