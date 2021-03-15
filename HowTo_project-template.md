@@ -13,8 +13,9 @@ merging the head of project template.
 In your local git repository, issue:
   ```
     $ git fetch https://github.com/ChimeraTK/project-template.git
-    $ git merge FETCH_HEAD
+    $ git merge FETCH_HEAD --allow-unrelated-histories
 ```
+To pull in an update of the project template, you can leave out the `--allow-unrelated-histories` flag.
 
 Note: you can access the files provided in the cmake directory from your 
 CMakeLists.txt after appending this location to your `CMAKE_MODULE_PATH`
