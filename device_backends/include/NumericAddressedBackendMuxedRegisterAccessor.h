@@ -220,7 +220,9 @@ namespace ChimeraTK {
       _numberOfElements = _nBlocks;
     }
     if(_numberOfElements + _elementsOffset > _nBlocks) {
-      throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register!");
+      throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register! Requested end: "+
+                                   std::to_string(_numberOfElements + _elementsOffset)+", register length: "+
+                                   std::to_string(_nBlocks));
     }
 
     // compute the address taking into account the selected area of interest
