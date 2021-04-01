@@ -2,11 +2,12 @@
 
 #include <boost/make_shared.hpp>
 
+
 namespace ChimeraTK {
 
-XdmaBackend::XdmaBackend(std::string deviceFilePath, std::string mapFileName)
+XdmaBackend::XdmaBackend(std::string devicePath, std::string mapFileName)
 :NumericAddressedBackend(mapFileName)
-,_deviceFilePath(deviceFilePath)
+,_devicePath(devicePath)
 {
 }
 
@@ -19,47 +20,70 @@ void XdmaBackend::open()
 #ifdef _DEBUG
     std::cout << "open xdma dev: " << _deviceFilePath << std::endl;
 #endif
-    if (!!_deviceFd) {
+    if (_ctrlIntf) {
         if (isFunctional()) {
             return;
         }
         close();
     }
-    _deviceFd = ::open(_deviceFilePath.c_str(), O_RDWR);
-    if(_deviceFd < 0) {
-        throw ChimeraTK::runtime_error(_strerror("Cannot open device: "));
+    // TODO: retrieve mmap_(offs,size) from map file
+    _ctrlIntf.emplace(_devicePath, 0, 0);
+
+    // Build vector of max. 4 DMA channels
+    _dmaChannels.clear();
+    for (size_t i = 0; i < 4; i++) {
+        try {
+            _dmaChannels.emplace_back(_devicePath, i);
+        }
+        catch (const runtime_error& e) {
+            break;
+        }
     }
     _hasActiveException = false;
 }
 
 void XdmaBackend::close()
 {
-    if (!!_deviceFd) {
-        ::close(_deviceFd);
-    }
-    _deviceFd = 0;
+    _ctrlIntf.reset();
+    _dmaChannels.clear();
 }
 
 bool XdmaBackend::isFunctional() const {
-    if (!_deviceFd || _hasActiveException) {
+    if (!_ctrlIntf || _hasActiveException) {
         return false;
     }
     // TODO implement me
     return true;
 }
 
-void XdmaBackend::read([[maybe_unused]] uint8_t bar,
-                       [[maybe_unused]] uint32_t address,
-                       [[maybe_unused]] int32_t* data,
-                       [[maybe_unused]] size_t sizeInBytes) {
-    // TODO implement me
+XdmaIntfAbstract* XdmaBackend::_intfFromBar(uint8_t bar)
+{
+    if (bar == 0) {
+        return _ctrlIntf ? dynamic_cast<XdmaIntfAbstract*>(&_ctrlIntf.value()) : nullptr;
+    }
+    const size_t dmaChIdx = bar - 1;
+    if (dmaChIdx >= _dmaChannels.size()) {
+        return nullptr;
+    }
+    return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[dmaChIdx]);
 }
 
-void XdmaBackend::write([[maybe_unused]] uint8_t bar,
-                        [[maybe_unused]] uint32_t address,
-                        [[maybe_unused]] int32_t const* data,
-                        [[maybe_unused]] size_t sizeInBytes) {
-    // TODO implement me
+void XdmaBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+    auto intf = _intfFromBar(bar);
+    if (!intf) {
+        // TODO: error handling
+        return;
+    }
+    intf->read(address, data, sizeInBytes);
+}
+
+void XdmaBackend::write(uint8_t bar, uint32_t address, const int32_t* data, size_t sizeInBytes) {
+    auto intf = _intfFromBar(bar);
+    if (!intf) {
+        // TODO: error handling
+        return;
+    }
+    intf->write(address, data, sizeInBytes);
 }
 
 std::string XdmaBackend::readDeviceInfo() {
@@ -80,11 +104,6 @@ boost::shared_ptr<DeviceBackend> XdmaBackend::createInstance(
 
 void XdmaBackend::setException() {
     _hasActiveException = true;
-}
-
-std::string XdmaBackend::_strerror(const std::string& msg) const {
-    char tmp[255];
-    return msg + _deviceFilePath + ": " + strerror_r(errno, tmp, sizeof(tmp));
 }
 
 }
