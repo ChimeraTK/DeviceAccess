@@ -30,6 +30,7 @@ public:
 
     void open() override;
     void close() override;
+    bool isOpen() override;
 
     bool isFunctional() const override;
 

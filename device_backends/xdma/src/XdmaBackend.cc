@@ -48,6 +48,10 @@ void XdmaBackend::close()
     _dmaChannels.clear();
 }
 
+bool XdmaBackend::isOpen() {
+    return !!_ctrlIntf;
+}
+
 bool XdmaBackend::isFunctional() const {
     if (!_ctrlIntf || _hasActiveException) {
         return false;
