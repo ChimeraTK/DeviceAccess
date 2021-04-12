@@ -18,7 +18,7 @@ XdmaBackend::~XdmaBackend()
 void XdmaBackend::open()
 {
 #ifdef _DEBUG
-    std::cout << "open xdma dev: " << _deviceFilePath << std::endl;
+    std::cout << "open xdma dev: " << _devicePath << std::endl;
 #endif
     if (_ctrlIntf) {
         if (isFunctional()) {
@@ -69,6 +69,9 @@ XdmaIntfAbstract* XdmaBackend::_intfFromBar(uint8_t bar)
 }
 
 void XdmaBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+#ifdef _DEBUG
+    std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
+#endif
     auto intf = _intfFromBar(bar);
     if (!intf) {
         // TODO: error handling
@@ -78,6 +81,9 @@ void XdmaBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t size
 }
 
 void XdmaBackend::write(uint8_t bar, uint32_t address, const int32_t* data, size_t sizeInBytes) {
+#ifdef _DEBUG
+    std::cout << "write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
+#endif
     auto intf = _intfFromBar(bar);
     if (!intf) {
         // TODO: error handling
