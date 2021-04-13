@@ -30,6 +30,8 @@ namespace ChimeraTK {
 
     virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) = 0;
 
+    virtual bool barIndexValid(uint32_t bar);
+
     virtual std::string readDeviceInfo() = 0;
 
     /**
