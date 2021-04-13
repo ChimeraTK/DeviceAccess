@@ -81,6 +81,11 @@ namespace ChimeraTK {
     write(retRegBar, retRegOff, data, retDataSize);
   }
 
+  // Default range of valid BARs
+  bool NumericAddressedBackend::barIndexValid(uint32_t bar) {
+    return bar <= 5 || bar == 13; 
+  }
+
   /********************************************************************************************************************/
 
   boost::shared_ptr<const RegisterInfoMap> NumericAddressedBackend::getRegisterMap() const { return _registerMap; }
