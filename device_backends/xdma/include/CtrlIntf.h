@@ -11,12 +11,14 @@ namespace ChimeraTK {
 class CtrlIntf : public XdmaIntfAbstract {
     DeviceFile _file;
     void *_mem;
-    size_t _mmapSize;
+
+    // Map whole PCIe BAR area (16 MiB)
+    static constexpr size_t _mmapSize = 16 * (1024 * 1024);
 
     volatile int32_t *_reg_ptr(uintptr_t offs) const;
 
 public:
-    CtrlIntf(const std::string &devicePath, uintptr_t mmapOffs, size_t mmapSize);
+    CtrlIntf(const std::string &devicePath);
     virtual ~CtrlIntf();
 
     void read(uintptr_t address, int32_t* buf, size_t nBytes) override;

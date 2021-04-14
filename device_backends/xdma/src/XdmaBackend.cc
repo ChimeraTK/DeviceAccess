@@ -27,7 +27,7 @@ void XdmaBackend::open()
         close();
     }
     // TODO: retrieve mmap_(offs,size) from map file
-    _ctrlIntf.emplace(_devicePath, 0, 0);
+    _ctrlIntf.emplace(_devicePath);
 
     // Build vector of max. 4 DMA channels
     _dmaChannels.clear();

@@ -7,10 +7,14 @@
 
 namespace ChimeraTK {
 
-CtrlIntf::CtrlIntf(const std::string &devicePath, uintptr_t mmapOffs, size_t mmapSize)
-:_file(devicePath + "/user", O_RDWR)
-,_mmapSize(mmapSize) {
-    _mem = ::mmap(NULL, mmapSize, PROT_READ | PROT_WRITE, MAP_SHARED, _file, mmapOffs);
+CtrlIntf::CtrlIntf(const std::string &devicePath)
+:_file(devicePath + "/user", O_RDWR) {
+    _mem = ::mmap(
+        NULL,
+        _mmapSize,
+        PROT_READ | PROT_WRITE, MAP_SHARED,
+        _file,
+        0);
 }
 
 CtrlIntf::~CtrlIntf() {
