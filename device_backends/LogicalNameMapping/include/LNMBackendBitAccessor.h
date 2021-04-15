@@ -75,8 +75,7 @@ namespace ChimeraTK {
         }
         map[RegisterPath(info->registerName)].accessor = _accessor;
       }
-      lock = std::move(
-          std::unique_lock<std::recursive_mutex>(map[RegisterPath(info->registerName)].mutex, std::defer_lock));
+      lock = std::unique_lock<std::recursive_mutex>(map[RegisterPath(info->registerName)].mutex, std::defer_lock);
       // allocate and initialise the buffer
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
