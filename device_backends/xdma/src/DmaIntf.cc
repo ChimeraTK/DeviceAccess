@@ -19,7 +19,7 @@ DmaIntf::DmaIntf(DmaIntf &&d)
 DmaIntf::~DmaIntf() {
 }
 
-void DmaIntf::read(uintptr_t address, int32_t* buf, size_t nbytes) {
+void DmaIntf::read(uintptr_t address, int32_t* __restrict__ buf, size_t nbytes) {
     ssize_t result = ::pread(_c2h, buf, nbytes, address);
     if (result != static_cast<ssize_t>(nbytes)) {
         // TODO: error handling

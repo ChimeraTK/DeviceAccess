@@ -15,13 +15,13 @@ class CtrlIntf : public XdmaIntfAbstract {
     // Map whole PCIe BAR area (16 MiB)
     static constexpr size_t _mmapSize = 16 * (1024 * 1024);
 
-    volatile int32_t *_reg_ptr(uintptr_t offs) const;
+    volatile int32_t* _reg_ptr(uintptr_t offs) const;
 
 public:
     CtrlIntf(const std::string &devicePath);
     virtual ~CtrlIntf();
 
-    void read(uintptr_t address, int32_t* buf, size_t nBytes) override;
+    void read(uintptr_t address, int32_t* __restrict__ buf, size_t nBytes) override;
     void write(uintptr_t address, const int32_t* data, size_t nBytes) override;
 };
 
