@@ -55,10 +55,7 @@ namespace ChimeraTK { namespace LNMBackend {
     auto info = _info.lock();
 
     // Change data type to non-integral
-    auto d = info->_dataDescriptor;
-    info->_dataDescriptor =
-        RegisterInfo::DataDescriptor(d.fundamentalType(), false, false, std::numeric_limits<double>::max_digits10,
-            -std::numeric_limits<double>::min_exponent10, DataType::none, d.transportLayerDataType());
+    info->_dataDescriptor = RegisterInfo::DataDescriptor(DataType("float64"));
 
     // Fix to unidirectional operation
     if(info->writeable && info->readable) {
