@@ -342,7 +342,7 @@ namespace ChimeraTK {
         }
         else {
           size_t nDigits =
-              std::ceil(std::log10(std::pow(2, width_))) + (signedFlag_ ? 1 : 0) + (nFractionalBits_ != 0 ? 1 : 0);
+              std::ceil(std::log10(std::pow(2, width_+nFractionalBits_))) + (signedFlag_ ? 1 : 0);
 
           dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric, // fundamentalType
               true,                                                               // isIntegral
