@@ -56,34 +56,8 @@ namespace ChimeraTK {
         new RegisterAccessor(_deviceBackendPointer, RegisterPath(module) / regName));
   }
 
-  /********************************************************************************************************************/
-
-  std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(const std::string& moduleName) const {
-    checkPointersAreNotNull();
-    auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_deviceBackendPointer);
-    if(!castedBackend) {
-      throw ChimeraTK::logic_error("Device::getRegistersInModule() called for a "
-                                   "non-NumericAddressedBackend. Use "
-                                   "Device::getRegisterCatalogue() instead!");
-    }
-    return castedBackend->getRegistersInModule(moduleName);
-  }
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
-  /********************************************************************************************************************/
-
-  std::list<boost::shared_ptr<ChimeraTK::RegisterAccessor>> Device::getRegisterAccessorsInModule(
-      const std::string& moduleName) const {
-    checkPointersAreNotNull();
-    auto reglist = getRegistersInModule(moduleName);
-    std::list<boost::shared_ptr<ChimeraTK::RegisterAccessor>> acclist;
-    for(auto it = reglist.begin(); it != reglist.end(); ++it) {
-      acclist.push_back(getRegisterAccessor(it->getRegisterName(), ""));
-    }
-    return acclist;
-  }
 
   /********************************************************************************************************************/
 

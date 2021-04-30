@@ -59,38 +59,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void NumericAddressedBackend::read(
-      const std::string& regModule, const std::string& regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) {
-    uint32_t retDataSize;
-    uint32_t retRegOff;
-    uint8_t retRegBar;
-
-    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
-    read(retRegBar, retRegOff, data, retDataSize);
-  }
-
-  /********************************************************************************************************************/
-
-  void NumericAddressedBackend::write(const std::string& regModule, const std::string& regName, int32_t const* data,
-      size_t dataSize, uint32_t addRegOffset) {
-    uint32_t retDataSize;
-    uint32_t retRegOff;
-    uint8_t retRegBar;
-
-    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
-    write(retRegBar, retRegOff, data, retDataSize);
-  }
-
-  /********************************************************************************************************************/
-
   boost::shared_ptr<const RegisterInfoMap> NumericAddressedBackend::getRegisterMap() const { return _registerMap; }
-
-  /********************************************************************************************************************/
-
-  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegistersInModule(
-      const std::string& moduleName) const {
-    return _registerMap->getRegistersInModule(moduleName);
-  }
 
   /********************************************************************************************************************/
 

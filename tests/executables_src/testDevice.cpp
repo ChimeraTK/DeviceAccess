@@ -444,52 +444,6 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer15) {
   BOOST_CHECK(adcdata[1] == 1);
 }
 
-BOOST_AUTO_TEST_CASE(testCompatibilityLayer16) {
-  boost::shared_ptr<ChimeraTK::Device> device(new ChimeraTK::Device());
-  device->open("DUMMYD1");
-  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> registerInfoList = device->getRegistersInModule("APP0");
-
-  BOOST_CHECK(registerInfoList.size() == 4);
-  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo>::iterator registerInfo = registerInfoList.begin();
-  BOOST_CHECK(registerInfo->name == "MODULE0");
-  BOOST_CHECK(registerInfo->module == "APP0");
-  ++registerInfo;
-  BOOST_CHECK(registerInfo->name == "MODULE1");
-  BOOST_CHECK(registerInfo->module == "APP0");
-  ++registerInfo;
-  BOOST_CHECK(registerInfo->name == "WORD_SCRATCH");
-  BOOST_CHECK(registerInfo->module == "APP0");
-  ++registerInfo;
-  BOOST_CHECK(registerInfo->name == "WORD_STATUS");
-  BOOST_CHECK(registerInfo->module == "APP0");
-}
-
-BOOST_AUTO_TEST_CASE(testCompatibilityLayer17) {
-  boost::shared_ptr<ChimeraTK::Device> device(new ChimeraTK::Device());
-  device->open("DUMMYD1");
-  // this test only makes sense for mapp files
-  // std::string mapFileName = "goodMapFile.map";
-  // the dummy device is opened with twice the map file name (use map file
-  // instead of device node)
-
-  std::list<boost::shared_ptr<ChimeraTK::Device::RegisterAccessor>> accessorList =
-      device->getRegisterAccessorsInModule("APP0");
-  BOOST_CHECK(accessorList.size() == 4);
-
-  auto accessor = accessorList.begin();
-  BOOST_CHECK((*accessor)->getRegisterInfo().name == "MODULE0");
-  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
-  ++accessor;
-  BOOST_CHECK((*accessor)->getRegisterInfo().name == "MODULE1");
-  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
-  ++accessor;
-  BOOST_CHECK((*accessor)->getRegisterInfo().name == "WORD_SCRATCH");
-  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
-  ++accessor;
-  BOOST_CHECK((*accessor)->getRegisterInfo().name == "WORD_STATUS");
-  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
-}
-
 struct DysfunctDummy : public ChimeraTK::DummyBackend {
   std::atomic<bool> _hasErrors = {false};
   bool isFunctional() const override { return _opened && !_hasErrors && !_hasActiveException; }

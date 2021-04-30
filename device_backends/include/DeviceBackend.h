@@ -87,27 +87,6 @@ namespace ChimeraTK {
      */
     virtual void activateAsyncRead() noexcept {}
 
-    /** DEPRECATED
-     *
-     *  \deprecated {
-     *  This function is deprecated. Do not use the backend directly, always use a
-     * Device.
-     *  @todo Add runtine warning after release of version 0.12
-     *  }
-     */
-    template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
-
-    /** DEPRECATED
-     *
-     *  \deprecated {
-     *  This function is deprecated. Do not use the backend directly, always use a
-     * Device.
-     *  @todo Add runtime warning after release of version 0.9
-     *  }
-     */
-    virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const = 0;
   };
 
   /********************************************************************************************************************/
@@ -120,19 +99,6 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-
-  template<typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>> DeviceBackend::getRegisterAccessor(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
-    if(!enforceRawAccess) {
-      return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
-          wordOffsetInRegister, AccessModeFlags({}));
-    }
-    else {
-      return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
-          wordOffsetInRegister, AccessModeFlags({AccessMode::raw}));
-    }
-  }
 
 } // namespace ChimeraTK
 
