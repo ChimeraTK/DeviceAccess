@@ -22,7 +22,7 @@ namespace ChimeraTK {
     RegisterInfoMapPointer pmap(new RegisterInfoMap(file_name));
     std::string name;        /**< Name of register */
     uint32_t nElements;      /**< Number of elements in register */
-    uint32_t address;        /**< Relative address in bytes from beginning  of the
+    uint64_t address;        /**< Relative address in bytes from beginning  of the
                                 bar(Base Address Range)*/
     uint32_t nBytes;         /**< Size of register expressed in bytes */
     uint32_t bar;            /**< Number of bar with register */
