@@ -26,9 +26,12 @@ namespace ChimeraTK {
     virtual void write(const std::string& regModule, const std::string& regName, int32_t const* data,
         size_t dataSize = 0, uint32_t addRegOffset = 0);
 
-    virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) = 0;
+    /* interface using 32bit address for backwards compatibility */
+    virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
+    virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
 
-    virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) = 0;
+    virtual void read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
+    virtual void write(uint8_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
 
     virtual bool barIndexValid(uint32_t bar);
 

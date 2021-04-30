@@ -72,7 +72,7 @@ XdmaIntfAbstract* XdmaBackend::_intfFromBar(uint8_t bar)
     return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[dmaChIdx]);
 }
 
-void XdmaBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+void XdmaBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
 #ifdef _DEBUG
     std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
@@ -84,7 +84,7 @@ void XdmaBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t size
     intf->read(address, data, sizeInBytes);
 }
 
-void XdmaBackend::write(uint8_t bar, uint32_t address, const int32_t* data, size_t sizeInBytes) {
+void XdmaBackend::write(uint8_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) {
 #ifdef _DEBUG
     std::cout << "write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
