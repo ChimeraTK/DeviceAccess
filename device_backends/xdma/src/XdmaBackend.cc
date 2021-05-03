@@ -65,9 +65,13 @@ XdmaIntfAbstract* XdmaBackend::_intfFromBar(uint8_t bar)
     if (bar == 0) {
         return _ctrlIntf ? dynamic_cast<XdmaIntfAbstract*>(&_ctrlIntf.value()) : nullptr;
     }
-    const size_t dmaChIdx = bar - 1;
-    if (dmaChIdx >= _dmaChannels.size()) {
-        return nullptr;
+    // 13 is magic value for DMA channel (by convention)
+    // We provide N DMA channels starting from there
+    const ssize_t dmaChIdx = bar - 13;
+    if (dmaChIdx < 0 || dmaChIdx >= static_cast<ssize_t>(_dmaChannels.size())) {
+        auto exc_string = std::string{"Couldn't find XDMA channel for BAR value "}
+                        + std::to_string(static_cast<int>(bar));
+        throw ChimeraTK::logic_error(exc_string);
     }
     return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[dmaChIdx]);
 }
@@ -77,9 +81,9 @@ void XdmaBackend::dump(const int32_t* data, size_t nbytes)
 {
     constexpr size_t wordsPerLine = 8;
     size_t n;
-    for (n = 0; n < (nbytes / sizeof(*data)); n++) {
+    for (n = 0; n < (nbytes / sizeof(*data)) && n < 64; n++) {
         if (!(n % wordsPerLine)) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') << n * sizeof(*data) << ":";
+            std::cout << std::hex << std::setw(4) << std::setfill('0') << n * sizeof(*data) << ":";
         }
         std::cout << " " << std::hex << std::setw(8) << std::setfill('0') << data[n];
         if ((n % wordsPerLine) == wordsPerLine - 1) {
@@ -97,12 +101,8 @@ void XdmaBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t size
     std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
-    if (!intf) {
-        // TODO: error handling
-        return;
-    }
     intf->read(address, data, sizeInBytes);
-#ifdef _DEBUG
+#ifdef _DEBUGDUMP
     dump(data, sizeInBytes);
 #endif
 }
@@ -112,12 +112,8 @@ void XdmaBackend::write(uint8_t bar, uint64_t address, const int32_t* data, size
     std::cout << "write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
-    if (!intf) {
-        // TODO: error handling
-        return;
-    }
     intf->write(address, data, sizeInBytes);
-#ifdef _DEBUG
+#ifdef _DEBUGDUMP
     dump(data, sizeInBytes);
 #endif
 }
@@ -132,7 +128,7 @@ boost::shared_ptr<DeviceBackend> XdmaBackend::createInstance(
     std::map<std::string, std::string> parameters) {
 
     if(address.empty()) {
-      throw ChimeraTK::logic_error("XDMA device address not specified.");
+        throw ChimeraTK::logic_error("XDMA device address not specified.");
     }
 
     return boost::make_shared<XdmaBackend>("/dev/" + address, parameters["map"]);
