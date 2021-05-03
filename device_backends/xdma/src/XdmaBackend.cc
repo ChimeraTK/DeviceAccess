@@ -1,7 +1,7 @@
 #include "XdmaBackend.h"
 
 #include <boost/make_shared.hpp>
-
+#include <iomanip>
 
 namespace ChimeraTK {
 
@@ -72,6 +72,26 @@ XdmaIntfAbstract* XdmaBackend::_intfFromBar(uint8_t bar)
     return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[dmaChIdx]);
 }
 
+#ifdef _DEBUG
+void XdmaBackend::dump(const int32_t* data, size_t nbytes)
+{
+    constexpr size_t wordsPerLine = 8;
+    size_t n;
+    for (n = 0; n < (nbytes / sizeof(*data)); n++) {
+        if (!(n % wordsPerLine)) {
+            std::cout << std::hex << std::setw(2) << std::setfill('0') << n * sizeof(*data) << ":";
+        }
+        std::cout << " " << std::hex << std::setw(8) << std::setfill('0') << data[n];
+        if ((n % wordsPerLine) == wordsPerLine - 1) {
+            std::cout << "\n";
+        }
+    }
+    if ((n % wordsPerLine) != wordsPerLine) {
+        std::cout << "\n";
+    }
+}
+#endif
+
 void XdmaBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
 #ifdef _DEBUG
     std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
@@ -82,6 +102,9 @@ void XdmaBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t size
         return;
     }
     intf->read(address, data, sizeInBytes);
+#ifdef _DEBUG
+    dump(data, sizeInBytes);
+#endif
 }
 
 void XdmaBackend::write(uint8_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) {
@@ -94,6 +117,9 @@ void XdmaBackend::write(uint8_t bar, uint64_t address, const int32_t* data, size
         return;
     }
     intf->write(address, data, sizeInBytes);
+#ifdef _DEBUG
+    dump(data, sizeInBytes);
+#endif
 }
 
 std::string XdmaBackend::readDeviceInfo() {
