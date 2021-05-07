@@ -57,8 +57,8 @@ namespace ChimeraTK {
   namespace {
 
     typedef struct _addresses {
-      uint32_t start;
-      uint32_t end;
+      uint64_t start;
+      uint64_t end;
       std::vector<RegisterInfoMap::RegisterInfo>::iterator iter;
     } addresses;
 
@@ -274,7 +274,7 @@ namespace ChimeraTK {
   RegisterInfoMap::MetaData::MetaData(std::string const& name_, std::string const& value_)
   : name(name_), value(value_) {}
 
-  RegisterInfoMap::RegisterInfo::RegisterInfo(std::string const& name_, uint32_t nElements_, uint32_t address_,
+  RegisterInfoMap::RegisterInfo::RegisterInfo(std::string const& name_, uint32_t nElements_, uint64_t address_,
       uint32_t nBytes_, uint32_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
       std::string const& module_, uint32_t nChannels_, bool is2DMultiplexed_, Access dataAccess_, Type dataType_)
   : name(name_), nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_), address(address_),

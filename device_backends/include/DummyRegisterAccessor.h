@@ -189,7 +189,13 @@ namespace ChimeraTK {
     /// Set callback function which is called when the register is written to (through the normal Device interface)
     void setWriteCallback(const std::function<void()>& writeCallback) {
       _dev->setWriteCallbackFunction(
-          {uint8_t(registerInfo.bar), registerInfo.address, registerInfo.nBytes}, writeCallback);
+        {
+          static_cast<uint8_t>(registerInfo.bar),
+          static_cast<uint32_t>(registerInfo.address),
+          registerInfo.nBytes
+        },
+        writeCallback
+      );
     }
 
    protected:

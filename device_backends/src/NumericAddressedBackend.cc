@@ -57,6 +57,30 @@ namespace ChimeraTK {
     }
   }
 
+  /* Throw exception if called directly and not implemented by backend */
+  void NumericAddressedBackend::read([[maybe_unused]] uint8_t bar,
+                                     [[maybe_unused]] uint32_t address,
+                                     [[maybe_unused]] int32_t* data,
+                                     [[maybe_unused]] size_t sizeInBytes) {
+    throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface read() called w/ 32bit address");
+  }
+
+  void NumericAddressedBackend::write([[maybe_unused]] uint8_t bar,
+                                      [[maybe_unused]] uint32_t address,
+                                      [[maybe_unused]] int32_t const* data,
+                                      [[maybe_unused]] size_t sizeInBytes) {
+    throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface write() called w/ 32bit address");
+  }
+
+  /* Call 32-bit address implementation by default, for backends that don't implement 64-bit */
+  void NumericAddressedBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
+    read(bar, static_cast<uint32_t>(address), data, sizeInBytes);
+  }
+
+  void NumericAddressedBackend::write(uint8_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
+    write(bar, static_cast<uint32_t>(address), data, sizeInBytes);
+  }
+
   /********************************************************************************************************************/
 
   boost::shared_ptr<const RegisterInfoMap> NumericAddressedBackend::getRegisterMap() const { return _registerMap; }
