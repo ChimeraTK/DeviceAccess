@@ -53,7 +53,7 @@ namespace ChimeraTK {
     TRY_REGISTER_ACCESS(_barContents[bar].at(address / sizeof(int32_t)) = data;);
   }
 
-  void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+  void DummyBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     std::lock_guard<std::mutex> lock(mutex);
     assert(_opened);
     if(_hasActiveException) {
@@ -65,7 +65,7 @@ namespace ChimeraTK {
                             ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
   }
 
-  void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
+  void DummyBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     {
       std::lock_guard<std::mutex> lock(mutex);
       assert(_opened);
