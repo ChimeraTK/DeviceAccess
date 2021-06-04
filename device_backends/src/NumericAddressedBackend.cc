@@ -73,16 +73,16 @@ namespace ChimeraTK {
   }
 
   /* Call 32-bit address implementation by default, for backends that don't implement 64-bit */
-  void NumericAddressedBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
-    read(bar, static_cast<uint32_t>(address), data, sizeInBytes);
+  void NumericAddressedBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
+    read(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
   }
 
-  void NumericAddressedBackend::write(uint8_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
-    write(bar, static_cast<uint32_t>(address), data, sizeInBytes);
+  void NumericAddressedBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
+    write(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
   }
 
   // Default range of valid BARs
-  bool NumericAddressedBackend::barIndexValid(uint32_t bar) {
+  bool NumericAddressedBackend::barIndexValid(uint64_t bar) {
     return bar <= 5 || bar == 13; 
   }
 

@@ -24,10 +24,10 @@ namespace ChimeraTK {
     virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
     virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
 
-    virtual void read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
-    virtual void write(uint8_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
+    virtual void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
+    virtual void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
 
-    virtual bool barIndexValid(uint32_t bar);
+    virtual bool barIndexValid(uint64_t bar);
 
     virtual std::string readDeviceInfo() = 0;
 

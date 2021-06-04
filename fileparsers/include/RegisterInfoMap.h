@@ -100,7 +100,7 @@ namespace ChimeraTK {
       uint64_t address;        /**< Relative address in bytes from beginning  of
                                         the bar(Base Address Range)*/
       uint32_t nBytes;         /**< Size of register expressed in bytes */
-      uint32_t bar;            /**< Number of bar with register */
+      uint64_t bar;            /**< Number of bar with register */
       uint32_t width;          /**< Number of significant bits in the register */
       int32_t nFractionalBits; /**< Number of fractional bits */
       bool signedFlag;         /**< Signed/Unsigned flag */
@@ -116,7 +116,7 @@ namespace ChimeraTK {
       /// Constructor to set all data members. They all have default values, so
       /// this also acts as default constructor.
       RegisterInfo(std::string const& name_ = std::string(), // an empty string
-          uint32_t nElements_ = 0, uint64_t address_ = 0, uint32_t nBytes_ = 0, uint32_t bar_ = 0, uint32_t width_ = 32,
+          uint32_t nElements_ = 0, uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
           int32_t nFractionalBits_ = 0, bool signedFlag_ = true, std::string const& module_ = std::string(),
           uint32_t nChannels_ = 1, bool is2DMultiplexed_ = false, Access dataAccess_ = Access::READWRITE,
           Type dataType_ = Type::FIXED_POINT);

@@ -25,7 +25,7 @@ namespace ChimeraTK {
     uint64_t address;        /**< Relative address in bytes from beginning  of the
                                 bar(Base Address Range)*/
     uint32_t nBytes;         /**< Size of register expressed in bytes */
-    uint32_t bar;            /**< Number of bar with register */
+    uint64_t bar;            /**< Number of bar with register */
     uint32_t width;          /**< Number of significant bits in the register */
     int32_t nFractionalBits; /**< Number of fractional bits */
     bool signedFlag;         /**< Signed/Unsigned flag */
