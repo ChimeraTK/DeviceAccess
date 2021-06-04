@@ -160,10 +160,18 @@ namespace ChimeraTK {
 
   template<typename NUMERIC>
   NUMERIC detail::userTypeToNumeric_impl<std::string, NUMERIC>::impl(const std::string& value) {
-    NUMERIC v;
-    std::stringstream ss(value);
-    ss >> v;
-    return v;
+    if constexpr(!std::is_same<NUMERIC, int8_t>::value && !std::is_same<NUMERIC, uint8_t>::value) {
+      NUMERIC v;
+      std::stringstream ss(value);
+      ss >> v;
+      return v;
+    }
+    else {
+      // int8_t and uint8_t are interpreted as char resp. unsigned char, in which case the stream operator does the
+      // wrong thing...
+      auto temp = std::stoi(value);
+      return detail::userTypeToNumeric_impl<decltype(temp), NUMERIC>::impl(temp);
+    }
   }
 
   /********************************************************************************************************************/
