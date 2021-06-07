@@ -124,7 +124,7 @@ void MapFileParserTest::testGoodMappFileParse() {
   ChimeraTK::MapFileParser map_file_parser;
   boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = map_file_parser.parse("goodMapFile.map");
 
-  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 18);
+  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 19);
 
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
@@ -137,7 +137,7 @@ void MapFileParserTest::testGoodMappFileParse() {
   ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(18);
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(19);
 
   RegisterInfoents[0] =
       ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true, "BOARD");
@@ -177,6 +177,8 @@ void MapFileParserTest::testGoodMappFileParse() {
           RegisterInfoMap::RegisterInfo::Access::READWRITE, RegisterInfoMap::RegisterInfo::Type::IEEE754);
   RegisterInfoents[17] =
       ChimeraTK::RegisterInfoMap::RegisterInfo("NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0, 32, 0, true, "BOARD");
+  RegisterInfoents[18] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true, "LARGE_BAR");
 
   ChimeraTK::RegisterInfoMap::const_iterator mapIter;
   std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;
