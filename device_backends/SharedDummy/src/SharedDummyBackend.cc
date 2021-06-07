@@ -26,7 +26,7 @@ namespace ChimeraTK {
 
   // Construct a segment for each bar and set required size
   void SharedDummyBackend::setupBarContents() {
-    for(std::map<uint8_t, size_t>::const_iterator barSizeInBytesIter = _barSizesInBytes.begin();
+    for(std::map<uint64_t, size_t>::const_iterator barSizeInBytesIter = _barSizesInBytes.begin();
         barSizeInBytesIter != _barSizesInBytes.end(); ++barSizeInBytesIter) {
       std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(barSizeInBytesIter->first);
 
@@ -55,7 +55,7 @@ namespace ChimeraTK {
 
   void SharedDummyBackend::close() { _opened = false; }
 
-  void SharedDummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+  void SharedDummyBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
     }
@@ -63,16 +63,16 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
     checkSizeIsMultipleOfWordSize(sizeInBytes);
-    unsigned int wordBaseIndex = address / sizeof(int32_t);
+    uint64_t wordBaseIndex = address / sizeof(int32_t);
 
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
 
-    for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
+    for(uint64_t wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
       TRY_REGISTER_ACCESS(data[wordIndex] = _barContents[bar]->at(wordBaseIndex + wordIndex););
     }
   }
 
-  void SharedDummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
+  void SharedDummyBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
     }
@@ -80,11 +80,11 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
     checkSizeIsMultipleOfWordSize(sizeInBytes);
-    unsigned int wordBaseIndex = address / sizeof(int32_t);
+    uint64_t wordBaseIndex = address / sizeof(int32_t);
 
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
 
-    for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
+    for(uint64_t wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
       TRY_REGISTER_ACCESS(_barContents[bar]->at(wordBaseIndex + wordIndex) = data[wordIndex];);
     }
   }

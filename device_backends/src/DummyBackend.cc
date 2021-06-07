@@ -11,11 +11,6 @@
 #include "DummyRegisterAccessor.h"
 
 namespace ChimeraTK {
-  // Valid bar numbers are 0 to 5 , so they must be contained
-  // in three bits.
-  const unsigned int BAR_MASK = 0x7;
-  // the bar number is stored in bits 60 to 62
-  const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
   DummyBackend::DummyBackend(std::string mapFileName) : DummyBackendBase(mapFileName), _mapFile(mapFileName) {
     resizeBarContents();
@@ -33,9 +28,9 @@ namespace ChimeraTK {
 
   void DummyBackend::resizeBarContents() {
     std::lock_guard<std::mutex> lock(mutex);
-    std::map<uint8_t, size_t> barSizesInBytes = getBarSizesInBytesFromRegisterMapping();
+    std::map<uint64_t, size_t> barSizesInBytes = getBarSizesInBytesFromRegisterMapping();
 
-    for(std::map<uint8_t, size_t>::const_iterator barSizeInBytesIter = barSizesInBytes.begin();
+    for(std::map<uint64_t, size_t>::const_iterator barSizeInBytesIter = barSizesInBytes.begin();
         barSizeInBytesIter != barSizesInBytes.end(); ++barSizeInBytesIter) {
       // the size of the vector is in words, not in bytes -> convert fist
       _barContents[barSizeInBytesIter->first].resize(barSizeInBytesIter->second / sizeof(int32_t), 0);
@@ -48,7 +43,7 @@ namespace ChimeraTK {
     _opened = false;
   }
 
-  void DummyBackend::writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data) {
+  void DummyBackend::writeRegisterWithoutCallback(uint64_t bar, uint64_t address, int32_t data) {
     std::lock_guard<std::mutex> lock(mutex);
     TRY_REGISTER_ACCESS(_barContents[bar].at(address / sizeof(int32_t)) = data;);
   }
@@ -60,7 +55,7 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
     checkSizeIsMultipleOfWordSize(sizeInBytes);
-    unsigned int wordBaseIndex = address / sizeof(int32_t);
+    uint64_t wordBaseIndex = address / sizeof(int32_t);
     TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
                             ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
   }
@@ -73,7 +68,7 @@ namespace ChimeraTK {
         throw ChimeraTK::runtime_error("previous, unrecovered fault");
       }
       checkSizeIsMultipleOfWordSize(sizeInBytes);
-      unsigned int wordBaseIndex = address / sizeof(int32_t);
+      uint64_t wordBaseIndex = address / sizeof(int32_t);
       TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
         if(isReadOnly(bar, address + wordIndex * sizeof(int32_t))) {
           continue;
@@ -92,15 +87,9 @@ namespace ChimeraTK {
     return info.str();
   }
 
-  uint64_t DummyBackend::calculateVirtualAddress(uint32_t registerOffsetInBar, uint8_t bar) {
-    return (static_cast<uint64_t>(bar & BAR_MASK) << BAR_POSITION_IN_VIRTUAL_REGISTER) |
-        (static_cast<uint64_t>(registerOffsetInBar));
-  }
-
-  void DummyBackend::setReadOnly(uint8_t bar, uint32_t address, size_t sizeInWords) {
+  void DummyBackend::setReadOnly(uint64_t bar, uint64_t address, size_t sizeInWords) {
     for(size_t i = 0; i < sizeInWords; ++i) {
-      uint64_t virtualAddress = calculateVirtualAddress(address + i * sizeof(int32_t), bar);
-      _readOnlyAddresses.insert(virtualAddress);
+      _readOnlyAddresses.insert({bar, address + i * sizeof(int32_t)});
     }
   }
 
@@ -108,9 +97,8 @@ namespace ChimeraTK {
     setReadOnly(addressRange.bar, addressRange.offset, addressRange.sizeInBytes / sizeof(int32_t));
   }
 
-  bool DummyBackend::isReadOnly(uint8_t bar, uint32_t address) const {
-    uint64_t virtualAddress = calculateVirtualAddress(address, bar);
-    return (_readOnlyAddresses.find(virtualAddress) != _readOnlyAddresses.end());
+  bool DummyBackend::isReadOnly(uint64_t bar, uint64_t address) const {
+    return (_readOnlyAddresses.find({bar, address}) != _readOnlyAddresses.end());
   }
 
   void DummyBackend::setWriteCallbackFunction(
@@ -160,13 +148,13 @@ namespace ChimeraTK {
       return false;
     }
 
-    uint32_t startAddress = std::max(firstRange.offset, secondRange.offset);
-    uint32_t endAddress =
+    uint64_t startAddress = std::max(firstRange.offset, secondRange.offset);
+    uint64_t endAddress =
         std::min(firstRange.offset + firstRange.sizeInBytes, secondRange.offset + secondRange.sizeInBytes);
 
     // if at least one register is writable there is an overlap of writable
     // registers
-    for(uint32_t address = startAddress; address < endAddress; address += sizeof(int32_t)) {
+    for(uint64_t address = startAddress; address < endAddress; address += sizeof(int32_t)) {
       if(isReadOnly(firstRange.bar, address) == false) {
         return true;
       }

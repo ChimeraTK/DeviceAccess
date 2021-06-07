@@ -20,7 +20,7 @@
   }                                                                                                                    \
   catch(std::out_of_range & outOfRangeException) {                                                                     \
     std::stringstream errorMessage;                                                                                    \
-    errorMessage << "Invalid address offset " << address << " in bar " << static_cast<int>(bar) << "."                 \
+    errorMessage << "Invalid address offset " << address << " in bar " << bar << "."                                   \
                  << "Caught out_of_range exception: " << outOfRangeException.what();                                   \
     throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
   }                                                                                                                    \
@@ -49,12 +49,28 @@ namespace ChimeraTK {
 
     size_t minimumTransferAlignment() const override { return 4; }
 
+    /** You cannot override the read version with 32 bit address any more. Please change your
+     *  implementation to the 64 bit signature.
+     */
+    void read([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address, [[maybe_unused]] int32_t* data,
+        [[maybe_unused]] size_t sizeInBytes) final {
+      throw;
+    }
+
+    /** You cannot override the write version with 32 bit address any more. Please change your
+     *  implementation to the 64 bit signature.
+     */
+    void write([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address, [[maybe_unused]] int32_t const* data,
+        [[maybe_unused]] size_t sizeInBytes) final {
+      throw;
+    }
+
    protected:
     RegisterInfoMapPointer _registerMapping;
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
-    std::map<uint8_t, size_t> getBarSizesInBytesFromRegisterMapping() const {
-      std::map<uint8_t, size_t> barSizesInBytes;
+    std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const {
+      std::map<uint64_t, size_t> barSizesInBytes;
       for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
           mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
         barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],

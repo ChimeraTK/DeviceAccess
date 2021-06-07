@@ -64,10 +64,6 @@ namespace ChimeraTK {
 
     std::string readDeviceInfo() override;
 
-    /// A virtual address is an address is a virtual 64 bit address space
-    /// which contains all bars.
-    static uint64_t calculateVirtualAddress(uint32_t registerOffsetInBar, uint8_t bar);
-
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
@@ -84,10 +80,10 @@ namespace ChimeraTK {
 
    protected:
     struct AddressRange {
-      const uint32_t offset;
+      const uint64_t offset;
       const uint32_t sizeInBytes;
-      const uint8_t bar;
-      AddressRange(uint8_t bar_, uint32_t address, size_t sizeInBytes_)
+      const uint64_t bar;
+      AddressRange(uint64_t bar_, uint64_t address, size_t sizeInBytes_)
       : offset(address), sizeInBytes(sizeInBytes_), bar(bar_) {}
       bool operator<(AddressRange const& right) const {
         return (bar == right.bar ? (offset < right.offset) : bar < right.bar);
@@ -97,8 +93,8 @@ namespace ChimeraTK {
     /** name of the map file */
     std::string _mapFile;
 
-    std::map<uint8_t, std::vector<int32_t>> _barContents;
-    std::set<uint64_t> _readOnlyAddresses;
+    std::map<uint64_t, std::vector<int32_t>> _barContents;
+    std::set<std::pair<uint64_t, uint64_t>> _readOnlyAddresses; // bar/address combinations which are read only
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
     std::mutex mutex;
 
@@ -108,9 +104,9 @@ namespace ChimeraTK {
 
     void runWriteCallbackFunctionsForAddressRange(AddressRange addressRange);
     std::list<boost::function<void(void)>> findCallbackFunctionsForAddressRange(AddressRange addressRange);
-    void setReadOnly(uint8_t bar, uint32_t address, size_t sizeInWords);
+    void setReadOnly(uint64_t bar, uint64_t address, size_t sizeInWords);
     void setReadOnly(AddressRange addressRange);
-    bool isReadOnly(uint8_t bar, uint32_t address) const;
+    bool isReadOnly(uint64_t bar, uint64_t address) const;
     void setWriteCallbackFunction(AddressRange addressRange, boost::function<void(void)> const& writeCallbackFunction);
     /// returns true if the ranges overlap and at least one of the overlapping
     /// registers can be written
@@ -119,7 +115,7 @@ namespace ChimeraTK {
     /// Not write-protected function for internal use only. It does not trigger
     /// the callback function so it can be used inside a callback function for
     /// resynchronisation.
-    void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
+    void writeRegisterWithoutCallback(uint64_t bar, uint64_t address, int32_t data);
 
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
