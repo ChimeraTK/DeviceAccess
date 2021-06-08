@@ -66,7 +66,7 @@ namespace ChimeraTK {
     }
 
     /// All bars are valid in dummies.
-    bool barIndexValid(uint64_t bar) override { return true; }
+    bool barIndexValid([[maybe_unused]] uint64_t bar) override { return true; }
 
    protected:
     RegisterInfoMapPointer _registerMapping;
