@@ -143,12 +143,12 @@ void RebotTestClass::testReadWriteAPIOfRebotBackend() {
    */
   uint32_t address = 0x04;
   int32_t readValue = 0;
-  rebotBackend.read(0, address, &readValue, sizeof(readValue));
+  rebotBackend.read(uint64_t(0), address, &readValue, sizeof(readValue));
   BOOST_CHECK_EQUAL(0xDEADBEEF, readValue);
 
   /****************************************************************************/
   // Single word read -  Hardcoding addresses for now
-  uint32_t word_status_register_address = 0x8;
+  uint64_t word_status_register_address = 0x8;
   int32_t data = -987;
   // Register
   rebotBackend.write(0, word_status_register_address, &data, sizeof(data));

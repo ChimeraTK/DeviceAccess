@@ -45,7 +45,7 @@ namespace ChimeraTK {
   class DummyBackend : public DummyBackendBase<DummyBackend> {
    public:
     DummyBackend(std::string mapFileName);
-    virtual ~DummyBackend();
+    ~DummyBackend() override;
 
     void open() override;
 
@@ -57,6 +57,8 @@ namespace ChimeraTK {
      */
     void close() override;
 
+    using DummyBackendBase<DummyBackend>::read;  // use the 32 bit version from the base class
+    using DummyBackendBase<DummyBackend>::write; // use the 32 bit version from the base class
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
 

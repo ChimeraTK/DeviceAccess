@@ -41,12 +41,16 @@ namespace ChimeraTK {
   class SharedDummyBackend : public DummyBackendBase<SharedDummyBackend> {
    public:
     SharedDummyBackend(std::string instanceId, std::string mapFileName);
-    virtual ~SharedDummyBackend();
+    ~SharedDummyBackend() override;
 
     void open() override;
     void close() override;
+
+    using DummyBackendBase<SharedDummyBackend>::read;  // use the 32 bit version from the base class
+    using DummyBackendBase<SharedDummyBackend>::write; // use the 32 bit version from the base class
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
+
     std::string readDeviceInfo() override;
     bool isFunctional() const override { return (_opened && !_hasActiveException); }
 

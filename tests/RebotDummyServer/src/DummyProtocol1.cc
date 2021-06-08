@@ -19,7 +19,7 @@ namespace ChimeraTK {
 
   uint32_t DummyProtocol1::multiWordWrite(std::vector<uint32_t>& buffer) {
     uint32_t addressInWords = buffer.at(1);
-    uint32_t addressInBytes = addressInWords * 4;
+    uint64_t addressInBytes = addressInWords * 4;
     uint32_t nWordsTotal = buffer.at(2);
 
     if((buffer.size() - 3) < nWordsTotal) {
@@ -44,8 +44,8 @@ namespace ChimeraTK {
     if(buffer.size() < _nWordsLeft) {
       uint32_t nWordsInThisBuffer = buffer.size();
 
-      _parent._registerSpace->write(
-          BAR, _nextAddressInWords * 4, reinterpret_cast<int32_t*>(buffer.data()), 4 * nWordsInThisBuffer);
+      _parent._registerSpace->write(BAR, static_cast<uint64_t>(_nextAddressInWords * 4),
+          reinterpret_cast<int32_t*>(buffer.data()), 4 * nWordsInThisBuffer);
 
       _nWordsLeft -= nWordsInThisBuffer;
       _nextAddressInWords += nWordsInThisBuffer;
@@ -54,8 +54,8 @@ namespace ChimeraTK {
     }
     else { // all words in this buffer
 
-      _parent._registerSpace->write(
-          BAR, _nextAddressInWords * 4, reinterpret_cast<int32_t*>(buffer.data()), 4 * _nWordsLeft);
+      _parent._registerSpace->write(BAR, static_cast<uint64_t>(_nextAddressInWords * 4),
+          reinterpret_cast<int32_t*>(buffer.data()), 4 * _nWordsLeft);
 
       _nextAddressInWords = 0;
       _nWordsLeft = 0;
