@@ -23,7 +23,7 @@
 #  error* in standard Makefiles: CPPFLAGS += $(shell ChimeraTK-DeviceAccess-config --cppflags)
 #endif
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/for_each.hpp>

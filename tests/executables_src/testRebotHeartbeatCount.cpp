@@ -13,7 +13,7 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "RebotDummyServer.h"
 #include "testableRebotSleep_testingImpl.h"
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/thread.hpp>
 
 using namespace boost::unit_test_framework;

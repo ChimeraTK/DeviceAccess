@@ -2,7 +2,7 @@
 #include "RebotDummyServer.h"
 #include "DummyProtocol1.h" // the latest version includes all predecessors in the include
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <iostream>
 #include <stdexcept>
 

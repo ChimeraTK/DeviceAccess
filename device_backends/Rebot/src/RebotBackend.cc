@@ -3,7 +3,7 @@
 #include "RebotProtocol1.h"
 #include "Connection.h"
 #include "testableRebotSleep.h"
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <sstream>
 
 namespace ChimeraTK {

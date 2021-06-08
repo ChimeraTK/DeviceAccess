@@ -21,7 +21,7 @@
 #include "LogicalNameMappingBackend.h"
 #include "SharedDummyBackend.h"
 #include "SubdeviceBackend.h"
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <dlfcn.h>
 

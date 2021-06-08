@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE testDummyBackend
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/test/included/unit_test.hpp>
