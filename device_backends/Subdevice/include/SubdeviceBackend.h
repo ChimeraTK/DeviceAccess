@@ -80,6 +80,9 @@ namespace ChimeraTK {
     /// type of the subdeivce
     Type type;
 
+    /// timeout (in milliseconds), used in threeRegisters to throw a runtime_error if status register stuck at 1
+    size_t timeout{10000};
+
     /// the target device name
     std::string targetAlias;
 
