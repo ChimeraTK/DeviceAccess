@@ -3,6 +3,7 @@
 #include <string>
 #include <functional>
 #include <list>
+#include <thread>
 
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/test/unit_test.hpp>
@@ -1715,7 +1716,7 @@ namespace ChimeraTK {
 
       // First step: measure time until initial value arrives, so we know how long to wait to exclude that an initial
       // value arrives wrongly.
-      std::chrono::duration<double> timeToInitialValue {};
+      std::chrono::duration<double> timeToInitialValue{};
       {
         // start time measurement
         auto t0 = std::chrono::steady_clock::now();
