@@ -100,18 +100,6 @@ TestableDummyBackend* Fixture_t::getBackendInstance() {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testCalculateVirtualAddress) {
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0) == 0UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x35, 0) == 0x35UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x67875, 0x3) == 0x3000000000067875UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0x4) == 0x4000000000000000UL);
-
-  // the first bit of the bar has to be cropped
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x123, 0xD) == 0x5000000000000123UL);
-}
-
-/**********************************************************************************************************************/
-
 BOOST_AUTO_TEST_CASE(testCheckSizeIsMultipleOfWordSize) {
   // just some arbitrary numbers to test %4 = 0, 1, 2, 3
   BOOST_CHECK_NO_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(24));
@@ -500,10 +488,10 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
   // plus the dma bar 0xD
   // BOOST_CHECK((*dummyBackend)._barContents.size() == 3 );
   BOOST_CHECK(dummyBackend->_barContents.size() == 3);
-  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar0Iter = dummyBackend->_barContents.find(0);
+  std::map<uint64_t, std::vector<int32_t>>::const_iterator bar0Iter = dummyBackend->_barContents.find(0);
   BOOST_REQUIRE(bar0Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar0Iter->second.size() == 0x53); // 0x14C bytes in 32 bit words
-  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar2Iter = dummyBackend->_barContents.find(2);
+  std::map<uint64_t, std::vector<int32_t>>::const_iterator bar2Iter = dummyBackend->_barContents.find(2);
   BOOST_REQUIRE(bar2Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar2Iter->second.size() == 0x400); // 0x1000 bytes in 32 bit words
 

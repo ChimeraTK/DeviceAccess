@@ -48,7 +48,7 @@ namespace ChimeraTK {
       DummyBackend::close();
     }
 
-    void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
+    void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
       if(throwExceptionRead) {
         thereHaveBeenExceptions = true;
         throw(ChimeraTK::runtime_error("DummyException: read throws by request"));
@@ -56,7 +56,7 @@ namespace ChimeraTK {
       ChimeraTK::DummyBackend::read(bar, address, data, sizeInBytes);
     }
 
-    void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override {
+    void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
       if(throwExceptionWrite) {
         thereHaveBeenExceptions = true;
         throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
