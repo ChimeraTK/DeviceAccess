@@ -52,7 +52,8 @@ namespace ChimeraTK {
       errorMessage << "Backend plugin '" << backendType << "' compiled with wrong DeviceAccess version " << version
                    << ". Please recompile with version " << CHIMERATK_DEVICEACCESS_VERSION;
       creatorMap_compat[make_pair(backendType, "")] =
-          boost::bind(BackendFactory::failedRegistrationThrowerFunction, _1, _2, _3, _4, errorMessage.str());
+          boost::bind(BackendFactory::failedRegistrationThrowerFunction, boost::placeholders::_1,
+              boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4, errorMessage.str());
       std::string errorMessageString = errorMessage.str();
       creatorMap[backendType] = [errorMessageString](std::string,
                                     std::map<std::string, std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
@@ -107,7 +108,8 @@ namespace ChimeraTK {
       errorMessage << "Backend plugin '" << interface << "' compiled with wrong DeviceAccess version " << version
                    << ". Please recompile with version " << CHIMERATK_DEVICEACCESS_VERSION;
       creatorMap_compat[make_pair(interface, protocol)] =
-          boost::bind(BackendFactory::failedRegistrationThrowerFunction, _1, _2, _3, _4, errorMessage.str());
+          boost::bind(BackendFactory::failedRegistrationThrowerFunction, boost::placeholders::_1,
+              boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4, errorMessage.str());
       std::string errorMessageString = errorMessage.str();
       creatorMap[interface] = [errorMessageString](std::string,
                                   std::map<std::string, std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
