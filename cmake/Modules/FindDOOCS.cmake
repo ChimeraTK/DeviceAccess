@@ -76,6 +76,10 @@ endif()
 set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/export/doocs/lib/pkgconfig)
 message("Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
 
+# WORK AROUND FOR BROKEN DOOCS PKG CONFIG FILES: Search for libgul14 which is required by DOOCS libraries
+list(APPEND DOOCS_FIND_COMPONENTS libgul14)
+# END OF WORK AROUND
+
 pkg_check_modules(DOOCS REQUIRED ${DOOCS_FIND_COMPONENTS})
 
 string(REPLACE ";" " " DOOCS_CFLAGS "${DOOCS_CFLAGS}")
