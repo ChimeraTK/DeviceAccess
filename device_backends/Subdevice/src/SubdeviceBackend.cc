@@ -295,6 +295,8 @@ namespace ChimeraTK {
     return returnValue;
   }
 
+  /********************************************************************************************************************/
+
   void SubdeviceBackend::verifyRegisterAccessorSize(
       boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords, size_t wordOffsetInRegister, bool forceAlignment) {
     // check that the bar is 0
