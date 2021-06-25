@@ -87,7 +87,7 @@ MACRO( COPY_MAPPING_FILES )
     mathPlugin.xlmap mathPlugin-broken.xlmap monostableTriggerPlugin.xlmap forceReadOnlyPlugin.xlmap typeHintModifierPlugin.xlmap
     performanceTest.map run_performance_test.sh
     badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
-    subdeviceTest.dmap Subdevice.map SubdeviceTarget.map
+    subdeviceTest.dmap Subdevice.map SubdeviceMuxedArea.map SubdeviceTarget.map
     shareddummyTest.dmap shareddummy.map
     registerAccess.map floatRawTest.map test3.map unifiedTest.xlmap
     DESTINATION ${PROJECT_BINARY_DIR}/tests)

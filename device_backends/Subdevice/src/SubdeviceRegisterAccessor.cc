@@ -10,7 +10,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NDRegisterAccessor<int32_t>> accData, boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
       size_t byteOffset, size_t numberOfWords)
   : NDRegisterAccessor<int32_t>(registerPathName, {AccessMode::raw}), _backend(backend), _accAddress(accAddress),
-    _accData(accData), _accStatus(accStatus), _byteOffset(byteOffset), _numberOfWords(numberOfWords) {
+    _accData(accData), _accStatus(accStatus), _startAddress(byteOffset), _numberOfWords(numberOfWords) {
     NDRegisterAccessor<int32_t>::buffer_2D.resize(1);
     NDRegisterAccessor<int32_t>::buffer_2D[0].resize(numberOfWords);
     _buffer.resize(numberOfWords);
@@ -26,9 +26,11 @@ namespace ChimeraTK {
 
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
+    // This is "_numberOfWords / _accData->getNumberOfSamples()" rounded up:
+    auto nTransfers = (_numberOfWords + _accData->getNumberOfSamples() - 1) / _accData->getNumberOfSamples();
     try {
       size_t idx = 0;
-      for(size_t adr = _byteOffset; adr < _byteOffset + 4 * _numberOfWords; adr += 4) {
+      for(size_t adr = _startAddress; adr < _startAddress + nTransfers; ++adr) {
         if(_backend->type == SubdeviceBackend::Type::threeRegisters) {
           size_t retry = 0;
           size_t max_retry = _backend->timeout * 1000 / _backend->sleepTime;
@@ -47,9 +49,17 @@ namespace ChimeraTK {
         }
         _accAddress->accessData(0) = adr;
         _accAddress->write();
-        _accData->accessData(0) = _buffer[idx];
+        for(size_t innerOffset = 0; innerOffset < _accData->getNumberOfSamples(); ++innerOffset) {
+          if(idx < _numberOfWords) {
+            _accData->accessData(0, innerOffset) = _buffer[idx];
+          }
+          else {
+            // pad data with zeros, if _numberOfWords isn't an integer multiple of _accData->getNumberOfSamples()
+            _accData->accessData(0, innerOffset) = 0;
+          }
+          ++idx;
+        }
         _accData->write();
-        ++idx;
       }
     }
     catch(ChimeraTK::runtime_error&) {
