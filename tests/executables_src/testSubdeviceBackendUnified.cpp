@@ -87,7 +87,7 @@ struct StaticCore {
     if(useStatus) status = 1;
     BOOST_REQUIRE(address <= lastAddress);
     currentValue[address] = data;
-    usleep(1234);
+    usleep(432);
     if(useStatus) status = 0;
   }
 };
@@ -186,8 +186,7 @@ BOOST_AUTO_TEST_CASE(testUnified) {
   // test 2regs type
   core.useStatus = false;
   ChimeraTK::UnifiedBackendTest<>().addRegister<Regs3Type<MyRegister1>>().addRegister<Regs3Type<MyArea1>>().runTests(
-      "(subdevice?type=2regs&device=" + cdd +
-      "&address=APP.1.ADDRESS&data=APP.1.DATA&sleep=1000000&map=Subdevice.map)");
+      "(subdevice?type=2regs&device=" + cdd + "&address=APP.1.ADDRESS&data=APP.1.DATA&sleep=1000&map=Subdevice.map)");
 }
 
 /*********************************************************************************************************************/

@@ -55,10 +55,7 @@ namespace ChimeraTK { namespace LNMBackend {
     auto info = _info.lock();
 
     // Change data type to non-integral
-    auto d = info->_dataDescriptor;
-    info->_dataDescriptor =
-        RegisterInfo::DataDescriptor(d.fundamentalType(), false, false, std::numeric_limits<double>::max_digits10,
-            -std::numeric_limits<double>::min_exponent10, DataType::none, d.transportLayerDataType());
+    info->_dataDescriptor = RegisterInfo::DataDescriptor(DataType("float64"));
 
     // Fix to unidirectional operation
     if(info->writeable && info->readable) {
@@ -145,7 +142,8 @@ namespace ChimeraTK { namespace LNMBackend {
       _pushParameterWriteThread = boost::thread([this, &waitUntilThreadLaunched] {
         // obtain target accessor
         auto targetDevice = BackendFactory::getInstance().createBackend(_info.lock()->deviceName);
-        auto target = targetDevice->getRegisterAccessor<double>(_info.lock()->registerName, 0, 0, {});
+        auto info = _info.lock();
+        auto target = targetDevice->getRegisterAccessor<double>(info->registerName, info->length, info->firstIndex, {});
         // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
         while(true) {
           auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();
@@ -173,7 +171,7 @@ namespace ChimeraTK { namespace LNMBackend {
             target->writeDestructively();
             _pushParameterReadGroup.readAny();
           }
-          catch(...) {
+          catch(ChimeraTK::runtime_error& e) {
             // no need to report the exception, as the accessor should have already done it
             return;
           }
@@ -413,6 +411,8 @@ namespace ChimeraTK { namespace LNMBackend {
     }
   }
 
+  /********************************************************************************************************************/
+
   template<typename T>
   void MathPluginFormulaHelper::computeResult(std::vector<double>& x, std::vector<T>& resultBuffer) {
     // inform the value view of the new data pointer - the buffer might have been swapped
@@ -465,5 +465,7 @@ namespace ChimeraTK { namespace LNMBackend {
           "': The expression returned " + std::to_string(results.count()) + " results, expect exactly one result.");
     }
   }
+
+  /********************************************************************************************************************/
 
 }} // namespace ChimeraTK::LNMBackend

@@ -4,3 +4,10 @@ The ChimeraTK DeviceAccess library provides an abstract interface for register b
 
 The API documentation and tutorial examples for all versions are available under<br>
 <a href="https://chimeratk.github.io/DeviceAccess/index.html" target="_blank">https://chimeratk.github.io/DeviceAccess/index.html</a>
+
+## Dependencies
+
+To build this library from source, following libraries have to be built / installed first:
+
+* [cppext](https://github.com/ChimeraTK/cppext)
+* [exprtk](https://github.com/ChimeraTK/exprtk) via [exprtk-interface](https://github.com/ChimeraTK/exprtk-interface) (use `git clone --recurse-submodules`)

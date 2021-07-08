@@ -3,6 +3,7 @@
 #include <string>
 #include <functional>
 #include <list>
+#include <thread>
 
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/test/unit_test.hpp>

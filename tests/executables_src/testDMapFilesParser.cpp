@@ -8,7 +8,7 @@
 #include "helperFunctions.h"
 #include "parserUtilities.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {

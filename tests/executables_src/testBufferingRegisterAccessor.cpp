@@ -4,7 +4,7 @@
 #include "boost_dynamic_init_test.h"
 
 #include <algorithm>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>

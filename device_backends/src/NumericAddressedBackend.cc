@@ -69,51 +69,20 @@ namespace ChimeraTK {
   }
 
   /* Call 32-bit address implementation by default, for backends that don't implement 64-bit */
-  void NumericAddressedBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
-    read(bar, address, data, sizeInBytes);
+  void NumericAddressedBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
+    read(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
   }
 
-  void NumericAddressedBackend::write(uint8_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
-    write(bar, address, data, sizeInBytes);
-  }
-
-  /********************************************************************************************************************/
-
-  void NumericAddressedBackend::read(
-      const std::string& regModule, const std::string& regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) {
-    uint32_t retDataSize;
-    uint32_t retRegOff;
-    uint8_t retRegBar;
-
-    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
-    read(retRegBar, retRegOff, data, retDataSize);
-  }
-
-  /********************************************************************************************************************/
-
-  void NumericAddressedBackend::write(const std::string& regModule, const std::string& regName, int32_t const* data,
-      size_t dataSize, uint32_t addRegOffset) {
-    uint32_t retDataSize;
-    uint32_t retRegOff;
-    uint8_t retRegBar;
-
-    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
-    write(retRegBar, retRegOff, data, retDataSize);
+  void NumericAddressedBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
+    write(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
   }
 
   // Default range of valid BARs
-  bool NumericAddressedBackend::barIndexValid(uint32_t bar) { return bar <= 5 || bar == 13; }
+  bool NumericAddressedBackend::barIndexValid(uint64_t bar) { return bar <= 5 || bar == 13; }
 
   /********************************************************************************************************************/
 
   boost::shared_ptr<const RegisterInfoMap> NumericAddressedBackend::getRegisterMap() const { return _registerMap; }
-
-  /********************************************************************************************************************/
-
-  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegistersInModule(
-      const std::string& moduleName) const {
-    return _registerMap->getRegistersInModule(moduleName);
-  }
 
   /********************************************************************************************************************/
 

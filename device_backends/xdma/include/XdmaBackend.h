@@ -22,11 +22,11 @@ namespace ChimeraTK {
 
     const std::string _devicePath;
 
-    XdmaIntfAbstract* _intfFromBar(uint8_t bar);
+    XdmaIntfAbstract* _intfFromBar(uint64_t bar);
 
    public:
     explicit XdmaBackend(std::string devicePath, std::string mapFileName = "");
-    virtual ~XdmaBackend();
+    ~XdmaBackend() override;
 
     void open() override;
     void close() override;
@@ -35,8 +35,8 @@ namespace ChimeraTK {
     bool isFunctional() const override;
 
     void dump(const int32_t* data, size_t nbytes);
-    void read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
-    void write(uint8_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) override;
+    void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
+    void write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) override;
 
     std::string readDeviceInfo() override;
 

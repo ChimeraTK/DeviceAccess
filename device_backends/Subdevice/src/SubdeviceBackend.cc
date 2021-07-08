@@ -101,6 +101,15 @@ namespace ChimeraTK {
               "SubdeviceBackend: Invalid value for parameter 'sleep': '" + parameters["sleep"] + "': " + e.what());
         }
       }
+      if(!parameters["timeout"].empty()) {
+        try {
+          timeout = std::stoul(parameters["timeout"]);
+        }
+        catch(std::exception& e) {
+          throw ChimeraTK::logic_error(
+              "SubdeviceBackend: Invalid value for parameter 'timeout': '" + parameters["timeout"] + "': " + e.what());
+        }
+      }
     }
     else if(parameters["type"] == "2regs") {
       type = Type::twoRegisters;
@@ -285,6 +294,8 @@ namespace ChimeraTK {
 
     return returnValue;
   }
+
+  /********************************************************************************************************************/
 
   void SubdeviceBackend::verifyRegisterAccessorSize(
       boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords, size_t wordOffsetInRegister, bool forceAlignment) {

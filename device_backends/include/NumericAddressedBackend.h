@@ -20,20 +20,14 @@ namespace ChimeraTK {
 
     virtual ~NumericAddressedBackend() {}
 
-    virtual void read(const std::string& regModule, const std::string& regName, int32_t* data, size_t dataSize = 0,
-        uint32_t addRegOffset = 0);
-
-    virtual void write(const std::string& regModule, const std::string& regName, int32_t const* data,
-        size_t dataSize = 0, uint32_t addRegOffset = 0);
-
     /* interface using 32bit address for backwards compatibility */
     virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
     virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
 
-    virtual void read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
-    virtual void write(uint8_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
+    virtual void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
+    virtual void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
 
-    virtual bool barIndexValid(uint32_t bar);
+    virtual bool barIndexValid(uint64_t bar);
 
     virtual std::string readDeviceInfo() = 0;
 
@@ -65,8 +59,6 @@ namespace ChimeraTK {
     virtual size_t minimumTransferAlignment() const { return 1; }
 
     boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
-
-    std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> getRegistersInModule(const std::string& moduleName) const;
 
     boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath& registerPathName);
 

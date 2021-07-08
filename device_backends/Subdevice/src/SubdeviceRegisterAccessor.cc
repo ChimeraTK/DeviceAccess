@@ -30,9 +30,15 @@ namespace ChimeraTK {
       size_t idx = 0;
       for(size_t adr = _byteOffset; adr < _byteOffset + 4 * _numberOfWords; adr += 4) {
         if(_backend->type == SubdeviceBackend::Type::threeRegisters) {
+          size_t retry = 0;
+          size_t max_retry = _backend->timeout * 1000 / _backend->sleepTime;
           while(true) {
             _accStatus->read();
             if(_accStatus->accessData(0) == 0) break;
+            if(++retry > max_retry) {
+              throw ChimeraTK::runtime_error("Write to register '" + _name +
+                  "' failed: timout waiting for cleared busy flag (" + _accStatus->getName() + ")");
+            }
             usleep(_backend->sleepTime);
           }
         }

@@ -30,7 +30,7 @@ class TestDummy : public ChimeraTK::DummyBackend {
     return boost::shared_ptr<DeviceBackend>(new TestDummy(parameters["map"]));
   }
 
-  void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override {
+  void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
     if(bar == 0 && address == 0x44 && sizeInBytes == 4) { // ADC.WORD_ADC_ENA
       if(sequenceComplete) {
         // start new sequence

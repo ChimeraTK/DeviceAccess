@@ -27,7 +27,7 @@ namespace ChimeraTK {
     uint32_t _nextAddressInWords;
     uint32_t _nWordsLeft;
 
-    static const uint8_t BAR = 0;
+    static const uint64_t BAR = 0;
   };
 
 } //  namespace ChimeraTK

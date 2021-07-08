@@ -225,7 +225,7 @@ namespace ChimeraTK {
           size_t newEndIndex = std::max(wordOffsetInRegister + nWords, endIndex);
           accessor =
               backend->getRegisterAccessor<UserType>(registerPathName, newEndIndex - newBeginIndex, newBeginIndex,
-                  isRaw); // 0 offset, raw
+                  (isRaw ? AccessModeFlags{AccessMode::raw} : AccessModeFlags{})); // 0 offset, raw
           // we have to update the accessor with the current hardware information.
           // It might be that a partial write is going to happen.
           accessor->read();

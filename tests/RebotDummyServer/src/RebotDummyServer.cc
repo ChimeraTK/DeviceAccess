@@ -2,7 +2,7 @@
 #include "RebotDummyServer.h"
 #include "DummyProtocol1.h" // the latest version includes all predecessors in the include
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -110,19 +110,21 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void RebotDummySession::writeWordToRequestedAddress(std::vector<uint32_t>& buffer) {
-    uint32_t registerAddress = buffer.at(1); // This is the word offset; since
+    // byte and address must be uint64_t (uint8_t/uint32_t combination not allowed in DummyBackend any more)
+    uint64_t registerAddress = buffer.at(1); // This is the word offset; since
     // dummy device deals with byte
     // addresses convert to bytes FIXME
     registerAddress = registerAddress * 4;
     int32_t wordToWrite = buffer.at(2);
-    uint8_t bar = 0;
+    uint64_t bar = 0;
     _registerSpace->write(bar, registerAddress, &wordToWrite, sizeof(wordToWrite));
   }
 
   /********************************************************************************************************************/
 
   void RebotDummySession::readRegisterAndSendData(std::vector<uint32_t>& buffer) {
-    uint32_t registerAddress = buffer.at(1); // This is a word offset. convert to bytes before use. FIXME
+    // byte and address must be uint64_t (uint8_t/uint32_t combination not allowed in DummyBackend any more)
+    uint64_t registerAddress = buffer.at(1); // This is a word offset. convert to bytes before use. FIXME
     registerAddress = registerAddress * 4;
     uint32_t numberOfWordsToRead = buffer.at(2);
 
@@ -131,7 +133,7 @@ namespace ChimeraTK {
     sendSingleWord(READ_SUCCESS_INDICATION);
 
     std::vector<uint32_t> dataToSend(numberOfWordsToRead);
-    uint8_t bar = 0;
+    uint64_t bar = 0;
     // start putting in the read values from location dataToSend[1]:
     int32_t* startAddressForReadInData = reinterpret_cast<int32_t*>(dataToSend.data());
     _registerSpace->read(bar, registerAddress, startAddressForReadInData, numberOfWordsToRead * sizeof(int32_t));
@@ -163,10 +165,10 @@ namespace ChimeraTK {
     _socket(_io), _registerSpace(std::make_shared<DummyBackend>(mapFile)) {
     // The first address of the register space is set to a reference value. This
     // would be used to test the rebot client.
-    uint32_t registerAddress = 0x04;
+    uint64_t registerAddress = 0x04;
     int32_t wordToWrite = 0xDEADBEEF; // Change this to someting standardized
                                       // later (eg FW version ..)
-    uint8_t bar = 0;
+    uint64_t bar = 0;
     _registerSpace->open();
     _registerSpace->write(bar, registerAddress, &wordToWrite, sizeof(wordToWrite));
   }

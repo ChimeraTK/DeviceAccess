@@ -31,3 +31,6 @@ FLOAT_TEST.ARRAY                  0x00000004    0x00000064    0x00000010    0x00
 
 #A register without optional parameters to check that defaults are being correctly reset for new registers, after they have been there.
 BOARD.NO_OPTIONAL            0x00000001    0x00000008    0x00000004
+
+# Test for 64-bit BAR
+LARGE_BAR.NUMBER                  0x00000001    0x00000000    0x00000004    0x100000000

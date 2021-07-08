@@ -418,28 +418,6 @@ namespace ChimeraTK {
     /** \brief <b>DEPRECATED</b>
      *
      *  \deprecated
-     *  This function is deprecated. Use the RegisterCatalogue (see
-     * getRegisterCatalogue()) instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use getRegisterCatalogue() instead!")]] std::list<ChimeraTK::RegisterInfoMap::RegisterInfo>
-        getRegistersInModule(const std::string& moduleName) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use the RegisterCatalogue (see
-     * getRegisterCatalogue()) to obtain a list of registers and create accessors
-     * using getBufferingRegisterAccessor instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use getRegisterCatalogue() instead and create accessors with "
-                 "get*RegisterAccessor() functions!")]] std::list<boost::shared_ptr<ChimeraTK::RegisterAccessor>>
-        getRegisterAccessorsInModule(const std::string& moduleName) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
      *  This function is deprecated. Use getRegisterCatalogue() instead.
      *  @todo Add printed runtime warning after release of version 0.9
      */
@@ -723,7 +701,8 @@ namespace ChimeraTK {
       size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
     checkPointersAreNotNull();
     return BufferingRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
-        registerPathName, numberOfWords, wordOffsetInRegister, enforceRawAccess));
+        registerPathName, numberOfWords, wordOffsetInRegister,
+        (enforceRawAccess ? AccessModeFlags{AccessMode::raw} : AccessModeFlags{}) ));
   }
 
   /********************************************************************************************************************/

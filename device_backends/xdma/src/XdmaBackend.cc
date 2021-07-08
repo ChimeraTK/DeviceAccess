@@ -29,7 +29,7 @@ namespace ChimeraTK {
       try {
         _dmaChannels.emplace_back(_devicePath, i);
       }
-      catch(const runtime_error& e) {
+      catch(const runtime_error&) {
         break;
       }
     }
@@ -51,19 +51,19 @@ namespace ChimeraTK {
     return true;
   }
 
-  XdmaIntfAbstract* XdmaBackend::_intfFromBar(uint8_t bar) {
+  XdmaIntfAbstract* XdmaBackend::_intfFromBar(uint64_t bar) {
     if(bar == 0) {
       return _ctrlIntf ? dynamic_cast<XdmaIntfAbstract*>(&_ctrlIntf.value()) : nullptr;
     }
     // 13 is magic value for DMA channel (by convention)
     // We provide N DMA channels starting from there
-    const ssize_t dmaChIdx = bar - 13;
+    const ssize_t dmaChIdx = static_cast<ssize_t>(bar) - 13;
     if(dmaChIdx < 0 || dmaChIdx >= static_cast<ssize_t>(_dmaChannels.size())) {
       auto exc_string =
           std::string{"Couldn't find XDMA channel for BAR value "} + std::to_string(static_cast<int>(bar));
       throw ChimeraTK::logic_error(exc_string);
     }
-    return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[dmaChIdx]);
+    return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[static_cast<size_t>(dmaChIdx)]);
   }
 
 #ifdef _DEBUG
@@ -85,7 +85,7 @@ namespace ChimeraTK {
   }
 #endif
 
-  void XdmaBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
+  void XdmaBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
 #ifdef _DEBUG
     std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
@@ -96,7 +96,7 @@ namespace ChimeraTK {
 #endif
   }
 
-  void XdmaBackend::write(uint8_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) {
+  void XdmaBackend::write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) {
 #ifdef _DEBUG
     std::cout << "write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif

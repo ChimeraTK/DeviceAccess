@@ -41,16 +41,18 @@ namespace ChimeraTK {
   class SharedDummyBackend : public DummyBackendBase<SharedDummyBackend> {
    public:
     SharedDummyBackend(std::string instanceId, std::string mapFileName);
-    virtual ~SharedDummyBackend();
+    ~SharedDummyBackend() override;
 
     void open() override;
     void close() override;
-    void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override;
-    void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override;
+
+    using DummyBackendBase<SharedDummyBackend>::read;  // use the 32 bit version from the base class
+    using DummyBackendBase<SharedDummyBackend>::write; // use the 32 bit version from the base class
+    void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
+    void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
+
     std::string readDeviceInfo() override;
     bool isFunctional() const override { return (_opened && !_hasActiveException); }
-
-    int32_t& getRegisterContent(uint8_t bar, uint32_t address);
 
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
@@ -63,10 +65,10 @@ namespace ChimeraTK {
 
     // Bar contents with shared-memory compatible vector type. Plain pointers are
     // used here since this is what we get from the shared memory allocation.
-    std::map<uint8_t, SharedMemoryVector*> _barContents;
+    std::map<uint64_t, SharedMemoryVector*> _barContents;
 
     // Bar sizes
-    std::map<uint8_t, size_t> _barSizesInBytes;
+    std::map<uint64_t, size_t> _barSizesInBytes;
 
     // Naming of bars as shared memory elements
     const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";

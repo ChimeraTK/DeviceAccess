@@ -275,7 +275,7 @@ namespace ChimeraTK {
   : name(name_), value(value_) {}
 
   RegisterInfoMap::RegisterInfo::RegisterInfo(std::string const& name_, uint32_t nElements_, uint64_t address_,
-      uint32_t nBytes_, uint32_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
+      uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
       std::string const& module_, uint32_t nChannels_, bool is2DMultiplexed_, Access dataAccess_, Type dataType_)
   : name(name_), nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_), address(address_),
     nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_), signedFlag(signedFlag_),
@@ -341,8 +341,7 @@ namespace ChimeraTK {
               nDigits, nFractionalDigits, rawDataInfo);
         }
         else {
-          size_t nDigits =
-              std::ceil(std::log10(std::pow(2, width_))) + (signedFlag_ ? 1 : 0) + (nFractionalBits_ != 0 ? 1 : 0);
+          size_t nDigits = std::ceil(std::log10(std::pow(2, width_ + nFractionalBits_))) + (signedFlag_ ? 1 : 0);
 
           dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric, // fundamentalType
               true,                                                               // isIntegral

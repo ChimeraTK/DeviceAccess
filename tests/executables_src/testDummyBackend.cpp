@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE testDummyBackend
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/test/included/unit_test.hpp>
@@ -100,18 +100,6 @@ TestableDummyBackend* Fixture_t::getBackendInstance() {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testCalculateVirtualAddress) {
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0) == 0UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x35, 0) == 0x35UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x67875, 0x3) == 0x3000000000067875UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0x4) == 0x4000000000000000UL);
-
-  // the first bit of the bar has to be cropped
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x123, 0xD) == 0x5000000000000123UL);
-}
-
-/**********************************************************************************************************************/
-
 BOOST_AUTO_TEST_CASE(testCheckSizeIsMultipleOfWordSize) {
   // just some arbitrary numbers to test %4 = 0, 1, 2, 3
   BOOST_CHECK_NO_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(24));
@@ -129,8 +117,8 @@ BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING, mappingElement);
-  uint32_t offset = mappingElement.address;
-  uint8_t bar = mappingElement.bar;
+  uint64_t offset = mappingElement.address;
+  uint64_t bar = mappingElement.bar;
   int32_t dataContent = -1;
   // BOOST_CHECK_NO_THROW(dummyBackend->readReg(bar, offset, &dataContent));
   BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &dataContent, 4));
@@ -157,8 +145,8 @@ BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
-  uint32_t offset = mappingElement.address;
-  uint8_t bar = mappingElement.bar;
+  uint64_t offset = mappingElement.address;
+  uint64_t bar = mappingElement.bar;
   size_t sizeInBytes = mappingElement.nBytes;
   size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
   std::vector<int32_t> dataContent(sizeInWords, -1);
@@ -230,8 +218,8 @@ BOOST_AUTO_TEST_CASE(testReadOnly) {
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
-  uint32_t offset = mappingElement.address;
-  uint8_t bar = mappingElement.bar;
+  uint64_t offset = mappingElement.address;
+  uint64_t bar = mappingElement.bar;
   size_t sizeInBytes = mappingElement.nBytes;
   size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
   std::stringstream errorMessage;
@@ -304,40 +292,40 @@ BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
 
   // test single writes
   int32_t dataWord(42);
-  dummyBackend->write(0, 12, &dataWord, 4); // nothing
+  dummyBackend->write(static_cast<uint64_t>(0), 12, &dataWord, 4); // nothing
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 0);
   BOOST_CHECK(f.c == 0);
 
-  dummyBackend->write(0, 20, &dataWord, 4); // c
+  dummyBackend->write(static_cast<uint64_t>(0), 20, &dataWord, 4); // c
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 0);
   BOOST_CHECK(f.c == 1);
-  dummyBackend->write(0, 24, &dataWord, 4); // c
+  dummyBackend->write(static_cast<uint64_t>(0), 24, &dataWord, 4); // c
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 0);
   BOOST_CHECK(f.c == 2);
-  dummyBackend->write(0, 28, &dataWord, 4); // bc
+  dummyBackend->write(static_cast<uint64_t>(0), 28, &dataWord, 4); // bc
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 1);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(0, 32, &dataWord, 4); // read only
+  dummyBackend->write(static_cast<uint64_t>(0), 32, &dataWord, 4); // read only
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 1);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(0, 36, &dataWord, 4); // ab
+  dummyBackend->write(static_cast<uint64_t>(0), 36, &dataWord, 4); // ab
   BOOST_CHECK(f.a == 1);
   BOOST_CHECK(f.b == 2);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(0, 40, &dataWord, 4); // read only
+  dummyBackend->write(static_cast<uint64_t>(0), 40, &dataWord, 4); // read only
   BOOST_CHECK(f.a == 1);
   BOOST_CHECK(f.b == 2);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(0, 44, &dataWord, 4); // read only
+  dummyBackend->write(static_cast<uint64_t>(0), 44, &dataWord, 4); // read only
   BOOST_CHECK(f.a == 1);
   BOOST_CHECK(f.b == 2);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(0, 48, &dataWord, 4); // b
+  dummyBackend->write(static_cast<uint64_t>(0), 48, &dataWord, 4); // b
   BOOST_CHECK(f.a == 1);
   BOOST_CHECK(f.b == 3);
   BOOST_CHECK(f.c == 3);
@@ -346,31 +334,31 @@ BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
   f.a = 0;
   f.b = 0;
   f.c = 0;
-  dummyBackend->write(0, 20, &(dataContents[0]), 32); // abc
+  dummyBackend->write(static_cast<uint64_t>(0), 20, &(dataContents[0]), 32); // abc
   BOOST_CHECK(f.a == 1);
   BOOST_CHECK(f.b == 1);
   BOOST_CHECK(f.c == 1);
-  dummyBackend->write(0, 20, &(dataContents[0]), 8); // c
+  dummyBackend->write(static_cast<uint64_t>(0), 20, &(dataContents[0]), 8); // c
   BOOST_CHECK(f.a == 1);
   BOOST_CHECK(f.b == 1);
   BOOST_CHECK(f.c == 2);
-  dummyBackend->write(0, 20, &(dataContents[0]), 12); // bc
+  dummyBackend->write(static_cast<uint64_t>(0), 20, &(dataContents[0]), 12); // bc
   BOOST_CHECK(f.a == 1);
   BOOST_CHECK(f.b == 2);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(0, 28, &(dataContents[0]), 24); // abc
+  dummyBackend->write(static_cast<uint64_t>(0), 28, &(dataContents[0]), 24); // abc
   BOOST_CHECK(f.a == 2);
   BOOST_CHECK(f.b == 3);
   BOOST_CHECK(f.c == 4);
-  dummyBackend->write(0, 32, &(dataContents[0]), 16); // ab
+  dummyBackend->write(static_cast<uint64_t>(0), 32, &(dataContents[0]), 16); // ab
   BOOST_CHECK(f.a == 3);
   BOOST_CHECK(f.b == 4);
   BOOST_CHECK(f.c == 4);
-  dummyBackend->write(0, 40, &(dataContents[0]), 8); // readOnly
+  dummyBackend->write(static_cast<uint64_t>(0), 40, &(dataContents[0]), 8); // readOnly
   BOOST_CHECK(f.a == 3);
   BOOST_CHECK(f.b == 4);
   BOOST_CHECK(f.c == 4);
-  dummyBackend->write(0, 4, &(dataContents[0]), 8); // nothing
+  dummyBackend->write(static_cast<uint64_t>(0), 4, &(dataContents[0]), 8); // nothing
   BOOST_CHECK(f.a == 3);
   BOOST_CHECK(f.b == 4);
   BOOST_CHECK(f.c == 4);
@@ -390,10 +378,10 @@ BOOST_AUTO_TEST_CASE(testWriteRegisterWithoutCallback) {
   BOOST_CHECK(f.c == 0); // c must not change
 
   // read only is also disabled for this internal function
-  dummyBackend->read(0, 40, &dataWord, 4);
+  dummyBackend->read(static_cast<uint64_t>(0), 40, &dataWord, 4);
   dummyBackend->writeRegisterWithoutCallback(0, 40, dataWord + 1);
   int32_t readbackDataWord;
-  dummyBackend->read(0, 40, &readbackDataWord, 4);
+  dummyBackend->read(static_cast<uint64_t>(0), 40, &readbackDataWord, 4);
   BOOST_CHECK(readbackDataWord == dataWord + 1);
 }
 
@@ -500,10 +488,10 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
   // plus the dma bar 0xD
   // BOOST_CHECK((*dummyBackend)._barContents.size() == 3 );
   BOOST_CHECK(dummyBackend->_barContents.size() == 3);
-  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar0Iter = dummyBackend->_barContents.find(0);
+  std::map<uint64_t, std::vector<int32_t>>::const_iterator bar0Iter = dummyBackend->_barContents.find(0);
   BOOST_REQUIRE(bar0Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar0Iter->second.size() == 0x53); // 0x14C bytes in 32 bit words
-  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar2Iter = dummyBackend->_barContents.find(2);
+  std::map<uint64_t, std::vector<int32_t>>::const_iterator bar2Iter = dummyBackend->_barContents.find(2);
   BOOST_REQUIRE(bar2Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar2Iter->second.size() == 0x400); // 0x1000 bytes in 32 bit words
 

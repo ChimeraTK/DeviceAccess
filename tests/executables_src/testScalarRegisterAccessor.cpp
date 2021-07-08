@@ -6,7 +6,7 @@ using namespace boost::unit_test_framework;
 #include <algorithm>
 #include <unordered_map>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>

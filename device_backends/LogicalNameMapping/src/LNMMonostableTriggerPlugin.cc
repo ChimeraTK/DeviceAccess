@@ -1,5 +1,7 @@
 #include <boost/make_shared.hpp>
 
+#include <thread>
+
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessorDecorator.h"

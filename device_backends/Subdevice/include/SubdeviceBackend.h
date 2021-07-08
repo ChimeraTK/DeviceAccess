@@ -68,10 +68,10 @@ namespace ChimeraTK {
     friend class SubdeviceRegisterAccessor;
 
     enum class Type {
-      area,           // address space is visible as an area in the target device
-      threeRegisters, // use three registers (address, data and status) in target
-                      // device. status must be 0 when idle
-      twoRegisters    // same as three registers but without status
+      area,           //< address space is visible as an area in the target device
+      threeRegisters, //< use three registers (address, data and status) in target
+                      //< device. status must be 0 when idle
+      twoRegisters    //< same as three registers but without status
     };
 
     /// Mutex to deal with concurrent access to the device
@@ -79,6 +79,9 @@ namespace ChimeraTK {
 
     /// type of the subdeivce
     Type type;
+
+    /// timeout (in milliseconds), used in threeRegisters to throw a runtime_error if status register stuck at 1
+    size_t timeout{10000};
 
     /// the target device name
     std::string targetAlias;
