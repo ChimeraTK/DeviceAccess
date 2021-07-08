@@ -74,11 +74,11 @@ namespace ChimeraTK {
 
   /* Call 32-bit address implementation by default, for backends that don't implement 64-bit */
   void NumericAddressedBackend::read(uint8_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
-    read(bar, static_cast<uint32_t>(address), data, sizeInBytes);
+    read(bar, address, data, sizeInBytes);
   }
 
   void NumericAddressedBackend::write(uint8_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
-    write(bar, static_cast<uint32_t>(address), data, sizeInBytes);
+    write(bar, address, data, sizeInBytes);
   }
 
   /********************************************************************************************************************/
