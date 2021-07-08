@@ -341,8 +341,7 @@ namespace ChimeraTK {
               nDigits, nFractionalDigits, rawDataInfo);
         }
         else {
-          size_t nDigits =
-              std::ceil(std::log10(std::pow(2, width_+nFractionalBits_))) + (signedFlag_ ? 1 : 0);
+          size_t nDigits = std::ceil(std::log10(std::pow(2, width_ + nFractionalBits_))) + (signedFlag_ ? 1 : 0);
 
           dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric, // fundamentalType
               true,                                                               // isIntegral
@@ -351,14 +350,14 @@ namespace ChimeraTK {
         }
       }
       else if(width == 1) { // boolean
-        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::boolean,true,false,1,0,rawDataInfo);
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::boolean, true, false, 1, 0, rawDataInfo);
       }
       else { // width == 0 -> nodata
-        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata,false,false,0,0,rawDataInfo);
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata, false, false, 0, 0, rawDataInfo);
       }
     }
     else if(dataType == ASCII) {
-      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::string,false,false,0,0,rawDataInfo);
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::string, false, false, 0, 0, rawDataInfo);
     }
   }
   const RegisterCatalogue& RegisterInfoMap::getRegisterCatalogue() { return _catalogue; }
