@@ -108,8 +108,12 @@ namespace ChimeraTK {
   }
 
   std::string XdmaBackend::readDeviceInfo() {
-    // TODO implement me
-    return "";
+    if(!isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+
+    std::string result = "XDMA device path = " + _devicePath + ", ";
+    result += std::to_string(_dmaChannels.size()) + " DMA channels";
+    // TODO: retrieve other interesting stuff (driver version...) via ioctl
+    return result;
   }
 
   boost::shared_ptr<DeviceBackend> XdmaBackend::createInstance(
