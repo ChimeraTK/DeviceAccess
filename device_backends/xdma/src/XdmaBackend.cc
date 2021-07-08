@@ -41,7 +41,7 @@ namespace ChimeraTK {
     _dmaChannels.clear();
   }
 
-  bool XdmaBackend::isOpen() { return !!_ctrlIntf; }
+  bool XdmaBackend::isOpen() { return _ctrlIntf.has_value(); }
 
   bool XdmaBackend::isFunctional() const {
     if(!_ctrlIntf || _hasActiveException) {
