@@ -58,17 +58,13 @@ namespace ChimeraTK {
   }
 
   /* Throw exception if called directly and not implemented by backend */
-  void NumericAddressedBackend::read([[maybe_unused]] uint8_t bar,
-                                     [[maybe_unused]] uint32_t address,
-                                     [[maybe_unused]] int32_t* data,
-                                     [[maybe_unused]] size_t sizeInBytes) {
+  void NumericAddressedBackend::read([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
+      [[maybe_unused]] int32_t* data, [[maybe_unused]] size_t sizeInBytes) {
     throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface read() called w/ 32bit address");
   }
 
-  void NumericAddressedBackend::write([[maybe_unused]] uint8_t bar,
-                                      [[maybe_unused]] uint32_t address,
-                                      [[maybe_unused]] int32_t const* data,
-                                      [[maybe_unused]] size_t sizeInBytes) {
+  void NumericAddressedBackend::write([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
+      [[maybe_unused]] int32_t const* data, [[maybe_unused]] size_t sizeInBytes) {
     throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface write() called w/ 32bit address");
   }
 
@@ -106,9 +102,7 @@ namespace ChimeraTK {
   }
 
   // Default range of valid BARs
-  bool NumericAddressedBackend::barIndexValid(uint32_t bar) {
-    return bar <= 5 || bar == 13; 
-  }
+  bool NumericAddressedBackend::barIndexValid(uint32_t bar) { return bar <= 5 || bar == 13; }
 
   /********************************************************************************************************************/
 

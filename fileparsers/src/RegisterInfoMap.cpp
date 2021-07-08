@@ -351,14 +351,14 @@ namespace ChimeraTK {
         }
       }
       else if(width == 1) { // boolean
-        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::boolean,true,false,1,0,rawDataInfo);
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::boolean, true, false, 1, 0, rawDataInfo);
       }
       else { // width == 0 -> nodata
-        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata,false,false,0,0,rawDataInfo);
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata, false, false, 0, 0, rawDataInfo);
       }
     }
     else if(dataType == ASCII) {
-      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::string,false,false,0,0,rawDataInfo);
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::string, false, false, 0, 0, rawDataInfo);
     }
   }
   const RegisterCatalogue& RegisterInfoMap::getRegisterCatalogue() { return _catalogue; }

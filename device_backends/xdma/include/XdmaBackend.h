@@ -13,8 +13,8 @@
 
 namespace ChimeraTK {
 
-class XdmaBackend : public NumericAddressedBackend, private boost::noncopyable {
-private:
+  class XdmaBackend : public NumericAddressedBackend, private boost::noncopyable {
+   private:
     std::optional<CtrlIntf> _ctrlIntf;
     std::vector<DmaIntf> _dmaChannels;
 
@@ -24,7 +24,7 @@ private:
 
     XdmaIntfAbstract* _intfFromBar(uint8_t bar);
 
-public:
+   public:
     explicit XdmaBackend(std::string devicePath, std::string mapFileName = "");
     virtual ~XdmaBackend();
 
@@ -41,11 +41,9 @@ public:
     std::string readDeviceInfo() override;
 
     static boost::shared_ptr<DeviceBackend> createInstance(
-        std::string address,
-        std::map<std::string, std::string> parameters
-    );
+        std::string address, std::map<std::string, std::string> parameters);
 
     void setException() override;
-};
+  };
 
-}
+} // namespace ChimeraTK
