@@ -57,13 +57,13 @@ namespace ChimeraTK {
     }
     // 13 is magic value for DMA channel (by convention)
     // We provide N DMA channels starting from there
-    const ssize_t dmaChIdx = static_cast<ssize_t>(bar) - 13;
-    if(dmaChIdx < 0 || dmaChIdx >= static_cast<ssize_t>(_dmaChannels.size())) {
-      auto exc_string =
-          std::string{"Couldn't find XDMA channel for BAR value "} + std::to_string(static_cast<int>(bar));
-      throw ChimeraTK::logic_error(exc_string);
+    if(bar >= 13) {
+      const size_t dmaChIdx = bar - 13;
+      if(dmaChIdx < _dmaChannels.size()) {
+        return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[dmaChIdx]);
+      }
     }
-    return dynamic_cast<XdmaIntfAbstract*>(&_dmaChannels[static_cast<size_t>(dmaChIdx)]);
+    throw ChimeraTK::logic_error("Couldn't find XDMA channel for BAR value " + std::to_string(bar));
   }
 
 #ifdef _DEBUG
