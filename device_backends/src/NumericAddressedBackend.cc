@@ -58,21 +58,17 @@ namespace ChimeraTK {
   }
 
   /* Throw exception if called directly and not implemented by backend */
-  void NumericAddressedBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
-    // Doxygen can't handle [[maybe_unused]]
-    (void)bar;
-    (void)address;
-    (void)data;
-    (void)sizeInBytes;
+  void NumericAddressedBackend::read([[maybe_unused]] uint8_t bar,
+                                     [[maybe_unused]] uint32_t address,
+                                     [[maybe_unused]] int32_t* data,
+                                     [[maybe_unused]] size_t sizeInBytes) {
     throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface read() called w/ 32bit address");
   }
 
-  void NumericAddressedBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
-    // Doxygen can't handle [[maybe_unused]]
-    (void)bar;
-    (void)address;
-    (void)data;
-    (void)sizeInBytes;
+  void NumericAddressedBackend::write([[maybe_unused]] uint8_t bar,
+                                      [[maybe_unused]] uint32_t address,
+                                      [[maybe_unused]] int32_t const* data,
+                                      [[maybe_unused]] size_t sizeInBytes) {
     throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface write() called w/ 32bit address");
   }
 
