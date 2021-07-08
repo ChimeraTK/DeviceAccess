@@ -47,7 +47,6 @@ namespace ChimeraTK {
     if(!_ctrlIntf || _hasActiveException) {
       return false;
     }
-    // TODO implement me
     return true;
   }
 
