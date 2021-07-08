@@ -140,29 +140,3 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Findmtca4u-deviceaccess.cmake.in "${P
 install(FILES "${PROJECT_BINARY_DIR}/Findmtca4u-deviceaccess.cmake"
         DESTINATION share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules
         COMPONENT dev)
-
-if(HAVE_XDMA_BACKEND)
-  SET(UDEV_OPTION_DEFAULT ON)
-else()
-  SET(UDEV_OPTION_DEFAULT OFF)
-endif()
-    
-option(INSTALL_UDEV_RULES
-  "Install udev rules for xdma driver"
-  ${UDEV_OPTION_DEFAULT}
-)
-
-set(UDEV_RULES_PATH
-  "/etc/udev/rules.d"
-  CACHE STRING
-  "Target directory for udev rules installation"
-)
-
-if(INSTALL_UDEV_RULES)
-  install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/device_backends/xdma/udev_rules/60-xdma.rules
-    ${CMAKE_CURRENT_SOURCE_DIR}/device_backends/xdma/udev_rules/xdma-udev-command.sh
-    DESTINATION ${UDEV_RULES_PATH}
-    COMPONENT "udev_rules"
-  )
-endif()
