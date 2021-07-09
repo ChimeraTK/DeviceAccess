@@ -112,7 +112,7 @@ namespace ChimeraTK {
       result += std::to_string(_dmaChannels.size());
     }
     else {
-      result += "uknown (device closed)";
+      result += "unknown (device closed)";
     }
 
     // TODO: retrieve other interesting stuff (driver version...) via ioctl
