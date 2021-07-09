@@ -39,9 +39,12 @@ include_directories(SYSTEM ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 # we can then use in other places.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(HAVE_PCIE_BACKEND 1)
+  set(HAVE_XDMA_BACKEND 1)
   add_definitions(-DCHIMERATK_HAVE_PCIE_BACKEND)
+  add_definitions(-DCHIMERATK_HAVE_XDMA_BACKEND)
 else()
   set(HAVE_PCIE_BACKEND 0)
+  set(HAVE_XDMA_BACKEND 0)
 endif()
 
 # Generate DeviceAccessVersion.h
@@ -53,6 +56,9 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/generated_include/ DESTINATION include/C
 set(subdirs exception util fileparsers device_backends device device_backends/LogicalNameMapping device_backends/Subdevice device_backends/SharedDummy device_backends/Rebot)
 if(HAVE_PCIE_BACKEND)
   set(subdirs ${subdirs} device_backends/pcie)
+endif()
+if(HAVE_XDMA_BACKEND)
+  set(subdirs ${subdirs} device_backends/xdma)
 endif()
 foreach(subdir ${subdirs})
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/src sources)
