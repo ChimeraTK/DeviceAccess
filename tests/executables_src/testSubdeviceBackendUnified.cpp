@@ -73,20 +73,36 @@ struct StaticCore {
   StaticCore() {
     assert(target != nullptr);
     data.setWriteCallback([this] { this->writeCallback(); });
+    area.setWriteCallback([this] { this->writeCallback(); });
   }
 
   DummyRegisterAccessor<uint32_t> address{target.get(), "APP.1", "ADDRESS"};
   DummyRegisterAccessor<uint32_t> data{target.get(), "APP.1", "DATA"};
+  DummyRegisterAccessor<uint32_t> area{target.get(), "APP.0", "THE_AREA"};
   DummyRegisterAccessor<uint32_t> status{target.get(), "APP.1", "STATUS"};
   size_t lastAddress{32};
   std::vector<uint32_t> currentValue{std::vector<uint32_t>(lastAddress)};
+  size_t areaSize{10};
+  std::vector<std::vector<uint32_t>> currentAreaValue{lastAddress, std::vector<uint32_t>(areaSize)};
 
   bool useStatus{true};
+  bool useArea{false};
 
   void writeCallback() {
     if(useStatus) status = 1;
-    BOOST_REQUIRE(address <= lastAddress);
-    currentValue[address] = data;
+    if(address >= lastAddress) {
+      std::cout << "Error: address (" << address << ") >= lastAddress (" << lastAddress << ")!" << std::endl;
+    }
+    BOOST_REQUIRE(address < lastAddress);
+    if(!useArea) {
+      currentValue[address] = data;
+    }
+    else {
+      assert(area.getNumberOfElements() == areaSize);
+      for(size_t i = 0; i < areaSize; ++i) {
+        currentAreaValue[address][i] = area[i];
+      }
+    }
     usleep(432);
     if(useStatus) status = 0;
   }
@@ -110,8 +126,14 @@ struct Regs3Type : Register {
   std::vector<std::vector<UserType>> generateValue() {
     std::vector<UserType> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      typename Register::minimumUserType e =
-          this->fromRaw(core.currentValue[i * 4 + this->address()]) + this->increment * (i + 1);
+      uint32_t cv;
+      if(!core.useArea) {
+        cv = core.currentValue[i + this->address()];
+      }
+      else {
+        cv = core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize];
+      }
+      typename Register::minimumUserType e = this->fromRaw(cv) + this->increment * (i + 1);
       v.push_back(this->limitGenerated(e));
     }
     return {v};
@@ -121,7 +143,12 @@ struct Regs3Type : Register {
   std::vector<std::vector<UserType>> getRemoteValue() {
     std::vector<UserType> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      v.push_back(this->fromRaw(core.currentValue[i * 4 + this->address()]));
+      if(!core.useArea) {
+        v.push_back(this->fromRaw(core.currentValue[i + this->address()]));
+      }
+      else {
+        v.push_back(this->fromRaw(core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize]));
+      }
     }
     return {v};
   }
@@ -129,7 +156,12 @@ struct Regs3Type : Register {
   void setRemoteValue() {
     auto v = generateValue<typename Register::minimumUserType>()[0];
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      core.currentValue[i * 4 + this->address()] = this->toRaw(v[i]);
+      if(!core.useArea) {
+        core.currentValue[i + this->address()] = this->toRaw(v[i]);
+      }
+      else {
+        core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize] = this->toRaw(v[i]);
+      }
     }
   }
 
@@ -173,6 +205,38 @@ struct MyArea1 {
 
 /*********************************************************************************************************************/
 
+struct MuxedArea1 {
+  std::string path() { return "/APP.0/THE_AREA_1"; }
+  size_t nElementsPerChannel() { return 10; }
+  size_t address() { return 0; }
+  uint32_t toRaw(uint32_t v) { return v; }
+  uint32_t fromRaw(uint32_t v) { return v; }
+  uint32_t limitGenerated(uint32_t e) { return e; }
+  uint32_t increment = 17;
+  typedef uint32_t minimumUserType;
+  typedef int32_t rawUserType;
+};
+
+/*********************************************************************************************************************/
+
+struct MuxedArea2 {
+  std::string path() { return "/APP.0/THE_AREA_2"; }
+  size_t nElementsPerChannel() { return 25; }
+  size_t address() { return 7; }
+  uint32_t toRaw(float v) { return v * 65536.F; }
+  float fromRaw(uint32_t v) { return v / 65536.F; }
+  float limitGenerated(float e) {
+    while(e > 32768.F) e -= 65535.F;
+    while(e < -32767.F) e += 65535.F;
+    return e;
+  }
+  float increment = 42. / 65536.;
+  typedef float minimumUserType;
+  typedef int32_t rawUserType;
+};
+
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testUnified) {
   // test area type
   ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyRegister1>>().addRegister<AreaType<MyArea1>>().runTests(
@@ -187,6 +251,14 @@ BOOST_AUTO_TEST_CASE(testUnified) {
   core.useStatus = false;
   ChimeraTK::UnifiedBackendTest<>().addRegister<Regs3Type<MyRegister1>>().addRegister<Regs3Type<MyArea1>>().runTests(
       "(subdevice?type=2regs&device=" + cdd + "&address=APP.1.ADDRESS&data=APP.1.DATA&sleep=1000&map=Subdevice.map)");
+
+  // test different use case of 3regs mode: multiplexing of an area
+  core.useStatus = true;
+  core.useArea = true;
+  core.lastAddress = 10;
+  ChimeraTK::UnifiedBackendTest<>().addRegister<Regs3Type<MuxedArea1>>().addRegister<Regs3Type<MuxedArea2>>().runTests(
+      "(subdevice?type=3regs&device=" + cdd +
+      "&address=APP.1.ADDRESS&data=APP.0.THE_AREA&status=APP.1.STATUS&map=SubdeviceMuxedArea.map)");
 }
 
 /*********************************************************************************************************************/

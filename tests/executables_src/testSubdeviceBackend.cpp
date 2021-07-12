@@ -1,10 +1,12 @@
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE SubdeviceBackendTest
-#include <boost/test/unit_test.hpp>
-using namespace boost::unit_test_framework;
-
 #include "Device.h"
 #include <thread>
+
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE SubdeviceBackendTest
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace ChimeraTK;
 
@@ -531,7 +533,7 @@ BOOST_AUTO_TEST_CASE(test3regsArray) {
   BOOST_CHECK(done == false);
   accS = 0;
   accS.write();
-  CHECK_TIMEOUT(accA.read();, (accA == 36), 5000);
+  CHECK_TIMEOUT(accA.read();, (accA == 33), 5000);
   t.join();
   accD.read();
   BOOST_CHECK_EQUAL(static_cast<int32_t>(accD), 456);

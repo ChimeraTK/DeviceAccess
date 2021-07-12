@@ -394,12 +394,12 @@ namespace ChimeraTK {
     // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
 
-    // obtain target accessor in raw mode
-    auto accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {AccessMode::raw});
-    auto accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 1, 0, {AccessMode::raw});
+    // obtain target accessors
+    auto accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {});
+    auto accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 0, 0, {});
     boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus;
     if(type == Type::threeRegisters) {
-      accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {AccessMode::raw});
+      accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {});
     }
 
     size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;

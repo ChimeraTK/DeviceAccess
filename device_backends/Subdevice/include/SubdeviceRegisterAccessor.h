@@ -55,7 +55,7 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<int32_t>> _accStatus;
 
     /// start address and length
-    size_t _byteOffset, _numberOfWords;
+    size_t _startAddress, _numberOfWords;
 
     /// internal buffer
     std::vector<int32_t> _buffer;
