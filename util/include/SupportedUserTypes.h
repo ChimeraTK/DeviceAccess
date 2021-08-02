@@ -203,11 +203,15 @@ namespace ChimeraTK {
 
   /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
    *  dependence of the UserType. */
-  typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
+  typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, 
+      boost::fusion::pair<uint8_t, uint8_t>,
       boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
       boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>,
-      boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>,
-      boost::fusion::pair<double, double>, boost::fusion::pair<std::string, std::string>>
+      boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, 
+      boost::fusion::pair<float, float>,
+      boost::fusion::pair<double, double>, 
+      boost::fusion::pair<std::string, std::string>,
+      boost::fusion::pair<bool, bool>>
       userTypeMap;
 
   /** Map of UserType to a value of a single type (same for evey user type) */
@@ -219,7 +223,8 @@ namespace ChimeraTK {
         boost::fusion::pair<int32_t, TargetType>, boost::fusion::pair<uint32_t, TargetType>,
         boost::fusion::pair<int64_t, TargetType>, boost::fusion::pair<uint64_t, TargetType>,
         boost::fusion::pair<float, TargetType>, boost::fusion::pair<double, TargetType>,
-        boost::fusion::pair<std::string, TargetType>>
+        boost::fusion::pair<std::string, TargetType>,
+        boost::fusion::pair<bool, bool>>
         table;
   };
 
@@ -234,7 +239,8 @@ namespace ChimeraTK {
         boost::fusion::pair<uint32_t, TemplateClass<uint32_t>>, boost::fusion::pair<int64_t, TemplateClass<int64_t>>,
         boost::fusion::pair<uint64_t, TemplateClass<uint64_t>>, boost::fusion::pair<float, TemplateClass<float>>,
         boost::fusion::pair<double, TemplateClass<double>>,
-        boost::fusion::pair<std::string, TemplateClass<std::string>>>
+        boost::fusion::pair<std::string, TemplateClass<std::string>>,
+        boost::fusion::pair<bool, TemplateClass<bool>>>
         table;
   };
 
@@ -243,7 +249,8 @@ namespace ChimeraTK {
   using SingleTypeUserTypeMap = boost::fusion::map<boost::fusion::pair<int8_t, T>, boost::fusion::pair<uint8_t, T>,
       boost::fusion::pair<int16_t, T>, boost::fusion::pair<uint16_t, T>, boost::fusion::pair<int32_t, T>,
       boost::fusion::pair<uint32_t, T>, boost::fusion::pair<int64_t, T>, boost::fusion::pair<uint64_t, T>,
-      boost::fusion::pair<float, T>, boost::fusion::pair<double, T>, boost::fusion::pair<std::string, T>>;
+      boost::fusion::pair<float, T>, boost::fusion::pair<double, T>, boost::fusion::pair<std::string, T>,
+      boost::fusion::pair<bool, T>>;
 
 #define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                       \
   extern template class TemplateClass<int8_t>;                                                                         \
@@ -256,7 +263,8 @@ namespace ChimeraTK {
   extern template class TemplateClass<uint64_t>;                                                                       \
   extern template class TemplateClass<float>;                                                                          \
   extern template class TemplateClass<double>;                                                                         \
-  extern template class TemplateClass<std::string> // the last semicolon is added by the user
+  extern template class TemplateClass<std::string>;
+  extern template class TemplateClass<bool> // the last semicolon is added by the user
 
 #define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                   \
   template class TemplateClass<int8_t>;                                                                                \
@@ -269,7 +277,8 @@ namespace ChimeraTK {
   template class TemplateClass<uint64_t>;                                                                              \
   template class TemplateClass<float>;                                                                                 \
   template class TemplateClass<double>;                                                                                \
-  template class TemplateClass<std::string> // the last semicolon is added by the user
+  template class TemplateClass<std::string>;
+  template class TemplateClass<bool> // the last semicolon is added by the user
 
 /** Macro to declare a template class with multiple template parameters for all
  *  supported user types. The variadic arguments are the additional template
@@ -287,7 +296,8 @@ namespace ChimeraTK {
   extern template class TemplateClass<uint64_t, __VA_ARGS__>;                                                          \
   extern template class TemplateClass<float, __VA_ARGS__>;                                                             \
   extern template class TemplateClass<double, __VA_ARGS__>;                                                            \
-  extern template class TemplateClass<std::string, __VA_ARGS__> // the last semicolon is added by the user
+  extern template class TemplateClass<std::string, __VA_ARGS__>;
+  extern template class TemplateClass<bool, __VA_ARGS__> // the last semicolon is added by the user
 
 #define INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass, ...)                                        \
   template class TemplateClass<int8_t, __VA_ARGS__>;                                                                   \
@@ -300,7 +310,8 @@ namespace ChimeraTK {
   template class TemplateClass<uint64_t, __VA_ARGS__>;                                                                 \
   template class TemplateClass<float, __VA_ARGS__>;                                                                    \
   template class TemplateClass<double, __VA_ARGS__>;                                                                   \
-  template class TemplateClass<std::string, __VA_ARGS__> // the last semicolon is added by the user
+  template class TemplateClass<std::string, __VA_ARGS__>;
+  template class TemplateClass<bool, __VA_ARGS__> // the last semicolon is added by the user
 
   /** A class to describe which of the supported data types is used.
    *  There is the additional type 'none' to indicate that the data type is not
@@ -330,7 +341,8 @@ namespace ChimeraTK {
       uint64,  ///< Unsigned 64 bit integer
       float32, ///< Single precision float
       float64, ///< Double precision float
-      string   ///< std::string
+      string,   ///< std::string
+      boolean
     };
 
     /** Implicit conversion operator to make DataType behave like a class enum.
@@ -362,6 +374,7 @@ namespace ChimeraTK {
         case int64:
         case uint64:
           return true;
+        case boolean:
         default:
           return false;
       }
@@ -380,6 +393,7 @@ namespace ChimeraTK {
         case float32:
         case float64:
           return true;
+        case boolean:
         default:
           return false;
       }
@@ -393,6 +407,7 @@ namespace ChimeraTK {
       // non-numeric types this has to be adapted.
       switch(_value) {
         case none:
+        case boolean:
         case string:
           return false;
         default:
@@ -439,6 +454,9 @@ namespace ChimeraTK {
       else if(info == typeid(std::string)) {
         _value = string;
       }
+      else if(info == typeid(bool)) {
+        _value = boolean;
+      }
       else {
         _value = none;
       }
@@ -479,6 +497,9 @@ namespace ChimeraTK {
       else if(typeName == "string") {
         _value = string;
       }
+      else if(typeName == "bool") {
+        _value = boolean;
+      }
       else {
         _value = none;
       }
@@ -509,6 +530,8 @@ namespace ChimeraTK {
           return "float64";
         case string:
           return "string";
+        case boolean:
+          return "bool";
         default:
           return "unknown";
       }
@@ -636,6 +659,8 @@ namespace ChimeraTK {
       } break;
       case DataType::string: {
         lambda(std::string());
+      case DataType::bool: {
+        lambda(bool());
       } break;
       case DataType::none:
         class myBadCast : public std::bad_cast {
