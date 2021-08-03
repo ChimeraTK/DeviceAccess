@@ -11,6 +11,7 @@
 #include "NumericAddress.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
+#include "AsyncNDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
