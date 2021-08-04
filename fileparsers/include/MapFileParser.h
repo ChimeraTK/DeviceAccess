@@ -43,6 +43,8 @@ namespace ChimeraTK {
 
    protected:
     std::pair<RegisterInfoMap::RegisterInfo::Type, int> getTypeAndNFractionalBits(std::string bitInterpretation);
+    std::pair<bool, std::pair<unsigned int, unsigned int>> checkIfInterruptAndGetInterruptCtrlNoAndInterruptNo(
+        std::string accessType);
   };
 
 } // namespace ChimeraTK

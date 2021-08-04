@@ -32,6 +32,9 @@ namespace ChimeraTK {
     RegisterInfoMap::RegisterInfo::Access registerAccess;
     RegisterInfoMap::RegisterInfo::Type type;
 
+    uint32_t interruptCtrlNo;
+    uint32_t interruptNo;
+
     std::string module; /**< Name of the module this register is in*/
 
     while(std::getline(file, line)) {
@@ -92,6 +95,8 @@ namespace ChimeraTK {
       signedFlag = true;
       registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
       type = RegisterInfoMap::RegisterInfo::Type::FIXED_POINT;
+      interruptCtrlNo = 0;
+      interruptNo = 0;
 
       is >> std::setbase(0) >> bar;
       if(is.fail()) {
@@ -118,6 +123,9 @@ namespace ChimeraTK {
           failed = true;
         }
         else {
+          //checkIfTypeIsVoid();
+          type = RegisterInfoMap::RegisterInfo::Type::VOID;
+          nFractionalBits = 0;
           // factored out because rather lengthy
           auto type_and_nFractionBits = getTypeAndNFractionalBits(bitInterpretation);
           type = type_and_nFractionBits.first;
@@ -146,7 +154,20 @@ namespace ChimeraTK {
           failed = true;
         }
         else {
-          if(accessString == "RO")
+          //first transform to uppercase
+          std::transform(accessString.begin(), accessString.end(), accessString.begin(),
+              [](unsigned char c) { return std::toupper(c); });
+
+          //first check if access mode is INTERRUPT and additionally check the interrupt controller number and interrupt number
+          auto interruptData = checkIfInterruptAndGetInterruptCtrlNoAndInterruptNo(accessString);
+
+          if(interruptData.first) {
+            registerAccess = RegisterInfoMap::RegisterInfo::Access::INTERRUPT;
+            //auto irCtrlNo_and_irNo = interruptData.second;
+            interruptCtrlNo = interruptData.second.first;
+            interruptNo = interruptData.second.second;
+          }
+          else if(accessString == "RO")
             registerAccess = RegisterInfoMap::RegisterInfo::Access::READ;
           else if(accessString == "RW")
             registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
@@ -162,7 +183,7 @@ namespace ChimeraTK {
       is.clear();
 
       RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
-          signedFlag, module, 1, false, registerAccess, type);
+          signedFlag, module, 1, false, registerAccess, type, interruptCtrlNo, interruptNo);
       pmap->insert(registerInfo);
     }
 
@@ -266,6 +287,50 @@ namespace ChimeraTK {
             bitInterpretation + "', caught exception: " + e.what());
       }
     }
+  }
+
+  std::pair<bool, std::pair<unsigned int, unsigned int>> MapFileParser::
+      checkIfInterruptAndGetInterruptCtrlNoAndInterruptNo(std::string accessTypeStr) {
+    std::string strToFind("INTERRUPT");
+
+    bool isInterrupt = false;
+    unsigned int intCtrlNo = 0;
+    unsigned int intNo = 0;
+    auto pos = accessTypeStr.find(strToFind);
+
+    if(pos != std::string::npos) {
+      isInterrupt = true;
+      accessTypeStr.erase(pos, strToFind.length());
+
+      auto delimiterPos = accessTypeStr.find(":");
+      if(delimiterPos != std::string::npos) {
+        std::string intCtrlNoStr = accessTypeStr.substr(0, delimiterPos);
+        std::string intNoStr = accessTypeStr.substr(delimiterPos + 1);
+        try {
+          intCtrlNo = std::stoul(intCtrlNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
+        }
+        catch(std::exception& e) {
+          throw ChimeraTK::logic_error(
+              std::string(
+                  "Map file error in accessString: wrong argument in interrupt controller number. Argument: '") +
+              intCtrlNoStr + "', caught exception: " + e.what());
+        }
+
+        try {
+          intNo = std::stoul(intNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
+        }
+        catch(std::exception& e) {
+          throw ChimeraTK::logic_error(
+              std::string("Map file error in accessString: wrong argument in interrupt number. Argument: '") +
+              intNoStr + "', caught exception: " + e.what());
+        }
+      }
+      else
+        throw ChimeraTK::logic_error(
+            std::string("Map file error in accessString: Delimiter ':' not found in INTERRPUT description "));
+    }
+
+    return {isInterrupt, {intCtrlNo, intNo}};
   }
 
 } // namespace ChimeraTK

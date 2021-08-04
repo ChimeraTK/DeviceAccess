@@ -1,0 +1,18 @@
+#In principle one could mix map and mapp syntax. The "empty" module name is just another module
+
+# name            	number_of_elements  address  size  bar  width  fracbits  signed 	read_mode
+WORD_FIRMWARE_ID  		1                   0x0     4   0
+WORD_USER         		1                   0x4     4   0
+APP0.MODULE_ID    		1                   0x0		4   1
+APP0.WORD_FIRMWARE_ID	1                   0x0     4   0	 32		0			0		RO
+APP0.WORD_USER0    		3                   0x4    12	1    18     3         false
+APP0.WORD_USER1    		3                   0x4    12	1    18     3         false		RW
+
+APP0.INTERUPT_VOID_1	0				    0x0		0	0	  0		0			0		INTERRUPT0:0
+APP0.INTERUPT_VOID_2	0				    0x0		0	0	  0		0			0		INTERRUPT1:1
+
+APP0.INTERUPT_UINT_1	2				    0x100	8	0	 32		0			0		INTERRUPT2:0
+APP0.INTERUPT_INT_1		1				    0x108	4	0	 32		0			1		INTERRUPT2:1
+APP0.INTERUPT_INT_1		1				    0x10C	4	0	 32		0			1		INTERRUPT15:25
+
+APP0.INTERUPT_INT_1		1				    0x10C	4	0	 32		0			1		INTERRUPT11:1

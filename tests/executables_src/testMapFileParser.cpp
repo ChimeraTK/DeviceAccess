@@ -24,6 +24,8 @@ class MapFileParserTest {
   void testMixedMapFileParse();
   void testSplitStringAtLastDot();
   void testBadMappFileParse();
+
+  void testInterruptMapFileParse();
 };
 class MapFileParserTestSuite : public test_suite {
  public:
@@ -40,6 +42,8 @@ class MapFileParserTestSuite : public test_suite {
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testMixedMapFileParse, mapFileParserTestPtr));
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testSplitStringAtLastDot, mapFileParserTestPtr));
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testBadMappFileParse, mapFileParserTestPtr));
+
+    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptMapFileParse, mapFileParserTestPtr));
   }
 };
 
@@ -262,4 +266,10 @@ void MapFileParserTest::testSplitStringAtLastDot() {
 void MapFileParserTest::testBadMappFileParse() {
   ChimeraTK::MapFileParser fileparser;
   BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"), ChimeraTK::logic_error);
+}
+
+void MapFileParserTest::testInterruptMapFileParse() {
+  ChimeraTK::MapFileParser fileparser;
+  fileparser.parse("interruptMapFile.map");
+  //BOOST_CHECK_THROW(fileparser.parse("interruptMapFile.map"), ChimeraTK::logic_error);
 }

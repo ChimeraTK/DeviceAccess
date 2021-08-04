@@ -276,10 +276,12 @@ namespace ChimeraTK {
 
   RegisterInfoMap::RegisterInfo::RegisterInfo(std::string const& name_, uint32_t nElements_, uint64_t address_,
       uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
-      std::string const& module_, uint32_t nChannels_, bool is2DMultiplexed_, Access dataAccess_, Type dataType_)
+      std::string const& module_, uint32_t nChannels_, bool is2DMultiplexed_, Access dataAccess_, Type dataType_,
+      uint32_t interruptCtrlNo_, uint32_t interruptNo_)
   : name(name_), nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_), address(address_),
     nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_), signedFlag(signedFlag_),
-    module(module_), registerAccess(dataAccess_), dataType(dataType_) {
+    module(module_), registerAccess(dataAccess_), dataType(dataType_), interruptCtrlNo(interruptCtrlNo_),
+    interruptNo(interruptNo_) {
     if(nBytes_ > 0 && nElements_ > 0) {
       if(nBytes_ % nElements_ != 0) {
         // nBytes_ must be divisible by nElements_
@@ -287,6 +289,7 @@ namespace ChimeraTK {
             "Number of bytes is not a multiple of number of elements for register " + name_ + ". Check your map file!");
       }
     }
+
     DataType rawDataInfo;
     if(nBytesPerElement() == 1 && !is2DMultiplexed_) {
       rawDataInfo = DataType::int8;
