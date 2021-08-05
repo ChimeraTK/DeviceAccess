@@ -123,11 +123,8 @@ namespace ChimeraTK {
           failed = true;
         }
         else {
-          //checkIfTypeIsVoid();
-          type = RegisterInfoMap::RegisterInfo::Type::VOID;
-          nFractionalBits = 0;
-          // factored out because rather lengthy
-          auto type_and_nFractionBits = getTypeAndNFractionalBits(bitInterpretation);
+          // width is needed to determine whether type is VOID
+          auto type_and_nFractionBits = getTypeAndNFractionalBits(bitInterpretation, width);
           type = type_and_nFractionBits.first;
           nFractionalBits = type_and_nFractionBits.second;
 
@@ -146,6 +143,8 @@ namespace ChimeraTK {
           failed = true;
         }
       }
+
+      if(type == RegisterInfoMap::RegisterInfo::Type::VOID) std::cout << "VOID type detected for " << name << std::endl;
 
       if(!failed) {
         std::string accessString;
@@ -181,6 +180,9 @@ namespace ChimeraTK {
         }
       }
       is.clear();
+
+      checkFileConsitencyAndThrowIfError(
+          registerAccess, type, nElements, address, nBytes, bar, width, nFractionalBits, signedFlag);
 
       RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
           signedFlag, module, 1, false, registerAccess, type, interruptCtrlNo, interruptNo);
@@ -268,69 +270,94 @@ namespace ChimeraTK {
   }
 
   std::pair<RegisterInfoMap::RegisterInfo::Type, int> MapFileParser::getTypeAndNFractionalBits(
-      std::string bitInterpretation) {
-    if(bitInterpretation == "IEEE754") {
-      return {RegisterInfoMap::RegisterInfo::Type::IEEE754, 0};
+      std::string bitInterpretation, unsigned int width) {
+    if(width == 0) return {RegisterInfoMap::RegisterInfo::Type::VOID, 0};
+    if(bitInterpretation == "IEEE754") return {RegisterInfoMap::RegisterInfo::Type::IEEE754, 0};
+    if(bitInterpretation == "ASCII") return {RegisterInfoMap::RegisterInfo::Type::ASCII, 0};
+
+    // If it is a digit the implicit interpretation is FixedPoint
+    try {
+      int nBits = std::stoi(bitInterpretation, nullptr,
+          0); // base 0 = auto, hex or dec or oct
+      return {RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, nBits};
     }
-    else if(bitInterpretation == "ASCII") {
-      return {RegisterInfoMap::RegisterInfo::Type::ASCII, 0};
-    }
-    else {
-      // If it is a digit the implicit interpretation is FixedPoint
-      try {
-        int nBits = std::stoi(bitInterpretation, nullptr,
-            0); // base 0 = auto, hex or dec or oct
-        return {RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, nBits};
-      }
-      catch(std::exception& e) {
-        throw ChimeraTK::logic_error(std::string("Map file error in bitInterpretation: wrong argument '") +
-            bitInterpretation + "', caught exception: " + e.what());
-      }
+    catch(std::exception& e) {
+      throw ChimeraTK::logic_error(std::string("Map file error in bitInterpretation: wrong argument '") +
+          bitInterpretation + "', caught exception: " + e.what());
     }
   }
 
   std::pair<bool, std::pair<unsigned int, unsigned int>> MapFileParser::
       checkIfInterruptAndGetInterruptCtrlNoAndInterruptNo(std::string accessTypeStr) {
     std::string strToFind("INTERRUPT");
+    auto pos = accessTypeStr.find(strToFind);
+    if(pos == std::string::npos) return {false, {0, 0}};
 
-    bool isInterrupt = false;
     unsigned int intCtrlNo = 0;
     unsigned int intNo = 0;
-    auto pos = accessTypeStr.find(strToFind);
+    accessTypeStr.erase(pos, strToFind.length());
 
-    if(pos != std::string::npos) {
-      isInterrupt = true;
-      accessTypeStr.erase(pos, strToFind.length());
-
-      auto delimiterPos = accessTypeStr.find(":");
-      if(delimiterPos != std::string::npos) {
-        std::string intCtrlNoStr = accessTypeStr.substr(0, delimiterPos);
-        std::string intNoStr = accessTypeStr.substr(delimiterPos + 1);
-        try {
-          intCtrlNo = std::stoul(intCtrlNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
-        }
-        catch(std::exception& e) {
-          throw ChimeraTK::logic_error(
-              std::string(
-                  "Map file error in accessString: wrong argument in interrupt controller number. Argument: '") +
-              intCtrlNoStr + "', caught exception: " + e.what());
-        }
-
-        try {
-          intNo = std::stoul(intNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
-        }
-        catch(std::exception& e) {
-          throw ChimeraTK::logic_error(
-              std::string("Map file error in accessString: wrong argument in interrupt number. Argument: '") +
-              intNoStr + "', caught exception: " + e.what());
-        }
+    auto delimiterPos = accessTypeStr.find(":");
+    if(delimiterPos != std::string::npos) {
+      std::string intCtrlNoStr = accessTypeStr.substr(0, delimiterPos);
+      std::string intNoStr = accessTypeStr.substr(delimiterPos + 1);
+      try {
+        intCtrlNo = std::stoul(intCtrlNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
       }
-      else
+      catch(std::exception& e) {
         throw ChimeraTK::logic_error(
-            std::string("Map file error in accessString: Delimiter ':' not found in INTERRPUT description "));
-    }
+            std::string("Map file error in accessString: wrong argument in interrupt controller number. Argument: '") +
+            intCtrlNoStr + "', caught exception: " + e.what());
+      }
 
-    return {isInterrupt, {intCtrlNo, intNo}};
+      try {
+        intNo = std::stoul(intNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
+      }
+      catch(std::exception& e) {
+        throw ChimeraTK::logic_error(
+            std::string("Map file error in accessString: wrong argument in interrupt number. Argument: '") + intNoStr +
+            "', caught exception: " + e.what());
+      }
+    }
+    else
+      throw ChimeraTK::logic_error(
+          std::string("Map file error in accessString: Delimiter ':' not found in INTERRPUT description "));
+
+    //return {true, {intCtrlNo, intNo}};
+    return std::make_pair(true, std::make_pair(intCtrlNo, intNo));
+  }
+
+  void MapFileParser::checkFileConsitencyAndThrowIfError(RegisterInfoMap::RegisterInfo::Access registerAccessMode,
+      RegisterInfoMap::RegisterInfo::Type registerType, uint32_t nElements, uint64_t address, uint32_t nBytes,
+      uint64_t bar, uint32_t width, int32_t nFractionalBits, bool signedFlag) {
+    // if type is VOID, access mode must be interrupt (cannot be READWRITE, READ or WRITE)
+    if(registerType == RegisterInfoMap::RegisterInfo::Type::VOID &&
+        registerAccessMode != RegisterInfoMap::RegisterInfo::Access::INTERRUPT)
+      throw ChimeraTK::logic_error(
+          std::string("Map file error. Register Type is VOID and access mode is different than INTERRUPT. "));
+    // if register type is VOID then all fields must be '0'
+    if(registerType == RegisterInfoMap::RegisterInfo::Type::VOID) {
+      if(width)
+        throw ChimeraTK::logic_error(
+            std::string("Map file error. Register Type is VOID and number of width is " + std::to_string(width)));
+      if(nElements)
+        throw ChimeraTK::logic_error(std::string(
+            "Map file error. Register Type is VOID and number of elements is " + std::to_string(nElements)));
+      if(address)
+        throw ChimeraTK::logic_error(
+            std::string("Map file error. Register Type is VOID and address is " + std::to_string(address)));
+      if(nBytes)
+        throw ChimeraTK::logic_error(
+            std::string("Map file error. Register Type is VOID and number of bytes is " + std::to_string(nBytes)));
+      if(bar)
+        throw ChimeraTK::logic_error(
+            std::string("Map file error. Register Type is VOID and bar is " + std::to_string(bar)));
+      if(nFractionalBits)
+        throw ChimeraTK::logic_error(std::string(
+            "Map file error. Register Type is VOID and fractional position is " + std::to_string(nFractionalBits)));
+      if(signedFlag)
+        throw ChimeraTK::logic_error(std::string("Map file error. Register Type is VOID and signed is true"));
+    }
   }
 
 } // namespace ChimeraTK
