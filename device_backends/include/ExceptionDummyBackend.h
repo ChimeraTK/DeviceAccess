@@ -32,7 +32,7 @@ namespace ChimeraTK {
     void open() override {
       if(throwExceptionOpen) {
         thereHaveBeenExceptions = true;
-        throw(ChimeraTK::runtime_error("DummyException: This is a test"));
+        throw(ChimeraTK::runtime_error("DummyException: open throws by request"));
       }
       ChimeraTK::DummyBackend::open();
       if(throwExceptionRead || throwExceptionWrite) {
