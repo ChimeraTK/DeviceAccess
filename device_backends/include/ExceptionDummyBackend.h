@@ -61,6 +61,25 @@ namespace ChimeraTK {
         throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
       }
       ChimeraTK::DummyBackend::write(bar, address, data, sizeInBytes);
+
+      // increment write counter and update write order (only if address points to beginning of a register!)
+      auto itWriteOrder = _writeOrderMap.find(std::make_pair(bar, address));
+      if(itWriteOrder != _writeOrderMap.end()) {
+        // update write order
+        auto generatedOrderNumber = ++_writeOrderCounter;
+        auto& orderNumberInMap = itWriteOrder->second;
+        // atomically update order number in the map only if the generated order number is bigger. This will be always
+        // the case, unless there is a concurrent write operation updating the order number in between.
+        size_t current;
+        while((current = orderNumberInMap.load()) < generatedOrderNumber) {
+          orderNumberInMap.compare_exchange_weak(current, generatedOrderNumber);
+        }
+
+        // increment write counter
+        auto itWriteCounter = _writeCounterMap.find(std::make_pair(bar, address));
+        assert(itWriteCounter != _writeCounterMap.end()); // always inserted together
+        itWriteCounter->second++;
+      }
     }
 
     bool isFunctional() const override {
@@ -104,22 +123,57 @@ namespace ChimeraTK {
 
         acc = decorator;
       }
+
+      // create entry in _writeOrderMap and _writeCounterMap if necessary
+      if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE") {
+        auto info = getRegisterInfo(path);
+        auto adrPair = std::make_pair(info->bar, info->address);
+        if(_writeOrderMap.find(adrPair) == _writeOrderMap.end()) {
+          _writeOrderMap[adrPair] = 0;
+          _writeCounterMap[adrPair] = 0;
+        }
+      }
+
       return acc;
     }
 
     /// Function to trigger sending values for push-type variables
     void triggerPush(RegisterPath path, VersionNumber v = {});
 
+    /// Function to obtain the write order number of a register. Comparing the write order number for different
+    /// registers allows to determine which register has been written last (later writs have bigger write order
+    /// numbers).
+    /// Note: This currently only works if writes are always starting at the beginning of the register (i.e. without an
+    /// offset relative to the register). Also does not work for DUMMY_WRITEABLE registers.
+    size_t getWriteOrder(const RegisterPath& path);
+
+    /// Function to obtain the number of writes of a register since the creation of the backend.
+    /// Note: This currently only works if writes are always starting at the beginning of the register (i.e. without an
+    /// offset relative to the register). Also does not work for DUMMY_WRITEABLE registers.
+    size_t getWriteCount(const RegisterPath& path);
+
     void activateAsyncRead() noexcept override;
 
     void setException() override;
 
-    /// Map of active ExceptionDummyPushDecorator
+    /// Mutex to protect data structures for push decorators
     std::mutex _pushDecoratorsMutex;
+    /// Map of active ExceptionDummyPushDecorator. Protected by _pushDecoratorMutex
     std::map<RegisterPath, std::list<boost::weak_ptr<ExceptionDummyPushDecoratorBase>>> _pushDecorators;
+    /// Map of version numbers to use in push decorators. Protected by _pushDecoratorMutex
     std::map<RegisterPath, VersionNumber> _pushVersions;
-    bool _activateNewPushAccessors{
-        false}; // flag is toggled by activateAsyncRead (true), setException (false) and close (false). Protected by _pushDecoratorMutex
+    /// Flag is toggled by activateAsyncRead (true), setException (false) and close (false).
+    /// Protected by _pushDecoratorMutex
+    bool _activateNewPushAccessors{false};
+
+    /// Map used allow determining order of writes by tests. Map key is pair of bar and address.
+    std::map<std::pair<uint64_t, uint64_t>, std::atomic<size_t>> _writeOrderMap;
+
+    /// Global counter for order numbers going into _writeOrderMap
+    std::atomic<size_t> _writeOrderCounter{0};
+
+    /// Map used allow determining number of writes of a specific register by tests. Map key is pair of bar and address.
+    std::map<std::pair<uint64_t, uint64_t>, std::atomic<size_t>> _writeCounterMap;
 
     class BackendRegisterer {
      public:
@@ -299,5 +353,23 @@ namespace ChimeraTK {
     }
     _activateNewPushAccessors = false;
   }
+
+  /********************************************************************************************************************/
+
+  size_t ExceptionDummy::getWriteOrder(const RegisterPath& path) {
+    auto info = getRegisterInfo(path);
+    auto adrPair = std::make_pair(info->bar, info->address);
+    return _writeOrderMap.at(adrPair);
+  }
+
+  /********************************************************************************************************************/
+
+  size_t ExceptionDummy::getWriteCount(const RegisterPath& path) {
+    auto info = getRegisterInfo(path);
+    auto adrPair = std::make_pair(info->bar, info->address);
+    return _writeCounterMap.at(adrPair);
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK
