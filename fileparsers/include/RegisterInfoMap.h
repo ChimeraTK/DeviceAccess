@@ -119,8 +119,8 @@ namespace ChimeraTK {
                                         and write */
       Type dataType;           /**< Data type (fixpoint, floating point)*/
 
-      uint32_t interruptCtrlNo;
-      uint32_t interruptNo;
+      uint32_t interruptCtrlNumber;
+      uint32_t interruptNumber;
 
       uint32_t nBytesPerElement() const { return nElements > 0 ? nBytes / nElements : 0; }
 
@@ -132,7 +132,7 @@ namespace ChimeraTK {
           uint32_t nElements_ = 0, uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
           int32_t nFractionalBits_ = 0, bool signedFlag_ = true, std::string const& module_ = std::string(),
           uint32_t nChannels_ = 1, bool is2DMultiplexed_ = false, Access dataAccess_ = Access::READWRITE,
-          Type dataType_ = Type::FIXED_POINT, uint32_t interruptCtrlNo_ = 0, uint32_t interruptNo_ = 0);
+          Type dataType_ = Type::FIXED_POINT, uint32_t interruptCtrlNumber_ = 0, uint32_t interruptNumber_ = 0);
 
       // We can use the default copy constructor, but have to declare that because we have an explicit assignment operator
       RegisterInfo(const RegisterInfo&) = default;

@@ -270,6 +270,31 @@ void MapFileParserTest::testBadMappFileParse() {
 
 void MapFileParserTest::testInterruptMapFileParse() {
   ChimeraTK::MapFileParser fileparser;
-  fileparser.parse("interruptMapFile.map");
+  boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = fileparser.parse("interruptMapFile.map");
+
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(2);
+
+  RegisterInfoents[0] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 0, 0);
+  RegisterInfoents[1] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 1);
+
+  //  RegisterInfoents[2] =
+  //      ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE_ID", 0x01, 0x0, 0x04, 0x1, 32, 0, true, "APP0");
+  //  RegisterInfoents[3] =
+  //      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER", 0x03, 0x4, 0x0C, 0x1, 18, 3, false, "APP0");
+
+  ChimeraTK::RegisterInfoMap::const_iterator mapIter;
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;
+  for(mapIter = ptrmapFile->begin(), elementsIter = RegisterInfoents.begin();
+      mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end(); ++mapIter, ++elementsIter) {
+    std::stringstream message;
+    message << "Failed comparison on Register '" << (*elementsIter).name << "', module '" << (elementsIter->module)
+            << "'";
+    BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
+  }
+
   //BOOST_CHECK_THROW(fileparser.parse("interruptMapFile.map"), ChimeraTK::logic_error);
 }

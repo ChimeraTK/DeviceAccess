@@ -32,8 +32,8 @@ namespace ChimeraTK {
     RegisterInfoMap::RegisterInfo::Access registerAccess;
     RegisterInfoMap::RegisterInfo::Type type;
 
-    uint32_t interruptCtrlNo;
-    uint32_t interruptNo;
+    uint32_t interruptCtrlNumber;
+    uint32_t interruptNumber;
 
     std::string module; /**< Name of the module this register is in*/
 
@@ -95,8 +95,8 @@ namespace ChimeraTK {
       signedFlag = true;
       registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
       type = RegisterInfoMap::RegisterInfo::Type::FIXED_POINT;
-      interruptCtrlNo = 0;
-      interruptNo = 0;
+      interruptCtrlNumber = 0;
+      interruptNumber = 0;
 
       is >> std::setbase(0) >> bar;
       if(is.fail()) {
@@ -144,8 +144,6 @@ namespace ChimeraTK {
         }
       }
 
-      if(type == RegisterInfoMap::RegisterInfo::Type::VOID) std::cout << "VOID type detected for " << name << std::endl;
-
       if(!failed) {
         std::string accessString;
         is >> accessString;
@@ -158,13 +156,13 @@ namespace ChimeraTK {
               [](unsigned char c) { return std::toupper(c); });
 
           //first check if access mode is INTERRUPT and additionally check the interrupt controller number and interrupt number
-          auto interruptData = checkIfInterruptAndGetInterruptCtrlNoAndInterruptNo(accessString);
+          auto interruptData = getInterruptData(accessString);
 
           if(interruptData.first) {
             registerAccess = RegisterInfoMap::RegisterInfo::Access::INTERRUPT;
             //auto irCtrlNo_and_irNo = interruptData.second;
-            interruptCtrlNo = interruptData.second.first;
-            interruptNo = interruptData.second.second;
+            interruptCtrlNumber = interruptData.second.first;
+            interruptNumber = interruptData.second.second;
           }
           else if(accessString == "RO")
             registerAccess = RegisterInfoMap::RegisterInfo::Access::READ;
@@ -185,7 +183,7 @@ namespace ChimeraTK {
           registerAccess, type, nElements, address, nBytes, bar, width, nFractionalBits, signedFlag);
 
       RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
-          signedFlag, module, 1, false, registerAccess, type, interruptCtrlNo, interruptNo);
+          signedFlag, module, 1, false, registerAccess, type, interruptCtrlNumber, interruptNumber);
       pmap->insert(registerInfo);
     }
 
@@ -287,76 +285,59 @@ namespace ChimeraTK {
     }
   }
 
-  std::pair<bool, std::pair<unsigned int, unsigned int>> MapFileParser::
-      checkIfInterruptAndGetInterruptCtrlNoAndInterruptNo(std::string accessTypeStr) {
+  std::pair<bool, std::pair<unsigned int, unsigned int>> MapFileParser::getInterruptData(std::string accessTypeStr) {
     std::string strToFind("INTERRUPT");
     auto pos = accessTypeStr.find(strToFind);
     if(pos == std::string::npos) return {false, {0, 0}};
 
-    unsigned int intCtrlNo = 0;
-    unsigned int intNo = 0;
+    unsigned int interruptCtrlNumber = 0;
+    unsigned int interruptNumber = 0;
     accessTypeStr.erase(pos, strToFind.length());
 
     auto delimiterPos = accessTypeStr.find(":");
     if(delimiterPos != std::string::npos) {
-      std::string intCtrlNoStr = accessTypeStr.substr(0, delimiterPos);
-      std::string intNoStr = accessTypeStr.substr(delimiterPos + 1);
+      std::string interruptCtrlNumberStr = accessTypeStr.substr(0, delimiterPos);
+      std::string interrupNumberStr = accessTypeStr.substr(delimiterPos + 1);
       try {
-        intCtrlNo = std::stoul(intCtrlNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
+        interruptCtrlNumber = std::stoul(interruptCtrlNumberStr, nullptr, 0); // base 0 = auto, hex or dec or oct
       }
       catch(std::exception& e) {
         throw ChimeraTK::logic_error(
             std::string("Map file error in accessString: wrong argument in interrupt controller number. Argument: '") +
-            intCtrlNoStr + "', caught exception: " + e.what());
+            interruptCtrlNumberStr + "', caught exception: " + e.what());
       }
 
       try {
-        intNo = std::stoul(intNoStr, nullptr, 0); // base 0 = auto, hex or dec or oct
+        interruptNumber = std::stoul(interrupNumberStr, nullptr, 0); // base 0 = auto, hex or dec or oct
       }
       catch(std::exception& e) {
         throw ChimeraTK::logic_error(
-            std::string("Map file error in accessString: wrong argument in interrupt number. Argument: '") + intNoStr +
-            "', caught exception: " + e.what());
+            std::string("Map file error in accessString: wrong argument in interrupt number. Argument: '") +
+            interrupNumberStr + "', caught exception: " + e.what());
       }
     }
     else
       throw ChimeraTK::logic_error(
           std::string("Map file error in accessString: Delimiter ':' not found in INTERRPUT description "));
 
-    //return {true, {intCtrlNo, intNo}};
-    return std::make_pair(true, std::make_pair(intCtrlNo, intNo));
+    return {true, {interruptCtrlNumber, interruptNumber}};
   }
 
   void MapFileParser::checkFileConsitencyAndThrowIfError(RegisterInfoMap::RegisterInfo::Access registerAccessMode,
       RegisterInfoMap::RegisterInfo::Type registerType, uint32_t nElements, uint64_t address, uint32_t nBytes,
       uint64_t bar, uint32_t width, int32_t nFractionalBits, bool signedFlag) {
+    //
     // if type is VOID, access mode must be interrupt (cannot be READWRITE, READ or WRITE)
     if(registerType == RegisterInfoMap::RegisterInfo::Type::VOID &&
         registerAccessMode != RegisterInfoMap::RegisterInfo::Access::INTERRUPT)
       throw ChimeraTK::logic_error(
           std::string("Map file error. Register Type is VOID and access mode is different than INTERRUPT. "));
+    //
     // if register type is VOID then all fields must be '0'
     if(registerType == RegisterInfoMap::RegisterInfo::Type::VOID) {
-      if(width)
+      if(width || nElements || address || nBytes || bar || nFractionalBits || signedFlag)
         throw ChimeraTK::logic_error(
-            std::string("Map file error. Register Type is VOID and number of width is " + std::to_string(width)));
-      if(nElements)
-        throw ChimeraTK::logic_error(std::string(
-            "Map file error. Register Type is VOID and number of elements is " + std::to_string(nElements)));
-      if(address)
-        throw ChimeraTK::logic_error(
-            std::string("Map file error. Register Type is VOID and address is " + std::to_string(address)));
-      if(nBytes)
-        throw ChimeraTK::logic_error(
-            std::string("Map file error. Register Type is VOID and number of bytes is " + std::to_string(nBytes)));
-      if(bar)
-        throw ChimeraTK::logic_error(
-            std::string("Map file error. Register Type is VOID and bar is " + std::to_string(bar)));
-      if(nFractionalBits)
-        throw ChimeraTK::logic_error(std::string(
-            "Map file error. Register Type is VOID and fractional position is " + std::to_string(nFractionalBits)));
-      if(signedFlag)
-        throw ChimeraTK::logic_error(std::string("Map file error. Register Type is VOID and signed is true"));
+            std::string("Map file error. Register Type is VOID (width field set to 0). All other fields must be '0'."));
     }
   }
 

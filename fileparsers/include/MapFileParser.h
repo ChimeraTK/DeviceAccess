@@ -44,8 +44,7 @@ namespace ChimeraTK {
    protected:
     std::pair<RegisterInfoMap::RegisterInfo::Type, int> getTypeAndNFractionalBits(
         std::string bitInterpretation, uint32_t width);
-    std::pair<bool, std::pair<unsigned int, unsigned int>> checkIfInterruptAndGetInterruptCtrlNoAndInterruptNo(
-        std::string accessType);
+    std::pair<bool, std::pair<unsigned int, unsigned int>> getInterruptData(std::string accessType);
     void checkFileConsitencyAndThrowIfError(RegisterInfoMap::RegisterInfo::Access registerAccessMode,
         RegisterInfoMap::RegisterInfo::Type registerType, uint32_t nElements, uint64_t address, uint32_t nBytes,
         uint64_t bar, uint32_t width, int32_t nFractionalBits, bool signedFlag);

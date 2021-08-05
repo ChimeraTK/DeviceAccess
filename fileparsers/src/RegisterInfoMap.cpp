@@ -144,6 +144,9 @@ namespace ChimeraTK {
       case RegisterInfoMap::RegisterInfo::Type::ASCII:
         os << "ASCII";
         break;
+      case RegisterInfoMap::RegisterInfo::Type::VOID:
+        os << "VOID";
+        break;
       default:
         os << "UNKNOWN";
     }
@@ -160,6 +163,8 @@ namespace ChimeraTK {
         break;
       case RegisterInfoMap::RegisterInfo::Access::READWRITE:
         os << "RW";
+      case RegisterInfoMap::RegisterInfo::Access::INTERRUPT:
+        os << "INTERRUPT";
         break;
       default:
         os << "UNKNOWN";
@@ -277,11 +282,11 @@ namespace ChimeraTK {
   RegisterInfoMap::RegisterInfo::RegisterInfo(std::string const& name_, uint32_t nElements_, uint64_t address_,
       uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
       std::string const& module_, uint32_t nChannels_, bool is2DMultiplexed_, Access dataAccess_, Type dataType_,
-      uint32_t interruptCtrlNo_, uint32_t interruptNo_)
+      uint32_t interruptCtrlNumber_, uint32_t interruptNumber_)
   : name(name_), nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_), address(address_),
     nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_), signedFlag(signedFlag_),
-    module(module_), registerAccess(dataAccess_), dataType(dataType_), interruptCtrlNo(interruptCtrlNo_),
-    interruptNo(interruptNo_) {
+    module(module_), registerAccess(dataAccess_), dataType(dataType_), interruptCtrlNumber(interruptCtrlNumber_),
+    interruptNumber(interruptNumber_) {
     if(nBytes_ > 0 && nElements_ > 0) {
       if(nBytes_ % nElements_ != 0) {
         // nBytes_ must be divisible by nElements_
@@ -361,6 +366,9 @@ namespace ChimeraTK {
     }
     else if(dataType == ASCII) {
       dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::string, false, false, 0, 0, rawDataInfo);
+    }
+    else if(dataType == VOID) {
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata, false, false, 0, 0, rawDataInfo);
     }
   }
   const RegisterCatalogue& RegisterInfoMap::getRegisterCatalogue() { return _catalogue; }
