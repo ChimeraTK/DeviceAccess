@@ -37,8 +37,7 @@ namespace ChimeraTK {
       ChimeraTK::DummyBackend::open();
       if(throwExceptionRead || throwExceptionWrite) {
         thereHaveBeenExceptions = true;
-        throw(ChimeraTK::runtime_error("DummyException: open throws because of "
-                                       "device error when already open."));
+        throw(ChimeraTK::runtime_error("DummyException: open throws because of device error when already open."));
       }
       thereHaveBeenExceptions = false;
     }
