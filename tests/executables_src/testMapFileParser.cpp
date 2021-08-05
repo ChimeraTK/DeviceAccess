@@ -26,6 +26,8 @@ class MapFileParserTest {
   void testBadMappFileParse();
 
   void testInterruptMapFileParse();
+  void testInterruptBadMapFileParse();
+  void testInterruptMapFileSupportedDataType();
 };
 class MapFileParserTestSuite : public test_suite {
  public:
@@ -44,6 +46,8 @@ class MapFileParserTestSuite : public test_suite {
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testBadMappFileParse, mapFileParserTestPtr));
 
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptMapFileParse, mapFileParserTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptBadMapFileParse, mapFileParserTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptMapFileSupportedDataType, mapFileParserTestPtr));
   }
 };
 
@@ -268,23 +272,56 @@ void MapFileParserTest::testBadMappFileParse() {
   BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"), ChimeraTK::logic_error);
 }
 
+void MapFileParserTest::testInterruptBadMapFileParse() {
+  ChimeraTK::MapFileParser fileparser;
+
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError1.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError2.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError3.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError4.map"), ChimeraTK::logic_error);
+}
+
 void MapFileParserTest::testInterruptMapFileParse() {
   ChimeraTK::MapFileParser fileparser;
   boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = fileparser.parse("interruptMapFile.map");
 
-  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(2);
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(9);
 
   RegisterInfoents[0] =
       ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
           RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 0, 0);
+
   RegisterInfoents[1] =
       ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
           RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 1);
 
-  //  RegisterInfoents[2] =
-  //      ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE_ID", 0x01, 0x0, 0x04, 0x1, 32, 0, true, "APP0");
-  //  RegisterInfoents[3] =
-  //      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER", 0x03, 0x4, 0x0C, 0x1, 18, 3, false, "APP0");
+  RegisterInfoents[2] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_UINT_1", 0x01, 0x100, 0x04, 0x0, 32, 0,
+      false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 2, 0);
+
+  RegisterInfoents[3] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true, "APP0", 0, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 2, 1);
+
+  RegisterInfoents[4] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04, 0x0, 32,
+      24, true, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 3, 0);
+
+  RegisterInfoents[5] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04, 0x0,
+      32, 24, false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 3, 1);
+
+  RegisterInfoents[6] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_UINT", 0x03, 0x300, 12, 0x0, 32, 0,
+      false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 0);
+
+  RegisterInfoents[7] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_INT", 0x03, 0x400, 12, 0x0, 32, 0,
+      true, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 1);
+
+  RegisterInfoents[8] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0, 32,
+      24, false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 2);
 
   ChimeraTK::RegisterInfoMap::const_iterator mapIter;
   std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;
@@ -295,6 +332,23 @@ void MapFileParserTest::testInterruptMapFileParse() {
             << "'";
     BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
   }
+}
 
-  //BOOST_CHECK_THROW(fileparser.parse("interruptMapFile.map"), ChimeraTK::logic_error);
+void MapFileParserTest::testInterruptMapFileSupportedDataType() {
+  ChimeraTK::MapFileParser fileparser;
+  boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = fileparser.parse("interruptMapFile.map");
+
+  auto waitForNewData = {AccessMode::wait_for_new_data};
+  auto rawAndWaitForNewData = {AccessMode::raw, AccessMode::wait_for_new_data};
+
+  ChimeraTK::RegisterInfoMap::const_iterator mapIter;
+  for(mapIter = ptrmapFile->begin(); mapIter != ptrmapFile->end(); ++mapIter) {
+    if((*mapIter).dataType == RegisterInfoMap::RegisterInfo::Type::VOID) {
+      BOOST_CHECK((*mapIter).getSupportedAccessModes() == waitForNewData);
+      BOOST_CHECK((*mapIter).registerAccess == RegisterInfoMap::RegisterInfo::Access::INTERRUPT);
+    }
+    else if((*mapIter).registerAccess == RegisterInfoMap::RegisterInfo::Access::INTERRUPT) {
+      BOOST_CHECK((*mapIter).getSupportedAccessModes() == rawAndWaitForNewData);
+    }
+  }
 }

@@ -42,7 +42,10 @@ bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& ele
       (element1.interruptCtrlNumber == element2.interruptCtrlNumber) &&
       (element1.interruptNumber == element2.interruptNumber);
   if(!result) {
-    std::cout << "Error in comparison: " << element1 << " : " << element2 << std::endl;
+    std::cout << "Error in comparison. Register 1: " << std::endl
+              << element1 << std::endl
+              << "Register 2:" << std::endl
+              << element2 << std::endl;
   }
   return result;
 }

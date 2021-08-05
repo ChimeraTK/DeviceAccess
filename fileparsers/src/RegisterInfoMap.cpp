@@ -163,6 +163,7 @@ namespace ChimeraTK {
         break;
       case RegisterInfoMap::RegisterInfo::Access::READWRITE:
         os << "RW";
+        break;
       case RegisterInfoMap::RegisterInfo::Access::INTERRUPT:
         os << "INTERRUPT";
         break;
@@ -177,7 +178,8 @@ namespace ChimeraTK {
        << registerInfo.nBytes << " 0x" << registerInfo.bar << std::dec << " " << registerInfo.width << " "
        << registerInfo.nFractionalBits << " " << (registerInfo.signedFlag ? "true" : "false")
        << (!registerInfo.module.empty() ? " " + registerInfo.module : " <noModule>") << " "
-       << registerInfo.registerAccess << " " << registerInfo.dataType;
+       << registerInfo.registerAccess << " " << registerInfo.dataType << " " << registerInfo.interruptCtrlNumber << " "
+       << registerInfo.interruptNumber << " " << registerInfo.getNumberOfDimensions();
     return os;
   }
 
