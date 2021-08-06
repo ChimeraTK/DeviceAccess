@@ -179,7 +179,7 @@ namespace ChimeraTK {
        << registerInfo.nFractionalBits << " " << (registerInfo.signedFlag ? "true" : "false")
        << (!registerInfo.module.empty() ? " " + registerInfo.module : " <noModule>") << " "
        << registerInfo.registerAccess << " " << registerInfo.dataType << " " << registerInfo.interruptCtrlNumber << " "
-       << registerInfo.interruptNumber << " " << registerInfo.getNumberOfDimensions();
+       << registerInfo.interruptNumber; // << " " << registerInfo.getNumberOfDimensions();
     return os;
   }
 
