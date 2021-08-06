@@ -22,8 +22,8 @@ std::string appendNumberToName(std::string name, int suffixNumber) {
   return (deviceName.str());
 }
 
-bool compareDeviceInfos(const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1,
-    const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo2) {
+bool compareDeviceInfos(
+    const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1, const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo2) {
   bool result = (deviceInfo1.deviceName == deviceInfo2.deviceName) && (deviceInfo1.uri == deviceInfo2.uri) &&
       (deviceInfo1.mapFileName == deviceInfo2.mapFileName) && (deviceInfo1.dmapFileName == deviceInfo2.dmapFileName) &&
       (deviceInfo1.dmapFileLineNumber == deviceInfo2.dmapFileLineNumber);
@@ -38,9 +38,14 @@ bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& ele
       (element1.nBytes == element2.nBytes) && (element1.width == element2.width) &&
       (element1.module == element2.module) && (element1.registerAccess == element2.registerAccess) &&
       (element1.dataType == element2.dataType) &&
-      (element1.getNumberOfDimensions() == element2.getNumberOfDimensions());
+      (element1.getNumberOfDimensions() == element2.getNumberOfDimensions()) &&
+      (element1.interruptCtrlNumber == element2.interruptCtrlNumber) &&
+      (element1.interruptNumber == element2.interruptNumber);
   if(!result) {
-    std::cout << "Error in comparison: " << element1 << " : " << element2 << std::endl;
+    std::cout << "Error in comparison. Register 1: " << std::endl
+              << element1 << std::endl
+              << "Register 2:" << std::endl
+              << element2 << std::endl;
   }
   return result;
 }

@@ -24,6 +24,12 @@ class MapFileParserTest {
   void testMixedMapFileParse();
   void testSplitStringAtLastDot();
   void testBadMappFileParse();
+
+  void testInterruptMapFileParse();
+  void testInterruptBadMapFileParse();
+  void testInterruptMapFileSupportedDataType();
+
+  void testMapFileWithCommentsParse();
 };
 class MapFileParserTestSuite : public test_suite {
  public:
@@ -40,6 +46,11 @@ class MapFileParserTestSuite : public test_suite {
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testMixedMapFileParse, mapFileParserTestPtr));
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testSplitStringAtLastDot, mapFileParserTestPtr));
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testBadMappFileParse, mapFileParserTestPtr));
+
+    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptMapFileParse, mapFileParserTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptBadMapFileParse, mapFileParserTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptMapFileSupportedDataType, mapFileParserTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testMapFileWithCommentsParse, mapFileParserTestPtr));
   }
 };
 
@@ -124,7 +135,7 @@ void MapFileParserTest::testGoodMappFileParse() {
   ChimeraTK::MapFileParser map_file_parser;
   boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = map_file_parser.parse("goodMapFile.map");
 
-  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 19);
+  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 22);
 
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
@@ -137,7 +148,7 @@ void MapFileParserTest::testGoodMappFileParse() {
   ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(19);
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(22);
 
   RegisterInfoents[0] =
       ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true, "BOARD");
@@ -179,6 +190,15 @@ void MapFileParserTest::testGoodMappFileParse() {
       ChimeraTK::RegisterInfoMap::RegisterInfo("NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0, 32, 0, true, "BOARD");
   RegisterInfoents[18] =
       ChimeraTK::RegisterInfoMap::RegisterInfo("NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true, "LARGE_BAR");
+  RegisterInfoents[19] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 3);
+  RegisterInfoents[20] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 2);
+  RegisterInfoents[21] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5, false, "MODULE0", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 5, 6);
 
   ChimeraTK::RegisterInfoMap::const_iterator mapIter;
   std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;
@@ -262,4 +282,165 @@ void MapFileParserTest::testSplitStringAtLastDot() {
 void MapFileParserTest::testBadMappFileParse() {
   ChimeraTK::MapFileParser fileparser;
   BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"), ChimeraTK::logic_error);
+}
+
+void MapFileParserTest::testInterruptBadMapFileParse() {
+  ChimeraTK::MapFileParser fileparser;
+
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError1.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError2.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError3.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError4.map"), ChimeraTK::logic_error);
+}
+
+void MapFileParserTest::testInterruptMapFileParse() {
+  ChimeraTK::MapFileParser fileparser;
+  boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = fileparser.parse("interruptMapFile.map");
+
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(9);
+
+  RegisterInfoents[0] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 0, 0);
+
+  RegisterInfoents[1] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 1);
+
+  RegisterInfoents[2] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_UINT_1", 0x01, 0x100, 0x04, 0x0, 32, 0,
+      false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 2, 0);
+
+  RegisterInfoents[3] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true, "APP0", 0, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 2, 1);
+
+  RegisterInfoents[4] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04, 0x0, 32,
+      24, true, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 3, 0);
+
+  RegisterInfoents[5] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04, 0x0,
+      32, 24, false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 3, 1);
+
+  RegisterInfoents[6] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_UINT", 0x03, 0x300, 12, 0x0, 32, 0,
+      false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 0);
+
+  RegisterInfoents[7] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_INT", 0x03, 0x400, 12, 0x0, 32, 0,
+      true, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 1);
+
+  RegisterInfoents[8] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0, 32,
+      24, false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 2);
+
+  ChimeraTK::RegisterInfoMap::const_iterator mapIter;
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;
+  for(mapIter = ptrmapFile->begin(), elementsIter = RegisterInfoents.begin();
+      mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end(); ++mapIter, ++elementsIter) {
+    std::stringstream message;
+    message << "Failed comparison on Register '" << (*elementsIter).name << "', module '" << (elementsIter->module)
+            << "'";
+    BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
+  }
+}
+
+void MapFileParserTest::testInterruptMapFileSupportedDataType() {
+  ChimeraTK::MapFileParser fileparser;
+  boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = fileparser.parse("interruptMapFile.map");
+
+  auto waitForNewData = {AccessMode::wait_for_new_data};
+  auto rawAndWaitForNewData = {AccessMode::raw, AccessMode::wait_for_new_data};
+
+  ChimeraTK::RegisterInfoMap::const_iterator mapIter;
+  for(mapIter = ptrmapFile->begin(); mapIter != ptrmapFile->end(); ++mapIter) {
+    if((*mapIter).dataType == RegisterInfoMap::RegisterInfo::Type::VOID) {
+      BOOST_CHECK((*mapIter).getSupportedAccessModes() == waitForNewData);
+      BOOST_CHECK((*mapIter).registerAccess == RegisterInfoMap::RegisterInfo::Access::INTERRUPT);
+    }
+    else if((*mapIter).registerAccess == RegisterInfoMap::RegisterInfo::Access::INTERRUPT) {
+      BOOST_CHECK((*mapIter).getSupportedAccessModes() == rawAndWaitForNewData);
+    }
+  }
+}
+
+void MapFileParserTest::testMapFileWithCommentsParse() {
+  ChimeraTK::MapFileParser map_file_parser;
+  boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = map_file_parser.parse("goodMapFileWithComments.map");
+
+  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 22);
+
+  std::string metaDataNameToRetrieve;
+  std::string retrievedValue;
+
+  metaDataNameToRetrieve = "HW_VERSION";
+  ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
+  BOOST_CHECK(retrievedValue == "1.6");
+
+  metaDataNameToRetrieve = "FW_VERSION";
+  ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
+  BOOST_CHECK(retrievedValue == "2.5");
+
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(22);
+
+  RegisterInfoents[0] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true, "BOARD");
+  RegisterInfoents[1] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_COMPILATION", 0x01, 0x04, 0x04, 0x0, 32, 0, true, "BOARD");
+  RegisterInfoents[2] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_STATUS", 0x01, 0x08, 0x04, 0x01, 32, 0, true, "APP0");
+  RegisterInfoents[3] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01, 16, 0, true, "APP0");
+  RegisterInfoents[4] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE0", 0x03, 0x10, 0x0C, 0x01, 32, 0, true, "APP0");
+  RegisterInfoents[5] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE1", 0x03, 0x20, 0x0C, 0x01, 32, 0, true, "APP0");
+  RegisterInfoents[6] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER1", 0x01, 0x10, 0x04, 0x01, 16, 3, true, "MODULE0");
+  RegisterInfoents[7] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER2", 0x01, 0x14, 0x04, 0x01, 18, 5, false, "MODULE0");
+  RegisterInfoents[8] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER3", 0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0");
+  RegisterInfoents[9] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER1", 0x01, 0x20, 0x04, 0x01, 16, 3, true, "MODULE1");
+  RegisterInfoents[10] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER2", 0x01, 0x24, 0x04, 0x01, 18, 5, false, "MODULE1");
+  RegisterInfoents[11] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER3", 0x01, 0x28, 0x04, 0x01, 18, 5, false,
+      "MODULE1", 1, false, RegisterInfoMap::RegisterInfo::Access::READ);
+  RegisterInfoents[12] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("NO_OPTIONAL", 0x01, 0x2C, 0x04, 0x01, 32, 0, true, "MODULE2");
+  RegisterInfoents[13] = ChimeraTK::RegisterInfoMap::RegisterInfo(
+      "REGISTER", 0x01, 0x00, 0x04, 0x02, 32, 0, true, "MODULE.NAME.WITH.DOTS");
+  RegisterInfoents[14] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("TEST_AREA", 0x0A, 0x025, 0x028, 0x01, 32, 0, false, "MODULE1");
+  RegisterInfoents[15] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("SCALAR", 0x01, 0x060, 0x04, 0x01, 32, 0, true, "FLOAT_TEST", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::READWRITE, RegisterInfoMap::RegisterInfo::Type::IEEE754);
+  RegisterInfoents[16] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("ARRAY", 0x04, 0x064, 0x010, 0x01, 32, 0, true, "FLOAT_TEST", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::READWRITE, RegisterInfoMap::RegisterInfo::Type::IEEE754);
+  RegisterInfoents[17] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0, 32, 0, true, "BOARD");
+  RegisterInfoents[18] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true, "LARGE_BAR");
+  RegisterInfoents[19] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 3);
+  RegisterInfoents[20] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 2);
+  RegisterInfoents[21] =
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5, false, "MODULE0", 1, false,
+          RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 5, 6);
+
+  ChimeraTK::RegisterInfoMap::const_iterator mapIter;
+  std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;
+  for(mapIter = ptrmapFile->begin(), elementsIter = RegisterInfoents.begin();
+      mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end(); ++mapIter, ++elementsIter) {
+    std::stringstream message;
+    message << "Failed comparison on Register '" << (*elementsIter).name << "', module '" << (elementsIter->module)
+            << "'";
+    BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
+  }
 }

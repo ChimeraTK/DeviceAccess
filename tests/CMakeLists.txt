@@ -90,6 +90,8 @@ MACRO( COPY_MAPPING_FILES )
     subdeviceTest.dmap Subdevice.map SubdeviceMuxedArea.map SubdeviceTarget.map
     shareddummyTest.dmap shareddummy.map
     registerAccess.map floatRawTest.map test3.map unifiedTest.xlmap
+    interruptMapFile.map interruptMapFileWithError1.map interruptMapFileWithError2.map interruptMapFileWithError3.map interruptMapFileWithError4.map
+    goodMapFileWithComments.map
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.

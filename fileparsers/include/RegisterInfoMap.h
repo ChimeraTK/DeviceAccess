@@ -55,7 +55,7 @@ namespace ChimeraTK {
      */
     class RegisterInfo : public ChimeraTK::RegisterInfo {
      public:
-      enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE };
+      enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE, INTERRUPT = 1 << 2 };
       /** Enum descibing the data interpretation:
        *  \li Fixed point (includes integer = 0 fractional bits)
        *  \li IEEE754 floating point
@@ -63,7 +63,7 @@ namespace ChimeraTK {
        *  \li VOID no data content, just trigger events (push type) FIXME:
        * Currently implicit by 0 bits width
        */
-      enum Type { FIXED_POINT, IEEE754, ASCII };
+      enum Type { FIXED_POINT, IEEE754, ASCII, VOID };
 
       RegisterPath getRegisterName() const override {
         RegisterPath path = RegisterPath(module) / name;
@@ -90,7 +90,17 @@ namespace ChimeraTK {
 
       bool isWriteable() const override { return (registerAccess & Access::WRITE) != 0; }
 
-      AccessModeFlags getSupportedAccessModes() const override { return {AccessMode::raw}; }
+      AccessModeFlags getSupportedAccessModes() const override {
+        if(registerAccess == Access::INTERRUPT && dataType == Type::VOID) {
+          return {AccessMode::wait_for_new_data};
+        }
+        else if(registerAccess == Access::INTERRUPT) {
+          return {AccessMode::raw, AccessMode::wait_for_new_data};
+        }
+        else {
+          return {AccessMode::raw};
+        }
+      }
 
       std::string name;        /**< Name of register */
       uint32_t nElements;      /**< Number of elements in register */
@@ -109,6 +119,9 @@ namespace ChimeraTK {
                                         and write */
       Type dataType;           /**< Data type (fixpoint, floating point)*/
 
+      uint32_t interruptCtrlNumber;
+      uint32_t interruptNumber;
+
       uint32_t nBytesPerElement() const { return nElements > 0 ? nBytes / nElements : 0; }
 
       friend std::ostream& operator<<(std::ostream& os, const RegisterInfo& registerInfo);
@@ -119,7 +132,7 @@ namespace ChimeraTK {
           uint32_t nElements_ = 0, uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
           int32_t nFractionalBits_ = 0, bool signedFlag_ = true, std::string const& module_ = std::string(),
           uint32_t nChannels_ = 1, bool is2DMultiplexed_ = false, Access dataAccess_ = Access::READWRITE,
-          Type dataType_ = Type::FIXED_POINT);
+          Type dataType_ = Type::FIXED_POINT, uint32_t interruptCtrlNumber_ = 0, uint32_t interruptNumber_ = 0);
 
       // We can use the default copy constructor, but have to declare that because we have an explicit assignment operator
       RegisterInfo(const RegisterInfo&) = default;

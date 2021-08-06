@@ -285,17 +285,32 @@ void MapFileTest::testRegisterInfoCoutStreamOperator() {
   ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("Some_Register");
   ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2(
       "TEST_REGISTER_NAME_2", 2, 4, 8, 1, 18, 3, false, "SomeModule");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_INTERRUPT_VOID_REG", 0, 0, 0, 0, 0, 0, false,
+      "SomeModule", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::VOID, 4, 2);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_INTERRUPT_REG", 2, 4, 8, 1, 18, 3, false,
+      "SomeModule", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 1, 5);
 
   std::stringstream expected_stream;
   expected_stream << "Some_Register"
                   << " 0x" << std::hex << 0 << " 0x" << 0 << " 0x" << 0 << " 0x" << 0 << std::dec
-                  << " 32 0 true <noModule> RW FIXED_POINT";
+                  << " 32 0 true <noModule> RW FIXED_POINT 0 0";
   expected_stream << "TEST_REGISTER_NAME_2"
                   << " 0x" << std::hex << 2 << " 0x" << 4 << " 0x" << 8 << " 0x" << 1 << std::dec
-                  << " 18 3 false SomeModule RW FIXED_POINT";
+                  << " 18 3 false SomeModule RW FIXED_POINT 0 0";
+  expected_stream << "TEST_INTERRUPT_VOID_REG"
+                  << " 0x" << std::hex << 0 << " 0x" << 0 << " 0x" << 0 << " 0x" << 0 << std::dec
+                  << " 0 0 false SomeModule INTERRUPT VOID 4 2";
+  expected_stream << "TEST_INTERRUPT_REG"
+                  << " 0x" << std::hex << 2 << " 0x" << 4 << " 0x" << 8 << " 0x" << 1 << std::dec
+                  << " 18 3 false SomeModule INTERRUPT FIXED_POINT 1 5";
+
   std::stringstream actual_stream;
   actual_stream << RegisterInfoent1;
   actual_stream << RegisterInfoent2;
+  actual_stream << RegisterInfoent3;
+  actual_stream << RegisterInfoent4;
 
   BOOST_CHECK_EQUAL(expected_stream.str(), actual_stream.str());
 }
@@ -406,12 +421,21 @@ void MapFileTest::testMapFileCoutStreamOperator() {
   ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 1, 12, 4, 1, 32, 0, true,
       "TEST_MODULE", 1, false, RegisterInfoMap::RegisterInfo::Access::READ,
       RegisterInfoMap::RegisterInfo::Type::IEEE754);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_4", 2, 4, 8, 1, 18, 3, false,
+      "TEST_MODULE", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 1, 5);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent5("TEST_REGISTER_NAME_5", 0, 0, 0, 0, 0, 0, false,
+      "TEST_MODULE", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::VOID, 2, 3);
+
   ChimeraTK::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
 
   dummyMapFile.insert(metaData1);
   dummyMapFile.insert(RegisterInfoent1);
   dummyMapFile.insert(RegisterInfoent2);
   dummyMapFile.insert(RegisterInfoent3);
+  dummyMapFile.insert(RegisterInfoent4);
+  dummyMapFile.insert(RegisterInfoent5);
 
   std::stringstream expected_stream;
   expected_stream << "=======================================" << std::endl;
@@ -425,13 +449,19 @@ void MapFileTest::testMapFileCoutStreamOperator() {
   expected_stream << "---------------------------------------" << std::endl;
   expected_stream << "TEST_REGISTER_NAME_1"
                   << " 0x" << std::hex << 0 << " 0x" << 0 << " 0x" << 0 << " 0x" << 0 << std::dec
-                  << " 32 0 true <noModule> RW FIXED_POINT" << std::endl;
+                  << " 32 0 true <noModule> RW FIXED_POINT 0 0" << std::endl;
   expected_stream << "TEST_REGISTER_NAME_2"
                   << " 0x" << std::hex << 2 << " 0x" << 4 << " 0x" << 8 << " 0x" << 1 << std::dec
-                  << " 18 3 false TEST_MODULE RW FIXED_POINT" << std::endl;
+                  << " 18 3 false TEST_MODULE RW FIXED_POINT 0 0" << std::endl;
   expected_stream << "TEST_REGISTER_NAME_3"
                   << " 0x" << std::hex << 1 << " 0x" << 12 << " 0x" << 4 << " 0x" << 1 << std::dec
-                  << " 32 0 true TEST_MODULE RO IEEE754" << std::endl;
+                  << " 32 0 true TEST_MODULE RO IEEE754 0 0" << std::endl;
+  expected_stream << "TEST_REGISTER_NAME_4"
+                  << " 0x" << std::hex << 2 << " 0x" << 4 << " 0x" << 8 << " 0x" << 1 << std::dec
+                  << " 18 3 false TEST_MODULE INTERRUPT FIXED_POINT 1 5" << std::endl;
+  expected_stream << "TEST_REGISTER_NAME_5"
+                  << " 0x" << std::hex << 0 << " 0x" << 0 << " 0x" << 0 << " 0x" << 0 << std::dec
+                  << " 0 0 false TEST_MODULE INTERRUPT VOID 2 3" << std::endl;
   expected_stream << "=======================================";
 
   std::stringstream actual_stream;
