@@ -16,6 +16,7 @@ namespace ChimeraTK {
     virtual void trigger(VersionNumber const& version) = 0;
     // returns the number of remaining subscribers
     virtual size_t unsubscribe();
+    virtual void sendException(std::exception_ptr& e) = 0;
   };
 
   template<typename UserType>
@@ -23,6 +24,7 @@ namespace ChimeraTK {
     void activate(VersionNumber const& version) override;
     void trigger(VersionNumber const& version) override;
     size_t unsubscribe() override;
+    void sendException(std::exception_ptr& e) override;
 
     template<typename Function>
     void executeWithCopy(Function& function, VersionNumber const& version);
@@ -95,6 +97,17 @@ namespace ChimeraTK {
 
   //*********************************************************************************************************************/
   template<typename UserType>
+  void NumericAddressedAsyncVariableImpl<UserType>::sendException(std::exception_ptr& e) {
+    for(auto& it : subscribers) {
+      auto subscriber = it->lock();
+      if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
+        subscriber.sendException(e);
+      }
+    }
+  }
+
+  //*********************************************************************************************************************/
+  template<typename UserType>
   template<typename Function>
   void NumericAddressedAsyncVariableImpl<UserType>::executeWithCopy(Function& function, VersionNumber const& version) {
     assert(!subscribers.empty());
@@ -117,12 +130,7 @@ namespace ChimeraTK {
       }
     }
     catch(ChimeraTK::runtime_error&) {
-      for(auto& it : subscribers) {
-        auto subscriber = it->lock();
-        if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
-          subscriber.sendException(std::current_exception());
-        }
-      }
+      sendException(std::current_exception());
     }
   }
 
