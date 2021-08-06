@@ -87,4 +87,14 @@ namespace ChimeraTK {
     }
   }
 
+  template<>
+  uint32_t FixedPointConverter::toRaw<Boolean>(Boolean cookedValue) const {
+    if((bool)cookedValue) { // use integer conversion
+      return 1.0;
+    }
+    else {
+      return 0.0;
+    }
+  }
+
 } // namespace ChimeraTK
