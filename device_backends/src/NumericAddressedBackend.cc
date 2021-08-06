@@ -12,7 +12,6 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "AsyncNDRegisterAccessor.h"
-#include "AsyncAccessorManager.h"
 #include "NumericAddressedInterruptDispatcher.h"
 
 namespace ChimeraTK {
@@ -27,6 +26,12 @@ namespace ChimeraTK {
     else {
       _registerMap = boost::shared_ptr<RegisterInfoMap>();
     }
+    // create all the interrupt dispatchers that are described in the map file
+    // FIXME: hack: just one dispatcher, fixed for 0,0
+    // FIXME: This should used make_shared, but that's not working :-(
+    _interruptDispatchers[{0, 0}] =
+        //boost::shared_ptr<NumericAddressedInterruptDispatcher>(new NumericAddressedInterruptDispatcher);
+        boost::make_shared<NumericAddressedInterruptDispatcher>();
   }
 
   /********************************************************************************************************************/

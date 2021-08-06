@@ -39,10 +39,9 @@ namespace ChimeraTK {
   class NumericAddressedInterruptDispatcher
   : public boost::enable_shared_from_this<NumericAddressedInterruptDispatcher> {
    public:
-    NumericAddressedInterruptDispatcher(boost::shared_ptr<NumericAddressedBackend> b);
-
     template<typename UserType>
-    void subscribe(RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+    void subscribe(boost::shared_ptr<NumericAddressedBackend> backend, RegisterPath name, size_t numberOfWords,
+        size_t wordOffsetInRegister, AccessModeFlags flags);
 
     void unsubscribe(RegisterPath name);
 
@@ -54,7 +53,6 @@ namespace ChimeraTK {
     std::mutex _variablesMutex;
     std::map<RegisterPath, std::unique_ptr<NumericAddressedAsyncVariable>> _asyncVariables;
     VersionNumber _lastVersion;
-    boost::shared_ptr<NumericAddressedBackend> _backend;
   };
 
   //*********************************************************************************************************************/
@@ -136,7 +134,7 @@ namespace ChimeraTK {
 
   //*********************************************************************************************************************/
   template<typename UserType>
-  void NumericAddressedInterruptDispatcher::subscribe(
+  void NumericAddressedInterruptDispatcher::subscribe(boost::shared_ptr<NumericAddressedBackend> backend,
       RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     std::lock_guard<std::mutex> variablesLock(_variablesMutex);
 
@@ -147,13 +145,14 @@ namespace ChimeraTK {
       auto synchronousFlags = flags;
       synchronousFlags.remove(AccessMode::wait_for_new_data);
       asyncVariable.syncAccessor =
-          _backend->getSyncRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags);
+          backend->getSyncRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags);
     }
     // we just take all the information we need for the async accessor from the sync accessor which has already done all the parsing
-    asyncVariable.subscribers.push_back(boost::make_shared(
-        AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>(_backend, shared_from_this(), name,
-            asyncVariable.syncAccessor->getNumberOfChannels(), asyncVariable.syncAccessor->getNumberOfElements(), flags,
-            asyncVariable.syncAccessor->getUnit(), asyncVariable.syncAccessor->getDescription())));
+    asyncVariable.subscribers.push_back(
+        boost::make_shared<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>>(backend,
+            shared_from_this(), name, asyncVariable.syncAccessor->getNumberOfChannels(),
+            asyncVariable.syncAccessor->getNumberOfElements(), flags, asyncVariable.syncAccessor->getUnit(),
+            asyncVariable.syncAccessor->getDescription()));
   }
 
 } // namespace ChimeraTK

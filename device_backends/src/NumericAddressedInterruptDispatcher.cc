@@ -2,9 +2,6 @@
 
 namespace ChimeraTK {
 
-  NumericAddressedInterruptDispatcher::NumericAddressedInterruptDispatcher(boost::shared_ptr<NumericAddressedBackend> b)
-  : _backend(b) {}
-
   //*********************************************************************************************************************/
   void NumericAddressedInterruptDispatcher::unsubscribe(RegisterPath name) {
     std::lock_guard<std::mutex> variablesLock(_variablesMutex);

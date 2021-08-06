@@ -12,6 +12,7 @@
 namespace ChimeraTK {
 
   class NumericAddressedLowLevelTransferElement;
+  class NumericAddressedInterruptDispatcher;
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
@@ -81,6 +82,8 @@ namespace ChimeraTK {
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
+    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
 
     friend NumericAddressedLowLevelTransferElement;
   };
