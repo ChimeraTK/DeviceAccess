@@ -156,6 +156,9 @@ namespace ChimeraTK {
 
     void setException() override;
 
+    /// Function to test whether async read transfers are activated
+    bool asyncReadActivated();
+
     /// Mutex to protect data structures for push decorators
     std::mutex _pushDecoratorsMutex;
     /// Map of active ExceptionDummyPushDecorator. Protected by _pushDecoratorMutex
@@ -372,4 +375,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  bool ExceptionDummy::asyncReadActivated() {
+    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
+    return _activateNewPushAccessors;
+  }
+
+  /********************************************************************************************************************/
 } // namespace ChimeraTK
