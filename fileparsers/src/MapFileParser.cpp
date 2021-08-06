@@ -48,15 +48,12 @@ namespace ChimeraTK {
       if(line[0] == '#') {
         continue;
       }
-      /*
       //remove comments from the end of the line
       auto pos = line.find("#");
       if(pos != std::string::npos) {
-        std::cout << "Comments found at the end of the line. Line is: " << line << std::endl;
         line.erase(pos, std::string::npos);
-        std::cout << "After removing cooments the line is:            " << line << std::endl;
       }
-      */
+      // parse meta data
       if(line[0] == '@') {
         std::string org_line = line;
         RegisterInfoMap::MetaData md;
@@ -70,8 +67,9 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error(
               "Parsing error in map file '" + file_name + "' on line " + std::to_string(line_nr));
         }
-        line.erase(line.begin(), line.begin() + md.name.length());
-        line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c) { return !isspace(c); }));
+        line.erase(line.begin(), line.begin() + md.name.length()); // remove name from the string
+        line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }),
+            line.end()); //remove whitespaces from rest of the string (before and after the value)
         md.value = line;
         pmap->insert(md);
         is.clear();
