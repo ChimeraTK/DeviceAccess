@@ -122,7 +122,20 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> NumericAddressedBackend::getRegisterAccessor_impl(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+    if(flags.has(AccessMode::wait_for_new_data)) {
+      // get the interrupt information from the map file
+      boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
+      auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      auto interruptDispatcher =
+          _interruptDispatchers[{registerInfo->interruptCtrlNumber, registerInfo->interruptNumber}];
+      assert(interruptDispatcher);
+      return interruptDispatcher->subscribe<UserType>(
+          boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
+          wordOffsetInRegister, flags);
+    }
+    else {
+      return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+    }
   }
 
   /********************************************************************************************************************/

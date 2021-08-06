@@ -86,6 +86,7 @@ namespace ChimeraTK {
     std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
 
     friend NumericAddressedLowLevelTransferElement;
+    friend NumericAddressedInterruptDispatcher;
   };
 
 } // namespace ChimeraTK

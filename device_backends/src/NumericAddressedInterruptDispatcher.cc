@@ -31,4 +31,6 @@ namespace ChimeraTK {
     return _lastVersion;
   }
 
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher);
+
 } // namespace ChimeraTK

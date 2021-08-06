@@ -7,9 +7,8 @@
 namespace ChimeraTK {
 
   template<typename UserType, typename AsyncAccessorManager>
-  class AsyncNDRegisterAccessor
-  : public NDRegisterAccessor<UserType>,
-    public boost::enable_shared_from_this<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager>> {
+  class AsyncNDRegisterAccessor : public NDRegisterAccessor<UserType> {
+    //public boost::enable_shared_from_this<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager>> {
    public:
     AsyncNDRegisterAccessor(const boost::shared_ptr<DeviceBackend>& backend,
         const boost::shared_ptr<AsyncAccessorManager>& manager, std::string const& name, size_t nChannels,
@@ -26,14 +25,17 @@ namespace ChimeraTK {
       for(auto& chan : buffer_2D) chan.resize(nElements);
 
       this->_readQueue = _dataTransportQueue.template then<void>(
-          [&](Buffer buf) { std::swap(_receiveBuffer, buf); }, std::launch::deferred);
-      _accessorManager->subscribe(this->shared_from_this());
+          [&](Buffer& buf) { std::swap(_receiveBuffer, buf); }, std::launch::deferred);
     }
 
-    ~AsyncNDRegisterAccessor() override { _accessorManager->unsubscribe(this->shared_from_this()); }
+    ~AsyncNDRegisterAccessor() override { _accessorManager->unsubscribe(this->getName()); }
 
     void doReadTransferSynchronously() override {
       throw ChimeraTK::logic_error("AsyncNDRegisterAccessor does not support synchronous reads.");
+    }
+
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
+      throw ChimeraTK::logic_error("AsyncNDRegisterAccessor does not support writing.");
     }
 
     void doPreWrite([[maybe_unused]] TransferType type, [[maybe_unused]] VersionNumber versionNumber) override {
@@ -66,7 +68,7 @@ namespace ChimeraTK {
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
 
-    void interrupt() override { this->interrupt_impl(this->_dataQueue); }
+    void interrupt() override { this->interrupt_impl(this->_readQueue); }
 
     void sendException(std::exception_ptr& e) {
       if(_isActive) { //FIXME: is there a scenario where we have to/are allowed to send an exception when the accessor is inactive?
@@ -84,7 +86,7 @@ namespace ChimeraTK {
         return;
       }
 
-      _dataTransportQueue.push_overwrite(data);
+      _dataTransportQueue.push_overwrite(std::move(data));
     }
 
     /** Activate the accessor and send the initial value.
@@ -92,7 +94,7 @@ namespace ChimeraTK {
     void activate(typename NDRegisterAccessor<UserType>::Buffer& initialValue) {
       //_hasException = false;
       _isActive = true;
-      send(initialValue);
+      sendDestrictively(initialValue);
     }
 
     // Needs to be called in case a device is closed.
@@ -103,7 +105,7 @@ namespace ChimeraTK {
     boost::shared_ptr<AsyncAccessorManager> _accessorManager;
     using typename NDRegisterAccessor<UserType>::Buffer;
     using NDRegisterAccessor<UserType>::buffer_2D;
-    Buffer& _receiveBuffer;
+    Buffer _receiveBuffer;
 
     // variables to simplify the bookkeeping and only send to the queue when it is allowed
     bool _isActive{false};
@@ -120,15 +122,16 @@ namespace ChimeraTK {
     if(updateDataBuffer) {
       // do not update meta data if updateDataBuffer == false, since this is the equivalent to a backend
       // implementation, not a decorator
-      this->_versionNumber = _receiveBuffer.version;
-      this->_dataValidity = _receiveBuffer.validity;
+      this->_versionNumber = _receiveBuffer.versionNumber;
+      this->_dataValidity = _receiveBuffer.dataValidity;
       // Do not overwrite the vectors in the first layer of the 2D array. Accessing code might have stored them.
       // Instead, swap the received data into the channel vectors.
-      auto source = _receiveBuffer.data.begin(); // the received data is the source as it is moved into the user buffer
+      auto source = _receiveBuffer.value.begin(); // the received data is the source as it is moved into the user buffer
       auto destination = this->buffer_2D.begin();
-      for(; source != _receiveBuffer.data.end(); ++source, ++destination) {
-        destination.swap(source);
+      for(; source != _receiveBuffer.value.end(); ++source, ++destination) {
+        destination->swap(*source);
       }
     }
   }
+
 } // namespace ChimeraTK
