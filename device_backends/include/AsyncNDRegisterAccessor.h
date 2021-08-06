@@ -12,15 +12,19 @@ namespace ChimeraTK {
     public boost::enable_shared_from_this<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager>> {
    public:
     AsyncNDRegisterAccessor(const boost::shared_ptr<DeviceBackend>& backend,
-        const boost::shared_ptr<AsyncAccessorManager>& manager, std::string const& name,
-        AccessModeFlags accessModeFlags, std::string const& unit = std::string(TransferElement::unitNotSet),
+        const boost::shared_ptr<AsyncAccessorManager>& manager, std::string const& name, size_t nChannels,
+        size_t nElements, AccessModeFlags accessModeFlags,
+        std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string())
 
     : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(backend),
-      _accessorManager(manager) {
+      _accessorManager(manager), _receiveBuffer(nChannels, nElements) {
       if(!accessModeFlags.has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error("AsyncNDRegisterAccessor requested without AccessMode::wait_for_new_data");
       }
+      buffer_2D.resize(nChannels);
+      for(auto& chan : buffer_2D) chan.resize(nElements);
+
       this->_readQueue = _dataTransportQueue.template then<void>(
           [&](Buffer buf) { std::swap(_receiveBuffer, buf); }, std::launch::deferred);
       _accessorManager->subscribe(this->shared_from_this());
@@ -98,6 +102,7 @@ namespace ChimeraTK {
     boost::shared_ptr<DeviceBackend> _backend;
     boost::shared_ptr<AsyncAccessorManager> _accessorManager;
     using typename NDRegisterAccessor<UserType>::Buffer;
+    using NDRegisterAccessor<UserType>::buffer_2D;
     Buffer& _receiveBuffer;
 
     // variables to simplify the bookkeeping and only send to the queue when it is allowed

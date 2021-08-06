@@ -89,9 +89,11 @@ namespace ChimeraTK {
      * allocations when transported in a cppext::future_queue.
      */
     struct Buffer {
-      Buffer(const std::vector<UserType> initialValue) : value(initialValue) {}
+      Buffer(const std::vector<std::vector<UserType>> initialValue) : value(initialValue) {}
 
-      Buffer(size_t size) : value(size) {}
+      Buffer(size_t nChannels, size_t nElements) : value(nChannels) {
+        for(auto& channel : value) channel.resize(nElements);
+      }
 
       Buffer() {}
 
@@ -106,7 +108,7 @@ namespace ChimeraTK {
       }
 
       /** The actual data contained in this buffer. */
-      std::vector<UserType> value;
+      std::vector<std::vector<UserType>> value;
 
       /** Version number of this data */
       ChimeraTK::VersionNumber versionNumber{nullptr};
