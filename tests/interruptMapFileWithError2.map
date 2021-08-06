@@ -1,0 +1,6 @@
+#In principle one could mix map and mapp syntax. The "empty" module name is just another module
+
+# name       			     		number_of_elements  address  size  bar  width  fracbits  signed 	read_mode
+
+APP0.INTERUPT_VOID_1_ERR			1				    0x0			4	0	  0		0			0		INTERRUPT0:0
+
