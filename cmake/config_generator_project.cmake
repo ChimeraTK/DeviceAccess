@@ -22,7 +22,9 @@ find_package(ConfigGenerator 02.00 REQUIRED)
 set(DESTDIR share/ConfigGenerator-${PROJECT_NAME}-${${PROJECT_NAME}_MAJOR_VERSION}-${${PROJECT_NAME}_MINOR_VERSION})
 
 # copy all script files from config generator to our build directory
-file(GLOB scripts RELATIVE ${ConfigGenerator_DIR} ${ConfigGenerator_DIR}/*.sh ${ConfigGenerator_DIR}/*.py ${ConfigGenerator_DIR}/*.inc ${ConfigGenerator_DIR}/ConfigGenerator/*.py)
+file(GLOB scripts RELATIVE ${ConfigGenerator_DIR} ${ConfigGenerator_DIR}/*.sh ${ConfigGenerator_DIR}/*.py
+                           ${ConfigGenerator_DIR}/*.inc ${ConfigGenerator_DIR}/ConfigGenerator/*.py
+                           ${ConfigGenerator_DIR}/TestFacility/*.py)
 foreach(script ${scripts})
   configure_file("${ConfigGenerator_DIR}/${script}" "${PROJECT_BINARY_DIR}/${script}" COPYONLY)
 endforeach()

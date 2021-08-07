@@ -68,6 +68,9 @@ namespace ChimeraTK {
      * exact format is unspecified. */
     operator std::string() const { return std::string("v") + std::to_string(_value); }
 
+    /** Stream operator passing the human readable representation to an ostream. */
+    friend std::ostream& operator<<(std::ostream& stream, const VersionNumber& version);
+
    private:
     /**
      * The version number held by this instance
