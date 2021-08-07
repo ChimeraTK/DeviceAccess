@@ -26,6 +26,7 @@ BOOST_AUTO_TEST_CASE(test_toCooked_3_25) {
   BOOST_CHECK_EQUAL(converter.scalarToCooked<int64_t>(rawValue), 3);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<uint64_t>(rawValue), 3);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<std::string>(rawValue), std::to_string(testValue));
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<Boolean>(rawValue), true);
 }
 
 BOOST_AUTO_TEST_CASE(test_toCooked_60k) {
@@ -48,6 +49,7 @@ BOOST_AUTO_TEST_CASE(test_toCooked_60k) {
   BOOST_CHECK_EQUAL(converter.scalarToCooked<int64_t>(rawValue), 60001);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<uint64_t>(rawValue), 60001);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<std::string>(rawValue), std::to_string(testValue));
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<Boolean>(rawValue), true);
 }
 
 BOOST_AUTO_TEST_CASE(test_toCooked_minus240) {
@@ -68,6 +70,7 @@ BOOST_AUTO_TEST_CASE(test_toCooked_minus240) {
   BOOST_CHECK_EQUAL(converter.scalarToCooked<int64_t>(rawValue), -241);
   BOOST_CHECK_THROW(converter.scalarToCooked<uint64_t>(rawValue), boost::numeric::negative_overflow);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<std::string>(rawValue), std::to_string(testValue));
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<Boolean>(rawValue), true);
 }
 
 void checkAsRaw(int32_t rawValue, float expectedValue) {
@@ -91,6 +94,7 @@ BOOST_AUTO_TEST_CASE(test_from_3_25) {
   checkAsRaw(converter.toRaw(int64_t(3)), 3);
   checkAsRaw(converter.toRaw(uint64_t(3)), 3);
   checkAsRaw(converter.toRaw(std::string("3.25")), 3.25);
+  checkAsRaw(converter.toRaw(Boolean("3.25")), true);
 
   // corner cases
   BOOST_CHECK_THROW(converter.toRaw(std::string("notAFloat")), ChimeraTK::logic_error);
@@ -101,4 +105,15 @@ BOOST_AUTO_TEST_CASE(test_from_3_25) {
   // converter should limit, not throw
   checkAsRaw(converter.toRaw(tooLarge), FLT_MAX);
   checkAsRaw(converter.toRaw(tooSmall), -FLT_MAX);
+}
+
+BOOST_AUTO_TEST_CASE(test_toCooked_00) {
+  IEEE754_SingleConverter converter;
+
+  // tests if Boolean turns 0.0 into false
+  float testValue = 0.0;
+  void* warningAvoider = &testValue;
+  int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
+
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<Boolean>(rawValue), false);
 }
