@@ -443,6 +443,9 @@ namespace ChimeraTK {
   template<>
   uint32_t FixedPointConverter::toRaw<Boolean>(Boolean cookedValue) const;
 
+  template<>
+  uint32_t FixedPointConverter::toRaw<Void>(__attribute__((unused)) Void cookedValue) const;
+
 } // namespace ChimeraTK
 
 #endif // CHIMERA_TK_FIXED_POINT_CONVERTER_H

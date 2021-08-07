@@ -62,6 +62,7 @@ DEF_TYPENAME(uint64_t)
 DEF_TYPENAME(float)
 DEF_TYPENAME(double)
 DEF_TYPENAME(std::string)
+DEF_TYPENAME(Boolean)
 
 template<typename T>
 void checkToCookedOverflowNeg(FixedPointConverter const& converter, uint32_t input) {
@@ -162,6 +163,9 @@ BOOST_AUTO_TEST_CASE(testInt32) {
 
   checkToCooked(converter, 0x55555555, std::string("1431655765"));
   checkToRaw(converter, std::string("1431655765"), 0x55555555);
+
+  //Boolean check
+  checkToCooked(converter, 0x55555555, Boolean(true));
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32) {
@@ -208,6 +212,8 @@ BOOST_AUTO_TEST_CASE(testUInt32) {
 
   checkToCooked(converter, 0xAAAAAAAA, std::string("2863311530"));
   checkToRaw(converter, std::string("2863311530"), 0xAAAAAAAA);
+
+  checkToCooked(converter, 0xAAAAAAAA, Boolean(true));
 }
 
 BOOST_AUTO_TEST_CASE(testInt16) {
@@ -1603,6 +1609,20 @@ BOOST_AUTO_TEST_CASE(testDynamicRangeNeg) {
   // check that our comparison values are not already exceeding the dynamic
   // range
   BOOST_CHECK(pow(2., -(1024 - 16)) > 0.);
+}
+
+BOOST_AUTO_TEST_CASE(testBoolean0) {
+  FixedPointConverter converter("Variable32signed"); // default parameters are signed 32 bit
+
+  checkToCooked(converter, 0x00000000, Boolean(false));
+}
+
+BOOST_AUTO_TEST_CASE(testVoid) {
+  FixedPointConverter converter("Variable32signed"); // default parameters are signed 32 bit
+
+  checkToCooked(converter, 0x00000000, Void(0));
+  checkToCooked(converter, 0x00000000, Void(500));
+  checkToCooked(converter, 0x00000000, Void(420));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

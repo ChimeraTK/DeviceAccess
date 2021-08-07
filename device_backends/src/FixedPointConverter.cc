@@ -97,4 +97,9 @@ namespace ChimeraTK {
     }
   }
 
+  template<>
+  uint32_t FixedPointConverter::toRaw<Void>(__attribute__((unused)) Void cookedValue) const {
+    return 0.0;
+  }
+
 } // namespace ChimeraTK
