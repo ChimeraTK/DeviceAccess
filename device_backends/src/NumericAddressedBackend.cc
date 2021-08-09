@@ -28,10 +28,8 @@ namespace ChimeraTK {
     }
     // create all the interrupt dispatchers that are described in the map file
     // FIXME: hack: just one dispatcher, fixed for 0,0
-    // FIXME: This should used make_shared, but that's not working :-(
-    _interruptDispatchers[{0, 0}] =
-        //boost::shared_ptr<NumericAddressedInterruptDispatcher>(new NumericAddressedInterruptDispatcher);
-        boost::make_shared<NumericAddressedInterruptDispatcher>();
+    //    _interruptDispatchers[{0, 0}] =
+    //        boost::make_shared<NumericAddressedInterruptDispatcher>();
   }
 
   /********************************************************************************************************************/
@@ -126,6 +124,11 @@ namespace ChimeraTK {
       // get the interrupt information from the map file
       boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
       auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      if(!registerInfo->getSupportedAccessModes().has(AccessMode::wait_for_new_data)) {
+        throw ChimeraTK::logic_error(
+            "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
+      }
+
       auto interruptDispatcher =
           _interruptDispatchers[{registerInfo->interruptCtrlNumber, registerInfo->interruptNumber}];
       assert(interruptDispatcher);
