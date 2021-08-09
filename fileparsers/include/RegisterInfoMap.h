@@ -423,12 +423,16 @@ namespace ChimeraTK {
     /** Return the RegisterCatalogue storing the register information */
     const RegisterCatalogue& getRegisterCatalogue();
 
+    const std::map<std::size_t, std::set<std::size_t>>& getListOfInterrupts();
+
    private:
     /** name of MAP file*/
     std::string _mapFileName;
 
     /** the catalogue storing the map file information */
     RegisterCatalogue _catalogue;
+    /** the map of interrupts - key is an interrupt controller number and value is a set of interrupts numbers assigned to the given interrupt controller */
+    std::map<std::size_t, std::set<std::size_t>> _mapOfInterrupts;
   };
   /**
    * @typedef RegisterInfoMapPointer

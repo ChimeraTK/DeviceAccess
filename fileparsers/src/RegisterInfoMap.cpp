@@ -25,6 +25,9 @@ namespace ChimeraTK {
   }
 
   void RegisterInfoMap::insert(RegisterInfo& elem) {
+    if(elem.registerAccess == RegisterInfo::Access::INTERRUPT) {
+      _mapOfInterrupts[elem.interruptCtrlNumber].insert(elem.interruptCtrlNumber);
+    }
     _catalogue.addRegister(boost::shared_ptr<RegisterInfo>(new RegisterInfo(elem)));
   }
 
@@ -374,5 +377,9 @@ namespace ChimeraTK {
     }
   }
   const RegisterCatalogue& RegisterInfoMap::getRegisterCatalogue() { return _catalogue; }
+
+  const std::map<std::size_t, std::set<std::size_t>>& RegisterInfoMap::getListOfInterrupts() {
+    return _mapOfInterrupts;
+  }
 
 } // namespace ChimeraTK
