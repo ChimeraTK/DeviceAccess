@@ -6,8 +6,6 @@
 
 namespace ChimeraTK {
 
-  class NumericAddressedInterruptDispatcher;
-
   // typeless base class
   struct NumericAddressedAsyncVariable {
     virtual ~NumericAddressedAsyncVariable() = default;
@@ -16,47 +14,83 @@ namespace ChimeraTK {
     virtual void trigger(VersionNumber const& version) = 0;
     // returns the number of remaining subscribers
     virtual size_t unsubscribe() = 0;
-    virtual void sendException(std::exception_ptr& e) = 0;
+    virtual void sendException(std::exception_ptr e) = 0;
   };
+
+  class NumericAddressedInterruptDispatcher
+  : public boost::enable_shared_from_this<NumericAddressedInterruptDispatcher> {
+   public:
+    // The asynchronous variables contain the typed synchronous reader which has a UserType, user size and offset and might be raw or cooked,
+    // so we need a helper object as key for the map which stores all the asynchronous variables
+    struct AccessorInstanceDescriptor {
+      RegisterPath name;
+      std::type_index type;
+      size_t numberOfWords;
+      size_t wordOffsetInRegister;
+      AccessModeFlags flags;
+      AccessorInstanceDescriptor(RegisterPath name_, std::type_index type_, size_t numberOfWords_,
+          size_t wordOffsetInRegister_, AccessModeFlags flags_)
+      : name(name_), type(type_), numberOfWords(numberOfWords_), wordOffsetInRegister(wordOffsetInRegister_),
+        flags(flags_) {}
+      bool operator<(AccessorInstanceDescriptor const& other) const {
+        if(name == other.name) {
+          if(type == other.type) {
+            if(numberOfWords == other.numberOfWords) {
+              if(wordOffsetInRegister == other.wordOffsetInRegister)
+                return (flags < other.flags);
+              else
+                return (wordOffsetInRegister < other.wordOffsetInRegister);
+            }
+            else
+              return (numberOfWords < other.numberOfWords);
+          }
+          else
+            return (type < other.type);
+        }
+        else
+          return (name < other.name);
+      }
+    }; // namespace ChimeraTK
+
+    template<typename UserType>
+    boost::shared_ptr<
+        AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher, AccessorInstanceDescriptor>>
+        subscribe(boost::shared_ptr<NumericAddressedBackend> backend, RegisterPath name, size_t numberOfWords,
+            size_t wordOffsetInRegister, AccessModeFlags flags);
+
+    void trigger();
+
+    VersionNumber getLastVersion();
+
+    void unsubscribe(AccessorInstanceDescriptor const& descriptor);
+
+   private:
+    std::mutex _variablesMutex;
+
+    std::map<AccessorInstanceDescriptor, std::unique_ptr<NumericAddressedAsyncVariable>> _asyncVariables;
+
+    VersionNumber _lastVersion;
+  }; // namespace ChimeraTK
 
   template<typename UserType>
   struct NumericAddressedAsyncVariableImpl : public NumericAddressedAsyncVariable {
     void activate(VersionNumber const& version) override;
     void trigger(VersionNumber const& version) override;
     size_t unsubscribe() override;
-    void sendException(std::exception_ptr& e) override;
+    void sendException(std::exception_ptr e) override;
 
     template<typename Function>
-    void executeWithCopy(Function& function, VersionNumber const& version);
+    void executeWithCopy(Function function, VersionNumber const& version);
 
-    bool isInitialised();
-    void initialise(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
+    NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
 
-    std::list<boost::weak_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>>> subscribers;
+    std::list<boost::weak_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
+        NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>>
+        subscribers;
     boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
 
    protected:
     typename NDRegisterAccessor<UserType>::Buffer _sendBuffer;
-  }; // namespace ChimeraTK
-
-  class NumericAddressedInterruptDispatcher
-  : public boost::enable_shared_from_this<NumericAddressedInterruptDispatcher> {
-   public:
-    template<typename UserType>
-    boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>> subscribe(
-        boost::shared_ptr<NumericAddressedBackend> backend, RegisterPath name, size_t numberOfWords,
-        size_t wordOffsetInRegister, AccessModeFlags flags);
-
-    void unsubscribe(RegisterPath name);
-
-    void trigger();
-
-    VersionNumber getLastVersion();
-
-   private:
-    std::mutex _variablesMutex;
-    std::map<RegisterPath, std::unique_ptr<NumericAddressedAsyncVariable>> _asyncVariables;
-    VersionNumber _lastVersion;
   };
 
   //*********************************************************************************************************************/
@@ -73,69 +107,60 @@ namespace ChimeraTK {
         subscribers.erase(it);
         return subscribers.size();
       }
-
-      throw ChimeraTK::logic_error("NumericAddressedAsyncVariable::unsibscribe must only be called from the "
-                                   "destructor of an AsyncDNRegisterAccessor!");
     }
+
+    throw ChimeraTK::logic_error("NumericAddressedAsyncVariable::unsibscribe must only be called from the "
+                                 "destructor of an AsyncDNRegisterAccessor!");
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
   void NumericAddressedAsyncVariableImpl<UserType>::trigger(VersionNumber const& version) {
-    executeWithCopy(
-        [](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>>& accessor,
-            VersionNumber const& v) { accessor->sendDestructively(v); },
+    executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
+                            NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>& accessor,
+                        typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->sendDestructively(buf); },
         version);
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
   void NumericAddressedAsyncVariableImpl<UserType>::activate(VersionNumber const& version) {
-    executeWithCopy(
-        [](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>>& accessor,
-            VersionNumber const& v) { accessor->activate(v); },
+    executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
+                            NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>& accessor,
+                        typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->activate(buf); },
         version);
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
-  void NumericAddressedAsyncVariableImpl<UserType>::sendException(std::exception_ptr& e) {
+  void NumericAddressedAsyncVariableImpl<UserType>::sendException(std::exception_ptr e) {
     for(auto& it : subscribers) {
-      auto subscriber = it->lock();
+      auto subscriber = it.lock();
       if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
-        subscriber.sendException(e);
+        subscriber->sendException(e);
       }
     }
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
-  bool NumericAddressedAsyncVariableImpl<UserType>::isInitialised() {
-    return (syncAccessor != nullptr);
-  }
-
-  //*********************************************************************************************************************/
-  template<typename UserType>
-  void NumericAddressedAsyncVariableImpl<UserType>::initialise(
-      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_) {
-    syncAccessor = syncAccessor_;
-    _sendBuffer = typename NDRegisterAccessor<UserType>::Buffer(
-        syncAccessor->getNumberOfChannels(), syncAccessor->getNumberOfSamples());
-  }
+  NumericAddressedAsyncVariableImpl<UserType>::NumericAddressedAsyncVariableImpl(
+      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_)
+  : syncAccessor(syncAccessor_), _sendBuffer(syncAccessor->getNumberOfChannels(), syncAccessor->getNumberOfSamples()) {}
 
   //*********************************************************************************************************************/
   template<typename UserType>
   template<typename Function>
-  void NumericAddressedAsyncVariableImpl<UserType>::executeWithCopy(Function& function, VersionNumber const& version) {
+  void NumericAddressedAsyncVariableImpl<UserType>::executeWithCopy(Function function, VersionNumber const& version) {
     assert(!subscribers.empty());
     assert(syncAccessor);
     try {
-      syncAccessor.read();
+      syncAccessor->read();
       _sendBuffer.value.swap(syncAccessor->accessChannels());
-      _sendBuffer.dataValidity = syncAccessor->getDataValidity();
+      _sendBuffer.dataValidity = syncAccessor->dataValidity();
       _sendBuffer.versionNumber = version;
 
-      for(auto& it = subscribers.begin(); it != --(subscribers.end()); ++it) {
+      for(auto it = subscribers.begin(); it != --(subscribers.end()); ++it) {
         auto subscriber = it->lock();
         if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
           function(subscriber, _sendBuffer);
@@ -153,30 +178,33 @@ namespace ChimeraTK {
 
   //*********************************************************************************************************************/
   template<typename UserType>
-  boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>>
+  boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
+      NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>
       NumericAddressedInterruptDispatcher::subscribe(boost::shared_ptr<NumericAddressedBackend> backend,
           RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     std::lock_guard<std::mutex> variablesLock(_variablesMutex);
 
-    auto asyncVariable = dynamic_cast<NumericAddressedAsyncVariableImpl<UserType>*>(_asyncVariables[name].get());
-    assert(asyncVariable);
-    if(!asyncVariable->isInitialised()) {
-      // The async variable has just been created and there are no subscribers and no synchronous accessor yet.
+    AccessorInstanceDescriptor descriptor(name, typeid(UserType), numberOfWords, wordOffsetInRegister, flags);
+    if(!_asyncVariables[descriptor].get()) {
+      // Variable does not exist yet. Create it.
       auto synchronousFlags = flags;
       synchronousFlags.remove(AccessMode::wait_for_new_data);
-      asyncVariable->initialise(
+      _asyncVariables[descriptor] = std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(
           backend->getSyncRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags));
     }
+
+    auto asyncVariable = dynamic_cast<NumericAddressedAsyncVariableImpl<UserType>*>(_asyncVariables[descriptor].get());
     // we just take all the information we need for the async accessor from the sync accessor which has already done all the parsing
-    auto newSubscriber = boost::make_shared<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher>>(
-        backend, shared_from_this(), name, asyncVariable->syncAccessor->getNumberOfChannels(),
-        asyncVariable->syncAccessor->getNumberOfSamples(), flags, asyncVariable->syncAccessor->getUnit(),
-        asyncVariable->syncAccessor->getDescription());
+    auto newSubscriber = boost::make_shared<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
+        NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>(backend, shared_from_this(), name,
+        asyncVariable->syncAccessor->getNumberOfChannels(), asyncVariable->syncAccessor->getNumberOfSamples(), flags,
+        descriptor, asyncVariable->syncAccessor->getUnit(), asyncVariable->syncAccessor->getDescription());
     asyncVariable->subscribers.push_back(newSubscriber);
     return newSubscriber;
   }
 
   //  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedAsyncVariableImpl);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher,
+      NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor);
 
 } // namespace ChimeraTK

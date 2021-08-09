@@ -3,12 +3,13 @@
 namespace ChimeraTK {
 
   //*********************************************************************************************************************/
-  void NumericAddressedInterruptDispatcher::unsubscribe(RegisterPath name) {
+  void NumericAddressedInterruptDispatcher::unsubscribe(
+      NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor const& descriptor) {
     std::lock_guard<std::mutex> variablesLock(_variablesMutex);
-    auto varIter = _asyncVariables.find(name);
+    auto varIter = _asyncVariables.find(descriptor);
     if(varIter == _asyncVariables.end()) {
-      throw ChimeraTK::logic_error(
-          "NumericAddressedInterruptDispatcher: cannot unsubscribe register " + name + " because it is not subscribed");
+      throw ChimeraTK::logic_error("NumericAddressedInterruptDispatcher: cannot unsubscribe register " +
+          descriptor.name + " because it is not subscribed in that configuration.");
     }
     auto& var = varIter->second;  // the iterator of a map is a key-value pair
     if(var->unsubscribe() == 0) { // no subscribers left if it returns 0
@@ -31,6 +32,7 @@ namespace ChimeraTK {
     return _lastVersion;
   }
 
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher,
+      NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor);
 
 } // namespace ChimeraTK

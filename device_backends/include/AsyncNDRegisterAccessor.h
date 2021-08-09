@@ -6,18 +6,18 @@
 
 namespace ChimeraTK {
 
-  template<typename UserType, typename AsyncAccessorManager>
+  template<typename UserType, typename AsyncAccessorManager, typename AsyncAccessorID>
   class AsyncNDRegisterAccessor : public NDRegisterAccessor<UserType> {
     //public boost::enable_shared_from_this<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager>> {
    public:
     AsyncNDRegisterAccessor(const boost::shared_ptr<DeviceBackend>& backend,
         const boost::shared_ptr<AsyncAccessorManager>& manager, std::string const& name, size_t nChannels,
-        size_t nElements, AccessModeFlags accessModeFlags,
+        size_t nElements, AccessModeFlags accessModeFlags, AsyncAccessorID id,
         std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string())
 
     : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(backend),
-      _accessorManager(manager), _receiveBuffer(nChannels, nElements) {
+      _accessorManager(manager), _receiveBuffer(nChannels, nElements), _id(id) {
       if(!accessModeFlags.has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error("AsyncNDRegisterAccessor requested without AccessMode::wait_for_new_data");
       }
@@ -28,7 +28,7 @@ namespace ChimeraTK {
           [&](Buffer& buf) { std::swap(_receiveBuffer, buf); }, std::launch::deferred);
     }
 
-    ~AsyncNDRegisterAccessor() override { _accessorManager->unsubscribe(this->getName()); }
+    ~AsyncNDRegisterAccessor() override { _accessorManager->unsubscribe(_id); }
 
     void doReadTransferSynchronously() override {
       throw ChimeraTK::logic_error("AsyncNDRegisterAccessor does not support synchronous reads.");
@@ -81,7 +81,7 @@ namespace ChimeraTK {
     /** You can only send descructively. If you want to keep a copy you have to make once yourself.
      *  This is more efficient that having one extra buffer within each AsyncNDRegisterAccessor.
      */
-    void sendDestrictively(typename NDRegisterAccessor<UserType>::Buffer& data) {
+    void sendDestructively(typename NDRegisterAccessor<UserType>::Buffer& data) {
       if(!_isActive) { // || _hasException) {
         return;
       }
@@ -94,7 +94,7 @@ namespace ChimeraTK {
     void activate(typename NDRegisterAccessor<UserType>::Buffer& initialValue) {
       //_hasException = false;
       _isActive = true;
-      sendDestrictively(initialValue);
+      sendDestructively(initialValue);
     }
 
     // Needs to be called in case a device is closed.
@@ -106,6 +106,7 @@ namespace ChimeraTK {
     using typename NDRegisterAccessor<UserType>::Buffer;
     using NDRegisterAccessor<UserType>::buffer_2D;
     Buffer _receiveBuffer;
+    AsyncAccessorID _id;
 
     // variables to simplify the bookkeeping and only send to the queue when it is allowed
     bool _isActive{false};
@@ -116,8 +117,8 @@ namespace ChimeraTK {
     cppext::future_queue<Buffer, cppext::SWAP_DATA> _dataTransportQueue{3};
   }; // namespace ChimeraTK
 
-  template<typename UserType, typename AsyncAccessorManager>
-  void AsyncNDRegisterAccessor<UserType, AsyncAccessorManager>::doPostRead(
+  template<typename UserType, typename AsyncAccessorManager, typename AsyncAccessorID>
+  void AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AsyncAccessorID>::doPostRead(
       [[maybe_unused]] TransferType type, bool updateDataBuffer) {
     if(updateDataBuffer) {
       // do not update meta data if updateDataBuffer == false, since this is the equivalent to a backend
