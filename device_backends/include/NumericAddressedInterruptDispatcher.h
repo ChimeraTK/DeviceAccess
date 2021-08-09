@@ -32,25 +32,8 @@ namespace ChimeraTK {
           size_t wordOffsetInRegister_, AccessModeFlags flags_)
       : name(name_), type(type_), numberOfWords(numberOfWords_), wordOffsetInRegister(wordOffsetInRegister_),
         flags(flags_) {}
-      bool operator<(AccessorInstanceDescriptor const& other) const {
-        if(name == other.name) {
-          if(type == other.type) {
-            if(numberOfWords == other.numberOfWords) {
-              if(wordOffsetInRegister == other.wordOffsetInRegister)
-                return (flags < other.flags);
-              else
-                return (wordOffsetInRegister < other.wordOffsetInRegister);
-            }
-            else
-              return (numberOfWords < other.numberOfWords);
-          }
-          else
-            return (type < other.type);
-        }
-        else
-          return (name < other.name);
-      }
-    }; // namespace ChimeraTK
+      bool operator<(AccessorInstanceDescriptor const& other) const;
+    };
 
     template<typename UserType>
     boost::shared_ptr<
@@ -70,7 +53,7 @@ namespace ChimeraTK {
     std::map<AccessorInstanceDescriptor, std::unique_ptr<NumericAddressedAsyncVariable>> _asyncVariables;
 
     VersionNumber _lastVersion;
-  }; // namespace ChimeraTK
+  };
 
   template<typename UserType>
   struct NumericAddressedAsyncVariableImpl : public NumericAddressedAsyncVariable {

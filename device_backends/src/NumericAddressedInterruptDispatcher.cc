@@ -3,6 +3,27 @@
 namespace ChimeraTK {
 
   //*********************************************************************************************************************/
+  bool NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor::operator<(
+      AccessorInstanceDescriptor const& other) const {
+    if(name == other.name) {
+      if(type == other.type) {
+        if(numberOfWords == other.numberOfWords) {
+          if(wordOffsetInRegister == other.wordOffsetInRegister)
+            return (flags < other.flags);
+          else
+            return (wordOffsetInRegister < other.wordOffsetInRegister);
+        }
+        else
+          return (numberOfWords < other.numberOfWords);
+      }
+      else
+        return (type < other.type);
+    }
+    else
+      return (name < other.name);
+  }
+
+  //*********************************************************************************************************************/
   void NumericAddressedInterruptDispatcher::unsubscribe(
       NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor const& descriptor) {
     std::lock_guard<std::mutex> variablesLock(_variablesMutex);
