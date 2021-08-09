@@ -69,6 +69,7 @@ struct Integers_signed32 {
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
+    exceptionDummy->throwExceptionOpen = enable;
   }
 };
 
@@ -151,6 +152,7 @@ struct ShortRaw_base {
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
+    exceptionDummy->throwExceptionOpen = enable;
   }
 };
 
@@ -313,6 +315,7 @@ struct MuxedNodma {
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummyMuxed->throwExceptionRead = enable;
     exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
   }
 };
 

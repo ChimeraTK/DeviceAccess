@@ -995,10 +995,10 @@ BOOST_AUTO_TEST_CASE(testIsFunctional) {
   d.open();
   BOOST_CHECK(d.isFunctional() == true);
 
-  exceptionDummyBackend->throwExceptionRead = true;
+  exceptionDummyBackend->throwExceptionOpen = true;
   BOOST_CHECK(d.isFunctional() == false);
 
-  exceptionDummyBackend->throwExceptionRead = false;
+  exceptionDummyBackend->throwExceptionOpen = false;
   BOOST_CHECK(d.isFunctional() == true);
 
   d.close();

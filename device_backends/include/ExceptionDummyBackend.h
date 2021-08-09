@@ -35,10 +35,6 @@ namespace ChimeraTK {
         throw(ChimeraTK::runtime_error("DummyException: open throws by request"));
       }
       ChimeraTK::DummyBackend::open();
-      if(throwExceptionRead || throwExceptionWrite) {
-        thereHaveBeenExceptions = true;
-        throw(ChimeraTK::runtime_error("DummyException: open throws because of device error when already open."));
-      }
       thereHaveBeenExceptions = false;
     }
 
@@ -87,8 +83,7 @@ namespace ChimeraTK {
       // * thereHaveBeenExceptions is set when this class originally raised an exception
       // * _hasActiveException is raised externally via setException. This can happen if a transfer element from another backend,
       //   which is in the same logical name mapping backend than this class, has seen an exception.
-      return (_opened && !throwExceptionOpen && !throwExceptionRead && !throwExceptionWrite &&
-          !thereHaveBeenExceptions && !_hasActiveException);
+      return (_opened && !throwExceptionOpen && !thereHaveBeenExceptions && !_hasActiveException);
     }
 
     /// Specific override which allows to create push-type accessors

@@ -21,26 +21,19 @@ BOOST_AUTO_TEST_CASE(testExceptionsDummyDevice) {
 
  // test throwExceptionRead
  exceptionDummy->throwExceptionRead = true;
- BOOST_CHECK(!device.isFunctional());
+ BOOST_CHECK(device.isFunctional());
  BOOST_CHECK_THROW(device.read<int32_t>("/Integers/signed32"),ChimeraTK::runtime_error);
  BOOST_CHECK(!device.isFunctional());
- BOOST_CHECK_THROW(device.open("(ExceptionDummy:1?map=test3.map)"),ChimeraTK::runtime_error);
- BOOST_CHECK(!device.isFunctional());
- exceptionDummy->throwExceptionRead = false;
- BOOST_CHECK(!device.isFunctional());
- device.open("(ExceptionDummy:1?map=test3.map)");
+ BOOST_CHECK_NO_THROW(device.open("(ExceptionDummy:1?map=test3.map)"));
  BOOST_CHECK(device.isFunctional());
+ exceptionDummy->throwExceptionRead = false;
 
  // test throwExceptionWrite
  exceptionDummy->throwExceptionWrite = true;
- BOOST_CHECK(!device.isFunctional());
+ BOOST_CHECK(device.isFunctional());
  BOOST_CHECK_THROW(device.write<int32_t>("/Integers/signed32",0),ChimeraTK::runtime_error);
  BOOST_CHECK(!device.isFunctional());
- BOOST_CHECK_THROW(device.open("(ExceptionDummy:1?map=test3.map)"),ChimeraTK::runtime_error);
- BOOST_CHECK(!device.isFunctional());
- exceptionDummy->throwExceptionWrite = false;
- BOOST_CHECK(!device.isFunctional());
- device.open("(ExceptionDummy:1?map=test3.map)");
+ BOOST_CHECK_NO_THROW(device.open("(ExceptionDummy:1?map=test3.map)"));
  BOOST_CHECK(device.isFunctional());
 
  // test throwExceptionOpen

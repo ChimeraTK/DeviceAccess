@@ -50,6 +50,7 @@ struct RegisterDescriptorBase {
     auto& dummy = dynamic_cast<ExceptionDummy&>(derived->acc.getBackend());
     dummy.throwExceptionRead = enable;
     dummy.throwExceptionWrite = enable;
+    dummy.throwExceptionOpen = enable;
     if(derived->isPush() && enable) {
       dummy.triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
     }
