@@ -57,8 +57,6 @@ namespace ChimeraTK {
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
-    void setException() override { _hasActiveException = true; }
-
    private:
     /** name of the map file */
     std::string _mapFile;
@@ -72,8 +70,6 @@ namespace ChimeraTK {
 
     // Naming of bars as shared memory elements
     const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";
-
-    std::atomic<bool> _hasActiveException{false};
 
     // Helper class to manage the shared memory: automatically construct if
     // necessary, automatically destroy if last using process closes.

@@ -9,6 +9,7 @@
 #include "MapFileParser.h"
 #include "parserUtilities.h"
 #include "DummyRegisterAccessor.h"
+#include "NumericAddressedInterruptDispatcher.h"
 
 namespace ChimeraTK {
 
@@ -187,6 +188,10 @@ namespace ChimeraTK {
 
   DummyRegisterRawAccessor DummyBackend::getRawAccessor(std::string module, std::string register_name) {
     return DummyRegisterRawAccessor(shared_from_this(), module, register_name);
+  }
+
+  void DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
+    _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
   }
 
 } // namespace ChimeraTK

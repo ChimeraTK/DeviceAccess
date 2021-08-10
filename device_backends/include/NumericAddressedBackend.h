@@ -63,6 +63,11 @@ namespace ChimeraTK {
 
     boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath& registerPathName);
 
+    //    void activateAsyncRead() noexcept final;
+    //    void setException() final;
+    void activateAsyncRead() noexcept override;
+    void setException() override;
+
    protected:
     /// resolve register name to address with error checks
     void checkRegister(const std::string& regName, const std::string& regModule, size_t dataSize, uint32_t addRegOffset,
@@ -84,6 +89,8 @@ namespace ChimeraTK {
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
+
+    std::atomic<bool> _hasActiveException{false};
 
     friend NumericAddressedLowLevelTransferElement;
     friend NumericAddressedInterruptDispatcher;

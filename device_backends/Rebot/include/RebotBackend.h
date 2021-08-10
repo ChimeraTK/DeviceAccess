@@ -57,7 +57,7 @@ namespace ChimeraTK {
    public:
     RebotBackend(std::string boardAddr, std::string port, std::string mapFileName = "",
         uint32_t connectionTimeout_sec = DEFAULT_CONNECTION_TIMEOUT_sec);
-    ~RebotBackend();
+    ~RebotBackend() override;
     /// The function opens the connection to the device
     void open() override;
     void close() override;
@@ -70,8 +70,6 @@ namespace ChimeraTK {
 
     bool isFunctional() const override;
 
-    void setException() override { _hasActiveException = true; }
-
     size_t minimumTransferAlignment() const override { return 4; }
 
    protected:
@@ -79,8 +77,6 @@ namespace ChimeraTK {
     boost::thread _heartbeatThread;
 
     const static uint32_t DEFAULT_CONNECTION_TIMEOUT_sec{5};
-
-    std::atomic<bool> _hasActiveException{false};
   };
 
 } // namespace ChimeraTK

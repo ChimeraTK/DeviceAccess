@@ -128,6 +128,4 @@ namespace ChimeraTK {
     return boost::make_shared<XdmaBackend>("/dev/" + address, parameters["map"]);
   }
 
-  void XdmaBackend::setException() { _hasActiveException = true; }
-
 } // namespace ChimeraTK

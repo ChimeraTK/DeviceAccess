@@ -27,9 +27,8 @@ namespace ChimeraTK {
       _registerMap = boost::shared_ptr<RegisterInfoMap>();
     }
     // create all the interrupt dispatchers that are described in the map file
-    // FIXME: hack: just one dispatcher, fixed for 0,0
-    //    _interruptDispatchers[{0, 0}] =
-    //        boost::make_shared<NumericAddressedInterruptDispatcher>();
+    // FIXME: hack: just one dispatcher, fixed for 5,6, which is used in goodMapFile.map
+    _interruptDispatchers[{5, 6}] = boost::make_shared<NumericAddressedInterruptDispatcher>();
   }
 
   /********************************************************************************************************************/
@@ -192,6 +191,25 @@ namespace ChimeraTK {
 
     accessor->setExceptionBackend(shared_from_this());
     return accessor;
+  }
+
+  void NumericAddressedBackend::activateAsyncRead() noexcept {
+    for(auto it : _interruptDispatchers) {
+      it.second->activate();
+    }
+  }
+
+  void NumericAddressedBackend::setException() {
+    _hasActiveException = true;
+    try {
+      throw ChimeraTK::runtime_error("NumericAddressedBackend is in exception state.");
+    }
+    catch(...) {
+      // FIXME: This is not thread-safe!
+      for(auto it : _interruptDispatchers) {
+        it.second->sendException(std::current_exception());
+      }
+    }
   }
 
 } // namespace ChimeraTK
