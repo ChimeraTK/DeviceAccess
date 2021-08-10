@@ -18,6 +18,11 @@ namespace ChimeraTK {
 }
 using namespace ChimeraTK;
 
+/* ===============================================================================================
+ * Despite its name, this test also qualifies as an unified test for the (Exception)DummyBackend.
+ * They are thinish implementations of the NumericAddressedBackend's internal interface.
+ * ==============================================================================================*/
+
 // Create a test suite which holds all your tests.
 BOOST_AUTO_TEST_SUITE(NumericAddressedBackendUnifiedTestSuite)
 
