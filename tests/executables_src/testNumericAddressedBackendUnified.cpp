@@ -18,6 +18,11 @@ namespace ChimeraTK {
 }
 using namespace ChimeraTK;
 
+/* ===============================================================================================
+ * Despite its name, this test also qualifies as an unified test for the (Exception)DummyBackend.
+ * They are thinish implementations of the NumericAddressedBackend's internal interface.
+ * ==============================================================================================*/
+
 // Create a test suite which holds all your tests.
 BOOST_AUTO_TEST_SUITE(NumericAddressedBackendUnifiedTestSuite)
 
@@ -69,6 +74,7 @@ struct Integers_signed32 {
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
+    exceptionDummy->throwExceptionOpen = enable;
   }
 };
 
@@ -151,6 +157,7 @@ struct ShortRaw_base {
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
+    exceptionDummy->throwExceptionOpen = enable;
   }
 };
 
@@ -313,6 +320,7 @@ struct MuxedNodma {
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummyMuxed->throwExceptionRead = enable;
     exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
   }
 };
 

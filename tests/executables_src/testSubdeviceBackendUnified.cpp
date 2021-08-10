@@ -64,6 +64,7 @@ struct AreaType : Register {
   void setForceRuntimeError(bool enable, size_t) {
     target->throwExceptionRead = enable;
     target->throwExceptionWrite = enable;
+    target->throwExceptionOpen = enable;
   }
 };
 
@@ -168,6 +169,7 @@ struct Regs3Type : Register {
   void setForceRuntimeError(bool enable, size_t) {
     target->throwExceptionRead = enable;
     target->throwExceptionWrite = enable;
+    target->throwExceptionOpen = enable;
   }
 };
 
