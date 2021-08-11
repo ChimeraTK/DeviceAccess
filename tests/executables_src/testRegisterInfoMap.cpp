@@ -23,6 +23,7 @@ class MapFileTest {
   void testMapFileCoutStreamOperator();
   void testGetRegistersInModule();
   static void testRegisterInfo();
+  void testGetListOfInterrupts();
 };
 
 class mapFileTestSuite : public test_suite {
@@ -65,6 +66,7 @@ class mapFileTestSuite : public test_suite {
 
     add(BOOST_TEST_CASE(MapFileTest::testRegisterInfo));
     add(BOOST_CLASS_TEST_CASE(&MapFileTest::testGetRegistersInModule, MapFileTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&MapFileTest::testGetListOfInterrupts, MapFileTestPtr));
   }
 };
 
@@ -655,4 +657,76 @@ void MapFileTest::testGetRegistersInModule() {
   std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> shouldBeEmptyList =
       someMapFile.getRegistersInModule("MODULE_BAR5");
   BOOST_CHECK(shouldBeEmptyList.empty());
+}
+
+void MapFileTest::testGetListOfInterrupts() {
+  ChimeraTK::RegisterInfoMap someMapFile("some.map");
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_no_interrupt1("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, "MODULE_BAR0");
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_no_interrupt2("REGISTER_1", 1, 0x0, 4, 1, 32, 0, true, "MODULE_BAR1");
+
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_interrupt1a("INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0, false,
+      "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID,
+      1, 1);
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_interrupt2a("INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5, false,
+      "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
+      RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 2, 1);
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_interrupt3a("INTERRUPT_VOID3", 0x00, 0x0, 0x00, 0, 0, 0, false,
+      "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID,
+      3, 1);
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_interrupt3b("INTERRUPT_VOID4", 0x00, 0x0, 0x00, 0, 0, 0, false,
+      "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID,
+      3, 2);
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_interrupt3c1("INTERRUPT_VOID5", 0x00, 0x0, 0x00, 0, 0, 0, false,
+      "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID,
+      3, 3);
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_interrupt3c2("INTERRUPT_VOID6", 0x00, 0x0, 0x00, 0, 0, 0, false,
+      "MODULE1", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID,
+      3, 3);
+  ChimeraTK::RegisterInfoMap::RegisterInfo reg_interrupt3c3("INTERRUPT_VOID7", 0x00, 0x0, 0x00, 0, 0, 0, false,
+      "MODULE1", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID,
+      3, 3);
+
+  //check is empty file has an empty list
+  BOOST_CHECK(someMapFile.getListOfInterrupts().size() == 0);
+
+  someMapFile.insert(reg_no_interrupt1);
+  someMapFile.insert(reg_no_interrupt2);
+  //check if not empty file, but with no interrupt registers added still gives an empty list
+  BOOST_CHECK(someMapFile.getListOfInterrupts().size() == 0);
+  someMapFile.insert(reg_interrupt1a);
+  someMapFile.insert(reg_interrupt2a);
+  someMapFile.insert(reg_interrupt3a);
+  //check is number of interrupt controller is correct - size of map should be 3, becuasue we have 3 different interrupt controllers - 1,2,3
+  BOOST_CHECK(someMapFile.getListOfInterrupts().size() == 3);
+  //check for all keys if number of elements in map is 1
+  BOOST_CHECK(someMapFile.getListOfInterrupts().count(1) == 1);
+  BOOST_CHECK(someMapFile.getListOfInterrupts().count(2) == 1);
+  BOOST_CHECK(someMapFile.getListOfInterrupts().count(3) == 1);
+  //check all keys is number of elements in map is 0 for not existing key
+  BOOST_CHECK(someMapFile.getListOfInterrupts().count(4) == 0);
+
+  //check set (of interrutps number) size for interrupt controller id 3
+  BOOST_CHECK(someMapFile.getListOfInterrupts().at(3).size() == 1);
+  //add another interrupt with controller id 3 and check size of set
+  someMapFile.insert(reg_interrupt3b);
+  BOOST_CHECK(someMapFile.getListOfInterrupts().at(3).size() == 2);
+  someMapFile.insert(reg_interrupt3c1);
+  BOOST_CHECK(someMapFile.getListOfInterrupts().at(3).size() == 3);
+  //create reference set of interrupts numbers for interrupt controller id 3
+  std::set<unsigned int> referenceInterruptsNumberSet;
+  referenceInterruptsNumberSet.insert(1);
+  referenceInterruptsNumberSet.insert(2);
+  referenceInterruptsNumberSet.insert(3);
+  BOOST_CHECK(someMapFile.getListOfInterrupts().at(3) == referenceInterruptsNumberSet);
+  //store number of entries in map file
+  auto mapFileEntriesCount = someMapFile.getMapFileSize();
+  //add next 2 registers which has the same interrupt controller id and interrupt id as reg_interrupt3c1
+  someMapFile.insert(reg_interrupt3c2);
+  someMapFile.insert(reg_interrupt3c3);
+  //check if entry has been added
+  BOOST_CHECK(someMapFile.getMapFileSize() == mapFileEntriesCount + 2);
+  //size of interrupt numbers set for interrupt controller 3 should not change
+  BOOST_CHECK(someMapFile.getListOfInterrupts().at(3).size() == 3);
+  //and set should be the same
+  BOOST_CHECK(someMapFile.getListOfInterrupts().at(3) == referenceInterruptsNumberSet);
 }
