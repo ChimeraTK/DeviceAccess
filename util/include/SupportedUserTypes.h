@@ -49,22 +49,33 @@ namespace ChimeraTK {
   /**
    * Wrapper Class for void. return is always  0.
    */
+
   class Void {
    public:
-    Void() : m_value() {}
-    Void(int value) : m_value(value) {}
-
+    Void() = default;
+    Void(__attribute__((unused)) int i){};
+    /*
     operator int() const { return 0; }
     operator int() { return 0; }
-    // TODO: test user types to numeric etc
+    operator float() const { return 0.0; }
+    operator float() { return 0.0; }
 
-   private:
-    bool m_value;
+    operator bool() const { return false; }
+    operator bool() { return false; }
+    */
+    // TODO: test user types to numeric etc
   };
 
   /********************************************************************************************************************/
 
   inline std::istream& operator>>(std::istream& is, __attribute__((unused)) Void& value) { return is; }
+
+  /********************************************************************************************************************/
+
+  inline std::ostream& operator<<(std::ostream& os, __attribute__((unused)) Void& value) {
+    os << 0;
+    return os;
+  }
 
   /********************************************************************************************************************/
   /** Helper classes for the conversion functions below */
@@ -77,6 +88,11 @@ namespace ChimeraTK {
     template<typename NUMERIC>
     struct numericToUserType_impl<std::string, NUMERIC> {
       static std::string impl(NUMERIC value);
+    };
+
+    template<typename NUMERIC>
+    struct numericToUserType_impl<Void, NUMERIC> {
+      static Void impl(NUMERIC value);
     };
 
     template<typename NUMERIC>
@@ -99,6 +115,11 @@ namespace ChimeraTK {
       static NUMERIC impl(const std::string& value);
     };
 
+    template<typename NUMERIC>
+    struct userTypeToNumeric_impl<Void, NUMERIC> {
+      static NUMERIC impl(const Void& value);
+    };
+
     template<typename UserTypeReturn, typename UserTypeParameter>
     struct userTypeToUserType_impl {
       static UserTypeReturn impl(UserTypeParameter value);
@@ -112,6 +133,31 @@ namespace ChimeraTK {
     template<typename UserTypeReturn>
     struct userTypeToUserType_impl<UserTypeReturn, std::string> {
       static UserTypeReturn impl(std::string value);
+    };
+
+    template<typename UserTypeReturn>
+    struct userTypeToUserType_impl<UserTypeReturn, Void> {
+      static UserTypeReturn impl(Void value);
+    };
+
+    template<typename UserTypeParameter>
+    struct userTypeToUserType_impl<Void, UserTypeParameter> {
+      static Void impl(UserTypeParameter value);
+    };
+
+    template<>
+    struct userTypeToUserType_impl<Void, Void> {
+      static Void impl(Void value) { return value; }
+    };
+
+    template<>
+    struct userTypeToUserType_impl<std::string, Void> {
+      static std::string impl(__attribute__((unused)) Void value) { return std::to_string(0); }
+    };
+
+    template<>
+    struct userTypeToUserType_impl<Void, std::string> {
+      static Void impl(__attribute__((unused)) std::string value) { return Void(); }
     };
 
     template<class S>
@@ -128,7 +174,7 @@ namespace ChimeraTK {
 
     template<>
     struct Round<Void> {
-      static Void nearbyint(__attribute__((unused)) Void s) { return 0; }
+      static Void nearbyint(__attribute__((unused)) Void s) { return s; }
       typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
     };
 
@@ -237,6 +283,14 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  template<typename NUMERIC>
+  NUMERIC detail::userTypeToNumeric_impl<Void, NUMERIC>::impl(const Void& value) {
+    auto temp = 0.0;
+    return detail::userTypeToNumeric_impl<decltype(temp), NUMERIC>::impl(temp);
+  }
+
+  /********************************************************************************************************************/
+
   /** Helper function to convert any UserType data into any other UserType (even if it is a string etc.). The conversion
    *  is done with proper rounding and range checking for numeric types. It will return the closed possible value if
    *  the value is out of range. */
@@ -258,6 +312,22 @@ namespace ChimeraTK {
   template<typename UserTypeReturn>
   inline UserTypeReturn detail::userTypeToUserType_impl<UserTypeReturn, std::string>::impl(std::string value) {
     return userTypeToNumeric<UserTypeReturn>(value);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserTypeReturn>
+  inline UserTypeReturn detail::userTypeToUserType_impl<UserTypeReturn, Void>::impl(
+      __attribute__((unused)) Void value) {
+    return numericToUserType<UserTypeReturn>(0);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserTypeParameter>
+  inline Void detail::userTypeToUserType_impl<Void, UserTypeParameter>::impl(
+      __attribute__((unused)) UserTypeParameter value) {
+    return Void();
   }
 
   /********************************************************************************************************************/
