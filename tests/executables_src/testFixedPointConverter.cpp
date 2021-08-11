@@ -1620,9 +1620,8 @@ BOOST_AUTO_TEST_CASE(testBoolean0) {
 BOOST_AUTO_TEST_CASE(testVoid) {
   FixedPointConverter converter("Variable32signed"); // default parameters are signed 32 bit
 
-  checkToCooked(converter, 0x00000000, Void(0));
-  checkToCooked(converter, 0x00000000, Void(500));
-  checkToCooked(converter, 0x00000000, Void(420));
+  Void output = converter.scalarToCooked<Void>(23);
+  (void)output;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
