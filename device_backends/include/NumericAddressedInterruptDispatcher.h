@@ -6,22 +6,43 @@
 
 namespace ChimeraTK {
 
-  // typeless base class
+  /** Typeless base class. The implementations will have a list of all asynchronous
+   *  accessors and one synchrounous accessor.
+   */
   struct NumericAddressedAsyncVariable {
     virtual ~NumericAddressedAsyncVariable() = default;
 
+    /** Activate all subscribers and send an initial value.
+     */
     virtual void activate(VersionNumber const& version) = 0;
+    /** Read the synchronous accessor and push the data to all subscribers,
+     *  using the specified version number.
+     */
     virtual void trigger(VersionNumber const& version) = 0;
-    // returns the number of remaining subscribers
+    /** Unsubscribes the first invalid subscriber.
+     *  Returns the number of remaining subscribers
+     */
     virtual size_t unsubscribe() = 0;
+    /** Send an exception to all subscribers. This automatically de-activates then.
+     */
     virtual void sendException(std::exception_ptr e) = 0;
   };
 
+  /** The NumericAddressedInterruptDispatcher has two main functionalities:
+   *  * It calls functions for all asynchronous accessors associated with one interrupt
+   *  * It serves as a subscription manager
+   *
+   *  This is done in a single class because the container with the fluctuating number of
+   *  subscribed variables is not thread safe. This class has implements a lock so
+   *  dispatching an interrupt is safe against concurrent subscriptions/unsibscriptions.
+   */
   class NumericAddressedInterruptDispatcher
   : public boost::enable_shared_from_this<NumericAddressedInterruptDispatcher> {
    public:
-    // The asynchronous variables contain the typed synchronous reader which has a UserType, user size and offset and might be raw or cooked,
-    // so we need a helper object as key for the map which stores all the asynchronous variables
+    /** Helper class to have a complete key to distinguish all accessors.
+     *  The asynchronous variables contain the typed synchronous reader which has a UserType, user size and offset and might be raw or cooked,
+     * so we need this helper object to have a complete description.
+     */
     struct AccessorInstanceDescriptor {
       RegisterPath name;
       std::type_index type;
@@ -35,20 +56,36 @@ namespace ChimeraTK {
       bool operator<(AccessorInstanceDescriptor const& other) const;
     };
 
+    /** Request a new subscription. This function internally creates the correct asynchronous accessor
+     *  and registers it. If it is the first accessor for that register with the same parameters (offset, size, UserType and raw mode)
+     *  it will internally create the matching NumericAddressedAsyncVariable.
+     */
     template<typename UserType>
     boost::shared_ptr<
         AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher, AccessorInstanceDescriptor>>
         subscribe(boost::shared_ptr<NumericAddressedBackend> backend, RegisterPath name, size_t numberOfWords,
             size_t wordOffsetInRegister, AccessModeFlags flags);
 
+    /** Trigger all NumericAddressedAsyncVariables that are stored in this dispatcher. Creates a new VersionNumber and sends
+     *  all data with this version.
+     */
     void trigger();
 
+    /** Allows a backend to get the last version number that was  send by this interrupt dispatcher. Usually only needed by dummies and for testing.
+     */
     VersionNumber getLastVersion();
 
+    /** This function must only be called from the destructor of the AsyncNDRegisterAccessor which is created in the subscribe function!
+     */
     void unsubscribe(AccessorInstanceDescriptor const& descriptor);
 
+    /** Send an exception to all accessors. This automatically de-activates them.
+     */
     void sendException(std::exception_ptr e);
 
+    /** Activate all accessors and send the initial value. Generates a new version number which is used for
+     *  all initial values and  which can be read out with getLastVersion().
+     */
     void activate();
 
    private:
@@ -60,6 +97,8 @@ namespace ChimeraTK {
     bool _isActive{false};
   };
 
+  /** Implementation of the NumericAddressedAsyncVariable for the concrete UserType.
+   */
   template<typename UserType>
   struct NumericAddressedAsyncVariableImpl : public NumericAddressedAsyncVariable {
     void activate(VersionNumber const& version) override;
@@ -67,11 +106,22 @@ namespace ChimeraTK {
     size_t unsubscribe() override;
     void sendException(std::exception_ptr e) override;
 
+    /** Helper function which loops all subscribers. It includes a copy minimisation
+     *  (the last subscriber is swapped instead of copied).
+     *  Inside of the loop it calls the templated labda function. Used in activate and trigger.
+     */
     template<typename Function>
     void executeWithCopy(Function function, VersionNumber const& version);
 
+    /** The constructor takes an already created synchronous accessor and a flag
+     *  whether the variable is active. If the variable is active all new subscribers will automatically
+     *  be activated and immediately get their initial value.
+     */
     NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, bool isActive);
 
+    /** Add an asynchronous accessor to the list of subscribers. If the variable is activated
+     *  the subscribed accessor is immediately activated and will get its initial value.
+     */
     void subscribe(boost::shared_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
             NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>
             newSubscriber);

@@ -79,7 +79,7 @@ namespace ChimeraTK {
       return _flags == other._flags;
     }
 
-    /** "Less than" operator, for use as key in std::map
+    /** "Less than" operator, e.g. for use as key in std::map
        */
     bool operator<(const AccessModeFlags& other) const {
       // fortunately the std::set already has a comparison operator which does exacty what we want
