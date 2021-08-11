@@ -86,7 +86,9 @@ namespace ChimeraTK {
 
       const DataDescriptor& getDataDescriptor() const override { return dataDescriptor; }
 
-      bool isReadable() const override { return (registerAccess & Access::READ) != 0; }
+      bool isReadable() const override {
+        return ((registerAccess & Access::READ) | (registerAccess & Access::INTERRUPT)) != 0;
+      }
 
       bool isWriteable() const override { return (registerAccess & Access::WRITE) != 0; }
 
@@ -115,8 +117,8 @@ namespace ChimeraTK {
       int32_t nFractionalBits; /**< Number of fractional bits */
       bool signedFlag;         /**< Signed/Unsigned flag */
       std::string module;      /**< Name of the module this register is in*/
-      Access registerAccess;   /**< Data access direction: Read, write or read
-                                        and write */
+      Access registerAccess;   /**< Data access direction: Read, write, read
+                                        and write or interrupt */
       Type dataType;           /**< Data type (fixpoint, floating point)*/
 
       uint32_t interruptCtrlNumber;
