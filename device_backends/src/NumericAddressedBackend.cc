@@ -137,9 +137,11 @@ namespace ChimeraTK {
       auto interruptDispatcher =
           _interruptDispatchers[{registerInfo->interruptCtrlNumber, registerInfo->interruptNumber}];
       assert(interruptDispatcher);
-      return interruptDispatcher->subscribe<UserType>(
+      auto newSubscriber = interruptDispatcher->subscribe<UserType>(
           boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
           wordOffsetInRegister, flags);
+      startInterruptHandlingThread(registerInfo->interruptCtrlNumber, registerInfo->interruptNumber);
+      return newSubscriber;
     }
     else {
       return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
@@ -218,4 +220,6 @@ namespace ChimeraTK {
     }
   }
 
+  void NumericAddressedBackend::startInterruptHandlingThread(
+      [[maybe_unused]] unsigned int interruptControllerNumber, [[maybe_unused]] unsigned int interruptNumber) {}
 } // namespace ChimeraTK

@@ -68,6 +68,15 @@ namespace ChimeraTK {
     void activateAsyncRead() noexcept override;
     void setException() override;
 
+    /** This function is called every time an accessor which is assicated with the particular interupt controller and interrupt number
+     *  is created. The idea is to have a lazy initialisation of the interrupt handling threads, so only those threads are running for which
+     *  accessors have been created. The function implementation must check whether the according thread is already running and should do nothing
+     *  when called a second time.
+     *
+     *  The function has an empty default implementation.
+     */
+    virtual void startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber);
+
    protected:
     /// resolve register name to address with error checks
     void checkRegister(const std::string& regName, const std::string& regModule, size_t dataSize, uint32_t addRegOffset,
