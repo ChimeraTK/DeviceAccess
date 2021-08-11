@@ -22,13 +22,19 @@ namespace ChimeraTK {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);
       _catalogue = _registerMap->getRegisterCatalogue();
+
+      // create all the interrupt dispatchers that are described in the map file
+      for(auto& interruptController : _registerMap->getListOfInterrupts()) {
+        // interruptController is a pair<int, set<int>>, containing the controller number and a set of associated interrupts
+        for(auto interruptNumber : interruptController.second) {
+          _interruptDispatchers[{interruptController.first, interruptNumber}] =
+              boost::make_shared<NumericAddressedInterruptDispatcher>();
+        }
+      }
     }
     else {
       _registerMap = boost::shared_ptr<RegisterInfoMap>();
     }
-    // create all the interrupt dispatchers that are described in the map file
-    // FIXME: hack: just one dispatcher, fixed for 5,6, which is used in goodMapFile.map
-    _interruptDispatchers[{5, 6}] = boost::make_shared<NumericAddressedInterruptDispatcher>();
   }
 
   /********************************************************************************************************************/
