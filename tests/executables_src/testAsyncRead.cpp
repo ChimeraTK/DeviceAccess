@@ -62,9 +62,11 @@ class AsyncTestDummy : public DeviceBackendImpl {
     void doPreRead(TransferType) override {}
 
     void doPostRead(TransferType, bool hasNewData) override {
-      if(!hasNewData) return;
-      buffer_2D[0][0] = _backend->registers.at(getName());
-      this->_versionNumber = {};
+      if constexpr(!std::is_same<UserType, Void>::value) { // Will not be used for Void-Type
+        if(!hasNewData) return;
+        buffer_2D[0][0] = _backend->registers.at(getName());
+        this->_versionNumber = {};
+      }
     }
 
     bool isReadOnly() const override { return false; }

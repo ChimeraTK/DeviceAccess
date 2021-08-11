@@ -53,17 +53,8 @@ namespace ChimeraTK {
   class Void {
    public:
     Void() = default;
-    Void(__attribute__((unused)) int i){};
-    /*
-    operator int() const { return 0; }
-    operator int() { return 0; }
-    operator float() const { return 0.0; }
-    operator float() { return 0.0; }
-
-    operator bool() const { return false; }
-    operator bool() { return false; }
-    */
-    // TODO: test user types to numeric etc
+    Void& operator=(const Void&) = default;
+    Void(const Void&) = default;
   };
 
   /********************************************************************************************************************/
@@ -264,6 +255,12 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
+  template<typename NUMERIC>
+  Void detail::numericToUserType_impl<Void, NUMERIC>::impl(__attribute__((unused)) NUMERIC value) {
+    return {};
+  }
+
+  /********************************************************************************************************************/
 
   template<typename NUMERIC>
   NUMERIC detail::userTypeToNumeric_impl<std::string, NUMERIC>::impl(const std::string& value) {
@@ -284,7 +281,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename NUMERIC>
-  NUMERIC detail::userTypeToNumeric_impl<Void, NUMERIC>::impl(const Void& value) {
+  NUMERIC detail::userTypeToNumeric_impl<Void, NUMERIC>::impl(__attribute__((unused)) const Void& value) {
     auto temp = 0.0;
     return detail::userTypeToNumeric_impl<decltype(temp), NUMERIC>::impl(temp);
   }
