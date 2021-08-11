@@ -25,6 +25,23 @@ namespace ChimeraTK {
         converter;
   };
 
+  template<typename SourceType>
+  struct RoundingRangeCheckingDataConverter {
+    struct converter {
+      static Void convert(SourceType s) { return Void(); }
+    };
+    typedef boost::numeric::converter<Void, SourceType, boost::numeric::conversion_traits<Void, SourceType>> converter;
+  };
+
+  template<typename DestType>
+  struct RoundingRangeCheckingDataConverter {
+    struct converter {
+      static DestType convert(__attribute__((unused)) Void s) { return 0.0; }
+    };
+
+    typedef boost::numeric::converter<DestType, Void, boost::numeric::conversion_traits<DestType, Void>> converter;
+  };
+
   /** Needs to have the same interface as FixedPointConverter, except for the
    * constructor. Converter for IEEE754 single precision (32bit) floating point.
    */
