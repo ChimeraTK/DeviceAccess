@@ -75,6 +75,15 @@ namespace ChimeraTK {
     _isActive = true;
   }
 
+  //*********************************************************************************************************************/
+  void NumericAddressedInterruptDispatcher::deactivate() {
+    std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
+    for(auto& var : _asyncVariables) {
+      var.second->deactivate();
+    }
+    _isActive = false;
+  }
+
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher,
       NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor);
 

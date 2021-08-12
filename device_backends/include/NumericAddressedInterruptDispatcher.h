@@ -26,6 +26,10 @@ namespace ChimeraTK {
     /** Send an exception to all subscribers. This automatically de-activates then.
      */
     virtual void sendException(std::exception_ptr e) = 0;
+    /** Deactivate all subscribers without throwing an exception.
+       *  This has to happen when a backend is closed.
+       */
+    virtual void deactivate() = 0;
   };
 
   /** The NumericAddressedInterruptDispatcher has two main functionalities:
@@ -88,6 +92,11 @@ namespace ChimeraTK {
      */
     void activate();
 
+    /** Deactivate all subscribers without throwing an exception.
+     *  This has to happen when a backend is closed.
+     */
+    void deactivate();
+
    private:
     std::recursive_mutex _variablesMutex;
 
@@ -127,6 +136,11 @@ namespace ChimeraTK {
             newSubscriber);
 
     boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
+
+    /** Deactivate all subscribers without throwing an exception.
+     *  This has to happen when a backend is closed.
+     */
+    void deactivate() override;
 
    protected:
     std::list<boost::weak_ptr<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
@@ -223,6 +237,7 @@ namespace ChimeraTK {
     }
   }
 
+  //*********************************************************************************************************************/
   template<typename UserType>
   void NumericAddressedAsyncVariableImpl<UserType>::subscribe(boost::shared_ptr<AsyncNDRegisterAccessor<UserType,
           NumericAddressedInterruptDispatcher, NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>
@@ -240,6 +255,18 @@ namespace ChimeraTK {
         // no action needed. The synchronous read() already triggered backend->setException();
       }
     }
+  }
+
+  //*********************************************************************************************************************/
+  template<typename UserType>
+  void NumericAddressedAsyncVariableImpl<UserType>::deactivate() {
+    for(auto it : _subscribers) {
+      auto subscriber = it.lock();
+      if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
+        subscriber->deactivate();
+      }
+    }
+    _isActive = false;
   }
 
   //*********************************************************************************************************************/

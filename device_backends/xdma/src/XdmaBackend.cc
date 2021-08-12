@@ -8,7 +8,9 @@ namespace ChimeraTK {
   XdmaBackend::XdmaBackend(std::string devicePath, std::string mapFileName)
   : NumericAddressedBackend(mapFileName), _devicePath(devicePath) {}
 
-  XdmaBackend::~XdmaBackend() {}
+  XdmaBackend::~XdmaBackend() {
+    close(); // required by NumericAddressedBackend
+  }
 
   void XdmaBackend::open() {
 #ifdef _DEBUG
@@ -37,6 +39,7 @@ namespace ChimeraTK {
   }
 
   void XdmaBackend::close() {
+    NumericAddressedBackend::close(); // deactivates all async accessors
     _ctrlIntf.reset();
     _dmaChannels.clear();
   }

@@ -98,6 +98,7 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::close() {
+    NumericAddressedBackend::close(); // deactivates all async accessors
     if(_opened) {
       ::close(_deviceID);
     }

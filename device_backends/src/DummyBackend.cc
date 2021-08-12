@@ -19,7 +19,9 @@ namespace ChimeraTK {
 
   // Nothing to clean up, all objects clean up for themselves when
   // they go out of scope.
-  DummyBackend::~DummyBackend() {}
+  DummyBackend::~DummyBackend() {
+    close(); // needed because it calls the inherited close function
+  }
 
   void DummyBackend::open() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -39,6 +41,7 @@ namespace ChimeraTK {
   }
 
   void DummyBackend::close() {
+    NumericAddressedBackend::close(); // deactivates all async accessors
     std::lock_guard<std::mutex> lock(mutex);
 
     _opened = false;

@@ -19,7 +19,7 @@ namespace ChimeraTK {
    public:
     NumericAddressedBackend(std::string mapFileName = "");
 
-    virtual ~NumericAddressedBackend() {}
+    ~NumericAddressedBackend() override;
 
     /* interface using 32bit address for backwards compatibility */
     virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
@@ -68,6 +68,10 @@ namespace ChimeraTK {
     void activateAsyncRead() noexcept override;
     void setException() override;
 
+    /** All implementing backends must call this close function in their close() function and in the destructor (checked in the destructor)
+     */
+    void close() override;
+
     /** This function is called every time an accessor which is assicated with the particular interupt controller and interrupt number
      *  is created. The idea is to have a lazy initialisation of the interrupt handling threads, so only those threads are running for which
      *  accessors have been created. The function implementation must check whether the according thread is already running and should do nothing
@@ -103,6 +107,11 @@ namespace ChimeraTK {
 
     friend NumericAddressedLowLevelTransferElement;
     friend NumericAddressedInterruptDispatcher;
+
+   private:
+    //Just a smoke test that close has been called at least once. NumericAddressedBackend::close() sets it to true.
+    // If the implemetation does not call it when overriding close, the NumericAddressedBackend will throw in the descructor.
+    bool _closeHasBeenCalled{false};
   };
 
 } // namespace ChimeraTK
