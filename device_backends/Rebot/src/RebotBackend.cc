@@ -70,8 +70,7 @@ namespace ChimeraTK {
     _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex)) {}
 
   RebotBackend::~RebotBackend() {
-    close(); // required by NumericAddressedBackend
-    {        // extra scope for the lock guard
+    { // extra scope for the lock guard
       std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
       // make sure the thread does not access any hardware when it gets the lock
@@ -125,9 +124,7 @@ namespace ChimeraTK {
     _protocolImplementor->write(addressInBytes, data, sizeInBytes);
   }
 
-  void RebotBackend::close() {
-    NumericAddressedBackend::close(); // deactivates all async accessors
-
+  void RebotBackend::closeImpl() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
     _opened = false;

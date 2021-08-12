@@ -55,7 +55,7 @@ namespace ChimeraTK {
      * the read-only  settings and callback functions have to be set again when
      * reopening the file.
      */
-    void close() override;
+    void closeImpl() override;
 
     using DummyBackendBase<DummyBackend>::read;  // use the 32 bit version from the base class
     using DummyBackendBase<DummyBackend>::write; // use the 32 bit version from the base class

@@ -44,7 +44,7 @@ namespace ChimeraTK {
     ~SharedDummyBackend() override;
 
     void open() override;
-    void close() override;
+    void closeImpl() override;
 
     using DummyBackendBase<SharedDummyBackend>::read;  // use the 32 bit version from the base class
     using DummyBackendBase<SharedDummyBackend>::write; // use the 32 bit version from the base class

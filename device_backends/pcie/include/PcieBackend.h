@@ -58,7 +58,7 @@ namespace ChimeraTK {
     ~PcieBackend() override;
 
     void open() override;
-    void close() override;
+    void closeImpl() override;
 
     bool isFunctional() const override;
 

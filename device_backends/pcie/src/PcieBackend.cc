@@ -97,8 +97,7 @@ namespace ChimeraTK {
     throw ChimeraTK::runtime_error("Unsupported driver in device" + _deviceNodeName);
   }
 
-  void PcieBackend::close() {
-    NumericAddressedBackend::close(); // deactivates all async accessors
+  void PcieBackend::closeImpl() {
     if(_opened) {
       ::close(_deviceID);
     }

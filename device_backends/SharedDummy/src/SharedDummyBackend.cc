@@ -20,9 +20,9 @@ namespace ChimeraTK {
     setupBarContents();
   }
 
-  SharedDummyBackend::~SharedDummyBackend() {
-    close(); // required by NumericAddressedBackend
-  }
+  // Nothing to clean up, all objects clean up for themselves when
+  // they go out of scope.
+  SharedDummyBackend::~SharedDummyBackend() {}
 
   // Construct a segment for each bar and set required size
   void SharedDummyBackend::setupBarContents() {
@@ -53,10 +53,7 @@ namespace ChimeraTK {
     _hasActiveException = false;
   }
 
-  void SharedDummyBackend::close() {
-    NumericAddressedBackend::close(); // deactivates all async accessors
-    _opened = false;
-  }
+  void SharedDummyBackend::closeImpl() { _opened = false; }
 
   void SharedDummyBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     if(!_opened) {

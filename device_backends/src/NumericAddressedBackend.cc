@@ -38,25 +38,6 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-  NumericAddressedBackend::~NumericAddressedBackend() {
-    if(!_closeHasBeenCalled) {
-      std::cerr << "*************************************************************"
-                   "****************"
-                << std::endl;
-      std::cerr << " BUG found in backend based on NumericAddressedBackend!" << std::endl;
-      std::cerr << " NumericAddressedBackend::close() is not called in the close() function of the "
-                   "backend implementation, or close() is not called int its desructor."
-                << std::endl;
-      std::cerr << " Please fix your backend!" << std::endl;
-      std::cerr << "*************************************************************"
-                   "****************"
-                << std::endl;
-
-      std::terminate();
-    }
-  }
-
-  /********************************************************************************************************************/
 
   boost::shared_ptr<RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegisterInfo(
       const RegisterPath& registerPathName) {
@@ -247,6 +228,6 @@ namespace ChimeraTK {
     for(auto it : _interruptDispatchers) {
       it.second->deactivate();
     }
-    _closeHasBeenCalled = true;
+    closeImpl();
   }
 } // namespace ChimeraTK

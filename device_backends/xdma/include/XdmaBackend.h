@@ -27,7 +27,7 @@ namespace ChimeraTK {
     ~XdmaBackend() override;
 
     void open() override;
-    void close() override;
+    void closeImpl() override;
     bool isOpen() override;
 
     bool isFunctional() const override;
