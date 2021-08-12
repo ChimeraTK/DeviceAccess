@@ -27,8 +27,6 @@ class MapFileParserTest {
 
   void testInterruptMapFileParse();
   void testInterruptBadMapFileParse();
-  void testInterruptMapFileSupportedDataType();
-
   void testMapFileWithCommentsParse();
 };
 class MapFileParserTestSuite : public test_suite {
@@ -49,7 +47,6 @@ class MapFileParserTestSuite : public test_suite {
 
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptMapFileParse, mapFileParserTestPtr));
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptBadMapFileParse, mapFileParserTestPtr));
-    add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testInterruptMapFileSupportedDataType, mapFileParserTestPtr));
     add(BOOST_CLASS_TEST_CASE(&MapFileParserTest::testMapFileWithCommentsParse, mapFileParserTestPtr));
   }
 };
@@ -343,25 +340,6 @@ void MapFileParserTest::testInterruptMapFileParse() {
     message << "Failed comparison on Register '" << (*elementsIter).name << "', module '" << (elementsIter->module)
             << "'";
     BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
-  }
-}
-
-void MapFileParserTest::testInterruptMapFileSupportedDataType() {
-  ChimeraTK::MapFileParser fileparser;
-  boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile = fileparser.parse("interruptMapFile.map");
-
-  auto waitForNewData = {AccessMode::wait_for_new_data};
-  auto rawAndWaitForNewData = {AccessMode::raw, AccessMode::wait_for_new_data};
-
-  ChimeraTK::RegisterInfoMap::const_iterator mapIter;
-  for(mapIter = ptrmapFile->begin(); mapIter != ptrmapFile->end(); ++mapIter) {
-    if((*mapIter).dataType == RegisterInfoMap::RegisterInfo::Type::VOID) {
-      BOOST_CHECK((*mapIter).getSupportedAccessModes() == waitForNewData);
-      BOOST_CHECK((*mapIter).registerAccess == RegisterInfoMap::RegisterInfo::Access::INTERRUPT);
-    }
-    else if((*mapIter).registerAccess == RegisterInfoMap::RegisterInfo::Access::INTERRUPT) {
-      BOOST_CHECK((*mapIter).getSupportedAccessModes() == rawAndWaitForNewData);
-    }
   }
 }
 
