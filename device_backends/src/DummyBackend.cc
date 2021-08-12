@@ -191,7 +191,13 @@ namespace ChimeraTK {
   }
 
   void DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
-    _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
+    try {
+      _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
+    }
+    catch(std::out_of_range&) {
+      throw ChimeraTK::logic_error("DummyBackend::triggerInterrupt(): Error: Unknown interrupt " +
+          std::to_string(interruptControllerNumber) + ", " + std::to_string(interruptNumber));
+    }
   }
 
 } // namespace ChimeraTK
