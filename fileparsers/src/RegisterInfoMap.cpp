@@ -301,7 +301,10 @@ namespace ChimeraTK {
     }
 
     DataType rawDataInfo;
-    if(nBytesPerElement() == 1 && !is2DMultiplexed_) {
+    if(nBytesPerElement() == 0 && !is2DMultiplexed_) {
+      rawDataInfo = DataType::Void;
+    }
+    else if(nBytesPerElement() == 1 && !is2DMultiplexed_) {
       rawDataInfo = DataType::int8;
     }
     else if(nBytesPerElement() == 2 && !is2DMultiplexed_) {

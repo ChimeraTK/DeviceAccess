@@ -113,7 +113,7 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
 
-    void interrupt() override { this->interrupt_impl(this->_readQueue); }
+    void interrupt() override { this->interrupt_impl(this->_dataTransportQueue); }
 
    protected:
     boost::shared_ptr<DeviceBackend> _backend;

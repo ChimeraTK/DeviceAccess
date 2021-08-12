@@ -160,7 +160,8 @@ namespace ChimeraTK {
 
     // 1D or scalar register
     if(info->getNumberOfDimensions() <= 1) {
-      if(registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) {
+      if((registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) ||
+          (registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::VOID)) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>(

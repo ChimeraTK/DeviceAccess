@@ -221,15 +221,30 @@ namespace ChimeraTK {
       _startAddress = _registerInfo->address + wordOffsetInRegister * _registerInfo->nBytesPerElement();
 
       // check number of words
-      if(_numberOfWords == 0) {
-        _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
+      if(_registerInfo->dataType == RegisterInfoMap::RegisterInfo::VOID) {
+        // in void registers we always create one element
+        if(_numberOfWords == 0) {
+          _numberOfWords = 1;
+        }
+        if(_numberOfWords > 1) {
+          throw ChimeraTK::logic_error(
+              "Requested number of words is larger than 1 in VOID register '" + _registerPathName + "'!");
+        }
+        if(wordOffsetInRegister > 0) {
+          throw ChimeraTK::logic_error("No offset allowed in VOID register '" + _registerPathName + "'!");
+        }
       }
-      if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
-        throw ChimeraTK::logic_error(
-            "Requested number of words exceeds the size of the register '" + _registerPathName + "'!");
-      }
-      if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
-        throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + _registerPathName + "'!");
+      else { // do the regular consistency check
+        if(_numberOfWords == 0) {
+          _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
+        }
+        if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
+          throw ChimeraTK::logic_error(
+              "Requested number of words exceeds the size of the register '" + _registerPathName + "'!");
+        }
+        if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
+          throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + _registerPathName + "'!");
+        }
       }
 
       // Cache writeability

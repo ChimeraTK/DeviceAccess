@@ -820,6 +820,9 @@ namespace ChimeraTK {
   template<typename LAMBDATYPE>
   void callForRawType(const DataType& type, LAMBDATYPE lambda) {
     switch(DataType::TheType(type)) {
+      case DataType::Void: {
+        // do nothing:
+      } break;
       case DataType::int8: {
         lambda(int8_t());
       } break;
