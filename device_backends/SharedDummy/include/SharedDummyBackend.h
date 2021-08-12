@@ -57,6 +57,8 @@ namespace ChimeraTK {
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
+    void triggerInterrupt(int interruptControllerNumber, int interruptNumber) override;
+
    private:
     /** name of the map file */
     std::string _mapFile;

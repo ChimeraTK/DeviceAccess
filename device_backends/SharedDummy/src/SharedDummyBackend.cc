@@ -11,6 +11,7 @@
 #include "MapFileParser.h"
 #include "SharedDummyBackend.h"
 #include "parserUtilities.h"
+#include "NumericAddressedInterruptDispatcher.h"
 
 namespace ChimeraTK {
 
@@ -132,6 +133,13 @@ namespace ChimeraTK {
     // Possible ./, ../ elements are removed, as the path may be constructed
     // differently in different client applications
     return boost::filesystem::canonical(absPathToMapFile).string();
+  }
+
+  void SharedDummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
+    // FIXME: This is the "one process" version taken from the regular DummyBackend. The correct implementation should
+    // * Signal the interrupt to all processes which are accessing this shared memory (and to itself, depending on the implementation)
+    // * Execute the dispatch (either based on the signal or here, depending on the implementation)
+    _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
   }
 
 } // Namespace ChimeraTK

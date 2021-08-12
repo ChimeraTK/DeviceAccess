@@ -78,12 +78,7 @@ namespace ChimeraTK {
      */
     DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
 
-    /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
-     *  for that particular interrupt controller and interrupt number, the data will be read out
-     *  through a synchronous accessor and pushed into the data transport queues of the asynchronous
-     *  accessors, so they can be received by the application.
-     */
-    void triggerInterrupt(int interruptControllerNumber, int interruptNumber);
+    void triggerInterrupt(int interruptControllerNumber, int interruptNumber) override;
 
    protected:
     struct AddressRange {
