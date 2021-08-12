@@ -20,8 +20,6 @@ namespace ChimeraTK {
     unsigned long _ioctlDMA;
     std::string _deviceNodeName;
 
-    std::atomic<bool> _hasActiveException{false};
-
     /// A function pointer which calls the correct dma read function (via ioctl or
     /// via struct)
     boost::function<void(uint8_t bar, uint32_t address, int32_t* data, size_t size)> _readDMAFunction;
@@ -60,7 +58,7 @@ namespace ChimeraTK {
     ~PcieBackend() override;
 
     void open() override;
-    void close() override;
+    void closeImpl() override;
 
     bool isFunctional() const override;
 
@@ -73,8 +71,6 @@ namespace ChimeraTK {
      * does not use them*/
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
-
-    void setException() override { _hasActiveException = true; }
   };
 
 } // namespace ChimeraTK

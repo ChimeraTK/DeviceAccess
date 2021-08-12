@@ -12,13 +12,14 @@
 namespace ChimeraTK {
 
   class NumericAddressedLowLevelTransferElement;
+  class NumericAddressedInterruptDispatcher;
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
    public:
     NumericAddressedBackend(std::string mapFileName = "");
 
-    virtual ~NumericAddressedBackend() {}
+    ~NumericAddressedBackend() override {}
 
     /* interface using 32bit address for backwards compatibility */
     virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
@@ -62,6 +63,29 @@ namespace ChimeraTK {
 
     boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath& registerPathName);
 
+    //    void activateAsyncRead() noexcept final;
+    //    void setException() final;
+    void activateAsyncRead() noexcept override;
+    void setException() override;
+
+    /** Deactivates all asynchronous accessors and calls closeImpl().
+     */
+    void close() final;
+
+    /** All backends derrived from NumericAddressedBackend must implement closeImpl() instead of close. Like this it
+     *  is assured that the deactivation of the asynchronous accessors is always executed.
+     */
+    virtual void closeImpl() {}
+
+    /** This function is called every time an accessor which is assicated with the particular interupt controller and interrupt number
+     *  is created. The idea is to have a lazy initialisation of the interrupt handling threads, so only those threads are running for which
+     *  accessors have been created. The function implementation must check whether the according thread is already running and should do nothing
+     *  when called a second time.
+     *
+     *  The function has an empty default implementation.
+     */
+    virtual void startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber);
+
    protected:
     /// resolve register name to address with error checks
     void checkRegister(const std::string& regName, const std::string& regModule, size_t dataSize, uint32_t addRegOffset,
@@ -77,7 +101,17 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
+    // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version internally, but is not given out
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
+    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
+
+    std::atomic<bool> _hasActiveException{false};
+
     friend NumericAddressedLowLevelTransferElement;
+    friend NumericAddressedInterruptDispatcher;
   };
 
 } // namespace ChimeraTK

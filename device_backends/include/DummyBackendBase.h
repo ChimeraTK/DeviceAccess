@@ -49,6 +49,13 @@ namespace ChimeraTK {
 
     size_t minimumTransferAlignment() const override { return 4; }
 
+    /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
+     *  for that particular interrupt controller and interrupt number, the data will be read out
+     *  through a synchronous accessor and pushed into the data transport queues of the asynchronous
+     *  accessors, so they can be received by the application.
+     */
+    virtual void triggerInterrupt(int interruptControllerNumber, int interruptNumber) = 0;
+
     /** You cannot override the read version with 32 bit address any more. Please change your
      *  implementation to the 64 bit signature.
      */

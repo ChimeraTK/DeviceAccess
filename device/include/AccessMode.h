@@ -79,6 +79,13 @@ namespace ChimeraTK {
       return _flags == other._flags;
     }
 
+    /** "Less than" operator, e.g. for use as key in std::map
+       */
+    bool operator<(const AccessModeFlags& other) const {
+      // fortunately the std::set already has a comparison operator which does exacty what we want
+      return _flags < other._flags;
+    }
+
     /** Remove the given flag from the set */
     void remove(const AccessMode flag) { _flags.erase(flag); }
 
@@ -88,10 +95,10 @@ namespace ChimeraTK {
     /** Get a comma seperated list of all flag strings contained in the class */
     std::string serialize() {
       std::string list{};
-      for (auto &f : _flags) {
+      for(auto& f : _flags) {
         list += getString(f) + ",";
       }
-      if(!list.empty()){
+      if(!list.empty()) {
         list.pop_back(); // remove trailing ','
       }
       return list;
@@ -101,13 +108,13 @@ namespace ChimeraTK {
     static const std::string& getString(const AccessMode flag) { return getStringMap().at(flag); }
 
     /** Get an AcessModeFlags object from a comma seperated list of flag strings */
-    static const AccessModeFlags deserialize(std::string listOfflags){
-        std::vector<std::string> names = split(listOfflags);
-        std::set<AccessMode> flagList;
-        for(auto flagName: names){
-            flagList.insert(getAccessMode(flagName));
-        }
-        return {flagList};
+    static const AccessModeFlags deserialize(std::string listOfflags) {
+      std::vector<std::string> names = split(listOfflags);
+      std::set<AccessMode> flagList;
+      for(auto flagName : names) {
+        flagList.insert(getAccessMode(flagName));
+      }
+      return {flagList};
     };
 
    private:
@@ -117,33 +124,33 @@ namespace ChimeraTK {
     /** return the string map */
     static const std::map<AccessMode, std::string>& getStringMap() {
       static std::map<AccessMode, std::string> m = {
-          {AccessMode::raw, "raw"},
-          {AccessMode::wait_for_new_data, "wait_for_new_data"}};
+          {AccessMode::raw, "raw"}, {AccessMode::wait_for_new_data, "wait_for_new_data"}};
       return m;
     }
 
     static AccessMode getAccessMode(const std::string& flagName) {
       static std::map<std::string, AccessMode> reverse_m;
-      for (auto &m : getStringMap()) {
+      for(auto& m : getStringMap()) {
         reverse_m[m.second] = m.first;
       }
       try {
         return reverse_m.at(flagName);
-      } catch (std::out_of_range &e){
-          throw logic_error("Unknown flag string: " + flagName);
+      }
+      catch(std::out_of_range& e) {
+        throw logic_error("Unknown flag string: " + flagName);
       }
     }
 
-    static std::vector<std::string> split(const std::string &s){
-        std::vector<std::string> list;
-        std::string tmp;
-        char delimiter = ',';
+    static std::vector<std::string> split(const std::string& s) {
+      std::vector<std::string> list;
+      std::string tmp;
+      char delimiter = ',';
 
-        std::istringstream stream(s);
-        while(getline(stream, tmp, delimiter)){
-            list.push_back(tmp);
-        }
-        return list;
+      std::istringstream stream(s);
+      while(getline(stream, tmp, delimiter)) {
+        list.push_back(tmp);
+      }
+      return list;
     }
   };
 

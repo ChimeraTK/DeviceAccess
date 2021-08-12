@@ -36,7 +36,7 @@ namespace ChimeraTK {
     _hasActiveException = false;
   }
 
-  void XdmaBackend::close() {
+  void XdmaBackend::closeImpl() {
     _ctrlIntf.reset();
     _dmaChannels.clear();
   }
@@ -127,7 +127,5 @@ namespace ChimeraTK {
 
     return boost::make_shared<XdmaBackend>("/dev/" + address, parameters["map"]);
   }
-
-  void XdmaBackend::setException() { _hasActiveException = true; }
 
 } // namespace ChimeraTK

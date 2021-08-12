@@ -11,6 +11,8 @@
 #include "NumericAddress.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
+#include "AsyncNDRegisterAccessor.h"
+#include "NumericAddressedInterruptDispatcher.h"
 
 namespace ChimeraTK {
 
@@ -20,6 +22,15 @@ namespace ChimeraTK {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);
       _catalogue = _registerMap->getRegisterCatalogue();
+
+      // create all the interrupt dispatchers that are described in the map file
+      for(auto& interruptController : _registerMap->getListOfInterrupts()) {
+        // interruptController is a pair<int, set<int>>, containing the controller number and a set of associated interrupts
+        for(auto interruptNumber : interruptController.second) {
+          _interruptDispatchers[{interruptController.first, interruptNumber}] =
+              boost::make_shared<NumericAddressedInterruptDispatcher>();
+        }
+      }
     }
     else {
       _registerMap = boost::shared_ptr<RegisterInfoMap>();
@@ -114,6 +125,34 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> NumericAddressedBackend::getRegisterAccessor_impl(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    if(flags.has(AccessMode::wait_for_new_data)) {
+      // get the interrupt information from the map file
+      boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
+      auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      if(!registerInfo->getSupportedAccessModes().has(AccessMode::wait_for_new_data)) {
+        throw ChimeraTK::logic_error(
+            "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
+      }
+
+      auto interruptDispatcher =
+          _interruptDispatchers[{registerInfo->interruptCtrlNumber, registerInfo->interruptNumber}];
+      assert(interruptDispatcher);
+      auto newSubscriber = interruptDispatcher->subscribe<UserType>(
+          boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
+          wordOffsetInRegister, flags);
+      startInterruptHandlingThread(registerInfo->interruptCtrlNumber, registerInfo->interruptNumber);
+      return newSubscriber;
+    }
+    else {
+      return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> NumericAddressedBackend::getSyncRegisterAccessor(
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
     // obtain register info
     boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
@@ -162,4 +201,33 @@ namespace ChimeraTK {
     return accessor;
   }
 
+  void NumericAddressedBackend::activateAsyncRead() noexcept {
+    for(auto it : _interruptDispatchers) {
+      it.second->activate();
+    }
+  }
+
+  void NumericAddressedBackend::setException() {
+    _hasActiveException = true;
+    try {
+      throw ChimeraTK::runtime_error("NumericAddressedBackend is in exception state.");
+    }
+    catch(...) {
+      // FIXME: This is not thread-safe!
+      for(auto it : _interruptDispatchers) {
+        it.second->sendException(std::current_exception());
+      }
+    }
+  }
+
+  // empty default implementation
+  void NumericAddressedBackend::startInterruptHandlingThread(
+      [[maybe_unused]] unsigned int interruptControllerNumber, [[maybe_unused]] unsigned int interruptNumber) {}
+
+  void NumericAddressedBackend::close() {
+    for(auto it : _interruptDispatchers) {
+      it.second->deactivate();
+    }
+    closeImpl();
+  }
 } // namespace ChimeraTK

@@ -233,7 +233,7 @@ namespace ChimeraTK {
       }
 
       // Cache writeability
-      _isNotWriteable = (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
+      _isNotWriteable = !_registerInfo->isWriteable();
 
       // create low-level transfer element handling the actual data transfer to
       // the hardware with raw data
@@ -322,9 +322,7 @@ namespace ChimeraTK {
 
     bool isReadOnly() const override { return isReadable() && !isWriteable(); }
 
-    bool isReadable() const override {
-      return (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::READ) != 0;
-    }
+    bool isReadable() const override { return _registerInfo->isReadable(); }
 
     bool isWriteable() const override { return !_isNotWriteable; }
 

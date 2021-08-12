@@ -18,8 +18,6 @@ namespace ChimeraTK {
     std::optional<CtrlIntf> _ctrlIntf;
     std::vector<DmaIntf> _dmaChannels;
 
-    std::atomic<bool> _hasActiveException{false};
-
     const std::string _devicePath;
 
     XdmaIntfAbstract* _intfFromBar(uint64_t bar);
@@ -29,7 +27,7 @@ namespace ChimeraTK {
     ~XdmaBackend() override;
 
     void open() override;
-    void close() override;
+    void closeImpl() override;
     bool isOpen() override;
 
     bool isFunctional() const override;
@@ -42,8 +40,6 @@ namespace ChimeraTK {
 
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
-
-    void setException() override;
   };
 
 } // namespace ChimeraTK

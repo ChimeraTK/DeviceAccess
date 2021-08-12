@@ -82,6 +82,43 @@ namespace ChimeraTK {
 
     boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override;
 
+    /**
+     * Data type to create individual buffers. They are mainly used in asynchronous
+     * implementation. Each buffer stores a vector, the version
+     * number and the time stamp. The type is swappable by the default
+     * implemenation of std::swap since both the move constructor and the move
+     * assignment operator are implemented. This helps to avoid unnecessary memory
+     * allocations when transported in a cppext::future_queue.
+     */
+    struct Buffer {
+      Buffer(const std::vector<std::vector<UserType>> initialValue) : value(initialValue) {}
+
+      Buffer(size_t nChannels, size_t nElements) : value(nChannels) {
+        for(auto& channel : value) channel.resize(nElements);
+      }
+
+      Buffer() {}
+
+      Buffer(Buffer&& other)
+      : value(std::move(other.value)), versionNumber(other.versionNumber), dataValidity(other.dataValidity) {}
+
+      Buffer& operator=(Buffer&& other) {
+        value = std::move(other.value);
+        versionNumber = other.versionNumber;
+        dataValidity = other.dataValidity;
+        return *this;
+      }
+
+      /** The actual data contained in this buffer. */
+      std::vector<std::vector<UserType>> value;
+
+      /** Version number of this data */
+      ChimeraTK::VersionNumber versionNumber{nullptr};
+
+      /** Whether or not the data in the bufer is considered valid */
+      ChimeraTK::DataValidity dataValidity{ChimeraTK::DataValidity::ok};
+    };
+
    protected:
     /** Buffer of converted data elements. The buffer is always two dimensional.
      * If a register with a single dimension should be accessed, the outer vector

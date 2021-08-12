@@ -9,6 +9,7 @@
 #include "MapFileParser.h"
 #include "parserUtilities.h"
 #include "DummyRegisterAccessor.h"
+#include "NumericAddressedInterruptDispatcher.h"
 
 namespace ChimeraTK {
 
@@ -37,7 +38,7 @@ namespace ChimeraTK {
     }
   }
 
-  void DummyBackend::close() {
+  void DummyBackend::closeImpl() {
     std::lock_guard<std::mutex> lock(mutex);
 
     _opened = false;
@@ -187,6 +188,16 @@ namespace ChimeraTK {
 
   DummyRegisterRawAccessor DummyBackend::getRawAccessor(std::string module, std::string register_name) {
     return DummyRegisterRawAccessor(shared_from_this(), module, register_name);
+  }
+
+  void DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
+    try {
+      _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
+    }
+    catch(std::out_of_range&) {
+      throw ChimeraTK::logic_error("DummyBackend::triggerInterrupt(): Error: Unknown interrupt " +
+          std::to_string(interruptControllerNumber) + ", " + std::to_string(interruptNumber));
+    }
   }
 
 } // namespace ChimeraTK

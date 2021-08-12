@@ -124,7 +124,7 @@ namespace ChimeraTK {
     _protocolImplementor->write(addressInBytes, data, sizeInBytes);
   }
 
-  void RebotBackend::close() {
+  void RebotBackend::closeImpl() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
     _opened = false;

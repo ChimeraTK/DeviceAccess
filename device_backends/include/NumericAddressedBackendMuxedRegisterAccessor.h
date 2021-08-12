@@ -83,9 +83,7 @@ namespace ChimeraTK {
 
     bool isReadOnly() const override { return isReadable() && !isWriteable(); }
 
-    bool isReadable() const override {
-      return (_areaInfo.registerAccess & RegisterInfoMap::RegisterInfo::Access::READ) != 0;
-    }
+    bool isReadable() const override { return _areaInfo.isReadable(); }
 
     bool isWriteable() const override { return !_isNotWriteable; }
 
@@ -161,7 +159,7 @@ namespace ChimeraTK {
     registerMapping->getRegisterInfo(areaName, _areaInfo, _moduleName);
 
     // Cache writeability
-    _isNotWriteable = (_areaInfo.registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
+    _isNotWriteable = !_areaInfo.isWriteable();
 
     // Obtain information for each sequence (= channel) in the area:
     // Create a fixed point converter for each sequence and store the sequence
@@ -220,9 +218,8 @@ namespace ChimeraTK {
       _numberOfElements = _nBlocks;
     }
     if(_numberOfElements + _elementsOffset > _nBlocks) {
-      throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register! Requested end: "+
-                                   std::to_string(_numberOfElements + _elementsOffset)+", register length: "+
-                                   std::to_string(_nBlocks));
+      throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register! Requested end: " +
+          std::to_string(_numberOfElements + _elementsOffset) + ", register length: " + std::to_string(_nBlocks));
     }
 
     // compute the address taking into account the selected area of interest

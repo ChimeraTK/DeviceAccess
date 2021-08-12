@@ -38,9 +38,9 @@ namespace ChimeraTK {
       thereHaveBeenExceptions = false;
     }
 
-    void close() override {
+    void closeImpl() override {
       setException();
-      DummyBackend::close();
+      DummyBackend::closeImpl();
     }
 
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {

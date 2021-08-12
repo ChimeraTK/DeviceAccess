@@ -55,7 +55,7 @@ namespace ChimeraTK {
      * the read-only  settings and callback functions have to be set again when
      * reopening the file.
      */
-    void close() override;
+    void closeImpl() override;
 
     using DummyBackendBase<DummyBackend>::read;  // use the 32 bit version from the base class
     using DummyBackendBase<DummyBackend>::write; // use the 32 bit version from the base class
@@ -78,7 +78,7 @@ namespace ChimeraTK {
      */
     DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
 
-    void setException() override { _hasActiveException = true; }
+    void triggerInterrupt(int interruptControllerNumber, int interruptNumber) override;
 
    protected:
     struct AddressRange {
@@ -99,8 +99,6 @@ namespace ChimeraTK {
     std::set<std::pair<uint64_t, uint64_t>> _readOnlyAddresses; // bar/address combinations which are read only
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
     std::mutex mutex;
-
-    std::atomic<bool> _hasActiveException{false};
 
     void resizeBarContents();
 
