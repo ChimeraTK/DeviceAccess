@@ -20,3 +20,6 @@
 /ByteRaw/unsigned8                1 13 1 1  8 0 0 RW
 /ByteRaw/fixedPoint8_4u           1 14 1 1  8 4 0 RW
 /ByteRaw/fixedPoint8_4s           1 15 1 1  8 4 1 RW
+
+# These registers are interrupt-backed registers
+/Integers/signed32_async          1  8 4 1 32 0 1 INTERRUPT5:6
