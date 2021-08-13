@@ -12,6 +12,10 @@ namespace ChimeraTK {
 
   struct ExceptionDummyPushDecoratorBase;
 
+  struct ExceptionDummyPollDecoratorBase;
+  template<typename UserType>
+  struct ExceptionDummyPollDecorator;
+
   /********************************************************************************************************************/
 
   class ExceptionDummy : public ChimeraTK::DummyBackend {
@@ -118,6 +122,12 @@ namespace ChimeraTK {
 
         acc = decorator;
       }
+      else {
+        // decorate all poll-type variable so returned validity of the data can be controlled
+        auto decorator = boost::make_shared<ExceptionDummyPollDecorator<UserType>>(
+            acc, boost::dynamic_pointer_cast<ExceptionDummy>(this->shared_from_this()));
+        acc = decorator;
+      }
 
       // create entry in _writeOrderMap and _writeCounterMap if necessary
       if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE") {
@@ -163,6 +173,20 @@ namespace ChimeraTK {
     /// Flag is toggled by activateAsyncRead (true), setException (false) and close (false).
     /// Protected by _pushDecoratorMutex
     bool _activateNewPushAccessors{false};
+
+    std::mutex _registerValiditiesMutex;
+    std::map<RegisterPath, DataValidity> _registerValidities;
+    void setValidity(RegisterPath path, DataValidity val) {
+      path.setAltSeparator(".");
+      std::unique_lock<std::mutex> lk(_registerValiditiesMutex);
+      _registerValidities[path] = val;
+    }
+    DataValidity getValidity(RegisterPath path) {
+      path.setAltSeparator(".");
+      std::unique_lock<std::mutex> lk(_registerValiditiesMutex);
+      // simply return default enum value 0 = DataValidity::ok unless path is explicity found in map
+      return _registerValidities[path];
+    }
 
     /// Map used allow determining order of writes by tests. Map key is pair of bar and address.
     std::map<std::pair<uint64_t, uint64_t>, std::atomic<size_t>> _writeOrderMap;
@@ -292,6 +316,47 @@ namespace ChimeraTK {
     using TransferElement::_versionNumber;
     using TransferElement::_dataValidity;
     using NDRegisterAccessor<UserType>::buffer_2D;
+  };
+
+  /********************************************************************************************************************/
+
+  // non-template base class for UserType-agnostic insertion into std::map
+  struct ExceptionDummyPollDecoratorBase {
+    virtual ~ExceptionDummyPollDecoratorBase() {}
+  };
+
+  /// A decorator that returns invalid data for polled variables
+  template<typename UserType>
+  struct ExceptionDummyPollDecorator : NDRegisterAccessorDecorator<UserType>, ExceptionDummyPollDecoratorBase {
+    ExceptionDummyPollDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target,
+        const boost::shared_ptr<ExceptionDummy>& backend)
+    : NDRegisterAccessorDecorator<UserType>(target), _backend(backend) {
+      assert(_target->isReadable());
+
+      _path = _target->getName();
+      _path.setAltSeparator(".");
+    }
+
+    void doPreRead(TransferType type) override {
+      if(!_backend->isOpen()) {
+        throw ChimeraTK::logic_error("Cannot read from closed device.");
+      }
+      _target->preRead(type);
+    }
+
+    void doPostRead(TransferType type, bool updateDataBuffer) override {
+      NDRegisterAccessorDecorator<UserType, UserType>::doPostRead(type, updateDataBuffer);
+      // overwriting is only allowed for faulty.
+      if(_backend->getValidity(_path) == DataValidity::faulty) this->_dataValidity = DataValidity::faulty;
+    }
+
+    bool _makeInvalid = true;
+    boost::shared_ptr<ExceptionDummy> _backend;
+    RegisterPath _path;
+    using NDRegisterAccessorDecorator<UserType>::_target;
+    using TransferElement::_readQueue;
+    using TransferElement::_versionNumber;
+    using TransferElement::_dataValidity;
   };
 
   /********************************************************************************************************************/
