@@ -313,6 +313,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void ExceptionDummy::activateAsyncRead() noexcept {
+    DummyBackend::activateAsyncRead();
+
     std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
     for(auto& pair : _pushDecorators) {
       _pushVersions[pair.first] = {};
