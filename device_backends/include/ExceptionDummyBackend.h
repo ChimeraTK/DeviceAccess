@@ -174,13 +174,18 @@ namespace ChimeraTK {
     /// Protected by _pushDecoratorMutex
     bool _activateNewPushAccessors{false};
 
+    /// mutex to protect map _registerValidities
     std::mutex _registerValiditiesMutex;
+    /// This map is used for setting individual (poll-type) variables to DataValidity=faulty
     std::map<RegisterPath, DataValidity> _registerValidities;
+    /// Use decorator to overwrite returned data validity of individual (poll-type) variables.
+    /// Works only in the direction valid->invalid.
     void setValidity(RegisterPath path, DataValidity val) {
       path.setAltSeparator(".");
       std::unique_lock<std::mutex> lk(_registerValiditiesMutex);
       _registerValidities[path] = val;
     }
+    /// Query map for overwritten data validities.
     DataValidity getValidity(RegisterPath path) {
       path.setAltSeparator(".");
       std::unique_lock<std::mutex> lk(_registerValiditiesMutex);
@@ -337,20 +342,12 @@ namespace ChimeraTK {
       _path.setAltSeparator(".");
     }
 
-    void doPreRead(TransferType type) override {
-      if(!_backend->isOpen()) {
-        throw ChimeraTK::logic_error("Cannot read from closed device.");
-      }
-      _target->preRead(type);
-    }
-
     void doPostRead(TransferType type, bool updateDataBuffer) override {
       NDRegisterAccessorDecorator<UserType, UserType>::doPostRead(type, updateDataBuffer);
       // overwriting is only allowed for faulty.
       if(_backend->getValidity(_path) == DataValidity::faulty) this->_dataValidity = DataValidity::faulty;
     }
 
-    bool _makeInvalid = true;
     boost::shared_ptr<ExceptionDummy> _backend;
     RegisterPath _path;
     using NDRegisterAccessorDecorator<UserType>::_target;
