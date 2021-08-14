@@ -25,6 +25,8 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
    */
   template<typename UserType, typename AsyncAccessorManager, typename AsyncAccessorID>
   class AsyncNDRegisterAccessor : public NDRegisterAccessor<UserType> {
+    static constexpr size_t _queueSize{3};
+
    public:
     /** In addition to the arguments of the NDRegisterAccessor constructor, you need
        *  an AccessorManager where you can unsubscribe, and an ID so the AccessorManager
@@ -129,7 +131,7 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
     // a scenario where it is allowed to send an exception before the accessor is activated
     // bool _hasException{false};
 
-    cppext::future_queue<Buffer, cppext::SWAP_DATA> _dataTransportQueue{3};
+    cppext::future_queue<Buffer, cppext::SWAP_DATA> _dataTransportQueue{_queueSize};
   };
 
   /**********************************************************************************************************/
@@ -149,6 +151,17 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
     }
     buffer_2D.resize(nChannels);
     for(auto& chan : buffer_2D) chan.resize(nElements);
+
+    // The sequence to initialise the queue:
+    // * write once and then read,
+    // * repeat n+1 times to make sure all buffers inside the queue have been replaced with
+    //   a properly sized buffer, so it can be swapped out and used for data
+    for(size_t i = 0; i < _queueSize + 1; ++i) {
+      Buffer b1(nChannels, nElements);
+      _dataTransportQueue.push(std::move(b1));
+      Buffer b2(nChannels, nElements);
+      _dataTransportQueue.pop(b2); // here b2 is swapped into the queue and transported "backwards"
+    }
 
     this->_readQueue = _dataTransportQueue.template then<void>(
         [&](Buffer& buf) { std::swap(_receiveBuffer, buf); }, std::launch::deferred);
