@@ -339,6 +339,15 @@ namespace ChimeraTK {
       boost::fusion::pair<Boolean, Boolean>, boost::fusion::pair<Void, Void>>
       userTypeMap;
 
+  /** Just like userTypeMap, only without the ChimeraTK::Void type. */
+  typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
+      boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
+      boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>,
+      boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>,
+      boost::fusion::pair<double, double>, boost::fusion::pair<std::string, std::string>,
+      boost::fusion::pair<Boolean, Boolean>>
+      userTypeMapNoVoid;
+
   /** Map of UserType to a value of a single type (same for evey user type) */
   template<typename TargetType>
   class FixedUserTypeMap {
@@ -350,6 +359,19 @@ namespace ChimeraTK {
         boost::fusion::pair<float, TargetType>, boost::fusion::pair<double, TargetType>,
         boost::fusion::pair<std::string, TargetType>, boost::fusion::pair<Boolean, TargetType>,
         boost::fusion::pair<Void, TargetType>>
+        table;
+  };
+
+  /** Just like TemplateUserTypeMap, only without the ChimeraTK::Void type. */
+  template<typename TargetType>
+  class FixedUserTypeMapNoVoid {
+   public:
+    boost::fusion::map<boost::fusion::pair<int8_t, TargetType>, boost::fusion::pair<uint8_t, TargetType>,
+        boost::fusion::pair<int16_t, TargetType>, boost::fusion::pair<uint16_t, TargetType>,
+        boost::fusion::pair<int32_t, TargetType>, boost::fusion::pair<uint32_t, TargetType>,
+        boost::fusion::pair<int64_t, TargetType>, boost::fusion::pair<uint64_t, TargetType>,
+        boost::fusion::pair<float, TargetType>, boost::fusion::pair<double, TargetType>,
+        boost::fusion::pair<std::string, TargetType>, boost::fusion::pair<Boolean, TargetType>>
         table;
   };
 
@@ -369,6 +391,21 @@ namespace ChimeraTK {
         table;
   };
 
+  /** Just like TemplateUserTypeMap, only without the ChimeraTK::Void type. */
+  template<template<typename> class TemplateClass>
+  class TemplateUserTypeMapNoVoid {
+   public:
+    boost::fusion::map<boost::fusion::pair<int8_t, TemplateClass<int8_t>>,
+        boost::fusion::pair<uint8_t, TemplateClass<uint8_t>>, boost::fusion::pair<int16_t, TemplateClass<int16_t>>,
+        boost::fusion::pair<uint16_t, TemplateClass<uint16_t>>, boost::fusion::pair<int32_t, TemplateClass<int32_t>>,
+        boost::fusion::pair<uint32_t, TemplateClass<uint32_t>>, boost::fusion::pair<int64_t, TemplateClass<int64_t>>,
+        boost::fusion::pair<uint64_t, TemplateClass<uint64_t>>, boost::fusion::pair<float, TemplateClass<float>>,
+        boost::fusion::pair<double, TemplateClass<double>>,
+        boost::fusion::pair<std::string, TemplateClass<std::string>>,
+        boost::fusion::pair<Boolean, TemplateClass<Boolean>>>
+        table;
+  };
+
   /** Map of UserType to a single type */
   template<typename T>
   using SingleTypeUserTypeMap = boost::fusion::map<boost::fusion::pair<int8_t, T>, boost::fusion::pair<uint8_t, T>,
@@ -376,6 +413,14 @@ namespace ChimeraTK {
       boost::fusion::pair<uint32_t, T>, boost::fusion::pair<int64_t, T>, boost::fusion::pair<uint64_t, T>,
       boost::fusion::pair<float, T>, boost::fusion::pair<double, T>, boost::fusion::pair<std::string, T>,
       boost::fusion::pair<Boolean, T>, boost::fusion::pair<Void, T>>;
+
+  /** Just like SingleTypeUserTypeMap, only without the ChimeraTK::Void type. */
+  template<typename T>
+  using SingleTypeUserTypeMapNoVoid = boost::fusion::map<boost::fusion::pair<int8_t, T>,
+      boost::fusion::pair<uint8_t, T>, boost::fusion::pair<int16_t, T>, boost::fusion::pair<uint16_t, T>,
+      boost::fusion::pair<int32_t, T>, boost::fusion::pair<uint32_t, T>, boost::fusion::pair<int64_t, T>,
+      boost::fusion::pair<uint64_t, T>, boost::fusion::pair<float, T>, boost::fusion::pair<double, T>,
+      boost::fusion::pair<std::string, T>, boost::fusion::pair<Boolean, T>>;
 
 #define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                       \
   extern template class TemplateClass<int8_t>;                                                                         \
@@ -391,6 +436,7 @@ namespace ChimeraTK {
   extern template class TemplateClass<std::string>;                                                                    \
   extern template class TemplateClass<ChimeraTK::Boolean>;                                                             \
   extern template class TemplateClass<ChimeraTK::Void> // the last semicolon is added by the user
+
 #define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                   \
   template class TemplateClass<int8_t>;                                                                                \
   template class TemplateClass<uint8_t>;                                                                               \
@@ -405,6 +451,7 @@ namespace ChimeraTK {
   template class TemplateClass<std::string>;                                                                           \
   template class TemplateClass<ChimeraTK::Boolean>;                                                                    \
   template class TemplateClass<ChimeraTK::Void> // the last semicolon is added by the user
+
 /** Macro to declare a template class with multiple template parameters for all
  *  supported user types. The variadic arguments are the additional template
  * parameters. Only works for classes where the user type is the first template
@@ -424,6 +471,7 @@ namespace ChimeraTK {
   extern template class TemplateClass<std::string, __VA_ARGS__>;                                                       \
   extern template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__>;                                                \
   extern template class TemplateClass<ChimeraTK::Void, __VA_ARGS__> // the last semicolon is added by the user
+
 #define INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass, ...)                                        \
   template class TemplateClass<int8_t, __VA_ARGS__>;                                                                   \
   template class TemplateClass<uint8_t, __VA_ARGS__>;                                                                  \
@@ -455,8 +503,7 @@ namespace ChimeraTK {
      *  identified for instance as DataType::int32.
      */
     enum TheType {
-      none,    ///< The data type/concept does not exist. e.g. there is no raw
-               ///< transfer
+      none,    ///< The data type/concept does not exist, e.g. there is no raw transfer (do not confuse with Void)
       int8,    ///< Signed 8 bit integer
       uint8,   ///< Unsigned 8 bit integer
       int16,   ///< Signed 16 bit integer
@@ -811,6 +858,17 @@ namespace ChimeraTK {
         };
         throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
     }
+  }
+
+  /** Like callForType() but omit the Void data type. typeDescriptor can be either a std::type_info or a
+   *  ChimeraTK::DataType. */
+  template<typename TYPE_DESCRIPTOR, typename LAMBDATYPE>
+  void callForTypeNoVoid(const TYPE_DESCRIPTOR& typeDescriptor, LAMBDATYPE lambda) {
+    callForType(typeDescriptor, [lambda](auto arg) {
+      if constexpr(!std::is_same<decltype(arg), Void>::value) {
+        lambda(arg);
+      }
+    });
   }
 
   /**
