@@ -574,12 +574,12 @@ namespace ChimeraTK {
 
   template<>
   bool compareHelper<double>(double a, double b) {
-    return std::abs(a - b) < std::abs(std::max(a, b) / 1e6);
+    return std::abs(a - b) <= std::numeric_limits<double>::epsilon() * 10. * std::max(std::abs(a), std::abs(b));
   }
 
   template<>
   bool compareHelper<float>(float a, float b) {
-    return std::abs(a - b) < std::abs(std::max(a, b) / 1e6F);
+    return std::abs(a - b) <= std::numeric_limits<float>::epsilon() * 10.F * std::max(std::abs(a), std::abs(b));
   }
 
   template<>
