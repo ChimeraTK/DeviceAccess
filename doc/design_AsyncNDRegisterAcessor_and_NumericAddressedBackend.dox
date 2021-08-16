@@ -1,0 +1,59 @@
+namespace ChimeraTK {
+/**
+\page design_AsyncNDRegisterAccessor_NumericAddressed Design: AsyncNDRegisterAccessor and the asynchronous implelentation in the NumericAddressedBackend
+
+\section  design_AsyncNDRegisterAccessor The AsyncNDRegisterAccessor
+
+The AsyncNDRegisterAccessor is an extension of the NDRegisterAccessor for push-type data.
+
+The NDRegisterAccessor itself extends the TransferElement with a user-type buffer. The TransferElement does not have a user type buffer and serves as a base class such that implementations with different user types can be stored together in containers. The TransferElement also contais a notification queue to implement the asynchronous read functionality. This notification queue is of type void (notifications only, no data is transported) because the data type is not known. The AsyncNDRegisterAccessor now povides the data transport queue which is needed for asynchronous accessors with data. As this queue is comparatively resource-intensive (multiple instances of the user buffer object pre-allocated in each queue) and not needed for synchronous data transfer, it is not directly added in the NDRegisterAccessor but in a second class.
+
+The data transport queue is implmented as continuation of the notification queue, such that the read operations of the notification queue trigger the filling of the user buffer.
+
+The AsyncNDRegisterAccessor is ready to use. It provides a generic asynchronous implementation.
+Each backend has to store a list of accessors and call AsyncNDRegisterAccessor::activate(), AsyncNDRegisterAccessor::deactivate(), AsyncNDRegisterAccessor::sendDestructively() and AsyncNDRegisterAccessor::sendException() appropriately. As the way the data containers are organised and the asynchronous mechanism is implemented stongly depend on the backend, the implementation of these are left to the specific backend.
+However, there is a common interface implemented to allow the clean subscription/unsubscription from the backend. The AsyncNDRegisterAccessor is templated to an AsyncAccessorManager and an AsyncAccessorID, which are both handed over in the constructor. In its destructor the AsyncNDRegisterAccessor is calling
+<pre>
+void AsyncAccessorManager::unsubscribe(AsyncAccessorID id);
+</pre>
+This function has to be implemented by the manager. From the ID it knows which subscriber is to be removed. For this mechanism to work, the AsyncAccessorManager must store boost::weak_pointers and lock them when the instance is being accessed. Otherwise the one instance held within the manager prevents the destructor from being called.
+
+\section  design_async_NumericAddressedBackend Asynchronous accessors in the NumericAddressedBackend
+
+As the NumericAddressedBackend base class already provides the creation of the synchronous NumericAddressedBackendRegisterAccessors, it also provides the subscription mechanism for the asynchronous accessors. The NumericAddressedBackend is based on a map file which allows to describe registers with interrupts. In the interface to the hardware, all interrupts are void. The map file then descibes which of the synchronous registers are read out and pushed when the according interrupt is triggered. This mechanism is implemented in the NumericAddressedBackend base class and the protocol implementing backends only have to notify the NumericAddressedInterruptDispatcher that the interrupt has happened.
+
+\subsection  async_NumericAddressedBackend_interface Interface for backend implementations
+
+The NumericAddressedInterruptDispatcher serves two purposes:
+\li It serves as a subscription manager for the AsyncNDRegisterAccessor
+\li It provides functions which act on all subsribers.
+
+When the map file is read in, a NumericAddressedInterruptDispatcher is created for each interrupt.
+
+The only function the backend implementor really has to deal with is NumericAddressedInterruptDispatcher::trigger(). All other functionaltiy for subscription, activation/deactivation and exception handling is already handled in the NumericAddressedBackend.
+
+There is one NumericAddressedInterruptDispatcher per interrupt controller number and interrupt number, stored in the variable NumericAddressedBackend::_interruptDispatchers. The interrupt handling thread in the backend implementation will just call
+
+<pre>
+  _interruptDispatcher.at({interruptControllerNumber, interruptNumber})->trigger();
+</pre>
+
+Notice that you should access the map with at() and not through the [ ] operator, so you don't accidentally add empty dispatchers to the map.
+
+Internally an object called NumericAddressedAsyncVariable (or to be more precie a shared pointer to the typed implementation NumericAddressedAsyncVariableImpl) is stored for each required accessor type. This contains one synchronous read accessor together with all its subscribers. Like this the hardware access to the devide and the possibly expensive postRead() action (de-mupltiplexing and numeric conversion) are only done once, before the data is pushed into the data transport queues of the subscribers.
+There can be multiple NumericAddressedAsyncVariables for one register. For example one for raw access, one with data conversion and a thrid one for only the first 10 elements in a large 1D register. All this is happening automatically in the NumericAddressedBackend and the developer of the individual backend does not have to care about it.
+
+\subsection design_async_map_file Asynchronous registers in the map file
+
+<pre>
+# name            nElements  address  nBytes  bar  width  bitInterpretation signed accessMode
+APP.0.DATA_READY          0        0       0    0      0                  0      0 INTERRUPT1:5
+APP.0.PUSH_DATA           4       12      16    1     32                  8      1 INTERRUPT2:3
+</pre>
+
+The map file has been extended by the access mode INTERRUPTx:y. Before, only RW and RO were allowed. x and y are the number of the interrupt controller and the interrupt number, respectively. Registers with access mode INTERRUPT will implicitly be treaded as read-only.
+
+For interrupts it is possible to have void-type entries. The width of these "registers" is 0 bits. For consistency all other fields also have to be 0. They don't make sencse in this context and have to be 0 to avoid confusion.
+*/
+
+} // end of namespace ChimeraTK
