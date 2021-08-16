@@ -603,11 +603,18 @@ namespace ChimeraTK {
   // Note: we use a macro and not a function, so BOOST_ERROR prints us the line number of the actual test!
 #define CHECK_EQUALITY(accessor, expectedValue)                                                                        \
   {                                                                                                                    \
+    typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
     std::string fail;                                                                                                  \
     BOOST_CHECK_EQUAL(accessor.getNChannels(), expectedValue.size());                                                  \
     BOOST_CHECK_EQUAL(accessor.getNElementsPerChannel(), expectedValue[0].size());                                     \
+    bool CHECK_EQUALITY_warnExpectedZero = true;                                                                       \
     for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
       for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {               \
+        if(CHECK_EQUALITY_warnExpectedZero &&                                                                          \
+            !compareHelper(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], CHECK_EQUALITY_UserType())) {            \
+          /* non-zero value found in expectedValue, no need to warn about all-zero expected value */                   \
+          CHECK_EQUALITY_warnExpectedZero = false;                                                                     \
+        }                                                                                                              \
         if(!compareHelper(                                                                                             \
                accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {     \
           if(fail.size() == 0) {                                                                                       \
@@ -622,17 +629,28 @@ namespace ChimeraTK {
     if(fail != "") {                                                                                                   \
       BOOST_ERROR(fail);                                                                                               \
     }                                                                                                                  \
+    if(CHECK_EQUALITY_warnExpectedZero) {                                                                              \
+      BOOST_ERROR("Comparison with all-zero expectedValue! Test may be insensitive! Check the "                        \
+                  "generateValue() implementations!");                                                                 \
+    }                                                                                                                  \
   }                                                                                                                    \
   (void)(0)
 
 // Similar to CHECK_EQUALITY, but compares two 2D vectors
 #define CHECK_EQUALITY_VECTOR(value, expectedValue)                                                                    \
   {                                                                                                                    \
+    typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
     std::string fail;                                                                                                  \
     BOOST_CHECK_EQUAL(value.size(), expectedValue.size());                                                             \
     BOOST_CHECK_EQUAL(value[0].size(), expectedValue[0].size());                                                       \
+    bool CHECK_EQUALITY_warnExpectedZero = true;                                                                       \
     for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                    \
       for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {               \
+        if(CHECK_EQUALITY_warnExpectedZero &&                                                                          \
+            !compareHelper(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], CHECK_EQUALITY_UserType())) {            \
+          /* non-zero value found in expectedValue, no need to warn about all-zero expected value */                   \
+          CHECK_EQUALITY_warnExpectedZero = false;                                                                     \
+        }                                                                                                              \
         if(!compareHelper(                                                                                             \
                value[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {        \
           if(fail.size() == 0) {                                                                                       \
@@ -647,6 +665,10 @@ namespace ChimeraTK {
     if(fail != "") {                                                                                                   \
       BOOST_ERROR(fail);                                                                                               \
     }                                                                                                                  \
+    if(CHECK_EQUALITY_warnExpectedZero) {                                                                              \
+      BOOST_ERROR("Comparison with all-zero expectedValue! Test may be insensitive! Check the "                        \
+                  "generateValue() implementations!");                                                                 \
+    }                                                                                                                  \
   }                                                                                                                    \
   (void)(0)
 
@@ -654,7 +676,9 @@ namespace ChimeraTK {
 // at most maxMillisecods. If the expected value is not seen within that time, an error is risen.
 #define CHECK_EQUALITY_TIMEOUT(accessor, expectedValue, maxMilliseconds)                                               \
   {                                                                                                                    \
+    typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    bool CHECK_EQUALITY_warnExpectedZero = true;                                                                       \
     while(true) {                                                                                                      \
       accessor.readLatest();                                                                                           \
       std::string fail;                                                                                                \
@@ -662,6 +686,11 @@ namespace ChimeraTK {
       BOOST_CHECK_EQUAL(accessor.getNElementsPerChannel(), expectedValue[0].size());                                   \
       for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
         for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {             \
+          if(CHECK_EQUALITY_warnExpectedZero &&                                                                        \
+              !compareHelper(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], CHECK_EQUALITY_UserType())) {          \
+            /* non-zero value found in expectedValue, no need to warn about all-zero expected value */                 \
+            CHECK_EQUALITY_warnExpectedZero = false;                                                                   \
+          }                                                                                                            \
           if(!compareHelper(                                                                                           \
                  accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
             if(fail.size() == 0) {                                                                                     \
@@ -679,13 +708,19 @@ namespace ChimeraTK {
       if(timeout_reached) break;                                                                                       \
       usleep(10000);                                                                                                   \
     }                                                                                                                  \
+    if(CHECK_EQUALITY_warnExpectedZero) {                                                                              \
+      BOOST_ERROR("Comparison with all-zero expectedValue! Test may be insensitive! Check the "                        \
+                  "generateValue() implementations!");                                                                 \
+    }                                                                                                                  \
   }                                                                                                                    \
   (void)(0)
 
 // Similar to CHECK_EQUALITY_TIMEOUT, but compares two 2D vectors
 #define CHECK_EQUALITY_VECTOR_TIMEOUT(value, expectedValue, maxMilliseconds)                                           \
   {                                                                                                                    \
+    typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    bool CHECK_EQUALITY_warnExpectedZero = true;                                                                       \
     while(true) {                                                                                                      \
       std::string fail;                                                                                                \
       auto CHECK_EQUALITY_value = value; /* Copy value for consistency and performance in the following code */        \
@@ -693,6 +728,11 @@ namespace ChimeraTK {
       BOOST_CHECK_EQUAL(theValue[0].size(), expectedValue[0].size());                                                  \
       for(size_t CHECK_EQUALITY_i = 0; CHECK_EQUALITY_i < expectedValue.size(); ++CHECK_EQUALITY_i) {                  \
         for(size_t CHECK_EQUALITY_k = 0; CHECK_EQUALITY_k < expectedValue[0].size(); ++CHECK_EQUALITY_k) {             \
+          if(CHECK_EQUALITY_warnExpectedZero &&                                                                        \
+              !compareHelper(expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], CHECK_EQUALITY_UserType())) {          \
+            /* non-zero value found in expectedValue, no need to warn about all-zero expected value */                 \
+            CHECK_EQUALITY_warnExpectedZero = false;                                                                   \
+          }                                                                                                            \
           if(!compareHelper(CHECK_EQUALITY_value[CHECK_EQUALITY_i][CHECK_EQUALITY_k],                                  \
                  expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {                                                 \
             if(fail.size() == 0) {                                                                                     \
@@ -709,6 +749,10 @@ namespace ChimeraTK {
       BOOST_CHECK_MESSAGE(!timeout_reached, fail);                                                                     \
       if(timeout_reached) break;                                                                                       \
       usleep(10000);                                                                                                   \
+    }                                                                                                                  \
+    if(CHECK_EQUALITY_warnExpectedZero) {                                                                              \
+      BOOST_ERROR("Comparison with all-zero expectedValue! Test may be insensitive! Check the "                        \
+                  "generateValue() implementations!");                                                                 \
     }                                                                                                                  \
   }                                                                                                                    \
   (void)(0)
