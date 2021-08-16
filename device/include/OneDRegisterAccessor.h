@@ -31,6 +31,9 @@ namespace ChimeraTK {
      * instead. */
     OneDRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
     : NDRegisterAccessorAbstractor<UserType>(impl) {
+      static_assert(!std::is_same<UserType, Void>::value,
+          "You cannot create OneDRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
+
       if(get()->getNumberOfChannels() != 1) {
         throw ChimeraTK::logic_error(std::string("The OneDRegisterAccessor has a too low ") +
             "dimension to access the register " + impl->getName());
@@ -42,7 +45,10 @@ namespace ChimeraTK {
      *  @attention Accessors created with this constructors will be dysfunctional,
      * calling any member function will throw an exception (by the
      * boost::shared_ptr)! */
-    OneDRegisterAccessor() {}
+    OneDRegisterAccessor() {
+      static_assert(!std::is_same<UserType, Void>::value,
+          "You cannot create OneDRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
+    }
 
     /** Get or set buffer content by [] operator.
      *  @attention No bounds checking is performed, use getNumberOfElements() to
@@ -90,7 +96,7 @@ namespace ChimeraTK {
     }
 
     /* Convert content of (cooked) buffer into std::vector */
-    operator const std::vector<UserType>&() { return get()->accessChannel(0); }
+    operator const std::vector<UserType> &() { return get()->accessChannel(0); }
 
     /** Return a direct pointer to the memory buffer storng the elements.
      *  @attention Note that this pointer will be invalidated during read(),

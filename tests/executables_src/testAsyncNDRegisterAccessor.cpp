@@ -21,8 +21,7 @@ BOOST_AUTO_TEST_CASE(SmokeTest) {
   BOOST_CHECK(asyncAccessor.isReadable());
   BOOST_CHECK(!asyncAccessor.isWriteable());
 
-  auto asyncVoidAccessor =
-      d.getScalarRegisterAccessor<ChimeraTK::Void>("MODULE0/INTERRUPT_VOID1", 0, {AccessMode::wait_for_new_data});
+  auto asyncVoidAccessor = d.getVoidRegisterAccessor("MODULE0/INTERRUPT_VOID1", {AccessMode::wait_for_new_data});
 
   auto syncAccessor = d.getScalarRegisterAccessor<double>("MODULE0/INTERRUPT_TYPE", 0);
   BOOST_CHECK(syncAccessor.isReadOnly());
