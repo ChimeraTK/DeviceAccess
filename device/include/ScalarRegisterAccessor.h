@@ -9,6 +9,7 @@
 #define CHIMERA_TK_SCALAR_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessorAbstractor.h"
+#include <type_traits>
 
 namespace ChimeraTK {
 
@@ -30,14 +31,20 @@ namespace ChimeraTK {
      *  Users should call Device::getScalarRegisterAccessor() to obtain an
      * instance instead. */
     ScalarRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
-    : NDRegisterAccessorAbstractor<UserType>(impl) {}
+    : NDRegisterAccessorAbstractor<UserType>(impl) {
+      static_assert(!std::is_same<UserType, Void>::value,
+          "You cannot create ScalarRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
+    }
 
     /** Placeholder constructor, to allow late initialisation of the accessor,
      * e.g. in the open function.
      *  @attention Accessors created with this constructors will be dysfunctional,
      * calling any member function will throw an exception (by the
      * boost::shared_ptr)! */
-    ScalarRegisterAccessor() {}
+    ScalarRegisterAccessor() {
+      static_assert(!std::is_same<UserType, Void>::value,
+          "You cannot create ScalarRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
+    }
 
     /** Implicit type conversion to user type T to access the value as a
      * reference. */
@@ -104,7 +111,7 @@ namespace ChimeraTK {
 
     inline ScalarRegisterAccessor() {}
 
-    inline operator std::string&() {
+    inline operator std::string &() {
       return boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)->accessData(0, 0);
     }
 

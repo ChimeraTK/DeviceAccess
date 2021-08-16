@@ -336,4 +336,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  VoidRegisterAccessor Device::getVoidRegisterAccessor(
+      const RegisterPath& registerPathName, const AccessModeFlags& flags) const {
+    checkPointersAreNotNull();
+    return VoidRegisterAccessor(_deviceBackendPointer->getRegisterAccessor<Void>(registerPathName, 0, 0, flags));
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK

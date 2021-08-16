@@ -14,6 +14,7 @@
 #  include "DeviceBackend.h"
 #  include "Exception.h"
 #  include "ForwardDeclarations.h"
+#  include "VoidRegisterAccessor.h"
 #  include "OneDRegisterAccessor.h"
 #  include "ScalarRegisterAccessor.h"
 #  include "TwoDRegisterAccessor.h"
@@ -91,6 +92,9 @@ namespace ChimeraTK {
      * can be re-opened using the open() function without argument.
      */
     virtual void close();
+
+    VoidRegisterAccessor getVoidRegisterAccessor(
+        const RegisterPath& registerPathName, const AccessModeFlags& flags = AccessModeFlags({})) const;
 
     /** Get a ScalarRegisterObject object for the given register.
      *
@@ -700,9 +704,9 @@ namespace ChimeraTK {
   BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(const RegisterPath& registerPathName,
       size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
     checkPointersAreNotNull();
-    return BufferingRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
-        registerPathName, numberOfWords, wordOffsetInRegister,
-        (enforceRawAccess ? AccessModeFlags{AccessMode::raw} : AccessModeFlags{}) ));
+    return BufferingRegisterAccessor<UserType>(
+        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister,
+            (enforceRawAccess ? AccessModeFlags{AccessMode::raw} : AccessModeFlags{})));
   }
 
   /********************************************************************************************************************/

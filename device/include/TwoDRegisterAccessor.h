@@ -21,12 +21,18 @@ namespace ChimeraTK {
    public:
     /** Do not use this constructor directly. Instead call Device::getTwoDRegisterAccessor(). */
     TwoDRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> _accessor)
-    : NDRegisterAccessorAbstractor<UserType>(_accessor) {}
+    : NDRegisterAccessorAbstractor<UserType>(_accessor) {
+      static_assert(!std::is_same<UserType, Void>::value,
+          "You cannot create TwoDRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
+    }
 
     /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
      *  @attention Accessors created with this constructors will be dysfunctional,  calling any member function will
      *  throw an exception (by the boost::shared_ptr)! */
-    TwoDRegisterAccessor() {}
+    TwoDRegisterAccessor() {
+      static_assert(!std::is_same<UserType, Void>::value,
+          "You cannot create TwoDRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
+    }
 
     /** Operator to access individual sequences/channels. */
     std::vector<UserType>& operator[](size_t channel) { return get()->accessChannel(channel); }
@@ -67,11 +73,11 @@ namespace ChimeraTK {
       return get()->getNumberOfChannels();
     }
 
-        /** DEPRECATED DO NOT USE
+    /** DEPRECATED DO NOT USE
          *
          *  \deprecated
          *  This function is deprecated. Use getNChannels() instead! */
-        [[deprecated("Use getNChannels() instead!")]] size_t getNumberOfChannels() const {
+    [[deprecated("Use getNChannels() instead!")]] size_t getNumberOfChannels() const {
       return get()->getNumberOfChannels();
     }
 
