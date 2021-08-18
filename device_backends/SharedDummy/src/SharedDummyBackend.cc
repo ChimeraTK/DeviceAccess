@@ -138,9 +138,9 @@ namespace ChimeraTK {
   void SharedDummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
     // FIXME: This is the "one process" version taken from the regular DummyBackend. The correct implementation should
     // * Signal the interrupt to all processes which are accessing this shared memory (and to itself, depending on the implementation)
-    // * Execute the dispatch (either based on the signal or here, depending on the implementation)
+    // * Execute the dispatch (either based on the signal or directly here, depending on the implementation)
     try {
-      _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
+      dispatchInterrupt(interruptControllerNumber, interruptNumber);
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("DummyBackend::triggerInterrupt(): Error: Unknown interrupt " +

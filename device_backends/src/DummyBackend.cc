@@ -192,7 +192,7 @@ namespace ChimeraTK {
 
   void DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
     try {
-      _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
+      dispatchInterrupt(interruptControllerNumber, interruptNumber);
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("DummyBackend::triggerInterrupt(): Error: Unknown interrupt " +
