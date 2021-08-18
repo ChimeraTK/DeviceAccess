@@ -3,6 +3,7 @@
 #include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
 #include <ChimeraTK/cppext/future_queue.hpp>
+#include <ChimeraTK/cppext/finally.hpp>
 
 namespace ChimeraTK {
 
@@ -73,20 +74,40 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
      */
     void deactivate() { _isActive = false; }
 
+    /** Set an accessor if the register is writeable. As the asynchronous mechanism is generic and does not
+     *  access the hardware, an implementation which can write is added here.
+     */
+    void setWriteAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> const& writeAccessor) {
+      assert(writeAccessor->isWriteable());
+      _writeAccessor = writeAccessor;
+    }
+
     ////////////////////////////////////////////////////
     // implementation of inherited, virtual functions //
     ////////////////////////////////////////////////////
 
     void doReadTransferSynchronously() override {
-      throw ChimeraTK::logic_error("AsyncNDRegisterAccessor does not support synchronous reads.");
+      // This code should never be executed because the constructor checks that wait_for_new_data is set.
+      assert(false);
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
-      throw ChimeraTK::logic_error("AsyncNDRegisterAccessor does not support writing.");
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
+      return _writeAccessor->writeTransfer(versionNumber);
     }
 
-    void doPreWrite([[maybe_unused]] TransferType type, [[maybe_unused]] VersionNumber versionNumber) override {
-      throw ChimeraTK::logic_error("AsyncNDRegisterAccessor does not support writing.");
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
+      return _writeAccessor->writeTransferDestructively(versionNumber);
+    }
+
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
+      if(!_writeAccessor) {
+        throw ChimeraTK::logic_error("Writing is not supported for " + this->getName());
+      }
+      // The following code is taken from the NDRegisterAccessorDecorator:
+      for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i)
+        buffer_2D[i].swap(_writeAccessor->accessChannel(i));
+      _writeAccessor->setDataValidity(this->_dataValidity);
+      _writeAccessor->preWrite(type, versionNumber);
     }
 
     void doPreRead([[maybe_unused]] TransferType type) override {
@@ -94,15 +115,24 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
       // Pre-read conceptually does nothing in synchronous reads
     }
 
-    void doPostWrite([[maybe_unused]] TransferType type, [[maybe_unused]] VersionNumber versionNumber) override {
-      throw ChimeraTK::logic_error("AsyncNDRegisterAccessor does not support writing.");
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
+      // The following code is taken from the NDRegisterAccessorDecorator:
+      // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
+      auto _ = cppext::finally([&] {
+        for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i)
+          buffer_2D[i].swap(_writeAccessor->accessChannel(i));
+      });
+      _writeAccessor->setActiveException(this->_activeException);
+      _writeAccessor->postWrite(type, versionNumber);
     }
 
     void doPostRead(TransferType, bool updateDataBuffer) override;
 
-    bool isReadOnly() const override { return true; }
+    bool isReadOnly() const override {
+      return !isWriteable(); // as the accessor is always readable, isReadOnly() is equivalent to !isWriteable()
+    }
     bool isReadable() const override { return true; }
-    bool isWriteable() const override { return false; }
+    bool isWriteable() const override { return static_cast<bool>(_writeAccessor); }
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
       this->_exceptionBackend = exceptionBackend;
@@ -132,6 +162,8 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
     // bool _hasException{false};
 
     cppext::future_queue<Buffer, cppext::SWAP_DATA> _dataTransportQueue{_queueSize};
+
+    boost::shared_ptr<NDRegisterAccessor<UserType>> _writeAccessor;
   };
 
   /**********************************************************************************************************/
@@ -146,9 +178,10 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
 
   : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(backend),
     _accessorManager(manager), _receiveBuffer(nChannels, nElements), _id(id) {
-    if(!accessModeFlags.has(AccessMode::wait_for_new_data)) {
-      throw ChimeraTK::logic_error("AsyncNDRegisterAccessor requested without AccessMode::wait_for_new_data");
-    }
+    // Don't throw a ChimeraTK::logic_error here. They are for mistakes an application is doing when using DeviceAccess.
+    // If an AsyncNDRegisterAccessor is created without wait_for_new_data it is a mistake in the backend, which is not part
+    // of the application.
+    assert(accessModeFlags.has(AccessMode::wait_for_new_data));
     buffer_2D.resize(nChannels);
     for(auto& chan : buffer_2D) chan.resize(nElements);
 

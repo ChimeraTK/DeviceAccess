@@ -282,8 +282,9 @@ namespace ChimeraTK {
       // Variable does not exist yet. Create it.
       auto synchronousFlags = flags;
       synchronousFlags.remove(AccessMode::wait_for_new_data);
+      // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
       _asyncVariables[descriptor] = std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(
-          backend->getSyncRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags),
+          backend->getRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags),
           _isActive);
     }
 
@@ -293,6 +294,19 @@ namespace ChimeraTK {
         NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>(backend, shared_from_this(), name,
         asyncVariable->syncAccessor->getNumberOfChannels(), asyncVariable->syncAccessor->getNumberOfSamples(), flags,
         descriptor, asyncVariable->syncAccessor->getUnit(), asyncVariable->syncAccessor->getDescription());
+    // Set the exception backend here. It might be that the accessor is already activated during subscription, and the backend shoud be set at that point
+    newSubscriber->setExceptionBackend(backend);
+
+    if(asyncVariable->syncAccessor->isWriteable()) {
+      // for writeable variables we add another synchronous accessors (which knows how to access the data) to the asyncAccessor (which is generic)
+      auto synchronousFlags = flags;
+      synchronousFlags.remove(AccessMode::wait_for_new_data);
+
+      // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
+      newSubscriber->setWriteAccessor(
+          backend->getRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags));
+    }
+
     asyncVariable->subscribe(newSubscriber);
     return newSubscriber;
   }

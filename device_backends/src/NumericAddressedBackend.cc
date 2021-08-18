@@ -140,6 +140,7 @@ namespace ChimeraTK {
       auto newSubscriber = interruptDispatcher->subscribe<UserType>(
           boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
           wordOffsetInRegister, flags);
+      // The new subsciber might already be activated. Hence the exception backend is already set by the interrupt dispatcher.
       startInterruptHandlingThread(registerInfo->interruptCtrlNumber, registerInfo->interruptNumber);
       return newSubscriber;
     }
