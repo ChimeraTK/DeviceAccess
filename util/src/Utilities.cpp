@@ -328,6 +328,25 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+#ifdef __GNUG__
+#  include <cstdlib>
+#  include <memory>
+#  include <cxxabi.h>
+  std::string Utilities::cxx_demangle_symbol(const char* mangled_name) {
+    // taken from https://stackoverflow.com/questions/281818/unmangling-the-result-of-stdtype-infoname
+    int status = -4; // some arbitrary value to eliminate the compiler warning
+    std::unique_ptr<char, void (*)(void*)> res{abi::__cxa_demangle(mangled_name, nullptr, nullptr, &status), std::free};
+    return (status == 0) ? res.get() : mangled_name;
+  }
+#else
+  std::string Utilities::cxx_demangle_symbol(const char* mangled_name) {
+    // no demangling if not compiled with g++
+    return mangled_name;
+  }
+#endif
+
+  /********************************************************************************************************************/
+
   void Utilities::printStackTrace() {
     void* trace[16];
     char** messages;
