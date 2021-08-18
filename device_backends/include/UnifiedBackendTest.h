@@ -3,6 +3,7 @@
 #include <string>
 #include <functional>
 #include <list>
+#include <numeric>
 #include <thread>
 
 #include <boost/fusion/include/at_key.hpp>
@@ -1102,6 +1103,7 @@ namespace ChimeraTK {
   VersionNumber STORE_APPLICATION_BUFFER_version;                                                                      \
   DataValidity STORE_APPLICATION_BUFFER_validity;                                                                      \
   for(size_t i = 0; i < accessor.getNChannels(); ++i) {                                                                \
+    std::iota(accessor[i].begin(), accessor[i].end(), std::numeric_limits<UserType>::min() + 1);                       \
     STORE_APPLICATION_BUFFER_data.push_back(accessor[i]);                                                              \
   }                                                                                                                    \
   STORE_APPLICATION_BUFFER_version = accessor.getVersionNumber();                                                      \
