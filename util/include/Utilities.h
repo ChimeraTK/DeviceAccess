@@ -93,9 +93,6 @@ namespace ChimeraTK {
     /// @ref BackendFactory::setDMapFilePath
     static std::vector<std::string> getAliasList();
 
-    /// Demangle C++ symbol name
-    static std::string cxx_demangle_symbol(const char* mangled_name);
-
     /// Print a call stack trace (but continue executing the process normally).
     /// Can be used for debugging. C++ names will be demangled, if possible.
     static void printStackTrace();
