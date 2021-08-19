@@ -208,7 +208,7 @@ This document describes the behaviour of the TransferElement base class, the NDR
     - 9.3.4 The backend makes sure 9.3.2 is finished for each TransferElement before a call to Device::activateAsyncRead() re-activates its asynchronous transfer again (*).
   - \anchor transferElement_B_9_4 9.4 TransferElements without wait_for_new_data
      - \anchor transferElement_B_9_4_1 9.4.1 Each call to doReadTransferSynchonously() throws a ChimeraTK::runtime error until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_4_1 "U"]
-  - \anchor transferElement_B_9_5 9.5 Write operations throw a ChimeraTK::runtime error in doWriteTrasferYyy() until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_5 "U"]
+  - \anchor transferElement_B_9_5 9.5 Write operations throw a ChimeraTK::runtime error in doWriteTransferYyy() until open() has been called successfully. [\ref UnifiedTest_TransferElement_B_9_5 "U"]
 
 - \anchor transferElement_B_10 10. Removed. Became part of 9.
 
