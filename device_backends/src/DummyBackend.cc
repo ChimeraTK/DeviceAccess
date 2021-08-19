@@ -190,9 +190,9 @@ namespace ChimeraTK {
     return DummyRegisterRawAccessor(shared_from_this(), module, register_name);
   }
 
-  void DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
+  VersionNumber DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
     try {
-      dispatchInterrupt(interruptControllerNumber, interruptNumber);
+      return dispatchInterrupt(interruptControllerNumber, interruptNumber);
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("DummyBackend::triggerInterrupt(): Error: Unknown interrupt " +

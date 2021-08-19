@@ -8,6 +8,7 @@
 #include <mutex>
 
 #include "DeviceBackendImpl.h"
+#include "VersionNumber.h"
 
 namespace ChimeraTK {
 
@@ -115,8 +116,10 @@ namespace ChimeraTK {
      *  called from the interrupt handling thread.
      *
      *  Throws std::out_of_range if an invalid interruptControllerNumber/interruptNumber is given as parameter.
+     *
+     *   @returns The version number that was send with all data in this interrupt.
      */
-    void dispatchInterrupt(int interruptControllerNumber, int interruptNumber);
+    VersionNumber dispatchInterrupt(int interruptControllerNumber, int interruptNumber);
 
    private:
     /** This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to

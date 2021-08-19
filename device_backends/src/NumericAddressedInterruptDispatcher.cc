@@ -39,20 +39,13 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  void NumericAddressedInterruptDispatcher::trigger() {
+  VersionNumber NumericAddressedInterruptDispatcher::trigger() {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
-    VersionNumber ver; // a common VersionNumber for this trigger
+    VersionNumber ver; // a common VersionNumber for this trigger. Must be generated under mutex
     for(auto& var : _asyncVariables) {
       var.second->trigger(ver);
     }
-    _lastVersion = ver; // only set _lastVersion after all variables have been triggered
-  }
-
-  //*********************************************************************************************************************/
-  VersionNumber NumericAddressedInterruptDispatcher::getLastVersion() {
-    // unfortunately we need a lock because VersionNumber cannot be made atomic as it is not trivially copyable
-    std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
-    return _lastVersion;
+    return ver;
   }
 
   //*********************************************************************************************************************/
@@ -65,14 +58,15 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  void NumericAddressedInterruptDispatcher::activate() {
+  VersionNumber NumericAddressedInterruptDispatcher::activate() {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
     VersionNumber ver; // a common VersionNumber for all variables
     for(auto& var : _asyncVariables) {
       var.second->activate(ver);
     }
-    _lastVersion = ver; // only set _lastVersion after all variables have been triggered
     _isActive = true;
+
+    return ver;
   }
 
   //*********************************************************************************************************************/

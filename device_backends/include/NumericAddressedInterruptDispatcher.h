@@ -73,11 +73,7 @@ namespace ChimeraTK {
     /** Trigger all NumericAddressedAsyncVariables that are stored in this dispatcher. Creates a new VersionNumber and sends
      *  all data with this version.
      */
-    void trigger();
-
-    /** Allows a backend to get the last version number that was  send by this interrupt dispatcher. Usually only needed by dummies and for testing.
-     */
-    VersionNumber getLastVersion();
+    VersionNumber trigger();
 
     /** This function must only be called from the destructor of the AsyncNDRegisterAccessor which is created in the subscribe function!
      */
@@ -90,7 +86,7 @@ namespace ChimeraTK {
     /** Activate all accessors and send the initial value. Generates a new version number which is used for
      *  all initial values and  which can be read out with getLastVersion().
      */
-    void activate();
+    VersionNumber activate();
 
     /** Deactivate all subscribers without throwing an exception.
      *  This has to happen when a backend is closed.
@@ -102,7 +98,6 @@ namespace ChimeraTK {
 
     std::map<AccessorInstanceDescriptor, std::unique_ptr<NumericAddressedAsyncVariable>> _asyncVariables;
 
-    VersionNumber _lastVersion;
     bool _isActive{false};
   };
 

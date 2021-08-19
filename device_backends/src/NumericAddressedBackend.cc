@@ -233,9 +233,9 @@ namespace ChimeraTK {
     closeImpl();
   }
 
-  void NumericAddressedBackend::dispatchInterrupt(int interruptControllerNumber, int interruptNumber) {
+  VersionNumber NumericAddressedBackend::dispatchInterrupt(int interruptControllerNumber, int interruptNumber) {
     // This function just makes sure that at() is used to access the _interruptDispatchers map,
     // which guarantees that the map is not altered.
-    _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
+    return _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
   }
 } // namespace ChimeraTK

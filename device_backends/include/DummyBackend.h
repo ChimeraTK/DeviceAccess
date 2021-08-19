@@ -78,7 +78,7 @@ namespace ChimeraTK {
      */
     DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
 
-    void triggerInterrupt(int interruptControllerNumber, int interruptNumber) override;
+    VersionNumber triggerInterrupt(int interruptControllerNumber, int interruptNumber) override;
 
    protected:
     struct AddressRange {
