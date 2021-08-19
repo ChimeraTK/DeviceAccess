@@ -129,6 +129,59 @@ struct Integers_signed32_async {
     if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
   }
 };
+struct Integers_signed32_async_rw {
+  // Using the DUMMY_WRITEABLE register here since usually an async regiter is r/o implicitly
+  std::string path() { return "/Integers/signed32_async/DUMMY_WRITEABLE"; }
+  bool isWriteable() { return true; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() {
+    return { ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
+  }
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 1; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef int32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData();
+
+  DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", "/Integers/signed32_async"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return {{acc + 3}};
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    return {{acc}};
+  }
+
+  void setRemoteValue() {
+    acc = generateValue<minimumUserType>()[0][0];
+    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
+  }
+
+
+  void forceAsyncReadInconsistency() {
+    // Change value without sending it via ZeroMQ
+    acc = generateValue<minimumUserType>()[0][0];
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummy->throwExceptionRead = enable;
+    exceptionDummy->throwExceptionWrite = enable;
+    exceptionDummy->throwExceptionOpen = enable;
+    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
+  }
+};
+
 /**********************************************************************************************************************/
 
 template<typename Derived, typename rawUserType>
@@ -382,6 +435,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   ChimeraTK::UnifiedBackendTest<>()
       .addRegister<Integers_signed32>()
       .addRegister<Integers_signed32_async>()
+      .addRegister<Integers_signed32_async_rw>()
       .addRegister<ShortRaw_signed16>()
       .addRegister<ShortRaw_unsigned16>()
       .addRegister<ShortRaw_fixedPoint16_8u>()
