@@ -212,16 +212,20 @@ namespace ChimeraTK {
     assert(syncAccessor);
     try {
       syncAccessor->read();
-      _sendBuffer.value.swap(syncAccessor->accessChannels());
-      _sendBuffer.dataValidity = syncAccessor->dataValidity();
-      _sendBuffer.versionNumber = version;
 
       for(auto it = _subscribers.begin(); it != --(_subscribers.end()); ++it) {
         auto subscriber = it->lock();
         if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
+          _sendBuffer.value = syncAccessor->accessChannels();
+          _sendBuffer.dataValidity = syncAccessor->dataValidity();
+          _sendBuffer.versionNumber = version;
           function(subscriber, _sendBuffer);
         }
       }
+
+      _sendBuffer.value.swap(syncAccessor->accessChannels());
+      _sendBuffer.dataValidity = syncAccessor->dataValidity();
+      _sendBuffer.versionNumber = version;
       auto subscriber = _subscribers.back().lock();
       if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
         function(subscriber, _sendBuffer);
