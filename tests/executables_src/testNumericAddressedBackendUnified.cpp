@@ -428,6 +428,70 @@ struct MuxedNodma {
   }
 };
 
+struct MuxedNodmaAsync {
+  std::string path() { return "/TEST/NODMAASYNC"; }
+  bool isWriteable() { return false; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
+
+  size_t nChannels() { return 16; }
+  size_t nElementsPerChannel() { return 4; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef uint16_t minimumUserType;
+  typedef minimumUserType rawUserType;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData();
+
+  DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMAASYNC"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    std::vector<std::vector<UserType>> v;
+    v.resize(nChannels());
+    for(size_t c = 0; c < nChannels(); ++c) {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        v[c].push_back(uint16_t(acc[c][e] + 7 * c + 3 * e));
+      }
+    }
+    return v;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    std::vector<std::vector<UserType>> v;
+    v.resize(nChannels());
+    for(size_t c = 0; c < nChannels(); ++c) {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        v[c].push_back(acc[c][e]);
+      }
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<minimumUserType>();
+    for(size_t c = 0; c < nChannels(); ++c) {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        acc[c][e] = v[c][e];
+      }
+    }
+    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(5, 6);
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(5, 6);
+  }
+};
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
@@ -451,7 +515,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
 
 BOOST_AUTO_TEST_CASE(testMultiplexedRegisterAccessor) {
   std::cout << "*** testMultiplexedRegisterAccessor *** " << std::endl;
-  ChimeraTK::UnifiedBackendTest<>().addRegister<MuxedNodma>().runTests(cddMuxed);
+  ChimeraTK::UnifiedBackendTest<>().addRegister<MuxedNodma>().addRegister<MuxedNodmaAsync>().runTests(cddMuxed);
 }
 
 /**********************************************************************************************************************/
