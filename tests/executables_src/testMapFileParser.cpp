@@ -297,38 +297,38 @@ void MapFileParserTest::testInterruptMapFileParse() {
   std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo> RegisterInfoents(14);
 
   RegisterInfoents[0] =
-      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
           RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 0, 0);
 
   RegisterInfoents[1] =
-      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
           RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 1);
 
-  RegisterInfoents[2] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_UINT_1", 0x01, 0x100, 0x04, 0x0, 32, 0,
+  RegisterInfoents[2] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_UINT_1", 0x01, 0x100, 0x04, 0x0, 32, 0,
       false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 2, 0);
 
   RegisterInfoents[3] =
-      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true, "APP0", 0, false,
+      ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true, "APP0", 0, false,
           RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 2, 1);
 
-  RegisterInfoents[4] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04, 0x0, 32,
+  RegisterInfoents[4] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04, 0x0, 32,
       24, true, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 3, 0);
 
-  RegisterInfoents[5] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04, 0x0,
+  RegisterInfoents[5] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04, 0x0,
       32, 24, false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 3, 1);
 
-  RegisterInfoents[6] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_UINT", 0x03, 0x300, 12, 0x0, 32, 0,
+  RegisterInfoents[6] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_ARRAY_UINT", 0x03, 0x300, 12, 0x0, 32, 0,
       false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 0);
 
-  RegisterInfoents[7] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_INT", 0x03, 0x400, 12, 0x0, 32, 0,
+  RegisterInfoents[7] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_ARRAY_INT", 0x03, 0x400, 12, 0x0, 32, 0,
       true, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 1);
 
-  RegisterInfoents[8] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0, 32,
+  RegisterInfoents[8] = ChimeraTK::RegisterInfoMap::RegisterInfo("INTERRUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0, 32,
       24, false, "APP0", 0, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 4, 2);
 
