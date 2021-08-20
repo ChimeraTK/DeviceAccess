@@ -234,7 +234,7 @@ namespace ChimeraTK {
       // add it to the map
       RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, nElements * nBytesPerEntry, info.bar,
           maxWidth, (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, info.module, nChannels, true,
-          info.registerAccess);
+          info.registerAccess, info.dataType, info.interruptCtrlNumber, info.interruptNumber);
       newInfos.push_back(newEntry);
     }
     // insert the new entries to the catalogue
