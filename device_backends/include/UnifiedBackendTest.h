@@ -1103,7 +1103,9 @@ namespace ChimeraTK {
   VersionNumber STORE_APPLICATION_BUFFER_version;                                                                      \
   DataValidity STORE_APPLICATION_BUFFER_validity;                                                                      \
   for(size_t i = 0; i < accessor.getNChannels(); ++i) {                                                                \
-    std::iota(accessor[i].begin(), accessor[i].end(), std::numeric_limits<UserType>::min() + 1);                       \
+    if constexpr(std::is_arithmetic_v<UserType>)                                                                       \
+      std::iota(accessor[i].begin(), accessor[i].end(), std::numeric_limits<UserType>::min() + 1);                     \
+    if constexpr(std::is_same_v<std::string, UserType>) std::fill(accessor[i].begin(), accessor[i].end(), "FACECAFE"); \
     STORE_APPLICATION_BUFFER_data.push_back(accessor[i]);                                                              \
   }                                                                                                                    \
   STORE_APPLICATION_BUFFER_version = accessor.getVersionNumber();                                                      \
