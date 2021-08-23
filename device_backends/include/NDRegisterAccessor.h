@@ -9,8 +9,7 @@
 #define CHIMERA_TK_N_D_REGISTER_ACCESSOR_H
 
 #include <boost/make_shared.hpp>
-#include<boost/container/static_vector.hpp>
-
+#include <boost/container/static_vector.hpp>
 
 #include "Exception.h"
 #include "ForwardDeclarations.h"
@@ -91,8 +90,6 @@ namespace ChimeraTK {
      * allocations when transported in a cppext::future_queue.
      */
     struct Buffer {
-      Buffer(const std::vector<std::vector<UserType>> initialValue) : value(initialValue) {}
-
       Buffer(size_t nChannels, size_t nElements) : value(nChannels) {
         for(auto& channel : value) channel.resize(nElements);
       }
