@@ -74,8 +74,7 @@ namespace ChimeraTK {
     try {
       syncAccessor->read();
       this->executeWithCopy(
-          [](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>>&
-                  accessor,
+          [](boost::shared_ptr<AsyncNDRegisterAccessor<UserType>>& accessor,
               typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->sendDestructively(buf); },
           syncAccessor->accessChannels(), version, syncAccessor->dataValidity());
     }
@@ -119,9 +118,5 @@ namespace ChimeraTK {
     }
     return b;
   }
-
-  //  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedAsyncVariableImpl);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
-      AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher, AccessorInstanceDescriptor);
 
 } // namespace ChimeraTK

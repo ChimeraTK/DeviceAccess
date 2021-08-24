@@ -21,7 +21,4 @@ namespace ChimeraTK {
     return ver;
   }
 
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
-      AsyncNDRegisterAccessor, NumericAddressedInterruptDispatcher, AccessorInstanceDescriptor);
-
 } // namespace ChimeraTK

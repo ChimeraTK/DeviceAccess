@@ -66,7 +66,4 @@ namespace ChimeraTK {
     _isActive = false;
   }
 
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
-      AsyncNDRegisterAccessor, AsyncAccessorManager, AccessorInstanceDescriptor);
-
 } // namespace ChimeraTK

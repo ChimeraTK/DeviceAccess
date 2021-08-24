@@ -50,9 +50,8 @@ namespace ChimeraTK {
      *  it will internally create the matching AsyncVariable.
      */
     template<typename UserType>
-    boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>> subscribe(
-        boost::shared_ptr<DeviceBackend> backend, RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister,
-        AccessModeFlags flags);
+    boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> subscribe(boost::shared_ptr<DeviceBackend> backend,
+        RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     /** This function must only be called from the destructor of the AsyncNDRegisterAccessor which is created in the subscribe function!
      */
@@ -119,9 +118,7 @@ namespace ChimeraTK {
     /** Add an asynchronous accessor to the list of subscribers. If the variable is activated
      *  the subscribed accessor is immediately activated and will get its initial value.
      */
-    void subscribe(
-        boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>>
-            newSubscriber);
+    void subscribe(boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> newSubscriber);
 
     AsyncVariableImpl(bool isActive, size_t nChannels, size_t nElements);
 
@@ -133,8 +130,7 @@ namespace ChimeraTK {
    protected:
     virtual typename NDRegisterAccessor<UserType>::Buffer getInitialValue(VersionNumber const& versionNumber) = 0;
 
-    std::list<boost::weak_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>>>
-        _subscribers;
+    std::list<boost::weak_ptr<AsyncNDRegisterAccessor<UserType>>> _subscribers;
 
     typename NDRegisterAccessor<UserType>::Buffer _sendBuffer;
     std::atomic<bool> _isActive{false};
@@ -173,10 +169,8 @@ namespace ChimeraTK {
   template<typename UserType>
   void AsyncVariableImpl<UserType>::activate(VersionNumber const& version) {
     auto initialValue = getInitialValue(version);
-    executeWithCopy(
-        [](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>>&
-                accessor,
-            typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->activate(buf); },
+    executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType>>& accessor,
+                        typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->activate(buf); },
         initialValue.value, initialValue.versionNumber, initialValue.dataValidity);
     _isActive = true;
   }
@@ -229,9 +223,7 @@ namespace ChimeraTK {
 
   //*********************************************************************************************************************/
   template<typename UserType>
-  void AsyncVariableImpl<UserType>::subscribe(
-      boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>>
-          newSubscriber) {
+  void AsyncVariableImpl<UserType>::subscribe(boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> newSubscriber) {
     _subscribers.push_back(newSubscriber);
     if(_isActive) {
       auto initialValue = getInitialValue({}); // {} is the a new version number
@@ -253,9 +245,9 @@ namespace ChimeraTK {
 
   //*********************************************************************************************************************/
   template<typename UserType>
-  boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>>
-      AsyncAccessorManager::subscribe(boost::shared_ptr<DeviceBackend> backend, RegisterPath name, size_t numberOfWords,
-          size_t wordOffsetInRegister, AccessModeFlags flags) {
+  boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> AsyncAccessorManager::subscribe(
+      boost::shared_ptr<DeviceBackend> backend, RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister,
+      AccessModeFlags flags) {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
 
     AccessorInstanceDescriptor descriptor(name, typeid(UserType), numberOfWords, wordOffsetInRegister, flags);
@@ -267,10 +259,9 @@ namespace ChimeraTK {
 
     auto asyncVariable = dynamic_cast<AsyncVariableImpl<UserType>*>(_asyncVariables[descriptor].get());
     // we just take all the information we need for the async accessor from the sync accessor which has already done all the parsing
-    auto newSubscriber =
-        boost::make_shared<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AccessorInstanceDescriptor>>(backend,
-            shared_from_this(), name, asyncVariable->getNumberOfChannels(), asyncVariable->getNumberOfSamples(), flags,
-            descriptor, asyncVariable->getUnit(), asyncVariable->getDescription());
+    auto newSubscriber = boost::make_shared<AsyncNDRegisterAccessor<UserType>>(backend, shared_from_this(), name,
+        asyncVariable->getNumberOfChannels(), asyncVariable->getNumberOfSamples(), flags, descriptor,
+        asyncVariable->getUnit(), asyncVariable->getDescription());
     // Set the exception backend here. It might be that the accessor is already activated during subscription, and the backend shoud be set at that point
     newSubscriber->setExceptionBackend(backend);
 
@@ -287,14 +278,5 @@ namespace ChimeraTK {
     asyncVariable->subscribe(newSubscriber);
     return newSubscriber;
   }
-
-  //template<typename FunctionType, typename... FunctionArgs>
-  //void AsyncSubscriptionManager::executeForEach<FunctionType, FunctionArgs...>(FunctionType function, FunctionArgs... args) {
-  //  function(args...);
-  //}
-
-  //  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncVariableImpl);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
-      AsyncNDRegisterAccessor, AsyncAccessorManager, AccessorInstanceDescriptor);
 
 } // namespace ChimeraTK
