@@ -62,11 +62,6 @@ namespace ChimeraTK {
     bool isWriteable() override { return syncAccessor->isWriteable(); }
 
     typename NDRegisterAccessor<UserType>::Buffer getInitialValue(VersionNumber const& versionNumber) override;
-
-    using AsyncVariableImpl<UserType>::unsubscribe;
-    using AsyncVariableImpl<UserType>::sendException;
-    using AsyncVariableImpl<UserType>::deactivate;
-    using AsyncVariableImpl<UserType>::activate;
   };
 
   //*********************************************************************************************************************/
@@ -76,11 +71,17 @@ namespace ChimeraTK {
   //*********************************************************************************************************************/
   template<typename UserType>
   void NumericAddressedAsyncVariableImpl<UserType>::trigger(VersionNumber const& version) {
-    syncAccessor->read();
-    this->executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager,
-                                  AsyncAccessorManager::AccessorInstanceDescriptor>>& accessor,
-                              typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->sendDestructively(buf); },
-        syncAccessor->accessChannels(), version, syncAccessor->dataValidity());
+    try {
+      syncAccessor->read();
+      this->executeWithCopy(
+          [](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager,
+                  AsyncAccessorManager::AccessorInstanceDescriptor>>& accessor,
+              typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->sendDestructively(buf); },
+          syncAccessor->accessChannels(), version, syncAccessor->dataValidity());
+    }
+    catch(ChimeraTK::runtime_error&) {
+      // Nothing to do. Backend's set exception has already been called by the sync accessor
+    }
   }
 
   //*********************************************************************************************************************/
