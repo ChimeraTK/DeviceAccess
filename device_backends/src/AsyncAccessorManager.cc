@@ -3,7 +3,7 @@
 namespace ChimeraTK {
 
   //*********************************************************************************************************************/
-  bool AsyncAccessorManager::AccessorInstanceDescriptor::operator<(AccessorInstanceDescriptor const& other) const {
+  bool AccessorInstanceDescriptor::operator<(AccessorInstanceDescriptor const& other) const {
     if(name == other.name) {
       if(type == other.type) {
         if(numberOfWords == other.numberOfWords) {
@@ -23,7 +23,7 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  void AsyncAccessorManager::unsubscribe(AsyncAccessorManager::AccessorInstanceDescriptor const& descriptor) {
+  void AsyncAccessorManager::unsubscribe(AccessorInstanceDescriptor const& descriptor) {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
     auto varIter = _asyncVariables.find(descriptor);
     if(varIter == _asyncVariables.end()) {
@@ -67,6 +67,6 @@ namespace ChimeraTK {
   }
 
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
-      AsyncNDRegisterAccessor, AsyncAccessorManager, AsyncAccessorManager::AccessorInstanceDescriptor);
+      AsyncNDRegisterAccessor, AsyncAccessorManager, AccessorInstanceDescriptor);
 
 } // namespace ChimeraTK
