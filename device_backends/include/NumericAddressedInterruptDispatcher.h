@@ -10,7 +10,7 @@ namespace ChimeraTK {
   /** Typeless base class. The implementations will have a list of all asynchronous
    *  accessors and one synchrounous accessor.
    */
-  struct NumericAddressedAsyncVariable : public AsyncVariable {
+  struct NumericAddressedAsyncVariable {
     virtual ~NumericAddressedAsyncVariable() = default;
 
     /** Read the synchronous accessor and push the data to all subscribers,
@@ -44,7 +44,7 @@ namespace ChimeraTK {
   /** Implementation of the NumericAddressedAsyncVariable for the concrete UserType.
    */
   template<typename UserType>
-  struct NumericAddressedAsyncVariableImpl : public AsyncVariableImpl<UserType, NumericAddressedAsyncVariable> {
+  struct NumericAddressedAsyncVariableImpl : public AsyncVariableImpl<UserType>, public NumericAddressedAsyncVariable {
     void trigger(VersionNumber const& version) override;
 
     /** The constructor takes an already created synchronous accessor and a flag
@@ -62,6 +62,11 @@ namespace ChimeraTK {
     bool isWriteable() override { return syncAccessor->isWriteable(); }
 
     typename NDRegisterAccessor<UserType>::Buffer getInitialValue(VersionNumber const& versionNumber) override;
+
+    using AsyncVariableImpl<UserType>::unsubscribe;
+    using AsyncVariableImpl<UserType>::sendException;
+    using AsyncVariableImpl<UserType>::deactivate;
+    using AsyncVariableImpl<UserType>::activate;
   };
 
   //*********************************************************************************************************************/
@@ -85,26 +90,17 @@ namespace ChimeraTK {
     auto synchronousFlags = descriptor.flags;
     synchronousFlags.remove(AccessMode::wait_for_new_data);
     // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
-    return std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(
-        backend->getRegisterAccessor<UserType>(
-            descriptor.name, descriptor.numberOfWords, descriptor.wordOffsetInRegister, synchronousFlags),
-        isActive);
+    auto syncAccessor = backend->getRegisterAccessor<UserType>(
+        descriptor.name, descriptor.numberOfWords, descriptor.wordOffsetInRegister, synchronousFlags);
+    return std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(syncAccessor, isActive);
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
   NumericAddressedAsyncVariableImpl<UserType>::NumericAddressedAsyncVariableImpl(
       boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, bool isActive)
-  : AsyncVariableImpl<UserType, NumericAddressedAsyncVariable>(
-        isActive, syncAccessor->getNumberOfChannels(), syncAccessor->getNumberOfSamples()),
+  : AsyncVariableImpl<UserType>(isActive, syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
     syncAccessor(syncAccessor_) {}
-          _sendBuffer.value = syncAccessor->accessChannels();
-          _sendBuffer.dataValidity = syncAccessor->dataValidity();
-          _sendBuffer.versionNumber = version;
-
-      _sendBuffer.value.swap(syncAccessor->accessChannels());
-      _sendBuffer.dataValidity = syncAccessor->dataValidity();
-      _sendBuffer.versionNumber = version;
 
   template<typename UserType>
   typename NDRegisterAccessor<UserType>::Buffer NumericAddressedAsyncVariableImpl<UserType>::getInitialValue(

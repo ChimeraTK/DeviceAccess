@@ -111,13 +111,11 @@ namespace ChimeraTK {
     bool _isActive{false};
   };
 
-  /** We use the Curiously Recuring Template Patter here (which means the base class is a template parameter).
-   *  Conceptually this is an AsyncVariable, which is the default AsyncVariableType. The implementation might
-   *  need the option to extend this functionality before templating to a user type, so pointers with
-   *  the extended AsyncVariableType can be stord in a list and be iterated.
+  /** This class provides parts the implementation of AsyncVariable. It still is a base class with has pure virtual functions, but
+   *  at the same time provides some final implementations of virtuals functions from AsyncVariable.
    */
-  template<typename UserType, typename AsyncVariableType = AsyncVariable>
-  struct AsyncVariableImpl : public AsyncVariableType {
+  template<typename UserType>
+  struct AsyncVariableImpl : public AsyncVariable {
     /** Implementation that activates all subscribers and sends the initial value (complete buffer with version number and data validity).
      *  This function has to be called by all activate implementations to distribute the data to the subscribers.
      *
@@ -171,8 +169,8 @@ namespace ChimeraTK {
   // Implementations
   //*********************************************************************************************************************/
 
-  template<typename UserType, typename AsyncVariableType>
-  size_t AsyncVariableImpl<UserType, AsyncVariableType>::unsubscribe() {
+  template<typename UserType>
+  size_t AsyncVariableImpl<UserType>::unsubscribe() {
     for(auto it = _subscribers.begin(); it != _subscribers.end(); ++it) {
       // This code is called from the destructor of an AsyncNDRegisterAccessor inside a boost::shared_ptr.
       // When this code is called the weak_ptr is already not lockable any more. We just use this to identify
@@ -189,8 +187,8 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  template<typename UserType, typename AsyncVariableType>
-  void AsyncVariableImpl<UserType, AsyncVariableType>::activate(VersionNumber const& version) {
+  template<typename UserType>
+  void AsyncVariableImpl<UserType>::activate(VersionNumber const& version) {
     auto initialValue = getInitialValue(version);
     executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType, AsyncAccessorManager,
                             AsyncAccessorManager::AccessorInstanceDescriptor>>& accessor,
@@ -200,8 +198,8 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  template<typename UserType, typename AsyncVariableType>
-  void AsyncVariableImpl<UserType, AsyncVariableType>::sendException(std::exception_ptr e) {
+  template<typename UserType>
+  void AsyncVariableImpl<UserType>::sendException(std::exception_ptr e) {
     _isActive = false;
     for(auto& it : _subscribers) {
       auto subscriber = it.lock();
@@ -212,14 +210,14 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  template<typename UserType, typename AsyncVariableType>
-  AsyncVariableImpl<UserType, AsyncVariableType>::AsyncVariableImpl(bool isActive, size_t nChannels, size_t nElements)
+  template<typename UserType>
+  AsyncVariableImpl<UserType>::AsyncVariableImpl(bool isActive, size_t nChannels, size_t nElements)
   : _sendBuffer(nChannels, nElements), _isActive(isActive) {}
 
   //*********************************************************************************************************************/
-  template<typename UserType, typename AsyncVariableType>
+  template<typename UserType>
   template<typename Function>
-  void AsyncVariableImpl<UserType, AsyncVariableType>::executeWithCopy(Function function,
+  void AsyncVariableImpl<UserType>::executeWithCopy(Function function,
       typename std::vector<std::vector<UserType>>& value, VersionNumber versionNumber, DataValidity dataValidity) {
     assert(!_subscribers.empty());
 
@@ -246,8 +244,8 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  template<typename UserType, typename AsyncVariableType>
-  void AsyncVariableImpl<UserType, AsyncVariableType>::subscribe(boost::shared_ptr<
+  template<typename UserType>
+  void AsyncVariableImpl<UserType>::subscribe(boost::shared_ptr<
       AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AsyncAccessorManager::AccessorInstanceDescriptor>>
           newSubscriber) {
     _subscribers.push_back(newSubscriber);
@@ -258,8 +256,8 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  template<typename UserType, typename AsyncVariableType>
-  void AsyncVariableImpl<UserType, AsyncVariableType>::deactivate() {
+  template<typename UserType>
+  void AsyncVariableImpl<UserType>::deactivate() {
     for(auto it : _subscribers) {
       auto subscriber = it.lock();
       if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
