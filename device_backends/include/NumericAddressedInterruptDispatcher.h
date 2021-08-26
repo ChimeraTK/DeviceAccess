@@ -3,6 +3,7 @@
 #include "AsyncNDRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "AsyncAccessorManager.h"
+#include "TransferGroup.h"
 #include <mutex>
 
 namespace ChimeraTK {
@@ -39,6 +40,11 @@ namespace ChimeraTK {
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(
         boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive);
+
+    bool prepareActivate(VersionNumber const& v) override;
+
+   protected:
+    TransferGroup _transferGroup;
   };
 
   /** Implementation of the NumericAddressedAsyncVariable for the concrete UserType.
@@ -71,16 +77,9 @@ namespace ChimeraTK {
   //*********************************************************************************************************************/
   template<typename UserType>
   void NumericAddressedAsyncVariableImpl<UserType>::trigger(VersionNumber const& version) {
-    try {
-      syncAccessor->read();
-      this->executeWithCopy(
-          [](boost::shared_ptr<AsyncNDRegisterAccessor<UserType>>& accessor,
-              typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->sendDestructively(buf); },
-          syncAccessor->accessChannels(), version, syncAccessor->dataValidity());
-    }
-    catch(ChimeraTK::runtime_error&) {
-      // Nothing to do. Backend's set exception has already been called by the sync accessor
-    }
+    this->executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType>>& accessor,
+                              typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->sendDestructively(buf); },
+        syncAccessor->accessChannels(), version, syncAccessor->dataValidity());
   }
 
   //*********************************************************************************************************************/
@@ -92,6 +91,17 @@ namespace ChimeraTK {
     // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
     auto syncAccessor = backend->getRegisterAccessor<UserType>(
         descriptor.name, descriptor.numberOfWords, descriptor.wordOffsetInRegister, synchronousFlags);
+    // read the initial value before adding it to the transfer group
+    if(isActive) {
+      try {
+        syncAccessor->read();
+      }
+      catch(ChimeraTK::runtime_error&) {
+        isActive = false;
+      }
+    }
+
+    _transferGroup.addAccessor(syncAccessor);
     return std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(syncAccessor, isActive);
   }
 
@@ -108,7 +118,6 @@ namespace ChimeraTK {
     typename NDRegisterAccessor<UserType>::Buffer b{syncAccessor->getNumberOfChannels(),
         syncAccessor->getNumberOfSamples()}; // fixme:: Try an implementation without allocating buffer
     try {
-      syncAccessor->read();
       b.value = syncAccessor->accessChannels(); // hew, this is expensive. Copying a full buffer_2D
       b.dataValidity = syncAccessor->dataValidity();
       b.versionNumber = versionNumber;

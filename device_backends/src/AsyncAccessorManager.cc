@@ -48,11 +48,14 @@ namespace ChimeraTK {
   //*********************************************************************************************************************/
   VersionNumber AsyncAccessorManager::activate() {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
+
     VersionNumber ver; // a common VersionNumber for all variables
-    for(auto& var : _asyncVariables) {
-      var.second->activate(ver);
+    if(prepareActivate(ver)) {
+      for(auto& var : _asyncVariables) {
+        var.second->activate(ver);
+      }
+      _isActive = true;
     }
-    _isActive = true;
 
     return ver;
   }

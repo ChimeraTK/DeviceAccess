@@ -63,8 +63,18 @@ namespace ChimeraTK {
 
     /** Activate all accessors and send the initial value. Generates a new version number which is used for
      *  all initial values and  which can be read out with getLastVersion().
+     *
+     *  It calls perpareActive before iterating the list of accessors.
      */
     VersionNumber activate();
+
+    /** Actions to be taken before activate() is called on all AsyncVariables.
+     *  Returns whether the preparation was successful. Only in success the activation takes place.
+     *
+     *  Example: The NumericAddressedBackend is executing read() on a TransferGroup to get all initial values.
+     *  If an exception occurs, this function returns false and the activation does not take place.
+     */
+    virtual bool prepareActivate([[maybe_unused]] VersionNumber const& v) { return true; }
 
     /** Deactivate all subscribers without throwing an exception.
      *  This has to happen when a backend is closed.
@@ -86,12 +96,14 @@ namespace ChimeraTK {
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable,
         std::unique_ptr<AsyncVariable>(boost::shared_ptr<DeviceBackend>, AccessorInstanceDescriptor const&, bool));
 
-   private:
+    // This mutext protects the _asyncVariables container and all its contents, and the _isActive flag. You must not touch those variables
+    // without holding the mutex. It serves two pruposes:
+    // 1. Variables can be added or removed from the container at any time. It is not safe to handle an element without holding the lock.
+    // 2. The elements in the container are not thread-safe as well. We use the same lock as it is needed for 1. anyway.
     std::recursive_mutex _variablesMutex;
-
-    std::map<AccessorInstanceDescriptor, std::unique_ptr<AsyncVariable>> _asyncVariables;
-
-    bool _isActive{false};
+    std::map<AccessorInstanceDescriptor, std::unique_ptr<AsyncVariable>>
+        _asyncVariables;   ///< protected by _variablesMutex
+    bool _isActive{false}; ///< protected by _variablesMutex
   };
 
   /** This class provides parts the implementation of AsyncVariable. It still is a base class with has pure virtual functions, but
