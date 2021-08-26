@@ -58,7 +58,7 @@ namespace ChimeraTK {
      *
      * @return Minimum alignment in bytes
      */
-    virtual size_t minimumTransferAlignment() const { return 1; }
+    virtual size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const { return 1; }
 
     boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 

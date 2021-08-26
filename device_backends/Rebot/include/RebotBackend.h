@@ -70,7 +70,7 @@ namespace ChimeraTK {
 
     bool isFunctional() const override;
 
-    size_t minimumTransferAlignment() const override { return 4; }
+    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
    protected:
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);

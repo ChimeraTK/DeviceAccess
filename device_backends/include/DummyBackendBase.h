@@ -49,7 +49,7 @@ namespace ChimeraTK {
 
     virtual ~DummyBackendBase() {}
 
-    size_t minimumTransferAlignment() const override { return 4; }
+    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
     /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
      *  for that particular interrupt controller and interrupt number, the data will be read out
