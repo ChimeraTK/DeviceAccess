@@ -49,7 +49,7 @@ namespace ChimeraTK {
     /**
      * @brief Determines the supported minimum alignment for any read/write requests.
      *
-     * If the backend expects a particular alignment for read()/write() calls it should return a value biggern than 1.
+     * If the backend expects a particular alignment for read()/write() calls it should return a value bigger than 1.
      * The address and sizeInBytes arguments of the read()/write() calls will be always an integer multiple of this
      * number. Any unaligned transfers will be changed to meet these criteria (additional padding data will be thrown
      * away).
