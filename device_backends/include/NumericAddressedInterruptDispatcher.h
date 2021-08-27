@@ -7,17 +7,15 @@
 #include <mutex>
 
 namespace ChimeraTK {
-
   /** Typeless base class. The implementations will have a list of all asynchronous
-   *  accessors and one synchrounous accessor.
-   */
+  *  accessors and one synchrounous accessor.
+  */
   struct NumericAddressedAsyncVariable {
     virtual ~NumericAddressedAsyncVariable() = default;
 
-    /** Read the synchronous accessor and push the data to all subscribers,
-     *  using the specified version number.
-     */
-    virtual void trigger(VersionNumber const& version) = 0;
+    /** Fill the user buffer from the sync accessor, and replace the version number with the given version.
+    */
+    virtual void fillSendBuffer(VersionNumber const& version) = 0;
   };
 
   /** The NumericAddressedInterruptDispatcher has two main functionalities:
@@ -41,7 +39,8 @@ namespace ChimeraTK {
     std::unique_ptr<AsyncVariable> createAsyncVariable(
         boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive);
 
-    bool prepareActivate(VersionNumber const& v) override;
+    //bool prepareActivate(VersionNumber const& v) override;
+    VersionNumber activate() override;
 
    protected:
     TransferGroup _transferGroup;
@@ -51,13 +50,13 @@ namespace ChimeraTK {
    */
   template<typename UserType>
   struct NumericAddressedAsyncVariableImpl : public AsyncVariableImpl<UserType>, public NumericAddressedAsyncVariable {
-    void trigger(VersionNumber const& version) override;
+    void fillSendBuffer(VersionNumber const& version) override;
 
     /** The constructor takes an already created synchronous accessor and a flag
      *  whether the variable is active. If the variable is active all new subscribers will automatically
      *  be activated and immediately get their initial value.
      */
-    NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, bool isActive);
+    NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
 
     boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
 
@@ -66,23 +65,12 @@ namespace ChimeraTK {
     const std::string& getUnit() override { return syncAccessor->getUnit(); }
     const std::string& getDescription() override { return syncAccessor->getDescription(); }
     bool isWriteable() override { return syncAccessor->isWriteable(); }
-
-    typename NDRegisterAccessor<UserType>::Buffer getInitialValue(VersionNumber const& versionNumber) override;
   };
 
   //*********************************************************************************************************************/
   // Implementations
   //*********************************************************************************************************************/
 
-  //*********************************************************************************************************************/
-  template<typename UserType>
-  void NumericAddressedAsyncVariableImpl<UserType>::trigger(VersionNumber const& version) {
-    this->executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType>>& accessor,
-                              typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->sendDestructively(buf); },
-        syncAccessor->accessChannels(), version, syncAccessor->dataValidity());
-  }
-
-  //*********************************************************************************************************************/
   template<typename UserType>
   std::unique_ptr<AsyncVariable> NumericAddressedInterruptDispatcher::createAsyncVariable(
       boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive) {
@@ -102,30 +90,24 @@ namespace ChimeraTK {
     }
 
     _transferGroup.addAccessor(syncAccessor);
-    return std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(syncAccessor, isActive);
+    return std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(syncAccessor);
+  }
+
+  //*********************************************************************************************************************/
+  template<typename UserType>
+  void NumericAddressedAsyncVariableImpl<UserType>::fillSendBuffer(VersionNumber const& version) {
+    this->_sendBuffer.versionNumber = version;
+    this->_sendBuffer.dataValidity = syncAccessor->dataValidity();
+    this->_sendBuffer.value.swap(syncAccessor->accessChannels());
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
   NumericAddressedAsyncVariableImpl<UserType>::NumericAddressedAsyncVariableImpl(
-      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, bool isActive)
-  : AsyncVariableImpl<UserType>(isActive, syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
-    syncAccessor(syncAccessor_) {}
-
-  template<typename UserType>
-  typename NDRegisterAccessor<UserType>::Buffer NumericAddressedAsyncVariableImpl<UserType>::getInitialValue(
-      VersionNumber const& versionNumber) {
-    typename NDRegisterAccessor<UserType>::Buffer b{syncAccessor->getNumberOfChannels(),
-        syncAccessor->getNumberOfSamples()}; // fixme:: Try an implementation without allocating buffer
-    try {
-      b.value = syncAccessor->accessChannels(); // hew, this is expensive. Copying a full buffer_2D
-      b.dataValidity = syncAccessor->dataValidity();
-      b.versionNumber = versionNumber;
-    }
-    catch(ChimeraTK::runtime_error&) {
-      // no action needed. The synchronous read() already triggered backend->setException();
-    }
-    return b;
+      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_)
+  : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
+    syncAccessor(syncAccessor_) {
+    fillSendBuffer({});
   }
 
 } // namespace ChimeraTK

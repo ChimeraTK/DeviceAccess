@@ -10,7 +10,6 @@ namespace ChimeraTK {
   VersionNumber NumericAddressedInterruptDispatcher::trigger() {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
     VersionNumber ver; // a common VersionNumber for this trigger. Must be generated under mutex
-
     if(!_isActive) return ver;
 
     try {
@@ -19,7 +18,8 @@ namespace ChimeraTK {
       for(auto& var : _asyncVariables) {
         auto numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());
         assert(numericAddressAsyncVariable);
-        numericAddressAsyncVariable->trigger(ver);
+        numericAddressAsyncVariable->fillSendBuffer(ver);
+        var.second->send(); // send function from  the AsyncVariable base class
       }
     }
     catch(ChimeraTK::runtime_error&) {
@@ -29,14 +29,26 @@ namespace ChimeraTK {
     return ver;
   }
 
-  bool NumericAddressedInterruptDispatcher::prepareActivate([[maybe_unused]] VersionNumber const& v) {
+  //*********************************************************************************************************************/
+  VersionNumber NumericAddressedInterruptDispatcher::activate() {
+    std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
+    VersionNumber ver; // a common VersionNumber for this trigger. Must be generated under mutex
     try {
       _transferGroup.read();
+
+      for(auto& var : _asyncVariables) {
+        auto numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());
+        assert(numericAddressAsyncVariable);
+        numericAddressAsyncVariable->fillSendBuffer(ver);
+        var.second->activateAndSend(); // function from  the AsyncVariable base class
+      }
+      _isActive = true;
     }
     catch(ChimeraTK::runtime_error&) {
-      return false;
+      // Nothing to do. Backend's set exception has already been called by the accessor in the transfer group that raised it.
     }
-    return true;
+
+    return ver;
   }
 
 } // namespace ChimeraTK

@@ -5,7 +5,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   AsyncNDRegisterAccessor<UserType>::~AsyncNDRegisterAccessor() {
-    _accessorManager->unsubscribe(_descriptor);
+    _accessorManager->unsubscribe(this->getId());
   }
 
   template<typename UserType>
@@ -40,7 +40,7 @@ namespace ChimeraTK {
 
   /**********************************************************************************************************/
   template<typename UserType>
-  void AsyncNDRegisterAccessor<UserType>::doPostRead(TransferType type, bool updateDataBuffer) {
+  void AsyncNDRegisterAccessor<UserType>::doPostRead([[maybe_unused]] TransferType type, bool updateDataBuffer) {
     if(updateDataBuffer) {
       // do not update meta data if updateDataBuffer == false, since this is the equivalent to a backend
       // implementation, not a decorator

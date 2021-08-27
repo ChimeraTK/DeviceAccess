@@ -23,17 +23,10 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  void AsyncAccessorManager::unsubscribe(AccessorInstanceDescriptor const& descriptor) {
+  void AsyncAccessorManager::unsubscribe(TransferElementID id) {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
-    auto varIter = _asyncVariables.find(descriptor);
-    if(varIter == _asyncVariables.end()) {
-      throw ChimeraTK::logic_error("AsyncSubscriptionManager: cannot unsubscribe register " + descriptor.name +
-          " because it is not subscribed in that configuration.");
-    }
-    auto& var = varIter->second;  // the iterator of a map is a key-value pair
-    if(var->unsubscribe() == 0) { // no subscribers left if it returns 0
-      _asyncVariables.erase(varIter);
-    }
+    // The descrutor of the AsyncVariable implementation must do all necesary clean-up
+    _asyncVariables.erase(id);
   }
 
   //*********************************************************************************************************************/
@@ -46,19 +39,19 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  VersionNumber AsyncAccessorManager::activate() {
-    std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
+  //  VersionNumber AsyncAccessorManager::activate() {
+  //    std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
 
-    VersionNumber ver; // a common VersionNumber for all variables
-    if(prepareActivate(ver)) {
-      for(auto& var : _asyncVariables) {
-        var.second->activate(ver);
-      }
-      _isActive = true;
-    }
+  //    VersionNumber ver; // a common VersionNumber for all variables
+  //    if(prepareActivate(ver)) {
+  //      for(auto& var : _asyncVariables) {
+  //        var.second->activateAndSend();
+  //      }
+  //      _isActive = true;
+  //    }
 
-    return ver;
-  }
+  //    return ver;
+  //  }
 
   //*********************************************************************************************************************/
   void AsyncAccessorManager::deactivate() {

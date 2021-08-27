@@ -12,13 +12,16 @@ namespace ChimeraTK {
   struct AsyncVariable {
     virtual ~AsyncVariable() = default;
 
-    /** Activate all subscribers and send an initial value.
+    /** Activate all subscribers and send an initial value from the _sendBuffer of the AsyncVariableImpl.
+     *  The buffer has to be prepared before calling this function (incl. version number and data validity flag).
      */
-    virtual void activate(VersionNumber const& version) = 0;
-    /** Read the synchronous accessor and push the data to all subscribers,
-     *  using the specified version number.
+    virtual void activateAndSend() = 0;
+
+    /** Send the value from the _sendBuffer of the AsyncVariableImpl.
+     *  The buffer has to be prepared before calling this function (incl. version number and data validity flag).
      */
-    virtual size_t unsubscribe() = 0;
+    virtual void send() = 0;
+
     /** Send an exception to all subscribers. This automatically de-activates then.
      */
     virtual void sendException(std::exception_ptr e) = 0;
@@ -55,7 +58,7 @@ namespace ChimeraTK {
 
     /** This function must only be called from the destructor of the AsyncNDRegisterAccessor which is created in the subscribe function!
      */
-    void unsubscribe(AccessorInstanceDescriptor const& descriptor);
+    void unsubscribe(TransferElementID id);
 
     /** Send an exception to all accessors. This automatically de-activates them.
      */
@@ -66,7 +69,7 @@ namespace ChimeraTK {
      *
      *  It calls perpareActive before iterating the list of accessors.
      */
-    VersionNumber activate();
+    virtual VersionNumber activate() = 0;
 
     /** Actions to be taken before activate() is called on all AsyncVariables.
      *  Returns whether the preparation was successful. Only in success the activation takes place.
@@ -74,7 +77,7 @@ namespace ChimeraTK {
      *  Example: The NumericAddressedBackend is executing read() on a TransferGroup to get all initial values.
      *  If an exception occurs, this function returns false and the activation does not take place.
      */
-    virtual bool prepareActivate([[maybe_unused]] VersionNumber const& v) { return true; }
+    //virtual bool prepareActivate([[maybe_unused]] VersionNumber const& v) { return true; }
 
     /** Deactivate all subscribers without throwing an exception.
      *  This has to happen when a backend is closed.
@@ -93,17 +96,24 @@ namespace ChimeraTK {
       }
     }
 
+    /*** Each implementation must provice a function to create specific AsyncVariables.
+     *   When the variable is returned, async accessor is not set yet. This would leave the whole creation
+     *   of the async accessor to the backend, would mean a lot of code duplication. It also cannot be
+     *   retreived from the AsyncVariable as this only contains a waek pointer.
+     *   If the isActiv flag is set, the _sendBuffer must already contain the initial value. The variable itself
+     *   is not activated yet as the async accessor is still not set.
+     */
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable,
-        std::unique_ptr<AsyncVariable>(boost::shared_ptr<DeviceBackend>, AccessorInstanceDescriptor const&, bool));
+        std::unique_ptr<AsyncVariable>(
+            boost::shared_ptr<DeviceBackend>, AccessorInstanceDescriptor const&, bool isActive));
 
     // This mutext protects the _asyncVariables container and all its contents, and the _isActive flag. You must not touch those variables
     // without holding the mutex. It serves two pruposes:
     // 1. Variables can be added or removed from the container at any time. It is not safe to handle an element without holding the lock.
     // 2. The elements in the container are not thread-safe as well. We use the same lock as it is needed for 1. anyway.
     std::recursive_mutex _variablesMutex;
-    std::map<AccessorInstanceDescriptor, std::unique_ptr<AsyncVariable>>
-        _asyncVariables;   ///< protected by _variablesMutex
-    bool _isActive{false}; ///< protected by _variablesMutex
+    std::map<TransferElementID, std::unique_ptr<AsyncVariable>> _asyncVariables; ///< protected by _variablesMutex
+    bool _isActive{false};                                                       ///< protected by _variablesMutex
   };
 
   /** This class provides parts the implementation of AsyncVariable. It still is a base class with has pure virtual functions, but
@@ -117,142 +127,75 @@ namespace ChimeraTK {
      *  The initial value is swapped out to avoid unnecessary copies. If you need a copy, you have to make one
      *  before calling this function.
      */
-    void activateImpl(typename NDRegisterAccessor<UserType>::Buffer& initialValue);
+    void send() final;
 
-    /** Implementation that activates all subscribers and sends the initial value (complete buffer with version number and data validity).
-     *  This function has to be called by all activate implementations to distribute the data to the subscribers.
-     *
-     *  The initial value is swapped out to avoid unnecessary copies. If you need a copy, you have to make one
-     *  before calling this function.
-     */
-    void dispatch(typename NDRegisterAccessor<UserType>::Buffer& initialValue);
+    AsyncVariableImpl(size_t nChannels, size_t nElements);
 
-    /** Add an asynchronous accessor to the list of subscribers. If the variable is activated
-     *  the subscribed accessor is immediately activated and will get its initial value.
-     */
-    void subscribe(boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> newSubscriber);
-
-    AsyncVariableImpl(bool isActive, size_t nChannels, size_t nElements);
-
-    size_t unsubscribe() final;
     void sendException(std::exception_ptr e) final;
     void deactivate() final;
-    void activate(VersionNumber const& version) final;
+    void activateAndSend() final;
+
+   private:
+    // This weak pointer is private so the user cannot bypass correct locking and nullptr-checking.
+    boost::weak_ptr<AsyncNDRegisterAccessor<UserType>> _asyncAccessor;
+    friend AsyncAccessorManager; // is allowed to set the variable
 
    protected:
-    virtual typename NDRegisterAccessor<UserType>::Buffer getInitialValue(VersionNumber const& versionNumber) = 0;
-
-    std::list<boost::weak_ptr<AsyncNDRegisterAccessor<UserType>>> _subscribers;
-
     typename NDRegisterAccessor<UserType>::Buffer _sendBuffer;
     std::atomic<bool> _isActive{false};
-
-    /** Helper function which loops all subscribers. It includes a copy minimisation
-     *  (the last subscriber is swapped instead of copied).
-     *  Inside of the loop it calls the templated labda function. Used in activate and dispatch.
-     */
-    template<typename Function>
-    void executeWithCopy(Function function, typename std::vector<std::vector<UserType>>& value,
-        VersionNumber versionNumber, DataValidity dataValidity);
   };
 
   //*********************************************************************************************************************/
   // Implementations
   //*********************************************************************************************************************/
 
-  template<typename UserType>
-  size_t AsyncVariableImpl<UserType>::unsubscribe() {
-    for(auto it = _subscribers.begin(); it != _subscribers.end(); ++it) {
-      // This code is called from the destructor of an AsyncNDRegisterAccessor inside a boost::shared_ptr.
-      // When this code is called the weak_ptr is already not lockable any more. We just use this to identify
-      // which element is to be removed. If we get the wrong one it does not matter because then the other destructor will get it.
-      if(it->lock().get() == nullptr) {
-        _subscribers.erase(it);
-        return _subscribers.size();
-      }
-    }
-
-    std::cerr << "AsyncVariable::unsubscribe must only be called from the destructor of an AsyncDNRegisterAccessor!"
-              << std::endl;
-    assert(false);
-  }
-
   //*********************************************************************************************************************/
   template<typename UserType>
-  void AsyncVariableImpl<UserType>::activate(VersionNumber const& version) {
-    auto initialValue = getInitialValue(version);
-    executeWithCopy([](boost::shared_ptr<AsyncNDRegisterAccessor<UserType>>& accessor,
-                        typename NDRegisterAccessor<UserType>::Buffer& buf) { accessor->activate(buf); },
-        initialValue.value, initialValue.versionNumber, initialValue.dataValidity);
-    _isActive = true;
+  void AsyncVariableImpl<UserType>::activateAndSend() {
+    // The initial value must have been set before calling this function. We can just send it.
+    auto subscriber = _asyncAccessor.lock();
+    if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
+      subscriber->activate(_sendBuffer);
+      _isActive = true;
+    }
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
   void AsyncVariableImpl<UserType>::sendException(std::exception_ptr e) {
     _isActive = false;
-    for(auto& it : _subscribers) {
-      auto subscriber = it.lock();
-      if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
-        subscriber->sendException(e);
-      }
-    }
-  }
-
-  //*********************************************************************************************************************/
-  template<typename UserType>
-  AsyncVariableImpl<UserType>::AsyncVariableImpl(bool isActive, size_t nChannels, size_t nElements)
-  : _sendBuffer(nChannels, nElements), _isActive(isActive) {}
-
-  //*********************************************************************************************************************/
-  template<typename UserType>
-  template<typename Function>
-  void AsyncVariableImpl<UserType>::executeWithCopy(Function function,
-      typename std::vector<std::vector<UserType>>& value, VersionNumber versionNumber, DataValidity dataValidity) {
-    assert(!_subscribers.empty());
-
-    for(auto it = _subscribers.begin(); it != --(_subscribers.end()); ++it) {
-      auto subscriber = it->lock();
-      if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
-        // Do the copy here
-        // Don't use operator =, this is a move operator which swaps
-        _sendBuffer.value = value;
-        _sendBuffer.dataValidity = dataValidity;
-        _sendBuffer.versionNumber = versionNumber;
-
-        function(subscriber, _sendBuffer);
-      }
-    }
-    auto subscriber = _subscribers.back().lock();
-    _sendBuffer.value.swap(value);
-    _sendBuffer.dataValidity = dataValidity;
-    _sendBuffer.versionNumber = versionNumber;
+    auto subscriber = _asyncAccessor.lock();
     if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
-      // on the last element we give away the input buffer
-      function(subscriber, _sendBuffer);
+      subscriber->sendException(e);
     }
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
-  void AsyncVariableImpl<UserType>::subscribe(boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> newSubscriber) {
-    _subscribers.push_back(newSubscriber);
-    if(_isActive) {
-      auto initialValue = getInitialValue({}); // {} is the a new version number
-      newSubscriber->activate(initialValue);
-    }
+  AsyncVariableImpl<UserType>::AsyncVariableImpl(size_t nChannels, size_t nElements)
+  : _sendBuffer(nChannels, nElements) {
+    // _isActive is false. You have to activate it after creation when necessary. Reason: the send buffer needs to
+    // be filled before so we can send the initial value. As this is backend specific it cannot happen here, because
+    // this code is executed first.
   }
 
   //*********************************************************************************************************************/
   template<typename UserType>
   void AsyncVariableImpl<UserType>::deactivate() {
-    for(auto it : _subscribers) {
-      auto subscriber = it.lock();
-      if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
-        subscriber->deactivate();
-      }
+    auto subscriber = _asyncAccessor.lock();
+    if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
+      subscriber->deactivate();
     }
     _isActive = false;
+  }
+
+  //*********************************************************************************************************************/
+  template<typename UserType>
+  void AsyncVariableImpl<UserType>::send() {
+    auto subscriber = _asyncAccessor.lock();
+    if(subscriber.get() != nullptr) { // Possible race condition: The subscriber is being destructed.
+      subscriber->sendDestructively(_sendBuffer);
+    }
   }
 
   //*********************************************************************************************************************/
@@ -263,14 +206,11 @@ namespace ChimeraTK {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
 
     AccessorInstanceDescriptor descriptor(name, typeid(UserType), numberOfWords, wordOffsetInRegister, flags);
-    if(!_asyncVariables[descriptor].get()) {
-      // Variable does not exist yet. Create it.
-      _asyncVariables[descriptor] =
-          CALL_VIRTUAL_FUNCTION_TEMPLATE(createAsyncVariable, UserType, backend, descriptor, _isActive);
-    }
+    auto untypedAsyncVariable =
+        CALL_VIRTUAL_FUNCTION_TEMPLATE(createAsyncVariable, UserType, backend, descriptor, _isActive);
 
-    auto asyncVariable = dynamic_cast<AsyncVariableImpl<UserType>*>(_asyncVariables[descriptor].get());
-    // we just take all the information we need for the async accessor from the sync accessor which has already done all the parsing
+    auto asyncVariable = dynamic_cast<AsyncVariableImpl<UserType>*>(untypedAsyncVariable.get());
+    // we take all the information we need for the async accessor from AsyncVariable because we cannot use the catalogue here
     auto newSubscriber = boost::make_shared<AsyncNDRegisterAccessor<UserType>>(backend, shared_from_this(), name,
         asyncVariable->getNumberOfChannels(), asyncVariable->getNumberOfSamples(), flags, descriptor,
         asyncVariable->getUnit(), asyncVariable->getDescription());
@@ -287,7 +227,12 @@ namespace ChimeraTK {
           backend->getRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags));
     }
 
-    asyncVariable->subscribe(newSubscriber);
+    asyncVariable->_asyncAccessor = newSubscriber;
+    // Now that the AsyncVariable is complete we can finally activate it.
+    if(_isActive) {
+      asyncVariable->activateAndSend();
+    }
+    _asyncVariables[newSubscriber->getId()] = std::move(untypedAsyncVariable);
     return newSubscriber;
   }
 
