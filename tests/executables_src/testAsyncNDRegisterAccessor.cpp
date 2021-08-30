@@ -66,6 +66,7 @@ BOOST_AUTO_TEST_CASE(SmokeTest) {
 
   // interrupt the blocking read of the accessor with data to get out of the program
   asyncAccessor.getHighLevelImplElement()->interrupt();
+  d.close();
 }
 
 BOOST_AUTO_TEST_CASE(SmokeTestWritable) {
@@ -87,10 +88,10 @@ BOOST_AUTO_TEST_CASE(SmokeTestWritable) {
   dummy->triggerInterrupt(5, 6); // the interrupt with data
   BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
 
-  BOOST_CHECK_EQUAL(int(asyncAccessor), 0);
+  BOOST_CHECK(int(asyncAccessor) != 43);
 
-  asyncAccessor = 42;
+  asyncAccessor = 43;
   asyncAccessor.write();
 
-  BOOST_CHECK_EQUAL(d.read<int>("MODULE0/INTERRUPT_TYPE"), 42);
+  BOOST_CHECK_EQUAL(d.read<int>("MODULE0/INTERRUPT_TYPE"), 43);
 }

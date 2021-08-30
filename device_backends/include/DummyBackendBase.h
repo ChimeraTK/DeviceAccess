@@ -175,9 +175,7 @@ namespace ChimeraTK {
 
         if(flags.has(AccessMode::wait_for_new_data)) {
           // We still have to set the now writeable synchronous accessor in the asynchronous accessor to enable writing
-          boost::dynamic_pointer_cast<AsyncNDRegisterAccessor<UserType, NumericAddressedInterruptDispatcher,
-              NumericAddressedInterruptDispatcher::AccessorInstanceDescriptor>>(accessor)
-              ->setWriteAccessor(syncAccessor);
+          boost::dynamic_pointer_cast<AsyncNDRegisterAccessor<UserType>>(accessor)->setWriteAccessor(syncAccessor);
         }
       }
 

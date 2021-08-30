@@ -7,39 +7,30 @@
 
 namespace ChimeraTK {
 
+  class AsyncAccessorManager;
+
   /** The AsyncNDRegisterAccessor implements a data transport queue with typed data
    *  as continuation of the void queue in TransferElement. This allows to
    *  receive the content of the buffer_2D, the version number and the data validity flag.
    *  The implementation is complete. The interrupt handling thread in the backend implementation
    *  can write to the queues through the memeber functions, and activate and deactivate the accessor.
-   *
-   *  To allow clean subscription of asynchronous accessors in the backend, the
-   *  AsyncNDRegisterAccessor is templated to an AsyncAccessorManager class and an AsyncAccessorID.
-   *  The accessor should be registed to the manager before given out when it is created. The
-   *  destructor of the AsyncNDRegisterAccessor will call a function
-   *  <pre>
-void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
-</pre>
-   *  in its destructor to unregister itself. As the way the asynchronous accessors are store
-   *  highly depends on the interrupt and data structure of backend, the implementation of the
-   *  manager is up to the backend implementation.
    */
-  template<typename UserType, typename AsyncAccessorManager, typename AsyncAccessorID>
+  template<typename UserType>
   class AsyncNDRegisterAccessor : public NDRegisterAccessor<UserType> {
     static constexpr size_t _queueSize{3};
 
    public:
     /** In addition to the arguments of the NDRegisterAccessor constructor, you need
-       *  an AccessorManager where you can unsubscribe, and an ID so the AccessorManager
-       *  can identify the accessor when doing so.
-       */
+     *  an AsyncAccessorManager where you can unsubscribe. As the AsyncAccessorManager is
+     *  the factory for AsyncNDRegisterAccessor, this is only an implementation detail.
+     */
     AsyncNDRegisterAccessor(const boost::shared_ptr<DeviceBackend>& backend,
         const boost::shared_ptr<AsyncAccessorManager>& manager, std::string const& name, size_t nChannels,
-        size_t nElements, AccessModeFlags accessModeFlags, AsyncAccessorID id,
+        size_t nElements, AccessModeFlags accessModeFlags,
         std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string());
 
-    ~AsyncNDRegisterAccessor() override { _accessorManager->unsubscribe(_id); }
+    ~AsyncNDRegisterAccessor() override;
 
     /** Pushes the exception to the queue and marks the accessor as inactive, so nothing
      *  is pushed until re-activation.
@@ -126,7 +117,8 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
       _writeAccessor->postWrite(type, versionNumber);
     }
 
-    void doPostRead(TransferType, bool updateDataBuffer) override;
+    // Don't ask my why in template code the [[maybe_unused]] must be here, but gives a warning when put to the implementation.
+    void doPostRead([[maybe_unused]] TransferType type, bool updateDataBuffer) override;
 
     bool isReadOnly() const override {
       return !isWriteable(); // as the accessor is always readable, isReadOnly() is equivalent to !isWriteable()
@@ -138,7 +130,7 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
       this->_exceptionBackend = exceptionBackend;
     }
 
-    std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() {
+    std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
     }
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
@@ -153,7 +145,6 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
     using typename NDRegisterAccessor<UserType>::Buffer;
     using NDRegisterAccessor<UserType>::buffer_2D;
     Buffer _receiveBuffer;
-    AsyncAccessorID _id;
 
     // variables to simplify the bookkeeping and only send to the queue when it is allowed
     bool _isActive{false};
@@ -167,56 +158,10 @@ void AsyncAccessorManager::unsubscribe(AsyncAccessorID)
   };
 
   /**********************************************************************************************************/
-  /* Implementations                                                                                        */
+  /* Implementations are in the .cc file. We use the trick to declare for all known types here,             */
+  /* and instantiate all of them in the .cc file. This is necessary because we cannot include               */
+  /* AsyncAccessorManager.h to avoid a circular dependency, but need it for the implementation.             */
   /**********************************************************************************************************/
-
-  template<typename UserType, typename AsyncAccessorManager, typename AsyncAccessorID>
-  AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AsyncAccessorID>::AsyncNDRegisterAccessor(
-      const boost::shared_ptr<DeviceBackend>& backend, const boost::shared_ptr<AsyncAccessorManager>& manager,
-      std::string const& name, size_t nChannels, size_t nElements, AccessModeFlags accessModeFlags, AsyncAccessorID id,
-      std::string const& unit, std::string const& description)
-
-  : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(backend),
-    _accessorManager(manager), _receiveBuffer(nChannels, nElements), _id(id) {
-    // Don't throw a ChimeraTK::logic_error here. They are for mistakes an application is doing when using DeviceAccess.
-    // If an AsyncNDRegisterAccessor is created without wait_for_new_data it is a mistake in the backend, which is not part
-    // of the application.
-    assert(accessModeFlags.has(AccessMode::wait_for_new_data));
-    buffer_2D.resize(nChannels);
-    for(auto& chan : buffer_2D) chan.resize(nElements);
-
-    // The sequence to initialise the queue:
-    // * write once and then read,
-    // * repeat n+1 times to make sure all buffers inside the queue have been replaced with
-    //   a properly sized buffer, so it can be swapped out and used for data
-    for(size_t i = 0; i < _queueSize + 1; ++i) {
-      Buffer b1(nChannels, nElements);
-      _dataTransportQueue.push(std::move(b1));
-      Buffer b2(nChannels, nElements);
-      _dataTransportQueue.pop(b2); // here b2 is swapped into the queue and transported "backwards"
-    }
-
-    this->_readQueue = _dataTransportQueue.template then<void>(
-        [&](Buffer& buf) { std::swap(_receiveBuffer, buf); }, std::launch::deferred);
-  }
-
-  /**********************************************************************************************************/
-  template<typename UserType, typename AsyncAccessorManager, typename AsyncAccessorID>
-  void AsyncNDRegisterAccessor<UserType, AsyncAccessorManager, AsyncAccessorID>::doPostRead(
-      [[maybe_unused]] TransferType type, bool updateDataBuffer) {
-    if(updateDataBuffer) {
-      // do not update meta data if updateDataBuffer == false, since this is the equivalent to a backend
-      // implementation, not a decorator
-      this->_versionNumber = _receiveBuffer.versionNumber;
-      this->_dataValidity = _receiveBuffer.dataValidity;
-      // Do not overwrite the vectors in the first layer of the 2D array. Accessing code might have stored them.
-      // Instead, swap the received data into the channel vectors.
-      auto source = _receiveBuffer.value.begin(); // the received data is the source as it is moved into the user buffer
-      auto destination = this->buffer_2D.begin();
-      for(; source != _receiveBuffer.value.end(); ++source, ++destination) {
-        destination->swap(*source);
-      }
-    }
-  }
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor);
 
 } // namespace ChimeraTK
