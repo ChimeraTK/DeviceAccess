@@ -59,9 +59,6 @@ BOOST_AUTO_TEST_CASE(testCreation) {
   // A part with offset
   auto accessor3 = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 3, 4);
   BOOST_CHECK(accessor3.getNElements() == 3);
-  // The rest of the register from an offset
-  auto accessor4 = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 2);
-  BOOST_CHECK(accessor4.getNElements() == 8);
 
   // some error cases:
   // too many elements requested
@@ -69,6 +66,7 @@ BOOST_AUTO_TEST_CASE(testCreation) {
   // offset exceeds range (or would result in accessor with 0 elements)
   BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 10), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 11), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 2), ChimeraTK::logic_error);
   // sum of requested elements and offset too large
   BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 5, 6), ChimeraTK::logic_error);
 

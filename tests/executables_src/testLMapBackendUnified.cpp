@@ -269,7 +269,7 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
 
-  typedef uint8_t minimumUserType;
+  typedef ChimeraTK::Boolean minimumUserType;
   typedef minimumUserType rawUserType;
 
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
@@ -732,7 +732,8 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
     return generateValue<UserType>();
   }
 
-  typedef uint32_t minimumUserType;
+  // FIXME: This is Boolean until the UnifiedTest is modified to support Void correctly
+  typedef ChimeraTK::Boolean minimumUserType;
   typedef uint32_t rawUserType;
 
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};

@@ -9,6 +9,8 @@
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
+#include "AsyncNDRegisterAccessor.h"
+#include "NumericAddressedInterruptDispatcher.h"
 
 #include <sstream>
 #include <regex>
@@ -47,14 +49,16 @@ namespace ChimeraTK {
 
     virtual ~DummyBackendBase() {}
 
-    size_t minimumTransferAlignment() const override { return 4; }
+    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
     /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
      *  for that particular interrupt controller and interrupt number, the data will be read out
      *  through a synchronous accessor and pushed into the data transport queues of the asynchronous
      *  accessors, so they can be received by the application.
+     *
+     *   @returns The version number that was send with all data in this interrupt.
      */
-    virtual void triggerInterrupt(int interruptControllerNumber, int interruptNumber) = 0;
+    virtual VersionNumber triggerInterrupt(int interruptControllerNumber, int interruptNumber) = 0;
 
     /** You cannot override the read version with 32 bit address any more. Please change your
      *  implementation to the 64 bit signature.
@@ -121,24 +125,37 @@ namespace ChimeraTK {
       auto accessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
           actualRegisterPath, numberOfWords, wordOffsetInRegister, flags);
 
-      // Modify writeability of the NumericAddressedBackendRegisterAccessor
+      // Modify writeability of the synchronous NumericAddressedBackendRegisterAccessor
       if(isDummyWriteableAccessor) {
+        // the accessor might be synchronous or asynchronous. If it is an async accessor we have to add a dummy-writable accessor
+        boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
+        if(flags.has(AccessMode::wait_for_new_data)) {
+          auto syncFlags = flags;
+          syncFlags.remove(AccessMode::wait_for_new_data);
+          syncAccessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
+              actualRegisterPath, numberOfWords, wordOffsetInRegister, syncFlags);
+          // we cannot add the new sync accessor to the async accessor as writeAccessor here, because it is not writeable yet
+        }
+        else {
+          syncAccessor = accessor;
+        }
+
         const auto info{getRegisterInfo(actualRegisterPath)};
 
         if(info->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) {
           if(flags.has(AccessMode::raw)) {
             boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(
-                accessor)
+                syncAccessor)
                 ->makeWriteable();
           }
           else {
             if(info->getNumberOfDimensions() < 2) {
               boost::dynamic_pointer_cast<
-                  NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(accessor)
+                  NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(syncAccessor)
                   ->makeWriteable();
             }
             else {
-              boost::dynamic_pointer_cast<NumericAddressedBackendMuxedRegisterAccessor<UserType>>(accessor)
+              boost::dynamic_pointer_cast<NumericAddressedBackendMuxedRegisterAccessor<UserType>>(syncAccessor)
                   ->makeWriteable();
             }
           }
@@ -146,18 +163,22 @@ namespace ChimeraTK {
         else if(info->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754) {
           if(flags.has(AccessMode::raw)) {
             boost::dynamic_pointer_cast<
-                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(accessor)
+                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(syncAccessor)
                 ->makeWriteable();
           }
           else {
             boost::dynamic_pointer_cast<
-                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>>(accessor)
+                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>>(syncAccessor)
                 ->makeWriteable();
           }
         }
+
+        if(flags.has(AccessMode::wait_for_new_data)) {
+          // We still have to set the now writeable synchronous accessor in the asynchronous accessor to enable writing
+          boost::dynamic_pointer_cast<AsyncNDRegisterAccessor<UserType>>(accessor)->setWriteAccessor(syncAccessor);
+        }
       }
 
-      accessor->setExceptionBackend(shared_from_this());
       return accessor;
     }
 

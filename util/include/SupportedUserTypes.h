@@ -437,6 +437,20 @@ namespace ChimeraTK {
   extern template class TemplateClass<ChimeraTK::Boolean>;                                                             \
   extern template class TemplateClass<ChimeraTK::Void> // the last semicolon is added by the user
 
+#define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES_NO_VOID(TemplateClass)                                               \
+  extern template class TemplateClass<int8_t>;                                                                         \
+  extern template class TemplateClass<uint8_t>;                                                                        \
+  extern template class TemplateClass<int16_t>;                                                                        \
+  extern template class TemplateClass<uint16_t>;                                                                       \
+  extern template class TemplateClass<int32_t>;                                                                        \
+  extern template class TemplateClass<uint32_t>;                                                                       \
+  extern template class TemplateClass<int64_t>;                                                                        \
+  extern template class TemplateClass<uint64_t>;                                                                       \
+  extern template class TemplateClass<float>;                                                                          \
+  extern template class TemplateClass<double>;                                                                         \
+  extern template class TemplateClass<std::string>;                                                                    \
+  extern template class TemplateClass<ChimeraTK::Boolean> // the last semicolon is added by the user
+
 #define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                   \
   template class TemplateClass<int8_t>;                                                                                \
   template class TemplateClass<uint8_t>;                                                                               \
@@ -451,6 +465,20 @@ namespace ChimeraTK {
   template class TemplateClass<std::string>;                                                                           \
   template class TemplateClass<ChimeraTK::Boolean>;                                                                    \
   template class TemplateClass<ChimeraTK::Void> // the last semicolon is added by the user
+
+#define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES_NO_VOID(TemplateClass)                                           \
+  template class TemplateClass<int8_t>;                                                                                \
+  template class TemplateClass<uint8_t>;                                                                               \
+  template class TemplateClass<int16_t>;                                                                               \
+  template class TemplateClass<uint16_t>;                                                                              \
+  template class TemplateClass<int32_t>;                                                                               \
+  template class TemplateClass<uint32_t>;                                                                              \
+  template class TemplateClass<int64_t>;                                                                               \
+  template class TemplateClass<uint64_t>;                                                                              \
+  template class TemplateClass<float>;                                                                                 \
+  template class TemplateClass<double>;                                                                                \
+  template class TemplateClass<std::string>;                                                                           \
+  template class TemplateClass<ChimeraTK::Boolean> // the last semicolon is added by the user
 
 /** Macro to declare a template class with multiple template parameters for all
  *  supported user types. The variadic arguments are the additional template
@@ -472,6 +500,20 @@ namespace ChimeraTK {
   extern template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__>;                                                \
   extern template class TemplateClass<ChimeraTK::Void, __VA_ARGS__> // the last semicolon is added by the user
 
+#define DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES_NO_VOID(TemplateClass, ...)                                    \
+  extern template class TemplateClass<int8_t, __VA_ARGS__>;                                                            \
+  extern template class TemplateClass<uint8_t, __VA_ARGS__>;                                                           \
+  extern template class TemplateClass<int16_t, __VA_ARGS__>;                                                           \
+  extern template class TemplateClass<uint16_t, __VA_ARGS__>;                                                          \
+  extern template class TemplateClass<int32_t, __VA_ARGS__>;                                                           \
+  extern template class TemplateClass<uint32_t, __VA_ARGS__>;                                                          \
+  extern template class TemplateClass<int64_t, __VA_ARGS__>;                                                           \
+  extern template class TemplateClass<uint64_t, __VA_ARGS__>;                                                          \
+  extern template class TemplateClass<float, __VA_ARGS__>;                                                             \
+  extern template class TemplateClass<double, __VA_ARGS__>;                                                            \
+  extern template class TemplateClass<std::string, __VA_ARGS__>;                                                       \
+  extern template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__> // the last semicolon is added by the user
+
 #define INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass, ...)                                        \
   template class TemplateClass<int8_t, __VA_ARGS__>;                                                                   \
   template class TemplateClass<uint8_t, __VA_ARGS__>;                                                                  \
@@ -486,6 +528,20 @@ namespace ChimeraTK {
   template class TemplateClass<std::string, __VA_ARGS__>;                                                              \
   template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__>;                                                       \
   template class TemplateClass<ChimeraTK::Void, __VA_ARGS__> // the last semicolon is added by the user
+
+#define INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES_NO_VOID(TemplateClass, ...)                                \
+  template class TemplateClass<int8_t, __VA_ARGS__>;                                                                   \
+  template class TemplateClass<uint8_t, __VA_ARGS__>;                                                                  \
+  template class TemplateClass<int16_t, __VA_ARGS__>;                                                                  \
+  template class TemplateClass<uint16_t, __VA_ARGS__>;                                                                 \
+  template class TemplateClass<int32_t, __VA_ARGS__>;                                                                  \
+  template class TemplateClass<uint32_t, __VA_ARGS__>;                                                                 \
+  template class TemplateClass<int64_t, __VA_ARGS__>;                                                                  \
+  template class TemplateClass<uint64_t, __VA_ARGS__>;                                                                 \
+  template class TemplateClass<float, __VA_ARGS__>;                                                                    \
+  template class TemplateClass<double, __VA_ARGS__>;                                                                   \
+  template class TemplateClass<std::string, __VA_ARGS__>;                                                              \
+  template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__> // the last semicolon is added by the user
 
   /** A class to describe which of the supported data types is used.
    *  There is the additional type 'none' to indicate that the data type is not

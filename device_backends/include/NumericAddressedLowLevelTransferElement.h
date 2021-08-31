@@ -143,7 +143,7 @@ namespace ChimeraTK {
 
       // make sure access is properly aligned
       _isUnaligned = false;
-      auto alignment = _dev->minimumTransferAlignment();
+      auto alignment = _dev->minimumTransferAlignment(_bar);
       auto start_padding = _startAddress % alignment;
       assert(_startAddress >= start_padding);
       if(start_padding > 0) _isUnaligned = true;

@@ -8,6 +8,7 @@
 #include <mutex>
 
 #include "DeviceBackendImpl.h"
+#include "VersionNumber.h"
 
 namespace ChimeraTK {
 
@@ -48,7 +49,7 @@ namespace ChimeraTK {
     /**
      * @brief Determines the supported minimum alignment for any read/write requests.
      *
-     * If the backend expects a particular alignment for read()/write() calls it should return a value biggern than 1.
+     * If the backend expects a particular alignment for read()/write() calls it should return a value bigger than 1.
      * The address and sizeInBytes arguments of the read()/write() calls will be always an integer multiple of this
      * number. Any unaligned transfers will be changed to meet these criteria (additional padding data will be thrown
      * away).
@@ -57,7 +58,7 @@ namespace ChimeraTK {
      *
      * @return Minimum alignment in bytes
      */
-    virtual size_t minimumTransferAlignment() const { return 1; }
+    virtual size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const { return 1; }
 
     boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
@@ -106,12 +107,25 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
-
     std::atomic<bool> _hasActiveException{false};
 
     friend NumericAddressedLowLevelTransferElement;
     friend NumericAddressedInterruptDispatcher;
+
+    /** Function to be called by implementing backend when an interrupt arrives. It usually is
+     *  called from the interrupt handling thread.
+     *
+     *  Throws std::out_of_range if an invalid interruptControllerNumber/interruptNumber is given as parameter.
+     *
+     *   @returns The version number that was send with all data in this interrupt.
+     */
+    VersionNumber dispatchInterrupt(int interruptControllerNumber, int interruptNumber);
+
+   private:
+    /** This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
+     *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not modified.
+     */
+    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
   };
 
 } // namespace ChimeraTK

@@ -236,7 +236,7 @@ namespace ChimeraTK {
       }
       else { // do the regular consistency check
         if(_numberOfWords == 0) {
-          _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
+          _numberOfWords = _registerInfo->getNumberOfElements();
         }
         if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
           throw ChimeraTK::logic_error(

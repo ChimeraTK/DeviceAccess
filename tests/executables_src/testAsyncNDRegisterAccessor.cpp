@@ -45,9 +45,12 @@ BOOST_AUTO_TEST_CASE(SmokeTest) {
 
   auto dummy = boost::dynamic_pointer_cast<DummyBackend>(d.getBackend());
 
-  dummy->triggerInterrupt(5, 6); // the interrupt with data
+  VersionNumber versionBeforeInterrupt;
+  auto interruptVersion = dummy->triggerInterrupt(5, 6); // the interrupt with data
   BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
   BOOST_CHECK_EQUAL(double(asyncAccessor), 42.0);
+  BOOST_CHECK_EQUAL(interruptVersion, asyncAccessor.getVersionNumber());
+  BOOST_CHECK(interruptVersion > versionBeforeInterrupt);
   BOOST_CHECK(isVoidReadFinished.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
 
   syncAccessor.read();
@@ -63,4 +66,32 @@ BOOST_AUTO_TEST_CASE(SmokeTest) {
 
   // interrupt the blocking read of the accessor with data to get out of the program
   asyncAccessor.getHighLevelImplElement()->interrupt();
+  d.close();
+}
+
+BOOST_AUTO_TEST_CASE(SmokeTestWritable) {
+  Device d("(dummy?map=goodMapFile.map)");
+  d.open();
+  d.activateAsyncRead();
+
+  auto asyncAccessor =
+      d.getScalarRegisterAccessor<int>("MODULE0/INTERRUPT_TYPE/DUMMY_WRITEABLE", 0, {AccessMode::wait_for_new_data});
+  BOOST_CHECK(!asyncAccessor.isReadOnly());
+  BOOST_CHECK(asyncAccessor.isReadable());
+  BOOST_CHECK(asyncAccessor.isWriteable());
+
+  asyncAccessor.read(); // the initial value has arrived
+  auto isReadFinished = std::async(std::launch::async, [&] { asyncAccessor.read(); });
+
+  BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(d.getBackend());
+  dummy->triggerInterrupt(5, 6); // the interrupt with data
+  BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
+
+  BOOST_CHECK(int(asyncAccessor) != 43);
+
+  asyncAccessor = 43;
+  asyncAccessor.write();
+
+  BOOST_CHECK_EQUAL(d.read<int>("MODULE0/INTERRUPT_TYPE"), 43);
 }
