@@ -19,6 +19,9 @@ One AsyncAccessorManager is used per interrupt that can occur. The AsyncAccessor
 - It contains a list of created asynchronous accessors and a subscribe/unsubcribe mechanism
 - It provides functions to act on all asynchronous accessors
 
+The AsyncNDRegisterAccessor that is returned by the AsyncAccessorManager by default is not writeable. To enable writing
+a synchronous accessor can be added using AsyncNDRegisterAccessor::setWriteAccessor().
+
 \subsection AsyncNDRegisterAccessor_details Design decisions and implementation details
 
 - The data transport queue is of type UserType, so the potentialy expensive and slow operations (data readout,
@@ -80,32 +83,16 @@ backend implementations
   accessor. Other backends might have similar advantages from having the functions the AsyncVariable, or at least
   they don't care much where the functions are implemented.
 
+The backend uses the AsyncNDRegisterAccessor by
+- creating one AsyncAccessorManager for each interrupt that can occur (or push type variable that is being subscribed
+  from a sender)
+- calling AsyncAccessorManager.subscribe() in getRegisterAccessor(), and hands out the created AsyncNDRegisterAccessor.
+  If the accessor is writeable, a suitable accessor for writing is also added in getRegisterAccessor().
+- calling AsyncAccessorManager::activate() in activteAsyncRead()
+- calling AsyncAccessorManager::setException() in setException()
+- calling AsyncAccessorManager::devactivate() when the backend is closed.
 
-\section  design_async_NumericAddressedBackend Asynchronous accessors in the NumericAddressedBackend
-
-As the NumericAddressedBackend base class already provides the creation of the synchronous NumericAddressedBackendRegisterAccessors, it also provides the subscription mechanism for the asynchronous accessors. The NumericAddressedBackend is based on a map file which allows to describe registers with interrupts. In the interface to the hardware, all interrupts are void. The map file then descibes which of the synchronous registers are read out and pushed when the according interrupt is triggered. This mechanism is implemented in the NumericAddressedBackend base class and the protocol implementing backends only have to notify the NumericAddressedInterruptDispatcher that the interrupt has happened.
-
-\subsection  async_NumericAddressedBackend_interface Interface for backend implementations
-
-The NumericAddressedInterruptDispatcher serves two purposes:
-\li It serves as a subscription manager for the AsyncNDRegisterAccessor
-\li It provides functions which act on all subsribers.
-
-When the map file is read in, a NumericAddressedInterruptDispatcher is created for each interrupt.
-
-The only function the backend implementor really has to deal with is NumericAddressedInterruptDispatcher::trigger(). All other functionaltiy for subscription, activation/deactivation and exception handling is already handled in the NumericAddressedBackend.
-
-There is one NumericAddressedInterruptDispatcher per interrupt controller number and interrupt number, stored in the variable NumericAddressedBackend::_interruptDispatchers. The interrupt handling thread in the backend implementation will just call
-
-<pre>
-  _interruptDispatcher.at({interruptControllerNumber, interruptNumber})->trigger();
-</pre>
-
-Notice that you should access the map with at() and not through the [ ] operator, so you don't accidentally add empty dispatchers to the map.
-The interrupt handler thread should have a "lazy start", which means that it should only be started once accessors to the particular interrupt have been requested. To achieve this, the backend should override NumericAddressedBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber). This function is called each time an asynchronous accessor which is associated to that interrupt is created. The implementing code has to make sure that the thead is only started once. The thread in not terminated automatically. The backend has to take care to do this when the backend is closed and/or destructed.
-
-Internally an object called NumericAddressedAsyncVariable (or to be more precie a shared pointer to the typed implementation NumericAddressedAsyncVariableImpl) is stored for each required accessor type. This contains one synchronous read accessor together with all its subscribers. Like this the hardware access to the devide and the possibly expensive postRead() action (de-mupltiplexing and numeric conversion) are only done once, before the data is pushed into the data transport queues of the subscribers.
-There can be multiple NumericAddressedAsyncVariables for one register. For example one for raw access, one with data conversion and a thrid one for only the first 10 elements in a large 1D register. All this is happening automatically in the NumericAddressedBackend and the developer of the individual backend does not have to care about it.
+\section  design_async_NumericAddressedBackend Implementation in the NumericAddressedBackend
 
 \subsection design_async_map_file Asynchronous registers in the map file
 
@@ -118,6 +105,46 @@ APP.0.PUSH_DATA           4       12      16    1     32                  8     
 The map file has been extended by the access mode INTERRUPTx:y. Before, only RW and RO were allowed. x and y are the number of the interrupt controller and the interrupt number, respectively. Registers with access mode INTERRUPT will implicitly be treaded as read-only.
 
 For interrupts it is possible to have void-type entries. The width of these "registers" is 0 bits. For consistency all other fields also have to be 0. They don't make sencse in this context and have to be 0 to avoid confusion.
+
+\subsection implementation_async_NumericAddressed Design and implementation details
+
+The NumericAddressedBackend has a complete implementation of the AsyncAccessorManager and the AsyncVariable, called
+NumericAddressedInterruptDispatcher and NumericAddressedAsyncVariable, respectively.
+
+- Each NumericAddressed AsyncVariable has a synchronous accessor for reading the data from the device when an
+  interrupt arrives.
+- Each NumericAddressedInterruptDispatcher has a transfer group with all the synchronous read accessors,
+  so the data transfer is
+  optimised under the hood (data is only transferred once, transfers are merged, copy decorators are used where
+  necessary so the converted data is duplicated and de-multiplexing and conversion is only happening once).
+- There is one NumericAddressedInterruptDispatcher per interrupt that is described in the map file.
+  They are created then when the map file is being processed.
+- If the AsyncNDRegisterAccessor is writeable, an additional synchonous accessor to the register is added as a
+  write accessor.
+  (The synchronous read accessor cannot be used here because the write is coming from a user thread, while the read is
+   comig from the interrupt handler thread).
+- The accessor manager has been extended by a trigger() function, which reads the tranfer groups and dispatches the read
+  results to all subscribed asynchronous accessors.
+
+\subsection  async_NumericAddressedBackend_interface Interface to implementing backends
+
+The list of accessor managers is private, and all implementing backends interface with it through two functions.
+
+- NumericAddressedBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int
+  interruptNumber) is a virtual function which is called each time an accessor for that interrupt is requested.
+  This allows the lazy start of the interrupt handling threads, which are not started if no accessors are requested.
+  The implementation must assure that the thead is only started once. In general, the NumericAddressedBackend does
+  not take care of interrupt handling threads, except for calling this virtual function. Each backend implementation
+  has to take care that treads are started, terminated and joined correctly.
+  There is an empty default implementation of startInterruptHandlingThread() for backward complatibility
+  (backends that don't support asynchronous data (yet) or that don't need a spearate thread like the dummies).
+- The interrupt handling threads call NumericAddressedBackend::dispatchInterrupt(unsigned int interruptControllerNumber,
+   unsigned int  interruptNumber) each time the according interrupt arrives.
+  
+All other functionaltiy for subscription, activation/deactivation and exception handling is already handled in the
+NumericAddressedBackend base class.
+
+
 */
 
 } // end of namespace ChimeraTK
