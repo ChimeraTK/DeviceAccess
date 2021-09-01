@@ -1,22 +1,85 @@
 namespace ChimeraTK {
 /**
-\page design_AsyncNDRegisterAccessor_NumericAddressed Design: AsyncNDRegisterAccessor and the asynchronous implelentation in the NumericAddressedBackend
+\page design_AsyncNDRegisterAccessor_NumericAddressed Design: AsyncNDRegisterAccessor
 
-\section  design_AsyncNDRegisterAccessor The AsyncNDRegisterAccessor
+\section  design_AsyncNDRegisterAccessor The AsyncNDRegisterAccessor and the AsyncAccessorManager
 
-The AsyncNDRegisterAccessor is an extension of the NDRegisterAccessor for push-type data.
+The AsyncNDRegisterAccessor is the NDRegisterAccessor implementation for push-type data. It is a generic implementation
+for all backends and contains the following components
 
-The NDRegisterAccessor itself extends the TransferElement with a user-type buffer. The TransferElement does not have a user type buffer and serves as a base class such that implementations with different user types can be stored together in containers. The TransferElement also contais a notification queue to implement the asynchronous read functionality. This notification queue is of type void (notifications only, no data is transported) because the data type is not known. The AsyncNDRegisterAccessor now povides the data transport queue which is needed for asynchronous accessors with data. As this queue is comparatively resource-intensive (multiple instances of the user buffer object pre-allocated in each queue) and not needed for synchronous data transfer, it is not directly added in the NDRegisterAccessor but in a second class.
+- an NDRegisterAccessor<UserType>::Buffer which serves as a send buffer and contains the data value
+  (2D vector of UserType), a VersionNumber and a DataValidity flag.
+- a lockfree queue to transport the data from the send buffer
+- functions to activate/deactivate the accessor, to push data and exceptions into the queue
+- a synchronous accessor which is used for write operations (optional)
 
-The data transport queue is implmented as continuation of the notification queue, such that the read operations of the notification queue trigger the filling of the user buffer.
+One AsyncAccessorManager is used per interrupt that can occur. The AsyncAccessor manager has three main functions:
 
-The AsyncNDRegisterAccessor is ready to use. It provides a generic asynchronous implementation.
-Each backend has to store a list of accessors and call AsyncNDRegisterAccessor::activate(), AsyncNDRegisterAccessor::deactivate(), AsyncNDRegisterAccessor::sendDestructively() and AsyncNDRegisterAccessor::sendException() appropriately. As the way the data containers are organised and the asynchronous mechanism is implemented stongly depend on the backend, the implementation of these are left to the specific backend.
-However, there is a common interface implemented to allow the clean subscription/unsubscription from the backend. The AsyncNDRegisterAccessor is templated to an AsyncAccessorManager and an AsyncAccessorID, which are both handed over in the constructor. In its destructor the AsyncNDRegisterAccessor is calling
-<pre>
-void AsyncAccessorManager::unsubscribe(AsyncAccessorID id);
-</pre>
-This function has to be implemented by the manager. From the ID it knows which subscriber is to be removed. For this mechanism to work, the AsyncAccessorManager must store boost::weak_pointers and lock them when the instance is being accessed. Otherwise the one instance held within the manager prevents the destructor from being called.
+- It serves as a factory for AsyncNDRegisterAccessors
+- It contains a list of created asynchronous accessors and a subscribe/unsubcribe mechanism
+- It provides functions to act on all asynchronous accessors
+
+\subsection AsyncNDRegisterAccessor_details Design decisions and implementation details
+
+- The data transport queue is of type UserType, so the potentialy expensive and slow operations (data readout,
+  de-mutliplexing, data conversion) are happening only once, before the data is distributed to multiple subscribers.
+- The additional send buffer is necessary because data has to be send through the queue in this container, and usually
+  the data is not provided in this format.
+  Even if the NDRegisterAccessor would provide the user buffer in this format it could not be used here, because it is
+  used by the receiving side which is running in another thread.
+- To unsubscribe, the NDRegisterAccessor is calling AsyncAccessorManager::unsibscribe() with its TransferElementId from
+  the destructor.
+  For the unsigbscribe mechanism to work, the AsyncAccessorManager can only hold a weak pointer.
+  If it would hold a shared pointer, the destructor would never be called because this instance survives,
+  even if the user code has deleted all copies of the AsyncNDRegisterAccessor.
+- To manage the weak pointer and to have an entry object for the implementation, the helper class
+  AsyncVariable has been introduced.\ref asyncAccessor_comment_AsyncVariable "(*)"
+  It contain the weak pointer as a private variable and provides member functions to access the object behind
+  the weak pointer.
+  This ensures two points which otherwise would be left to the implementation, which would be error prone:
+  - The weak pointer is locked before accessing the object.
+  - There is a race condition that the locked object could have a nullptr if the shared pointer is currently being
+     destructed while the lock is being acquired. This is checked as well.
+- The void notification queue in the TransferElement base class is set up as a continuation of the data transport queue,
+  such that the read operations of the notification queue trigger the filling of the user buffer.
+
+\anchor asyncAccessor_comment_AsyncVariable (*) There is AsyncVariable as an untyped base class and AsyncVariableImpl,
+  which is templated to a user type. Like this pointers to variables with different user types can be stored in one list.
+
+\subsection AsyncNDRegisterAccessor_usage Interface for implementing backends
+
+While the AsyncNDRegisterAccessor itself is complete and universal, the AsyncAccessorManager and
+AsyncVariable have pure virtual functions which must be provided by the individual
+backend implementations
+
+- AsyncVariable::getNumberOfChannels(), AsyncVariable::getNumberOfSamples(), AsyncVariable::getUnit(),
+  AsyncVariable::getDescription() and AsyncVariable::isWriteable() must be provided by derriving from AsyncVariable or
+  AsyncVariableImpl. The information must directly be provided by the backend.
+  The generating code cannot rely on the catalogue here (which might not even be filled yet when the accessor
+  is being created).\ref asyncAccessor_comment_AsyncVariable "(*2)"
+- The 'virtual function template' AsyncAccessorManager::createAsyncVariable() must provide an AsyncVariable
+  implementation with the implemented accessor-describing functions from the previous bullet point, such that the
+  accessor manager can create the AsyncNDRegisterAccessor.
+  When createAsyncVariable() returns the AsyncVariable object, the weak pointer to the AsyncNDRegisterAccessor is not
+  set yet. The reason is that the backend specific code should not have the subscription code, which is the same for
+  all backends and would only be code duplication. And it is not sufficient to have the AsyncVariable, which only
+  contains the weak pointer. The calling code also needs the shared pointer to the AsyncNDRegisterAccessor.
+- AsyncAccessorManager::activate() needs to be implemented in the following way:
+  -# Lock the mutex which protects the list of weak pointer, so no entries can be added or removed
+  -# Generate a new version  number while holding the lock
+  -# Write the intial value, the according data validity flag and the version number to _sendBuffer of each AsyncVariable
+  -# Call activate() on all AsyncVariables
+  Locking of the mutex, generation of the version number and calling activate() on each variable could be factored into
+  the managern, with additional virtual functions that are called in between, but this means the container needs to be
+  looped several times and the design gets more complicated and involved,
+  and hence the implementation is left to the backend.
+
+\anchor asyncAccessor_comment_AsyncVariable (*2) The reason to put this into the AsyncVariable is coming from the
+  NumericAddressedBackend. It adds a synchronous accessor to the AsyncVariable which is used for reading and
+  provides this information. The logic to generate this information is in the creation code of the synchronous
+  accessor. Other backends might have similar advantages from having the functions the AsyncVariable, or at least
+  they don't care much where the functions are implemented.
+
 
 \section  design_async_NumericAddressedBackend Asynchronous accessors in the NumericAddressedBackend
 
