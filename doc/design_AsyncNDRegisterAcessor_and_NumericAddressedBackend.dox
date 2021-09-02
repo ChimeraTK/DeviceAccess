@@ -4,8 +4,11 @@ namespace ChimeraTK {
 
 \section  design_AsyncNDRegisterAccessor The AsyncNDRegisterAccessor and the AsyncAccessorManager
 
-The AsyncNDRegisterAccessor is the NDRegisterAccessor implementation for push-type data. It is a generic implementation
-for all backends and contains the following components
+The AsyncNDRegisterAccessor is the NDRegisterAccessor implementation for push-type data. It is used
+if accessors with AccessMode::wait_for_new_data are requested. See \ref transferElement_B_8
+"Technical specification: TransferElement B.8" for the requirements it is based on.
+
+The AsyncNDRegisterAccessor is a generic implementation for all backends and contains the following components
 
 - an NDRegisterAccessor<UserType>::Buffer which serves as a send buffer and contains the data value
   (2D vector of UserType), a VersionNumber and a DataValidity flag.
