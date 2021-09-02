@@ -4,11 +4,12 @@ namespace ChimeraTK {
 
 \section  design_AsyncNDRegisterAccessor The AsyncNDRegisterAccessor and the AsyncAccessorManager
 
-The AsyncNDRegisterAccessor is the NDRegisterAccessor implementation for push-type data. It is used
+The AsyncNDRegisterAccessor is a generic NDRegisterAccessor implementation for push-type data. It is used
 if accessors with AccessMode::wait_for_new_data are requested. See \ref transferElement_B_8
 "Technical specification: TransferElement B.8" for the requirements it is based on.
 
-The AsyncNDRegisterAccessor is a generic implementation for all backends and contains the following components
+The AsyncNDRegisterAccessor is a generic implementation which can be used for all backends and contains the following
+components
 
 - an NDRegisterAccessor<UserType>::Buffer which serves as a send buffer and contains the data value
   (2D vector of UserType), a VersionNumber and a DataValidity flag.
@@ -24,13 +25,14 @@ One AsyncAccessorManager is used per interrupt that can occur. The AsyncAccessor
 
 \subsection AsyncNDRegisterAccessor_details Design decisions and implementation details
 
-- The data transport queue is of type UserType, so the potentially expensive and slow operations (data readout,
+- The data transport queue contains data that is already converted to the UserType, so the potentially expensive and
+  slow operations (data readout,
   de-multiplexing, data conversion) are happening only once, before the data is distributed to multiple subscribers.
 - The additional send buffer is necessary because data has to be send through the queue in this container, and usually
   the data is not provided in this format.
   Even if the NDRegisterAccessor would provide the user buffer in this format it could not be used here, because it is
   used by the receiving side which is running in another thread.
-- To unsubscribe, the NDRegisterAccessor is calling AsyncAccessorManager::unsibscribe() with its TransferElementID from
+- To unsubscribe, the NDRegisterAccessor is calling AsyncAccessorManager::unsubscribe() with its TransferElementID from
   the destructor.
   For the unsubscribe mechanism to work, the AsyncAccessorManager can only hold a weak pointer.
   If it would hold a shared pointer, the destructor would never be called because this instance survives,
@@ -60,34 +62,28 @@ backend implementations:
   The generating code cannot rely on the catalogue here (which might not even be filled yet when the accessor
   is being created).\ref asyncAccessor_comment_AsyncVariable "(*2)"
 - The 'virtual function template' AsyncAccessorManager::createAsyncVariable() must return an AsyncVariable
-  implementation with the implemented accessor-describing functions from the previous bullet point, such that the
-  accessor manager can create the AsyncNDRegisterAccessor.
+  implementation with the implemented accessor-describing functions from the previous bullet point.
   When createAsyncVariable() returns the AsyncVariable object, the weak pointer to the AsyncNDRegisterAccessor is not
-  set yet. The reason is that the backend specific code should not have the subscription code, which is the same for
-  all backends and would only be code duplication. And it is not sufficient to have the AsyncVariable, which only
-  contains the weak pointer. The calling code also needs the shared pointer to the AsyncNDRegisterAccessor.
-  createAsyncVariable() is used internally by the AsyncAccessorManager, which creates the AsyncNDRegisterAccessor
-  and adds it to the AsyncVariable in the subscription process.
-- AsyncAccessorManager::activate() needs to be implemented in the following way:
-  -# Lock the mutex which protects the list of weak pointer, so no entries can be added or removed
-  -# Generate a new version  number while holding the lock
+  set yet.
+  createAsyncVariable() is used internally by the AsyncAccessorManager in the subscription process,
+  which creates the AsyncNDRegisterAccessor by using the shape information from the AsyncVariable,
+  and then adds it to the AsyncVariable.
+- AsyncAccessorManager::activate() needs to be implemented in the following way\ref asyncAccessor_comment_activate "(*3)":
+  -# Lock the _variablesMutex which protects the container of AsyncVariables, so no entries can be added or removed
+     \ref asyncAccessor_comment_mutex "(*4)"
+  -# Generate a new version number while holding the lock
   -# Write the initial value, the according data validity flag and the version number to the _sendBuffer of each
      AsyncVariable
   -# Call activate() on all AsyncVariables
   
-  Locking of the mutex, generating the version number and calling activate() on each variable could be factored into
-  the manager, with additional virtual functions that are called in between, but this means the container needs to be
-  looped several times and the design gets more complicated and involved,
-  and hence the implementation is left to the backend.
-
 The backend uses the AsyncNDRegisterAccessor by
 - creating one AsyncAccessorManager for each interrupt that can occur (or for each push type variable that is being
   subscribed from a sender)
-- calling AsyncAccessorManager.subscribe() in getRegisterAccessor(), and handing out the created AsyncNDRegisterAccessor.
+- calling AsyncAccessorManager::subscribe() in getRegisterAccessor(), and handing out the created AsyncNDRegisterAccessor.
   If the accessor is writeable (according to the AsyncVariable), the AsyncAccessorManager will call
   getRegisterAccessor() recursively without the wait_for_new_data flag for the same register, and add
   this accessor as write accessor to the AsyncNDRegisterAccessor. The backend's getRegisterAccessor() implementation
-  must be able to handle this recursive call.\ref asyncAccessor_comment_writeable "(*3)"
+  must be able to handle this recursive call.\ref asyncAccessor_comment_writeable "(*5)"
 - calling AsyncAccessorManager::activate() in activateAsyncRead()
 - calling AsyncAccessorManager::sendException() in setException()
 - calling AsyncAccessorManager::deactivate() when the backend is closed.
@@ -98,7 +94,19 @@ The backend uses the AsyncNDRegisterAccessor by
   accessor. Other backends might have similar advantages from having the functions the AsyncVariable, or at least
   they don't care much where the functions are implemented.
 
-\anchor asyncAccessor_comment_writeable (*3) Even if the implementation already has a synchronous read accessor,
+\anchor asyncAccessor_comment_activate (*3)  Locking of the mutex, generating the version number and calling activate()
+  on each variable could be factored into
+  the manager, with additional virtual functions that are called in between, but this means the container needs to be
+  looped several times and the design gets more complicated and involved,
+  and hence the implementation is left to the backend.
+
+\anchor asyncAccessor_comment_mutex (*4) Holding the mutex while accessing the AsyncVariables actually serves two
+purposes:
+-# It prevents the container from being modified and variables going out of scope while being accessed.
+-# The AsyncVariables and the AsyncNDRegisterAcessors in them are not thread safe, and activation/deactivation,
+   exception sending and data sending are coming from different threads.
+
+\anchor asyncAccessor_comment_writeable (*5) Even if the implementation already has a synchronous read accessor,
 like the NumericAccdressedBackend, this cannot be used for writing. The write is coming from a user thread,
 while the read is coming from the interrupt handler thread.
 
