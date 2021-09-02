@@ -31,8 +31,6 @@ namespace ChimeraTK {
 
     virtual bool barIndexValid(uint64_t bar);
 
-    virtual std::string readDeviceInfo() = 0;
-
     /**
      * @brief Determines whether the backend supports merging of requests (read or
      * write)
