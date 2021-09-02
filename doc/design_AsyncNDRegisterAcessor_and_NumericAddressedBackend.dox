@@ -13,10 +13,10 @@ for all backends and contains the following components
 - functions to activate/deactivate the accessor, to push data and exceptions into the queue
 - a synchronous accessor which is used for write operations (optional)
 
-One AsyncAccessorManager is used per interrupt that can occur. The AsyncAccessor manager has three main functions:
+One AsyncAccessorManager is used per interrupt that can occur. The AsyncAccessorManager has three main functions:
 
 - It serves as a factory for AsyncNDRegisterAccessors
-- It contains a list of created asynchronous accessors and a subscribe/unsubcribe mechanism
+- It contains a list of created asynchronous accessors and a subscribe/unsubscribe mechanism
 - It provides functions to act on all asynchronous accessors
 
 The AsyncNDRegisterAccessor that is returned by the AsyncAccessorManager by default is not writeable. To enable writing
@@ -24,15 +24,15 @@ a synchronous accessor can be added using AsyncNDRegisterAccessor::setWriteAcces
 
 \subsection AsyncNDRegisterAccessor_details Design decisions and implementation details
 
-- The data transport queue is of type UserType, so the potentialy expensive and slow operations (data readout,
-  de-mutliplexing, data conversion) are happening only once, before the data is distributed to multiple subscribers.
+- The data transport queue is of type UserType, so the potentially expensive and slow operations (data readout,
+  de-multiplexing, data conversion) are happening only once, before the data is distributed to multiple subscribers.
 - The additional send buffer is necessary because data has to be send through the queue in this container, and usually
   the data is not provided in this format.
   Even if the NDRegisterAccessor would provide the user buffer in this format it could not be used here, because it is
   used by the receiving side which is running in another thread.
-- To unsubscribe, the NDRegisterAccessor is calling AsyncAccessorManager::unsibscribe() with its TransferElementId from
+- To unsubscribe, the NDRegisterAccessor is calling AsyncAccessorManager::unsibscribe() with its TransferElementID from
   the destructor.
-  For the unsigbscribe mechanism to work, the AsyncAccessorManager can only hold a weak pointer.
+  For the unsubscribe mechanism to work, the AsyncAccessorManager can only hold a weak pointer.
   If it would hold a shared pointer, the destructor would never be called because this instance survives,
   even if the user code has deleted all copies of the AsyncNDRegisterAccessor.
 - To manage the weak pointer and to have an entry object for the implementation, the helper class
@@ -56,7 +56,7 @@ AsyncVariable have pure virtual functions which must be provided by the individu
 backend implementations
 
 - AsyncVariable::getNumberOfChannels(), AsyncVariable::getNumberOfSamples(), AsyncVariable::getUnit(),
-  AsyncVariable::getDescription() and AsyncVariable::isWriteable() must be provided by derriving from AsyncVariable or
+  AsyncVariable::getDescription() and AsyncVariable::isWriteable() must be provided by deriving from AsyncVariable or
   AsyncVariableImpl. The information must directly be provided by the backend.
   The generating code cannot rely on the catalogue here (which might not even be filled yet when the accessor
   is being created).\ref asyncAccessor_comment_AsyncVariable "(*2)"
@@ -70,10 +70,11 @@ backend implementations
 - AsyncAccessorManager::activate() needs to be implemented in the following way:
   -# Lock the mutex which protects the list of weak pointer, so no entries can be added or removed
   -# Generate a new version  number while holding the lock
-  -# Write the intial value, the according data validity flag and the version number to _sendBuffer of each AsyncVariable
+  -# Write the initial value, the according data validity flag and the version number to the _sendBuffer of each
+     AsyncVariable
   -# Call activate() on all AsyncVariables
   Locking of the mutex, generation of the version number and calling activate() on each variable could be factored into
-  the managern, with additional virtual functions that are called in between, but this means the container needs to be
+  the manager, with additional virtual functions that are called in between, but this means the container needs to be
   looped several times and the design gets more complicated and involved,
   and hence the implementation is left to the backend.
 
@@ -88,7 +89,7 @@ The backend uses the AsyncNDRegisterAccessor by
   from a sender)
 - calling AsyncAccessorManager.subscribe() in getRegisterAccessor(), and hands out the created AsyncNDRegisterAccessor.
   If the accessor is writeable, a suitable accessor for writing is also added in getRegisterAccessor().
-- calling AsyncAccessorManager::activate() in activteAsyncRead()
+- calling AsyncAccessorManager::activate() in activateAsyncRead()
 - calling AsyncAccessorManager::setException() in setException()
 - calling AsyncAccessorManager::devactivate() when the backend is closed.
 
@@ -102,16 +103,18 @@ APP.0.DATA_READY          0        0       0    0      0                  0     
 APP.0.PUSH_DATA           4       12      16    1     32                  8      1 INTERRUPT2:3
 </pre>
 
-The map file has been extended by the access mode INTERRUPTx:y. Before, only RW and RO were allowed. x and y are the number of the interrupt controller and the interrupt number, respectively. Registers with access mode INTERRUPT will implicitly be treaded as read-only.
+The map file has been extended by the access mode INTERRUPTx:y. Before, only RW and RO were allowed. x and y are the
+number of the interrupt controller and the interrupt number, respectively. Registers with access mode INTERRUPT will
+implicitly be treated as read-only.
 
-For interrupts it is possible to have void-type entries. The width of these "registers" is 0 bits. For consistency all other fields also have to be 0. They don't make sencse in this context and have to be 0 to avoid confusion.
+For interrupts it is possible to have void-type entries. The width of these "registers" is 0 bits. For consistency all other fields also have to be 0. They don't make sense in this context and have to be 0 to avoid confusion.
 
 \subsection implementation_async_NumericAddressed Design and implementation details
 
 The NumericAddressedBackend has a complete implementation of the AsyncAccessorManager and the AsyncVariable, called
 NumericAddressedInterruptDispatcher and NumericAddressedAsyncVariable, respectively.
 
-- Each NumericAddressed AsyncVariable has a synchronous accessor for reading the data from the device when an
+- Each NumericAddressedAsyncVariable has a synchronous accessor for reading the data from the device when an
   interrupt arrives.
 - Each NumericAddressedInterruptDispatcher has a transfer group with all the synchronous read accessors,
   so the data transfer is
@@ -119,11 +122,11 @@ NumericAddressedInterruptDispatcher and NumericAddressedAsyncVariable, respectiv
   necessary so the converted data is duplicated and de-multiplexing and conversion is only happening once).
 - There is one NumericAddressedInterruptDispatcher per interrupt that is described in the map file.
   They are created then when the map file is being processed.
-- If the AsyncNDRegisterAccessor is writeable, an additional synchonous accessor to the register is added as a
+- If the AsyncNDRegisterAccessor is writeable, an additional synchronous accessor to the register is added as a
   write accessor.
   (The synchronous read accessor cannot be used here because the write is coming from a user thread, while the read is
-   comig from the interrupt handler thread).
-- The accessor manager has been extended by a trigger() function, which reads the tranfer groups and dispatches the read
+   coming from the interrupt handler thread).
+- The accessor manager has been extended by a trigger() function, which reads the transfer groups and dispatches the read
   results to all subscribed asynchronous accessors.
 
 \subsection  async_NumericAddressedBackend_interface Interface to implementing backends
@@ -133,15 +136,15 @@ The list of accessor managers is private, and all implementing backends interfac
 - NumericAddressedBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int
   interruptNumber) is a virtual function which is called each time an accessor for that interrupt is requested.
   This allows the lazy start of the interrupt handling threads, which are not started if no accessors are requested.
-  The implementation must assure that the thead is only started once. In general, the NumericAddressedBackend does
+  The implementation must assure that the thread is only started once. In general, the NumericAddressedBackend does
   not take care of interrupt handling threads, except for calling this virtual function. Each backend implementation
   has to take care that treads are started, terminated and joined correctly.
-  There is an empty default implementation of startInterruptHandlingThread() for backward complatibility
-  (backends that don't support asynchronous data (yet) or that don't need a spearate thread like the dummies).
+  There is an empty default implementation of startInterruptHandlingThread() for backward compatibility
+  (backends that don't support asynchronous data (yet) or that don't need a separate thread like the dummies).
 - The interrupt handling threads call NumericAddressedBackend::dispatchInterrupt(unsigned int interruptControllerNumber,
    unsigned int  interruptNumber) each time the according interrupt arrives.
   
-All other functionaltiy for subscription, activation/deactivation and exception handling is already handled in the
+All other functionality for subscription, activation/deactivation and exception handling is already handled in the
 NumericAddressedBackend base class.
 
 
