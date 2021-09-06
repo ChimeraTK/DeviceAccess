@@ -1,7 +1,6 @@
-# This is VOID type register (width is 0), so it should be an INTERRUPT
-# rest of fields is set correctly for normal register.
+# A VOID type register (width is 0) with mode INTERRUPT must have all values 0. 
+# (For write  (only) registers void type with an address is valid)
 # Parser should thrown Exception
 # name       			     		number_of_elements  address  size  bar  width  fracbits  signed 	read_mode
 
-APP0.INTERUPT_VOID_1_ERR			3				    0x100		12	1	  0		24			1		RW
-
+APP0.INTERUPT_VOID_1_ERR			3				    0x100		12	1	  0		0			0		INTERRUPT
