@@ -8,6 +8,7 @@
 
 #include "CtrlIntf.h"
 #include "DmaIntf.h"
+#include "EventFile.h"
 
 #include "NumericAddressedBackend.h"
 
@@ -15,8 +16,12 @@ namespace ChimeraTK {
 
   class XdmaBackend : public NumericAddressedBackend, private boost::noncopyable {
    private:
+    static constexpr size_t _maxDmaChannels = 4;
+    static constexpr size_t _maxInterrupts = 16;
+
     std::optional<CtrlIntf> _ctrlIntf;
     std::vector<DmaIntf> _dmaChannels;
+    std::vector<EventFile> _eventFiles;
 
     const std::string _devicePath;
 
@@ -35,6 +40,8 @@ namespace ChimeraTK {
     void dump(const int32_t* data, size_t nbytes);
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) override;
+    void startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) override;
+    using NumericAddressedBackend::dispatchInterrupt; // make public for EventThread
 
     std::string readDeviceInfo() override;
 

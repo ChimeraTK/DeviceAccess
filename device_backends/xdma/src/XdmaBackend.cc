@@ -20,12 +20,12 @@ namespace ChimeraTK {
       }
       close();
     }
-    // TODO: retrieve mmap_(offs,size) from map file
+
     _ctrlIntf.emplace(_devicePath);
 
-    // Build vector of max. 4 DMA channels
+    // Build vector of DMA channels
     _dmaChannels.clear();
-    for(size_t i = 0; i < 4; i++) {
+    for(size_t i = 0; i < _maxDmaChannels; i++) {
       try {
         _dmaChannels.emplace_back(_devicePath, i);
       }
@@ -33,6 +33,20 @@ namespace ChimeraTK {
         break;
       }
     }
+
+    std::cout << "EVENTILED\n";
+    // Build vector of event files
+    _eventFiles.clear();
+    for(size_t i = 0; i < _maxInterrupts; i++) {
+      std::cout << "EVE->" << i << "\n";
+      try {
+        _eventFiles.emplace_back(_devicePath, i, *this);
+      }
+      catch(const runtime_error&) {
+        break;
+      }
+    }
+
     _hasActiveException = false;
   }
 
@@ -104,6 +118,15 @@ namespace ChimeraTK {
 #ifdef _DEBUGDUMP
     dump(data, sizeInBytes);
 #endif
+  }
+
+  void XdmaBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) {
+    if(interruptControllerNumber != 0) {
+      throw ChimeraTK::logic_error("XDMA backend only uses interrupt controller 0");
+    }
+    if(interruptNumber >= _eventFiles.size()) {
+      throw ChimeraTK::logic_error("Couldn't find XDMA event file " + std::to_string(interruptNumber));
+    }
   }
 
   std::string XdmaBackend::readDeviceInfo() {
