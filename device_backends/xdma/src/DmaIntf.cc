@@ -11,8 +11,6 @@ namespace ChimeraTK {
   : _c2h(devicePath + "/c2h" + std::to_string(channelIdx), O_RDONLY),
     _h2c(devicePath + "/h2c" + std::to_string(channelIdx), O_WRONLY) {}
 
-  DmaIntf::DmaIntf(DmaIntf&& d) : _c2h(std::move(d._c2h)), _h2c(std::move(d._h2c)) {}
-
   DmaIntf::~DmaIntf() {}
 
   void DmaIntf::read(uintptr_t address, int32_t* __restrict__ buf, size_t nbytes) {

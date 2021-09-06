@@ -15,7 +15,7 @@ namespace ChimeraTK {
    public:
     DmaIntf() = delete;
     DmaIntf(const std::string& devicePath, size_t channelIdx);
-    DmaIntf(DmaIntf&& d); // Need move ctor for storage in std::vector
+    DmaIntf(DmaIntf&& d) = default; // Need move ctor for storage in std::vector
     virtual ~DmaIntf();
 
     void read(uintptr_t address, int32_t* __restrict__ buf, size_t nbytes) override;
