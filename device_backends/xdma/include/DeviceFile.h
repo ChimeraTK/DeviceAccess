@@ -14,6 +14,7 @@ namespace ChimeraTK {
     const std::string _path;
 
    public:
+    DeviceFile() = delete;
     DeviceFile(const std::string& filePath, int flags);
     DeviceFile(DeviceFile&& d);
     virtual ~DeviceFile();

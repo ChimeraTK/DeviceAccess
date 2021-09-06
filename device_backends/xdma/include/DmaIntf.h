@@ -13,6 +13,7 @@ namespace ChimeraTK {
     DeviceFile _h2c;
 
    public:
+    DmaIntf() = delete;
     DmaIntf(const std::string& devicePath, size_t channelIdx);
     DmaIntf(DmaIntf&& d); // Need move ctor for storage in std::vector
     virtual ~DmaIntf();
