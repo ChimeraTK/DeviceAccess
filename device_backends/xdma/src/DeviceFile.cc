@@ -20,7 +20,7 @@ namespace ChimeraTK {
     }
   }
 
-  DeviceFile::DeviceFile(DeviceFile&& d) : _fd(std::exchange(d._fd, 0)) {}
+  DeviceFile::DeviceFile(DeviceFile&& d) : _fd(std::exchange(d._fd, 0)), _path(std::move(d._path)) {}
 
   DeviceFile::~DeviceFile() {
 #ifdef _DEBUG
