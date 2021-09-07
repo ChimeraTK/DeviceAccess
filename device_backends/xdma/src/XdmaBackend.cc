@@ -12,7 +12,7 @@ namespace ChimeraTK {
 
   void XdmaBackend::open() {
 #ifdef _DEBUG
-    std::cout << "open xdma dev: " << _devicePath << std::endl;
+    std::cout << "XDMA: opening dev: " << _devicePath << std::endl;
 #endif
     if(_ctrlIntf) {
       if(isFunctional()) {
@@ -45,7 +45,8 @@ namespace ChimeraTK {
       }
     }
 #ifdef _DEBUG
-    std::cout << "Opened XDMA interface with " << _dmaChannels.size() << " DMA channels and " << _eventFiles.size() << " interrupt sources\n";
+    std::cout << "XDMA: opened interface with " << _dmaChannels.size() << " DMA channels and " << _eventFiles.size()
+              << " interrupt sources\n";
 #endif
     _hasActiveException = false;
   }
@@ -100,7 +101,7 @@ namespace ChimeraTK {
 
   void XdmaBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
 #ifdef _DEBUGDUMP
-    std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
+    std::cout << "XDMA: read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
     intf->read(address, data, sizeInBytes);
@@ -111,7 +112,7 @@ namespace ChimeraTK {
 
   void XdmaBackend::write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) {
 #ifdef _DEBUGDUMP
-    std::cout << "write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
+    std::cout << "XDMA: write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
     intf->write(address, data, sizeInBytes);
