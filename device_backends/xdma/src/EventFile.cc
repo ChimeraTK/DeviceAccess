@@ -18,7 +18,9 @@ namespace ChimeraTK {
   }
 
   void EventThread::waitForEvent() {
+#ifdef _DEBUG
     std::cout << "Waiting for event...\n";
+#endif
     _sd.async_read_some(boost::asio::null_buffers(), // No actual reading
         std::bind(&EventThread::handleEvent, this,
             std::placeholders::_1 // boost::asio::placeholders::error
@@ -30,14 +32,15 @@ namespace ChimeraTK {
       const std::string msg = "EventThread I/O error: " + ec.message();
       throw runtime_error(msg);
     }
+#ifdef _DEBUG
     std::cout << "Event received.\n";
+#endif
     _receiver.dispatchInterrupt(0, _interruptIdx);
     waitForEvent();
   }
 
   EventFile::EventFile(const std::string& devicePath, size_t interruptIdx, XdmaBackend& owner)
   : _file(devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY), _owner(owner) {
-    std::cout << "Open EVT " << devicePath + "/events" + std::to_string(interruptIdx) << "\n";
   }
 
   EventFile::~EventFile() { stopThread(); }

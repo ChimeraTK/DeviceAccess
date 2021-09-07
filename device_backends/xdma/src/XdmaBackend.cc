@@ -34,11 +34,9 @@ namespace ChimeraTK {
       }
     }
 
-    std::cout << "EVENTILED\n";
     // Build vector of event files
     _eventFiles.clear();
     for(size_t i = 0; i < _maxInterrupts; i++) {
-      std::cout << "EVE->" << i << "\n";
       try {
         _eventFiles.emplace_back(_devicePath, i, *this);
       }
@@ -46,7 +44,9 @@ namespace ChimeraTK {
         break;
       }
     }
-
+#ifdef _DEBUG
+    std::cout << "Opened XDMA interface with " << _dmaChannels.size() << " DMA channels and " << _eventFiles.size() << " interrupt sources\n";
+#endif
     _hasActiveException = false;
   }
 
@@ -99,7 +99,7 @@ namespace ChimeraTK {
 #endif
 
   void XdmaBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
-#ifdef _DEBUG
+#ifdef _DEBUGDUMP
     std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
@@ -110,7 +110,7 @@ namespace ChimeraTK {
   }
 
   void XdmaBackend::write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) {
-#ifdef _DEBUG
+#ifdef _DEBUGDUMP
     std::cout << "write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
