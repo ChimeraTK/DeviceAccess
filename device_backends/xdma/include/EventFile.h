@@ -19,13 +19,16 @@ namespace ChimeraTK {
     XdmaBackend& _receiver;
     std::thread _thread;
 
+    std::array<uint32_t, 1> _result;
+
    public:
     EventThread() = delete;
     EventThread(int fd, size_t interruptIdx, XdmaBackend& receiver);
     ~EventThread();
 
+    void run();
     void waitForEvent();
-    void handleEvent(const boost::system::error_code& ec);
+    void handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred);
   };
 
   // Event files are device files that are used to signal interrupt events to userspace

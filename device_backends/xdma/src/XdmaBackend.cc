@@ -54,6 +54,7 @@ namespace ChimeraTK {
   void XdmaBackend::closeImpl() {
     _ctrlIntf.reset();
     _dmaChannels.clear();
+    _eventFiles.clear();
   }
 
   bool XdmaBackend::isOpen() { return _ctrlIntf.has_value(); }
@@ -123,11 +124,16 @@ namespace ChimeraTK {
 
   void XdmaBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) {
     if(interruptControllerNumber != 0) {
-      throw ChimeraTK::logic_error("XDMA backend only uses interrupt controller 0");
+      throw ChimeraTK::logic_error("XDMA: backend only uses interrupt controller 0");
+    }
+    if(_eventFiles.empty()) {
+      throw ChimeraTK::logic_error("XDMA: trying to use interrupts, but no event files available");
     }
     if(interruptNumber >= _eventFiles.size()) {
-      throw ChimeraTK::logic_error("Couldn't find XDMA event file " + std::to_string(interruptNumber));
+      throw ChimeraTK::logic_error("XDMA interrupt " + std::to_string(interruptNumber) + " out of range, only 0.." +
+          std::to_string(_eventFiles.size() - 1) + " available\n");
     }
+    _eventFiles[interruptNumber].startThread();
   }
 
   std::string XdmaBackend::readDeviceInfo() {
