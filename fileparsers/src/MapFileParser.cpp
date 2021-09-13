@@ -334,14 +334,14 @@ namespace ChimeraTK {
       RegisterInfoMap::RegisterInfo::Type registerType, uint32_t nElements, uint64_t address, uint32_t nBytes,
       uint64_t bar, uint32_t width, int32_t nFractionalBits, bool signedFlag) {
     //
-    // if type is VOID, access mode must be interrupt (cannot be READWRITE, READ or WRITE)
+    // if type is VOID, access mode cannot me read only
     if(registerType == RegisterInfoMap::RegisterInfo::Type::VOID &&
-        registerAccessMode != RegisterInfoMap::RegisterInfo::Access::INTERRUPT)
-      throw ChimeraTK::logic_error(
-          std::string("Map file error. Register Type is VOID and access mode is different than INTERRUPT. "));
+        registerAccessMode == RegisterInfoMap::RegisterInfo::Access::READ)
+      throw ChimeraTK::logic_error(std::string("Map file error. Register Type is VOID and access mode is READ only. "));
     //
-    // if register type is VOID then all fields must be '0'
-    if(registerType == RegisterInfoMap::RegisterInfo::Type::VOID) {
+    // if register type is VOID and push-type. then all fields must be '0'
+    if(registerType == RegisterInfoMap::RegisterInfo::Type::VOID &&
+        registerAccessMode == RegisterInfoMap::RegisterInfo::Access::INTERRUPT) {
       if(width || nElements || address || nBytes || bar || nFractionalBits || signedFlag)
         throw ChimeraTK::logic_error(
             std::string("Map file error. Register Type is VOID (width field set to 0). All other fields must be '0'."));
