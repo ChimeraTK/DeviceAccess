@@ -11,19 +11,19 @@ if accessors with AccessMode::wait_for_new_data are requested. See \ref transfer
 The AsyncNDRegisterAccessor is a generic implementation which can be used for all backends and contains the following
 components
 
-- a send buffer of type NDRegisterAccessor<UserType>::Buffer which contains the data value
+- a lock free queue to transport data of type NDRegisterAccessor<UserType>::Buffer, which contains the data value
   (2D vector of UserType), a VersionNumber and a DataValidity flag.
-- a lock free queue to transport the data of the send buffer
 - functions to activate/deactivate the accessor, and to push data and exceptions into the queue
 - a (synchronous) accessor which is used for write operations (optional)
 
 A *trigger domain* is a set of registers for which the data is always send together.
 Examles:
-- For the pcie backend, a set of registers described in the map file as read out and the data is pushed into the
- according AsyncNDRegisterAccessessors when the according interrupt occurs.
-- For push-type data with a composed data type where DeviceAccess provides individual accessors for the components
-  (e.g. for a DOOCS IFFF there is one int and three floats in the trigger domain)
-- A trigger domain can consist of a single register
+- For the pcie backend, a set of registers described in the map file is read from the device  and the data is pushed
+  into the according AsyncNDRegisterAccessessors when the according interrupt occurs.
+- For push-type data with a composed data type, DeviceAccess provides individual registers for the components which
+  make up a trigger domain
+  (e.g. for a DOOCS IFFF there is one int and three floats in the trigger domain).
+- A trigger domain can consist of a single register.
  
 One AsyncAccessorManager is used per trigger domain. The AsyncAccessorManager has three main functions:
 
@@ -36,13 +36,13 @@ One AsyncAccessorManager is used per trigger domain. The AsyncAccessorManager ha
 - The data transport queue contains data that is already converted to the UserType, so the potentially expensive and
   slow operations (data readout,
   de-multiplexing, data conversion) are happening only once, before the data is distributed to multiple subscribers.
-- The send buffer is contained in the AsyncNDRegisterAccessor to avoid dynamic memory allocation.
 - To unsubscribe, the NDRegisterAccessor is calling AsyncAccessorManager::unsubscribe() with its TransferElementID from
   the destructor.
 - The class AsyncVariable represents the sender side of the asynchonous accessor.\ref asyncAccessor_comment_AsyncVariable "(*)"
   It provides fuctions to send data and exceptions, to activate and to deactivate the accessors,  and it implements
   all the handling of the contained AsyncNDRegisterAccessor instance.
   In addition it provides shape information for creating AsyncNDRegisterAccessors to the AsyncAccessorManager.
+- A send buffer is contained in the AsyncVariable to avoid dynamic memory allocation.
 - The void notification queue in the TransferElement base class is set up as a continuation of the data transport queue,
   such that the read operations of the notification queue trigger the filling of the user buffer.
 
@@ -74,7 +74,9 @@ backend implementations:
   -# Write the initial value, the according data validity flag and the version number to the _sendBuffer of each
      AsyncVariable
   -# Call activate() on all AsyncVariables
-  
+  - 3. and 4. can also be implemented together by looping all variables once, i.e. preparing the _sendBuffer and
+    activating one valiable before continuing with the next one.
+
 The backend uses the AsyncNDRegisterAccessor by
 - creating one AsyncAccessorManager for each trigger domain
 - calling AsyncAccessorManager::subscribe() in getRegisterAccessor(), and handing out the created AsyncNDRegisterAccessor.
@@ -85,6 +87,15 @@ The backend uses the AsyncNDRegisterAccessor by
 - calling AsyncAccessorManager::activate() in activateAsyncRead()
 - calling AsyncAccessorManager::sendException() in setException()
 - calling AsyncAccessorManager::deactivate() when the backend is closed.
+
+The code sending the data has to follow a similar quequence as AsyncAccessorManager::activate():
+-# Lock the _variablesMutex which protects the container of AsyncVariables, so no entries can be added or removed
+-# Generate a new version number while holding the lock. All accessors of the same trigger domain must
+   have the same version number for the same trigger.
+-# Prepare the _sendBuffer, incl. data validity flag and version number for each AsyncVariable
+-# Call send() on all AsyncVariables
+- 3. and 4. can also be implemented together by looping all variables once, i.e. preparing the _sendBuffer and
+  calling send() for one valiable before continuing with the next one.
 
 \anchor asyncAccessor_comment_AsyncVariable (*2) The reason to put this into the AsyncVariable is coming from the
   NumericAddressedBackend. It adds a synchronous accessor to the AsyncVariable which is used for reading and
