@@ -13,7 +13,7 @@ namespace ChimeraTK {
   class XdmaBackend;
 
   class EventThread {
-    boost::asio::io_service _svc;
+    boost::asio::io_context _ctx;
     boost::asio::posix::stream_descriptor _sd;
     size_t _interruptIdx;
     XdmaBackend& _receiver;
@@ -26,22 +26,18 @@ namespace ChimeraTK {
     EventThread(int fd, size_t interruptIdx, XdmaBackend& receiver);
     ~EventThread();
 
-    void run();
     void waitForEvent();
+    void readEvent(const boost::system::error_code& ec);
     void handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred);
   };
 
   // Event files are device files that are used to signal interrupt events to userspace
   class EventFile {
-    friend class EventThread;
-
     DeviceFile _file;
     size_t _interruptIdx;
     XdmaBackend& _owner;
 
     std::unique_ptr<EventThread> _evtThread;
-
-    void trigger();
 
    public:
     EventFile() = delete;
@@ -50,7 +46,6 @@ namespace ChimeraTK {
     ~EventFile();
 
     void startThread();
-    void stopThread();
   };
 
 } // namespace ChimeraTK

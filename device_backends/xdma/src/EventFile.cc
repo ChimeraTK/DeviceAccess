@@ -7,9 +7,11 @@
 
 #include "XdmaBackend.h"
 
+namespace io = boost::asio;
+
 namespace ChimeraTK {
   EventThread::EventThread(int fd, size_t interruptIdx, XdmaBackend& receiver)
-  : _svc{}, _sd{_svc, fd}, _interruptIdx(interruptIdx), _receiver(receiver), _thread(&EventThread::run, this) {
+  : _ctx{}, _sd{_ctx, fd}, _interruptIdx{interruptIdx}, _receiver{receiver}, _thread{&EventThread::waitForEvent, this} {
 #ifdef _DEBUG
     std::cout << "XDMA: EventThread " << _interruptIdx << " ctor\n";
 #endif
@@ -19,48 +21,59 @@ namespace ChimeraTK {
 #ifdef _DEBUG
     std::cout << "XDMA: EventThread " << _interruptIdx << " dtor\n";
 #endif
-    _svc.stop();
+    _ctx.stop();
     _thread.join();
-#ifdef _DEBUG
-    std::cout << "XDMA: EventThread " << _interruptIdx << " dtor done\n";
-#endif
-  }
-
-  void EventThread::run() {
-#ifdef _DEBUG
-    std::cout << "XDMA: EventThread(" << _interruptIdx << ")::run() start\n";
-#endif
-    waitForEvent();
-    _svc.run();
-#ifdef _DEBUG
-    std::cout << "XDMA: EventThread(" << _interruptIdx << ")::run() end\n";
-#endif
   }
 
   void EventThread::waitForEvent() {
 #ifdef _DEBUG
-    std::cout << "XDMA: Waiting for event " << _interruptIdx << "\n";
+    std::cout << "XDMA: waitForEvent " << _interruptIdx << "\n";
 #endif
-    _sd.async_read_some(boost::asio::buffer(_result),
-        std::bind(&EventThread::handleEvent, this,
-            std::placeholders::_1, // boost::asio::placeholders::error
-            std::placeholders::_2  // boost::asio::placeholders::bytes_transferred
+    // We have to wait seperately from the read operation,
+    // since the read op will not be canceled by _ctx.stop() in the dtor
+    _sd.async_wait(io::posix::stream_descriptor::wait_read,
+        std::bind(&EventThread::readEvent, this,
+            std::placeholders::_1 // io::placeholders::error
             ));
+    _ctx.run_one();
+  }
+
+  void EventThread::readEvent(const boost::system::error_code& ec) {
+#ifdef _DEBUG
+    std::cout << "XDMA: readEvent " << _interruptIdx << "\n";
+#endif
+    if(ec) {
+      const std::string msg = "EventThread::readEvent() I/O error: " + ec.message();
+      throw runtime_error(msg);
+    }
+    _sd.async_read_some(io::buffer(_result),
+        std::bind(&EventThread::handleEvent, this,
+            std::placeholders::_1, // io::placeholders::error
+            std::placeholders::_2  // io::placeholders::bytes_transferred
+            ));
+    _ctx.run_one();
   }
 
   void EventThread::handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred) {
+#ifdef _DEBUG
+    std::cout << "XDMA: handleEvent " << _interruptIdx << "\n";
+#endif
     if(ec) {
-      const std::string msg = "EventThread I/O error: " + ec.message();
+      const std::string msg = "EventThread::handleEvent() I/O error: " + ec.message();
       throw runtime_error(msg);
     }
+    if(bytes_transferred != sizeof(_result[0])) {
+      throw runtime_error("EventThread::handleEvent() incomplete read");
+    }
+
+    uint32_t numInterrupts = _result[0];
 #ifdef _DEBUG
-    std::cout << "XDMA: Event " << _interruptIdx << " received: " << bytes_transferred << " bytes, " << _result[0]
+    std::cout << "XDMA: Event " << _interruptIdx << " received: " << bytes_transferred << " bytes, " << numInterrupts
               << " interrupts\n";
 #endif
-    _receiver.dispatchInterrupt(0, _interruptIdx);
-#ifdef _DEBUG
-    std::cout << "XDMA: Event " << _interruptIdx << " dispatched\n";
-#endif
+    while(numInterrupts--) {
+      _receiver.dispatchInterrupt(0, _interruptIdx);
+    }
     waitForEvent();
   }
 
@@ -68,28 +81,13 @@ namespace ChimeraTK {
   : _file(devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY), _interruptIdx(interruptIdx), _owner(owner) {
   }
 
-  EventFile::~EventFile() { stopThread(); }
+  EventFile::~EventFile() { _evtThread.reset(nullptr); }
 
   void EventFile::startThread() {
     if(_evtThread) {
       return;
     }
-#ifdef _DEBUG
-    std::cout << "XDMA: Starting thread for event " << _interruptIdx << "\n";
-#endif
     _evtThread = std::make_unique<EventThread>(_file, _interruptIdx, _owner);
-#ifdef _DEBUG
-    std::cout << "XDMA: Started thread for event " << _interruptIdx << "\n";
-#endif
-  }
-
-  void EventFile::stopThread() {
-    if(_evtThread) {
-#ifdef _DEBUG
-      std::cout << "XDMA: Stopping thread for event " << _interruptIdx << "\n";
-#endif
-      _evtThread.reset(nullptr);
-    }
   }
 
 } // namespace ChimeraTK

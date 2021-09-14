@@ -52,9 +52,9 @@ namespace ChimeraTK {
   }
 
   void XdmaBackend::closeImpl() {
+    _eventFiles.clear();
     _ctrlIntf.reset();
     _dmaChannels.clear();
-    _eventFiles.clear();
   }
 
   bool XdmaBackend::isOpen() { return _ctrlIntf.has_value(); }
