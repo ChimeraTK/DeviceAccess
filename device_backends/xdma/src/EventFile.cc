@@ -10,7 +10,7 @@ namespace io = boost::asio;
 
 namespace ChimeraTK {
   EventThread::EventThread(EventFile& owner)
-  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file}, _thread{&EventThread::waitForEvent, this} {
+  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file}, _thread{&EventThread::start, this} {
 #ifdef _DEBUG
     std::cout << "XDMA: EventThread " << _owner._file.name() << " ctor\n";
 #endif
@@ -18,10 +18,16 @@ namespace ChimeraTK {
 
   EventThread::~EventThread() {
 #ifdef _DEBUG
-    std::cout << "XDMA: EventThread " << _owner._file.name() << " dtor\n";
+    std::cout << "XDMA: EventThread " << _owner._file.name() << " dtor\n" << std::endl;
 #endif
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     _ctx.stop();
     _thread.join();
+  }
+
+  void EventThread::start() {
+    waitForEvent();
+    _ctx.run();
   }
 
   void EventThread::waitForEvent() {
@@ -34,7 +40,6 @@ namespace ChimeraTK {
         std::bind(&EventThread::readEvent, this,
             std::placeholders::_1 // io::placeholders::error
             ));
-    _ctx.run_one();
   }
 
   void EventThread::readEvent(const boost::system::error_code& ec) {
@@ -50,7 +55,6 @@ namespace ChimeraTK {
             std::placeholders::_1, // io::placeholders::error
             std::placeholders::_2  // io::placeholders::bytes_transferred
             ));
-    _ctx.run_one();
   }
 
   void EventThread::handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred) {

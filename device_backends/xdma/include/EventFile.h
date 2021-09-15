@@ -28,6 +28,7 @@ namespace ChimeraTK {
     EventThread(EventFile& owner);
     ~EventThread();
 
+    void start();
     void waitForEvent();
     void readEvent(const boost::system::error_code& ec);
     void handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred);
