@@ -20,7 +20,7 @@ namespace ChimeraTK {
     }
   }
 
-  DeviceFile::DeviceFile(DeviceFile&& d) : _fd(std::exchange(d._fd, 0)), _path(std::move(d._path)) {}
+  DeviceFile::DeviceFile(DeviceFile&& d) : _path(std::move(d._path)), _fd(std::exchange(d._fd, 0)) {}
 
   DeviceFile::~DeviceFile() {
     if(_fd > 0) {
@@ -38,6 +38,6 @@ namespace ChimeraTK {
 
   DeviceFile::operator int() const { return _fd; }
 
-  std::string DeviceFile::name() const { return _path; };
+  std::string DeviceFile::name() const { return _path; }
 
 } // namespace ChimeraTK

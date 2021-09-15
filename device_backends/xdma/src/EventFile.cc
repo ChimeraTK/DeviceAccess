@@ -3,23 +3,22 @@
 #include <fcntl.h>
 
 #include <iostream>
-#include <functional>
 
-#include "XdmaBackend.h"
+#include "ChimeraTK/Exception.h"
 
 namespace io = boost::asio;
 
 namespace ChimeraTK {
-  EventThread::EventThread(int fd, size_t interruptIdx, XdmaBackend& receiver)
-  : _ctx{}, _sd{_ctx, fd}, _interruptIdx{interruptIdx}, _receiver{receiver}, _thread{&EventThread::waitForEvent, this} {
+  EventThread::EventThread(EventFile& owner)
+  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file}, _thread{&EventThread::waitForEvent, this} {
 #ifdef _DEBUG
-    std::cout << "XDMA: EventThread " << _interruptIdx << " ctor\n";
+    std::cout << "XDMA: EventThread " << _owner._file.name() << " ctor\n";
 #endif
   }
 
   EventThread::~EventThread() {
 #ifdef _DEBUG
-    std::cout << "XDMA: EventThread " << _interruptIdx << " dtor\n";
+    std::cout << "XDMA: EventThread " << _owner._file.name() << " dtor\n";
 #endif
     _ctx.stop();
     _thread.join();
@@ -27,7 +26,7 @@ namespace ChimeraTK {
 
   void EventThread::waitForEvent() {
 #ifdef _DEBUG
-    std::cout << "XDMA: waitForEvent " << _interruptIdx << "\n";
+    std::cout << "XDMA: waitForEvent " << _owner._file.name() << "\n";
 #endif
     // We have to wait seperately from the read operation,
     // since the read op will not be canceled by _ctx.stop() in the dtor
@@ -40,7 +39,7 @@ namespace ChimeraTK {
 
   void EventThread::readEvent(const boost::system::error_code& ec) {
 #ifdef _DEBUG
-    std::cout << "XDMA: readEvent " << _interruptIdx << "\n";
+    std::cout << "XDMA: readEvent " << _owner._file.name() << "\n";
 #endif
     if(ec) {
       const std::string msg = "EventThread::readEvent() I/O error: " + ec.message();
@@ -56,7 +55,7 @@ namespace ChimeraTK {
 
   void EventThread::handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred) {
 #ifdef _DEBUG
-    std::cout << "XDMA: handleEvent " << _interruptIdx << "\n";
+    std::cout << "XDMA: handleEvent " << _owner._file.name() << "\n";
 #endif
     if(ec) {
       const std::string msg = "EventThread::handleEvent() I/O error: " + ec.message();
@@ -68,18 +67,17 @@ namespace ChimeraTK {
 
     uint32_t numInterrupts = _result[0];
 #ifdef _DEBUG
-    std::cout << "XDMA: Event " << _interruptIdx << " received: " << bytes_transferred << " bytes, " << numInterrupts
-              << " interrupts\n";
+    std::cout << "XDMA: Event " << _owner._file.name() << " received: " << bytes_transferred << " bytes, "
+              << numInterrupts << " interrupts\n";
 #endif
     while(numInterrupts--) {
-      _receiver.dispatchInterrupt(0, _interruptIdx);
+      _owner._callback();
     }
     waitForEvent();
   }
 
-  EventFile::EventFile(const std::string& devicePath, size_t interruptIdx, XdmaBackend& owner)
-  : _file(devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY), _interruptIdx(interruptIdx), _owner(owner) {
-  }
+  EventFile::EventFile(const std::string& devicePath, size_t interruptIdx, EventCallback callback)
+  : _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _callback{callback} {}
 
   EventFile::~EventFile() { _evtThread.reset(nullptr); }
 
@@ -87,7 +85,7 @@ namespace ChimeraTK {
     if(_evtThread) {
       return;
     }
-    _evtThread = std::make_unique<EventThread>(_file, _interruptIdx, _owner);
+    _evtThread = std::make_unique<EventThread>(*this);
   }
 
 } // namespace ChimeraTK

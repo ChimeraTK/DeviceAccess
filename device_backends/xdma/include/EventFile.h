@@ -3,6 +3,7 @@
 #include <string>
 #include <thread>
 #include <memory>
+#include <functional>
 
 #include <boost/asio.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
@@ -10,20 +11,21 @@
 #include "DeviceFile.h"
 
 namespace ChimeraTK {
-  class XdmaBackend;
+  using EventCallback = std::function<void()>;
 
+  class EventFile;
   class EventThread {
+    EventFile& _owner;
+
     boost::asio::io_context _ctx;
     boost::asio::posix::stream_descriptor _sd;
-    size_t _interruptIdx;
-    XdmaBackend& _receiver;
     std::thread _thread;
 
     std::array<uint32_t, 1> _result;
 
    public:
     EventThread() = delete;
-    EventThread(int fd, size_t interruptIdx, XdmaBackend& receiver);
+    EventThread(EventFile& owner);
     ~EventThread();
 
     void waitForEvent();
@@ -33,15 +35,15 @@ namespace ChimeraTK {
 
   // Event files are device files that are used to signal interrupt events to userspace
   class EventFile {
+    friend class EventThread;
     DeviceFile _file;
-    size_t _interruptIdx;
-    XdmaBackend& _owner;
+    EventCallback _callback;
 
     std::unique_ptr<EventThread> _evtThread;
 
    public:
     EventFile() = delete;
-    EventFile(const std::string& devicePath, size_t interruptIdx, XdmaBackend& owner);
+    EventFile(const std::string& devicePath, size_t interruptIdx, EventCallback callback);
     EventFile(EventFile&& d) = default;
     ~EventFile();
 
