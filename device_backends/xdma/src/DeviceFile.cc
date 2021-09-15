@@ -11,7 +11,7 @@
 namespace ChimeraTK {
 
   DeviceFile::DeviceFile(const std::string& deviceFilePath, int flags)
-  : _fd{::open(deviceFilePath.c_str(), flags)}, _path{deviceFilePath} {
+  : _path{deviceFilePath}, _fd{::open(_path.c_str(), flags)} {
 #ifdef _DEBUG
     std::cout << "XDMA: opening device file " << _path << std::endl;
 #endif
@@ -37,5 +37,7 @@ namespace ChimeraTK {
   }
 
   DeviceFile::operator int() const { return _fd; }
+
+  std::string DeviceFile::name() const { return _path; };
 
 } // namespace ChimeraTK
