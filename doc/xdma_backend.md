@@ -1,6 +1,6 @@
-# XDMA backend for DeviceAccess
+# XDMA backend
 
-This is a DeviceAccess backend that interfaces the [Xilinx DMA Subsystem for PCI Express](https://www.xilinx.com/support/documentation/ip_documentation/xdma/v4_1/pg195-pcie-dma.pdf) through the [Xilinx XDMA driver](https://www.xilinx.com/Attachment/Xilinx_Answer_71435_XDMA_Debug_Guide.pdf).
+The XDMA backend interfaces the [Xilinx DMA Subsystem for PCI Express](https://www.xilinx.com/support/documentation/ip_documentation/xdma/v4_1/pg195-pcie-dma.pdf) through the [Xilinx XDMA driver](https://www.xilinx.com/Attachment/Xilinx_Answer_71435_XDMA_Debug_Guide.pdf).
 
 ## Prerequisites
 
