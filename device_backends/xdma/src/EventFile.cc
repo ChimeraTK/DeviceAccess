@@ -1,7 +1,5 @@
 #include "EventFile.h"
 
-#include <fcntl.h>
-
 #include <iostream>
 
 #include "ChimeraTK/Exception.h"
@@ -20,7 +18,6 @@ namespace ChimeraTK {
 #ifdef _DEBUG
     std::cout << "XDMA: EventThread " << _owner._file.name() << " dtor\n" << std::endl;
 #endif
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     _ctx.stop();
     _thread.join();
   }
