@@ -123,6 +123,17 @@ namespace ChimeraTK {
       return get()->template setAsCooked<COOKED_TYPE>(0, sample, value);
     }
 
+    /**
+     * Convenience function to set and write new value if it differes from the current value.
+     */
+    void writeIfDifferent(const std::vector<UserType>& newValue) {
+      if(std::equal(newValue.begin(), newValue.end(), get()->accessChannel(0).begin()) ||
+          this->getVersionNumber() == VersionNumber(nullptr)) {
+        operator=(newValue);
+        this->write();
+      }
+    }
+
     friend class TransferGroup;
 
     using NDRegisterAccessorAbstractor<UserType>::get;
