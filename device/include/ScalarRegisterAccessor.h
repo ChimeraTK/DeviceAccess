@@ -133,6 +133,19 @@ namespace ChimeraTK {
       return *this;
     }
 
+    /**
+     * Convenience function to set and write new value if it differes from the current value. The given version number
+     * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
+     * the write actually takes place.
+     */
+    void writeIfDifferent(const std::string& newValue, VersionNumber versionNumber = VersionNumber{nullptr}) {
+      if(get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr)) {
+        operator=(newValue);
+        if(versionNumber == VersionNumber{nullptr}) versionNumber = {};
+        this->write(versionNumber);
+      }
+    }
+
     friend class TransferGroup;
   };
 
