@@ -124,13 +124,16 @@ namespace ChimeraTK {
     }
 
     /**
-     * Convenience function to set and write new value if it differes from the current value.
+     * Convenience function to set and write new value if it differes from the current value. The given version number
+     * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
+     * the write actually takes place.
      */
-    void writeIfDifferent(const std::vector<UserType>& newValue) {
-      if(std::equal(newValue.begin(), newValue.end(), get()->accessChannel(0).begin()) ||
+    void writeIfDifferent(const std::vector<UserType>& newValue, VersionNumber versionNumber = VersionNumber{nullptr}) {
+      if(!std::equal(newValue.begin(), newValue.end(), get()->accessChannel(0).begin()) ||
           this->getVersionNumber() == VersionNumber(nullptr)) {
         operator=(newValue);
-        this->write();
+        if(versionNumber == VersionNumber{nullptr}) versionNumber = {};
+        this->write(versionNumber);
       }
     }
 
