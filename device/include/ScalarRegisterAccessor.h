@@ -124,7 +124,7 @@ namespace ChimeraTK {
 
     inline ScalarRegisterAccessor() {}
 
-    inline operator std::string &() {
+    inline operator std::string&() {
       return boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)->accessData(0, 0);
     }
 
