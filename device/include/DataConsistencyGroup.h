@@ -31,7 +31,7 @@ namespace ChimeraTK {
 
     /** Add register to group. The same TransferElement can be part of multiple DataConsistencyGroups. The register
      *  must be must be readable, and it must have AccessMode::wait_for_new_data. */
-    void add(TransferElementAbstractor element);
+    void add(const TransferElementAbstractor& element);
     void add(boost::shared_ptr<TransferElement> element);
 
     /** This function updates consistentElements, a set of TransferElementID. It returns true, if a consistent state is
@@ -90,7 +90,7 @@ namespace ChimeraTK {
   }
   /********************************************************************************************************************/
 
-  inline void DataConsistencyGroup::add(TransferElementAbstractor element) {
+  inline void DataConsistencyGroup::add(const TransferElementAbstractor& element) {
     if(!element.isReadable()) {
       throw ChimeraTK::logic_error(
           "Cannot add non-readable accessor for register " + element.getName() + " to DataConsistencyGroup.");
