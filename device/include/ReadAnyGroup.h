@@ -496,13 +496,21 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::Notification ReadAnyGroup::waitAnyNonBlocking() {
-    handlePreRead();
+    // check if update is available
+    if(notification_queue.empty()) {
+      // If no notification is present, do not even execute preRead. This is necessary for two reasons:
+      // - We always used TransferType::read to avoid mixing TransferType::read and TransferType::readNonBlocking
+      //   in the same transfer of the same variable. We can do this even in this non-blocking case, if we already know
+      //   that there will be an update read, since there will not be any difference beyond this point.
+      // - In ApplicationCore testable mode, the testable mode lock must be released in a preRead before any blocking
+      //   read operation. If preRead is called here when no update is available, no preRead will be called in a
+      //   possible subsequend blocking readAny(), hence there would be no way to release the testable mode lock in the
+      //   right place.
+      return {};
+    }
 
-    // Wait for notification
-    std::size_t index;
-    bool hasUpdate = notification_queue.pop(index);
-    if(!hasUpdate) return {};
-    return Notification(index, this);
+    // now that we know that an update is available, we can defer to waitAny()
+    return waitAny();
   }
 
   /********************************************************************************************************************/
