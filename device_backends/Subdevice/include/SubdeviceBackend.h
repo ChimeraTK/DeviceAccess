@@ -86,10 +86,8 @@ namespace ChimeraTK {
     /// the target device name
     std::string targetAlias;
 
-    /// The target device backend itself. We are using directly a backend since we
-    /// want to obtain
-    //  NDRegisterAccessors which we can directly return in
-    //  getRegisterAccessor_impl().
+    /// The target device backend itself. We are using directly a backend since we want to obtain
+    /// NDRegisterAccessors which we can directly return in  getRegisterAccessor_impl().
     boost::shared_ptr<ChimeraTK::DeviceBackend> targetDevice;
 
     /// for type == area: the name of the target register
@@ -99,8 +97,7 @@ namespace ChimeraTK {
     /// registers
     std::string targetAddress, targetData, targetControl;
 
-    /// for type == threeRegisters or twoRegisters: sleep time of polling loop
-    /// resp. between operations, in usecs.
+    /// for type == threeRegisters or twoRegisters: sleep time of polling loop resp. between operations, in usecs.
     size_t sleepTime{100};
 
     /// map from register names to addresses
