@@ -21,16 +21,18 @@ namespace ChimeraTK {
    * to pass through the registers. The following pass-trough types are supported:
    *
    *  - "area" type:  use a 1D register as an address space.\n
-   *                  URI scheme:\n
-   *                  \verbatim(subdevice?type=area&device=<targetDevice>&area=<targetRegister>&map=mapFile>)\endverbatim
+   *  URI scheme:\n
+   *  \verbatim(subdevice?type=area&device=<targetDevice>&area=<targetRegister>&map=mapFile>)\endverbatim
    *
    *  - "3regs" type: use three scalar registers: address, data and status. Before
    * access, a value of 0 in the status register is awaited. Next, the address is
    * written to the address register. The value is then written to resp. read from
-   * the data register.\n URI scheme:\n
-   *                  \verbatim(subdevice?type=3regs&device=<targetDevice>&address=<addressRegister>&data=<dataRegister>&status=<statusRegister>&sleep=<usecs>&map=<mapFile>)\endverbatim
-   *                  The sleep parameter is optional and defaults to 100 usecs.
-   * It sets the polling interval for the status register.
+   * the data register.\n
+   * URI scheme:\n
+   * \verbatim(subdevice?type=3regs&device=<targetDevice>&address=<addressRegister>&data=<dataRegister>&status=<statusRegister>&sleep=<usecs>&map=<mapFile>)\endverbatim
+   * The sleep parameter is optional and defaults to 100 usecs. It sets the polling interval for the status register in
+   * microseconds. Another optional parameter "dataDelay" can be used to configure an additional delay in microseconds
+   * between the write of the address and the data registers (defaults to 0 usecs).
    *
    *  - "2regs" type: same as "3regs" but without a status register. Instead the
    * sleep parameter is mandatory and specifies the fixed sleep time before each
@@ -99,6 +101,9 @@ namespace ChimeraTK {
 
     /// for type == threeRegisters or twoRegisters: sleep time of polling loop resp. between operations, in usecs.
     size_t sleepTime{100};
+
+    /// for type == threeRegisters or twoRegisters: sleep time between address and data write
+    size_t addressToDataDelay{0};
 
     /// map from register names to addresses
     boost::shared_ptr<RegisterInfoMap> _registerMap;

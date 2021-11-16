@@ -101,6 +101,15 @@ namespace ChimeraTK {
               "SubdeviceBackend: Invalid value for parameter 'sleep': '" + parameters["sleep"] + "': " + e.what());
         }
       }
+      if(!parameters["dataDelay"].empty()) {
+        try {
+          addressToDataDelay = std::stoul(parameters["dataDelay"]);
+        }
+        catch(std::exception& e) {
+          throw ChimeraTK::logic_error("SubdeviceBackend: Invalid value for parameter 'dataDelay': '" +
+              parameters["dataDelay"] + "': " + e.what());
+        }
+      }
       if(!parameters["timeout"].empty()) {
         try {
           timeout = std::stoul(parameters["timeout"]);

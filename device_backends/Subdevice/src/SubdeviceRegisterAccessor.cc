@@ -49,6 +49,7 @@ namespace ChimeraTK {
         }
         _accAddress->accessData(0) = adr;
         _accAddress->write();
+        usleep(_backend->addressToDataDelay);
         for(size_t innerOffset = 0; innerOffset < _accData->getNumberOfSamples(); ++innerOffset) {
           if(idx < _numberOfWords) {
             _accData->accessData(0, innerOffset) = _buffer[idx];
