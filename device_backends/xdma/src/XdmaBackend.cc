@@ -2,6 +2,7 @@
 
 #include <boost/make_shared.hpp>
 #include <iomanip>
+#include <functional>
 
 namespace ChimeraTK {
 
@@ -12,7 +13,7 @@ namespace ChimeraTK {
 
   void XdmaBackend::open() {
 #ifdef _DEBUG
-    std::cout << "open xdma dev: " << _devicePath << std::endl;
+    std::cout << "XDMA: opening dev: " << _devicePath << std::endl;
 #endif
     if(_ctrlIntf) {
       if(isFunctional()) {
@@ -20,12 +21,12 @@ namespace ChimeraTK {
       }
       close();
     }
-    // TODO: retrieve mmap_(offs,size) from map file
+
     _ctrlIntf.emplace(_devicePath);
 
-    // Build vector of max. 4 DMA channels
+    // Build vector of DMA channels
     _dmaChannels.clear();
-    for(size_t i = 0; i < 4; i++) {
+    for(size_t i = 0; i < _maxDmaChannels; i++) {
       try {
         _dmaChannels.emplace_back(_devicePath, i);
       }
@@ -33,10 +34,26 @@ namespace ChimeraTK {
         break;
       }
     }
+
+    // Build vector of event files
+    _eventFiles.clear();
+    for(size_t i = 0; i < _maxInterrupts; i++) {
+      try {
+        _eventFiles.emplace_back(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, 0, i));
+      }
+      catch(const runtime_error&) {
+        break;
+      }
+    }
+#ifdef _DEBUG
+    std::cout << "XDMA: opened interface with " << _dmaChannels.size() << " DMA channels and " << _eventFiles.size()
+              << " interrupt sources\n";
+#endif
     _hasActiveException = false;
   }
 
   void XdmaBackend::closeImpl() {
+    _eventFiles.clear();
     _ctrlIntf.reset();
     _dmaChannels.clear();
   }
@@ -85,8 +102,8 @@ namespace ChimeraTK {
 #endif
 
   void XdmaBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
-#ifdef _DEBUG
-    std::cout << "read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
+#ifdef _DEBUGDUMP
+    std::cout << "XDMA: read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
     intf->read(address, data, sizeInBytes);
@@ -96,14 +113,28 @@ namespace ChimeraTK {
   }
 
   void XdmaBackend::write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) {
-#ifdef _DEBUG
-    std::cout << "write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
+#ifdef _DEBUGDUMP
+    std::cout << "XDMA: write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
     auto intf = _intfFromBar(bar);
     intf->write(address, data, sizeInBytes);
 #ifdef _DEBUGDUMP
     dump(data, sizeInBytes);
 #endif
+  }
+
+  void XdmaBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) {
+    if(interruptControllerNumber != 0) {
+      throw ChimeraTK::logic_error("XDMA: backend only uses interrupt controller 0");
+    }
+    if(_eventFiles.empty()) {
+      throw ChimeraTK::logic_error("XDMA: trying to use interrupts, but no event files available");
+    }
+    if(interruptNumber >= _eventFiles.size()) {
+      throw ChimeraTK::logic_error("XDMA interrupt " + std::to_string(interruptNumber) + " out of range, only 0.." +
+          std::to_string(_eventFiles.size() - 1) + " available\n");
+    }
+    _eventFiles[interruptNumber].startThread();
   }
 
   std::string XdmaBackend::readDeviceInfo() {
