@@ -18,6 +18,7 @@ namespace ChimeraTK {
     volatile int32_t* _reg_ptr(uintptr_t offs) const;
 
    public:
+    CtrlIntf() = delete;
     CtrlIntf(const std::string& devicePath);
     virtual ~CtrlIntf();
 

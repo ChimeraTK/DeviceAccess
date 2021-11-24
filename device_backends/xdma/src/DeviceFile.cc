@@ -11,22 +11,22 @@
 namespace ChimeraTK {
 
   DeviceFile::DeviceFile(const std::string& deviceFilePath, int flags)
-  : _fd{::open(deviceFilePath.c_str(), flags)}, _path{deviceFilePath} {
+  : _path{deviceFilePath}, _fd{::open(_path.c_str(), flags)} {
 #ifdef _DEBUG
-    std::cout << "opening device file:  " << _path << std::endl;
+    std::cout << "XDMA: opening device file " << _path << std::endl;
 #endif
     if(_fd < 0) {
       throw runtime_error(_strerror("Cannot open device: "));
     }
   }
 
-  DeviceFile::DeviceFile(DeviceFile&& d) : _fd(std::exchange(d._fd, 0)) {}
+  DeviceFile::DeviceFile(DeviceFile&& d) : _path(std::move(d._path)), _fd(std::exchange(d._fd, 0)) {}
 
   DeviceFile::~DeviceFile() {
-#ifdef _DEBUG
-    std::cout << "closing device file:  " << _path << std::endl;
-#endif
     if(_fd > 0) {
+#ifdef _DEBUG
+      std::cout << "XDMA: closing device file " << _path << std::endl;
+#endif
       ::close(_fd);
     }
   }
@@ -37,5 +37,7 @@ namespace ChimeraTK {
   }
 
   DeviceFile::operator int() const { return _fd; }
+
+  std::string DeviceFile::name() const { return _path; }
 
 } // namespace ChimeraTK
