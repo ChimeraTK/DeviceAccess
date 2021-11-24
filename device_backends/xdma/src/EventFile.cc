@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "ChimeraTK/Exception.h"
+#include "Exception.h"
 
 namespace io = boost::asio;
 
