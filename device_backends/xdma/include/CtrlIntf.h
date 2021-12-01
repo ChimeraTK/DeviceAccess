@@ -16,6 +16,7 @@ namespace ChimeraTK {
     static constexpr size_t _mmapSize = 16 * (1024 * 1024);
 
     volatile int32_t* _reg_ptr(uintptr_t offs) const;
+    void _check_range(const std::string access_type, uintptr_t address, size_t nBytes) const;
 
    public:
     CtrlIntf() = delete;
