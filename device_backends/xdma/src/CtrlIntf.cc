@@ -15,19 +15,20 @@ namespace ChimeraTK {
 
   volatile int32_t* CtrlIntf::_reg_ptr(uintptr_t offs) const { return static_cast<volatile int32_t*>(_mem) + offs / 4; }
 
-  void CtrlIntf::read(uintptr_t address, int32_t* __restrict__ buf, size_t nbytes) {
+
+  void CtrlIntf::read(uintptr_t address, int32_t* __restrict__ buf, size_t nBytes) {
     volatile int32_t* rptr = _reg_ptr(address);
-    while(nbytes >= sizeof(int32_t)) {
+    while(nBytes >= sizeof(int32_t)) {
       *buf++ = *rptr++;
-      nbytes -= sizeof(int32_t);
+      nBytes -= sizeof(int32_t);
     }
   }
 
-  void CtrlIntf::write(uintptr_t address, const int32_t* data, size_t nbytes) {
+  void CtrlIntf::write(uintptr_t address, const int32_t* data, size_t nBytes) {
     volatile int32_t* __restrict__ wptr = _reg_ptr(address);
-    while(nbytes >= sizeof(int32_t)) {
+    while(nBytes >= sizeof(int32_t)) {
       *wptr++ = *data++;
-      nbytes -= sizeof(int32_t);
+      nBytes -= sizeof(int32_t);
     }
   }
 
