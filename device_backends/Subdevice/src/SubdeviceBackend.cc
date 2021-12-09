@@ -60,47 +60,53 @@ namespace ChimeraTK {
     // type "area":
     if(parameters["type"] == "area") {
       type = Type::area;
-
-      // check if target register name is specified
-      if(parameters["area"].empty()) {
-        throw ChimeraTK::logic_error("SubdeviceBackend: Target register name "
-                                     "must be specified in the device "
-                                     "descriptor for type 'area'.");
-      }
-      targetArea = parameters["area"];
+    }
+    else if(parameters["type"] == "areaHandshake") {
+      type = Type::areaHandshake;
     }
     // type "3regs":
     else if(parameters["type"] == "3regs") {
       type = Type::threeRegisters;
+    }
+    else if(parameters["type"] == "2regs") {
+      type = Type::twoRegisters;
+
+      if(parameters["sleep"].empty()) {
+        throw ChimeraTK::logic_error("SubdeviceBackend: Target sleep time must be specified in the device "
+                                     "descriptor for type '2regs'.");
+      }
+    }
+    // unknown type
+    else {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Unknown type '" + parameters["type"] + "' specified.");
+    }
+
+    if(hasAreaParam()) {
+      // check if target register name is specified
+      if(parameters["area"].empty()) {
+        throw ChimeraTK::logic_error("SubdeviceBackend: Target register name "
+                                     "must be specified in the device "
+                                     "descriptor for types 'area' and 'areaHandshake'.");
+      }
+      targetArea = parameters["area"];
+    }
+    else {
+      // if area is not given, data and address are required
+      if(parameters["data"].empty()) {
+        throw ChimeraTK::logic_error("SubdeviceBackend: Target data register "
+                                     "name must be specified in the device "
+                                     "descriptor for types '2regs' and '3regs'.");
+      }
+      targetData = parameters["data"];
 
       // check if all target register names are specified
       if(parameters["address"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target address register "
                                      "name must be specified in the device "
-                                     "descriptor for type '3regs'.");
-      }
-      if(parameters["data"].empty()) {
-        throw ChimeraTK::logic_error("SubdeviceBackend: Target data register "
-                                     "name must be specified in the device "
-                                     "descriptor for type '3regs'.");
-      }
-      if(parameters["status"].empty()) {
-        throw ChimeraTK::logic_error("SubdeviceBackend: Target status register "
-                                     "name must be specified in the device "
-                                     "descriptor for type '3regs'.");
+                                     "descriptor for type '2regs' and '3regs'.");
       }
       targetAddress = parameters["address"];
-      targetData = parameters["data"];
-      targetControl = parameters["status"];
-      if(!parameters["sleep"].empty()) {
-        try {
-          sleepTime = std::stoul(parameters["sleep"]);
-        }
-        catch(std::exception& e) {
-          throw ChimeraTK::logic_error(
-              "SubdeviceBackend: Invalid value for parameter 'sleep': '" + parameters["sleep"] + "': " + e.what());
-        }
-      }
+      // optional parameter for delay between address write and data write
       if(!parameters["dataDelay"].empty()) {
         try {
           addressToDataDelay = std::stoul(parameters["dataDelay"]);
@@ -110,6 +116,14 @@ namespace ChimeraTK {
               parameters["dataDelay"] + "': " + e.what());
         }
       }
+    }
+    if(hasStatusParam()) {
+      if(parameters["status"].empty()) {
+        throw ChimeraTK::logic_error("SubdeviceBackend: Target status register "
+                                     "name must be specified in the device "
+                                     "descriptor for types '3regs' and 'areaHandshake'.");
+      }
+      targetControl = parameters["status"];
       if(!parameters["timeout"].empty()) {
         try {
           timeout = std::stoul(parameters["timeout"]);
@@ -120,26 +134,8 @@ namespace ChimeraTK {
         }
       }
     }
-    else if(parameters["type"] == "2regs") {
-      type = Type::twoRegisters;
-
-      // check if all target register names are specified
-      if(parameters["address"].empty()) {
-        throw ChimeraTK::logic_error("SubdeviceBackend: Target address register "
-                                     "name must be specified in the device "
-                                     "descriptor for type '2regs'.");
-      }
-      if(parameters["data"].empty()) {
-        throw ChimeraTK::logic_error("SubdeviceBackend: Target data register "
-                                     "name must be specified in the device "
-                                     "descriptor for type '2regs'.");
-      }
-      if(parameters["sleep"].empty()) {
-        throw ChimeraTK::logic_error("SubdeviceBackend: Target sleep time must be specified in the device "
-                                     "descriptor for type '2regs'.");
-      }
-      targetAddress = parameters["address"];
-      targetData = parameters["data"];
+    // sleep parameter for 2regs, 3regs or areaHandshake case
+    if(!parameters["sleep"].empty()) {
       try {
         sleepTime = std::stoul(parameters["sleep"]);
       }
@@ -148,11 +144,6 @@ namespace ChimeraTK {
             "SubdeviceBackend: Invalid value for parameter 'sleep': '" + parameters["sleep"] + "': " + e.what());
       }
     }
-    // unknown type
-    else {
-      throw ChimeraTK::logic_error("SubdeviceBackend: Unknown type '" + parameters["type"] + "' specified.");
-    }
-
     // parse map file
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("SubdeviceBackend: Map file must be specified.");
@@ -293,8 +284,9 @@ namespace ChimeraTK {
     if(type == Type::area) {
       returnValue = getRegisterAccessor_area<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
-    else if(type == Type::threeRegisters || type == Type::twoRegisters) {
-      returnValue = getRegisterAccessor_3regs<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+    else if(type == Type::threeRegisters || type == Type::twoRegisters || type == Type::areaHandshake) {
+      returnValue =
+          getRegisterAccessor_synchronized<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
     if(!returnValue) {
       throw ChimeraTK::logic_error("Unknown type");
@@ -351,7 +343,7 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_area(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    assert(type == Type::area);
+    assert(hasAreaParam());
 
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
@@ -382,40 +374,58 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-
   template<typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_3regs(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    assert(type == Type::threeRegisters || type == Type::twoRegisters);
+  boost::shared_ptr<SubdeviceRegisterAccessor> SubdeviceBackend::getRegisterAccessor_helper(
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
+      boost::shared_ptr<RegisterInfoMap::RegisterInfo>& info) {
     flags.checkForUnknownFlags({AccessMode::raw});
 
     // obtain register info
-    auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
+    info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
     verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, false);
 
     // check if register access properly specified in map file
     if(!info->isWriteable()) {
       throw ChimeraTK::logic_error("SubdeviceBackend: Subdevices of type 3reg or "
-                                   "2reg must have writeable registers only!");
+                                   "2reg or areaHandshake must have writeable registers only!");
     }
 
-
-    // check if raw transfer?
-    bool isRaw = flags.has(AccessMode::raw);
-
     // obtain target accessors
-    auto accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {});
-    auto accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 0, 0, {});
+    boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress, accData;
+    if(!hasAreaParam()) {
+      // TODO check - why is it int32 here instead of UserType?
+      accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {});
+      accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 0, 0, {});
+    }
+    else {
+      // TODO check - why do we need to check alignment?
+      // it is done in 'area' type subdevice which it seems is based on raw int32 accessors to target
+      verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, true);
+
+      // obtain target accessor in raw mode
+      size_t wordOffset = (info->address + sizeof(int32_t) * wordOffsetInRegister) / 4;
+      flags.add(AccessMode::raw);
+      // TODO check is targetArea right here? yes.
+      accData = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
+    }
     boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus;
-    if(type == Type::threeRegisters) {
+    if(hasStatusParam()) {
       accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {});
     }
 
     size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
-    auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();    
-    auto rawAcc =
-        boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
-            registerPathName, accAddress, accData, accStatus, byteOffset, numberOfWords);
+    auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
+    return boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
+        registerPathName, accAddress, accData, accStatus, byteOffset, numberOfWords);
+  }
+
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_synchronized(
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    bool isRaw = flags.has(AccessMode::raw);
+    boost::shared_ptr<RegisterInfoMap::RegisterInfo> info;
+    boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
+        getRegisterAccessor_helper<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags, info);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
@@ -437,7 +447,7 @@ namespace ChimeraTK {
   template<>
   boost::shared_ptr<NDRegisterAccessor<int32_t>> SubdeviceBackend::getRegisterAccessor_area<int32_t>(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    assert(type == Type::area);
+    assert(hasAreaParam());
 
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
@@ -467,39 +477,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<>
-  boost::shared_ptr<NDRegisterAccessor<int32_t>> SubdeviceBackend::getRegisterAccessor_3regs<int32_t>(
+  boost::shared_ptr<NDRegisterAccessor<int32_t>> SubdeviceBackend::getRegisterAccessor_synchronized<int32_t>(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    assert(type == Type::threeRegisters || type == Type::twoRegisters);
-    flags.checkForUnknownFlags({AccessMode::raw});
-
-
-    // obtain register info
-    auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
-
-    verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, false);
-
-    // check if register access properly specified in map file
-    if(!info->isWriteable()) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: Subdevices of type 3reg or "
-                                   "2reg must have writeable registers only!");
-    }
-
-    // check if raw transfer?
     bool isRaw = flags.has(AccessMode::raw);
-
-    // obtain target accessor in raw mode
-    auto accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {});
-    auto accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 0, 0, {});
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus;
-    if(type == Type::threeRegisters) {
-      accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {});
-    }
-
-    size_t byteOffset = info->address + sizeof(int32_t) * wordOffsetInRegister;
-    auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
-    auto rawAcc =
-        boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
-            registerPathName, accAddress, accData, accStatus, byteOffset, numberOfWords);
+    boost::shared_ptr<RegisterInfoMap::RegisterInfo> info;
+    boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
+        getRegisterAccessor_helper<int32_t>(registerPathName, numberOfWords, wordOffsetInRegister, flags, info);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().

@@ -586,6 +586,59 @@ BOOST_AUTO_TEST_CASE(test3regsByteOffset1) {
 
 /*********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
+  setDMapFilePath("subdeviceTest.dmap");
+
+  Device dev;
+  dev.open("SUBDEV4");
+  Device target;
+  target.open("TARGET1");
+
+  auto acc1 = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER1");
+  auto acc2 = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER2");
+  auto acc3 = dev.getOneDRegisterAccessor<int>("APP.0.MY_AREA1", 6, 0);
+  auto accArea = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 10, 0, {AccessMode::raw});
+  target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA");
+  auto accS = target.getScalarRegisterAccessor<int32_t>("APP.1.STATUS");
+  std::atomic<bool> done;
+  std::thread t;
+
+  BOOST_CHECK_THROW(acc1.read(), ChimeraTK::logic_error);
+  std::vector<int> vec = {1, 2, 3, 4, 5, 6};
+
+  accS = 1;
+  accS.write();
+  done = false;
+  t = std::thread([&] {
+    acc1 = 1897;
+    acc2 = 1897;
+    acc3 = vec;
+    acc1.write();
+    acc2.write();
+    acc3.write();
+    done = true;
+  });
+  usleep(10000);
+  BOOST_CHECK(done == false);
+  accS = 0;
+  accS.write();
+  t.join();
+  accArea.read();
+  BOOST_CHECK(accArea[0] == 1897);
+  BOOST_CHECK(accArea[1] == 1897 * 4);
+  BOOST_CHECK(accArea[2] == 65536 * vec[0]);
+  BOOST_CHECK(accArea[3] == 65536 * vec[1]);
+  dev.close();
+
+  // TODO - how can I check that the accessor waits on status==0 _each_ time before writing, not just once?
+  // in particular, when writing to an array, this must be guaranteed between individual elements
+  // maybe introduce debug counter or something?
+
+  // TODO - how can I test that multiple accessors in more than one thread all wait on the status register every time?
+}
+
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(test2regsScalar) {
   setDMapFilePath("subdeviceTest.dmap");
 

@@ -1,0 +1,2 @@
+TARGET1   (dummy?map=SubdeviceTarget.map)
+SUBDEV4   (subdevice?type=areaHandshake&device=TARGET1&area=APP.0.THE_AREA&status=APP.1.STATUS&map=Subdevice.map)

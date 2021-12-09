@@ -22,7 +22,7 @@ namespace ChimeraTK {
    public:
     SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
         boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
-        boost::shared_ptr<NDRegisterAccessor<int32_t>> accData,
+        boost::shared_ptr<NDRegisterAccessor<int32_t>> accDataArea,
         boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus, size_t byteOffset, size_t numberOfWords);
 
     void doReadTransferSynchronously() override;
@@ -50,9 +50,9 @@ namespace ChimeraTK {
     boost::shared_ptr<SubdeviceBackend> _backend;
 
     /// Pointers to the three accessors
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accAddress;
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accData;
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accStatus;
+    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accAddress;  // address register, if present
+    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accDataArea; // data or area register
+    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accStatus;   // status register, if present
 
     /// start address and length
     size_t _startAddress, _numberOfWords;
