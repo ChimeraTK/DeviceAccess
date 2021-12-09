@@ -587,7 +587,7 @@ BOOST_AUTO_TEST_CASE(test3regsByteOffset1) {
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
-  setDMapFilePath("subdeviceTest.dmap");
+  setDMapFilePath("subdeviceTestAreaHandshake.dmap");
 
   Device dev;
   dev.open("SUBDEV4");
@@ -620,8 +620,17 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
   });
   usleep(10000);
   BOOST_CHECK(done == false);
-  accS = 0;
-  accS.write();
+  int countStatusResets = 0;
+  // the dummyForAreaHandshake backend which we use for this test does not set back the status register. we do it manually from the test, and count how often we need do so
+  // Like this we can check that the accessor waits on status==0 _each_ time before writing,
+  // in particular each array entry counts.
+  while(!done) {
+    countStatusResets++;
+    accS = 0;
+    accS.write();
+    usleep(200000);
+  }
+  BOOST_CHECK(countStatusResets >= 8); // do not strictly compare with 8 since we have little control over timing
   t.join();
   accArea.read();
   BOOST_CHECK(accArea[0] == 1897);
@@ -630,11 +639,6 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
   BOOST_CHECK(accArea[3] == 65536 * vec[1]);
   dev.close();
 
-  // TODO - how can I check that the accessor waits on status==0 _each_ time before writing, not just once?
-  // in particular, when writing to an array, this must be guaranteed between individual elements
-  // maybe introduce debug counter or something?
-
-  // TODO - how can I test that multiple accessors in more than one thread all wait on the status register every time?
 }
 
 /*********************************************************************************************************************/
