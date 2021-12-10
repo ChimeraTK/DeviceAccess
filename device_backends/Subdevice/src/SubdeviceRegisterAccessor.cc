@@ -26,10 +26,9 @@ namespace ChimeraTK {
 
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
-    // TODO we have different number of transfers - given by number of registers in map
-    // I think in AreaHandshake case with 1D array this should evaluate to the requested length
     size_t nTransfers;
     if(_backend->hasAreaParam())
+      // for areaHandshake case with 1D array
       nTransfers = _numberOfWords;
     else {
       // This is "_numberOfWords / _accData->getNumberOfSamples()" rounded up:

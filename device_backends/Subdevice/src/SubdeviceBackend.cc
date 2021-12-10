@@ -374,7 +374,6 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-  template<typename UserType>
   boost::shared_ptr<SubdeviceRegisterAccessor> SubdeviceBackend::getRegisterAccessor_helper(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
       boost::shared_ptr<RegisterInfoMap::RegisterInfo>& info) {
@@ -393,19 +392,16 @@ namespace ChimeraTK {
     // obtain target accessors
     boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress, accData;
     if(!hasAreaParam()) {
-      // TODO check - why is it int32 here instead of UserType?
       accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {});
       accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 0, 0, {});
     }
     else {
-      // TODO check - why do we need to check alignment?
-      // it is done in 'area' type subdevice which it seems is based on raw int32 accessors to target
+      // check alignment just like it is done in 'area' type subdevice which is based on raw int32 accessors to target
       verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, true);
 
       // obtain target accessor in raw mode
       size_t wordOffset = (info->address + sizeof(int32_t) * wordOffsetInRegister) / 4;
       flags.add(AccessMode::raw);
-      // TODO check is targetArea right here? yes.
       accData = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
     }
     boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus;
@@ -425,7 +421,7 @@ namespace ChimeraTK {
     bool isRaw = flags.has(AccessMode::raw);
     boost::shared_ptr<RegisterInfoMap::RegisterInfo> info;
     boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
-        getRegisterAccessor_helper<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags, info);
+        getRegisterAccessor_helper(registerPathName, numberOfWords, wordOffsetInRegister, flags, info);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
@@ -482,7 +478,7 @@ namespace ChimeraTK {
     bool isRaw = flags.has(AccessMode::raw);
     boost::shared_ptr<RegisterInfoMap::RegisterInfo> info;
     boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
-        getRegisterAccessor_helper<int32_t>(registerPathName, numberOfWords, wordOffsetInRegister, flags, info);
+        getRegisterAccessor_helper(registerPathName, numberOfWords, wordOffsetInRegister, flags, info);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
