@@ -10,6 +10,7 @@
 #include "DeviceBackendImpl.h"
 
 namespace ChimeraTK {
+  class SubdeviceRegisterAccessor;
 
   /**
    *  Backend for subdevices which are passed through some register or area of
@@ -37,6 +38,11 @@ namespace ChimeraTK {
    *  - "2regs" type: same as "3regs" but without a status register. Instead the
    * sleep parameter is mandatory and specifies the fixed sleep time before each
    * operation.
+   *  - "areaHandshake" type: mapped area, but before write operations to registers
+   *    inside the map, waits for value 0 in the status register like in 3regs mode.
+   *    The sleep parameter is optional.\n
+   * URI scheme:\n
+   * \verbatim(subdevice?type=areaHandshake&device=<targetDevice>&area=<targetRegister>&map=mapFile&status=<statusRegister>&sleep=<usecs>)\endverbatim
    *
    *  Example: We like to use the register "APP.0.EXT_PZ16M" of the device with
    * the alias name "TCK7_0" in our dmap file as a target and the file
@@ -73,7 +79,8 @@ namespace ChimeraTK {
       area,           //< address space is visible as an area in the target device
       threeRegisters, //< use three registers (address, data and status) in target
                       //< device. status must be 0 when idle
-      twoRegisters    //< same as three registers but without status
+      twoRegisters,   //< same as three registers but without status
+      areaHandshake   //< address space visible as an area in the target device, and wait on status 0
     };
 
     /// Mutex to deal with concurrent access to the device
@@ -125,7 +132,7 @@ namespace ChimeraTK {
 
     /// getRegisterAccessor implemenation for threeRegisters types
     template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_3regs(
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_synchronized(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     /// obtain the target backend if not yet done
@@ -136,6 +143,13 @@ namespace ChimeraTK {
     void setException() override;
 
     void activateAsyncRead() noexcept override;
+
+    bool needAreaParam() { return type == Type::area || type == Type::areaHandshake; }
+    bool needStatusParam() { return type == Type::threeRegisters || type == Type::areaHandshake; }
+    // helper for reducing code duplication among template specializations
+    boost::shared_ptr<SubdeviceRegisterAccessor> getRegisterAccessor_helper(const RegisterPath& registerPathName,
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
+        boost::shared_ptr<RegisterInfoMap::RegisterInfo>& info);
   };
 
 } // namespace ChimeraTK
