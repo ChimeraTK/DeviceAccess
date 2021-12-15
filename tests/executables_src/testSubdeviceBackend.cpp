@@ -598,7 +598,6 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
   auto acc2 = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER2");
   auto acc3 = dev.getOneDRegisterAccessor<int>("APP.0.MY_AREA1", 6, 0);
   auto accArea = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 10, 0, {AccessMode::raw});
-  target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA");
   auto accS = target.getScalarRegisterAccessor<int32_t>("APP.1.STATUS");
   std::atomic<bool> done;
   std::thread t;
@@ -624,13 +623,18 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
   // the dummyForAreaHandshake backend which we use for this test does not set back the status register. we do it manually from the test, and count how often we need do so
   // Like this we can check that the accessor waits on status==0 _each_ time before writing,
   // in particular each array entry counts.
-  while(!done) {
+  while(true) {
+    // wait for status=busy
+    do {
+      accS.read();
+      usleep(20000);
+    } while(accS == 0 && !done);
+    if(done) break;
     countStatusResets++;
     accS = 0;
     accS.write();
-    usleep(200000);
   }
-  BOOST_CHECK(countStatusResets >= 8); // do not strictly compare with 8 since we have little control over timing
+  BOOST_CHECK(countStatusResets == 8);
   t.join();
   accArea.read();
   BOOST_CHECK(accArea[0] == 1897);

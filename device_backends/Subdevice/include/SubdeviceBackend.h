@@ -144,8 +144,8 @@ namespace ChimeraTK {
 
     void activateAsyncRead() noexcept override;
 
-    bool hasAreaParam() { return type == Type::area || type == Type::areaHandshake; }
-    bool hasStatusParam() { return type == Type::threeRegisters || type == Type::areaHandshake; }
+    bool needAreaParam() { return type == Type::area || type == Type::areaHandshake; }
+    bool needStatusParam() { return type == Type::threeRegisters || type == Type::areaHandshake; }
     // helper for reducing code duplication among template specializations
     boost::shared_ptr<SubdeviceRegisterAccessor> getRegisterAccessor_helper(const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,

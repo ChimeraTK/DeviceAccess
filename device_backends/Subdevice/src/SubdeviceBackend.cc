@@ -81,7 +81,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("SubdeviceBackend: Unknown type '" + parameters["type"] + "' specified.");
     }
 
-    if(hasAreaParam()) {
+    if(needAreaParam()) {
       // check if target register name is specified
       if(parameters["area"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target register name "
@@ -117,7 +117,7 @@ namespace ChimeraTK {
         }
       }
     }
-    if(hasStatusParam()) {
+    if(needStatusParam()) {
       if(parameters["status"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target status register "
                                      "name must be specified in the device "
@@ -343,7 +343,7 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_area(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    assert(hasAreaParam());
+    assert(type == Type::area);
 
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
@@ -391,7 +391,7 @@ namespace ChimeraTK {
 
     // obtain target accessors
     boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress, accData;
-    if(!hasAreaParam()) {
+    if(!needAreaParam()) {
       accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {});
       accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 0, 0, {});
     }
@@ -405,7 +405,7 @@ namespace ChimeraTK {
       accData = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
     }
     boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus;
-    if(hasStatusParam()) {
+    if(needStatusParam()) {
       accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {});
     }
 
@@ -443,7 +443,7 @@ namespace ChimeraTK {
   template<>
   boost::shared_ptr<NDRegisterAccessor<int32_t>> SubdeviceBackend::getRegisterAccessor_area<int32_t>(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    assert(hasAreaParam());
+    assert(type == Type::area);
 
     // obtain register info
     auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));

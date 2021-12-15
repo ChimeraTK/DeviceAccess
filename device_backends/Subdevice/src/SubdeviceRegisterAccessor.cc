@@ -27,10 +27,12 @@ namespace ChimeraTK {
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
     size_t nTransfers;
-    if(_backend->hasAreaParam())
+    if(_backend->type == SubdeviceBackend::Type::areaHandshake)
       // for areaHandshake case with 1D array
       nTransfers = _numberOfWords;
     else {
+      assert(_backend->type == SubdeviceBackend::Type::threeRegisters ||
+          _backend->type == SubdeviceBackend::Type::twoRegisters);
       // This is "_numberOfWords / _accData->getNumberOfSamples()" rounded up:
       nTransfers = (_numberOfWords + _accDataArea->getNumberOfSamples() - 1) / _accDataArea->getNumberOfSamples();
     }
@@ -54,7 +56,7 @@ namespace ChimeraTK {
         else { // twoRegisters type
           usleep(_backend->sleepTime);
         }
-        if(_backend->hasAreaParam()) {
+        if(_backend->type == SubdeviceBackend::Type::areaHandshake) {
           int32_t val = (idx < _numberOfWords) ? _buffer[idx] : 0;
           _accDataArea->accessData(0, idx) = val;
           ++idx;
@@ -112,7 +114,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("SubdeviceRegisterAccessor[" + this->getName() + "]: data/area register '" +
           _accDataArea->getName() + "' is not writeable.");
     }
-    if(_backend->hasStatusParam()) {
+    if(_backend->needStatusParam()) {
       if(!_accStatus->isReadable()) {
         throw ChimeraTK::logic_error("SubdeviceRegisterAccessor[" + this->getName() + "]: status register '" +
             _accStatus->getName() + "' is not readable.");
