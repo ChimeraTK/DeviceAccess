@@ -38,7 +38,7 @@ endforeach()
 
 # copy all server type directories to the build directory
 foreach(servertype ${servertypes})
-  file(GLOB_RECURSE files RELATIVE ${PROJECT_SOURCE_DIR} ${servertype}/*)
+  file(GLOB_RECURSE files FOLLOW_SYMLINKS RELATIVE ${PROJECT_SOURCE_DIR} ${servertype}/*)
   foreach(f ${files})
     configure_file("${f}" "${PROJECT_BINARY_DIR}/${f}" COPYONLY)
   endforeach()
