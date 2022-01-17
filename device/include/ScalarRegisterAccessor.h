@@ -30,8 +30,9 @@ namespace ChimeraTK {
     /** Constructor. @attention Do not normally use directly.
      *  Users should call Device::getScalarRegisterAccessor() to obtain an
      * instance instead. */
-    ScalarRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
+    ScalarRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) // NOLINT
     : NDRegisterAccessorAbstractor<UserType>(impl) {
+      // the linter warning about explicit conversion is suppressed.
       static_assert(!std::is_same<UserType, Void>::value,
           "You cannot create ScalarRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
     }
@@ -46,12 +47,18 @@ namespace ChimeraTK {
           "You cannot create ScalarRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
     }
 
-    /** Implicit type conversion to user type T to access the value as a
-     * reference. */
-    operator UserType&() { return get()->accessData(0, 0); }
+    /** Implicit type conversion to UserType& to access the value as a reference. */
+    operator UserType&() { // NOLINT
+      // the linter warning about explicit conversion is suppressed.
+      return get()->accessData(0, 0);
+    }
 
-    /** Implicit type conversion to user type T to access the const value. */
-    operator const UserType&() const { return get()->accessData(0, 0); }
+    /** Implicit type conversion to const UserType& to access the const reference. */
+    operator const UserType&() const { // NOLINT
+      // the linter warning about explicit conversion is suppressed.
+      return get()->accessData(0, 0);
+    }
+
 
     /** Assignment operator, assigns the first element. */
     ScalarRegisterAccessor<UserType>& operator=(UserType rightHandSide) {
