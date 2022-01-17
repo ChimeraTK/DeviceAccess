@@ -27,8 +27,8 @@ namespace ChimeraTK {
     Boolean() : m_value() {}
     Boolean(bool value) : m_value(value) {}
 
-    operator bool() const { return m_value; }
-    operator bool() { return m_value; }
+    operator const bool&() const { return m_value; }
+    operator bool&() { return m_value; }
     // TODO: test user types to numeric etc
 
    private:

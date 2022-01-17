@@ -23,8 +23,11 @@ namespace ChimeraTK {
    *  Note: Transfers between the device and the internal buffer need to be
    * triggered using the read() and write() functions before reading from resp.
    * after writing to the buffer using the operators.
+   *
+   * The second template argument TAG is only used to implement the template specialisation for ChimeraTK::Boolean
+   * without duplicating all code.
    */
-  template<typename UserType>
+  template<typename UserType, typename TAG = std::nullptr_t>
   class ScalarRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
    public:
     /** Constructor. @attention Do not normally use directly.
@@ -59,18 +62,37 @@ namespace ChimeraTK {
       return get()->accessData(0, 0);
     }
 
+    /**
+     * Allow free conversion between different TAG template arguments (which is merely used to avoid code duplication
+     * in the template specialisation for ChimeraTK::Boolean).
+     */
+    template<typename OTHER_TAG>
+    operator ScalarRegisterAccessor<UserType, OTHER_TAG>&() { // NOLINT
+      // the linter warning about explicit conversion is suppressed.
+      return *this;
+    }
+
+    /**
+     * Allow free conversion between different TAG template arguments (which is merely used to avoid code duplication
+     * in the template specialisation for ChimeraTK::Boolean).
+     */
+    template<typename OTHER_TAG>
+    operator const ScalarRegisterAccessor<UserType, OTHER_TAG>&() const { // NOLINT
+      // the linter warning about explicit conversion is suppressed.
+      return *this;
+    }
 
     /** Assignment operator, assigns the first element. */
-    ScalarRegisterAccessor<UserType>& operator=(UserType rightHandSide) {
+    ScalarRegisterAccessor& operator=(UserType rightHandSide) {
       get()->accessData(0, 0) = rightHandSide;
       return *this;
     }
 
     /** Pre-increment operator for the first element. */
-    ScalarRegisterAccessor<UserType>& operator++() { return operator=(get()->accessData(0, 0) + 1); }
+    ScalarRegisterAccessor& operator++() { return operator=(get()->accessData(0, 0) + 1); }
 
     /** Pre-decrement operator for the first element. */
-    ScalarRegisterAccessor<UserType>& operator--() { return operator=(get()->accessData(0, 0) - 1); }
+    ScalarRegisterAccessor& operator--() { return operator=(get()->accessData(0, 0) - 1); }
 
     /** Post-increment operator for the first element. */
     UserType operator++(int) {
@@ -154,6 +176,32 @@ namespace ChimeraTK {
     }
 
     friend class TransferGroup;
+  };
+
+  /**
+   * Template specialisation for ChimeraTK::Boolean. Simply add implicit type conversions to references of bool, since
+   * C++ does not do this conversion on its own as it involves two steps.
+   */
+  template<>
+  class ScalarRegisterAccessor<ChimeraTK::Boolean, std::nullptr_t>
+  : public ScalarRegisterAccessor<ChimeraTK::Boolean, void> {
+   public:
+    using ScalarRegisterAccessor<ChimeraTK::Boolean, void>::ScalarRegisterAccessor;
+    using ScalarRegisterAccessor<ChimeraTK::Boolean, void>::operator=;
+
+    /**
+     * Implicit type conversion to const bool&.
+     */
+    operator const bool&() const { // NOLINT;
+      return get()->accessData(0, 0);
+    }
+
+    /**
+     * Implicit type conversion to bool&.
+     */
+    operator bool&() { // NOLINT;
+      return get()->accessData(0, 0);
+    }
   };
 
   // Do not declare the template for all user types as extern here.
