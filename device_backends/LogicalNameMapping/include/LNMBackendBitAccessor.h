@@ -63,19 +63,21 @@ namespace ChimeraTK {
         targetDevice = dev;
       }
       auto& map = boost::fusion::at_key<uint64_t>(_dev->sharedAccessorMap.table);
-      auto it = map.find(RegisterPath(info->registerName));
+      // we need an identifier of the device in the key, in case the logical name mapping accesses more than one device
+      // with same set of register names
+      LogicalNameMappingBackend::SharedAccessorKey key(targetDevice.get(), RegisterPath(info->registerName));
+      auto it = map.find(key);
       // Obtain accessor if not found in the map or if weak pointer has expired
       // Note: we must not use boost::weak_ptr::expired() here, because we have to check the status and obtain the
       // accessor in one atomic step.
-      if(it == map.end() || (_accessor = map[RegisterPath(info->registerName)].accessor.lock()) == nullptr) {
-        _accessor = targetDevice->getRegisterAccessor<uint64_t>(
-            RegisterPath(info->registerName), numberOfWords, wordOffsetInRegister, {});
+      if(it == map.end() || (_accessor = map[key].accessor.lock()) == nullptr) {
+        _accessor = targetDevice->getRegisterAccessor<uint64_t>(key.second, numberOfWords, wordOffsetInRegister, {});
         if(_accessor->getNumberOfSamples() != 1) {
           throw ChimeraTK::logic_error("LNMBackendBitAccessors only work with registers of size 1");
         }
-        map[RegisterPath(info->registerName)].accessor = _accessor;
+        map[key].accessor = _accessor;
       }
-      lock = std::unique_lock<std::recursive_mutex>(map[RegisterPath(info->registerName)].mutex, std::defer_lock);
+      lock = std::unique_lock<std::recursive_mutex>(map[key].mutex, std::defer_lock);
       // allocate and initialise the buffer
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);

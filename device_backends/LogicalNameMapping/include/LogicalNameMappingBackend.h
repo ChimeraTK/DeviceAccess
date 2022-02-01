@@ -9,6 +9,7 @@
 #define CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
 
 #include <mutex>
+#include <utility>
 
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
@@ -82,8 +83,9 @@ namespace ChimeraTK {
     /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of
      *  LNMBackendBitAccessor. Multiple instances of LNMBackendBitAccessor referring to different bits of the same
      *  register share their target accessor. This sharing is governed by this map. */
+    using SharedAccessorKey = std::pair<DeviceBackend*, std::string>;
     template<typename UserType>
-    using SharedAccessorMap = std::map<std::string, SharedAccessor<UserType>>;
+    using SharedAccessorMap = std::map<SharedAccessorKey, SharedAccessor<UserType>>;
     TemplateUserTypeMap<SharedAccessorMap> sharedAccessorMap;
 
     template<typename T>
