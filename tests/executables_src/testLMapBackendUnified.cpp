@@ -481,6 +481,10 @@ struct RegBit2OfWordFirmwareB : BitRegisterDescriptorBase<RegBit2OfWordFirmwareB
 
   RegSingleWordB target;
   size_t bit = 2;
+  // in order to make our test sensitive to incorrect (bit accessor->device) associations, we need an instance
+  // of a bit accessor to device A, same register path, as a fixture
+  boost::shared_ptr<NDRegisterAccessor<minimumUserType>> fixAccessorOnA{
+      lmapBackend->getRegisterAccessor<minimumUserType>("/Bit2ofWordFirmwareA", 1, 0, AccessModeFlags{})};
 };
 
 /// Test bit accessor with a real dummy accessor as target
