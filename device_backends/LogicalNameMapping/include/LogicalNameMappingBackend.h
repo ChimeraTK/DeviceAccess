@@ -87,6 +87,8 @@ namespace ChimeraTK {
     template<typename UserType>
     using SharedAccessorMap = std::map<SharedAccessorKey, SharedAccessor<UserType>>;
     TemplateUserTypeMap<SharedAccessorMap> sharedAccessorMap;
+    /// a mutex to be locked when sharedAccessorMap (the container) is changed
+    std::mutex sharedAccessorMap_mutex;
 
     template<typename T>
     friend class LNMBackendRegisterAccessor;
