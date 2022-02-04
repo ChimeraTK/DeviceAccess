@@ -82,8 +82,13 @@
       <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
       <targetBit>3</targetBit>
     </redirectedBit>
-    <redirectedBit name="Bit2ofWordFirmware">
+    <redirectedBit name="Bit2ofWordFirmwareA">
       <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <targetBit>2</targetBit>
+    </redirectedBit>
+    <redirectedBit name="Bit2ofWordFirmwareB">
+      <targetDevice><par>target3</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <targetBit>2</targetBit>
     </redirectedBit>

@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE(LMapBackendUnifiedTestSuite)
 
 /**********************************************************************************************************************/
 
-static boost::shared_ptr<ExceptionDummy> exceptionDummy, exceptionDummy2;
+static boost::shared_ptr<ExceptionDummy> exceptionDummy, exceptionDummy2, exceptionDummy3;
 static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 
 /**********************************************************************************************************************/
@@ -308,6 +308,17 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
+/// Test passing through scalar accessors - dummy target 3
+struct RegSingleWordB : ScalarRegisterDescriptorBase<RegSingleWordB> {
+  std::string path() { return "/SingleWord"; }
+
+  const uint32_t increment = 3;
+
+  typedef uint32_t minimumUserType;
+  typedef minimumUserType rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
 /// Test passing through push-type scalar accessors
 struct RegSingleWord_push : ScalarRegisterDescriptorBase<RegSingleWord_push> {
   std::string path() { return "/SingleWord_push"; }
@@ -458,10 +469,22 @@ struct RegBit3OfVar : BitRegisterDescriptorBase<RegBit3OfVar> {
 
 /// Test bit accessor with a real dummy accessor as target
 struct RegBit2OfWordFirmware : BitRegisterDescriptorBase<RegBit2OfWordFirmware> {
-  std::string path() { return "/Bit2ofWordFirmware"; }
+  std::string path() { return "/Bit2ofWordFirmwareA"; }
 
   RegSingleWord target;
   size_t bit = 2;
+};
+
+/// Test bit accessor with another instance of a real dummy accessor as target
+struct RegBit2OfWordFirmwareB : BitRegisterDescriptorBase<RegBit2OfWordFirmwareB> {
+  std::string path() { return "/Bit2ofWordFirmwareB"; }
+
+  RegSingleWordB target;
+  size_t bit = 2;
+  // in order to make our test sensitive to incorrect (bit accessor->device) associations, we need an instance
+  // of a bit accessor to device A, same register path, as a fixture
+  boost::shared_ptr<NDRegisterAccessor<minimumUserType>> fixAccessorOnA{
+      lmapBackend->getRegisterAccessor<minimumUserType>("/Bit2ofWordFirmwareA", 1, 0, AccessModeFlags{})};
 };
 
 /// Test bit accessor with a real dummy accessor as target
@@ -744,9 +767,13 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   std::string dummyCdd = "(ExceptionDummy?map=mtcadummy.map)";
   std::string dummy2Cdd = "(ExceptionDummy?map=muxedDataAcessor.map)";
-  std::string lmapCdd = "(logicalNameMap?map=unifiedTest.xlmap&target=" + dummyCdd + "&target2=" + dummy2Cdd + ")";
+  std::string dummy3Cdd = "(ExceptionDummy?map=mtcadummyB.map)";
+  std::string lmapCdd = "(logicalNameMap?map=unifiedTest.xlmap&target=" + dummyCdd + "&target2=" + dummy2Cdd +
+      "&target3=" + dummy3Cdd + ")";
   exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummyCdd));
   exceptionDummy2 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy2Cdd));
+  // needed for a test that redirected bit goes to right target device
+  exceptionDummy3 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy3Cdd));
   lmapBackend =
       boost::dynamic_pointer_cast<LogicalNameMappingBackend>(BackendFactory::getInstance().createBackend(lmapCdd));
 
@@ -766,6 +793,7 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegBit0OfVar>()
       .addRegister<RegBit3OfVar>()
       .addRegister<RegBit2OfWordFirmware>()
+      .addRegister<RegBit2OfWordFirmwareB>()
       .addRegister<RegBit2OfWordFirmware_push>()
       .addRegister<RegSingleWordScaled_R>()
       .addRegister<RegSingleWordScaled_W>()
