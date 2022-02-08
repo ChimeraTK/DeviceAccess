@@ -1,2 +1,2 @@
 @Library('ChimeraTK') _
-buildTestDeploy(['ChimeraTK-cppext'])
+autojob(['ChimeraTK/cppext', 'ChimeraTK/exprtk-interface'], 'https://github.com/ChimeraTK/DeviceAccess')
