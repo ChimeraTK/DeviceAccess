@@ -1,2 +1,2 @@
 @Library('ChimeraTK') _
-autojob(['ChimeraTK-cppext'], 'https://github.com/ChimeraTK/DeviceAccess')
+autojob(['cppext'], 'https://github.com/ChimeraTK/DeviceAccess')
