@@ -122,8 +122,11 @@ include(cmake/enable_doxygen_documentation.cmake)
 
 # Keep the testing section at the end. It will include boost test, which will modify the Boost_LIBRARIES variable.
 # We don't want to link client applications to the boost testing library. This might give trouble.
-enable_testing()
-add_subdirectory("${PROJECT_SOURCE_DIR}/tests")
+option(BUILD_TESTS "Build test programs" ON)
+if(BUILD_TESTS)
+  enable_testing()
+  add_subdirectory("${PROJECT_SOURCE_DIR}/tests")
+endif()
 
 # Install the tools
 foreach( toolScripts chimeratk-lmap-editor )
