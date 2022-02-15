@@ -205,7 +205,7 @@ namespace ChimeraTK {
         continue;
 
       std::string devName = info_cast.deviceName;
-      boost::shared_ptr<RegisterInfo> target_info;
+      boost::shared_ptr<RegisterInfoImpl> target_info;
       if(devName != "this") {
         auto& cat = _devices.at(devName)->getRegisterCatalogue();
         if(!cat.hasRegister(info_cast.registerName)) continue;
@@ -221,7 +221,7 @@ namespace ChimeraTK {
       }
       else {
         info_cast._dataDescriptor =
-            RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::boolean, true, false, 1, 0);
+            RegisterInfoImpl::DataDescriptor(RegisterInfoImpl::FundamentalType::boolean, true, false, 1, 0);
         info_cast.supportedFlags.remove(AccessMode::raw);
       }
       info_cast.readable = target_info->isReadable();

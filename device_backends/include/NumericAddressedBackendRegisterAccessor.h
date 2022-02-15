@@ -46,7 +46,7 @@ namespace ChimeraTK {
       size_t& _startAddress;
       DataConverterType& _dataConverter;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
+      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<UserType>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -66,7 +66,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
+      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int32_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -85,7 +85,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
+      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int16_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -104,7 +104,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
+      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int8_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -213,7 +213,7 @@ namespace ChimeraTK {
       }
 
       // obtain register information
-      boost::shared_ptr<RegisterInfo> info = _dev->getRegisterInfo(registerPathName);
+      boost::shared_ptr<RegisterInfoImpl> info = _dev->getRegisterInfo(registerPathName);
       _prePostActionsImplementor._registerInfo = info;
       _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
       _bar = _registerInfo->bar;

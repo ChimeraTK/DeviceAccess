@@ -3,9 +3,9 @@
 
 namespace ChimeraTK {
 
-  boost::shared_ptr<RegisterInfo> RegisterCatalogue::getRegister(const RegisterPath& registerPathName) const {
+  boost::shared_ptr<RegisterInfoImpl> RegisterCatalogue::getRegister(const RegisterPath& registerPathName) const {
     auto it =
-        std::find_if(catalogue.begin(), catalogue.end(), [registerPathName](boost::shared_ptr<RegisterInfo> info) {
+        std::find_if(catalogue.begin(), catalogue.end(), [registerPathName](boost::shared_ptr<RegisterInfoImpl> info) {
           return info->getRegisterName() == registerPathName;
         });
     if(it == catalogue.end()) {
@@ -18,7 +18,7 @@ namespace ChimeraTK {
 
   bool RegisterCatalogue::hasRegister(const RegisterPath& registerPathName) const {
     auto it =
-        std::find_if(catalogue.begin(), catalogue.end(), [registerPathName](boost::shared_ptr<RegisterInfo> info) {
+        std::find_if(catalogue.begin(), catalogue.end(), [registerPathName](boost::shared_ptr<RegisterInfoImpl> info) {
           return info->getRegisterName() == registerPathName;
         });
     if(it == catalogue.end()) {
@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void RegisterCatalogue::addRegister(boost::shared_ptr<RegisterInfo> registerInfo) {
+  void RegisterCatalogue::addRegister(boost::shared_ptr<RegisterInfoImpl> registerInfo) {
     catalogue.push_back(registerInfo);
   }
 

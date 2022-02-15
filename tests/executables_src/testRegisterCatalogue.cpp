@@ -28,7 +28,7 @@ bool init_unit_test() {
   return true;
 }
 
-class myRegisterInfo : public RegisterInfo {
+class myRegisterInfo : public RegisterInfoImpl {
  public:
   myRegisterInfo(std::string path, unsigned int nbOfElements, unsigned int nbOfChannels, unsigned int nbOfDimensions,
       DataDescriptor dataDescriptor, bool readable, bool writeable, AccessModeFlags supportedFlags)
@@ -53,18 +53,18 @@ class myRegisterInfo : public RegisterInfo {
 
 void RegisterCatalogueTest::testRegisterCatalogue() {
   RegisterCatalogue catalogue;
-  boost::shared_ptr<RegisterInfo> info;
+  boost::shared_ptr<RegisterInfoImpl> info;
 
-  RegisterInfo::DataDescriptor dataDescriptor(
-      RegisterInfo::FundamentalType::numeric, false, false, 8, 3, DataType::int32);
-  catalogue.addRegister(boost::shared_ptr<RegisterInfo>(
+  RegisterInfoImpl::DataDescriptor dataDescriptor(
+      RegisterInfoImpl::FundamentalType::numeric, false, false, 8, 3, DataType::int32);
+  catalogue.addRegister(boost::shared_ptr<RegisterInfoImpl>(
       new myRegisterInfo("/some/register/name", 42, 3, 2, dataDescriptor, true, false, {AccessMode::raw})));
   info = catalogue.getRegister("/some/register/name");
   BOOST_CHECK(info->getRegisterName() == "/some/register/name");
   BOOST_CHECK(info->getNumberOfElements() == 42);
   BOOST_CHECK(info->getNumberOfChannels() == 3);
   BOOST_CHECK(info->getNumberOfDimensions() == 2);
-  BOOST_CHECK(info->getDataDescriptor().fundamentalType() == RegisterInfo::FundamentalType::numeric);
+  BOOST_CHECK(info->getDataDescriptor().fundamentalType() == RegisterInfoImpl::FundamentalType::numeric);
   BOOST_CHECK(info->getDataDescriptor().isSigned() == false);
   BOOST_CHECK(info->getDataDescriptor().isIntegral() == false);
   BOOST_CHECK(info->getDataDescriptor().nDigits() == 8);
@@ -78,15 +78,15 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK(info->getSupportedAccessModes().has(AccessMode::raw) == true);
   BOOST_CHECK(info->getSupportedAccessModes().has(AccessMode::wait_for_new_data) == false);
 
-  RegisterInfo::DataDescriptor dataDescriptor2(RegisterInfo::FundamentalType::numeric, true, false, 12);
-  catalogue.addRegister(boost::shared_ptr<RegisterInfo>(new myRegisterInfo(
+  RegisterInfoImpl::DataDescriptor dataDescriptor2(RegisterInfoImpl::FundamentalType::numeric, true, false, 12);
+  catalogue.addRegister(boost::shared_ptr<RegisterInfoImpl>(new myRegisterInfo(
       "/some/other/name", 1, 1, 0, dataDescriptor2, true, true, {AccessMode::raw, AccessMode::wait_for_new_data})));
   info = catalogue.getRegister("/some/other/name");
   BOOST_CHECK(info->getRegisterName() == "/some/other/name");
   BOOST_CHECK(info->getNumberOfElements() == 1);
   BOOST_CHECK(info->getNumberOfChannels() == 1);
   BOOST_CHECK(info->getNumberOfDimensions() == 0);
-  BOOST_CHECK(info->getDataDescriptor().fundamentalType() == RegisterInfo::FundamentalType::numeric);
+  BOOST_CHECK(info->getDataDescriptor().fundamentalType() == RegisterInfoImpl::FundamentalType::numeric);
   BOOST_CHECK(info->getDataDescriptor().isSigned() == false);
   BOOST_CHECK(info->getDataDescriptor().isIntegral() == true);
   BOOST_CHECK(info->getDataDescriptor().nDigits() == 12);
@@ -99,15 +99,15 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK(info->getSupportedAccessModes().has(AccessMode::raw) == true);
   BOOST_CHECK(info->getSupportedAccessModes().has(AccessMode::wait_for_new_data) == true);
 
-  RegisterInfo::DataDescriptor dataDescriptor3(RegisterInfo::FundamentalType::string);
+  RegisterInfoImpl::DataDescriptor dataDescriptor3(RegisterInfoImpl::FundamentalType::string);
   catalogue.addRegister(
-      boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/justAName", 1, 1, 0, dataDescriptor3, false, false, {})));
+      boost::shared_ptr<RegisterInfoImpl>(new myRegisterInfo("/justAName", 1, 1, 0, dataDescriptor3, false, false, {})));
   info = catalogue.getRegister("/justAName");
   BOOST_CHECK(info->getRegisterName() == "/justAName");
   BOOST_CHECK(info->getNumberOfElements() == 1);
   BOOST_CHECK(info->getNumberOfChannels() == 1);
   BOOST_CHECK(info->getNumberOfDimensions() == 0);
-  BOOST_CHECK(info->getDataDescriptor().fundamentalType() == RegisterInfo::FundamentalType::string);
+  BOOST_CHECK(info->getDataDescriptor().fundamentalType() == RegisterInfoImpl::FundamentalType::string);
   BOOST_CHECK(info->getDataDescriptor().rawDataType() == DataType::none);
   BOOST_CHECK(info->getDataDescriptor().rawDataType().isNumeric() == false);
   BOOST_CHECK(info->getDataDescriptor().rawDataType().isIntegral() == false);

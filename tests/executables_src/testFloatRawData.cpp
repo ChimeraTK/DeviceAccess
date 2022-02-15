@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(testCatalogueEntries) {
   BOOST_CHECK(scalarInfo->getSupportedAccessModes() == AccessModeFlags({AccessMode::raw}));
 
   auto dataDescriptor = scalarInfo->getDataDescriptor();
-  BOOST_CHECK(dataDescriptor.fundamentalType() == RegisterInfo::FundamentalType::numeric);
+  BOOST_CHECK(dataDescriptor.fundamentalType() == RegisterInfoImpl::FundamentalType::numeric);
   BOOST_CHECK(dataDescriptor.isSigned());
   BOOST_CHECK(dataDescriptor.isIntegral() == false);
   BOOST_CHECK_EQUAL(dataDescriptor.nDigits(), 48);

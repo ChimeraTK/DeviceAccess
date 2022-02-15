@@ -23,7 +23,7 @@ namespace ChimeraTK {
   }
 
   /** RegisterInfo structure for the LogicalNameMappingBackend */
-  class LNMBackendRegisterInfo : public RegisterInfo {
+  class LNMBackendRegisterInfo : public RegisterInfoImpl {
    public:
     /** Potential target types */
     enum TargetType { INVALID, REGISTER, CHANNEL, BIT, CONSTANT, VARIABLE };

@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(testCatalogue) {
 
   const RegisterCatalogue& catalogue = device.getRegisterCatalogue();
 
-  boost::shared_ptr<RegisterInfo> info = catalogue.getRegister("SingleWord");
+  boost::shared_ptr<RegisterInfoImpl> info = catalogue.getRegister("SingleWord");
   BOOST_CHECK(info->getRegisterName() == "/SingleWord");
   BOOST_CHECK(info->getNumberOfElements() == 1);
   BOOST_CHECK(info->getNumberOfChannels() == 1);

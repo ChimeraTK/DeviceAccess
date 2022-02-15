@@ -198,7 +198,7 @@ namespace ChimeraTK {
     boost::shared_ptr<DeviceBackend> _backend;
 
     /** The RegisterInfo for this register */
-    boost::shared_ptr<RegisterInfo> _registerInfo;
+    boost::shared_ptr<RegisterInfoImpl> _registerInfo;
 
     template<class UserType>
     class AccessorHandler {

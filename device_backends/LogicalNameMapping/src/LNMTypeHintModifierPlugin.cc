@@ -26,8 +26,8 @@ namespace ChimeraTK { namespace LNMBackend {
   void TypeHintModifierPlugin::updateRegisterInfo() {
     auto info = _info.lock();
     auto d = info->_dataDescriptor;
-    auto newDescriptor = RegisterInfo::DataDescriptor(_dataType);
-    info->_dataDescriptor = RegisterInfo::DataDescriptor(newDescriptor.fundamentalType(), newDescriptor.isIntegral(),
+    auto newDescriptor = RegisterInfoImpl::DataDescriptor(_dataType);
+    info->_dataDescriptor = RegisterInfoImpl::DataDescriptor(newDescriptor.fundamentalType(), newDescriptor.isIntegral(),
         newDescriptor.isSigned(), newDescriptor.nDigits(),
         _dataType.isIntegral() ? 0 : newDescriptor.nFractionalDigits(), d.rawDataType(), d.transportLayerDataType());
   }

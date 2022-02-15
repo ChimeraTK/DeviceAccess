@@ -23,7 +23,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   void MultiplierPlugin::updateRegisterInfo() {
     auto info = _info.lock();
-    info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(DataType("float64"));
+    info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(DataType("float64"));
     info->supportedFlags.remove(AccessMode::raw);
   }
 

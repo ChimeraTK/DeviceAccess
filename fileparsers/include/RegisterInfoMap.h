@@ -53,7 +53,7 @@ namespace ChimeraTK {
      * Stores detailed information about PCIe register and location of its
      * description in MAP file.
      */
-    class RegisterInfo : public ChimeraTK::RegisterInfo {
+    class RegisterInfo : public ChimeraTK::RegisterInfoImpl {
      public:
       enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE, INTERRUPT = 1 << 2 };
       /** Enum describing the data interpretation:

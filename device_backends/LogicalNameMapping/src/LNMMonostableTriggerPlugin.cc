@@ -28,7 +28,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     // Change register info to write-only and data type nodata
     info->readable = false;
-    info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::nodata);
+    info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(RegisterInfoImpl::FundamentalType::nodata);
   }
 
   /********************************************************************************************************************/
@@ -37,7 +37,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // Change register info to write-only and data type nodata
     auto info = _info.lock();
     info->readable = false;
-    info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::nodata);
+    info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(RegisterInfoImpl::FundamentalType::nodata);
     info->supportedFlags.remove(AccessMode::raw);
   }
 

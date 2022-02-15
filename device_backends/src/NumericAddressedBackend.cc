@@ -42,7 +42,7 @@ namespace ChimeraTK {
   boost::shared_ptr<RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegisterInfo(
       const RegisterPath& registerPathName) {
     if(!registerPathName.startsWith(numeric_address::BAR)) {
-      boost::shared_ptr<RegisterInfo> info = _catalogue.getRegister(registerPathName);
+      boost::shared_ptr<RegisterInfoImpl> info = _catalogue.getRegister(registerPathName);
       return boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
     }
     else {
@@ -127,7 +127,7 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     if(flags.has(AccessMode::wait_for_new_data)) {
       // get the interrupt information from the map file
-      boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
+      boost::shared_ptr<RegisterInfoImpl> info = getRegisterInfo(registerPathName);
       auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
       if(!registerInfo->getSupportedAccessModes().has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error(
@@ -156,7 +156,7 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
     // obtain register info
-    boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
+    boost::shared_ptr<RegisterInfoImpl> info = getRegisterInfo(registerPathName);
     auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
 
     // 1D or scalar register

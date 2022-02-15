@@ -55,7 +55,7 @@ namespace ChimeraTK { namespace LNMBackend {
     auto info = _info.lock();
 
     // Change data type to non-integral
-    info->_dataDescriptor = RegisterInfo::DataDescriptor(DataType("float64"));
+    info->_dataDescriptor = RegisterInfoImpl::DataDescriptor(DataType("float64"));
     info->supportedFlags.remove(AccessMode::raw);
 
     // Fix to unidirectional operation

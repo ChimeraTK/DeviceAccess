@@ -510,7 +510,7 @@ void MapFileTest::testRegisterInfo() {
   BOOST_CHECK(myRegisterInfo.module == "MY_MODULE");
 
   BOOST_CHECK(
-      myRegisterInfo.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::numeric);
+      myRegisterInfo.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfoImpl::FundamentalType::numeric);
   BOOST_CHECK(myRegisterInfo.getDataDescriptor().isIntegral() == false);
   BOOST_CHECK(myRegisterInfo.getDataDescriptor().isSigned() == false);
   BOOST_CHECK(myRegisterInfo.getDataDescriptor().nFractionalDigits() == 2); // 2^5 = 32 -> 2 digits
@@ -538,7 +538,7 @@ void MapFileTest::testRegisterInfo() {
   BOOST_CHECK(myRegisterInfo2.module == "XYZ");
 
   BOOST_CHECK(
-      myRegisterInfo2.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::numeric);
+      myRegisterInfo2.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfoImpl::FundamentalType::numeric);
   BOOST_CHECK(myRegisterInfo2.getDataDescriptor().isIntegral() == true);
   BOOST_CHECK(myRegisterInfo2.getDataDescriptor().isSigned() == true);
   BOOST_CHECK(myRegisterInfo2.getDataDescriptor().nDigits() == 8); // 2^23 = 8388608 -> 7 digits + 1 for the sign
@@ -564,7 +564,7 @@ void MapFileTest::testRegisterInfo() {
   BOOST_CHECK(myRegisterInfo3.module == "XYZ");
 
   BOOST_CHECK(
-      myRegisterInfo3.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::numeric);
+      myRegisterInfo3.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfoImpl::FundamentalType::numeric);
   BOOST_CHECK(myRegisterInfo3.getDataDescriptor().isIntegral() == true);
   BOOST_CHECK(myRegisterInfo3.getDataDescriptor().isSigned() == false);
   BOOST_CHECK(myRegisterInfo3.getDataDescriptor().nDigits() == 7); // 2^23 = 8388608 -> 7 digits
@@ -590,7 +590,7 @@ void MapFileTest::testRegisterInfo() {
   BOOST_CHECK(myRegisterInfo4.module == "TEST");
 
   BOOST_CHECK(
-      myRegisterInfo4.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::boolean);
+      myRegisterInfo4.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfoImpl::FundamentalType::boolean);
 
   // a boolean
   ChimeraTK::RegisterInfoMap::RegisterInfo myRegisterInfo5("SOME_VOID",
@@ -613,7 +613,7 @@ void MapFileTest::testRegisterInfo() {
   BOOST_CHECK(myRegisterInfo5.module == "TEST");
 
   BOOST_CHECK(
-      myRegisterInfo5.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::nodata);
+      myRegisterInfo5.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfoImpl::FundamentalType::nodata);
 }
 
 void MapFileTest::testGetRegistersInModule() {
@@ -740,67 +740,67 @@ void MapFileTest::testGetSupportedAccessModes() {
   auto waitForNewData = {AccessMode::wait_for_new_data};
   auto rawAndWaitForNewData = {AccessMode::raw, AccessMode::wait_for_new_data};
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg1 =
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg1 =
       std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG1", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1,
           false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 3);
   BOOST_CHECK(ptrReg1->getSupportedAccessModes() == waitForNewData);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg2 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG2",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg2 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG2",
       0x01, 0x68, 0x04, 1, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 5, 6);
   BOOST_CHECK(ptrReg2->getSupportedAccessModes() == rawAndWaitForNewData);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg3 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG3",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg3 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG3",
       0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::READ,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 0, 0);
   BOOST_CHECK(ptrReg3->getSupportedAccessModes() == raw);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg4 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg4 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
       0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::WRITE,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 0, 0);
   BOOST_CHECK(ptrReg4->getSupportedAccessModes() == raw);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg5 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg5 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
       0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::READWRITE,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 0, 0);
   BOOST_CHECK(ptrReg5->getSupportedAccessModes() == raw);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg6 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG5");
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg6 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG5");
   BOOST_CHECK(ptrReg6->getSupportedAccessModes() == raw);
 }
 
 void MapFileTest::testIsWritableIsReadable() {
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg1 =
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg1 =
       std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG1", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1,
           false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT, RegisterInfoMap::RegisterInfo::Type::VOID, 1, 3);
   BOOST_CHECK(ptrReg1->isReadable() == true);
   BOOST_CHECK(ptrReg1->isWriteable() == false);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg2 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG2",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg2 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG2",
       0x01, 0x68, 0x04, 1, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::INTERRUPT,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 5, 6);
   BOOST_CHECK(ptrReg2->isReadable() == true);
   BOOST_CHECK(ptrReg2->isWriteable() == false);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg3 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG3",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg3 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG3",
       0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::READ,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 0, 0);
   BOOST_CHECK(ptrReg3->isReadable() == true);
   BOOST_CHECK(ptrReg3->isWriteable() == false);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg4 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg4 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
       0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::WRITE,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 0, 0);
   BOOST_CHECK(ptrReg4->isReadable() == false);
   BOOST_CHECK(ptrReg4->isWriteable() == true);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg5 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg5 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG4",
       0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0", 1, false, RegisterInfoMap::RegisterInfo::Access::READWRITE,
       RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, 0, 0);
   BOOST_CHECK(ptrReg5->isReadable() == true);
   BOOST_CHECK(ptrReg5->isWriteable() == true);
 
-  std::unique_ptr<ChimeraTK::RegisterInfo> ptrReg6 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG5");
+  std::unique_ptr<ChimeraTK::RegisterInfoImpl> ptrReg6 = std::make_unique<ChimeraTK::RegisterInfoMap::RegisterInfo>("REG5");
   BOOST_CHECK(ptrReg6->isReadable() == true);
   BOOST_CHECK(ptrReg6->isWriteable() == true);
 }

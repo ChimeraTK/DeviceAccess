@@ -8,43 +8,42 @@
 #ifndef CHIMERA_TK_REGISTER_INFO_H
 #define CHIMERA_TK_REGISTER_INFO_H
 
-#include <assert.h>
-#include <iostream>
-
 #include "AccessMode.h"
 #include "ForwardDeclarations.h"
 #include "RegisterPath.h"
 #include "SupportedUserTypes.h"
 
+#include <boost/shared_ptr.hpp>
+
+#include <cassert>
+#include <iostream>
+
 namespace ChimeraTK {
 
-  /** DeviceBackend-independent register description. */
-  class RegisterInfo {
+  /** Class describing the actual payload data format of a register in an
+     * abstract manner. It gives information about the underlying data type
+     * without fully describing it, to prevent a loss of abstraction on the
+     *  application level. The returned information always refers to the data type
+     * and thus is completely independent of the current value of the register. */
+  class DataDescriptor {
    public:
     /** Enum for the fundamental data types. This is only used inside the
      * DataDescriptor class but defined outside to prevent too long fully
      * qualified names. */
     enum class FundamentalType { numeric, string, boolean, nodata, undefined };
 
-    /** Class describing the actual payload data format of a register in an
-     * abstract manner. It gives information about the underlying data type
-     * without fully describing it, to prevent a loss of abstraction on the
-     *  application level. The returned information always refers to the data type
-     * and thus is completely independent of the current value of the register. */
-    class DataDescriptor {
-     public:
-      /** Get the fundamental data type */
-      FundamentalType fundamentalType() const;
+    /** Get the fundamental data type */
+    FundamentalType fundamentalType() const;
 
-      /** Return whether the data is signed or not. May only be called for numeric
+    /** Return whether the data is signed or not. May only be called for numeric
        * data types. */
-      bool isSigned() const;
+    bool isSigned() const;
 
-      /** Return whether the data is integral or not (e.g. int vs. float). May
+    /** Return whether the data is integral or not (e.g. int vs. float). May
        * only be called for numeric data types. */
-      bool isIntegral() const;
+    bool isIntegral() const;
 
-      /** Return the approximate maximum number of digits (of base 10) needed to
+    /** Return the approximate maximum number of digits (of base 10) needed to
        * represent the value (including a decimal dot, if not an integral data
        * type, and the sign). May only be called for numeric data types.
        *
@@ -53,9 +52,9 @@ namespace ChimeraTK {
        * Beware that for some data types this might become a really large number
        * (e.g. 300), which indicates that you need to choose a different
        * representation than just a plain decimal number. */
-      size_t nDigits() const;
+    size_t nDigits() const;
 
-      /** Approximate maximum number of digits after decimal dot (of base 10)
+    /** Approximate maximum number of digits after decimal dot (of base 10)
        * needed to represent the value (excluding the decimal dot itself). May
        * only be called for non-integral numeric data types.
        *
@@ -63,9 +62,9 @@ namespace ChimeraTK {
        * displaying purposes. There is no guarantee that the full precision of the
        * number can be displayed with the given number of digits. Again beware
        * that this number might be rather large (e.g. 300). */
-      size_t nFractionalDigits() const;
+    size_t nFractionalDigits() const;
 
-      /** Get the raw data type. This is the data conversion from 'cooked' to the
+    /** Get the raw data type. This is the data conversion from 'cooked' to the
        raw
        *  data type on the device. This conversion does not change the shape of
        the data but
@@ -83,17 +82,17 @@ namespace ChimeraTK {
        representing the
        *  one data point.
 
-       *  Most backends will have type none, i.e. no raw data conversion
-       available. At the moment
-       *  only the NumericalAddressedBackend has int32_t raw transfer with
-       raw/cooked conversion. Can be extended if needed,
-       *  but this partily breaks abstraction because it exposes details of the
-       (transport) layer below. It should be
-       *  avoided if possible.
-       */
-      DataType rawDataType() const;
+    *  Most backends will have type none, i.e. no raw data conversion
+                                            available. At the moment
+                                                *  only the NumericalAddressedBackend has int32_t raw transfer with
+                                                    raw/cooked conversion. Can be extended if needed,
+        *  but this partily breaks abstraction because it exposes details of the
+        (transport) layer below. It should be
+            *  avoided if possible.
+                */
+    DataType rawDataType() const;
 
-      /** Get the data type on the transport layer. This is always a 1D array of
+    /** Get the data type on the transport layer. This is always a 1D array of
        * the specific data type. This raw transfer might contain data for more
        * than one register.
        *
@@ -107,49 +106,55 @@ namespace ChimeraTK {
        * there is no way to access the transport layer data (yet). The function is
        * put here for conceputal completeness.
        */
-      DataType transportLayerDataType() const;
+    DataType transportLayerDataType() const;
 
-      /** Default constructor sets fundamental type to "undefined" */
-      DataDescriptor();
+    /** Default constructor sets fundamental type to "undefined" */
+    DataDescriptor();
 
-      /** Constructor setting all members. */
-      DataDescriptor(FundamentalType fundamentalType, bool isIntegral = false, bool isSigned = false,
-          size_t nDigits = 0, size_t nFractionalDigits = 0, DataType rawDataType = DataType::none,
-          DataType transportLayerDataType_ = DataType::none);
+    /** Constructor setting all members. */
+    DataDescriptor(FundamentalType fundamentalType, bool isIntegral = false, bool isSigned = false, size_t nDigits = 0,
+        size_t nFractionalDigits = 0, DataType rawDataType = DataType::none,
+        DataType transportLayerDataType_ = DataType::none);
 
-      /** Construct from DataType object - the DataDescriptor will then describe the passed DataType (with no raw
+    /** Construct from DataType object - the DataDescriptor will then describe the passed DataType (with no raw
        *  type). */
-      explicit DataDescriptor(DataType type);
+    explicit DataDescriptor(DataType type);
 
-     private:
-      /** The fundamental data type */
-      FundamentalType _fundamentalType;
+   private:
+    /** The fundamental data type */
+    FundamentalType _fundamentalType;
 
-      /** The raw data type.*/
-      DataType _rawDataType;
+    /** The raw data type.*/
+    DataType _rawDataType;
 
-      /** The transport layer data type.*/
-      DataType _transportLayerDataType;
+    /** The transport layer data type.*/
+    DataType _transportLayerDataType;
 
-      /** Numeric types only: is the number integral or not */
-      bool _isIntegral;
+    /** Numeric types only: is the number integral or not */
+    bool _isIntegral;
 
-      /** Numeric types only: is the number signed or not */
-      bool _isSigned;
+    /** Numeric types only: is the number signed or not */
+    bool _isSigned;
 
-      /** Numeric types only: approximate maximum number of digits (of base 10)
+    /** Numeric types only: approximate maximum number of digits (of base 10)
        * needed to represent the value (including a decimal dot, if not an
        * integral data type) */
-      size_t _nDigits;
+    size_t _nDigits;
 
-      /** Non-integer numeric types only: Approximate maximum number of digits
+    /** Non-integer numeric types only: Approximate maximum number of digits
        * after decimal dot (of base 10) needed to represent the value (excluding
        * the decimal dot itself) */
-      size_t _nFractionalDigits;
-    };
+    size_t _nFractionalDigits;
+  };
+
+  /*******************************************************************************************************************/
+
+  /** DeviceBackend-independent register description. */
+  class RegisterInfoImpl {
+   public:
 
     /** Virtual destructor */
-    virtual ~RegisterInfo() {}
+    virtual ~RegisterInfoImpl() {}
 
     /** Return full path name of the register (including modules) */
     virtual RegisterPath getRegisterName() const = 0;
@@ -178,62 +183,94 @@ namespace ChimeraTK {
   };
 
   /*******************************************************************************************************************/
+
+  class RegisterInfo {
+   public:
+    /** Return full path name of the register (including modules) */
+    RegisterPath getRegisterName() const;
+
+    /** Return number of elements per channel */
+    unsigned int getNumberOfElements() const;
+
+    /** Return number of channels in register */
+    unsigned int getNumberOfChannels() const;
+
+    /** Return number of dimensions of this register */
+    unsigned int getNumberOfDimensions() const;
+
+    /** Return desciption of the actual payload data for this register. See the
+     * description of DataDescriptor for more information. */
+    const DataDescriptor& getDataDescriptor() const;
+
+    /** Return whether the register is readable. */
+    bool isReadable() const;
+
+    /** Return whether the register is writeable. */
+    bool isWriteable() const;
+
+    /** Return all supported AccessModes for this register */
+    AccessModeFlags getSupportedAccessModes() const;
+
+    boost::shared_ptr<RegisterInfoImpl> getImpl(); // find better name
+
+   protected:
+    boost::shared_ptr<RegisterInfoImpl> impl;
+  };
+
+  /*******************************************************************************************************************/
   /***** IMPELMENTATIONS **************/
   /*******************************************************************************************************************/
 
-  inline RegisterInfo::FundamentalType RegisterInfo::DataDescriptor::fundamentalType() const {
-    return _fundamentalType;
-  }
+  inline DataDescriptor::FundamentalType DataDescriptor::fundamentalType() const { return _fundamentalType; }
 
   /*******************************************************************************************************************/
 
-  inline DataType RegisterInfo::DataDescriptor::rawDataType() const { return _rawDataType; }
+  inline DataType DataDescriptor::rawDataType() const { return _rawDataType; }
 
-  inline DataType RegisterInfo::DataDescriptor::transportLayerDataType() const { return _transportLayerDataType; }
+  inline DataType DataDescriptor::transportLayerDataType() const { return _transportLayerDataType; }
 
   /*******************************************************************************************************************/
 
-  inline bool RegisterInfo::DataDescriptor::isSigned() const {
+  inline bool DataDescriptor::isSigned() const {
     assert(_fundamentalType == FundamentalType::numeric);
     return _isSigned;
   }
 
   /*******************************************************************************************************************/
 
-  inline bool RegisterInfo::DataDescriptor::isIntegral() const {
+  inline bool DataDescriptor::isIntegral() const {
     assert(_fundamentalType == FundamentalType::numeric);
     return _isIntegral;
   }
 
   /*******************************************************************************************************************/
 
-  inline size_t RegisterInfo::DataDescriptor::nDigits() const {
+  inline size_t DataDescriptor::nDigits() const {
     assert(_fundamentalType == FundamentalType::numeric);
     return _nDigits;
   }
 
   /*******************************************************************************************************************/
 
-  inline size_t RegisterInfo::DataDescriptor::nFractionalDigits() const {
+  inline size_t DataDescriptor::nFractionalDigits() const {
     assert(_fundamentalType == FundamentalType::numeric && !_isIntegral);
     return _nFractionalDigits;
   }
 
   /*******************************************************************************************************************/
 
-  inline RegisterInfo::DataDescriptor::DataDescriptor() : _fundamentalType(FundamentalType::undefined) {}
+  inline DataDescriptor::DataDescriptor() : _fundamentalType(FundamentalType::undefined) {}
 
   /*******************************************************************************************************************/
 
-  inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_,
-      bool isSigned_, size_t nDigits_, size_t nFractionalDigits_, DataType rawDataType_,
-      DataType transportLayerDataType_)
+  inline DataDescriptor::DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_, bool isSigned_,
+      size_t nDigits_, size_t nFractionalDigits_, DataType rawDataType_, DataType transportLayerDataType_)
   : _fundamentalType(fundamentalType_), _rawDataType(rawDataType_), _transportLayerDataType(transportLayerDataType_),
     _isIntegral(isIntegral_), _isSigned(isSigned_), _nDigits(nDigits_), _nFractionalDigits(nFractionalDigits_) {}
 
   /*******************************************************************************************************************/
 
-  inline RegisterInfo::DataDescriptor::DataDescriptor(DataType type) {
+  inline DataDescriptor::DataDescriptor(DataType type) {
     if(type.isNumeric()) {
       _fundamentalType = FundamentalType::numeric;
     }
