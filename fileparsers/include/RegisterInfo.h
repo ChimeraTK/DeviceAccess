@@ -186,6 +186,8 @@ namespace ChimeraTK {
 
   class RegisterInfo {
    public:
+    RegisterInfo(boost::shared_ptr<RegisterInfoImpl> impl);
+
     /** Return full path name of the register (including modules) */
     RegisterPath getRegisterName() const;
 
