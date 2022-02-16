@@ -3282,6 +3282,8 @@ namespace ChimeraTK {
     d.open();
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(not this->isRaw(x)) return;
+
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 

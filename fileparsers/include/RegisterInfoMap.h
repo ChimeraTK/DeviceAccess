@@ -93,11 +93,14 @@ namespace ChimeraTK {
       bool isWriteable() const override { return (registerAccess & Access::WRITE) != 0; }
 
       AccessModeFlags getSupportedAccessModes() const override {
-        if(registerAccess == Access::INTERRUPT && dataType == Type::VOID) {
+        if(registerAccess == Access::INTERRUPT && ((dataType == Type::VOID) || (is2DMultiplexed))) {
           return {AccessMode::wait_for_new_data};
         }
         else if(registerAccess == Access::INTERRUPT) {
           return {AccessMode::raw, AccessMode::wait_for_new_data};
+        }
+        else if(is2DMultiplexed) {
+          return {};
         }
         else {
           return {AccessMode::raw};
