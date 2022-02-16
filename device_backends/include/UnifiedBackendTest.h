@@ -348,6 +348,8 @@ namespace ChimeraTK {
     void test_C_5_3_3();
     void test_NOSPEC_valueAfterConstruction();
     void test_NOSPEC_backendNotClosedAfterException();
+    void test_NOSPES_rawTransfer();
+    void test_NOSPES_catalogueRaw();
 
     /// Utility functions for recurring tasks
     void recoverDevice(ChimeraTK::Device& d);
@@ -889,6 +891,8 @@ namespace ChimeraTK {
     test_C_5_3_3();
     test_NOSPEC_valueAfterConstruction();
     test_NOSPEC_backendNotClosedAfterException();
+    test_NOSPES_rawTransfer();
+    test_NOSPES_catalogueRaw();
   }
 
   /********************************************************************************************************************/
@@ -3267,6 +3271,71 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  /**
+   *  Test that the backend does not close itself after seeing an exception
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPES_rawTransfer() {
+    std::cout << "--- test_NOSPEC_rawTransfer - test creation and readig/writing with access mode raw." << std::endl;
+    Device d(cdd);
+    d.open();
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      typedef typename decltype(x)::rawUserType RawUserType;
+      // Use double as example for a not working user type
+      BOOST_CHECK_THROW(
+          d.getTwoDRegisterAccessor<double>(registerName, 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
+      try {
+        // test creation
+        auto reg = d.getTwoDRegisterAccessor<RawUserType>(registerName, 0, 0, {AccessMode::raw});
+        //        if(x.isReadable()) {
+        //          reg.read();
+        //        }
+      }
+      catch(std::exception& e) {
+        BOOST_CHECK_MESSAGE(false, std::string("Unexpected expeption: ") + e.what());
+      }
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test that the catalogue information for the raw accessor is correct
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPES_catalogueRaw() {
+    std::cout << "--- test_NOSPEC_catalogueRaw - test catalogue entries for access mode raw." << std::endl;
+    Device d(cdd);
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // workaround for DUMMY_WRITABLE not having information in the catalogue yet
+      if(std::string(registerName).find("DUMMY_WRITEABLE") != std::string::npos) {
+        return;
+      }
+
+      auto registerInfo = d.getRegisterCatalogue().getRegister(registerName);
+
+      if(this->isRaw(x)) {
+        BOOST_CHECK(registerInfo->getSupportedAccessModes().has(AccessMode::raw));
+        BOOST_TEST(registerInfo->getDataDescriptor().rawDataType() != DataType::none);
+      }
+      else {
+        BOOST_CHECK(not registerInfo->getSupportedAccessModes().has(AccessMode::raw));
+        BOOST_TEST(registerInfo->getDataDescriptor().rawDataType() == DataType::none);
+      }
+    });
+  }
+
+  /********************************************************************************************************************/
   /**
    *  Test small getter functions of accessors
    * 
