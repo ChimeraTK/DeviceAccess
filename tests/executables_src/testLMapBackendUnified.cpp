@@ -270,7 +270,7 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   size_t nElementsPerChannel() { return 1; }
 
   typedef ChimeraTK::Boolean minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
 
@@ -304,7 +304,7 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   const uint32_t increment = 3;
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -315,7 +315,7 @@ struct RegSingleWordB : ScalarRegisterDescriptorBase<RegSingleWordB> {
   const uint32_t increment = 3;
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -327,7 +327,7 @@ struct RegSingleWord_push : ScalarRegisterDescriptorBase<RegSingleWord_push> {
   const uint32_t increment = 3;
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -339,7 +339,7 @@ struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
   size_t nElementsPerChannel() { return 0x400; }
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
@@ -352,7 +352,7 @@ struct RegPartOfArea : OneDRegisterDescriptorBase<RegPartOfArea> {
   size_t myOffset() { return 10; }
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
@@ -365,7 +365,10 @@ struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
   const size_t channel{3};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
+
+  // Multiplexed 2d accessors don't have access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
 };
 
@@ -379,7 +382,10 @@ struct RegChannel4_push : ChannelRegisterDescriptorBase<RegChannel4_push> {
   const size_t channel{4};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
+
+  // Multiplexed 2d accessors don't have access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
   DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
 };
 
@@ -392,7 +398,10 @@ struct RegChannelLast : ChannelRegisterDescriptorBase<RegChannelLast> {
   const size_t channel{15};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
+
+  // Multiplexed 2d accessors don't have access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
 };
 
@@ -404,7 +413,7 @@ struct RegConstant : ConstantRegisterDescriptorBase<RegConstant> {
   const std::vector<int32_t> value{42};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test constant accessor
@@ -415,7 +424,7 @@ struct RegConstant2 : ConstantRegisterDescriptorBase<RegConstant2> {
   const std::vector<int32_t> value{666};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test variable accessor
@@ -426,7 +435,7 @@ struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
   size_t nElementsPerChannel() { return 1; }
 
   typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test constant accessor with arrays
@@ -437,7 +446,7 @@ struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
   size_t nElementsPerChannel() { return 5; }
 
   typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test variable accessor with arrays
@@ -448,7 +457,7 @@ struct RegArrayVariable : VariableRegisterDescriptorBase<RegArrayVariable> {
   size_t nElementsPerChannel() { return 6; }
 
   typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test bit accessor with a variable accessor as target
@@ -505,6 +514,8 @@ struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -525,6 +536,8 @@ struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
   T convertRawToCooked(T value) {
     return value / 4.2;
   }
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
 };
 
 /// Test multiply plugin applied twice (just one direction for sake of simplicity)
@@ -542,6 +555,8 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
 
   typedef double minimumUserType;
   typedef minimumUserType rawUserType;
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -559,7 +574,9 @@ struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   }
 
   typedef double minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
@@ -571,7 +588,7 @@ struct RegWordFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWordFirmw
   bool isWriteable() { return false; }
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -584,18 +601,19 @@ struct RegWordFirmwareForcedReadOnly_push : ScalarRegisterDescriptorBase<RegWord
   bool isWriteable() { return false; }
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test math plugin - needs to be done separately for reading and writing (see below)
 template<typename Derived>
 struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
-
   const double increment = 7;
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
+  //Math plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -607,6 +625,8 @@ struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMa
   T convertRawToCooked(T value) {
     return value + 2.345;
   }
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
 };
 
 struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R_push> {
@@ -618,6 +638,8 @@ struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareW
   T convertRawToCooked(T value) {
     return value + 2.345;
   }
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
 };
 
 struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMath_W> {
@@ -629,6 +651,8 @@ struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMa
   T convertRawToCooked(T value) {
     return value - 2.345;
   }
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
 };
 
 /// Test math plugin with real dummy register as parameter (exception handling...)
@@ -646,7 +670,9 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
   }
 
   typedef double minimumUserType;
-  typedef uint32_t rawUserType;
+  typedef minimumUserType rawUserType;
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
@@ -757,9 +783,11 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
 
   // FIXME: This is Boolean until the UnifiedTest is modified to support Void correctly
   typedef ChimeraTK::Boolean minimumUserType;
-  typedef uint32_t rawUserType;
+  typedef minimumUserType rawUserType;
 
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 /********************************************************************************************************************/
