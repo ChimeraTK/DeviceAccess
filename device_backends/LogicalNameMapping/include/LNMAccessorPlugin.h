@@ -280,11 +280,6 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error(
           "Access mode 'raw' is not supported for register '" + std::string(info->getRegisterName()) + "'");
     }
-    //    if((info->_dataDescriptor.rawDataType() == DataType::none) and
-    //        info->getSupportedAccessModes().has(AccessMode::raw)) {
-    //      throw ChimeraTK::logic_error(
-    //          "Inconsistent catalogue for register '" + std::string(info->getRegisterName()) + "'");
-    //    }
 
     callForType(type, [&](auto T) {
       // obtain target accessor with desired type
