@@ -517,7 +517,7 @@ struct RegBit2OfWordFirmware_push : BitRegisterDescriptorBase<RegBit2OfWordFirmw
     return false;
   }
 
-  RegSingleWord target;
+  RegSingleWordB target;
   size_t bit = 2;
 };
 
