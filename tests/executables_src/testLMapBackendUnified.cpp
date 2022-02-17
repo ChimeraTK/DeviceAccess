@@ -52,7 +52,6 @@ struct RegisterDescriptorBase {
     dummy.throwExceptionWrite = enable;
     dummy.throwExceptionOpen = enable;
     if(derived->isPush() && enable) {
-      std::cout << "exception test: deprecated trigger. Open is " << dummy.isOpen() << std::endl;
       dummy.triggerInterrupt(5, 6);
     }
   }
@@ -91,7 +90,6 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     }
     if(derived->isPush()) {
       // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
-      std::cout << "channel: triggering interrupt 5:6" << std::endl;
       dynamic_cast<DummyBackend&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
     }
   }
@@ -157,7 +155,6 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       derived->acc[i + derived->myOffset()] = v[i];
     }
     if(derived->isPush()) {
-      std::cout << "triggering deprecated push" << std::endl;
       dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
     }
   }
@@ -295,7 +292,6 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
     derived->target.setRemoteValue();
     if(derived->isPush()) {
       // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
-      std::cout << "triggering interrupt 5:6" << std::endl;
       exceptionDummy3->triggerInterrupt(5, 6);
     }
   }

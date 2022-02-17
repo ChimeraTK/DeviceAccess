@@ -38,6 +38,7 @@ namespace ChimeraTK { namespace LNMBackend {
     auto info = _info.lock();
     info->readable = false;
     info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::nodata);
+    info->supportedFlags.remove(AccessMode::raw);
   }
 
   /********************************************************************************************************************/
