@@ -1,11 +1,10 @@
-#ifndef CHIMERA_TK_PCIE_BACKEND_H
-#define CHIMERA_TK_PCIE_BACKEND_H
+#pragma once
+
+#include "NumericAddressedBackend.h"
 
 #include <boost/function.hpp>
 #include <stdint.h>
 #include <stdlib.h>
-
-#include "NumericAddressedBackend.h"
 
 namespace ChimeraTK {
 
@@ -74,5 +73,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_PCIE_BACKEND_H */

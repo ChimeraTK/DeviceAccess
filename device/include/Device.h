@@ -158,9 +158,15 @@ namespace ChimeraTK {
         size_t numberOfElements = 0, size_t elementsOffset = 0,
         const AccessModeFlags& flags = AccessModeFlags({})) const;
 
-    /** Return the register catalogue with detailed information on all registers.
+    /** 
+     *  Return the register catalogue with detailed information on all registers.
      */
-    const RegisterCatalogue& getRegisterCatalogue() const;
+    RegisterCatalogue getRegisterCatalogue() const;
+
+    /** 
+     *  Return the register catalogue with detailed information on all registers.
+     */
+    MetadataCatalogue getMetadataCatalogue() const;
 
     /** Return a device information string. Format depends on the backend, use for
      * display only. */

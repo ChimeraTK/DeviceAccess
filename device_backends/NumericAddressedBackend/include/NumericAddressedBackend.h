@@ -1,14 +1,11 @@
-#ifndef CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_H
-#define CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_H
+#pragma once
 
-#include <fcntl.h>
-#include <stdint.h>
-#include <string>
-#include <vector>
-#include <mutex>
-
+#include "RegisterInfoMap.h"
 #include "DeviceBackendImpl.h"
 #include "VersionNumber.h"
+
+#include <string>
+#include <mutex>
 
 namespace ChimeraTK {
 
@@ -22,23 +19,45 @@ namespace ChimeraTK {
 
     ~NumericAddressedBackend() override {}
 
-    /* interface using 32bit address for backwards compatibility */
-    virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
-    virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
-
+    /**
+     * Read function to be implemented by backends.
+     * 
+     * TODO: Add documentation!
+     */
     virtual void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
+
+    /**
+     * Write function to be implemented by backends.
+     * 
+     * TODO: Add documentation!
+     */
     virtual void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
 
+    /**
+     * Deprecated read function using 32bit address for backwards compatibility. Old backends which have not yet
+     * been updated to the new 64 bit address interface will implement this. Please implement the read() function
+     * with the 64 bit address signature instead!
+     */
+    virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
+
+    /**
+     * Deprecated write function using 32bit address for backwards compatibility. Old backends which have not yet
+     * been updated to the new 64 bit address interface will implement this. Please implement the write() function
+     * with the 64 bit address signature instead!
+     */
+    virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
+
+    /**
+     * Function to be implemented by the backends. Returns whether the given bar number is valid.
+     */
     virtual bool barIndexValid(uint64_t bar);
 
     /**
-     * @brief Determines whether the backend supports merging of requests (read or
-     * write)
+     * @brief Determines whether the backend supports merging of requests (read or write)
      *
-     * Should return true if the backend supports that several consecutive write
-     * or read operations are merged into one single read or write request. If a
-     * deriving backend cannot handle such requests, it can prevent this by
-     * returning false here.
+     * Should return true if the backend supports that several consecutive write or read operations are merged into one
+     * single read or write request. If a deriving backend cannot handle such requests, it can prevent this by returning
+     * false here.
      *
      * @return true if supported, false otherwise
      */
@@ -58,28 +77,39 @@ namespace ChimeraTK {
      */
     virtual size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const { return 1; }
 
-    boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
+    RegisterCatalogue getRegisterCatalogue() const override;
 
-    boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath& registerPathName);
+    MetadataCatalogue getMetadataCatalogue() const override;
 
-    //    void activateAsyncRead() noexcept final;
-    //    void setException() final;
+    /**
+     * @brief getRegisterInfo returns a NumericAddressedRegisterInfo object for the given register. This is mainly used
+     * by accessor implementations
+     * 
+     * @param registerPathName identifies which register to return the RegisterInfo for.
+     * 
+     * @return Shared pointer to the NumericAddressedRegisterInfo object in the catalogue.
+     */
+    boost::shared_ptr<NumericAddressedRegisterInfo> getRegisterInfo(const RegisterPath& registerPathName);
+
     void activateAsyncRead() noexcept override;
     void setException() override;
 
-    /** Deactivates all asynchronous accessors and calls closeImpl().
+    /** 
+     *  Deactivates all asynchronous accessors and calls closeImpl().
      */
     void close() final;
 
-    /** All backends derived from NumericAddressedBackend must implement closeImpl() instead of close. Like this it
+    /** 
+     *  All backends derrived from NumericAddressedBackend must implement closeImpl() instead of close. Like this it
      *  is assured that the deactivation of the asynchronous accessors is always executed.
      */
     virtual void closeImpl() {}
 
-    /** This function is called every time an accessor which is associated with the particular interrupt controller and interrupt number
-     *  is created. The idea is to have a lazy initialisation of the interrupt handling threads, so only those threads are running for which
-     *  accessors have been created. The function implementation must check whether the according thread is already running and should do nothing
-     *  when called a second time.
+    /** 
+     *  This function is called every time an accessor which is assicated with the particular interupt controller and
+     *  interrupt number is created. The idea is to have a lazy initialisation of the interrupt handling threads, so
+     *  only those threads are running for which accessors have been created. The function implementation must check
+     *  whether the according thread is already running and should do nothing when called a second time.
      *
      *  The function has an empty default implementation.
      */
@@ -90,8 +120,11 @@ namespace ChimeraTK {
     void checkRegister(const std::string& regName, const std::string& regModule, size_t dataSize, uint32_t addRegOffset,
         uint32_t& retDataSize, uint32_t& retRegOff, uint8_t& retRegBar) const;
 
-    /// map from register names to addresses
-    boost::shared_ptr<RegisterInfoMap> _registerMap;
+    /// register catalogue
+    NumericAddressedRegisterCatalogue _registerMap;
+
+    /// metadata catalogue
+    MetadataCatalogue _metadataCatalogue;
 
     /// mutex for protecting unaligned access
     std::mutex _unalignedAccess;
@@ -110,7 +143,8 @@ namespace ChimeraTK {
     friend NumericAddressedLowLevelTransferElement;
     friend NumericAddressedInterruptDispatcher;
 
-    /** Function to be called by implementing backend when an interrupt arrives. It usually is
+    /** 
+     *  Function to be called by implementing backend when an interrupt arrives. It usually is
      *  called from the interrupt handling thread.
      *
      *  Throws std::out_of_range if an invalid interruptControllerNumber/interruptNumber is given as parameter.
@@ -120,12 +154,11 @@ namespace ChimeraTK {
     VersionNumber dispatchInterrupt(int interruptControllerNumber, int interruptNumber);
 
    private:
-    /** This variable is private so the map cannot be altered by deriving backends. The only thing the backends have to
+    /** 
+     *  This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
      *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not modified.
      */
     std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
   };
 
 } // namespace ChimeraTK
-
-#endif /*CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_H*/

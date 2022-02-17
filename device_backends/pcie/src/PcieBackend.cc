@@ -1,3 +1,10 @@
+#include "PcieBackend.h"
+
+// the io constants and struct for the driver
+#include "llrfdrv_io_compat.h"
+#include "pciedev_io.h"
+#include "pcieuni_io_compat.h"
+
 #include <errno.h>
 #include <iostream>
 #include <sstream>
@@ -5,16 +12,10 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <boost/bind/bind.hpp>
 #include <boost/shared_ptr.hpp>
-
-// the io constants and struct for the driver
-// FIXME: they should come from the installed driver
-#include "PcieBackend.h"
-#include "llrfdrv_io_compat.h"
-#include "pciedev_io.h"
-#include "pcieuni_io_compat.h"
 
 namespace ChimeraTK {
 

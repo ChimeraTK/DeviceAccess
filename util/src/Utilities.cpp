@@ -13,8 +13,8 @@
 #include <vector>
 
 #include "BackendFactory.h"
-#include "DMapFilesParser.h"
 #include "Utilities.h"
+#include "DMapFileParser.h"
 
 namespace ChimeraTK {
 

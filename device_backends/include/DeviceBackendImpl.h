@@ -1,11 +1,10 @@
-#ifndef CHIMERA_TK_DEVICE_BACKEND_IMPL_H
-#define CHIMERA_TK_DEVICE_BACKEND_IMPL_H
-
-#include <list>
-#include <atomic>
+#pragma once
 
 #include "DeviceBackend.h"
 #include "Exception.h"
+
+#include <list>
+#include <atomic>
 
 namespace ChimeraTK {
 
@@ -16,28 +15,17 @@ namespace ChimeraTK {
    */
   class DeviceBackendImpl : public DeviceBackend {
    public:
-    DeviceBackendImpl();
-    virtual ~DeviceBackendImpl();
+    bool isOpen() override { return _opened; }
 
-    virtual bool isOpen() { return _opened; }
-
-    virtual bool isConnected() { return _connected; }
-
-    virtual const RegisterCatalogue& getRegisterCatalogue() const { return _catalogue; }
+    bool isConnected() override { return _connected; }
 
    protected:
-    /** the register catalogue containing describing the registers known by this
-     * backend */
-    RegisterCatalogue _catalogue;
 
     /** flag if device is opened */
-    std::atomic<bool> _opened = {true};
+    std::atomic<bool> _opened{false};
 
     /** flag if device is connected. */
-    bool _connected;
-
+    bool _connected{false};
   };
 
 } // namespace ChimeraTK
-
-#endif /*CHIMERA_TK_DEVICE_BACKEND_IMPL_H*/

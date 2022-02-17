@@ -5,8 +5,7 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
-#define CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
+#pragma once
 
 #include "FixedPointConverter.h"
 #include "ForwardDeclarations.h"
@@ -24,15 +23,15 @@ namespace ChimeraTK {
   namespace detail {
     /** This function is external to allow template specialisation. */
     template<typename ConverterT>
-    ConverterT createDataConverter(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+    ConverterT createDataConverter(boost::shared_ptr<NumericAddressedRegisterInfo> registerInfo);
 
     template<>
     FixedPointConverter createDataConverter<FixedPointConverter>(
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+        boost::shared_ptr<NumericAddressedRegisterInfo> registerInfo);
 
     template<>
     IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+        boost::shared_ptr<NumericAddressedRegisterInfo> registerInfo);
 
     /** We need partial template specialisations of some functions. However, in C++ this is only possible for full classes.
      *  Hence we introduce an implementer class which only holds the functions which we have to re-implement anyway.
@@ -213,14 +212,13 @@ namespace ChimeraTK {
       }
 
       // obtain register information
-      boost::shared_ptr<RegisterInfoImpl> info = _dev->getRegisterInfo(registerPathName);
-      _prePostActionsImplementor._registerInfo = info;
-      _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      _registerInfo = _dev->getRegisterInfo(registerPathName);
+      _prePostActionsImplementor._registerInfo = _registerInfo;
       _bar = _registerInfo->bar;
       _startAddress = _registerInfo->address + wordOffsetInRegister * _registerInfo->nBytesPerElement();
 
       // check number of words
-      if(_registerInfo->dataType == RegisterInfoMap::RegisterInfo::VOID) {
+      if(_registerInfo->dataType == NumericAddressedRegisterInfo::VOID) {
         // in void registers we always create one element
         if(_numberOfWords == 0) {
           _numberOfWords = 1;
@@ -361,7 +359,7 @@ namespace ChimeraTK {
    protected:
     /** Address, size and fixed-point representation information of the register
      * from the map file */
-    boost::shared_ptr<RegisterInfoMap::RegisterInfo> _registerInfo;
+    boost::shared_ptr<NumericAddressedRegisterInfo> _registerInfo;
 
     /** Converter to interpret the data */
     DataConverterType _dataConverter;
@@ -503,5 +501,3 @@ namespace ChimeraTK {
       NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, false);
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H */

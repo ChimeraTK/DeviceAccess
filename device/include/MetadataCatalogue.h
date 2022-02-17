@@ -13,6 +13,7 @@ namespace ChimeraTK {
    * The metadata is a list of key-value pairs with string data types for both key and value.
    */
   class MetadataCatalogue {
+   public:
     /** Get metadata information for the given key. If the key is not known, a ChimeraTK::logic_error is thrown. */
     [[nodiscard]] const std::string& getMetadata(const std::string& key) const;
 

@@ -146,6 +146,8 @@ namespace ChimeraTK {
    public:
     [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const override;
 
+    [[nodiscard]] boost::shared_ptr<BackendRegisterInfo> getBackendRegister(const RegisterPath& registerPathName) const;
+
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
 
     [[nodiscard]] size_t getNumberOfRegisters() const override;
@@ -334,6 +336,19 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
+  boost::shared_ptr<BackendRegisterInfo> BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
+      const RegisterPath& name) const {
+    try {
+      return catalogue.at(name);
+    }
+    catch(std::out_of_range&) {
+      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
   size_t BackendRegisterCatalogue<BackendRegisterInfo>::getNumberOfRegisters() const {
     return catalogue.size();
   }
@@ -343,7 +358,7 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   boost::shared_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorBegin() const {
-    return {catalogue.cbegin()};
+    return boost::make_shared<const_RegisterCatalogueImplIterator>(catalogue.cbegin());
   }
 
   /********************************************************************************************************************/
@@ -351,7 +366,7 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   boost::shared_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorEnd() const {
-    return {catalogue.cend()};
+    return boost::make_shared<const_RegisterCatalogueImplIterator>(catalogue.cend());
   }
 
   /********************************************************************************************************************/
