@@ -52,7 +52,8 @@ struct RegisterDescriptorBase {
     dummy.throwExceptionWrite = enable;
     dummy.throwExceptionOpen = enable;
     if(derived->isPush() && enable) {
-      dummy.triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
+      std::cout << "exception test: deprecated trigger. Open is " << dummy.isOpen() << std::endl;
+      dummy.triggerInterrupt(5, 6);
     }
   }
 };
@@ -89,8 +90,9 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       derived->acc[derived->channel][k] = v[k];
     }
     if(derived->isPush()) {
-      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend())
-          .triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
+      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
+      std::cout << "channel: triggering interrupt 5:6" << std::endl;
+      dynamic_cast<DummyBackend&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
     }
   }
 };
@@ -155,8 +157,8 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       derived->acc[i + derived->myOffset()] = v[i];
     }
     if(derived->isPush()) {
-      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend())
-          .triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
+      std::cout << "triggering deprecated push" << std::endl;
+      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
     }
   }
 };
@@ -289,7 +291,14 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
     return {{result}};
   }
 
-  void setRemoteValue() { derived->target.setRemoteValue(); }
+  void setRemoteValue() {
+    derived->target.setRemoteValue();
+    if(derived->isPush()) {
+      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
+      std::cout << "triggering interrupt 5:6" << std::endl;
+      exceptionDummy3->triggerInterrupt(5, 6);
+    }
+  }
 
   void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }
 };
@@ -323,12 +332,17 @@ struct RegSingleWordB : ScalarRegisterDescriptorBase<RegSingleWordB> {
 struct RegSingleWord_push : ScalarRegisterDescriptorBase<RegSingleWord_push> {
   std::string path() { return "/SingleWord_push"; }
   bool isPush() { return true; }
+  bool isWriteable() {
+    std::cout << "Warning: Writing test for /SingleWord_push has been disabled due to missing support in the dummy."
+              << std::endl;
+    return false;
+  }
 
   const uint32_t increment = 3;
 
   typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test passing through 1D array accessors
@@ -500,6 +514,12 @@ struct RegBit2OfWordFirmwareB : BitRegisterDescriptorBase<RegBit2OfWordFirmwareB
 struct RegBit2OfWordFirmware_push : BitRegisterDescriptorBase<RegBit2OfWordFirmware_push> {
   std::string path() { return "/Bit2ofWordFirmware_push"; }
   bool isPush() { return true; }
+  bool isWriteable() {
+    std::cout
+        << "Warning: Writing test for /Bit2ofWordFirmware_push has been disabled due to missing support in the dummy."
+        << std::endl;
+    return false;
+  }
 
   RegSingleWord target;
   size_t bit = 2;
@@ -557,7 +577,7 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
   typedef minimumUserType rawUserType;
   //Mutliply plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test multiply plugin applied to array (just one direction for sake of simplicity)
@@ -602,7 +622,7 @@ struct RegWordFirmwareForcedReadOnly_push : ScalarRegisterDescriptorBase<RegWord
 
   typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test math plugin - needs to be done separately for reading and writing (see below)
@@ -614,7 +634,7 @@ struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
   typedef uint32_t rawUserType;
   //Math plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R> {
