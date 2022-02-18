@@ -1,9 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.0
-
-> This version is identical to V1.0RC13 (apart from added introduction).
+\page spec_TransferElement Technical specification: TransferElement V1.1 Draft
 
 > **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
@@ -101,8 +99,11 @@ This document describes the behaviour of the TransferElement base class, the NDR
     - float
     - double
     - std::string
+    - ChimeraTK::Boolean
+    - ChimeraTK::Void
   - 2.2 Applications select a data type for the buffer via the UserType template argument of Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor().
   - 2.3 If needed, the register value is converted between the actual register's data type and the application-selected UserType.
+    - 2.3.1 When the actual type is Void, the conversion is 0 or false in the respective UserType.
   - 2.4  In read operations, values outside the possible range of the UserType are moved to the nearest possible value (rounding and clamping).
     - 2.4.1 The data is marked with DataValidity::faulty in case of an overflow/underflow.
   - 2.5 In write operations, values outside the possible range of the actual register's data type are moved to the nearest possible value (rounding and clamping).
@@ -385,6 +386,12 @@ This document describes the behaviour of the TransferElement base class, the NDR
     - 5.2.7 A write operation is executed on a transfer element that cannot be written
       - 5.2.7.1 Check with TransferElement::isWriteable() or TransferElement::isReadOnly()
       - \anchor transferElement_C_5_2_7_2 5.2.7.2 Thrown in doPreWrite() [\ref UnifiedTest_TransferElement_C_5_2_7_2 "U"]
+    - 5.2.8 Scalar, 1D or 2D registers of UserType Void
+      - The instantiation of the Void UserType is limited to the respective VoidRegister
+      - Other register types will throw an error upon instantiaion.
+    - 5.2.9 UserType Void in combination with read only and not having wait_for_new_data
+      - Read only is solely useful in tandem with the wait_for_new_data AccessMode.
+      - Thrown in constructor.
   - \anchor transferElement_C_5_3 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant for each TransferElement. Only when a ChimeraTK::runtime_error is thrown by the TransferElement, the information might change and applications are expected to check it again. [\ref UnifiedTest_TransferElement_C_5_3 "U"]
     - \anchor transferElement_C_5_3_1 5.3.1 If a device is changing this information on its own (e.g. makes a register read-only which was readable before), and the application hence performes an operation which is no longer possible, a ChimeraTK::runtime_error must be thrown (unexpected behaviour of the device). \ref transferElement_comment_C_5_3_1 "(*)" [\ref UnifiedTest_TransferElement_C_5_3_1 "U"]
     - \anchor transferElement_C_5_3_2 5.3.2 If an implementation needs to obtain the information from the device (and hence the information might potentially change), it caches the information for each TransferElement separately. [\ref UnifiedTest_TransferElement_C_5_3_2 "U"]
