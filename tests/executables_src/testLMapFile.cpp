@@ -1,10 +1,12 @@
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE LMapBackendTest
-#include <boost/test/unit_test.hpp>
+#if 0
+
+#  define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_MODULE LMapBackendTest
+#  include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "LNMBackendRegisterInfo.h"
-#include "LogicalNameMapParser.h"
+#  include "LNMBackendRegisterInfo.h"
+#  include "LogicalNameMapParser.h"
 
 using namespace ChimeraTK;
 
@@ -159,3 +161,4 @@ BOOST_AUTO_TEST_CASE(testParameters) {
     BOOST_CHECK(info->registerName == "ThisTime");
   }
 }
+#endif

@@ -30,6 +30,8 @@ bool compareDeviceInfos(
   return result;
 }
 
+#if 0
+
 bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& element1,
     const ChimeraTK::RegisterInfoMap::RegisterInfo& element2) {
   bool result = (element1.address == element2.address) && (element1.bar == element2.bar) &&
@@ -49,3 +51,5 @@ bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& ele
   }
   return result;
 }
+
+#endif

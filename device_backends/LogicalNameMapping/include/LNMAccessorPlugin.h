@@ -1,9 +1,10 @@
-#ifndef CHIMERA_TK_LNM_ACCESSOR_PLUGIN_H
-#define CHIMERA_TK_LNM_ACCESSOR_PLUGIN_H
+#pragma once
 
-#include "VirtualFunctionTemplate.h"
-#include "LogicalNameMappingBackend.h"
-#include "ReadAnyGroup.h"
+#if 0
+
+#  include "VirtualFunctionTemplate.h"
+#  include "LogicalNameMappingBackend.h"
+#  include "ReadAnyGroup.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -294,4 +295,4 @@ namespace ChimeraTK { namespace LNMBackend {
 
 }} // namespace ChimeraTK::LNMBackend
 
-#endif // CHIMERA_TK_LNM_ACCESSOR_PLUGIN_H
+#endif

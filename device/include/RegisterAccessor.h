@@ -2,18 +2,20 @@
  * RegisterAccessor.h - Non-buffering accessor for device registers
  */
 
-#ifndef CHIMERA_TK_REGISTER_ACCESSOR_H
-#define CHIMERA_TK_REGISTER_ACCESSOR_H
+#if 0
 
-#include "DeviceBackend.h"
-#include "ForwardDeclarations.h"
-#include "NDRegisterAccessor.h"
-#include "NumericAddressedBackend.h"
-#include "RegisterInfoMap.h"
-#include "VirtualFunctionTemplate.h"
+#  ifndef CHIMERA_TK_REGISTER_ACCESSOR_H
+#    define CHIMERA_TK_REGISTER_ACCESSOR_H
 
-#include <boost/fusion/include/at_key.hpp>
-#include <typeinfo>
+#    include "DeviceBackend.h"
+#    include "ForwardDeclarations.h"
+#    include "NDRegisterAccessor.h"
+#    include "NumericAddressedBackend.h"
+#    include "RegisterInfoMap.h"
+#    include "VirtualFunctionTemplate.h"
+
+#    include <boost/fusion/include/at_key.hpp>
+#    include <typeinfo>
 
 namespace ChimeraTK {
 
@@ -107,7 +109,7 @@ namespace ChimeraTK {
      *  @todo Add printed runtime warning after release of version 0.8
      */
     unsigned int getNumberOfElements() const { return _registerInfo->getNumberOfElements(); }
-
+#    if 0
     /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
      *  \deprecated
      *  This class is deprecated. Use BufferingRegisterAccessor instead!
@@ -123,7 +125,7 @@ namespace ChimeraTK {
       castedBackend->getRegisterMap()->getRegisterInfo(_registerPathName, info);
       return info;
     }
-
+#    endif
     /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
      *  \deprecated
      *  This class is deprecated. Use BufferingRegisterAccessor instead!
@@ -263,4 +265,6 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* CHIMERA_TK_REGISTER_ACCESSOR_H */
+#  endif /* CHIMERA_TK_REGISTER_ACCESSOR_H */
+
+#endif

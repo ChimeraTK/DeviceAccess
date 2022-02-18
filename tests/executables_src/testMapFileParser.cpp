@@ -1,13 +1,15 @@
+#if 0
+
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#  include "boost_dynamic_init_test.h"
 
-#include <sstream>
+#  include <sstream>
 
-#include "Exception.h"
-#include "MapFileParser.h"
-#include "RegisterInfoMap.h"
-#include "helperFunctions.h"
+#  include "Exception.h"
+#  include "MapFileParser.h"
+#  include "RegisterInfoMap.h"
+#  include "helperFunctions.h"
 
 using namespace ChimeraTK;
 using namespace boost::unit_test_framework;
@@ -446,3 +448,5 @@ void MapFileParserTest::testMapFileWithCommentsParse() {
     BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
   }
 }
+
+#endif

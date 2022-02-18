@@ -33,7 +33,7 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  RegisterCatalogue::const_iterator::const_iterator(boost::shared_ptr<const_RegisterCatalogueImplIterator> it)
+  RegisterCatalogue::const_iterator::const_iterator(std::unique_ptr<const_RegisterCatalogueImplIterator> it)
   : impl(std::move(it)) {}
 
   /*******************************************************************************************************************/
@@ -68,11 +68,11 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  RegisterInfo RegisterCatalogue::const_iterator::operator*() { return impl->get(); }
+  const RegisterInfoImpl* RegisterCatalogue::const_iterator::operator*() { return impl->get(); }
 
   /*******************************************************************************************************************/
 
-  RegisterInfo RegisterCatalogue::const_iterator::operator->() { return impl->get(); }
+  const RegisterInfoImpl* RegisterCatalogue::const_iterator::operator->() { return impl->get(); }
 
   /*******************************************************************************************************************/
 

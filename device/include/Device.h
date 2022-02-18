@@ -428,39 +428,11 @@ namespace ChimeraTK {
     /** \brief <b>DEPRECATED</b>
      *
      *  \deprecated
-     *  This function is deprecated. Use getRegisterCatalogue() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use getRegisterCatalogue() instead!")]] boost::shared_ptr<const RegisterInfoMap> getRegisterMap()
-        const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Open by alias name instead.
-     *  @todo Change warning into runtime error after release of version 0.9
-     */
-    [[deprecated("Open by alias or device identifier string instead!")]] virtual void open(
-        boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<ChimeraTK::RegisterInfoMap>& registerMap);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
      *  This function is deprecated. Open by alias name instead.
      *  @todo Change warning into runtime error after release of version 0.9
      */
     [[deprecated("Open by alias or device identifier string instead!")]] virtual void open(
         boost::shared_ptr<DeviceBackend> deviceBackend);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use getTwoDRegisterAccessor() instead!
-     *  @todo Change warning into runtime error after release of version 0.9
-     */
-    template<typename customClass>
-    [[deprecated("Use getTwoDRegisterAccessor() instead!")]] boost::shared_ptr<customClass> getCustomAccessor(
-        const std::string& dataRegionName, const std::string& module = std::string()) const;
 
     /** \brief <b>DEPRECATED</b>
      *
@@ -554,27 +526,6 @@ namespace ChimeraTK {
 
     void checkPointersAreNotNull() const;
   };
-
-  /********************************************************************************************************************/
-
-  template<typename customClass>
-  boost::shared_ptr<customClass> Device::getCustomAccessor(
-      const std::string& dataRegionName, const std::string& module) const {
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Usage of deprecated function Device::getCustomAccessor() "
-                 "detected.                          **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Use Device::getTwoDRegisterAccessor() instead!              "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    return customClass::createInstance(
-        dataRegionName, module, _deviceBackendPointer, boost::shared_ptr<RegisterInfoMap>());
-  }
 
   /********************************************************************************************************************/
 

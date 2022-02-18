@@ -119,7 +119,7 @@ namespace ChimeraTK {
    */
   class DummyRegisterAddressChecker {
    public:
-    DummyRegisterAddressChecker(RegisterInfoMap::RegisterInfo _registerInfo) : registerInfo(_registerInfo) {}
+    DummyRegisterAddressChecker(NumericAddressedRegisterInfo _registerInfo) : registerInfo(_registerInfo) {}
 
     /// check if the given address is in range of the register
     bool isAddressInRange(uint8_t bar, uint32_t address, size_t length) {
@@ -132,7 +132,7 @@ namespace ChimeraTK {
     DummyRegisterAddressChecker() {}
 
     /// register map information
-    RegisterInfoMap::RegisterInfo registerInfo;
+    NumericAddressedRegisterInfo registerInfo;
   };
 
   /*********************************************************************************************************************/
@@ -160,7 +160,7 @@ namespace ChimeraTK {
     /// itself. module and name denominate the register entry in the map file.
     DummyRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
     : _dev(dev), _path(module + "/" + name), fpc(module + "/" + name) {
-      _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
+      registerInfo = _dev->_registerMap.getBackendRegister(_path);
       fpc = FixedPointConverter(
           module + "/" + name, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
       // initialise the base DummyRegisterElement
@@ -240,7 +240,7 @@ namespace ChimeraTK {
     /// name when searching for the register.
     DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
     : _dev(dev), _path(module + "/" + name), pitch(0) {
-      _dev->_registerMap->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
+      registerInfo = _dev->_registerMap.getBackendRegister(module + "." + MULTIPLEXED_SEQUENCE_PREFIX + name);
 
       int i = 0;
       while(true) {

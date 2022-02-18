@@ -21,16 +21,16 @@ namespace ChimeraTK {
 
     virtual void decrement() = 0;
 
-    [[nodiscard]] virtual boost::shared_ptr<RegisterInfoImpl> get() = 0;
+    [[nodiscard]] virtual const RegisterInfoImpl* get() = 0;
 
     [[nodiscard]] virtual bool isEqual(
-        const boost::shared_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const = 0;
+        const std::unique_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const = 0;
 
     /**
      * Create copy of the iterator. This is required to implement the post-increment/decrement operators and
      * proper copy/assignment sematics of the RegisterCatalogue::const_iterator.
      */
-    [[nodiscard]] virtual boost::shared_ptr<const_RegisterCatalogueImplIterator> clone() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> clone() const = 0;
   };
 
   /*******************************************************************************************************************/
@@ -57,19 +57,39 @@ namespace ChimeraTK {
   class const_BackendRegisterCatalogueImplIterator : public const_RegisterCatalogueImplIterator {
    public:
     explicit const_BackendRegisterCatalogueImplIterator(
-        std::map<RegisterPath, boost::shared_ptr<RegisterInfoImpl>>::const_iterator it);
+        typename std::map<RegisterPath, BackendRegisterInfo>::const_iterator it);
 
     void increment() override;
 
     void decrement() override;
 
-    boost::shared_ptr<RegisterInfoImpl> get() override;
+    const RegisterInfoImpl* get() override;
 
     [[nodiscard]] bool isEqual(
-        const boost::shared_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const override;
+        const std::unique_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const override;
+
+    [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> clone() const override;
+
+    const_BackendRegisterCatalogueImplIterator& operator++();
+
+    const_BackendRegisterCatalogueImplIterator operator++(int);
+
+    const_BackendRegisterCatalogueImplIterator& operator--();
+
+    const_BackendRegisterCatalogueImplIterator operator--(int);
+
+    const BackendRegisterInfo& operator*() const;
+
+    const BackendRegisterInfo* operator->() const;
+
+    explicit operator RegisterCatalogue::const_iterator() const;
+
+    bool operator==(const const_BackendRegisterCatalogueImplIterator& rightHandSide) const;
+
+    bool operator!=(const const_BackendRegisterCatalogueImplIterator& rightHandSide) const;
 
    protected:
-    typename std::map<RegisterPath, boost::shared_ptr<BackendRegisterInfo>>::const_iterator theIterator;
+    typename std::map<RegisterPath, BackendRegisterInfo>::const_iterator theIterator;
   };
 
   /*******************************************************************************************************************/
@@ -81,7 +101,7 @@ namespace ChimeraTK {
     BackendRegisterCatalogueImplIterator() = default;
 
     explicit BackendRegisterCatalogueImplIterator(
-        typename std::map<RegisterPath, boost::shared_ptr<BackendRegisterInfo>>::iterator theIterator_);
+        typename std::map<RegisterPath, BackendRegisterInfo>::iterator theIterator_);
 
     BackendRegisterCatalogueImplIterator& operator++();
 
@@ -91,9 +111,9 @@ namespace ChimeraTK {
 
     BackendRegisterCatalogueImplIterator operator--(int);
 
-    boost::shared_ptr<BackendRegisterInfo>& operator*() const;
+    BackendRegisterInfo& operator*() const;
 
-    boost::shared_ptr<BackendRegisterInfo>& operator->() const;
+    BackendRegisterInfo* operator->() const;
 
     explicit operator RegisterCatalogue::const_iterator() const;
 
@@ -102,7 +122,7 @@ namespace ChimeraTK {
     bool operator!=(const BackendRegisterCatalogueImplIterator& rightHandSide) const;
 
    protected:
-    typename std::map<RegisterPath, boost::shared_ptr<BackendRegisterInfo>>::iterator theIterator;
+    typename std::map<RegisterPath, BackendRegisterInfo>::iterator theIterator;
   };
 
   /*******************************************************************************************************************/
@@ -112,6 +132,14 @@ namespace ChimeraTK {
   /** Pure virtual implementation base class for the register catalogue. */
   class RegisterCatalogueImpl {
    public:
+    RegisterCatalogueImpl() = default;
+
+    RegisterCatalogueImpl(const RegisterCatalogueImpl& other);
+    RegisterCatalogueImpl(RegisterCatalogueImpl&& other) = default;
+
+    RegisterCatalogueImpl& operator=(const RegisterCatalogueImpl& other);
+    RegisterCatalogueImpl& operator=(RegisterCatalogueImpl&& other) = default;
+
     /** 
      *  Get register information for a given full path name.
      *  
@@ -126,10 +154,13 @@ namespace ChimeraTK {
     [[nodiscard]] virtual size_t getNumberOfRegisters() const = 0;
 
     /** Return begin iterator for iterating through the registers in the catalogue */
-    [[nodiscard]] virtual boost::shared_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const = 0;
 
     /** Return end iterator for iterating through the registers in the catalogue */
-    [[nodiscard]] virtual boost::shared_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const = 0;
+
+    /** Create deep copy of the catalogue */
+    [[nodiscard]] virtual std::unique_ptr<RegisterCatalogueImpl> clone() const = 0;
   };
 
   /*******************************************************************************************************************/
@@ -146,21 +177,25 @@ namespace ChimeraTK {
    public:
     [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const override;
 
-    [[nodiscard]] boost::shared_ptr<BackendRegisterInfo> getBackendRegister(const RegisterPath& registerPathName) const;
+    [[nodiscard]] BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName);
+
+    [[nodiscard]] const BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName) const;
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
 
     [[nodiscard]] size_t getNumberOfRegisters() const override;
 
-    [[nodiscard]] boost::shared_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const override;
+    [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const override;
 
-    [[nodiscard]] boost::shared_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const override;
+    [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const override;
+
+    [[nodiscard]] std::unique_ptr<RegisterCatalogueImpl> clone() const override;
 
     /**
      * Add register information to the catalogue. The full path name of the register is taken from the RegisterInfo
      * structure.
      */
-    void addRegister(boost::shared_ptr<BackendRegisterInfo> registerInfo);
+    void addRegister(BackendRegisterInfo registerInfo);
 
     /**
      * Remove register as identified by the given name from the catalogue. Throws ChimeraTK::logic_error if register
@@ -179,17 +214,17 @@ namespace ChimeraTK {
     }
 
     /** Return const begin iterators for iterating through the registers in the catalogue */
-    [[nodiscard]] RegisterCatalogue::const_iterator cbegin() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cbegin() const {
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
     }
 
     /** Return const end iterators for iterating through the registers in the catalogue */
-    [[nodiscard]] RegisterCatalogue::const_iterator cend() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cend() const {
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
     }
 
    protected:
-    std::map<RegisterPath, boost::shared_ptr<BackendRegisterInfo>> catalogue;
+    std::map<RegisterPath, BackendRegisterInfo> catalogue;
   };
 
   /*******************************************************************************************************************/
@@ -201,7 +236,7 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::const_BackendRegisterCatalogueImplIterator(
-      std::map<RegisterPath, boost::shared_ptr<RegisterInfoImpl>>::const_iterator it)
+      typename std::map<RegisterPath, BackendRegisterInfo>::const_iterator it)
   : theIterator(it) {}
 
   /********************************************************************************************************************/
@@ -221,17 +256,94 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  boost::shared_ptr<RegisterInfoImpl> const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::get() {
-    return {theIterator->second};
+  const RegisterInfoImpl* const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::get() {
+    return &(theIterator->second);
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
   bool const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::isEqual(
-      const boost::shared_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const {
-    auto rhs_casted = boost::dynamic_pointer_cast<const_BackendRegisterCatalogueImplIterator>(rightHandSide);
-    return rhs_casted && rhs_casted.theIterator == theIterator;
+      const std::unique_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const {
+    auto rhs_casted = dynamic_cast<const_BackendRegisterCatalogueImplIterator*>(rightHandSide.get());
+    return rhs_casted && rhs_casted->theIterator == theIterator;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  std::unique_ptr<const_RegisterCatalogueImplIterator> const_BackendRegisterCatalogueImplIterator<
+      BackendRegisterInfo>::clone() const {
+    auto* p = new const_BackendRegisterCatalogueImplIterator(*this);
+    return std::unique_ptr<const_RegisterCatalogueImplIterator>(p);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>& const_BackendRegisterCatalogueImplIterator<
+      BackendRegisterInfo>::operator++() {
+    ++theIterator;
+    return *this;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> const_BackendRegisterCatalogueImplIterator<
+      BackendRegisterInfo>::operator++(int) {
+    BackendRegisterCatalogueImplIterator<BackendRegisterInfo> temp(*this);
+    ++theIterator;
+    return temp;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>& const_BackendRegisterCatalogueImplIterator<
+      BackendRegisterInfo>::operator--() {
+    --theIterator;
+    return *this;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> const_BackendRegisterCatalogueImplIterator<
+      BackendRegisterInfo>::operator--(int) {
+    BackendRegisterCatalogueImplIterator<BackendRegisterInfo> temp(*this);
+    --theIterator;
+    return temp;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  const BackendRegisterInfo& const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator*() const {
+    return *(theIterator->second);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  const BackendRegisterInfo* const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator->() const {
+    return theIterator->second;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  bool const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator==(
+      const const_BackendRegisterCatalogueImplIterator& rightHandSide) const {
+    return rightHandSide.theIterator == theIterator;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  bool const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator!=(
+      const const_BackendRegisterCatalogueImplIterator& rightHandSide) const {
+    return rightHandSide.theIterator != theIterator;
   }
 
   /********************************************************************************************************************/
@@ -239,7 +351,7 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::BackendRegisterCatalogueImplIterator(
-      typename std::map<RegisterPath, boost::shared_ptr<BackendRegisterInfo>>::iterator theIterator_)
+      typename std::map<RegisterPath, BackendRegisterInfo>::iterator theIterator_)
   : theIterator(theIterator_) {}
 
   /********************************************************************************************************************/
@@ -283,16 +395,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  boost::shared_ptr<BackendRegisterInfo>& BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator*() const {
+  BackendRegisterInfo& BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator*() const {
     return theIterator->second;
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  boost::shared_ptr<BackendRegisterInfo>& BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator->()
-      const {
-    return theIterator->second;
+  BackendRegisterInfo* BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator->() const {
+    return &(theIterator->second);
   }
 
   /********************************************************************************************************************/
@@ -326,7 +437,7 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   RegisterInfo BackendRegisterCatalogue<BackendRegisterInfo>::getRegister(const RegisterPath& name) const {
     try {
-      return RegisterInfo(catalogue.at(name));
+      return RegisterInfo(std::make_unique<BackendRegisterInfo>(catalogue.at(name)));
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
@@ -336,8 +447,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  boost::shared_ptr<BackendRegisterInfo> BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
-      const RegisterPath& name) const {
+  BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(const RegisterPath& name) {
     try {
       return catalogue.at(name);
     }
@@ -349,6 +459,18 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
+  const BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
+      const RegisterPath& name) const {
+    try {
+      return catalogue.at(name);
+    }
+    catch(std::out_of_range&) {
+      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
+    }
+  }
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
   size_t BackendRegisterCatalogue<BackendRegisterInfo>::getNumberOfRegisters() const {
     return catalogue.size();
   }
@@ -356,24 +478,37 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  boost::shared_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
+  std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorBegin() const {
-    return boost::make_shared<const_RegisterCatalogueImplIterator>(catalogue.cbegin());
+    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cbegin());
+    return it;
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  boost::shared_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
+  std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorEnd() const {
-    return boost::make_shared<const_RegisterCatalogueImplIterator>(catalogue.cend());
+    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cend());
+    return it;
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  void BackendRegisterCatalogue<BackendRegisterInfo>::addRegister(boost::shared_ptr<BackendRegisterInfo> registerInfo) {
-    catalogue[registerInfo->getRegisterName()] = std::move(registerInfo);
+  std::unique_ptr<RegisterCatalogueImpl> BackendRegisterCatalogue<BackendRegisterInfo>::clone() const {
+    auto* c = new BackendRegisterCatalogue<BackendRegisterInfo>();
+    for(auto& p : catalogue) {
+      c->catalogue[p.first] = getBackendRegister(p.first);
+    }
+    return std::unique_ptr<RegisterCatalogueImpl>(c);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  void BackendRegisterCatalogue<BackendRegisterInfo>::addRegister(BackendRegisterInfo registerInfo) {
+    catalogue[registerInfo.getRegisterName()] = std::move(registerInfo);
   }
 
   /********************************************************************************************************************/

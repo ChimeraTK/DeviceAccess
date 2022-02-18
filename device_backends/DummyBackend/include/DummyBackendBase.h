@@ -3,8 +3,7 @@
  *
  * Common definitions and base class for DummyBackends
  */
-#ifndef CHIMERA_TK_DUMMY_BACKEND_BASE_H
-#define CHIMERA_TK_DUMMY_BACKEND_BASE_H
+#pragma once
 
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
@@ -36,6 +35,7 @@ namespace ChimeraTK {
   class DummyBackendBase : public NumericAddressedBackend {
    protected:
     DummyBackendBase(std::string const& mapFileName);
+    DummyBackendBase(std::string const& mapFileName) : NumericAddressedBackend(mapFileName) {
 
     ~DummyBackendBase() override;
 
@@ -69,10 +69,13 @@ namespace ChimeraTK {
     /// All bars are valid in dummies.
     bool barIndexValid([[maybe_unused]] uint64_t bar) override;
 
-    RegisterInfoMapPointer _registerMapping;
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
     std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
+      for(auto info = _registerMap.cbegin(); info != _registerMap.cend(); ++info) {
+        //for(const auto info : _registerMap) {
+        barSizesInBytes[info->bar] =
+            std::max(barSizesInBytes[info->bar], static_cast<size_t>(info->address + info->nBytes));
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
@@ -154,7 +157,7 @@ namespace ChimeraTK {
 
         const auto info{getRegisterInfo(actualRegisterPath)};
 
-        if(info->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) {
+        if(info->dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) {
           if(flags.has(AccessMode::raw)) {
             boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(
                 syncAccessor)
@@ -172,7 +175,7 @@ namespace ChimeraTK {
             }
           }
         }
-        else if(info->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754) {
+        else if(info->dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
           if(flags.has(AccessMode::raw)) {
             boost::dynamic_pointer_cast<
                 NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(syncAccessor)
@@ -217,5 +220,3 @@ namespace ChimeraTK {
   }; // class DummyBackendBase
 
 } //namespace ChimeraTK
-
-#endif // CHIMERA_TK_DUMMY_BACKEND_BASE_H

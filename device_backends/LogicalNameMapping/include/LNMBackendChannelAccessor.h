@@ -5,15 +5,16 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H
-#define CHIMERA_TK_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H
+#pragma once
 
-#include <algorithm>
+#if 0
 
-#include "Device.h"
-#include "LogicalNameMappingBackend.h"
-#include "NDRegisterAccessor.h"
-#include "TwoDRegisterAccessor.h"
+#  include <algorithm>
+
+#  include "Device.h"
+#  include "LogicalNameMappingBackend.h"
+#  include "NDRegisterAccessor.h"
+#  include "TwoDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -150,4 +151,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* CHIMERA_TK_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H */
+#endif

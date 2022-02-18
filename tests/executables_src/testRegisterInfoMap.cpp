@@ -1,10 +1,12 @@
+#if 0
+
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#  include "boost_dynamic_init_test.h"
 using namespace boost::unit_test_framework;
 
-#include "Exception.h"
-#include "helperFunctions.h"
+#  include "Exception.h"
+#  include "helperFunctions.h"
 using namespace ChimeraTK;
 
 class MapFileTest {
@@ -804,3 +806,5 @@ void MapFileTest::testIsWritableIsReadable() {
   BOOST_CHECK(ptrReg6->isReadable() == true);
   BOOST_CHECK(ptrReg6->isWriteable() == true);
 }
+
+#endif

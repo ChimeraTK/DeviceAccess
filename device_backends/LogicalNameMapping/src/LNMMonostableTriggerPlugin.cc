@@ -1,10 +1,12 @@
-#include <boost/make_shared.hpp>
+#if 0
 
-#include <thread>
+#  include <boost/make_shared.hpp>
 
-#include "LNMBackendRegisterInfo.h"
-#include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessorDecorator.h"
+#  include <thread>
+
+#  include "LNMBackendRegisterInfo.h"
+#  include "LNMAccessorPlugin.h"
+#  include "NDRegisterAccessorDecorator.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -141,3 +143,5 @@ namespace ChimeraTK { namespace LNMBackend {
         target, _milliseconds, _active, _inactive);
   }
 }} // namespace ChimeraTK::LNMBackend
+
+#endif

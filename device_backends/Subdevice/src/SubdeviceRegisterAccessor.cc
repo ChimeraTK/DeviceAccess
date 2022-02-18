@@ -1,5 +1,6 @@
+#if 0
 
-#include "SubdeviceRegisterAccessor.h"
+#  include "SubdeviceRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -167,3 +168,5 @@ namespace ChimeraTK {
   void SubdeviceRegisterAccessor::replaceTransferElement(boost::shared_ptr<TransferElement>) {}
 
 } // namespace ChimeraTK
+
+#endif

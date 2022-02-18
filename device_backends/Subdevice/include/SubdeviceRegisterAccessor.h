@@ -5,14 +5,15 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_SUBDEVICE_REGISTER_ACCESSOR_H
-#define CHIMERA_TK_SUBDEVICE_REGISTER_ACCESSOR_H
+#pragma once
 
-#include <algorithm>
+#if 0
 
-#include "Device.h"
-#include "SubdeviceBackend.h"
-#include "NDRegisterAccessor.h"
+#  include <algorithm>
+
+#  include "Device.h"
+#  include "SubdeviceBackend.h"
+#  include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -69,4 +70,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* CHIMERA_TK_SUBDEVICE_REGISTER_ACCESSOR_H */
+#endif

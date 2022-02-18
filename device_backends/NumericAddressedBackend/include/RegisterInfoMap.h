@@ -2,8 +2,7 @@
  *      @brief          Provides storage object for registers description taken
  * from MAP file
  */
-#ifndef CHIMERA_TK_MAP_FILE_H
-#define CHIMERA_TK_MAP_FILE_H
+#pragma once
 
 #include <boost/shared_ptr.hpp>
 #include <iostream>
@@ -19,7 +18,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  class NumericAddressedRegisterInfo : public ChimeraTK::RegisterInfoImpl {
+  class NumericAddressedRegisterInfo : public RegisterInfoImpl {
    public:
     enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE, INTERRUPT = 1 << 2 };
 
@@ -44,46 +43,44 @@ namespace ChimeraTK {
 
     NumericAddressedRegisterInfo& operator=(const NumericAddressedRegisterInfo& other) = default;
 
-    RegisterPath getRegisterName() const override {
+    [[nodiscard]] RegisterPath getRegisterName() const override {
       RegisterPath path = RegisterPath(module) / name;
       path.setAltSeparator(".");
       return path;
     }
 
-    unsigned int getNumberOfElements() const override { return nElements; }
+    [[nodiscard]] unsigned int getNumberOfElements() const override { return nElements; }
 
-    unsigned int getNumberOfChannels() const override {
+    [[nodiscard]] unsigned int getNumberOfChannels() const override {
       if(is2DMultiplexed) return nChannels;
       return 1;
     }
 
-    unsigned int getNumberOfDimensions() const override {
+    [[nodiscard]] unsigned int getNumberOfDimensions() const override {
       if(is2DMultiplexed) return 2;
       if(nElements > 1) return 1;
       return 0;
     }
 
-    const DataDescriptor& getDataDescriptor() const override { return dataDescriptor; }
+    [[nodiscard]] const DataDescriptor& getDataDescriptor() const override { return dataDescriptor; }
 
-    bool isReadable() const override {
+    [[nodiscard]] bool isReadable() const override {
       return ((registerAccess & Access::READ) | (registerAccess & Access::INTERRUPT)) != 0;
     }
 
-    bool isWriteable() const override { return (registerAccess & Access::WRITE) != 0; }
+    [[nodiscard]] bool isWriteable() const override { return (registerAccess & Access::WRITE) != 0; }
 
-    AccessModeFlags getSupportedAccessModes() const override {
+    [[nodiscard]] AccessModeFlags getSupportedAccessModes() const override {
         if(registerAccess == Access::INTERRUPT && ((dataType == Type::VOID) || (is2DMultiplexed))) {
         return {AccessMode::wait_for_new_data};
       }
-      else if(registerAccess == Access::INTERRUPT) {
+      if(registerAccess == Access::INTERRUPT) {
         return {AccessMode::raw, AccessMode::wait_for_new_data};
         }
       else if(is2DMultiplexed) {
         return {};
       }
-      else {
-        return {AccessMode::raw};
-      }
+      return {AccessMode::raw};
     }
 
     std::string name;        /**< Name of register */
@@ -106,9 +103,14 @@ namespace ChimeraTK {
     uint32_t interruptCtrlNumber;
     uint32_t interruptNumber;
 
-    uint32_t nBytesPerElement() const { return nElements > 0 ? nBytes / nElements : 0; }
+    [[nodiscard]] uint32_t nBytesPerElement() const { return nElements > 0 ? nBytes / nElements : 0; }
 
     DataDescriptor dataDescriptor;
+
+    [[nodiscard]] std::unique_ptr<RegisterInfoImpl> clone() const override {
+      auto* info = new NumericAddressedRegisterInfo(*this);
+      return std::unique_ptr<RegisterInfoImpl>(info);
+    }
   };
 
   /********************************************************************************************************************/
@@ -128,5 +130,3 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_MAP_FILE_H */

@@ -5,16 +5,17 @@
  *      Author: mhier
  */
 
-#ifndef CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
-#define CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
+#pragma once
 
-#include <mutex>
+#if 0
 
-#include <boost/shared_ptr.hpp>
+#  include <mutex>
 
-#include "ForwardDeclarations.h"
-#include "RegisterInfo.h"
-#include "TransferElement.h"
+#  include <boost/shared_ptr.hpp>
+
+#  include "ForwardDeclarations.h"
+#  include "RegisterInfo.h"
+#  include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -120,4 +121,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H */
+#endif

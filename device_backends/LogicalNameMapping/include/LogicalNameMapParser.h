@@ -5,17 +5,18 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_LOGICAL_NAME_MAP_PARSER_H
-#define CHIMERA_TK_LOGICAL_NAME_MAP_PARSER_H
+#pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <map>
-#include <unordered_set>
+#if 0
 
-#include "RegisterCatalogue.h"
-#include "RegisterPath.h"
+#  include <boost/shared_ptr.hpp>
+#  include <map>
+#  include <unordered_set>
 
-#include "LNMAccessorPlugin.h"
+#  include "RegisterCatalogue.h"
+#  include "RegisterPath.h"
+
+#  include "LNMAccessorPlugin.h"
 
 // forward declaration
 namespace xmlpp {
@@ -81,4 +82,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* CHIMERA_TK_LOGICAL_NAME_MAP_PARSER_H */
+#endif

@@ -1,13 +1,14 @@
-#ifndef CHIMERATK_SUBDEVICE_BACKEND_H
-#define CHIMERATK_SUBDEVICE_BACKEND_H
+#if 0
 
-#include <fcntl.h>
-#include <mutex>
-#include <stdint.h>
-#include <string>
-#include <vector>
+#  pragma once
 
-#include "DeviceBackendImpl.h"
+#  include <fcntl.h>
+#  include <mutex>
+#  include <stdint.h>
+#  include <string>
+#  include <vector>
+
+#  include "DeviceBackendImpl.h"
 
 namespace ChimeraTK {
   class SubdeviceRegisterAccessor;
@@ -154,4 +155,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /*CHIMERATK_SUBDEVICE_BACKEND_H*/
+#endif

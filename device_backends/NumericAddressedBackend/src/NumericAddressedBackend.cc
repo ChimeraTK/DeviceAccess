@@ -20,11 +20,10 @@ namespace ChimeraTK {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
-      _registerMap = parser.parse(mapFileName);
-      _catalogue = _registerMap->getRegisterCatalogue();
+      std::tie(_registerMap, _metadataCatalogue) = parser.parse(mapFileName);
 
       // create all the interrupt dispatchers that are described in the map file
-      for(auto& interruptController : _registerMap->getListOfInterrupts()) {
+      for(auto& interruptController : _registerMap.getListOfInterrupts()) {
         // interruptController is a pair<int, set<int>>, containing the controller number and a set of associated interrupts
         for(auto interruptNumber : interruptController.second) {
           _interruptDispatchers[{interruptController.first, interruptNumber}] =
@@ -32,20 +31,18 @@ namespace ChimeraTK {
         }
       }
     }
-    else {
-      _registerMap = boost::shared_ptr<RegisterInfoMap>();
-    }
   }
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegisterInfo(
+  boost::shared_ptr<NumericAddressedRegisterInfo> NumericAddressedBackend::getRegisterInfo(
       const RegisterPath& registerPathName) {
     if(!registerPathName.startsWith(numeric_address::BAR)) {
-      boost::shared_ptr<RegisterInfoImpl> info = _catalogue.getRegister(registerPathName);
-      return boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      return _registerMap.getBackendRegister(registerPathName);
     }
     else {
+      /// FIXME move into catalogue implementation!
+
       auto components = registerPathName.getComponents();
       if(components.size() != 3) {
         throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
@@ -64,7 +61,7 @@ namespace ChimeraTK {
       if(nBytes == 0 || nBytes % sizeof(int32_t) != 0) {
         throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
       }
-      return boost::make_shared<RegisterInfoMap::RegisterInfo>(registerPathName, nElements, address, nBytes, bar);
+      return boost::make_shared<NumericAddressedRegisterInfo>(registerPathName, nElements, address, nBytes, bar);
     }
   }
 
@@ -93,14 +90,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<const RegisterInfoMap> NumericAddressedBackend::getRegisterMap() const { return _registerMap; }
-
-  /********************************************************************************************************************/
-
   void NumericAddressedBackend::checkRegister(const std::string& regName, const std::string& regModule, size_t dataSize,
       uint32_t addRegOffset, uint32_t& retDataSize, uint32_t& retRegOff, uint8_t& retRegBar) const {
-    RegisterInfoMap::RegisterInfo registerInfo;
-    _registerMap->getRegisterInfo(regName, registerInfo, regModule);
+    auto registerInfo = _registerMap.getBackendRegister(RegisterPath(regModule) / regName);
     if(addRegOffset % 4) {
       throw ChimeraTK::logic_error("Register offset must be divisible by 4");
     }
@@ -108,16 +100,16 @@ namespace ChimeraTK {
       if(dataSize % 4) {
         throw ChimeraTK::logic_error("Data size must be divisible by 4");
       }
-      if(dataSize > registerInfo.nBytes - addRegOffset) {
+      if(dataSize > registerInfo->nBytes - addRegOffset) {
         throw ChimeraTK::logic_error("Data size exceed register size");
       }
       retDataSize = dataSize;
     }
     else {
-      retDataSize = registerInfo.nBytes;
+      retDataSize = registerInfo->nBytes;
     }
-    retRegBar = registerInfo.bar;
-    retRegOff = registerInfo.address + addRegOffset;
+    retRegBar = registerInfo->bar;
+    retRegOff = registerInfo->address + addRegOffset;
   }
 
   /********************************************************************************************************************/
@@ -127,8 +119,7 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     if(flags.has(AccessMode::wait_for_new_data)) {
       // get the interrupt information from the map file
-      boost::shared_ptr<RegisterInfoImpl> info = getRegisterInfo(registerPathName);
-      auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      auto registerInfo = _registerMap.getBackendRegister(registerPathName);
       if(!registerInfo->getSupportedAccessModes().has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error(
             "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
@@ -156,13 +147,12 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
     // obtain register info
-    boost::shared_ptr<RegisterInfoImpl> info = getRegisterInfo(registerPathName);
-    auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+    auto registerInfo = _registerMap.getBackendRegister(registerPathName);
 
     // 1D or scalar register
-    if(info->getNumberOfDimensions() <= 1) {
-      if((registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) ||
-          (registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::VOID)) {
+    if(registerInfo->getNumberOfDimensions() <= 1) {
+      if((registerInfo->dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) ||
+          (registerInfo->dataType == NumericAddressedRegisterInfo::Type::VOID)) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>(
@@ -174,7 +164,7 @@ namespace ChimeraTK {
                   shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
       }
-      else if(registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754) {
+      else if(registerInfo->dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(

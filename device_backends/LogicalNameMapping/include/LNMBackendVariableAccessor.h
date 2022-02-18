@@ -6,16 +6,17 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H
-#define CHIMERA_TK_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H
+#pragma once
 
-#include <algorithm>
+#if 0
 
-#include "BufferingRegisterAccessor.h"
-#include "Device.h"
-#include "FixedPointConverter.h"
-#include "LogicalNameMappingBackend.h"
-#include "NDRegisterAccessor.h"
+#  include <algorithm>
+
+#  include "BufferingRegisterAccessor.h"
+#  include "Device.h"
+#  include "FixedPointConverter.h"
+#  include "LogicalNameMappingBackend.h"
+#  include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -304,4 +305,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* CHIMERA_TK_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H */
+#endif

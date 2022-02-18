@@ -5,14 +5,15 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
-#define CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
+#pragma once
 
-#include <mutex>
-#include <utility>
+#if 0
 
-#include "DeviceBackendImpl.h"
-#include "LNMBackendRegisterInfo.h"
+#  include <mutex>
+#  include <utility>
+
+#  include "DeviceBackendImpl.h"
+#  include "LNMBackendRegisterInfo.h"
 
 namespace ChimeraTK {
 
@@ -112,4 +113,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H */
+#endif

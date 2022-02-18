@@ -1,8 +1,10 @@
-#include <boost/make_shared.hpp>
+#if 0
 
-#include "LNMBackendRegisterInfo.h"
-#include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessor.h"
+#  include <boost/make_shared.hpp>
+
+#  include "LNMBackendRegisterInfo.h"
+#  include "LNMAccessorPlugin.h"
+#  include "NDRegisterAccessor.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -52,3 +54,5 @@ namespace ChimeraTK { namespace LNMBackend {
     return ForcePollingReadPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
 }} // namespace ChimeraTK::LNMBackend
+
+#endif

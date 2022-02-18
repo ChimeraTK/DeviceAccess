@@ -192,18 +192,18 @@ namespace ChimeraTK {
       checkFileConsitencyAndThrowIfError(
           registerAccess, type, nElements, address, nBytes, bar, width, nFractionalBits, signedFlag);
 
-      auto registerInfo = boost::make_shared<NumericAddressedRegisterInfo>(name, nElements, address, nBytes, bar, width,
-          nFractionalBits, signedFlag, module, 1, false, registerAccess, type, interruptCtrlNumber, interruptNumber);
-      pmap.addRegister(registerInfo);
+      auto registerInfo = NumericAddressedRegisterInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
+          signedFlag, module, 1, false, registerAccess, type, interruptCtrlNumber, interruptNumber);
+      pmap.addRegister(std::move(registerInfo));
     }
 
     // search for 2D registers and add 2D entries
-    std::vector<boost::shared_ptr<NumericAddressedRegisterInfo>> newInfos;
+    std::vector<NumericAddressedRegisterInfo> newInfos;
     for(auto& info : pmap) {
       // check if 2D register, otherwise ignore
-      if(info->name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
+      if(info.name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
       // name of the 2D register is the name without the sequence prefix
-      name = info->name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
+      name = info.name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
       // count number of channels and number of entries per channel
       size_t nChannels = 0;
       size_t nBytesPerEntry = 0; // nb. of bytes per entry for all channels together
@@ -215,29 +215,27 @@ namespace ChimeraTK {
       bool isSigned = false;
       bool isInteger = true;
       uint32_t maxWidth = 0;
-      while(pmap.hasRegister(RegisterPath(info->module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)))) {
+      while(pmap.hasRegister(RegisterPath(info.module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)))) {
         auto subInfo = pmap.getBackendRegister(
-            RegisterPath(info->module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)));
-        nBytesPerEntry += subInfo->nBytes;
+            RegisterPath(info.module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)));
+        nBytesPerEntry += subInfo.nBytes;
         nChannels++;
-        if(subInfo->signedFlag) {
+        if(subInfo.signedFlag) {
           isSigned = true;
         }
-        if(subInfo->nFractionalBits > 0) {
+        if(subInfo.nFractionalBits > 0) {
           isInteger = false;
         }
-        maxWidth = std::max(maxWidth, subInfo->width);
+        maxWidth = std::max(maxWidth, subInfo.width);
       }
       if(nChannels == 0) continue;
       // Compute number of elements. Note that there may be additional padding bytes specified in the map file. The
       // integer division is then rounding down, so it may be that nElements * nBytesPerEntry != info.nBytes.
-      nElements = info->nBytes / nBytesPerEntry;
+      nElements = info.nBytes / nBytesPerEntry;
       // add it to the map
-      auto newEntry =
-          boost::make_shared<NumericAddressedRegisterInfo>(name, nElements, info->address, nElements * nBytesPerEntry,
-              info->bar, maxWidth, (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, info->module, nChannels, true,
-              info->registerAccess, info->dataType, info->interruptCtrlNumber, info->interruptNumber);
-      newInfos.push_back(newEntry);
+      newInfos.emplace_back(name, nElements, info.address, nElements * nBytesPerEntry, info.bar, maxWidth,
+          (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, info.module, nChannels, true, info.registerAccess,
+          info.dataType, info.interruptCtrlNumber, info.interruptNumber);
     }
     // insert the new entries to the catalogue
     for(auto& entry : newInfos) {

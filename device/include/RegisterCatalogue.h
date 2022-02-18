@@ -37,7 +37,7 @@ namespace ChimeraTK {
     /** Const iterator for iterating through the registers in the catalogue */
     class const_iterator {
      public:
-      explicit const_iterator(boost::shared_ptr<const_RegisterCatalogueImplIterator> it);
+      explicit const_iterator(std::unique_ptr<const_RegisterCatalogueImplIterator> it);
 
       const_iterator(const const_iterator& other);
       const_iterator& operator=(const const_iterator& other);
@@ -49,13 +49,13 @@ namespace ChimeraTK {
       const_iterator operator++(int);
       const_iterator& operator--();
       const_iterator operator--(int);
-      RegisterInfo operator*();
-      RegisterInfo operator->();
+      const RegisterInfoImpl* operator*();
+      const RegisterInfoImpl* operator->();
       bool operator==(const const_iterator& rightHandSide) const;
       bool operator!=(const const_iterator& rightHandSide) const;
 
      protected:
-      boost::shared_ptr<const_RegisterCatalogueImplIterator> impl;
+      std::unique_ptr<const_RegisterCatalogueImplIterator> impl;
     };
 
     /** Return iterators for iterating through the registers in the catalogue */
@@ -63,7 +63,7 @@ namespace ChimeraTK {
     [[nodiscard]] const_iterator cend() const;
 
    protected:
-    boost::shared_ptr<RegisterCatalogueImpl> impl;
+    std::unique_ptr<RegisterCatalogueImpl> impl;
   };
 
 } /* namespace ChimeraTK */

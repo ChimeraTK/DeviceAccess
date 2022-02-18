@@ -1,8 +1,10 @@
-#include <boost/make_shared.hpp>
+#if 0
 
-#include "LNMBackendRegisterInfo.h"
-#include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessor.h"
+#  include <boost/make_shared.hpp>
+
+#  include "LNMBackendRegisterInfo.h"
+#  include "LNMAccessorPlugin.h"
+#  include "NDRegisterAccessor.h"
 
 namespace ChimeraTK { namespace LNMBackend {
   TypeHintModifierPlugin::TypeHintModifierPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info,
@@ -32,3 +34,5 @@ namespace ChimeraTK { namespace LNMBackend {
         _dataType.isIntegral() ? 0 : newDescriptor.nFractionalDigits(), d.rawDataType(), d.transportLayerDataType());
   }
 }} // namespace ChimeraTK::LNMBackend
+
+#endif

@@ -5,13 +5,15 @@
  *      Author: Martin Hierholzer
  */
 
-#include <libxml++/libxml++.h>
-#include <stdexcept>
+#if 0
 
-#include "DeviceBackend.h"
-#include "Exception.h"
-#include "LNMBackendRegisterInfo.h"
-#include "LogicalNameMapParser.h"
+#  include <libxml++/libxml++.h>
+#  include <stdexcept>
+
+#  include "DeviceBackend.h"
+#  include "Exception.h"
+#  include "LNMBackendRegisterInfo.h"
+#  include "LogicalNameMapParser.h"
 
 namespace ChimeraTK {
 
@@ -417,3 +419,5 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
+
+#endif

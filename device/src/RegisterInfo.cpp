@@ -1,9 +1,8 @@
 #include "RegisterInfo.h"
 
 namespace ChimeraTK {
-  RegisterPath RegisterInfo::getRegisterName() const{
-    return impl->getRegisterName();
-  }
+
+  RegisterPath RegisterInfo::getRegisterName() const { return impl->getRegisterName(); }
 
   unsigned int RegisterInfo::getNumberOfElements() const{
     return impl->getNumberOfElements();
@@ -29,12 +28,8 @@ namespace ChimeraTK {
     return impl->isWriteable();
   }
 
-  AccessModeFlags RegisterInfo::getSupportedAccessModes() const{
-    return impl->getSupportedAccessModes();
-  }
+  AccessModeFlags RegisterInfo::getSupportedAccessModes() const { return impl->getSupportedAccessModes(); }
 
-  boost::shared_ptr<RegisterInfoImpl> RegisterInfo::getImpl(){
-      return impl;
-  }
+  std::unique_ptr<RegisterInfoImpl> RegisterInfo::getImpl() { return impl->clone(); }
 
-}
+} // namespace ChimeraTK
