@@ -72,10 +72,9 @@ namespace ChimeraTK {
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
     std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
-      for(auto info = _registerMap.cbegin(); info != _registerMap.cend(); ++info) {
-        //for(const auto info : _registerMap) {
-        barSizesInBytes[info->bar] =
-            std::max(barSizesInBytes[info->bar], static_cast<size_t>(info->address + info->nBytes));
+      for(auto const& info : _registerMap) {
+        barSizesInBytes[info.bar] =
+            std::max(barSizesInBytes[info.bar], static_cast<size_t>(info.address + info.nBytes));
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
@@ -157,14 +156,14 @@ namespace ChimeraTK {
 
         const auto info{getRegisterInfo(actualRegisterPath)};
 
-        if(info->dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) {
+        if(info.dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) {
           if(flags.has(AccessMode::raw)) {
             boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(
                 syncAccessor)
                 ->makeWriteable();
           }
           else {
-            if(info->getNumberOfDimensions() < 2) {
+            if(info.getNumberOfDimensions() < 2) {
               boost::dynamic_pointer_cast<
                   NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(syncAccessor)
                   ->makeWriteable();
@@ -175,7 +174,7 @@ namespace ChimeraTK {
             }
           }
         }
-        else if(info->dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
+        else if(info.dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
           if(flags.has(AccessMode::raw)) {
             boost::dynamic_pointer_cast<
                 NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(syncAccessor)

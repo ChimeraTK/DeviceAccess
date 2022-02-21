@@ -17,7 +17,7 @@ namespace ChimeraTK {
 
   class RegisterInfo {
    public:
-    explicit RegisterInfo(std::unique_ptr<RegisterInfoImpl> impl);
+    explicit RegisterInfo(std::unique_ptr<RegisterInfoImpl>&& impl);
 
     RegisterInfo(const RegisterInfo& other);
     RegisterInfo(RegisterInfo&& other) = default;
@@ -50,10 +50,12 @@ namespace ChimeraTK {
     /** Return all supported AccessModes for this register */
     [[nodiscard]] AccessModeFlags getSupportedAccessModes() const;
 
-    [[nodiscard]] std::unique_ptr<RegisterInfoImpl> getImpl(); // find better name
+    [[nodiscard]] RegisterInfoImpl& getImpl();
+
+    [[nodiscard]] const RegisterInfoImpl& getImpl() const;
 
    protected:
-    std::unique_ptr<RegisterInfoImpl> impl;
+    std::unique_ptr<RegisterInfoImpl> _impl;
   };
 
 } /* namespace ChimeraTK */

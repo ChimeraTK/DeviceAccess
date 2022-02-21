@@ -82,7 +82,7 @@ namespace ChimeraTK {
 
     bool isReadOnly() const override { return isReadable() && !isWriteable(); }
 
-    bool isReadable() const override { return _areaInfo->isReadable(); }
+    bool isReadable() const override { return _areaInfo.isReadable(); }
 
     bool isWriteable() const override { return !_isNotWriteable; }
 
@@ -100,8 +100,8 @@ namespace ChimeraTK {
 
     std::vector<int32_t> _ioBuffer;
 
-    boost::shared_ptr<NumericAddressedRegisterInfo> _areaInfo;
-    std::vector<boost::shared_ptr<NumericAddressedRegisterInfo>> _sequenceInfos;
+    NumericAddressedRegisterInfo _areaInfo;
+    std::vector<NumericAddressedRegisterInfo> _sequenceInfos;
 
     std::vector<detail::pitched_iterator<int32_t>> _startIterators;
     std::vector<detail::pitched_iterator<int32_t>> _endIterators;
@@ -157,7 +157,7 @@ namespace ChimeraTK {
     _areaInfo = _ioDevice->getRegisterInfo(registerPathName);
 
     // Cache writeability
-    _isNotWriteable = !_areaInfo->isWriteable();
+    _isNotWriteable = !_areaInfo.isWriteable();
 
     // Obtain information for each sequence (= channel) in the area:
     // Create a fixed point converter for each sequence and store the sequence
@@ -165,7 +165,7 @@ namespace ChimeraTK {
     size_t iSeq = 0;
     while(true) {
       // build name of the next sequence as written in the map file
-      boost::shared_ptr<NumericAddressedRegisterInfo> sequenceInfo;
+      NumericAddressedRegisterInfo sequenceInfo;
       std::stringstream sequenceNameStream;
       sequenceNameStream << _moduleName << "." << SEQUENCE_PREFIX << _registerName << "_" << iSeq++;
 
@@ -180,18 +180,18 @@ namespace ChimeraTK {
       }
 
       // check consistency
-      if(sequenceInfo->nElements != 1) {
+      if(sequenceInfo.nElements != 1) {
         throw ChimeraTK::logic_error("Sequence words must have exactly one element");
       }
 
       // store sequence info and fixed point converter
-      if(sequenceInfo->width > sequenceInfo->nBytes * 8) {
+      if(sequenceInfo.width > sequenceInfo.nBytes * 8) {
         // FIXME do we really want to permit and correct such map file errors?
-        sequenceInfo->width = sequenceInfo->nBytes * 8;
+        sequenceInfo.width = sequenceInfo.nBytes * 8;
       }
       _sequenceInfos.push_back(sequenceInfo);
       _converters.push_back(FixedPointConverter(
-          registerPathName, sequenceInfo->width, sequenceInfo->nFractionalBits, sequenceInfo->signedFlag));
+          registerPathName, sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag));
     }
 
     // check if no sequences were found
@@ -202,7 +202,7 @@ namespace ChimeraTK {
     // compute size of one block in bytes (one sample for all channels)
     bytesPerBlock = 0;
     for(unsigned int i = 0; i < _converters.size(); i++) {
-      uint32_t nbt = _sequenceInfos[i]->nBytes;
+      uint32_t nbt = _sequenceInfos[i].nBytes;
       bytesPerBlock += nbt;
       if(nbt != 1 && nbt != 2 && nbt != 4) {
         throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
@@ -210,7 +210,7 @@ namespace ChimeraTK {
     }
 
     // compute number of blocks (number of samples for each channel)
-    _nBlocks = std::floor(_areaInfo->nBytes / bytesPerBlock);
+    _nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
 
     // check number of words
     if(_elementsOffset >= _nBlocks) {
@@ -225,11 +225,11 @@ namespace ChimeraTK {
     }
 
     // compute the address taking into account the selected area of interest
-    _bar = _areaInfo->bar;
-    _address = _areaInfo->address + bytesPerBlock * _elementsOffset;
+    _bar = _areaInfo.bar;
+    _address = _areaInfo.address + bytesPerBlock * _elementsOffset;
     _nBytes = bytesPerBlock * _numberOfElements;
     if(_nBytes % sizeof(int32_t) > 0) _nBytes += 4 - _nBytes % sizeof(int32_t); // round up to the next multiple of 4
-    if(_nBytes > _areaInfo->nBytes) {
+    if(_nBytes > _areaInfo.nBytes) {
       throw ChimeraTK::logic_error(
           "Requested number of elements exceeds the size of the register (late, redundant safety check)!");
     }
@@ -249,7 +249,7 @@ namespace ChimeraTK {
     for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
       _startIterators.push_back(detail::pitched_iterator<int32_t>(standOfMyioBuffer, bytesPerBlock));
       _endIterators.push_back(_startIterators.back() + _nBlocks);
-      standOfMyioBuffer += _sequenceInfos[sequenceIndex]->nBytes;
+      standOfMyioBuffer += _sequenceInfos[sequenceIndex].nBytes;
     }
   }
 
@@ -292,7 +292,7 @@ namespace ChimeraTK {
     uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
       for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-        switch(_sequenceInfos[sequenceIndex]->nBytes) {
+        switch(_sequenceInfos[sequenceIndex].nBytes) {
           case 1: // 8 bit variables
             *(standOfMyioBuffer) =
                 _converters[sequenceIndex].toRaw(NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex]);

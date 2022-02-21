@@ -33,15 +33,17 @@ using namespace ChimeraTK;
 
 static BackendFactory& FactoryInstance = BackendFactory::getInstance();
 
-/** The TestableDummybackend is derived from
+/** 
+ *  The TestableDummybackend is derived from
  *  DummyBackend to get access to the protected members.
  *  This is done by declaring DummybackendTest as a friend.
+ *  
+ *  FIXME get away from testing implementation details!
  */
 class TestableDummyBackend : public DummyBackend {
  public:
   explicit TestableDummyBackend(std::string mapFileName) : DummyBackend(mapFileName) {}
   using DummyBackend::checkSizeIsMultipleOfWordSize;
-  using DummyBackend::_registerMapping;
   using DummyBackend::_barContents;
   using DummyBackend::setReadOnly;
   using DummyBackend::AddressRange;
@@ -113,10 +115,10 @@ BOOST_AUTO_TEST_CASE(testCheckSizeIsMultipleOfWordSize) {
 
 /**********************************************************************************************************************/
 
+#if 0
 BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING, mappingElement);
+  auto mappingElement = dummyBackend->_registerMap.getBackendRegister(CLOCK_RESET_REGISTER_STRING);
   uint64_t offset = mappingElement.address;
   uint64_t bar = mappingElement.bar;
   int32_t dataContent = -1;
@@ -271,6 +273,7 @@ BOOST_AUTO_TEST_CASE(testReadOnly) {
   dummyBackend->read(bar, offset + sizeInBytes, &readbackWord, 4);
   BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
 }
+#endif
 
 /**********************************************************************************************************************/
 
@@ -514,7 +517,7 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
 
   // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL
-  BOOST_CHECK(dummyBackend->_registerMapping);
+  //BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());
   // it must always be possible to re-open a backend
   dummyBackend->open();

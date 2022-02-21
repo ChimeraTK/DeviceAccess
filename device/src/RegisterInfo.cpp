@@ -2,34 +2,61 @@
 
 namespace ChimeraTK {
 
-  RegisterPath RegisterInfo::getRegisterName() const { return impl->getRegisterName(); }
+  /**********************************************************************************************************************/
 
-  unsigned int RegisterInfo::getNumberOfElements() const{
-    return impl->getNumberOfElements();
+  RegisterInfo::RegisterInfo(std::unique_ptr<RegisterInfoImpl>&& impl) : _impl(std::move(impl)) {}
+
+  /**********************************************************************************************************************/
+
+  RegisterInfo::RegisterInfo(const RegisterInfo& other) : _impl(other.getImpl().clone()) {}
+
+  /**********************************************************************************************************************/
+
+  RegisterInfo& RegisterInfo::operator=(const RegisterInfo& other) {
+    _impl = other.getImpl().clone();
+    return *this;
   }
 
-  unsigned int RegisterInfo::getNumberOfChannels() const{
-    return impl->getNumberOfChannels();
-  }
+  /**********************************************************************************************************************/
 
-  unsigned int RegisterInfo::getNumberOfDimensions() const{
-    return impl->getNumberOfDimensions();
-  }
+  RegisterPath RegisterInfo::getRegisterName() const { return _impl->getRegisterName(); }
 
-  const DataDescriptor& RegisterInfo::getDataDescriptor() const{
-    return impl->getDataDescriptor();
-  }
+  /**********************************************************************************************************************/
 
-  bool RegisterInfo::isReadable() const{
-    return impl->isReadable();
-  }
+  unsigned int RegisterInfo::getNumberOfElements() const { return _impl->getNumberOfElements(); }
 
-  bool RegisterInfo::isWriteable() const{
-    return impl->isWriteable();
-  }
+  /**********************************************************************************************************************/
 
-  AccessModeFlags RegisterInfo::getSupportedAccessModes() const { return impl->getSupportedAccessModes(); }
+  unsigned int RegisterInfo::getNumberOfChannels() const { return _impl->getNumberOfChannels(); }
 
-  std::unique_ptr<RegisterInfoImpl> RegisterInfo::getImpl() { return impl->clone(); }
+  /**********************************************************************************************************************/
+
+  unsigned int RegisterInfo::getNumberOfDimensions() const { return _impl->getNumberOfDimensions(); }
+
+  /**********************************************************************************************************************/
+
+  const DataDescriptor& RegisterInfo::getDataDescriptor() const { return _impl->getDataDescriptor(); }
+
+  /**********************************************************************************************************************/
+
+  bool RegisterInfo::isReadable() const { return _impl->isReadable(); }
+
+  /**********************************************************************************************************************/
+
+  bool RegisterInfo::isWriteable() const { return _impl->isWriteable(); }
+
+  /**********************************************************************************************************************/
+
+  AccessModeFlags RegisterInfo::getSupportedAccessModes() const { return _impl->getSupportedAccessModes(); }
+
+  /**********************************************************************************************************************/
+
+  RegisterInfoImpl& RegisterInfo::getImpl() { return *_impl; }
+
+  /**********************************************************************************************************************/
+
+  const RegisterInfoImpl& RegisterInfo::getImpl() const { return *_impl; }
+
+  /**********************************************************************************************************************/
 
 } // namespace ChimeraTK

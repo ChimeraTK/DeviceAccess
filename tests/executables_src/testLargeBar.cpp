@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(testLargeBarNumber) {
 
   // Checking the large bar in the RegisterInfo checks the map file parser and the data type in the catalogue
   auto registerInfo = d.getRegisterCatalogue().getRegister("LARGE_BAR/NUMBER");
-  BOOST_CHECK_EQUAL(dynamic_cast<NumericAddressedRegisterInfo*>(registerInfo.getImpl().get())->bar, 0x100000000);
+  BOOST_CHECK_EQUAL(dynamic_cast<NumericAddressedRegisterInfo&>(registerInfo.getImpl()).bar, 0x100000000);
 
   // this is a smoke test that reading and writing works with a large BAR map file
   auto intAccessor = d.getScalarRegisterAccessor<int32_t>("LARGE_BAR/NUMBER");

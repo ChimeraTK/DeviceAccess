@@ -10,6 +10,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "Device.h"
+#include "DeviceBackendImpl.h"
 
 // disable shadow warning, boost::mpl::for_each is triggering this warning on Ubuntu 16.04
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -419,6 +420,9 @@ namespace ChimeraTK {
       void close() override {}
       bool isFunctional() const override { return false; }
       std::string readDeviceInfo() override { return ""; }
+
+      RegisterCatalogue getRegisterCatalogue() const override { throw; }
+      MetadataCatalogue getMetadataCatalogue() const override { throw; }
 
      private:
       boost::shared_ptr<DeviceBackend> _target;

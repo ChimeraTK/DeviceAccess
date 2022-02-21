@@ -17,34 +17,38 @@
 
 namespace ChimeraTK {
 
-  /** Enum type with access mode flags for register accessors.
+  /** 
+   * Enum type with access mode flags for register accessors.
    *
-   *  Developers note: when adding new flags, also add the flag in the map of the
-   * AccessModeFlags with a string representation. */
+   * Developers note: when adding new flags, also add the flag in the map of the AccessModeFlags with a string
+   * representation.
+   */
   enum class AccessMode {
 
-    /** Raw access: disable any possible conversion from the original hardware
-     * data type into the given UserType. Obtaining the accessor with a UserType
-     * unequal to the actual raw data type will fail and throw a DeviceException
+    /** 
+     * Raw access: disable any possible conversion from the original hardware data type into the given UserType.
+     * Obtaining the accessor with a UserType unequal to the actual raw data type will fail and throw a DeviceException
      * with the id EX_WRONG_PARAMETER.
      *
-     *  Note: using this flag will make your code intrinsically dependent on the
-     * backend type, since the actual raw data type must be known. */
+     * Note: using this flag will make your code intrinsically dependent on the backend type, since the actual raw data
+     * type must be known.
+     */
     raw,
 
-    /** Make any read blocking until new data has arrived since the last read.
-     * This flag may not be suppoerted by all registers (and backends), in which
-     * case a DeviceException with the id NOT_IMPLEMENTED will be thrown. */
+    /** 
+     * Make any read blocking until new data has arrived since the last read. This flag may not be suppoerted by all
+     * registers (and backends), in which case a DeviceException with the id NOT_IMPLEMENTED will be thrown.
+     */
     wait_for_new_data
 
     /* IMPORTANT: When extending this class with new flags, don't forget to update AccessModeFlags::getStringMap()! */
   };
 
-  /** Set of AccessMode flags with additional functionality for an easier
-   * handling.
+  /** 
+   * Set of AccessMode flags with additional functionality for an easier handling.
    *
    * The set holds flags which are enabled for an accessor. The method has() can be used to check wheater a flag is set.
-   * */
+   */
   class AccessModeFlags {
    public:
     /** Constructor initialises from a std::set<AccessMode> */
@@ -55,6 +59,8 @@ namespace ChimeraTK {
      * without explicitly using the class name, when calling a function which has
      *  an argument of the type AccessModeFlags. */
     AccessModeFlags(const std::initializer_list<AccessMode>& flags) : _flags(flags) {}
+
+    AccessModeFlags() = default;
 
     /** Check if a certain flag is in the set */
     bool has(AccessMode flag) const { return (_flags.count(flag) != 0); }

@@ -16,6 +16,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   NumericAddressedBackend::NumericAddressedBackend(std::string mapFileName) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(mapFileName != "") {
@@ -35,13 +37,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<NumericAddressedRegisterInfo> NumericAddressedBackend::getRegisterInfo(
-      const RegisterPath& registerPathName) {
+  NumericAddressedRegisterInfo NumericAddressedBackend::getRegisterInfo(const RegisterPath& registerPathName) {
     if(!registerPathName.startsWith(numeric_address::BAR)) {
       return _registerMap.getBackendRegister(registerPathName);
     }
     else {
-      /// FIXME move into catalogue implementation!
+      /// FIXME move into catalogue implementation, then make return type a const reference!
 
       auto components = registerPathName.getComponents();
       if(components.size() != 3) {
@@ -61,9 +62,11 @@ namespace ChimeraTK {
       if(nBytes == 0 || nBytes % sizeof(int32_t) != 0) {
         throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
       }
-      return boost::make_shared<NumericAddressedRegisterInfo>(registerPathName, nElements, address, nBytes, bar);
+      return NumericAddressedRegisterInfo(registerPathName, nElements, address, nBytes, bar);
     }
   }
+
+  /********************************************************************************************************************/
 
   /* Throw exception if called directly and not implemented by backend */
   void NumericAddressedBackend::read([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
@@ -71,19 +74,27 @@ namespace ChimeraTK {
     throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface read() called w/ 32bit address");
   }
 
+  /********************************************************************************************************************/
+
   void NumericAddressedBackend::write([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
       [[maybe_unused]] int32_t const* data, [[maybe_unused]] size_t sizeInBytes) {
     throw ChimeraTK::logic_error("NumericAddressedBackend: internal error: interface write() called w/ 32bit address");
   }
+
+  /********************************************************************************************************************/
 
   /* Call 32-bit address implementation by default, for backends that don't implement 64-bit */
   void NumericAddressedBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     read(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
   }
 
+  /********************************************************************************************************************/
+
   void NumericAddressedBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     write(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
   }
+
+  /********************************************************************************************************************/
 
   // Default range of valid BARs
   bool NumericAddressedBackend::barIndexValid(uint64_t bar) { return bar <= 5 || bar == 13; }
@@ -100,16 +111,16 @@ namespace ChimeraTK {
       if(dataSize % 4) {
         throw ChimeraTK::logic_error("Data size must be divisible by 4");
       }
-      if(dataSize > registerInfo->nBytes - addRegOffset) {
+      if(dataSize > registerInfo.nBytes - addRegOffset) {
         throw ChimeraTK::logic_error("Data size exceed register size");
       }
       retDataSize = dataSize;
     }
     else {
-      retDataSize = registerInfo->nBytes;
+      retDataSize = registerInfo.nBytes;
     }
-    retRegBar = registerInfo->bar;
-    retRegOff = registerInfo->address + addRegOffset;
+    retRegBar = registerInfo.bar;
+    retRegOff = registerInfo.address + addRegOffset;
   }
 
   /********************************************************************************************************************/
@@ -120,19 +131,19 @@ namespace ChimeraTK {
     if(flags.has(AccessMode::wait_for_new_data)) {
       // get the interrupt information from the map file
       auto registerInfo = _registerMap.getBackendRegister(registerPathName);
-      if(!registerInfo->getSupportedAccessModes().has(AccessMode::wait_for_new_data)) {
+      if(!registerInfo.getSupportedAccessModes().has(AccessMode::wait_for_new_data)) {
         throw ChimeraTK::logic_error(
             "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
       }
 
       auto interruptDispatcher =
-          _interruptDispatchers[{registerInfo->interruptCtrlNumber, registerInfo->interruptNumber}];
+          _interruptDispatchers[{registerInfo.interruptCtrlNumber, registerInfo.interruptNumber}];
       assert(interruptDispatcher);
       auto newSubscriber = interruptDispatcher->subscribe<UserType>(
           boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
           wordOffsetInRegister, flags);
       // The new subscriber might already be activated. Hence the exception backend is already set by the interrupt dispatcher.
-      startInterruptHandlingThread(registerInfo->interruptCtrlNumber, registerInfo->interruptNumber);
+      startInterruptHandlingThread(registerInfo.interruptCtrlNumber, registerInfo.interruptNumber);
       return newSubscriber;
     }
     else {
@@ -150,9 +161,9 @@ namespace ChimeraTK {
     auto registerInfo = _registerMap.getBackendRegister(registerPathName);
 
     // 1D or scalar register
-    if(registerInfo->getNumberOfDimensions() <= 1) {
-      if((registerInfo->dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) ||
-          (registerInfo->dataType == NumericAddressedRegisterInfo::Type::VOID)) {
+    if(registerInfo.getNumberOfDimensions() <= 1) {
+      if((registerInfo.dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) ||
+          (registerInfo.dataType == NumericAddressedRegisterInfo::Type::VOID)) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>(
@@ -164,7 +175,7 @@ namespace ChimeraTK {
                   shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
       }
-      else if(registerInfo->dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
+      else if(registerInfo.dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(
@@ -193,11 +204,15 @@ namespace ChimeraTK {
     return accessor;
   }
 
+  /********************************************************************************************************************/
+
   void NumericAddressedBackend::activateAsyncRead() noexcept {
     for(auto it : _interruptDispatchers) {
       it.second->activate();
     }
   }
+
+  /********************************************************************************************************************/
 
   void NumericAddressedBackend::setException() {
     _hasActiveException = true;
@@ -212,9 +227,13 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   // empty default implementation
   void NumericAddressedBackend::startInterruptHandlingThread(
       [[maybe_unused]] unsigned int interruptControllerNumber, [[maybe_unused]] unsigned int interruptNumber) {}
+
+  /********************************************************************************************************************/
 
   void NumericAddressedBackend::close() {
     for(auto it : _interruptDispatchers) {
@@ -223,9 +242,24 @@ namespace ChimeraTK {
     closeImpl();
   }
 
+  /********************************************************************************************************************/
+
   VersionNumber NumericAddressedBackend::dispatchInterrupt(int interruptControllerNumber, int interruptNumber) {
     // This function just makes sure that at() is used to access the _interruptDispatchers map,
     // which guarantees that the map is not altered.
     return _interruptDispatchers.at({interruptControllerNumber, interruptNumber})->trigger();
   }
+
+  /********************************************************************************************************************/
+
+  RegisterCatalogue NumericAddressedBackend::getRegisterCatalogue() const {
+    return RegisterCatalogue(_registerMap.clone());
+  }
+
+  /********************************************************************************************************************/
+
+  MetadataCatalogue NumericAddressedBackend::getMetadataCatalogue() const { return _metadataCatalogue; }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK

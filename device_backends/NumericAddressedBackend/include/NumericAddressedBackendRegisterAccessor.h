@@ -23,15 +23,14 @@ namespace ChimeraTK {
   namespace detail {
     /** This function is external to allow template specialisation. */
     template<typename ConverterT>
-    ConverterT createDataConverter(boost::shared_ptr<NumericAddressedRegisterInfo> registerInfo);
+    ConverterT createDataConverter(const NumericAddressedRegisterInfo& registerInfo);
 
     template<>
-    FixedPointConverter createDataConverter<FixedPointConverter>(
-        boost::shared_ptr<NumericAddressedRegisterInfo> registerInfo);
+    FixedPointConverter createDataConverter<FixedPointConverter>(const NumericAddressedRegisterInfo& registerInfo);
 
     template<>
     IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(
-        boost::shared_ptr<NumericAddressedRegisterInfo> registerInfo);
+        const NumericAddressedRegisterInfo& registerInfo);
 
     /** We need partial template specialisations of some functions. However, in C++ this is only possible for full classes.
      *  Hence we introduce an implementer class which only holds the functions which we have to re-implement anyway.
@@ -45,7 +44,7 @@ namespace ChimeraTK {
       size_t& _startAddress;
       DataConverterType& _dataConverter;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
+      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temporary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<UserType>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -65,7 +64,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
+      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temporary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int32_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -84,7 +83,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
+      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int16_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -103,7 +102,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfoImpl> _registerInfo; // must not be a reference as it is obtained from a temprary
+      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temprary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int8_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -116,7 +115,7 @@ namespace ChimeraTK {
 
     template<typename UserType, typename DataConverterType, bool isRaw>
     void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPostRead() {
-      callForRawType(_registerInfo->getDataDescriptor().rawDataType(), [this](auto t) {
+      callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
         typedef decltype(t) RawType;
         auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
         _dataConverter.template vectorToCooked<UserType>(itsrc, itsrc + _buffer_2D[0].size(), _buffer_2D[0].begin());
@@ -128,9 +127,9 @@ namespace ChimeraTK {
       if(_isNotWriteable) {
         throw ChimeraTK::logic_error(
             "NumericAddressedBackend: Writing to a non-writable register is not allowed (Register name: " +
-            _registerInfo->getRegisterName() + ").");
+            _registerInfo.getRegisterName() + ").");
       }
-      callForRawType(_registerInfo->getDataDescriptor().rawDataType(), [this](auto t) {
+      callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
         typedef decltype(t) RawType;
         auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
         for(auto itdst = _buffer_2D[0].begin(); itdst != _buffer_2D[0].end(); ++itdst) {
@@ -214,11 +213,11 @@ namespace ChimeraTK {
       // obtain register information
       _registerInfo = _dev->getRegisterInfo(registerPathName);
       _prePostActionsImplementor._registerInfo = _registerInfo;
-      _bar = _registerInfo->bar;
-      _startAddress = _registerInfo->address + wordOffsetInRegister * _registerInfo->nBytesPerElement();
+      _bar = _registerInfo.bar;
+      _startAddress = _registerInfo.address + wordOffsetInRegister * _registerInfo.nBytesPerElement();
 
       // check number of words
-      if(_registerInfo->dataType == NumericAddressedRegisterInfo::VOID) {
+      if(_registerInfo.dataType == NumericAddressedRegisterInfo::VOID) {
         // in void registers we always create one element
         if(_numberOfWords == 0) {
           _numberOfWords = 1;
@@ -233,24 +232,24 @@ namespace ChimeraTK {
       }
       else { // do the regular consistency check
         if(_numberOfWords == 0) {
-          _numberOfWords = _registerInfo->getNumberOfElements();
+          _numberOfWords = _registerInfo.getNumberOfElements();
         }
-        if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
+        if(_numberOfWords + wordOffsetInRegister > _registerInfo.getNumberOfElements()) {
           throw ChimeraTK::logic_error(
               "Requested number of words exceeds the size of the register '" + _registerPathName + "'!");
         }
-        if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
+        if(wordOffsetInRegister >= _registerInfo.getNumberOfElements()) {
           throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + _registerPathName + "'!");
         }
       }
 
       // Cache writeability
-      _isNotWriteable = !_registerInfo->isWriteable();
+      _isNotWriteable = !_registerInfo.isWriteable();
 
       // create low-level transfer element handling the actual data transfer to
       // the hardware with raw data
       _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(
-          _dev, _bar, _startAddress, _numberOfWords * _registerInfo->nBytesPerElement()));
+          _dev, _bar, _startAddress, _numberOfWords * _registerInfo.nBytesPerElement()));
 
       // allocated the buffers
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
@@ -262,10 +261,10 @@ namespace ChimeraTK {
       _dataConverter = detail::createDataConverter<DataConverterType>(_registerInfo);
 
       if(flags.has(AccessMode::raw)) {
-        if(DataType(typeid(UserType)) != _registerInfo->getDataDescriptor().rawDataType()) {
+        if(DataType(typeid(UserType)) != _registerInfo.getDataDescriptor().rawDataType()) {
           throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in "
                                        "raw mode does not match the expected type. Use an " +
-              _registerInfo->getDataDescriptor().rawDataType().getAsString() +
+              _registerInfo.getDataDescriptor().rawDataType().getAsString() +
               " instead! (Register name: " + _registerPathName + "')");
         }
         // FIXME: this has to move to the creation
@@ -334,7 +333,7 @@ namespace ChimeraTK {
 
     bool isReadOnly() const override { return isReadable() && !isWriteable(); }
 
-    bool isReadable() const override { return _registerInfo->isReadable(); }
+    bool isReadable() const override { return _registerInfo.isReadable(); }
 
     bool isWriteable() const override { return !_isNotWriteable; }
 
@@ -359,7 +358,7 @@ namespace ChimeraTK {
    protected:
     /** Address, size and fixed-point representation information of the register
      * from the map file */
-    boost::shared_ptr<NumericAddressedRegisterInfo> _registerInfo;
+    NumericAddressedRegisterInfo _registerInfo;
 
     /** Converter to interpret the data */
     DataConverterType _dataConverter;

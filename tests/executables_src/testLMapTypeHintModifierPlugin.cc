@@ -1,13 +1,15 @@
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE LMapTypeHintModifierPluginTest
-#include <boost/test/unit_test.hpp>
+#if 0
+
+#  define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_MODULE LMapTypeHintModifierPluginTest
+#  include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "BackendFactory.h"
-#include "DeviceAccessVersion.h"
-#include "DummyBackend.h"
-#include "BufferingRegisterAccessor.h"
-#include "Device.h"
+#  include "BackendFactory.h"
+#  include "DeviceAccessVersion.h"
+#  include "DummyBackend.h"
+#  include "BufferingRegisterAccessor.h"
+#  include "Device.h"
 
 using namespace ChimeraTK;
 
@@ -50,3 +52,5 @@ BOOST_AUTO_TEST_CASE(test) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
+
+#endif

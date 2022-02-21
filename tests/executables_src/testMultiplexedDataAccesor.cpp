@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(testMixed) {
 }
 
 BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
-  boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
+  auto registerMap = MapFileParser().parse(MAP_FILE_NAME).first;
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;

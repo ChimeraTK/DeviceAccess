@@ -293,6 +293,7 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer5) {
   BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), ChimeraTK::logic_error);
 }
 
+#if 0
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer6) {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   boost::shared_ptr<ChimeraTK::Device> device(new ChimeraTK::Device());
@@ -365,6 +366,7 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer9) {
   word_clk_rst->readRaw(&read_data);
   BOOST_CHECK(read_data == 16);
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer10) {
   std::string validMappingFile = "mtcadummy_withoutModules.map";

@@ -245,11 +245,11 @@ namespace ChimeraTK {
       int i = 0;
       while(true) {
         // obtain register information for sequence
-        RegisterInfoMap::RegisterInfo elem;
+        NumericAddressedRegisterInfo elem;
         std::stringstream sequenceNameStream;
-        sequenceNameStream << SEQUENCE_PREFIX << name << "_" << i++;
+        sequenceNameStream << module << "." << SEQUENCE_PREFIX << name << "_" << i++;
         try {
-          _dev->_registerMapping->getRegisterInfo(sequenceNameStream.str(), elem, module);
+          elem = _dev->_registerMap.getBackendRegister(sequenceNameStream.str());
         }
         catch(ChimeraTK::logic_error&) {
           break;
@@ -343,7 +343,7 @@ namespace ChimeraTK {
     DummyRegisterRawAccessor(boost::shared_ptr<DeviceBackend> backend, std::string module, std::string name)
     : _backend(boost::dynamic_pointer_cast<DummyBackend>(backend)) {
       assert(_backend);
-      _backend->_registerMapping->getRegisterInfo(name, registerInfo, module);
+      registerInfo = _backend->_registerMap.getBackendRegister(module + "." + name);
       buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t)]);
     }
     // declare that we want the default copy constructor. Needed because we have a custom = operator

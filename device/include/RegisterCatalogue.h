@@ -21,6 +21,10 @@ namespace ChimeraTK {
   /** Catalogue of register information */
   class RegisterCatalogue {
    public:
+    explicit RegisterCatalogue(std::unique_ptr<RegisterCatalogueImpl>&& impl);
+
+    ~RegisterCatalogue();
+
     /** 
      *  Get register information for a given full path name.
      *  
@@ -49,21 +53,21 @@ namespace ChimeraTK {
       const_iterator operator++(int);
       const_iterator& operator--();
       const_iterator operator--(int);
-      const RegisterInfoImpl* operator*();
+      const RegisterInfoImpl& operator*();
       const RegisterInfoImpl* operator->();
       bool operator==(const const_iterator& rightHandSide) const;
       bool operator!=(const const_iterator& rightHandSide) const;
 
      protected:
-      std::unique_ptr<const_RegisterCatalogueImplIterator> impl;
+      std::unique_ptr<const_RegisterCatalogueImplIterator> _impl;
     };
 
     /** Return iterators for iterating through the registers in the catalogue */
-    [[nodiscard]] const_iterator cbegin() const;
-    [[nodiscard]] const_iterator cend() const;
+    [[nodiscard]] const_iterator begin() const;
+    [[nodiscard]] const_iterator end() const;
 
    protected:
-    std::unique_ptr<RegisterCatalogueImpl> impl;
+    std::unique_ptr<RegisterCatalogueImpl> _impl;
   };
 
 } /* namespace ChimeraTK */

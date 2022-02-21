@@ -120,6 +120,9 @@ namespace ChimeraTK {
        *  type). */
     explicit DataDescriptor(DataType type);
 
+    bool operator==(const DataDescriptor& other) const;
+    bool operator!=(const DataDescriptor& other) const;
+
    private:
     /** The fundamental data type */
     FundamentalType _fundamentalType;
@@ -146,5 +149,12 @@ namespace ChimeraTK {
        * the decimal dot itself) */
     size_t _nFractionalDigits;
   };
-}
+
+  /********************************************************************************************************************/
+
+  std::ostream& operator<<(std::ostream& stream, const DataDescriptor::FundamentalType& fundamentalType);
+
+  /********************************************************************************************************************/
+
+} // namespace ChimeraTK
 #endif // DATADESCRIPTOR_H

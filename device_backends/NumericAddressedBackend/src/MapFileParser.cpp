@@ -242,7 +242,7 @@ namespace ChimeraTK {
       pmap.addRegister(entry);
     }
 
-    return {pmap, metadataCatalogue};
+    return {std::move(pmap), std::move(metadataCatalogue)};
   }
 
   /********************************************************************************************************************/

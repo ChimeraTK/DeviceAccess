@@ -1,5 +1,8 @@
 #include "DataDescriptor.h"
-namespace ChimeraTK{
+namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
   DataDescriptor::DataDescriptor(DataType type) {
     if(type.isNumeric()) {
       _fundamentalType = FundamentalType::numeric;
@@ -47,4 +50,39 @@ namespace ChimeraTK{
       _nFractionalDigits = 325;
     }
   }
-}
+
+  /********************************************************************************************************************/
+
+  bool DataDescriptor::operator==(const DataDescriptor& other) const {
+    return _fundamentalType == other._fundamentalType && _rawDataType == other._rawDataType &&
+        _transportLayerDataType == other._transportLayerDataType && _isIntegral == other._isIntegral &&
+        _isSigned == other._isSigned && _nDigits == other._nDigits && _nFractionalDigits == other._nFractionalDigits;
+  }
+
+  /********************************************************************************************************************/
+
+  bool DataDescriptor::operator!=(const DataDescriptor& other) const { return !operator==(other); }
+
+  /********************************************************************************************************************/
+
+  std::ostream& operator<<(std::ostream& stream, const DataDescriptor::FundamentalType& fundamentalType) {
+    if(fundamentalType == DataDescriptor::FundamentalType::nodata) {
+      stream << "nodata";
+    }
+    else if(fundamentalType == DataDescriptor::FundamentalType::boolean) {
+      stream << "boolean";
+    }
+    else if(fundamentalType == DataDescriptor::FundamentalType::numeric) {
+      stream << "numeric";
+    }
+    else if(fundamentalType == DataDescriptor::FundamentalType::string) {
+      stream << "string";
+    }
+    else if(fundamentalType == DataDescriptor::FundamentalType::undefined) {
+      stream << "undefined";
+    }
+    return stream;
+  }
+  /********************************************************************************************************************/
+
+} // namespace ChimeraTK

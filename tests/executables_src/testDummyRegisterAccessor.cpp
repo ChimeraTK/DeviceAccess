@@ -386,8 +386,8 @@ void DummyRegisterTest::testDummyRegisterAddressChecker() {
   std::cout << "testDummyRegisterAddressChecker" << std::endl;
 
   // first test class directly
-  RegisterInfoMap::RegisterInfo info;
-  device->_registerMapping->getRegisterInfo("ANOTHER_REGISTER", info, "APP0");
+  NumericAddressedRegisterInfo info;
+  info = device->_registerMap.getBackendRegister("APP0.ANOTHER_REGISTER");
   DummyRegisterAddressChecker checker(info);
   BOOST_CHECK(checker.isAddressInRange(info.bar, info.address, 1) == true);
   BOOST_CHECK(checker.isAddressInRange(info.bar, info.address, 4) == true);
@@ -401,7 +401,7 @@ void DummyRegisterTest::testDummyRegisterAddressChecker() {
   device->open();
 
   // check via DummyRegisterAccessor
-  device->_registerMapping->getRegisterInfo("SOME_REGISTER", info, "APP0");
+  info = device->_registerMap.getBackendRegister("APP0.SOME_REGISTER");
   BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address, 1) == true);
   BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address, 40) == true);
   BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address, 41) == false);

@@ -89,7 +89,7 @@ namespace ChimeraTK {
      * 
      * @return Shared pointer to the NumericAddressedRegisterInfo object in the catalogue.
      */
-    boost::shared_ptr<NumericAddressedRegisterInfo> getRegisterInfo(const RegisterPath& registerPathName);
+    NumericAddressedRegisterInfo getRegisterInfo(const RegisterPath& registerPathName);
 
     void activateAsyncRead() noexcept override;
     void setException() override;

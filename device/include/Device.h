@@ -512,15 +512,6 @@ namespace ChimeraTK {
     [[deprecated("Use write() instead!")]] virtual void writeDMA(const std::string& regName,
         const std::string& regModule, int32_t const* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  A typedef for backward compatibility. Don't use this in new code. It will
-     * be removed in a future release. Use ChimeraTK::BufferingRegisterAccessor
-     * instead
-     */
-    typedef ChimeraTK::RegisterAccessor RegisterAccessor;
-
    protected:
     boost::shared_ptr<DeviceBackend> _deviceBackendPointer;
 
