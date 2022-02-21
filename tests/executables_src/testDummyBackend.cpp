@@ -427,6 +427,23 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnlyRegister) {
   // for the following test cases
 }
 
+BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
+  ChimeraTK::Device dummyDevice;
+  dummyDevice.open("DUMMYD0");
+
+  // Also get pointer to the backend in order to check the catalogue
+  TestableDummyBackend* dummyBackend = f.getBackendInstance();
+
+  const std::string DUMMY_INTERRUPT{"/DUMMY_INTERRUPT_3_0"};
+  auto ro_register = dummyDevice.getScalarRegisterAccessor<int>(DUMMY_INTERRUPT);
+
+  // The suffixed register must not appear in the catalogue
+  BOOST_CHECK(!dummyBackend->getRegisterCatalogue().hasRegister(DUMMY_INTERRUPT));
+
+  // Don't close the device here because the backend needs to stay open
+  // for the following test cases
+}
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAddressRange) {

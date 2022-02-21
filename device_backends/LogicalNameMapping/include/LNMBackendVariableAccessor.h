@@ -27,7 +27,7 @@ namespace ChimeraTK {
     LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    ~LNMBackendVariableAccessor();
+    ~LNMBackendVariableAccessor() override;
 
     void doReadTransferSynchronously() override;
 

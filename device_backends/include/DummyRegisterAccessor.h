@@ -240,7 +240,7 @@ namespace ChimeraTK {
     /// name when searching for the register.
     DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
     : _dev(dev), _path(module + "/" + name), pitch(0) {
-      _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
+      _dev->_registerMap->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
 
       int i = 0;
       while(true) {

@@ -11,6 +11,7 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "AsyncNDRegisterAccessor.h"
 #include "NumericAddressedInterruptDispatcher.h"
+#include "DummyInterruptTriggerAccessor.h"
 
 #include <sstream>
 #include <regex>
@@ -29,7 +30,6 @@
   while(false)
 
 namespace ChimeraTK {
-
   /**
    * Base class for DummyBackends, provides common functionality
    *
@@ -42,6 +42,7 @@ namespace ChimeraTK {
     // ctor & dtor private with derived type as friend to enforce
     // correct specialization
     friend DerivedBackendType;
+
     DummyBackendBase(std::string const& mapFileName)
     : NumericAddressedBackend(mapFileName), _registerMapping{_registerMap} {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
@@ -106,14 +107,39 @@ namespace ChimeraTK {
       // Suffix to mark writeable references to read-only registers
       static const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
 
+      // Suffix to trigger interrupts for this register
+      static const std::string DUMMY_INTERRUPT_REGISTER_NAME{"^/DUMMY_INTERRUPT_([0-9]+)_([0-9]+)$"};
+
+      const std::string regPathNameStr{registerPathName};
+      const std::regex re2{DUMMY_INTERRUPT_REGISTER_NAME};
+      std::smatch match;
+      std::regex_search(regPathNameStr, match, re2);
+      if(not match.empty()) {
+        auto controller = std::stoi(match[1].str());
+        auto interrupt = std::stoi(match[2].str());
+        try {
+          auto& interruptsForController = _registerMap->getListOfInterrupts().at(controller);
+          if(interruptsForController.find(interrupt) == interruptsForController.end())
+            throw std::out_of_range("Invalid interrupt for controller");
+        }
+        catch(std::out_of_range&) {
+          throw ChimeraTK::logic_error("Invalid controller and interrupt combination (" + match[0].str() + ", " +
+              match[1].str() + ": " + regPathNameStr);
+        }
+
+        auto d = new DummyInterruptTriggerAccessor<UserType>(shared_from_this(),
+            [this, controller, interrupt]() { return triggerInterrupt(controller, interrupt); }, registerPathName);
+
+        return boost::shared_ptr<NDRegisterAccessor<UserType>>(d);
+      }
+
       bool isDummyWriteableAccessor = false;
       RegisterPath actualRegisterPath{registerPathName};
 
       // Check if register name ends on DUMMY_WRITEABLE_SUFFIX,
       // in that case, set actual path to the "real" register
       // which exists in the catalogue.
-      const std::string regPathNameStr{registerPathName};
-      std::smatch match;
+      //std::smatch match;
       const std::regex re{DUMMY_WRITEABLE_SUFFIX + "$"};
       std::regex_search(regPathNameStr, match, re);
 
