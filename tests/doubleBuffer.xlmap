@@ -1,5 +1,17 @@
 <logicalNameMap>
 
+  <redirectedRegister name="doubleBuffer">
+    <targetDevice>(dummy?map=doubleBuffer.map)</targetDevice>
+    <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
+    <plugin name="doubleBuffer">
+      <parameter name="secondBuffer"> APP.0.DAQ0_BUF1 </parameter>
+      <parameter name="controlRegister"> APP.1.WORD_DUB_BUF_ENA </parameter>
+      <parameter name="statusRegister"> APP.1.WORD_DUB_BUF_CURR </parameter>
+    </plugin>
+  </redirectedRegister>
+
+
+  <!-- This part is not used in double buffering tests. Seems to be left over from preparing a file based on some template -->
   <redirectedRegister name="enableDoubleBuffer">
     <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
     <targetRegister>ADC.1.WORD_DUB_BUF_ENA</targetRegister>
@@ -13,16 +25,6 @@
   <redirectedRegister name="pulseNumberOfNonWrittenBuffer">
     <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
     <targetRegister>ADC.1.WORD_DUB_BUF_PNUM</targetRegister>
-  </redirectedRegister>
-
-  <redirectedRegister name="doubleBuffer">
-    <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
-    <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
-    <plugin name="doubleBuffer">
-      <parameter name="secondBuffer"> APP.0.DAQ0_BUF1 </parameter>
-      <parameter name="controlRegister"> APP.1.WORD_DUB_BUF_ENA </parameter>
-      <parameter name="statusRegister"> APP.1.WORD_DUB_BUF_CURR </parameter>
-    </plugin>
   </redirectedRegister>
 
 </logicalNameMap>

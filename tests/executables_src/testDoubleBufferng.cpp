@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
 
 /**********************************************************************************************************************/
 
-//static std::string dbdevice("(ExceptionDummy:1?map=DoubleBuffer.map)");
+//static std::string dbdevice("(ExceptionDummy:1?map=doubleBuffer.map)");
 static std::string db("(logicalNameMap?map=doubleBuffer.xlmap)");
 static auto target = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(db));
 //static auto device = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dbdevice));
@@ -26,7 +26,7 @@ static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 
 template<typename Register>
 struct AreaType : Register {
-  Register* derived{static_cast<Register*>(this)};
+  //Register* derived{static_cast<Register*>(this)};
 
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
@@ -37,6 +37,7 @@ struct AreaType : Register {
 
   static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
 
+  // !!! here tests crashes - target is null , cannot cast logical name mapping backend to ExceptionDummy !!!!
   DummyRegisterAccessor<uint32_t> acc{target.get(), "/doubleBuffer", "doubleBuffer"};
 
   template<typename UserType>
@@ -63,23 +64,23 @@ struct AreaType : Register {
     if(!backendWasOpened) {
       lmapBackend->open();
     }
-    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(derived->path(), 0, 0, {});
+    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(this->path(), 0, 0, {});
     acc->read();
     if(!backendWasOpened) {
       lmapBackend->close();
     }
     std::vector<UserType> v;
-    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
+    for(size_t k = 0; k < this->nElementsPerChannel(); ++k) {
       v.push_back(acc->accessData(k));
     }
     return {v};
   }
 
   void setRemoteValue() {
-    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(derived->path(), 0, 0, {});
+    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(this->path(), 0, 0, {});
     auto v = getRemoteValue<typename Register::minimumUserType>()[0];
-//    auto v = derived->template generateValue<typename Register::minimumUserType>()[0];
-    for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {
+    //    auto v = derived->template generateValue<typename Register::minimumUserType>()[0];
+    for(size_t k = 0; k < this->nElementsPerChannel(); ++k) {
       acc->accessData(k) = v[k];
     }
     bool backendWasOpened = lmapBackend->isOpen();
@@ -93,8 +94,8 @@ struct AreaType : Register {
   }
 
   void setForceRuntimeError(bool enable, size_t) {
-//    target->throwExceptionRead = enable;
-//    target->throwExceptionWrite = enable;
+    //    target->throwExceptionRead = enable;
+    //    target->throwExceptionWrite = enable;
     assert(false);
   }
 };
@@ -121,14 +122,11 @@ struct MyArea1 {
 
 BOOST_AUTO_TEST_CASE(testUnified) {
   // test area type
-  std::string dummy = "(ExceptionDummy?map=DoubleBuffer.map)";
+  std::string dummy = "(ExceptionDummy?map=doubleBuffer.map)";
   std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + dummy + ")";
   exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy));
 
-
   ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyArea1>>().runTests(lmap);
-
-
 }
 
 /*********************************************************************************************************************/

@@ -55,9 +55,9 @@ namespace ChimeraTK { namespace LNMBackend {
   DoubleBufferAccessor<UserType>::DoubleBufferAccessor(boost::shared_ptr<LogicalNameMappingBackend>& backend,
       boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target) {
-    _bufferRegister = backend->getRegisterAccessor<UserType>(getValue(parameters, "secondBuffer"), 0, 0, false);
-    _controlRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "controlRegister"), 0, 0, false);
-    _statusRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "statusRegister"), 0, 0, false);
+    _bufferRegister = backend->getRegisterAccessor<UserType>(getValue(parameters, "secondBuffer"), 0, 0, {});
+    _controlRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "controlRegister"), 0, 0, {});
+    _statusRegister = backend->getRegisterAccessor<int32_t>(getValue(parameters, "statusRegister"), 0, 0, {});
   }
 
   template<typename UserType>
@@ -67,14 +67,13 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void DoubleBufferAccessor<UserType>::doReadTransferSynchronously() {
-
     _controlRegister->accessData(0) = 0;
     _controlRegister->write();
 
     _statusRegister->read();
     if(_statusRegister == 0) {
       _bufferRegister->read();
-      for(size_t i=0; i<_bufferRegister->getNumberOfChannels(); ++i){
+      for(size_t i = 0; i < _bufferRegister->getNumberOfChannels(); ++i) {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i] = _bufferRegister->accessChannel(i);
       }
     }
@@ -84,10 +83,10 @@ namespace ChimeraTK { namespace LNMBackend {
 
     _controlRegister->accessData(0) = 1;
     _controlRegister->write();
-  } 
+  }
 
   template<typename UserType>
-  void DoubleBufferAccessor<UserType>:: doPostRead(TransferType type, bool hasNewData) {
+  void DoubleBufferAccessor<UserType>::doPostRead(TransferType type, bool hasNewData) {
     _target->postRead(type, hasNewData);
   }
 

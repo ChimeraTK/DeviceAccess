@@ -196,7 +196,7 @@ namespace ChimeraTK {
     /// Set callback function which is called when the register is readed to (through the normal Device interface)
     void setReadCallback(const std::function<void()>& readCallback) {
       _dev->setReadCallbackFunction(
-      {uint8_t(registerInfo.bar), registerInfo.address, registerInfo.nBytes}, readCallback);
+          {uint8_t(registerInfo.bar), registerInfo.address, registerInfo.nBytes}, readCallback);
     }
 
    protected:

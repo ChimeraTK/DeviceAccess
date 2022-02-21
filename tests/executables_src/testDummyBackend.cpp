@@ -288,11 +288,11 @@ BOOST_AUTO_TEST_CASE(testReadCallbackFunctions) {
 
   // test single reads
   int32_t dataWord(42);
-  dummyBackend->read(0,12, &dataWord, 4); // nothing
+  dummyBackend->read((uint64_t)0, (uint64_t)12, &dataWord, 4); // nothing
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 0);
   BOOST_CHECK(f.c == 0);
-  dummyBackend->read(0, 20, &dataWord, 4); // c
+  dummyBackend->read((uint64_t)0, (uint64_t)20, &dataWord, 4); // c
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 0);
   BOOST_CHECK(f.c == 1);
