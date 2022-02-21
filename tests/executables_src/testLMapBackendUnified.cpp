@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE(LMapBackendUnifiedTestSuite)
 
 /**********************************************************************************************************************/
 
-static boost::shared_ptr<ExceptionDummy> exceptionDummy, exceptionDummy2, exceptionDummy3;
+static boost::shared_ptr<ExceptionDummy> exceptionDummyLikeMtcadummy, exceptionDummyMuxed, exceptionDummyPush;
 static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 
 /**********************************************************************************************************************/
@@ -292,7 +292,7 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
     derived->target.setRemoteValue();
     if(derived->isPush()) {
       // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
-      exceptionDummy3->triggerInterrupt(5, 6);
+      exceptionDummyPush->triggerInterrupt(5, 6);
     }
   }
 
@@ -310,10 +310,10 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
 
   typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
-/// Test passing through scalar accessors - dummy target 3
+/// Test passing through scalar accessors - use another target. We use the one with the push accessors (target 3 in lmap file)
 struct RegSingleWordB : ScalarRegisterDescriptorBase<RegSingleWordB> {
   std::string path() { return "/SingleWord"; }
 
@@ -321,7 +321,7 @@ struct RegSingleWordB : ScalarRegisterDescriptorBase<RegSingleWordB> {
 
   typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test passing through push-type scalar accessors
@@ -338,7 +338,7 @@ struct RegSingleWord_push : ScalarRegisterDescriptorBase<RegSingleWord_push> {
 
   typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test passing through 1D array accessors
@@ -350,7 +350,7 @@ struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
 
   typedef int32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
 /// Test passing through partial array accessors
@@ -363,7 +363,7 @@ struct RegPartOfArea : OneDRegisterDescriptorBase<RegPartOfArea> {
 
   typedef int32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
 /// Test channel accessor
@@ -379,7 +379,7 @@ struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
 
   // Multiplexed 2d accessors don't have access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 };
 
 /// Test channel accessors
@@ -396,7 +396,7 @@ struct RegChannel4_push : ChannelRegisterDescriptorBase<RegChannel4_push> {
 
   // Multiplexed 2d accessors don't have access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
-  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 };
 
 /// Test channel accessors
@@ -412,7 +412,7 @@ struct RegChannelLast : ChannelRegisterDescriptorBase<RegChannelLast> {
 
   // Multiplexed 2d accessors don't have access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 };
 
 /// Test constant accessor
@@ -532,7 +532,7 @@ struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
   typedef uint32_t rawUserType;
   //Mutliply plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
@@ -573,7 +573,7 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
   typedef minimumUserType rawUserType;
   //Mutliply plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test multiply plugin applied to array (just one direction for sake of simplicity)
@@ -593,7 +593,7 @@ struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   typedef int32_t rawUserType;
   //Mutliply plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
 /// Test force readonly plugin
@@ -605,7 +605,7 @@ struct RegWordFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWordFirmw
 
   typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test force readonly plugin with wait_for_new_data
@@ -618,7 +618,7 @@ struct RegWordFirmwareForcedReadOnly_push : ScalarRegisterDescriptorBase<RegWord
 
   typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test math plugin - needs to be done separately for reading and writing (see below)
@@ -630,7 +630,7 @@ struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
   typedef uint32_t rawUserType;
   //Math plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R> {
@@ -689,7 +689,7 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
   typedef minimumUserType rawUserType;
   //Mutliply plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test math plugin with push-type parameter. In this test we write to one of the variables which is
@@ -720,7 +720,7 @@ struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Deriv
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 struct RegVariableAsPushParameterInMath_var1
@@ -803,21 +803,24 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
 
   //Mutliply plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   std::string dummyCdd = "(ExceptionDummy?map=mtcadummy.map)";
-  std::string dummy2Cdd = "(ExceptionDummy?map=muxedDataAcessor.map)";
-  std::string dummy3Cdd = "(ExceptionDummy?map=mtcadummyB.map)";
-  std::string lmapCdd = "(logicalNameMap?map=unifiedTest.xlmap&target=" + dummyCdd + "&target2=" + dummy2Cdd +
-      "&target3=" + dummy3Cdd + ")";
-  exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummyCdd));
-  exceptionDummy2 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy2Cdd));
+  std::string muxedDummyCdd = "(ExceptionDummy?map=muxedDataAcessor.map)";
+  std::string pushDummyCdd = "(ExceptionDummy?map=mtcadummyB.map)";
+  std::string lmapCdd = "(logicalNameMap?map=unifiedTest.xlmap&target=" + dummyCdd + "&target2=" + muxedDummyCdd +
+      "&target3=" + pushDummyCdd + ")";
+  exceptionDummyLikeMtcadummy =
+      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummyCdd));
+  exceptionDummyMuxed =
+      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(muxedDummyCdd));
   // needed for a test that redirected bit goes to right target device
-  exceptionDummy3 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy3Cdd));
+  exceptionDummyPush =
+      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(pushDummyCdd));
   lmapBackend =
       boost::dynamic_pointer_cast<LogicalNameMappingBackend>(BackendFactory::getInstance().createBackend(lmapCdd));
 

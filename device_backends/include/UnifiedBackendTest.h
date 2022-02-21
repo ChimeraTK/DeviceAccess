@@ -348,8 +348,8 @@ namespace ChimeraTK {
     void test_C_5_3_3();
     void test_NOSPEC_valueAfterConstruction();
     void test_NOSPEC_backendNotClosedAfterException();
-    void test_NOSPES_rawTransfer();
-    void test_NOSPES_catalogueRaw();
+    void test_NOSPEC_rawTransfer();
+    void test_NOSPEC_catalogueRaw();
 
     /// Utility functions for recurring tasks
     void recoverDevice(ChimeraTK::Device& d);
@@ -891,8 +891,8 @@ namespace ChimeraTK {
     test_C_5_3_3();
     test_NOSPEC_valueAfterConstruction();
     test_NOSPEC_backendNotClosedAfterException();
-    test_NOSPES_rawTransfer();
-    test_NOSPES_catalogueRaw();
+    test_NOSPEC_rawTransfer();
+    test_NOSPEC_catalogueRaw();
   }
 
   /********************************************************************************************************************/
@@ -3276,7 +3276,7 @@ namespace ChimeraTK {
    *  * MISSING SPEC
    */
   template<typename VECTOR_OF_REGISTERS_T>
-  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPES_rawTransfer() {
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_rawTransfer() {
     std::cout << "--- test_NOSPEC_rawTransfer - test creation and readig/writing with access mode raw." << std::endl;
     Device d(cdd);
     d.open();
@@ -3311,7 +3311,7 @@ namespace ChimeraTK {
    *  * MISSING SPEC
    */
   template<typename VECTOR_OF_REGISTERS_T>
-  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPES_catalogueRaw() {
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_catalogueRaw() {
     std::cout << "--- test_NOSPEC_catalogueRaw - test catalogue entries for access mode raw." << std::endl;
     Device d(cdd);
 
