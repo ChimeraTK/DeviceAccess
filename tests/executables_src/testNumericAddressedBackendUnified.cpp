@@ -83,7 +83,7 @@ struct Integers_signed32_async {
   bool isWriteable() { return false; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() {
-    return { ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
+    return {ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
   }
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
@@ -116,7 +116,6 @@ struct Integers_signed32_async {
     if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
   }
 
-
   void forceAsyncReadInconsistency() {
     // Change value without sending it via ZeroMQ
     acc = generateValue<minimumUserType>()[0][0];
@@ -135,7 +134,7 @@ struct Integers_signed32_async_rw {
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() {
-    return { ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
+    return {ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
   }
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
@@ -167,7 +166,6 @@ struct Integers_signed32_async_rw {
     acc = generateValue<minimumUserType>()[0][0];
     if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
   }
-
 
   void forceAsyncReadInconsistency() {
     // Change value without sending it via ZeroMQ
@@ -270,6 +268,7 @@ struct ShortRaw_base {
 struct ShortRaw_signed16 : ShortRaw_base<ShortRaw_signed16, int16_t> {
   std::string path() { return "/ShortRaw/signed16"; }
   typedef int16_t minimumUserType;
+  typedef minimumUserType rawUserType;
 
   int16_t rawToCooked = 1;
   // The rawIncrements are chosen such that we generate different values for different variables, and to cover the
@@ -285,6 +284,7 @@ struct ShortRaw_signed16 : ShortRaw_base<ShortRaw_signed16, int16_t> {
 struct ShortRaw_unsigned16 : ShortRaw_base<ShortRaw_unsigned16, uint16_t> {
   std::string path() { return "/ShortRaw/unsigned16"; }
   typedef uint16_t minimumUserType;
+  typedef int16_t rawUserType;
 
   int16_t rawToCooked = 1;
   int16_t rawIncrement = 17119;
@@ -297,6 +297,7 @@ struct ShortRaw_unsigned16 : ShortRaw_base<ShortRaw_unsigned16, uint16_t> {
 struct ShortRaw_fixedPoint16_8u : ShortRaw_base<ShortRaw_fixedPoint16_8u, uint16_t> {
   std::string path() { return "/ShortRaw/fixedPoint16_8u"; }
   typedef float minimumUserType;
+  typedef int16_t rawUserType;
 
   float rawToCooked = 1. / 256.;
   int16_t rawIncrement = 17121;
@@ -309,6 +310,7 @@ struct ShortRaw_fixedPoint16_8u : ShortRaw_base<ShortRaw_fixedPoint16_8u, uint16
 struct ShortRaw_fixedPoint16_8s : ShortRaw_base<ShortRaw_fixedPoint16_8s, int16_t> {
   std::string path() { return "/ShortRaw/fixedPoint16_8s"; }
   typedef float minimumUserType;
+  typedef int16_t rawUserType;
 
   float rawToCooked = 1. / 256.;
   int16_t rawIncrement = 17123;
@@ -321,6 +323,7 @@ struct ShortRaw_fixedPoint16_8s : ShortRaw_base<ShortRaw_fixedPoint16_8s, int16_
 struct ByteRaw_signed8 : ShortRaw_base<ByteRaw_signed8, int8_t> {
   std::string path() { return "/ByteRaw/signed8"; }
   typedef int8_t minimumUserType;
+  typedef int8_t rawUserType;
 
   int8_t rawToCooked = 1;
   int8_t rawIncrement = 119;
@@ -333,6 +336,7 @@ struct ByteRaw_signed8 : ShortRaw_base<ByteRaw_signed8, int8_t> {
 struct ByteRaw_unsigned8 : ShortRaw_base<ByteRaw_unsigned8, uint8_t> {
   std::string path() { return "/ByteRaw/unsigned8"; }
   typedef uint8_t minimumUserType;
+  typedef int8_t rawUserType;
 
   uint8_t rawToCooked = 1;
   int8_t rawIncrement = 121;
@@ -345,6 +349,7 @@ struct ByteRaw_unsigned8 : ShortRaw_base<ByteRaw_unsigned8, uint8_t> {
 struct ByteRaw_fixedPoint8_4u : ShortRaw_base<ByteRaw_fixedPoint8_4u, uint8_t> {
   std::string path() { return "/ByteRaw/fixedPoint8_4u"; }
   typedef float minimumUserType;
+  typedef int8_t rawUserType;
 
   float rawToCooked = 1. / 16.;
   int8_t rawIncrement = 123;
@@ -357,6 +362,7 @@ struct ByteRaw_fixedPoint8_4u : ShortRaw_base<ByteRaw_fixedPoint8_4u, uint8_t> {
 struct ByteRaw_fixedPoint8_4s : ShortRaw_base<ByteRaw_fixedPoint8_4s, int8_t> {
   std::string path() { return "/ByteRaw/fixedPoint8_4s"; }
   typedef float minimumUserType;
+  typedef int8_t rawUserType;
 
   float rawToCooked = 1. / 16.;
   int8_t rawIncrement = 125;

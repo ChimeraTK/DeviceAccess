@@ -153,9 +153,9 @@ namespace ChimeraTK { namespace LNMBackend {
     void exceptionHook() override;
 
     bool _isWrite{false};
-    bool _hasPushParameter{false};                       // can only be true if _isWrite == true
-    boost::thread _pushParameterWriteThread;             // only used if _hasPushParameter == true
-    ReadAnyGroup _pushParameterReadGroup;                // only used if _hasPushParameter == true
+    bool _hasPushParameter{false};           // can only be true if _isWrite == true
+    boost::thread _pushParameterWriteThread; // only used if _hasPushParameter == true
+    ReadAnyGroup _pushParameterReadGroup;    // only used if _hasPushParameter == true
     std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>>
         _pushParameterAccessorMap;                       // only used if _hasPushParameter == true
     boost::shared_ptr<MathPluginFormulaHelper> _h;       // only used if _hasPushParameter == true
@@ -275,10 +275,16 @@ namespace ChimeraTK { namespace LNMBackend {
 
     // obtain desired target type from plugin implementation
     auto type = getTargetDataType(typeid(UserType));
+    auto info = _info.lock();
+    if((info->_dataDescriptor.rawDataType() == DataType::none) and flags.has(AccessMode::raw)) {
+      throw ChimeraTK::logic_error(
+          "Access mode 'raw' is not supported for register '" + std::string(info->getRegisterName()) + "'");
+    }
+
     callForType(type, [&](auto T) {
       // obtain target accessor with desired type
       auto target = backend->getRegisterAccessor_impl<decltype(T)>(
-          _info.lock()->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
+          info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
       decorated = static_cast<Derived*>(this)->template decorateAccessor<UserType>(backend, target);
     });
 
