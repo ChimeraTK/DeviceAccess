@@ -33,7 +33,8 @@ struct RegisterDescriptorBase {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
@@ -105,9 +106,9 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   size_t myOffset() { return 0; }
 
   // T is always minimumUserType, but C++ doesn't allow to use Derived::minimumUserType here (circular dependency)
-  template<typename T>
-  T convertRawToCooked(T value) {
-    return value;
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
+    return static_cast<T>(value);
   }
 
   template<typename UserType>
@@ -122,7 +123,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       Traw e = cv[i] + derived->increment * (static_cast<T>(i) + 1);
       if(!getRaw) {
-        v.push_back(derived->template convertRawToCooked<T>(e));
+        v.push_back(derived->template convertRawToCooked<T, Traw>(e));
       }
       else {
         v.push_back(static_cast<T>(e));
@@ -140,10 +141,11 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       Traw e = derived->acc[i + derived->myOffset()];
       if(!getRaw) {
-        v.push_back(derived->template convertRawToCooked<T>(e));
+        v.push_back(derived->template convertRawToCooked<T, Traw>(e));
       }
       else {
-        v.push_back(static_cast<T>(e));
+        v.push_back(static_cast<T>(
+            e)); // you can only use raw if user type and raw type are the same, so the static cast is a no-op
       }
     }
     return {v};
@@ -538,8 +540,8 @@ struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
 struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
   bool isWriteable() { return false; }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value * 4.2;
   }
 };
@@ -548,8 +550,8 @@ struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
   bool isReadable() { return false; }
 
   // the scale plugin applies the same factor in both directions, so we have to inverse it for write tests
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value / 4.2;
   }
   //Mutliply plugin does not support access mode raw
@@ -564,8 +566,8 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
 
   const double increment = std::exp(3.);
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return 6 * value;
   }
 
@@ -584,8 +586,8 @@ struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   const double increment = std::exp(4.);
   size_t nElementsPerChannel() { return 0x400; }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return 0.5 * value;
   }
 
@@ -637,8 +639,8 @@ struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMa
   std::string path() { return "/WordFirmwareWithMath_r"; }
   bool isWriteable() { return false; }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value + 2.345;
   }
   //Mutliply plugin does not support access mode raw
@@ -650,8 +652,8 @@ struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareW
   bool isPush() { return true; }
   std::string path() { return "/WordFirmwareWithMath_push"; }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value + 2.345;
   }
   //Mutliply plugin does not support access mode raw
@@ -663,8 +665,8 @@ struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMa
   bool isReadable() { return false; }
 
   // the math plugin applies the same formula in both directions, so we have to reverse the formula for write tests
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value - 2.345;
   }
   //Mutliply plugin does not support access mode raw
@@ -680,8 +682,8 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
 
   const double increment = 91;
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value - 42;
   }
 
@@ -729,8 +731,8 @@ struct RegVariableAsPushParameterInMath_var1
 
   const double increment = 17;
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
     variable2->read();
     return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
@@ -743,8 +745,8 @@ struct RegVariableAsPushParameterInMath_var2
 
   const double increment = 23;
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     variable1->read();
     return (value - variable1->accessData(0) * 120 - RegVariableAsPushParameterInMathBase_lastX) / 121;
@@ -763,8 +765,8 @@ struct RegVariableAsPushParameterInMath_x : RegVariableAsPushParameterInMathBase
     RegVariableAsPushParameterInMathBase_lastX = v[0];
   }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     variable1->read();
     auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
