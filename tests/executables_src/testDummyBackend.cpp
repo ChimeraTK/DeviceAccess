@@ -495,7 +495,7 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
   BOOST_REQUIRE(bar2Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar2Iter->second.size() == 0x400); // 0x1000 bytes in 32 bit words
 
-  // the "prtmapFile" has an implicit converion to bool to check
+  // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL
   BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());

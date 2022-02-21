@@ -85,7 +85,7 @@ namespace ChimeraTK {
      * Data type to create individual buffers. They are mainly used in asynchronous
      * implementation. Each buffer stores a vector, the version
      * number and the time stamp. The type is swappable by the default
-     * implemenation of std::swap since both the move constructor and the move
+     * implementation of std::swap since both the move constructor and the move
      * assignment operator are implemented. This helps to avoid unnecessary memory
      * allocations when transported in a cppext::future_queue.
      */
@@ -112,7 +112,7 @@ namespace ChimeraTK {
       /** Version number of this data */
       ChimeraTK::VersionNumber versionNumber{nullptr};
 
-      /** Whether or not the data in the bufer is considered valid */
+      /** Whether or not the data in the buffer is considered valid */
       ChimeraTK::DataValidity dataValidity{ChimeraTK::DataValidity::ok};
     };
 

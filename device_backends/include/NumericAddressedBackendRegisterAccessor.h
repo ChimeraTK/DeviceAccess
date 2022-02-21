@@ -36,7 +36,7 @@ namespace ChimeraTK {
         boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
 
     /** We need partial template specialisations of some functions. However, in C++ this is only possible for full classes.
-     *  Hence we introduce an implementor class which only holds the functions which we have to re-implement anyway.
+     *  Hence we introduce an implementer class which only holds the functions which we have to re-implement anyway.
      *  The functions are doPostRead, doPreWrite and doPostWrite.
      */
     template<typename UserType, typename DataConverterType, bool isRaw>
@@ -47,7 +47,7 @@ namespace ChimeraTK {
       size_t& _startAddress;
       DataConverterType& _dataConverter;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<UserType>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -67,7 +67,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int32_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -86,7 +86,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int16_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -105,7 +105,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       const bool& _isNotWriteable;
-      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temprary
+      boost::shared_ptr<RegisterInfo> _registerInfo; // must not be a reference as it is obtained from a temporary
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int8_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
@@ -129,7 +129,7 @@ namespace ChimeraTK {
     void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPreWrite() {
       if(_isNotWriteable) {
         throw ChimeraTK::logic_error(
-            "NumericAddressedBackend: Writeing to a non-writeable register is not allowed (Register name: " +
+            "NumericAddressedBackend: Writing to a non-writable register is not allowed (Register name: " +
             _registerInfo->getRegisterName() + ").");
       }
       callForRawType(_registerInfo->getDataDescriptor().rawDataType(), [this](auto t) {
@@ -296,7 +296,7 @@ namespace ChimeraTK {
       if(!hasNewData) return;
       _prePostActionsImplementor.doPostRead();
       // we don't put the setting of the version number into the PrePostActionImplementor
-      // because it does not need template specialisation, and the implementor does not
+      // because it does not need template specialisation, and the implementer does not
       // know about _versionNumber. It's just easier here.
       this->_versionNumber = _rawAccessor->getVersionNumber();
       this->_dataValidity = _rawAccessor->dataValidity();
@@ -379,7 +379,7 @@ namespace ChimeraTK {
     /** number of 4-byte words to access */
     size_t _numberOfWords;
 
-    /** cache for negated writeable status to avoid repeated evaluation */
+    /** cache for negated writable status to avoid repeated evaluation */
     bool _isNotWriteable;
 
     detail::NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw> _prePostActionsImplementor;

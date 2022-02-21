@@ -26,7 +26,7 @@ namespace ChimeraTK {
   };
 
   /**
-   *  Descriptor for the test capabilites for each register. This allows a schema evolution of the test. New tests
+   *  Descriptor for the test capabilities for each register. This allows a schema evolution of the test. New tests
    *  which require a new backend-specific function in the test in the register descriptor will be enabled through
    *  a corresponding Capability flag.
    * 
@@ -62,7 +62,7 @@ namespace ChimeraTK {
         _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
         enableForceDataLossWrite() const {
       static_assert(_writeNeverLosesData != TestCapability::enabled,
-          "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
+          "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutually exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
@@ -158,7 +158,7 @@ namespace ChimeraTK {
   };
 
   /**
-   *  Class to test any backend for correct behavior. Instantiate this class and call all (!) preparatory functions to
+   *  Class to test any backend for correct behaviour. Instantiate this class and call all (!) preparatory functions to
    *  provide the tests with the backend-specific test actions etc. Finally call runTests() to execute all tests.
    *  Internally the BOOST unit test framework is used, so this shall be called inside a normal unit test.
    * 
@@ -166,7 +166,7 @@ namespace ChimeraTK {
    *  more backend specific actions for enabling and disabling test conditions are needed for the tests and the backend
    *  test has not yet been updated, tests will fail.
    * 
-   *  Actions are usually speficied as list of pairs of functors. The pair's first element is always the action to enable
+   *  Actions are usually specified as list of pairs of functors. The pair's first element is always the action to enable
    *  the the test condition, the second is the action to disable it. By providing multiple entries in the lists it is
    *  possible to test several code paths the backend has to end up in the intended test condition.
    *  For example in case of forceRuntimeErrorOnRead(): runtime_errors in a read can be caused by a timeout in the
@@ -178,7 +178,7 @@ namespace ChimeraTK {
    *  In the same way as for the actions, names of registers etc. are provided as lists, so all test can be repeated for
    *  different registers, if required for full coverage.
    * 
-   *  Instatiate with default template argument, then call addRegister() to add any number of registers, i.e.:
+   *  Instantiate with default template argument, then call addRegister() to add any number of registers, i.e.:
    *
    *    auto ubt = UnifiedBackendTest<>.addRegister<RegisterA>().addRegister<RegisterB>().addRegister<RegisterC>()
    *    ubt.runTest("myCDD");
@@ -244,7 +244,7 @@ namespace ChimeraTK {
      *    /// Used by setForceDataLossWrite(). Can be omitted if Capability forceDataLossWrite = disabled.
      *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}
      * 
-     *    /// Force data loss during write operations. It is expected that data loss occurse exactly writeQueueLength
+     *    /// Force data loss during write operations. It is expected that data loss occurs exactly writeQueueLength
      *    /// write operations after calling this function with enable=true.
      *    /// Can be omitted if Capability forceDataLossWrite = disabled.
      *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
@@ -252,7 +252,7 @@ namespace ChimeraTK {
      *    void setForceDataLossWrite(bool enable);
      * 
      *    /// Do whatever necessary that data last received via a push-type subscription is inconsistent with the actual 
-     *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishng
+     *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishing
      *    /// the update to the subscribers.
      *    /// Can be omitted if Capability asyncReadInconsistency = disabled. This should be done only if such
      *    /// inconsistencies are already prevented by the protocol.
@@ -275,7 +275,7 @@ namespace ChimeraTK {
      *  any data (e.g. seeds for generating values), use static member variables.
      * 
      *  Properties of the register are implemented as functions instead of data members to make it easier to override
-     *  values when using a common base clase for multiple descriptors to avoid code duplication (without triggering a
+     *  values when using a common base class for multiple descriptors to avoid code duplication (without triggering a
      *  shadowing warning).
      */
     template<typename REG_T>
@@ -286,7 +286,7 @@ namespace ChimeraTK {
     }
 
     /**
-     *  "Strong typedef" for list of pairs of functors for enabling and disbaling a test condition.
+     *  "Strong typedef" for list of pairs of functors for enabling and disabling a test condition.
      */
     class EnableDisableActionList : public std::list<std::pair<std::function<void(void)>, std::function<void(void)>>> {
      public:
@@ -395,7 +395,7 @@ namespace ChimeraTK {
     /// CDD for backend to test
     std::string cdd, cdd2;
 
-    /// Flag wheter to disable tests for the backend itself
+    /// Flag whether to disable tests for the backend itself
     bool _testOnlyTransferElement{false};
 
     /// Special DeviceBackend used for testing the exception reporting to the backend
@@ -675,8 +675,8 @@ namespace ChimeraTK {
   }                                                                                                                    \
   (void)(0)
 
-// Simiar to CHECK_EQUALITY, but runs readLatest() on the accessor in a loop until the expected value has arrived, for
-// at most maxMillisecods. If the expected value is not seen within that time, an error is risen.
+// Similar to CHECK_EQUALITY, but runs readLatest() on the accessor in a loop until the expected value has arrived, for
+// at most maxMilliseconds. If the expected value is not seen within that time, an error is risen.
 #define CHECK_EQUALITY_TIMEOUT(accessor, expectedValue, maxMilliseconds)                                               \
   {                                                                                                                    \
     typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
@@ -1920,7 +1920,7 @@ namespace ChimeraTK {
         d.close();
       }
 
-      // Second check: Concurrent updates do not cause inconsistency. Note: This test cannot possilby cover all
+      // Second check: Concurrent updates do not cause inconsistency. Note: This test cannot possibly cover all
       // potential scenarios for race conditions, hence only one simple scenario is tested.
       {
         // Set initial remote value, to make sure it is different from the next remote value set below
@@ -2378,7 +2378,7 @@ namespace ChimeraTK {
 
       // recover device
       this->recoverDevice(d);
-      d.activateAsyncRead(); // re-activate asyn read after recovery
+      d.activateAsyncRead(); // re-activate async read after recovery
     });
 
     // close device again
@@ -2437,14 +2437,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /**
-   *  Test doReadTransferSynchonously throws runtime_error after setException() until recovery
+   *  Test doReadTransferSynchronously throws runtime_error after setException() until recovery
    *  * \anchor UnifiedTest_TransferElement_B_9_4_1 \ref transferElement_B_9_4_1 "B.9.4.1"
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_4_1() {
     if(_testOnlyTransferElement) return;
     std::cout
-        << "--- test_B_9_4_1 - doReadTransferSynchonously throws runtime_error after setException() until recovery"
+        << "--- test_B_9_4_1 - doReadTransferSynchronously throws runtime_error after setException() until recovery"
         << std::endl;
     Device d(cdd);
     d.open();
@@ -2988,7 +2988,7 @@ namespace ChimeraTK {
         // disable exceptions on read
         x.setForceRuntimeError(false, i);
 
-        // recover shouldn't even be necessary, since no communcation happened
+        // recover shouldn't even be necessary, since no communication happened
         BOOST_CHECK(d.isFunctional() == true);
       }
     });
@@ -3053,7 +3053,7 @@ namespace ChimeraTK {
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
 
-        // check a failed attept to recover does not change this
+        // check a failed attempt to recover does not change this
         BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
@@ -3088,7 +3088,7 @@ namespace ChimeraTK {
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
 
-        // check a failed attept to recover does not change this
+        // check a failed attempt to recover does not change this
         BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
@@ -3122,7 +3122,7 @@ namespace ChimeraTK {
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
 
-        // check a failed attept to recover does not change this
+        // check a failed attempt to recover does not change this
         BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
@@ -3158,7 +3158,7 @@ namespace ChimeraTK {
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
 
-          // check a failed attept to recover does not change this
+          // check a failed attempt to recover does not change this
           BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
@@ -3202,7 +3202,7 @@ namespace ChimeraTK {
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
 
-          // check a failed attept to recover does not change this
+          // check a failed attempt to recover does not change this
           BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
@@ -3245,7 +3245,7 @@ namespace ChimeraTK {
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
 
-          // check a failed attept to recover does not change this
+          // check a failed attempt to recover does not change this
           BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());

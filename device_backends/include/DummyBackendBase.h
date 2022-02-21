@@ -31,7 +31,7 @@
 namespace ChimeraTK {
 
   /**
-   * Base class for DummyBackends, provides common funtionality
+   * Base class for DummyBackends, provides common functionality
    *
    * Note: This is implemented as a CRTP because we need to access
    *       the static getInstanceMap() of the derived backends.
@@ -125,9 +125,9 @@ namespace ChimeraTK {
       auto accessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
           actualRegisterPath, numberOfWords, wordOffsetInRegister, flags);
 
-      // Modify writeability of the synchronous NumericAddressedBackendRegisterAccessor
+      // Modify write-ability of the synchronous NumericAddressedBackendRegisterAccessor
       if(isDummyWriteableAccessor) {
-        // the accessor might be synchronous or asynchronous. If it is an async accessor we have to add a dummy-writable accessor
+        // the accessor might be synchronous or asynchronous. If it is an async accessor we have to add a dummy-writeable accessor
         boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
         if(flags.has(AccessMode::wait_for_new_data)) {
           auto syncFlags = flags;

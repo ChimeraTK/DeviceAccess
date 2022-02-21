@@ -13,7 +13,7 @@ namespace ChimeraTK {
    *  as continuation of the void queue in TransferElement. This allows to
    *  receive the content of the buffer_2D, the version number and the data validity flag.
    *  The implementation is complete. The interrupt handling thread in the backend implementation
-   *  can write to the queues through the memeber functions, and activate and deactivate the accessor.
+   *  can write to the queues through the member functions, and activate and deactivate the accessor.
    */
   template<typename UserType>
   class AsyncNDRegisterAccessor : public NDRegisterAccessor<UserType> {

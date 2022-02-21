@@ -130,7 +130,7 @@ namespace ChimeraTK {
       }
 
       // create entry in _writeOrderMap and _writeCounterMap if necessary
-      if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE") {
+      if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE" && (pathComponents[0].find("DUMMY_INTERRUPT_") != 0)) {
         auto info = getRegisterInfo(path);
         auto adrPair = std::make_pair(info->bar, info->address);
         if(_writeOrderMap.find(adrPair) == _writeOrderMap.end()) {
