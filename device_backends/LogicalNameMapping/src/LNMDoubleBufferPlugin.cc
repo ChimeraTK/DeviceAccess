@@ -67,13 +67,21 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void DoubleBufferAccessor<UserType>::doReadTransferSynchronously() {
+<<<<<<< HEAD
+=======
+
+>>>>>>> c51786e2c63d391dcb40f2b7cf5686f8a08a3782
     _controlRegister->accessData(0) = 0;
     _controlRegister->write();
 
     _statusRegister->read();
     if(_statusRegister == 0) {
       _bufferRegister->read();
+<<<<<<< HEAD
       for(size_t i = 0; i < _bufferRegister->getNumberOfChannels(); ++i) {
+=======
+      for(size_t i=0; i<_bufferRegister->getNumberOfChannels(); ++i){
+>>>>>>> c51786e2c63d391dcb40f2b7cf5686f8a08a3782
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i] = _bufferRegister->accessChannel(i);
       }
     }
@@ -83,10 +91,17 @@ namespace ChimeraTK { namespace LNMBackend {
 
     _controlRegister->accessData(0) = 1;
     _controlRegister->write();
+<<<<<<< HEAD
   }
 
   template<typename UserType>
   void DoubleBufferAccessor<UserType>::doPostRead(TransferType type, bool hasNewData) {
+=======
+  } 
+
+  template<typename UserType>
+  void DoubleBufferAccessor<UserType>:: doPostRead(TransferType type, bool hasNewData) {
+>>>>>>> c51786e2c63d391dcb40f2b7cf5686f8a08a3782
     _target->postRead(type, hasNewData);
   }
 
