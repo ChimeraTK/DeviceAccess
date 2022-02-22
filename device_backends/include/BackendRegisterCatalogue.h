@@ -89,36 +89,39 @@ namespace ChimeraTK {
 
     /** Return begin iterator for iterating through the registers in the catalogue */
     [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.begin()};
     }
 
     /** Return end iterator for iterating through the registers in the catalogue */
     [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.end()};
     }
 
     /** Return const begin iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.begin()};
     }
 
     /** Return const end iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.end()};
     }
 
     /** Return const begin iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cbegin() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.begin()};
     }
 
     /** Return const end iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cend() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.end()};
     }
 
-   protected:
+   private:
+    // Always access the catalogue through the member functions. Modifications need special care to keep the two
+    // containers synchronised, hence these members are made private.
     std::map<RegisterPath, BackendRegisterInfo> catalogue;
+    std::vector<BackendRegisterInfo*> insertionOrderedCatalogue;
   };
 
   /*******************************************************************************************************************/
@@ -146,8 +149,7 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   class const_BackendRegisterCatalogueImplIterator : public const_RegisterCatalogueImplIterator {
    public:
-    explicit const_BackendRegisterCatalogueImplIterator(
-        typename std::map<RegisterPath, BackendRegisterInfo>::const_iterator it);
+    explicit const_BackendRegisterCatalogueImplIterator(typename std::vector<BackendRegisterInfo*>::const_iterator it);
 
     void increment() override;
 
@@ -179,7 +181,7 @@ namespace ChimeraTK {
     bool operator!=(const const_BackendRegisterCatalogueImplIterator& rightHandSide) const;
 
    protected:
-    typename std::map<RegisterPath, BackendRegisterInfo>::const_iterator theIterator;
+    typename std::vector<BackendRegisterInfo*>::const_iterator theIterator;
   };
 
   /*******************************************************************************************************************/
@@ -190,8 +192,7 @@ namespace ChimeraTK {
    public:
     BackendRegisterCatalogueImplIterator() = default;
 
-    explicit BackendRegisterCatalogueImplIterator(
-        typename std::map<RegisterPath, BackendRegisterInfo>::iterator theIterator_);
+    explicit BackendRegisterCatalogueImplIterator(typename std::vector<BackendRegisterInfo*>::iterator theIterator_);
 
     BackendRegisterCatalogueImplIterator& operator++();
 
@@ -212,7 +213,7 @@ namespace ChimeraTK {
     bool operator!=(const BackendRegisterCatalogueImplIterator& rightHandSide) const;
 
    protected:
-    typename std::map<RegisterPath, BackendRegisterInfo>::iterator theIterator;
+    typename std::vector<BackendRegisterInfo*>::iterator theIterator;
   };
 
   /*******************************************************************************************************************/
@@ -276,7 +277,8 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorBegin() const {
-    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cbegin());
+    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(
+        insertionOrderedCatalogue.cbegin());
     return it;
   }
 
@@ -285,7 +287,8 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorEnd() const {
-    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cend());
+    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(
+        insertionOrderedCatalogue.cend());
     return it;
   }
 
@@ -304,18 +307,33 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   void BackendRegisterCatalogue<BackendRegisterInfo>::addRegister(BackendRegisterInfo registerInfo) {
+    if(hasRegister(registerInfo.getRegisterName())) {
+      throw ChimeraTK::logic_error("BackendRegisterCatalogue::addRegister(): Register with the name " +
+          registerInfo.getRegisterName() + " already exists!");
+    }
     catalogue[registerInfo.getRegisterName()] = std::move(registerInfo);
+    insertionOrderedCatalogue.push_back(&catalogue[registerInfo.getRegisterName()]);
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
   void BackendRegisterCatalogue<BackendRegisterInfo>::removeRegister(const RegisterPath& name) {
-    auto removed = catalogue.erase(name);
-    if(removed != 1) {
+    // check existence
+    if(!hasRegister(name)) {
       throw ChimeraTK::logic_error(
           "BackendRegisterCatalogue::removeRegister(): Register '" + name + "' does not exist.");
     }
+
+    // remove from insertion-ordered vector
+    auto it = std::find_if(insertionOrderedCatalogue.begin(), insertionOrderedCatalogue.end(),
+        [&](auto reg) { return reg.getRegisterName() == name; });
+    assert(it != insertionOrderedCatalogue.end());
+    insertionOrderedCatalogue.erase(it);
+
+    // remove from catalogue map
+    auto removed = catalogue.erase(name);
+    assert(removed == 1);
   }
 
   /*******************************************************************************************************************/
@@ -324,7 +342,7 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::const_BackendRegisterCatalogueImplIterator(
-      typename std::map<RegisterPath, BackendRegisterInfo>::const_iterator it)
+      typename std::vector<BackendRegisterInfo*>::const_iterator it)
   : theIterator(it) {}
 
   /********************************************************************************************************************/
@@ -345,7 +363,7 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   const BackendRegisterInfoBase* const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::get() {
-    return &(theIterator->second);
+    return *theIterator;
   }
 
   /********************************************************************************************************************/
@@ -408,14 +426,14 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   const BackendRegisterInfo& const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator*() const {
-    return theIterator->second;
+    return *(*theIterator);
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
   const BackendRegisterInfo* const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator->() const {
-    return &(theIterator->second);
+    return *theIterator;
   }
 
   /********************************************************************************************************************/
@@ -439,7 +457,7 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::BackendRegisterCatalogueImplIterator(
-      typename std::map<RegisterPath, BackendRegisterInfo>::iterator theIterator_)
+      typename std::vector<BackendRegisterInfo*>::iterator theIterator_)
   : theIterator(theIterator_) {}
 
   /********************************************************************************************************************/
@@ -484,14 +502,14 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   BackendRegisterInfo& BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator*() const {
-    return theIterator->second;
+    return *(*theIterator);
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
   BackendRegisterInfo* BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator->() const {
-    return &(theIterator->second);
+    return *theIterator;
   }
 
   /********************************************************************************************************************/

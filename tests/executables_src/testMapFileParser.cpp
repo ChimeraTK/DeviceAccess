@@ -23,15 +23,6 @@ void compareCatalogue(const NumericAddressedRegisterCatalogue& regcat,
   // first check that size is equal
   BOOST_REQUIRE_EQUAL(regcat.getNumberOfRegisters(), RegisterInfoents.size());
 
-  // compare without caring about the order of elements
-  for(const auto& ent : RegisterInfoents) {
-    auto reg = regcat.getBackendRegister(ent.getRegisterName());
-    std::stringstream message;
-    message << "Failed comparison on Register '" << ent.name << "', module '" << (ent.module) << "'";
-    BOOST_CHECK_MESSAGE((compareRegisterInfoents(ent, reg)) == true, message.str());
-  }
-
-  /*
   // compare and check for same order of elements
   auto mapIter = regcat.begin();
   auto elementsIter = RegisterInfoents.begin();
@@ -41,7 +32,6 @@ void compareCatalogue(const NumericAddressedRegisterCatalogue& regcat,
             << "'";
     BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
   }
-  */
 }
 
 /*******************************************************************************************************************/
