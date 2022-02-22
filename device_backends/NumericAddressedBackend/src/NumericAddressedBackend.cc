@@ -158,7 +158,7 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
     // obtain register info
-    auto registerInfo = _registerMap.getBackendRegister(registerPathName);
+    auto registerInfo = getRegisterInfo(registerPathName);
 
     // 1D or scalar register
     if(registerInfo.getNumberOfDimensions() <= 1) {
