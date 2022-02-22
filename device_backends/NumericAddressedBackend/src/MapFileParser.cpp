@@ -21,7 +21,7 @@ namespace ChimeraTK {
     if(!file) {
       throw ChimeraTK::logic_error("Cannot open file \"" + file_name + "\"");
     }
-    NumericAddressedRegisterCatalogue pmap;
+    RegisterInfoMap pmap;
     MetadataCatalogue metadataCatalogue;
     std::string name;        /**< Name of register */
     uint32_t nElements;      /**< Number of elements in register */

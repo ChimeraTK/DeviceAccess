@@ -4,7 +4,7 @@
 
 #include "Exception.h"
 #include "MapFileParser.h"
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 #include "predicates.h"
 
 namespace ChimeraTK {

@@ -7,7 +7,7 @@ using namespace boost::unit_test_framework;
  */
 
 #include "Device.h"
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_CASE(testLargeBarNumber) {

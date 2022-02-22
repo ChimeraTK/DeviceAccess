@@ -7,7 +7,7 @@
 #include "FixedPointConverter.h"
 #include "MapFileParser.h"
 #include "NumericAddressedBackend.h"
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 #include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {

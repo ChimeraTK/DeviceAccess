@@ -8,7 +8,7 @@ using namespace boost::unit_test_framework;
 
 #  include "Exception.h"
 #  include "MapFileParser.h"
-#  include "RegisterInfoMap.h"
+#  include "NumericAddressedRegisterCatalogue.h"
 #  include "helperFunctions.h"
 
 using namespace ChimeraTK;

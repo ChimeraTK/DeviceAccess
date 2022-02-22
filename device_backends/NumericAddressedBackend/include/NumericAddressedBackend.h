@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 #include "DeviceBackendImpl.h"
 #include "VersionNumber.h"
 

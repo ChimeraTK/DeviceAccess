@@ -2,7 +2,7 @@
 #define CHIMERA_TK_MAPFILEPARSER_H
 
 #include "Exception.h"
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 #include "MetadataCatalogue.h"
 
 #include <fstream>

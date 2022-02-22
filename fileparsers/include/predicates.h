@@ -4,7 +4,7 @@
 #pragma once
 
 #include "DeviceInfoMap.h"
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 
 namespace ChimeraTK {
 
