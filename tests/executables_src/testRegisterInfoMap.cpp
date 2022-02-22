@@ -1,13 +1,16 @@
-#if 0
+#define BOOST_TEST_DYN_LINK
 
-///@todo FIXME My dynamic init header is a hack. Change the test to use
-/// BOOST_AUTO_TEST_CASE!
-#  include "boost_dynamic_init_test.h"
+#define BOOST_TEST_MODULE RegisterInfoMapTest
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#  include "Exception.h"
-#  include "helperFunctions.h"
+#include "Exception.h"
+#include "helperFunctions.h"
 using namespace ChimeraTK;
+
+BOOST_AUTO_TEST_SUITE(RegisterInfoMapTestSuite)
+
+#if 0
 
 class MapFileTest {
  public:
@@ -808,3 +811,5 @@ void MapFileTest::testIsWritableIsReadable() {
 }
 
 #endif
+
+BOOST_AUTO_TEST_SUITE_END()

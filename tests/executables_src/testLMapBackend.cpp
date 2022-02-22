@@ -1,4 +1,3 @@
-#if 0
 
 #  define BOOST_TEST_DYN_LINK
 #  define BOOST_TEST_MODULE LMapBackendTest
@@ -15,6 +14,7 @@ using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(LMapBackendTestSuite)
+#if 0
 
 /********************************************************************************************************************/
 
@@ -1116,6 +1116,6 @@ BOOST_AUTO_TEST_CASE(testWithTransferGroup) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_SUITE_END()
-
 #endif
+
+BOOST_AUTO_TEST_SUITE_END()

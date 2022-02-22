@@ -7,16 +7,16 @@
 
 #pragma once
 
+#include <boost/shared_ptr.hpp>
+#include <map>
+#include <unordered_set>
+
+#include "RegisterCatalogue.h"
+#include "RegisterPath.h"
+
+#include "LNMAccessorPlugin.h"
+
 #if 0
-
-#  include <boost/shared_ptr.hpp>
-#  include <map>
-#  include <unordered_set>
-
-#  include "RegisterCatalogue.h"
-#  include "RegisterPath.h"
-
-#  include "LNMAccessorPlugin.h"
 
 // forward declaration
 namespace xmlpp {

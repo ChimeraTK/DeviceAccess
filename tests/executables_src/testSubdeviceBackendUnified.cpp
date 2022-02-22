@@ -1,4 +1,3 @@
-#if 0
 
 #  define BOOST_TEST_DYN_LINK
 #  define BOOST_TEST_MODULE SubdeviceBackendUnifiedTest
@@ -14,6 +13,7 @@ using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(SubdeviceBackendUnifiedTestSuite)
 
+#if 0
 /**********************************************************************************************************************/
 
 static std::string cdd("(ExceptionDummy:1?map=SubdeviceTarget.map)");
@@ -267,6 +267,6 @@ BOOST_AUTO_TEST_CASE(testUnified) {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_SUITE_END()
-
 #endif
+
+BOOST_AUTO_TEST_SUITE_END()
