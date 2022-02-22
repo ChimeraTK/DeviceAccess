@@ -48,7 +48,7 @@ namespace ChimeraTK {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     }
 
-    virtual ~DummyBackendBase() {}
+    ~DummyBackendBase() override {}
 
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
@@ -104,17 +104,21 @@ namespace ChimeraTK {
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-      // Suffix to mark writeable references to read-only registers
-      static const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
 
-      // Suffix to trigger interrupts for this register
+      // First check if the request is for one of the special DUMMY_INTEERRUPT_X_Y registers. if so, early return
+      // this special accessor.
+      // Pseudo-register to trigger interrupts for this register
       static const std::string DUMMY_INTERRUPT_REGISTER_NAME{"^/DUMMY_INTERRUPT_([0-9]+)_([0-9]+)$"};
 
       const std::string regPathNameStr{registerPathName};
-      const std::regex re2{DUMMY_INTERRUPT_REGISTER_NAME};
+      const std::regex dummyInterruptRegex{DUMMY_INTERRUPT_REGISTER_NAME};
       std::smatch match;
-      std::regex_search(regPathNameStr, match, re2);
+      std::regex_search(regPathNameStr, match, dummyInterruptRegex);
+
       if(not match.empty()) {
+        // FIXME: Ideally, this test and the need for passing in the lambda function should be done
+        // in the constructor of the accessor. But passing down the base-class of the accessor is very weird
+        // due to the sort-of CRTP pattern used in this base class.
         auto controller = std::stoi(match[1].str());
         auto interrupt = std::stoi(match[2].str());
         try {
@@ -127,7 +131,7 @@ namespace ChimeraTK {
               match[1].str() + ": " + regPathNameStr);
         }
 
-        // Delegate the parameters own to the accessor which will throw accordingly, to satisfy the specification
+        // Delegate the other parameters down to the accessor which will throw accordingly, to satisfy the specification
         auto d = new DummyInterruptTriggerAccessor<UserType>(
             shared_from_this(), [this, controller, interrupt]() { return triggerInterrupt(controller, interrupt); },
             registerPathName, numberOfWords, wordOffsetInRegister, flags);
@@ -135,6 +139,9 @@ namespace ChimeraTK {
         return boost::shared_ptr<NDRegisterAccessor<UserType>>(d);
       }
 
+      // Suffix to mark writeable references to read-only registers
+      // This is just a special case of a "normal" register, so can be handled together with getting the regular accessor.
+      static const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
       bool isDummyWriteableAccessor = false;
       RegisterPath actualRegisterPath{registerPathName};
 
