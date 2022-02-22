@@ -5,34 +5,124 @@
 
 namespace ChimeraTK {
 
+  template<typename BackendRegisterInfo>
+  class const_BackendRegisterCatalogueImplIterator;
+
+  template<typename BackendRegisterInfo>
+  class BackendRegisterCatalogueImplIterator;
+
   /*******************************************************************************************************************/
-  /* Iterator class definitions **************************************************************************************/
+  /* Register catalogue container class definitions ******************************************************************/
+  /*******************************************************************************************************************/
+
+  /** Pure virtual implementation base class for the register catalogue. */
+  class BackendRegisterCatalogueBase {
+   public:
+    BackendRegisterCatalogueBase() = default;
+
+    BackendRegisterCatalogueBase(BackendRegisterCatalogueBase&& other) = default;
+
+    BackendRegisterCatalogueBase& operator=(BackendRegisterCatalogueBase&& other) = default;
+
+    /** 
+     *  Get register information for a given full path name.
+     *  
+     *  Throws ChimeraTK::logic_error if register does not exist in the catalogue.
+     */
+    [[nodiscard]] virtual RegisterInfo getRegister(const RegisterPath& registerPathName) const = 0;
+
+    /** Check if register with the given path name exists. */
+    [[nodiscard]] virtual bool hasRegister(const RegisterPath& registerPathName) const = 0;
+
+    /** Get number of registers in the catalogue */
+    [[nodiscard]] virtual size_t getNumberOfRegisters() const = 0;
+
+    /** Return begin iterator for iterating through the registers in the catalogue */
+    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const = 0;
+
+    /** Return end iterator for iterating through the registers in the catalogue */
+    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const = 0;
+
+    /** Create deep copy of the catalogue */
+    [[nodiscard]] virtual std::unique_ptr<BackendRegisterCatalogueBase> clone() const = 0;
+  };
+
   /*******************************************************************************************************************/
 
   /**
-   * Virtual base class for the catalogue const iterator. The typical interator interface is realised in the
-   * RegisterCatalogue::const_iterator class, which holds a pointer to this class (pimpl pattern).
+   * Interface for backends to the register catalogue. In addition to the functionality offered by the RegisterCatalogue
+   * class, the content of the catalogue can be modified through this interface.
+   * 
+   * Backend implementations should instantiate this class with their backend-specific implementation of the
+   * RegisterInfoImpl class.
    */
-  class const_RegisterCatalogueImplIterator {
+  template<typename BackendRegisterInfo>
+  class BackendRegisterCatalogue : public BackendRegisterCatalogueBase {
    public:
-    virtual ~const_RegisterCatalogueImplIterator() = default;
+    [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const override;
 
-    virtual void increment() = 0;
+    [[nodiscard]] BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName);
 
-    virtual void decrement() = 0;
+    [[nodiscard]] const BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName) const;
 
-    [[nodiscard]] virtual const RegisterInfoImpl* get() = 0;
+    [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
 
-    [[nodiscard]] virtual bool isEqual(
-        const std::unique_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const = 0;
+    [[nodiscard]] size_t getNumberOfRegisters() const override;
+
+    [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const override;
+
+    [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const override;
+
+    [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
     /**
-     * Create copy of the iterator. This is required to implement the post-increment/decrement operators and
-     * proper copy/assignment sematics of the RegisterCatalogue::const_iterator.
+     * Add register information to the catalogue. The full path name of the register is taken from the RegisterInfo
+     * structure.
      */
-    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> clone() const = 0;
+    void addRegister(BackendRegisterInfo registerInfo);
+
+    /**
+     * Remove register as identified by the given name from the catalogue. Throws ChimeraTK::logic_error if register
+     * does not exist in the catalogue.
+     */
+    void removeRegister(const RegisterPath& name);
+
+    /** Return begin iterator for iterating through the registers in the catalogue */
+    [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() {
+      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+    }
+
+    /** Return end iterator for iterating through the registers in the catalogue */
+    [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() {
+      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+    }
+
+    /** Return const begin iterators for iterating through the registers in the catalogue */
+    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() const {
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+    }
+
+    /** Return const end iterators for iterating through the registers in the catalogue */
+    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() const {
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+    }
+
+    /** Return const begin iterators for iterating through the registers in the catalogue */
+    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cbegin() const {
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+    }
+
+    /** Return const end iterators for iterating through the registers in the catalogue */
+    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cend() const {
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+    }
+
+   protected:
+    std::map<RegisterPath, BackendRegisterInfo> catalogue;
   };
 
+  /*******************************************************************************************************************/
+  /* Iterator class definitions **************************************************************************************/
   /*******************************************************************************************************************/
 
   /**
@@ -63,7 +153,7 @@ namespace ChimeraTK {
 
     void decrement() override;
 
-    const RegisterInfoImpl* get() override;
+    const BackendRegisterInfoBase* get() override;
 
     [[nodiscard]] bool isEqual(
         const std::unique_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const override;
@@ -126,117 +216,107 @@ namespace ChimeraTK {
   };
 
   /*******************************************************************************************************************/
-  /* Register catalogue container class definitions ******************************************************************/
   /*******************************************************************************************************************/
 
-  /** Pure virtual implementation base class for the register catalogue. */
-  class RegisterCatalogueImpl {
-   public:
-    RegisterCatalogueImpl() = default;
-
-    RegisterCatalogueImpl(RegisterCatalogueImpl&& other) = default;
-
-    RegisterCatalogueImpl& operator=(RegisterCatalogueImpl&& other) = default;
-
-    /** 
-     *  Get register information for a given full path name.
-     *  
-     *  Throws ChimeraTK::logic_error if register does not exist in the catalogue.
-     */
-    [[nodiscard]] virtual RegisterInfo getRegister(const RegisterPath& registerPathName) const = 0;
-
-    /** Check if register with the given path name exists. */
-    [[nodiscard]] virtual bool hasRegister(const RegisterPath& registerPathName) const = 0;
-
-    /** Get number of registers in the catalogue */
-    [[nodiscard]] virtual size_t getNumberOfRegisters() const = 0;
-
-    /** Return begin iterator for iterating through the registers in the catalogue */
-    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const = 0;
-
-    /** Return end iterator for iterating through the registers in the catalogue */
-    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const = 0;
-
-    /** Create deep copy of the catalogue */
-    [[nodiscard]] virtual std::unique_ptr<RegisterCatalogueImpl> clone() const = 0;
-  };
-
+  /*******************************************************************************************************************/
+  /* Register catalogue container implementations ********************************************************************/
   /*******************************************************************************************************************/
 
-  /**
-   * Interface for backends to the register catalogue. In addition to the functionality offered by the RegisterCatalogue
-   * class, the content of the catalogue can be modified through this interface.
-   * 
-   * Backend implementations should instantiate this class with their backend-specific implementation of the
-   * RegisterInfoImpl class.
-   */
   template<typename BackendRegisterInfo>
-  class BackendRegisterCatalogue : public RegisterCatalogueImpl {
-   public:
-    [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const override;
-
-    [[nodiscard]] BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName);
-
-    [[nodiscard]] const BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName) const;
-
-    [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
-
-    [[nodiscard]] size_t getNumberOfRegisters() const override;
-
-    [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const override;
-
-    [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const override;
-
-    [[nodiscard]] std::unique_ptr<RegisterCatalogueImpl> clone() const override;
-
-    /**
-     * Add register information to the catalogue. The full path name of the register is taken from the RegisterInfo
-     * structure.
-     */
-    void addRegister(BackendRegisterInfo registerInfo);
-
-    /**
-     * Remove register as identified by the given name from the catalogue. Throws ChimeraTK::logic_error if register
-     * does not exist in the catalogue.
-     */
-    void removeRegister(const RegisterPath& name);
-
-    /** Return begin iterator for iterating through the registers in the catalogue */
-    [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+  RegisterInfo BackendRegisterCatalogue<BackendRegisterInfo>::getRegister(const RegisterPath& name) const {
+    try {
+      return RegisterInfo(std::make_unique<BackendRegisterInfo>(catalogue.at(name)));
     }
-
-    /** Return end iterator for iterating through the registers in the catalogue */
-    [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+    catch(std::out_of_range&) {
+      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
     }
+  }
 
-    /** Return const begin iterators for iterating through the registers in the catalogue */
-    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(const RegisterPath& name) {
+    try {
+      return catalogue.at(name);
     }
-
-    /** Return const end iterators for iterating through the registers in the catalogue */
-    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+    catch(std::out_of_range&) {
+      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
     }
+  }
 
-    /** Return const begin iterators for iterating through the registers in the catalogue */
-    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cbegin() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.begin()};
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  const BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
+      const RegisterPath& name) const {
+    try {
+      return catalogue.at(name);
     }
-
-    /** Return const end iterators for iterating through the registers in the catalogue */
-    [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cend() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{catalogue.end()};
+    catch(std::out_of_range&) {
+      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
     }
+  }
 
-   protected:
-    std::map<RegisterPath, BackendRegisterInfo> catalogue;
-  };
+  /********************************************************************************************************************/
 
-  /*******************************************************************************************************************/
-  /*******************************************************************************************************************/
+  template<typename BackendRegisterInfo>
+  bool BackendRegisterCatalogue<BackendRegisterInfo>::hasRegister(const RegisterPath& registerPathName) const {
+    return catalogue.find(registerPathName) != catalogue.end();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  size_t BackendRegisterCatalogue<BackendRegisterInfo>::getNumberOfRegisters() const {
+    return catalogue.size();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
+      BackendRegisterInfo>::getConstIteratorBegin() const {
+    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cbegin());
+    return it;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
+      BackendRegisterInfo>::getConstIteratorEnd() const {
+    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cend());
+    return it;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  std::unique_ptr<BackendRegisterCatalogueBase> BackendRegisterCatalogue<BackendRegisterInfo>::clone() const {
+    auto* c = new BackendRegisterCatalogue<BackendRegisterInfo>();
+    for(auto& p : catalogue) {
+      c->catalogue[p.first] = getBackendRegister(p.first);
+    }
+    return std::unique_ptr<BackendRegisterCatalogueBase>(c);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  void BackendRegisterCatalogue<BackendRegisterInfo>::addRegister(BackendRegisterInfo registerInfo) {
+    catalogue[registerInfo.getRegisterName()] = std::move(registerInfo);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  void BackendRegisterCatalogue<BackendRegisterInfo>::removeRegister(const RegisterPath& name) {
+    auto removed = catalogue.erase(name);
+    if(removed != 1) {
+      throw ChimeraTK::logic_error(
+          "BackendRegisterCatalogue::removeRegister(): Register '" + name + "' does not exist.");
+    }
+  }
 
   /*******************************************************************************************************************/
   /* Iterator implementations ****************************************************************************************/
@@ -264,7 +344,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  const RegisterInfoImpl* const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::get() {
+  const BackendRegisterInfoBase* const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::get() {
     return &(theIterator->second);
   }
 
@@ -436,106 +516,6 @@ namespace ChimeraTK {
   bool BackendRegisterCatalogueImplIterator<BackendRegisterInfo>::operator!=(
       const BackendRegisterCatalogueImplIterator& rightHandSide) const {
     return rightHandSide.theIterator != theIterator;
-  }
-
-  /*******************************************************************************************************************/
-  /* Register catalogue container implementations ********************************************************************/
-  /*******************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  RegisterInfo BackendRegisterCatalogue<BackendRegisterInfo>::getRegister(const RegisterPath& name) const {
-    try {
-      return RegisterInfo(std::make_unique<BackendRegisterInfo>(catalogue.at(name)));
-    }
-    catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(const RegisterPath& name) {
-    try {
-      return catalogue.at(name);
-    }
-    catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  const BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
-      const RegisterPath& name) const {
-    try {
-      return catalogue.at(name);
-    }
-    catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  bool BackendRegisterCatalogue<BackendRegisterInfo>::hasRegister(const RegisterPath& registerPathName) const {
-    return catalogue.find(registerPathName) != catalogue.end();
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  size_t BackendRegisterCatalogue<BackendRegisterInfo>::getNumberOfRegisters() const {
-    return catalogue.size();
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
-      BackendRegisterInfo>::getConstIteratorBegin() const {
-    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cbegin());
-    return it;
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
-      BackendRegisterInfo>::getConstIteratorEnd() const {
-    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(catalogue.cend());
-    return it;
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  std::unique_ptr<RegisterCatalogueImpl> BackendRegisterCatalogue<BackendRegisterInfo>::clone() const {
-    auto* c = new BackendRegisterCatalogue<BackendRegisterInfo>();
-    for(auto& p : catalogue) {
-      c->catalogue[p.first] = getBackendRegister(p.first);
-    }
-    return std::unique_ptr<RegisterCatalogueImpl>(c);
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  void BackendRegisterCatalogue<BackendRegisterInfo>::addRegister(BackendRegisterInfo registerInfo) {
-    catalogue[registerInfo.getRegisterName()] = std::move(registerInfo);
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  void BackendRegisterCatalogue<BackendRegisterInfo>::removeRegister(const RegisterPath& name) {
-    auto removed = catalogue.erase(name);
-    if(removed != 1) {
-      throw ChimeraTK::logic_error(
-          "BackendRegisterCatalogue::removeRegister(): Register '" + name + "' does not exist.");
-    }
   }
 
   /********************************************************************************************************************/

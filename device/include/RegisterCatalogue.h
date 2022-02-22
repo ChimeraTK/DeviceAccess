@@ -15,13 +15,15 @@
 
 namespace ChimeraTK {
 
-  class RegisterCatalogueImpl;
+  class BackendRegisterCatalogueBase;
   class const_RegisterCatalogueImplIterator;
+
+  /*******************************************************************************************************************/
 
   /** Catalogue of register information */
   class RegisterCatalogue {
    public:
-    explicit RegisterCatalogue(std::unique_ptr<RegisterCatalogueImpl>&& impl);
+    explicit RegisterCatalogue(std::unique_ptr<BackendRegisterCatalogueBase>&& impl);
 
     ~RegisterCatalogue();
 
@@ -53,8 +55,8 @@ namespace ChimeraTK {
       const_iterator operator++(int);
       const_iterator& operator--();
       const_iterator operator--(int);
-      const RegisterInfoImpl& operator*();
-      const RegisterInfoImpl* operator->();
+      const BackendRegisterInfoBase& operator*();
+      const BackendRegisterInfoBase* operator->();
       bool operator==(const const_iterator& rightHandSide) const;
       bool operator!=(const const_iterator& rightHandSide) const;
 
@@ -67,7 +69,35 @@ namespace ChimeraTK {
     [[nodiscard]] const_iterator end() const;
 
    protected:
-    std::unique_ptr<RegisterCatalogueImpl> _impl;
+    std::unique_ptr<BackendRegisterCatalogueBase> _impl;
   };
+
+  /*******************************************************************************************************************/
+
+  /**
+   * Virtual base class for the catalogue const iterator. The typical interator interface is realised in the
+   * RegisterCatalogue::const_iterator class, which holds a pointer to this class (pimpl pattern).
+   */
+  class const_RegisterCatalogueImplIterator {
+   public:
+    virtual ~const_RegisterCatalogueImplIterator() = default;
+
+    virtual void increment() = 0;
+
+    virtual void decrement() = 0;
+
+    [[nodiscard]] virtual const BackendRegisterInfoBase* get() = 0;
+
+    [[nodiscard]] virtual bool isEqual(
+        const std::unique_ptr<const_RegisterCatalogueImplIterator>& rightHandSide) const = 0;
+
+    /**
+     * Create copy of the iterator. This is required to implement the post-increment/decrement operators and
+     * proper copy/assignment sematics of the RegisterCatalogue::const_iterator.
+     */
+    [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> clone() const = 0;
+  };
+
+  /*******************************************************************************************************************/
 
 } /* namespace ChimeraTK */

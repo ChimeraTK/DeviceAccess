@@ -28,7 +28,7 @@ bool init_unit_test() {
   return true;
 }
 
-class myRegisterInfo : public RegisterInfoImpl {
+class myRegisterInfo : public BackendRegisterInfoBase {
  public:
   myRegisterInfo(std::string path, unsigned int nbOfElements, unsigned int nbOfChannels, unsigned int nbOfDimensions,
       DataDescriptor dataDescriptor, bool readable, bool writeable, AccessModeFlags supportedFlags)
@@ -53,9 +53,9 @@ class myRegisterInfo : public RegisterInfoImpl {
 
   AccessModeFlags getSupportedAccessModes() const override { return _supportedFlags; }
 
-  [[nodiscard]] std::unique_ptr<RegisterInfoImpl> clone() const override {
+  [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
     auto* info = new myRegisterInfo(*this);
-    return std::unique_ptr<RegisterInfoImpl>(info);
+    return std::unique_ptr<BackendRegisterInfoBase>(info);
   }
 
   bool operator==(const myRegisterInfo& other) const {

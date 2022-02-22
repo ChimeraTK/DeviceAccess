@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ForwardDeclarations.h"
-#include "RegisterInfoImpl.h"
+#include "BackendRegisterInfoBase.h"
 
 #include <iostream>
 #include <memory>
@@ -17,7 +17,7 @@ namespace ChimeraTK {
 
   class RegisterInfo {
    public:
-    explicit RegisterInfo(std::unique_ptr<RegisterInfoImpl>&& impl);
+    explicit RegisterInfo(std::unique_ptr<BackendRegisterInfoBase>&& impl);
 
     RegisterInfo(const RegisterInfo& other);
     RegisterInfo(RegisterInfo&& other) = default;
@@ -50,12 +50,12 @@ namespace ChimeraTK {
     /** Return all supported AccessModes for this register */
     [[nodiscard]] AccessModeFlags getSupportedAccessModes() const;
 
-    [[nodiscard]] RegisterInfoImpl& getImpl();
+    [[nodiscard]] BackendRegisterInfoBase& getImpl();
 
-    [[nodiscard]] const RegisterInfoImpl& getImpl() const;
+    [[nodiscard]] const BackendRegisterInfoBase& getImpl() const;
 
    protected:
-    std::unique_ptr<RegisterInfoImpl> _impl;
+    std::unique_ptr<BackendRegisterInfoBase> _impl;
   };
 
 } /* namespace ChimeraTK */

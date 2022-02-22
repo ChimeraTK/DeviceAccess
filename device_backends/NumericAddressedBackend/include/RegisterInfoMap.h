@@ -12,13 +12,13 @@
 #include <vector>
 
 #include "BackendRegisterCatalogue.h"
-#include "RegisterInfoImpl.h"
+#include "BackendRegisterInfoBase.h"
 
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  class NumericAddressedRegisterInfo : public RegisterInfoImpl {
+  class NumericAddressedRegisterInfo : public BackendRegisterInfoBase {
    public:
     enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE, INTERRUPT = 1 << 2 };
 
@@ -107,9 +107,9 @@ namespace ChimeraTK {
 
     DataDescriptor dataDescriptor;
 
-    [[nodiscard]] std::unique_ptr<RegisterInfoImpl> clone() const override {
+    [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
       auto* info = new NumericAddressedRegisterInfo(*this);
-      return std::unique_ptr<RegisterInfoImpl>(info);
+      return std::unique_ptr<BackendRegisterInfoBase>(info);
     }
   };
 

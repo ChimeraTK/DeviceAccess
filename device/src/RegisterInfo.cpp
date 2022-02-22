@@ -4,7 +4,7 @@ namespace ChimeraTK {
 
   /**********************************************************************************************************************/
 
-  RegisterInfo::RegisterInfo(std::unique_ptr<RegisterInfoImpl>&& impl) : _impl(std::move(impl)) {}
+  RegisterInfo::RegisterInfo(std::unique_ptr<BackendRegisterInfoBase>&& impl) : _impl(std::move(impl)) {}
 
   /**********************************************************************************************************************/
 
@@ -51,11 +51,11 @@ namespace ChimeraTK {
 
   /**********************************************************************************************************************/
 
-  RegisterInfoImpl& RegisterInfo::getImpl() { return *_impl; }
+  BackendRegisterInfoBase& RegisterInfo::getImpl() { return *_impl; }
 
   /**********************************************************************************************************************/
 
-  const RegisterInfoImpl& RegisterInfo::getImpl() const { return *_impl; }
+  const BackendRegisterInfoBase& RegisterInfo::getImpl() const { return *_impl; }
 
   /**********************************************************************************************************************/
 

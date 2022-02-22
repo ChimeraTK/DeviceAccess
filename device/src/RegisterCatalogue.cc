@@ -5,7 +5,7 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  RegisterCatalogue::RegisterCatalogue(std::unique_ptr<RegisterCatalogueImpl>&& impl) : _impl(std::move(impl)) {}
+  RegisterCatalogue::RegisterCatalogue(std::unique_ptr<BackendRegisterCatalogueBase>&& impl) : _impl(std::move(impl)) {}
 
   /*******************************************************************************************************************/
 
@@ -77,11 +77,11 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  const RegisterInfoImpl& RegisterCatalogue::const_iterator::operator*() { return *(_impl->get()); }
+  const BackendRegisterInfoBase& RegisterCatalogue::const_iterator::operator*() { return *(_impl->get()); }
 
   /*******************************************************************************************************************/
 
-  const RegisterInfoImpl* RegisterCatalogue::const_iterator::operator->() { return _impl->get(); }
+  const BackendRegisterInfoBase* RegisterCatalogue::const_iterator::operator->() { return _impl->get(); }
 
   /*******************************************************************************************************************/
 
