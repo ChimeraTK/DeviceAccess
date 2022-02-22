@@ -28,7 +28,8 @@ struct AreaType : Register {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  static constexpr auto capabilities =
+      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
 
   DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
 
