@@ -1,9 +1,5 @@
 #define BOOST_TEST_DYN_LINK
 
-#define BOOST_TEST_MODULE SequenceDeMultiplexerTest
-#include <boost/test/unit_test.hpp>
-using namespace boost::unit_test_framework;
-
 #include <iostream>
 #include <sstream>
 
@@ -14,9 +10,10 @@ using namespace boost::unit_test_framework;
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
 
-namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
+#define BOOST_TEST_MODULE MultiplexedDataAccessorTest
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
+
 using namespace ChimeraTK;
 
 static const std::string DMAP_FILE_NAME("dummies.dmap");
@@ -30,7 +27,7 @@ static const std::string INVALID_MODULE_NAME("INVALID");
 static const RegisterPath TEST_MODULE_PATH(TEST_MODULE_NAME);
 static const RegisterPath INVALID_MODULE_PATH(INVALID_MODULE_NAME);
 
-BOOST_AUTO_TEST_SUITE(SequenceDeMultiplexerTestSuite)
+BOOST_AUTO_TEST_SUITE(MultiplexedDataAccessorTestSuite)
 
 BOOST_AUTO_TEST_CASE(testConstructor) {
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
