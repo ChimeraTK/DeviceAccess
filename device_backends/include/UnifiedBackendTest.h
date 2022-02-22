@@ -3335,12 +3335,12 @@ namespace ChimeraTK {
       auto registerInfo = d.getRegisterCatalogue().getRegister(registerName);
 
       if(this->isRaw(x)) {
-        BOOST_CHECK(registerInfo->getSupportedAccessModes().has(AccessMode::raw));
-        BOOST_TEST(registerInfo->getDataDescriptor().rawDataType() != DataType::none);
+        BOOST_CHECK(registerInfo.getSupportedAccessModes().has(AccessMode::raw));
+        BOOST_TEST(registerInfo.getDataDescriptor().rawDataType() != DataType::none);
       }
       else {
-        BOOST_CHECK(not registerInfo->getSupportedAccessModes().has(AccessMode::raw));
-        BOOST_TEST(registerInfo->getDataDescriptor().rawDataType() == DataType::none);
+        BOOST_CHECK(not registerInfo.getSupportedAccessModes().has(AccessMode::raw));
+        BOOST_TEST(registerInfo.getDataDescriptor().rawDataType() == DataType::none);
       }
     });
   }
