@@ -145,6 +145,7 @@ BOOST_AUTO_TEST_CASE(testDeviceCreation) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath(initialDmapFilePath);
 }
 
+#if 0
 BOOST_AUTO_TEST_CASE(testDeviceInfo) {
   ChimeraTK::Device device;
   device.open("DUMMYD3");
@@ -152,6 +153,7 @@ BOOST_AUTO_TEST_CASE(testDeviceInfo) {
   std::cout << deviceInfo << std::endl;
   BOOST_CHECK(deviceInfo.substr(0, 31) == "DummyBackend with mapping file ");
 }
+#endif
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
