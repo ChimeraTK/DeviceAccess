@@ -155,10 +155,11 @@ namespace ChimeraTK {
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
 
+   public:
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
-    static std::map<std::string, boost::shared_ptr<DeviceBackend>>& getInstanceMap() {
-      static std::map<std::string, boost::shared_ptr<DeviceBackend>> instanceMap;
+    static std::map<std::string, boost::weak_ptr<DeviceBackend>>& getInstanceMap() {
+      static std::map<std::string, boost::weak_ptr<DeviceBackend>> instanceMap;
       return instanceMap;
     }
     // DummyBackendBase needs access to getInstanceMap()
