@@ -1,7 +1,5 @@
 #pragma once
 
-#if 0
-
 #  include "VirtualFunctionTemplate.h"
 #  include "LogicalNameMappingBackend.h"
 #  include "ReadAnyGroup.h"
@@ -294,5 +292,3 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
 }} // namespace ChimeraTK::LNMBackend
-
-#endif

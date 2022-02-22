@@ -1,5 +1,3 @@
-#if 0
-
 #  include <boost/make_shared.hpp>
 
 #  include "LNMBackendRegisterInfo.h"
@@ -73,5 +71,3 @@ namespace ChimeraTK { namespace LNMBackend {
     return ForceReadOnlyPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
 }} // namespace ChimeraTK::LNMBackend
-
-#endif

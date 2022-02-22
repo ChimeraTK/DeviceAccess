@@ -1,5 +1,3 @@
-#if 0
-
 #  include <boost/make_shared.hpp>
 
 #  include <exprtk.hpp>
@@ -57,7 +55,7 @@ namespace ChimeraTK { namespace LNMBackend {
     auto info = _info.lock();
 
     // Change data type to non-integral
-    info->_dataDescriptor = RegisterInfoImpl::DataDescriptor(DataType("float64"));
+    info->_dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
     info->supportedFlags.remove(AccessMode::raw);
 
     // Fix to unidirectional operation
@@ -85,7 +83,7 @@ namespace ChimeraTK { namespace LNMBackend {
       // If write direction, check for push-type parameters if enabled
       if(_isWrite && _enablePushParameters) {
         for(auto& parpair : _parameters) {
-          auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second)->getSupportedAccessModes();
+          auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
           if(paramFlags.has(AccessMode::wait_for_new_data)) {
             _hasPushParameter = true;
             break;
@@ -98,7 +96,7 @@ namespace ChimeraTK { namespace LNMBackend {
           for(auto& parpair : _parameters) {
             // push-type parameters need to be obtained with wait_for_new_data, others without
             AccessModeFlags flags{};
-            auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second)->getSupportedAccessModes();
+            auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
             if(paramFlags.has(AccessMode::wait_for_new_data)) {
               flags = {AccessMode::wait_for_new_data};
             }
@@ -472,5 +470,3 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
 }} // namespace ChimeraTK::LNMBackend
-
-#endif

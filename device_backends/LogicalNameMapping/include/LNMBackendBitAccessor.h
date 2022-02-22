@@ -7,7 +7,6 @@
 
 #pragma once
 
-#if 0
 #  include <algorithm>
 
 #  include <ChimeraTK/cppext/finally.hpp>
@@ -222,4 +221,3 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif

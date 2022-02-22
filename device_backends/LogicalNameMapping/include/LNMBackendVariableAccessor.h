@@ -8,8 +8,6 @@
 
 #pragma once
 
-#if 0
-
 #  include <algorithm>
 
 #  include "BufferingRegisterAccessor.h"
@@ -304,5 +302,3 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
-
-#endif

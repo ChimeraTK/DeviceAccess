@@ -1,5 +1,3 @@
-#if 0
-
 #  include <boost/make_shared.hpp>
 
 #  include "LNMBackendRegisterInfo.h"
@@ -36,5 +34,3 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
 }} // namespace ChimeraTK::LNMBackend
-
-#endif

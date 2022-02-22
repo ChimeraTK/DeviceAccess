@@ -5,8 +5,6 @@
  *      Author: Martin Hierholzer
  */
 
-#if 0
-
 #  include <libxml++/libxml++.h>
 #  include <stdexcept>
 
@@ -322,7 +320,7 @@ namespace ChimeraTK {
         info->nChannels = 1;
         info->writeable = false;
         info->readable = true;
-        info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(info->valueType);
+        info->_dataDescriptor = ChimeraTK::DataDescriptor(info->valueType);
       }
       else if(type == "variable") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
@@ -339,7 +337,7 @@ namespace ChimeraTK {
         info->nChannels = 1;
         info->writeable = true;
         info->readable = true;
-        info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(info->valueType);
+        info->_dataDescriptor = ChimeraTK::DataDescriptor(info->valueType);
         info->supportedFlags = {AccessMode::wait_for_new_data};
       }
       else {
@@ -419,5 +417,3 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
-
-#endif

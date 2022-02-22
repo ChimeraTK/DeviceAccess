@@ -11,12 +11,11 @@
 #include <map>
 #include <unordered_set>
 
-#include "RegisterCatalogue.h"
+#include "BackendRegisterCatalogue.h"
 #include "RegisterPath.h"
 
 #include "LNMAccessorPlugin.h"
 
-#if 0
 
 // forward declaration
 namespace xmlpp {
@@ -40,7 +39,7 @@ namespace ChimeraTK {
     LogicalNameMapParser() {}
 
     /** Obtain the parsed register catalogue */
-    const RegisterCatalogue& getCatalogue() const { return _catalogue; }
+    RegisterCatalogue getCatalogue() {return RegisterCatalogue(_catalogue.clone()); }
 
     /** Obtain list of all target devices referenced in the map */
     std::unordered_set<std::string> getTargetDevices() const;
@@ -70,7 +69,7 @@ namespace ChimeraTK {
     RegisterPath currentModule;
 
     /** actual register info map (register name to target information) */
-    RegisterCatalogue _catalogue;
+    BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
 
     /** parameter map */
     std::map<std::string, std::string> _parameters;
@@ -81,5 +80,3 @@ namespace ChimeraTK {
       const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, std::string defaultValue);
 
 } // namespace ChimeraTK
-
-#endif

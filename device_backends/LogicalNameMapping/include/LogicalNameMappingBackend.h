@@ -7,13 +7,12 @@
 
 #pragma once
 
-#if 0
+#include <mutex>
+#include <utility>
 
-#  include <mutex>
-#  include <utility>
-
-#  include "DeviceBackendImpl.h"
-#  include "LNMBackendRegisterInfo.h"
+#include "DeviceBackendImpl.h"
+#include "LNMBackendRegisterInfo.h"
+#include "BackendRegisterCatalogue.h"
 
 namespace ChimeraTK {
 
@@ -37,7 +36,7 @@ namespace ChimeraTK {
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
-    const RegisterCatalogue& getRegisterCatalogue() const override;
+    RegisterCatalogue getRegisterCatalogue() const override;
 
     void setException() override;
 
@@ -68,7 +67,7 @@ namespace ChimeraTK {
 
     /** We need to make the catalogue mutable, since we fill it within
      * getRegisterCatalogue() */
-    mutable RegisterCatalogue _catalogue_mutable;
+    mutable BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue_mutable;
 
     /** Flag whether the catalogue has already been filled with extra information
      * from the target backends */
@@ -112,5 +111,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif

@@ -5,8 +5,6 @@
  *      Author: Martin Hierholzer
  */
 
-#if 0
-
 #  include "LogicalNameMappingBackend.h"
 #  include "LNMBackendBitAccessor.h"
 #  include "LNMBackendChannelAccessor.h"
@@ -193,8 +191,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  const RegisterCatalogue& LogicalNameMappingBackend::getRegisterCatalogue() const {
-    if(catalogueCompleted) return _catalogue_mutable;
+  RegisterCatalogue LogicalNameMappingBackend::getRegisterCatalogue() const {
+    if(catalogueCompleted) return RegisterCatalogue(_catalogue_mutable.clone());
     parse();
 
     // fill in information to the catalogue from the target devices
@@ -209,7 +207,7 @@ namespace ChimeraTK {
       std::string devName = info_cast.deviceName;
       boost::shared_ptr<RegisterInfoImpl> target_info;
       if(devName != "this") {
-        auto& cat = _devices.at(devName)->getRegisterCatalogue();
+        auto cat = _devices.at(devName)->getRegisterCatalogue();
         if(!cat.hasRegister(info_cast.registerName)) continue;
         target_info = cat.getRegister(info_cast.registerName);
       }
@@ -223,7 +221,7 @@ namespace ChimeraTK {
       }
       else {
         info_cast._dataDescriptor =
-            RegisterInfoImpl::DataDescriptor(RegisterInfoImpl::FundamentalType::boolean, true, false, 1, 0);
+            DataDescriptor(DataDescriptor::FundamentalType::boolean, true, false, 1, 0);
         info_cast.supportedFlags.remove(AccessMode::raw);
       }
       info_cast.readable = target_info->isReadable();
@@ -249,7 +247,7 @@ namespace ChimeraTK {
     }
 
     catalogueCompleted = true;
-    return _catalogue_mutable;
+    return RegisterCatalogue(_catalogue_mutable.clone());
   }
 
   /********************************************************************************************************************/
@@ -357,4 +355,3 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif

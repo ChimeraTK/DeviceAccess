@@ -7,8 +7,6 @@
 
 #pragma once
 
-#if 0
-
 #  include <mutex>
 
 #  include <boost/shared_ptr.hpp>
@@ -31,6 +29,11 @@ namespace ChimeraTK {
 
     /** constuctor: initialise values */
     LNMBackendRegisterInfo() : targetType(TargetType::INVALID), supportedFlags({}) {}
+
+    LNMBackendRegisterInfo(const LNMBackendRegisterInfo&) {};
+
+    LNMBackendRegisterInfo& operator=(const LNMBackendRegisterInfo& other) {};
+
 
     RegisterPath getRegisterName() const override { return name; }
 
@@ -117,8 +120,11 @@ namespace ChimeraTK {
     std::vector<boost::shared_ptr<LNMBackend::AccessorPluginBase>> plugins;
 
     DataDescriptor _dataDescriptor;
+
+    [[nodiscard]] std::unique_ptr<RegisterInfoImpl> clone() const override {
+      auto* info = new LNMBackendRegisterInfo(*this);
+      return std::unique_ptr<RegisterInfoImpl>(info);
+    }
   };
 
 } /* namespace ChimeraTK */
-
-#endif

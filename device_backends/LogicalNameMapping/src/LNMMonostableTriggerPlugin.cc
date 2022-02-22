@@ -1,5 +1,3 @@
-#if 0
-
 #  include <boost/make_shared.hpp>
 
 #  include <thread>
@@ -30,7 +28,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     // Change register info to write-only and data type nodata
     info->readable = false;
-    info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(RegisterInfoImpl::FundamentalType::nodata);
+    info->_dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
   }
 
   /********************************************************************************************************************/
@@ -39,7 +37,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // Change register info to write-only and data type nodata
     auto info = _info.lock();
     info->readable = false;
-    info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(RegisterInfoImpl::FundamentalType::nodata);
+    info->_dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
     info->supportedFlags.remove(AccessMode::raw);
   }
 
@@ -143,5 +141,3 @@ namespace ChimeraTK { namespace LNMBackend {
         target, _milliseconds, _active, _inactive);
   }
 }} // namespace ChimeraTK::LNMBackend
-
-#endif

@@ -7,14 +7,12 @@
 
 #pragma once
 
-#if 0
+#include <algorithm>
 
-#  include <algorithm>
-
-#  include "Device.h"
-#  include "LogicalNameMappingBackend.h"
-#  include "NDRegisterAccessor.h"
-#  include "TwoDRegisterAccessor.h"
+#include "Device.h"
+#include "LogicalNameMappingBackend.h"
+#include "NDRegisterAccessor.h"
+#include "TwoDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -150,5 +148,3 @@ namespace ChimeraTK {
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LNMBackendChannelAccessor);
 
 } // namespace ChimeraTK
-
-#endif

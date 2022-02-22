@@ -1,5 +1,3 @@
-#if 0
-
 #  include <boost/make_shared.hpp>
 
 #  include "LNMBackendRegisterInfo.h"
@@ -25,7 +23,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   void MultiplierPlugin::updateRegisterInfo() {
     auto info = _info.lock();
-    info->_dataDescriptor = ChimeraTK::RegisterInfoImpl::DataDescriptor(DataType("float64"));
+    info->_dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
     info->supportedFlags.remove(AccessMode::raw);
   }
 
@@ -100,5 +98,3 @@ namespace ChimeraTK { namespace LNMBackend {
     return MultiplierPlugin_Helper<UserType, TargetType>::decorateAccessor(target, _factor);
   }
 }} // namespace ChimeraTK::LNMBackend
-
-#endif
