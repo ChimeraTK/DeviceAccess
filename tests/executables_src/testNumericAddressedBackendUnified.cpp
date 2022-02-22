@@ -46,7 +46,7 @@ struct Interrupt_dummy {
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
-  size_t nRuntimeErrorCases() { return 0; }
+  size_t nRuntimeErrorCases() { return 1; }
   typedef int32_t minimumUserType;
   typedef minimumUserType rawUserType;
 
@@ -59,12 +59,12 @@ struct Interrupt_dummy {
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
-    return {{0}};
+    return {{1}};
   }
 
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue() {
-    return {{0}};
+    return {{1}};
   }
 
   void setRemoteValue() { }

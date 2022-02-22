@@ -127,8 +127,10 @@ namespace ChimeraTK {
               match[1].str() + ": " + regPathNameStr);
         }
 
-        auto d = new DummyInterruptTriggerAccessor<UserType>(shared_from_this(),
-            [this, controller, interrupt]() { return triggerInterrupt(controller, interrupt); }, registerPathName);
+        // Delegate the parameters own to the accessor which will throw accordingly, to satisfy the specification
+        auto d = new DummyInterruptTriggerAccessor<UserType>(
+            shared_from_this(), [this, controller, interrupt]() { return triggerInterrupt(controller, interrupt); },
+            registerPathName, numberOfWords, wordOffsetInRegister, flags);
 
         return boost::shared_ptr<NDRegisterAccessor<UserType>>(d);
       }

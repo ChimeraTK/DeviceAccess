@@ -3324,6 +3324,10 @@ namespace ChimeraTK {
         return;
       }
 
+      if(std::string(registerName).find("DUMMY_INTERRUPT_") != std::string::npos) {
+        return;
+      }
+
       auto registerInfo = d.getRegisterCatalogue().getRegister(registerName);
 
       if(this->isRaw(x)) {
