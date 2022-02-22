@@ -27,7 +27,7 @@ namespace ChimeraTK {
     LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    ~LNMBackendVariableAccessor();
+    ~LNMBackendVariableAccessor() override;
 
     void doReadTransferSynchronously() override;
 
@@ -126,7 +126,7 @@ namespace ChimeraTK {
 
     // if wait_for_new_data is specified, make subscription
     if(flags.has(AccessMode::wait_for_new_data)) {
-      // alocate _queueValue buffer
+      // allocate _queueValue buffer
       this->_queueValue.value.resize(numberOfWords);
 
       std::lock_guard<std::mutex> lock(_info->valueTable_mutex);

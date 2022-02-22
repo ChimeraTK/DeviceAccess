@@ -25,7 +25,7 @@
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>
     ShmemAllocator;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
+typedef boost::interprocess::vector<pid_t, ShmemAllocator> PidSet;
 
 namespace ChimeraTK {
 

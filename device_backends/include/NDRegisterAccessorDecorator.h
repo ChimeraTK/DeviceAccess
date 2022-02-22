@@ -25,7 +25,7 @@ namespace ChimeraTK {
      * unequal to UserType. Default implementations for these functions are provided
      * only in case TargetUserType is equal to UserType. The functions must be
      * implemented by the actual decorator, if the types are unequal. Otherwise they
-     * still can be implemented, but the default provides a useful behavior for many
+     * still can be implemented, but the default provides a useful behaviour for many
      *  cases (buffers are simply swapped). */
     template<typename UserType, typename TargetUserType = UserType>
     class NDRegisterAccessorDecoratorImpl : public NDRegisterAccessor<UserType> {
@@ -56,7 +56,7 @@ namespace ChimeraTK {
         _target->setActiveException(this->_activeException);
         _target->postRead(type, updateDataBuffer);
 
-        // Decorators have to copy meta data even if updataDataBuffer is false
+        // Decorators have to copy meta data even if updateDataBuffer is false
         this->_dataValidity = _target->dataValidity();
         this->_versionNumber = _target->getVersionNumber();
 
