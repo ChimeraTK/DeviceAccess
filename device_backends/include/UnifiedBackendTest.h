@@ -3319,7 +3319,13 @@ namespace ChimeraTK {
             for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
               for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
                 auto readCookedVal = reg.template getAsCooked<UserType>(channel, element);
-                BOOST_TEST(compareHelper(readCookedVal, expectedCookedValue[channel][element]));
+                if(!compareHelper(expectedCookedValue[channel][element], readCookedVal)) {
+                  BOOST_ERROR("Comparing expected cooked value and getAsCooked() failed. First error in [" +
+                      std::to_string(channel) + "][" + std::to_string(element) +
+                      "] : " + std::to_string(expectedCookedValue[channel][element]) +
+                      " != " + std::to_string(readCookedVal) + " (raw " + std::to_string(reg[channel][element]) + ")");
+                  break;
+                }
                 //BOOST_TEST(RawType(reg[channel][element]) == expectedRawValue[channel][element]);
               }
             }
