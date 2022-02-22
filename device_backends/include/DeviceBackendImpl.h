@@ -3,8 +3,8 @@
 #include "DeviceBackend.h"
 #include "Exception.h"
 
-#include <list>
 #include <atomic>
+#include <list>
 
 namespace ChimeraTK {
 
