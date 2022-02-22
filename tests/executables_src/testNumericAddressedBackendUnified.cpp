@@ -38,44 +38,6 @@ static auto exceptionDummyMuxed =
 
 /**********************************************************************************************************************/
 
-struct Interrupt_dummy {
-  std::string path() { return "/DUMMY_INTERRUPT_5_6"; }
-  bool isWriteable() { return true; }
-  bool isReadable() { return true; }
-  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  size_t nChannels() { return 1; }
-  size_t nElementsPerChannel() { return 1; }
-  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
-  size_t nRuntimeErrorCases() { return 1; }
-  typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-
-  static constexpr auto capabilities = TestCapabilities<>()
-                                           .disableForceDataLossWrite()
-                                           .disableAsyncReadInconsistency()
-                                           .disableSwitchReadOnly()
-                                           .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
-
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    return {{1}};
-  }
-
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    return {{1}};
-  }
-
-  void setRemoteValue() { }
-
-  void setForceRuntimeError(bool enable, size_t) {
-    exceptionDummy->throwExceptionRead = enable;
-    exceptionDummy->throwExceptionWrite = enable;
-    exceptionDummy->throwExceptionOpen = enable;
-  }
-};
-
 struct Integers_signed32 {
   std::string path() { return "/Integers/signed32"; }
   bool isWriteable() { return true; }
@@ -540,7 +502,6 @@ struct MuxedNodmaAsync {
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
-      .addRegister<Interrupt_dummy>()
       .addRegister<Integers_signed32>()
       .addRegister<Integers_signed32_async>()
       .addRegister<Integers_signed32_async_rw>()
