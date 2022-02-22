@@ -154,7 +154,7 @@ namespace ChimeraTK {
     std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX + _registerName;
 
     // Obtain information about the area
-    _areaInfo = _ioDevice->getRegisterInfo(registerPathName);
+    _areaInfo = _ioDevice->getRegisterInfo(_moduleName + "." + areaName);
 
     // Cache writeability
     _isNotWriteable = !_areaInfo.isWriteable();
