@@ -48,7 +48,13 @@ namespace ChimeraTK {
     template<typename UserType>
     class NDRegisterAccessorDecoratorImpl<UserType, UserType> : public NDRegisterAccessor<UserType> {
      public:
-      using NDRegisterAccessor<UserType>::NDRegisterAccessor;
+      NDRegisterAccessorDecoratorImpl(std::string const& name, AccessModeFlags accessModeFlags,
+          std::string const& unit = std::string(TransferElement::unitNotSet),
+          std::string const& description = std::string())
+      : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description) {
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
+      }
 
       void doPreRead(TransferType type) override { _target->preRead(type); }
 
@@ -79,11 +85,35 @@ namespace ChimeraTK {
         _target->postWrite(type, versionNumber);
       }
 
+      template<typename COOKED_TYPE>
+      COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample) {
+        // Swap the user buffer back into the target, so we can call the target's getAsCooked()
+        // Channels might cached. Just swap the channel content.
+        this->buffer_2D[channel].swap(_target->accessChannel(channel));
+        auto retVal = _target->template getAsCooked<COOKED_TYPE>(channel, sample);
+        // Swap the buffer back
+        this->buffer_2D[channel].swap(_target->accessChannel(channel));
+
+        return retVal;
+      }
+
+      template<typename COOKED_TYPE>
+      void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value) {
+        // Swap the user buffer back into the target, so the target's setAsCooked() puts it in,
+        // then swap the buffer back out of the target.
+        // Channels might cached. Just swap the channel content.
+        this->buffer_2D[channel].swap(_target->accessChannel(channel));
+        _target->template setAsCooked<COOKED_TYPE>(channel, sample, value);
+        this->buffer_2D[channel].swap(_target->accessChannel(channel));
+      }
+
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
       /// The accessor to be decorated
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _target;
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(NDRegisterAccessorDecorator_impl<UserType>, getAsCooked_impl, 2);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(NDRegisterAccessorDecorator_impl<UserType>, setAsCooked_impl, 3);
     };
 
   } // namespace detail
