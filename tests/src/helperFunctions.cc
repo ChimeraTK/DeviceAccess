@@ -30,10 +30,8 @@ bool compareDeviceInfos(
   return result;
 }
 
-#if 0
-
-bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& element1,
-    const ChimeraTK::RegisterInfoMap::RegisterInfo& element2) {
+bool compareRegisterInfoents(
+    const ChimeraTK::NumericAddressedRegisterInfo& element1, const ChimeraTK::NumericAddressedRegisterInfo& element2) {
   bool result = (element1.address == element2.address) && (element1.bar == element2.bar) &&
       (element1.nElements == element2.nElements) && (element1.nFractionalBits == element2.nFractionalBits) &&
       (element1.name == element2.name) && (element1.signedFlag == element2.signedFlag) &&
@@ -45,11 +43,9 @@ bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& ele
       (element1.interruptNumber == element2.interruptNumber);
   if(!result) {
     std::cout << "Error in comparison. Register 1: " << std::endl
-              << element1 << std::endl
+              << element1.name << std::endl
               << "Register 2:" << std::endl
-              << element2 << std::endl;
+              << element2.name << std::endl;
   }
   return result;
 }
-
-#endif
