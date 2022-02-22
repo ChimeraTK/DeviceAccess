@@ -17,15 +17,17 @@ namespace ChimeraTK {
    public:
     bool isOpen() override { return _opened; }
 
-    bool isConnected() override { return _connected; }
+    bool isConnected() final {
+      std::cerr << "Removed function DeviceBackendImpl::isConnected() called." << std::endl;
+      std::cerr << "Do not use. This function has no valid meaning." << std::endl;
+      std::terminate();
+    }
 
    protected:
 
     /** flag if device is opened */
     std::atomic<bool> _opened{false};
 
-    /** flag if device is connected. */
-    bool _connected{false};
   };
 
 } // namespace ChimeraTK

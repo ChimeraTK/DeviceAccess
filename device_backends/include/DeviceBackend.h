@@ -32,9 +32,8 @@ namespace ChimeraTK {
     /** Return whether a device has been opened or not. */
     virtual bool isOpen() = 0;
 
-    /** Return whether a device has been connected or not. A device is considered
-     * connected when it is created. */
-    virtual bool isConnected() = 0;
+    /** Deprecated. Do not use. */
+    [[deprecated]] virtual bool isConnected() = 0;
 
     /** Return wether a device is working as intended, usually this means it is opened
      *  and does not have any errors. The default implementeation in DeviceBackendImpl reports
