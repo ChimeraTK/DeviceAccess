@@ -1,0 +1,2 @@
+SHDMEMDEV      (sharedMemoryDummy:1?map=sharedDummyUnified.map)
+SHDMEMDEV2     (sharedMemoryDummy:2?map=sharedDummyUnified.map)
