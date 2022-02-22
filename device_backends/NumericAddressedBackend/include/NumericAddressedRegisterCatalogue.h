@@ -119,6 +119,13 @@ namespace ChimeraTK {
    public:
     [[nodiscard]] const std::map<unsigned int, std::set<unsigned int>>& getListOfInterrupts() const;
 
+    void addRegister(NumericAddressedRegisterInfo registerInfo) {
+      if(registerInfo.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) {
+        _mapOfInterrupts[registerInfo.interruptCtrlNumber].insert(registerInfo.interruptNumber);
+      }
+      BackendRegisterCatalogue<NumericAddressedRegisterInfo>::addRegister(registerInfo);
+    }
+
    protected:
     /** 
      *  Map of interrupts. Key is an interrupt controller number and value is a set of interrupts numbers assigned to
