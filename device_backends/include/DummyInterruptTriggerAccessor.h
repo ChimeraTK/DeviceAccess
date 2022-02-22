@@ -6,7 +6,14 @@
 #include "NumericAddressedBackend.h"
 
 namespace ChimeraTK {
-  template <typename UserType>
+  /**
+   * @brief The DummyInterruptTriggerAccessor class
+   *
+   * Pseudo-accessor for the hidden DUMMY_INTERRUPT_X_Y register that can be used to trigger
+   * the interrupt Y on interrupt controller X. This will do nothing but call DummyBackendBase::triggerInterrupt()
+   * when written to. For backwards compatibility it can also be read from, but there is only a constant value available.
+   */
+  template<typename UserType>
   class DummyInterruptTriggerAccessor : public NDRegisterAccessor<UserType> {
    public:
     DummyInterruptTriggerAccessor(boost::shared_ptr<DeviceBackend> backend,
@@ -34,15 +41,14 @@ namespace ChimeraTK {
       return false;
     }
 
-    void doReadTransferSynchronously() override {
-    }
+    void doReadTransferSynchronously() override {}
 
     void doPreRead(TransferType) override {
       if(not _backend->isOpen()) {
         throw ChimeraTK::logic_error("Device is not opened.");
       }
 
-      if (not _backend->isFunctional()) {
+      if(not _backend->isFunctional()) {
         throw ChimeraTK::runtime_error("Exception reported by another accessor.");
       }
     }
@@ -59,7 +65,7 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Device is not opened.");
       }
 
-      if (not _backend->isFunctional()) {
+      if(not _backend->isFunctional()) {
         throw ChimeraTK::runtime_error("Exception reported by another accessor.");
       }
     }
@@ -70,7 +76,7 @@ namespace ChimeraTK {
 
    protected:
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
-      return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+      return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
     }
 
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
@@ -83,4 +89,3 @@ namespace ChimeraTK {
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(DummyInterruptTriggerAccessor);
 
 } // namespace ChimeraTK
-
