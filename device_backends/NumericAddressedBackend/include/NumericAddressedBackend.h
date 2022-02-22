@@ -38,14 +38,16 @@ namespace ChimeraTK {
      * been updated to the new 64 bit address interface will implement this. Please implement the read() function
      * with the 64 bit address signature instead!
      */
-    virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
+    virtual void read([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address, [[maybe_unused]] int32_t* data,
+        [[maybe_unused]] size_t sizeInBytes);
 
     /**
      * Deprecated write function using 32bit address for backwards compatibility. Old backends which have not yet
      * been updated to the new 64 bit address interface will implement this. Please implement the write() function
      * with the 64 bit address signature instead!
      */
-    virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
+    virtual void write([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
+        [[maybe_unused]] int32_t const* data, [[maybe_unused]] size_t sizeInBytes);
 
     /**
      * Function to be implemented by the backends. Returns whether the given bar number is valid.
