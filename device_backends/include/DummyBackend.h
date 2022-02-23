@@ -119,8 +119,8 @@ namespace ChimeraTK {
 
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
-    static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>>& getInstanceMap() {
-      static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> instanceMap;
+    static std::map<std::string, boost::weak_ptr<ChimeraTK::DeviceBackend>>& getInstanceMap() {
+      static std::map<std::string, boost::weak_ptr<ChimeraTK::DeviceBackend>> instanceMap;
       return instanceMap;
     }
     // DummyBackendBase needs access to getInstanceMap()
