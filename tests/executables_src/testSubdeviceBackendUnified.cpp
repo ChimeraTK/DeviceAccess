@@ -29,7 +29,7 @@ struct AreaType : Register {
   size_t nRuntimeErrorCases() { return 1; }
 
   static constexpr auto capabilities =
-      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
+      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().disableTestRawTransfer();
 
   DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
 

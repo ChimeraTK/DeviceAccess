@@ -3296,25 +3296,27 @@ namespace ChimeraTK {
     d.open();
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(not this->isRaw(x)) return;
+      // the test itself requires an extended interface, so the test can be disabled
+      if constexpr(x.capabilities.testRawTransfer == TestCapability::enabled) {
+        auto registerName = x.path();
+        std::cout << "... registerName = " << registerName << std::endl;
 
-      auto registerName = x.path();
-      std::cout << "... registerName = " << registerName << std::endl;
+        BOOST_REQUIRE_MESSAGE(this->isRaw(x),
+            "Test configuration error: testRawTransfer is enabled for register without AccessMode::raw!");
 
-      typedef typename decltype(x)::minimumUserType UserType;
-      typedef typename decltype(x)::rawUserType RawType;
-      // Use double as example for a not working user type
-      BOOST_CHECK_THROW(
-          d.getTwoDRegisterAccessor<double>(registerName, 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
-      try {
-        // test creation
-        auto reg = d.getTwoDRegisterAccessor<RawType>(registerName, 0, 0, {AccessMode::raw});
-        // the test itself requires an extended interface, so the test can be disabled
-        if constexpr(x.capabilities.testRawTransfer == TestCapability::enabled) {
+        typedef typename decltype(x)::minimumUserType UserType;
+        typedef typename decltype(x)::rawUserType RawType;
+        // Use double as example for a not working user type
+        BOOST_CHECK_THROW(
+            d.getTwoDRegisterAccessor<double>(registerName, 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
+        try {
+          // test creation
+          auto reg = d.getTwoDRegisterAccessor<RawType>(registerName, 0, 0, {AccessMode::raw});
+          // the test itself requires an extended interface, so the test can be disabled
           if(x.isReadable()) {
             x.template setRemoteValue();
             reg.read();
-            //auto expectedRawValue = x.template getRemoteRawValue<UserType>();
+            auto expectedRawValue = x.template getRemoteRawValue<RawType>();
             auto expectedCookedValue = x.template getRemoteValue<UserType>();
             for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
               for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
@@ -3326,14 +3328,33 @@ namespace ChimeraTK {
                       " != " + std::to_string(readCookedVal) + " (raw " + std::to_string(reg[channel][element]) + ")");
                   break;
                 }
-                //BOOST_TEST(RawType(reg[channel][element]) == expectedRawValue[channel][element]);
               }
+
+              CHECK_EQUALITY(reg, expectedRawValue);
             }
           }
         }
+        catch(std::exception& e) {
+          BOOST_CHECK_MESSAGE(false, std::string("Unexpected expeption: ") + e.what());
+        }
+      } // end of constexpr if
+      if(this->isRaw(x)) {
+        if(x.capabilities.testRawTransfer == TestCapability::disabled) {
+          BOOST_REQUIRE_MESSAGE(
+              false, "Test configuration error: testRawTransfer is disabled for register with AccessMode::raw!");
+        }
+        else if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
+          std::cout << "WARNING: testRawTransfer capability unspecified for a register with AccessMode::raw. This will "
+                       "turn into a test configuration error in a future release!"
+                    << std::endl;
+        }
       }
-      catch(std::exception& e) {
-        BOOST_CHECK_MESSAGE(false, std::string("Unexpected expeption: ") + e.what());
+      else {
+        if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
+          std::cout << "Warning: testRawTransfer capability unspecified for a register without AccessMode::raw. Please "
+                       "explicitly disable this test."
+                    << std::endl;
+        }
       }
     });
   }

@@ -56,7 +56,7 @@ struct Integers_signed32 {
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
                                            .disableTestWriteNeverLosesData()
-                                           .enableTestRawTransfer();
+                                           .disableTestRawTransfer();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
