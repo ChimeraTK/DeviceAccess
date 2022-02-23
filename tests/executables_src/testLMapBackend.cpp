@@ -1,15 +1,15 @@
 
 #  define BOOST_TEST_DYN_LINK
 #  define BOOST_TEST_MODULE LMapBackendTest
-#  include <boost/test/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#  include "BufferingRegisterAccessor.h"
-#  include "Device.h"
-#  include "TransferGroup.h"
-#  include "ExceptionDummyBackend.h"
-#  include "UnifiedBackendTest.h"
-#  include "DummyRegisterAccessor.h"
+#include "BufferingRegisterAccessor.h"
+#include "Device.h"
+#include "TransferGroup.h"
+#include "ExceptionDummyBackend.h"
+#include "UnifiedBackendTest.h"
+#include "DummyRegisterAccessor.h"
 
 using namespace ChimeraTK;
 

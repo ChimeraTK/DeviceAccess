@@ -4,12 +4,12 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#  include <sstream>
+#include <sstream>
 
-#  include "Exception.h"
-#  include "MapFileParser.h"
-#  include "NumericAddressedRegisterCatalogue.h"
-#  include "helperFunctions.h"
+#include "Exception.h"
+#include "MapFileParser.h"
+#include "NumericAddressedRegisterCatalogue.h"
+#include "helperFunctions.h"
 
 using namespace ChimeraTK;
 using namespace boost::unit_test_framework;

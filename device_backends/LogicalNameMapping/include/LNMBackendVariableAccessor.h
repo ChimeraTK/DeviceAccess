@@ -57,8 +57,8 @@ namespace ChimeraTK {
 
     /// register information. We have a shared pointer to the original RegisterInfo inside the map, since we need to
     /// modify the value in it (in case of a writeable variable register)
-    boost::shared_ptr<LNMBackendRegisterInfo> _info;
-
+    LNMBackendRegisterInfo _info;
+    //RegisterInfo _info;
     /// Word offset when reading
     size_t _wordOffsetInRegister;
 
@@ -95,11 +95,11 @@ namespace ChimeraTK {
     _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
 
     // obtain the register info
-    _info =
-        boost::static_pointer_cast<LNMBackendRegisterInfo>(_dev->getRegisterCatalogue().getRegister(_registerPathName));
+    _info = _dev->_catalogue_mutable.getBackendRegister(_registerPathName);
+    //boost::static_pointer_cast<BackendRegisterCatalogue<LNMBackendRegisterInfo>>(_dev->getRegisterCatalogue().getRegister(_registerPathName));
 
     // check for unknown flags
-    if(_info->targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
+    if(_info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
       flags.checkForUnknownFlags({AccessMode::wait_for_new_data});
     }
     else {
@@ -108,17 +108,17 @@ namespace ChimeraTK {
     }
 
     // numberOfWords default to full register length
-    if(numberOfWords == 0) numberOfWords = _info->length;
+    if(numberOfWords == 0) numberOfWords = _info.length;
 
     // check for illegal parameter combinations
-    if(wordOffsetInRegister + numberOfWords > _info->length) {
+    if(wordOffsetInRegister + numberOfWords > _info.length) {
       throw ChimeraTK::logic_error(
           "Requested number of words and/or offset exceeds length of register '" + registerPathName + "'.");
     }
 
     // check for incorrect usage of this accessor
-    if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
-        _info->targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
+    if(_info.targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
+        _info.targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
       throw ChimeraTK::logic_error(
           "LNMBackendVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
     }
@@ -128,10 +128,10 @@ namespace ChimeraTK {
       // allocate _queueValue buffer
       this->_queueValue.value.resize(numberOfWords);
 
-      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-      callForType(_info->valueType, [&, this](auto arg) {
+      //std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+      callForType(_info.valueType, [&, this](auto arg) {
         typedef decltype(arg) T;
-        auto& vtEntry = boost::fusion::at_key<T>(_info->valueTable.table);
+        auto& vtEntry = boost::fusion::at_key<T>(_info.valueTable.table);
         // create subscription queue
         cppext::future_queue<typename LNMBackendRegisterInfo::ValueTable<T>::QueuedValue> queue(3);
         // place queue in map
@@ -165,10 +165,11 @@ namespace ChimeraTK {
   LNMBackendVariableAccessor<UserType>::~LNMBackendVariableAccessor() {
     if(_flags.has(AccessMode::wait_for_new_data)) {
       // unsubscribe the update queue
-      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-      callForType(_info->valueType, [&, this](auto arg) {
+        //fix this
+      //std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+      callForType(_info.valueType, [&, this](auto arg) {
         typedef decltype(arg) T;
-        auto vtEntry = boost::fusion::at_key<T>(_info->valueTable.table);
+        auto vtEntry = boost::fusion::at_key<T>(_info.valueTable.table);
         vtEntry.subscriptions.erase(this->getId());
       });
     }
@@ -204,9 +205,9 @@ namespace ChimeraTK {
     if(_dev->_hasException) {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
-    std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-    callForType(_info->valueType, [&, this](auto arg) {
-      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info->valueTable.table);
+    //std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+    callForType(_info.valueType, [&, this](auto arg) {
+      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info.valueTable.table);
 
       // store new value as latest value
       for(size_t i = 0; i < this->buffer_2D[0].size(); ++i) {
@@ -236,7 +237,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   bool LNMBackendVariableAccessor<UserType>::isReadOnly() const {
-    return _info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT;
+    return _info.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT;
   }
 
   /********************************************************************************************************************/
@@ -250,7 +251,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   bool LNMBackendVariableAccessor<UserType>::isWriteable() const {
-    return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT;
+    return _info.targetType != LNMBackendRegisterInfo::TargetType::CONSTANT;
   }
 
   /********************************************************************************************************************/
@@ -270,9 +271,9 @@ namespace ChimeraTK {
 
     if(!_flags.has(AccessMode::wait_for_new_data)) {
       // poll-type read transfer: fetch latest value from ValueTable
-      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-      callForType(_info->valueType, [&, this](auto arg) {
-        auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info->valueTable.table);
+      //fix this std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+      callForType(_info.valueType, [&, this](auto arg) {
+        auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info.valueTable.table);
         for(size_t i = 0; i < this->buffer_2D[0].size(); ++i) {
           this->buffer_2D[0][i] = userTypeToUserType<UserType>(vtEntry.latestValue[i + _wordOffsetInRegister]);
           this->_dataValidity = vtEntry.latestValidity;
@@ -292,9 +293,9 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void LNMBackendVariableAccessor<UserType>::interrupt() {
-    std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
-    callForType(_info->valueType, [&, this](auto arg) {
-      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info->valueTable.table);
+    //fix this std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+    callForType(_info.valueType, [&, this](auto arg) {
+      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info.valueTable.table);
       this->interrupt_impl(vtEntry.subscriptions[this->getId()]);
     });
   }

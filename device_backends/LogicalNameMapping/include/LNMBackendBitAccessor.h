@@ -7,15 +7,15 @@
 
 #pragma once
 
-#  include <algorithm>
+#include <algorithm>
 
-#  include <ChimeraTK/cppext/finally.hpp>
+#include <ChimeraTK/cppext/finally.hpp>
 
-#  include "Device.h"
-#  include "FixedPointConverter.h"
-#  include "LogicalNameMappingBackend.h"
-#  include "NDRegisterAccessor.h"
-#  include "TwoDRegisterAccessor.h"
+#include "Device.h"
+#include "FixedPointConverter.h"
+#include "LogicalNameMappingBackend.h"
+#include "NDRegisterAccessor.h"
+#include "TwoDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -36,10 +36,10 @@ namespace ChimeraTK {
       }
       _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
       // copy the register info and create the internal accessors, if needed
-      auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
-          _dev->getRegisterCatalogue().getRegister(_registerPathName));
+      auto info = _dev->_catalogue_mutable.getBackendRegister(_registerPathName);
+
       // check for incorrect usage of this accessor
-      if(info->targetType != LNMBackendRegisterInfo::TargetType::BIT) {
+      if(info.targetType != LNMBackendRegisterInfo::TargetType::BIT) {
         throw ChimeraTK::logic_error(
             "LNMBackendBitAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
       }
@@ -53,7 +53,7 @@ namespace ChimeraTK {
       }
 
       // get target device and accessor
-      std::string devName = info->deviceName;
+      std::string devName = info.deviceName;
       boost::shared_ptr<DeviceBackend> targetDevice;
       if(devName != "this") {
         targetDevice = _dev->_devices[devName];
@@ -66,7 +66,7 @@ namespace ChimeraTK {
         auto& map = boost::fusion::at_key<uint64_t>(_dev->sharedAccessorMap.table);
         // we need an identifier of the device in the key, in case the logical name mapping accesses more than one device
         // with same set of register names
-        LogicalNameMappingBackend::SharedAccessorKey key(targetDevice.get(), RegisterPath(info->registerName));
+        LogicalNameMappingBackend::SharedAccessorKey key(targetDevice.get(), RegisterPath(info.registerName));
         auto it = map.find(key);
         // Obtain accessor if not found in the map or if weak pointer has expired
         // Note: we must not use boost::weak_ptr::expired() here, because we have to check the status and obtain the
@@ -85,7 +85,7 @@ namespace ChimeraTK {
       NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
       NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(false);
       // set the bit mask
-      _bitMask = 1 << info->bit;
+      _bitMask = 1 << info.bit;
     }
 
     void doReadTransferSynchronously() override {

@@ -8,7 +8,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<AccessorPluginBase> makePlugin(boost::shared_ptr<LNMBackendRegisterInfo> info,
+  boost::shared_ptr<AccessorPluginBase> makePlugin(LNMBackendRegisterInfo info,
       const std::string& name, const std::map<std::string, std::string>& parameters) {
     if(name == "multiply") {
       return boost::make_shared<MultiplierPlugin>(info, parameters);

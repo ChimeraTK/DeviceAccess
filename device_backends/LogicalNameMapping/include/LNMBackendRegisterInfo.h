@@ -7,13 +7,13 @@
 
 #pragma once
 
-#  include <mutex>
+#include <mutex>
 
-#  include <boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
-#  include "ForwardDeclarations.h"
-#  include "RegisterInfo.h"
-#  include "TransferElement.h"
+#include "ForwardDeclarations.h"
+#include "RegisterInfo.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK {
 
@@ -29,10 +29,9 @@ namespace ChimeraTK {
 
     /** constuctor: initialise values */
     LNMBackendRegisterInfo() : targetType(TargetType::INVALID), supportedFlags({}) {}
+    LNMBackendRegisterInfo(const LNMBackendRegisterInfo&) = default;
 
-    LNMBackendRegisterInfo(const LNMBackendRegisterInfo&) {};
-
-    LNMBackendRegisterInfo& operator=(const LNMBackendRegisterInfo& other) {};
+    LNMBackendRegisterInfo& operator=(const LNMBackendRegisterInfo& other) = default;
 
 
     RegisterPath getRegisterName() const override { return name; }
@@ -101,10 +100,10 @@ namespace ChimeraTK {
       std::map<TransferElementID, cppext::future_queue<QueuedValue>> subscriptions;
     };
     TemplateUserTypeMap<ValueTable> valueTable;
-
+#if 0
     /** Mutex one needs to hold while accessing valueTable. */
     std::mutex valueTable_mutex;
-
+#endif
     /** Flag if the register is readable. Might be derived from the target
      * register */
     bool readable;

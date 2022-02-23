@@ -11,7 +11,7 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   MonostableTriggerPlugin::MonostableTriggerPlugin(
-      boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters)
+      LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin(info) {
     // extract parameters
     if(parameters.find("milliseconds") == parameters.end()) {
@@ -27,18 +27,18 @@ namespace ChimeraTK { namespace LNMBackend {
     }
 
     // Change register info to write-only and data type nodata
-    info->readable = false;
-    info->_dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
+    info.readable = false;
+    info._dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
   }
 
   /********************************************************************************************************************/
 
   void MonostableTriggerPlugin::updateRegisterInfo() {
     // Change register info to write-only and data type nodata
-    auto info = _info.lock();
-    info->readable = false;
-    info->_dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
-    info->supportedFlags.remove(AccessMode::raw);
+    auto info = _info;//.lock();
+    info.readable = false;
+    info._dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
+    info.supportedFlags.remove(AccessMode::raw);
   }
 
   /********************************************************************************************************************/

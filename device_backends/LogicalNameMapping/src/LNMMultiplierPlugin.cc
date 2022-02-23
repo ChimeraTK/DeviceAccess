@@ -10,7 +10,7 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   MultiplierPlugin::MultiplierPlugin(
-      boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters)
+      LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin(info) {
     // extract parameters
     if(parameters.find("factor") == parameters.end()) {
@@ -22,9 +22,9 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   void MultiplierPlugin::updateRegisterInfo() {
-    auto info = _info.lock();
-    info->_dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
-    info->supportedFlags.remove(AccessMode::raw);
+    auto info = _info;//.lock();
+    info._dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
+    info.supportedFlags.remove(AccessMode::raw);
   }
 
   /********************************************************************************************************************/

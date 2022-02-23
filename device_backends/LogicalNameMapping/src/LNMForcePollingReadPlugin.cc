@@ -9,16 +9,16 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   ForcePollingReadPlugin::ForcePollingReadPlugin(
-      boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>&)
+      LNMBackendRegisterInfo info, const std::map<std::string, std::string>&)
   : AccessorPlugin(info) {}
 
   /********************************************************************************************************************/
 
   void ForcePollingReadPlugin::updateRegisterInfo() {
     // remove wait_for_new_data flag, if present
-    auto info = _info.lock();
-    if(info->supportedFlags.has(AccessMode::wait_for_new_data)) {
-      info->supportedFlags.remove(AccessMode::wait_for_new_data);
+    auto info = _info;//.lock();
+    if(info.supportedFlags.has(AccessMode::wait_for_new_data)) {
+      info.supportedFlags.remove(AccessMode::wait_for_new_data);
     }
   }
 
