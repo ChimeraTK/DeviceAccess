@@ -28,8 +28,7 @@ void compareCatalogue(const NumericAddressedRegisterCatalogue& regcat,
   auto elementsIter = RegisterInfoents.begin();
   for(; mapIter != regcat.end() && elementsIter != RegisterInfoents.end(); ++mapIter, ++elementsIter) {
     std::stringstream message;
-    message << "Failed comparison on Register '" << (*elementsIter).name << "', module '" << (elementsIter->module)
-            << "'";
+    message << "Failed comparison on Register '" << (*elementsIter).pathName << "'";
     BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter, *elementsIter) == true, message.str());
   }
 }
@@ -124,51 +123,47 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(22);
 
   RegisterInfoents[0] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true, "BOARD");
+      ChimeraTK::NumericAddressedRegisterInfo("BOARD.WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true);
   RegisterInfoents[1] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_COMPILATION", 0x01, 0x04, 0x04, 0x0, 32, 0, true, "BOARD");
+      ChimeraTK::NumericAddressedRegisterInfo("BOARD.WORD_COMPILATION", 0x01, 0x04, 0x04, 0x0, 32, 0, true);
   RegisterInfoents[2] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_STATUS", 0x01, 0x08, 0x04, 0x01, 32, 0, true, "APP0");
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.WORD_STATUS", 0x01, 0x08, 0x04, 0x01, 32, 0, true);
   RegisterInfoents[3] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01, 16, 0, true, "APP0");
-  RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0", 0x03, 0x10, 0x0C, 0x01, 32, 0, true, "APP0");
-  RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("MODULE1", 0x03, 0x20, 0x0C, 0x01, 32, 0, true, "APP0");
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01, 16, 0, true);
+  RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("APP0.MODULE0", 0x03, 0x10, 0x0C, 0x01, 32, 0, true);
+  RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("APP0.MODULE1", 0x03, 0x20, 0x0C, 0x01, 32, 0, true);
   RegisterInfoents[6] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER1", 0x01, 0x10, 0x04, 0x01, 16, 3, true, "MODULE0");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.WORD_USER1", 0x01, 0x10, 0x04, 0x01, 16, 3, true);
   RegisterInfoents[7] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER2", 0x01, 0x14, 0x04, 0x01, 18, 5, false, "MODULE0");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.WORD_USER2", 0x01, 0x14, 0x04, 0x01, 18, 5, false);
   RegisterInfoents[8] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER3", 0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.WORD_USER3", 0x01, 0x18, 0x04, 0x01, 18, 5, false);
   RegisterInfoents[9] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER1", 0x01, 0x20, 0x04, 0x01, 16, 3, true, "MODULE1");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.WORD_USER1", 0x01, 0x20, 0x04, 0x01, 16, 3, true);
   RegisterInfoents[10] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER2", 0x01, 0x24, 0x04, 0x01, 18, 5, false, "MODULE1");
-  RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("WORD_USER3", 0x01, 0x28, 0x04, 0x01, 18, 5, false,
-      "MODULE1", 1, false, NumericAddressedRegisterInfo::Access::READ);
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.WORD_USER2", 0x01, 0x24, 0x04, 0x01, 18, 5, false);
+  RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("MODULE1.WORD_USER3", 0x01, 0x28, 0x04, 0x01, 18, 5,
+      false, 1, false, NumericAddressedRegisterInfo::Access::READ_ONLY);
   RegisterInfoents[12] =
-      ChimeraTK::NumericAddressedRegisterInfo("NO_OPTIONAL", 0x01, 0x2C, 0x04, 0x01, 32, 0, true, "MODULE2");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE2.NO_OPTIONAL", 0x01, 0x2C, 0x04, 0x01, 32, 0, true);
   RegisterInfoents[13] =
-      ChimeraTK::NumericAddressedRegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02, 32, 0, true, "MODULE.NAME.WITH.DOTS");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE.NAME.WITH.DOTS.REGISTER", 0x01, 0x00, 0x04, 0x02, 32, 0, true);
   RegisterInfoents[14] =
-      ChimeraTK::NumericAddressedRegisterInfo("TEST_AREA", 0x0A, 0x025, 0x028, 0x01, 32, 0, false, "MODULE1");
-  RegisterInfoents[15] =
-      ChimeraTK::NumericAddressedRegisterInfo("SCALAR", 0x01, 0x060, 0x04, 0x01, 32, 0, true, "FLOAT_TEST", 1, false,
-          NumericAddressedRegisterInfo::Access::READWRITE, NumericAddressedRegisterInfo::Type::IEEE754);
-  RegisterInfoents[16] =
-      ChimeraTK::NumericAddressedRegisterInfo("ARRAY", 0x04, 0x064, 0x010, 0x01, 32, 0, true, "FLOAT_TEST", 1, false,
-          NumericAddressedRegisterInfo::Access::READWRITE, NumericAddressedRegisterInfo::Type::IEEE754);
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.TEST_AREA", 0x0A, 0x025, 0x028, 0x01, 32, 0, false);
+  RegisterInfoents[15] = ChimeraTK::NumericAddressedRegisterInfo("FLOAT_TEST.SCALAR", 0x01, 0x060, 0x04, 0x01, 32, 0,
+      true, 1, false, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::IEEE754);
+  RegisterInfoents[16] = ChimeraTK::NumericAddressedRegisterInfo("FLOAT_TEST.ARRAY", 0x04, 0x064, 0x010, 0x01, 32, 0,
+      true, 1, false, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::IEEE754);
   RegisterInfoents[17] =
-      ChimeraTK::NumericAddressedRegisterInfo("NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0, 32, 0, true, "BOARD");
+      ChimeraTK::NumericAddressedRegisterInfo("BOARD.NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0, 32, 0, true);
   RegisterInfoents[18] =
-      ChimeraTK::NumericAddressedRegisterInfo("NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true, "LARGE_BAR");
-  RegisterInfoents[19] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 3);
-  RegisterInfoents[20] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 2);
+      ChimeraTK::NumericAddressedRegisterInfo("LARGE_BAR.NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true);
+  RegisterInfoents[19] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0,
+      false, 1, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 3);
+  RegisterInfoents[20] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0,
+      false, 1, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 2);
   RegisterInfoents[21] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5, false, "MODULE0", 1, false,
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5, false, 1, false,
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, 5, 6);
 
   compareCatalogue(regcat, RegisterInfoents);
@@ -184,9 +179,8 @@ BOOST_AUTO_TEST_CASE(testMixedMapFileParse) {
 
   RegisterInfoents[0] = ChimeraTK::NumericAddressedRegisterInfo("WORD_FIRMWARE_ID", 0x01, 0x0, 0x04, 0x0, 32, 0, true);
   RegisterInfoents[1] = ChimeraTK::NumericAddressedRegisterInfo("WORD_USER", 0x01, 0x4, 0x04, 0x0, 32, 0, true);
-  RegisterInfoents[2] = ChimeraTK::NumericAddressedRegisterInfo("MODULE_ID", 0x01, 0x0, 0x04, 0x1, 32, 0, true, "APP0");
-  RegisterInfoents[3] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER", 0x03, 0x4, 0x0C, 0x1, 18, 3, false, "APP0");
+  RegisterInfoents[2] = ChimeraTK::NumericAddressedRegisterInfo("APP0.MODULE_ID", 0x01, 0x0, 0x04, 0x1, 32, 0, true);
+  RegisterInfoents[3] = ChimeraTK::NumericAddressedRegisterInfo("APP0.WORD_USER", 0x03, 0x4, 0x0C, 0x1, 18, 3, false);
 
   compareCatalogue(regcat, RegisterInfoents);
 }
@@ -228,13 +222,6 @@ BOOST_AUTO_TEST_CASE(testSplitStringAtLastDot) {
 
 /*******************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testBadMappFileParse) {
-  ChimeraTK::MapFileParser fileparser;
-  BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"), ChimeraTK::logic_error);
-}
-
-/*******************************************************************************************************************/
-
 BOOST_AUTO_TEST_CASE(testInterruptBadMapFileParse) {
   ChimeraTK::MapFileParser fileparser;
 
@@ -252,60 +239,58 @@ BOOST_AUTO_TEST_CASE(testInterruptMapFileParse) {
 
   std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(14);
 
-  RegisterInfoents[0] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 0, 0);
+  RegisterInfoents[0] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0,
+      false, 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 0, 0);
 
-  RegisterInfoents[1] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0, false, "APP0", 0, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 1);
+  RegisterInfoents[1] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0,
+      false, 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 1);
 
-  RegisterInfoents[2] = ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_UINT_1", 0x01, 0x100, 0x04, 0x0, 32, 0,
-      false, "APP0", 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
-      NumericAddressedRegisterInfo::Type::FIXED_POINT, 2, 0);
+  RegisterInfoents[2] =
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_UINT_1", 0x01, 0x100, 0x04, 0x0, 32, 0, false, 0, false,
+          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, 2, 0);
 
   RegisterInfoents[3] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true, "APP0", 0, false,
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true, 0, false,
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, 2, 1);
 
-  RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04, 0x0, 32,
-      24, true, "APP0", 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
+  RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04,
+      0x0, 32, 24, true, 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
       NumericAddressedRegisterInfo::Type::FIXED_POINT, 3, 0);
 
-  RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04, 0x0,
-      32, 24, false, "APP0", 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
+  RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04,
+      0x0, 32, 24, false, 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
       NumericAddressedRegisterInfo::Type::FIXED_POINT, 3, 1);
 
-  RegisterInfoents[6] = ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_ARRAY_UINT", 0x03, 0x300, 12, 0x0, 32, 0,
-      false, "APP0", 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
-      NumericAddressedRegisterInfo::Type::FIXED_POINT, 4, 0);
+  RegisterInfoents[6] =
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_ARRAY_UINT", 0x03, 0x300, 12, 0x0, 32, 0, false, 0, false,
+          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, 4, 0);
 
-  RegisterInfoents[7] = ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_ARRAY_INT", 0x03, 0x400, 12, 0x0, 32, 0,
-      true, "APP0", 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
-      NumericAddressedRegisterInfo::Type::FIXED_POINT, 4, 1);
+  RegisterInfoents[7] =
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_ARRAY_INT", 0x03, 0x400, 12, 0x0, 32, 0, true, 0, false,
+          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, 4, 1);
 
-  RegisterInfoents[8] = ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0, 32,
-      24, false, "APP0", 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
+  RegisterInfoents[8] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0,
+      32, 24, false, 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
       NumericAddressedRegisterInfo::Type::FIXED_POINT, 4, 2);
 
-  RegisterInfoents[9] = ChimeraTK::NumericAddressedRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_INTERRUPT_AREA_INT", 0x0f,
-      0x0, 0x3c, 0x0, 16, -2, true, "APP0", 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
+  RegisterInfoents[9] = ChimeraTK::NumericAddressedRegisterInfo("APP0.AREA_MULTIPLEXED_SEQUENCE_INTERRUPT_AREA_INT",
+      0x0f, 0x0, 0x3c, 0x0, 16, -2, true, 0, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
       NumericAddressedRegisterInfo::Type::FIXED_POINT, 5, 0);
 
-  RegisterInfoents[10] = ChimeraTK::NumericAddressedRegisterInfo("SEQUENCE_INTERRUPT_AREA_INT_0", 0x01, 0x0, 0x04, 0x0,
-      16, 0, false, "APP0", 0, false, NumericAddressedRegisterInfo::Access::READWRITE,
+  RegisterInfoents[10] = ChimeraTK::NumericAddressedRegisterInfo("APP0.SEQUENCE_INTERRUPT_AREA_INT_0", 0x01, 0x0, 0x04,
+      0x0, 16, 0, false, 0, false, NumericAddressedRegisterInfo::Access::READ_WRITE,
       NumericAddressedRegisterInfo::Type::FIXED_POINT, 0, 0);
 
-  RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("SEQUENCE_INTERRUPT_AREA_INT_1", 0x01, 0x4, 0x04, 0x0,
-      16, 0, false, "APP0", 0, false, NumericAddressedRegisterInfo::Access::READWRITE,
+  RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("APP0.SEQUENCE_INTERRUPT_AREA_INT_1", 0x01, 0x4, 0x04,
+      0x0, 16, 0, false, 0, false, NumericAddressedRegisterInfo::Access::READ_WRITE,
       NumericAddressedRegisterInfo::Type::FIXED_POINT, 0, 0);
 
-  RegisterInfoents[12] = ChimeraTK::NumericAddressedRegisterInfo("SEQUENCE_INTERRUPT_AREA_INT_2", 0x01, 0x8, 0x04, 0x0,
-      16, 0, false, "APP0", 0, false, NumericAddressedRegisterInfo::Access::READWRITE,
+  RegisterInfoents[12] = ChimeraTK::NumericAddressedRegisterInfo("APP0.SEQUENCE_INTERRUPT_AREA_INT_2", 0x01, 0x8, 0x04,
+      0x0, 16, 0, false, 0, false, NumericAddressedRegisterInfo::Access::READ_WRITE,
       NumericAddressedRegisterInfo::Type::FIXED_POINT, 0, 0);
 
   RegisterInfoents[13] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_AREA_INT", 0x05, 0x0, 0x3c, 0x0, 16, 0, false, "APP0", 0, true,
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_AREA_INT", 0x05, 0x0, 0x3c, 0x0, 16, 0, false, 0, true,
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, 5, 0);
 
   compareCatalogue(regcat, RegisterInfoents);
@@ -333,51 +318,47 @@ BOOST_AUTO_TEST_CASE(testMapFileWithCommentsParse) {
   std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(22);
 
   RegisterInfoents[0] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true, "BOARD");
+      ChimeraTK::NumericAddressedRegisterInfo("BOARD.WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true);
   RegisterInfoents[1] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_COMPILATION", 0x01, 0x04, 0x04, 0x0, 32, 0, true, "BOARD");
+      ChimeraTK::NumericAddressedRegisterInfo("BOARD.WORD_COMPILATION", 0x01, 0x04, 0x04, 0x0, 32, 0, true);
   RegisterInfoents[2] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_STATUS", 0x01, 0x08, 0x04, 0x01, 32, 0, true, "APP0");
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.WORD_STATUS", 0x01, 0x08, 0x04, 0x01, 32, 0, true);
   RegisterInfoents[3] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01, 16, 0, true, "APP0");
-  RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0", 0x03, 0x10, 0x0C, 0x01, 32, 0, true, "APP0");
-  RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("MODULE1", 0x03, 0x20, 0x0C, 0x01, 32, 0, true, "APP0");
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01, 16, 0, true);
+  RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("APP0.MODULE0", 0x03, 0x10, 0x0C, 0x01, 32, 0, true);
+  RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("APP0.MODULE1", 0x03, 0x20, 0x0C, 0x01, 32, 0, true);
   RegisterInfoents[6] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER1", 0x01, 0x10, 0x04, 0x01, 16, 3, true, "MODULE0");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.WORD_USER1", 0x01, 0x10, 0x04, 0x01, 16, 3, true);
   RegisterInfoents[7] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER2", 0x01, 0x14, 0x04, 0x01, 18, 5, false, "MODULE0");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.WORD_USER2", 0x01, 0x14, 0x04, 0x01, 18, 5, false);
   RegisterInfoents[8] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER3", 0x01, 0x18, 0x04, 0x01, 18, 5, false, "MODULE0");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.WORD_USER3", 0x01, 0x18, 0x04, 0x01, 18, 5, false);
   RegisterInfoents[9] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER1", 0x01, 0x20, 0x04, 0x01, 16, 3, true, "MODULE1");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.WORD_USER1", 0x01, 0x20, 0x04, 0x01, 16, 3, true);
   RegisterInfoents[10] =
-      ChimeraTK::NumericAddressedRegisterInfo("WORD_USER2", 0x01, 0x24, 0x04, 0x01, 18, 5, false, "MODULE1");
-  RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("WORD_USER3", 0x01, 0x28, 0x04, 0x01, 18, 5, false,
-      "MODULE1", 1, false, NumericAddressedRegisterInfo::Access::READ);
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.WORD_USER2", 0x01, 0x24, 0x04, 0x01, 18, 5, false);
+  RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("MODULE1.WORD_USER3", 0x01, 0x28, 0x04, 0x01, 18, 5,
+      false, 1, false, NumericAddressedRegisterInfo::Access::READ_ONLY);
   RegisterInfoents[12] =
-      ChimeraTK::NumericAddressedRegisterInfo("NO_OPTIONAL", 0x01, 0x2C, 0x04, 0x01, 32, 0, true, "MODULE2");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE2.NO_OPTIONAL", 0x01, 0x2C, 0x04, 0x01, 32, 0, true);
   RegisterInfoents[13] =
-      ChimeraTK::NumericAddressedRegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02, 32, 0, true, "MODULE.NAME.WITH.DOTS");
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE.NAME.WITH.DOTS.REGISTER", 0x01, 0x00, 0x04, 0x02, 32, 0, true);
   RegisterInfoents[14] =
-      ChimeraTK::NumericAddressedRegisterInfo("TEST_AREA", 0x0A, 0x025, 0x028, 0x01, 32, 0, false, "MODULE1");
-  RegisterInfoents[15] =
-      ChimeraTK::NumericAddressedRegisterInfo("SCALAR", 0x01, 0x060, 0x04, 0x01, 32, 0, true, "FLOAT_TEST", 1, false,
-          NumericAddressedRegisterInfo::Access::READWRITE, NumericAddressedRegisterInfo::Type::IEEE754);
-  RegisterInfoents[16] =
-      ChimeraTK::NumericAddressedRegisterInfo("ARRAY", 0x04, 0x064, 0x010, 0x01, 32, 0, true, "FLOAT_TEST", 1, false,
-          NumericAddressedRegisterInfo::Access::READWRITE, NumericAddressedRegisterInfo::Type::IEEE754);
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.TEST_AREA", 0x0A, 0x025, 0x028, 0x01, 32, 0, false);
+  RegisterInfoents[15] = ChimeraTK::NumericAddressedRegisterInfo("FLOAT_TEST.SCALAR", 0x01, 0x060, 0x04, 0x01, 32, 0,
+      true, 1, false, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::IEEE754);
+  RegisterInfoents[16] = ChimeraTK::NumericAddressedRegisterInfo("FLOAT_TEST.ARRAY", 0x04, 0x064, 0x010, 0x01, 32, 0,
+      true, 1, false, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::IEEE754);
   RegisterInfoents[17] =
-      ChimeraTK::NumericAddressedRegisterInfo("NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0, 32, 0, true, "BOARD");
+      ChimeraTK::NumericAddressedRegisterInfo("BOARD.NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0, 32, 0, true);
   RegisterInfoents[18] =
-      ChimeraTK::NumericAddressedRegisterInfo("NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true, "LARGE_BAR");
-  RegisterInfoents[19] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 3);
-  RegisterInfoents[20] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0, false, "MODULE0", 1, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 2);
+      ChimeraTK::NumericAddressedRegisterInfo("LARGE_BAR.NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true);
+  RegisterInfoents[19] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0,
+      false, 1, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 3);
+  RegisterInfoents[20] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0,
+      false, 1, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, 1, 2);
   RegisterInfoents[21] =
-      ChimeraTK::NumericAddressedRegisterInfo("INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5, false, "MODULE0", 1, false,
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5, false, 1, false,
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, 5, 6);
 
   compareCatalogue(regcat, RegisterInfoents);

@@ -11,22 +11,27 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(std::string const& name_, uint32_t nElements_,
+  NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint32_t nElements_,
       uint64_t address_, uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
-      std::string const& module_, uint32_t nChannels_, bool is2DMultiplexed_, Access dataAccess_, Type dataType_,
-      uint32_t interruptCtrlNumber_, uint32_t interruptNumber_)
-  : name(name_), nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_), address(address_),
-    nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_), signedFlag(signedFlag_),
-    module(module_), registerAccess(dataAccess_), dataType(dataType_), interruptCtrlNumber(interruptCtrlNumber_),
-    interruptNumber(interruptNumber_) {
+      uint32_t nChannels_, bool is2DMultiplexed_, Access dataAccess_, Type dataType_, uint32_t interruptCtrlNumber_,
+      uint32_t interruptNumber_)
+  : pathName(pathName_), nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_),
+    address(address_), nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
+    signedFlag(signedFlag_), registerAccess(dataAccess_), dataType(dataType_),
+    interruptCtrlNumber(interruptCtrlNumber_), interruptNumber(interruptNumber_) {
+    // make sure . and / is treated as similar as possible
+    pathName.setAltSeparator(".");
+
+    // consistency checks
     if(nBytes_ > 0 && nElements_ > 0) {
       if(nBytes_ % nElements_ != 0) {
         // nBytes_ must be divisible by nElements_
-        throw logic_error(
-            "Number of bytes is not a multiple of number of elements for register " + name_ + ". Check your map file!");
+        throw logic_error("Number of bytes is not a multiple of number of elements for register " + pathName +
+            ". Check your map file!");
       }
     }
 
+    // set raw data type
     DataType rawDataInfo;
     if(nBytesPerElement() == 0 && !is2DMultiplexed_) {
       rawDataInfo = DataType::Void;
@@ -44,7 +49,8 @@ namespace ChimeraTK {
       rawDataInfo = DataType::none;
     }
 
-    if(dataType == IEEE754) {
+    // determine DataDescriptor
+    if(dataType == Type::IEEE754) {
       if(width == 32) {
         // Largest possible number +- 3e38, smallest possible number 1e-45
         // However, the actual precision is only 23+1 bit, which is < 1e9 relevant
@@ -67,10 +73,10 @@ namespace ChimeraTK {
             DataType::int64);
       }
       else {
-        throw logic_error("Wrong data width for data type IEEE754 for register " + name_ + ". Check your map file!");
+        throw logic_error("Wrong data width for data type IEEE754 for register " + pathName + ". Check your map file!");
       }
     }
-    else if(dataType == FIXED_POINT) {
+    else if(dataType == Type::FIXED_POINT) {
       if(width > 1) { // numeric type
 
         if(nFractionalBits_ > 0) {
@@ -99,10 +105,10 @@ namespace ChimeraTK {
         dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::nodata, false, false, 0, 0, rawDataInfo);
       }
     }
-    else if(dataType == ASCII) {
+    else if(dataType == Type::ASCII) {
       dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::string, false, false, 0, 0, rawDataInfo);
     }
-    else if(dataType == VOID) {
+    else if(dataType == Type::VOID) {
       dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::nodata, false, false, 0, 0, rawDataInfo);
     }
   }

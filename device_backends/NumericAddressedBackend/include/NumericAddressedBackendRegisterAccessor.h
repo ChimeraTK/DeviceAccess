@@ -217,7 +217,7 @@ namespace ChimeraTK {
       _startAddress = _registerInfo.address + wordOffsetInRegister * _registerInfo.nBytesPerElement();
 
       // check number of words
-      if(_registerInfo.dataType == NumericAddressedRegisterInfo::VOID) {
+      if(_registerInfo.dataType == NumericAddressedRegisterInfo::Type::VOID) {
         // in void registers we always create one element
         if(_numberOfWords == 0) {
           _numberOfWords = 1;

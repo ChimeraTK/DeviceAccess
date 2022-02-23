@@ -23,7 +23,7 @@ namespace ChimeraTK {
     }
     NumericAddressedRegisterCatalogue pmap;
     MetadataCatalogue metadataCatalogue;
-    std::string name;        /**< Name of register */
+    std::string pathName;    /**< Name of register */
     uint32_t nElements;      /**< Number of elements in register */
     uint64_t address;        /**< Relative address in bytes from beginning  of the
                                 bar(Base Address Range)*/
@@ -37,8 +37,6 @@ namespace ChimeraTK {
 
     uint32_t interruptCtrlNumber;
     uint32_t interruptNumber;
-
-    std::string module; /**< Name of the module this register is in*/
 
     while(std::getline(file, line)) {
       bool failed = false;
@@ -80,17 +78,11 @@ namespace ChimeraTK {
       }
       is.str(line);
 
-      std::string moduleAndRegisterName;
-      is >> moduleAndRegisterName;
+      is >> pathName;
 
-      std::pair<std::string, std::string> moduleAndNamePair = splitStringAtLastDot(moduleAndRegisterName);
-      module = moduleAndNamePair.first;
-      name = moduleAndNamePair.second;
-      if(name.empty()) {
+      if(pathName.empty()) {
         throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-            std::to_string(line_nr) +
-            ": "
-            "empty register name");
+            std::to_string(line_nr) + ": empty register name");
       }
 
       is >> std::setbase(0) >> nElements >> std::setbase(0) >> address >> std::setbase(0) >> nBytes;
@@ -103,7 +95,7 @@ namespace ChimeraTK {
       width = 32;
       nFractionalBits = 0;
       signedFlag = true;
-      registerAccess = NumericAddressedRegisterInfo::Access::READWRITE;
+      registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
       type = NumericAddressedRegisterInfo::Type::FIXED_POINT;
       interruptCtrlNumber = 0;
       interruptNumber = 0;
@@ -120,9 +112,7 @@ namespace ChimeraTK {
         else {
           if(width > 32) {
             throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-                std::to_string(line_nr) +
-                ": "
-                "register width too big");
+                std::to_string(line_nr) + ": register width too big");
           }
         }
       }
@@ -140,9 +130,7 @@ namespace ChimeraTK {
 
           if(nFractionalBits > 1023 || nFractionalBits < -1024) {
             throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-                std::to_string(line_nr) +
-                ": "
-                "too many fractional bits");
+                std::to_string(line_nr) + ": too many fractional bits");
           }
         }
       }
@@ -161,30 +149,28 @@ namespace ChimeraTK {
           failed = true;
         }
         else {
-          //first transform to uppercase
+          // first transform to uppercase
           std::transform(accessString.begin(), accessString.end(), accessString.begin(),
               [](unsigned char c) { return std::toupper(c); });
 
-          //first check if access mode is INTERRUPT and additionally check the interrupt controller number and interrupt number
+          // first check if access mode is INTERRUPT and additionally check the interrupt controller number and
+          // interrupt number
           auto interruptData = getInterruptData(accessString);
 
           if(interruptData.first) {
             registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
-            //auto irCtrlNo_and_irNo = interruptData.second;
             interruptCtrlNumber = interruptData.second.first;
             interruptNumber = interruptData.second.second;
           }
           else if(accessString == "RO")
-            registerAccess = NumericAddressedRegisterInfo::Access::READ;
+            registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
           else if(accessString == "RW")
-            registerAccess = NumericAddressedRegisterInfo::Access::READWRITE;
+            registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
           else if(accessString == "WO")
-            registerAccess = NumericAddressedRegisterInfo::Access::WRITE;
+            registerAccess = NumericAddressedRegisterInfo::Access::WRITE_ONLY;
           else
             throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-                std::to_string(line_nr) +
-                ": "
-                "invalid data access");
+                std::to_string(line_nr) + ": invalid data access");
         }
       }
       is.clear();
@@ -192,21 +178,26 @@ namespace ChimeraTK {
       checkFileConsitencyAndThrowIfError(
           registerAccess, type, nElements, address, nBytes, bar, width, nFractionalBits, signedFlag);
 
-      auto registerInfo = NumericAddressedRegisterInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
-          signedFlag, module, 1, false, registerAccess, type, interruptCtrlNumber, interruptNumber);
+      auto registerInfo = NumericAddressedRegisterInfo(pathName, nElements, address, nBytes, bar, width,
+          nFractionalBits, signedFlag, 1, false, registerAccess, type, interruptCtrlNumber, interruptNumber);
       pmap.addRegister(std::move(registerInfo));
     }
 
     // search for 2D registers and add 2D entries
     std::vector<NumericAddressedRegisterInfo> newInfos;
     for(auto& info : pmap) {
+      auto [module, name] = splitStringAtLastDot(info.pathName);
+
       // check if 2D register, otherwise ignore
-      if(info.name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
+      if(name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
+
       // name of the 2D register is the name without the sequence prefix
-      name = info.name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
+      name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
+
       // count number of channels and number of entries per channel
       size_t nChannels = 0;
       size_t nBytesPerEntry = 0; // nb. of bytes per entry for all channels together
+
       // We have to aggregate the fractional/ signed information of all cannels.
       // Afterwards we set fractional to 9999 (way out of range, max allowed is
       // 1023) if there are fractional bits, just to indicate that the register is
@@ -215,9 +206,9 @@ namespace ChimeraTK {
       bool isSigned = false;
       bool isInteger = true;
       uint32_t maxWidth = 0;
-      while(pmap.hasRegister(RegisterPath(info.module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)))) {
-        auto subInfo = pmap.getBackendRegister(
-            RegisterPath(info.module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)));
+      while(pmap.hasRegister(RegisterPath(module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)))) {
+        auto subInfo =
+            pmap.getBackendRegister(RegisterPath(module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)));
         nBytesPerEntry += subInfo.nBytes;
         nChannels++;
         if(subInfo.signedFlag) {
@@ -229,12 +220,14 @@ namespace ChimeraTK {
         maxWidth = std::max(maxWidth, subInfo.width);
       }
       if(nChannels == 0) continue;
+
       // Compute number of elements. Note that there may be additional padding bytes specified in the map file. The
       // integer division is then rounding down, so it may be that nElements * nBytesPerEntry != info.nBytes.
       nElements = info.nBytes / nBytesPerEntry;
+
       // add it to the map
-      newInfos.emplace_back(name, nElements, info.address, nElements * nBytesPerEntry, info.bar, maxWidth,
-          (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, info.module, nChannels, true, info.registerAccess,
+      newInfos.emplace_back(RegisterPath(module) / name, nElements, info.address, nElements * nBytesPerEntry, info.bar,
+          maxWidth, (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, nChannels, true, info.registerAccess,
           info.dataType, info.interruptCtrlNumber, info.interruptNumber);
     }
     // insert the new entries to the catalogue
@@ -249,6 +242,13 @@ namespace ChimeraTK {
 
   std::pair<std::string, std::string> MapFileParser::splitStringAtLastDot(std::string moduleDotName) {
     size_t lastDotPosition = moduleDotName.rfind('.');
+    size_t lastSlashPosition = moduleDotName.rfind('/');
+    if(lastDotPosition != std::string::npos && lastSlashPosition != std::string::npos) {
+      lastDotPosition = std::max(lastDotPosition, lastSlashPosition);
+    }
+    else if(lastDotPosition == std::string::npos) {
+      lastDotPosition = lastSlashPosition;
+    }
 
     // some special case handlings to avoid string::split from throwing exceptions
     if(lastDotPosition == std::string::npos) {
@@ -344,7 +344,7 @@ namespace ChimeraTK {
     //
     // if type is VOID, access mode cannot me read only
     if(registerType == NumericAddressedRegisterInfo::Type::VOID &&
-        registerAccessMode == NumericAddressedRegisterInfo::Access::READ)
+        registerAccessMode == NumericAddressedRegisterInfo::Access::READ_ONLY)
       throw ChimeraTK::logic_error(std::string("Map file error. Register Type is VOID and access mode is READ only. "));
     //
     // if register type is VOID and push-type. then all fields must be '0'

@@ -4,15 +4,11 @@
  */
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <iostream>
-#include <list>
-#include <cstdint>
-#include <string>
-#include <vector>
-
 #include "BackendRegisterCatalogue.h"
 #include "BackendRegisterInfoBase.h"
+
+#include <cstdint>
+#include <string>
 
 namespace ChimeraTK {
 
@@ -20,7 +16,14 @@ namespace ChimeraTK {
 
   class NumericAddressedRegisterInfo : public BackendRegisterInfoBase {
    public:
-    enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE, INTERRUPT = 1 << 2 };
+    /**
+     * Enum describing the access mode of the register:
+     * \li read-only
+     * \li write-only
+     * \li read-write
+     * \li interrupt (implies read-only)
+     */
+    enum class Access { READ_ONLY, WRITE_ONLY, READ_WRITE, INTERRUPT };
 
     /** 
      *  Enum descibing the data interpretation:
@@ -29,25 +32,20 @@ namespace ChimeraTK {
      *  \li ASCII ascii characters
      *  \li VOID no data content, just trigger events (push type) FIXME: Currently implicit by 0 bits width
      */
-    enum Type { FIXED_POINT, IEEE754, ASCII, VOID };
+    enum class Type { FIXED_POINT, IEEE754, ASCII, VOID };
 
-    /// Constructor to set all data members. They all have default values, so
-    /// this also acts as default constructor.
-    explicit NumericAddressedRegisterInfo(std::string const& name_ = std::string(), // an empty string
-        uint32_t nElements_ = 0, uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
-        int32_t nFractionalBits_ = 0, bool signedFlag_ = true, std::string const& module_ = std::string(),
-        uint32_t nChannels_ = 1, bool is2DMultiplexed_ = false, Access dataAccess_ = Access::READWRITE,
-        Type dataType_ = Type::FIXED_POINT, uint32_t interruptCtrlNumber_ = 0, uint32_t interruptNumber_ = 0);
+    /// Constructor to set all data members. They all have default values, so this also acts as default constructor.
+    explicit NumericAddressedRegisterInfo(RegisterPath const& pathName_ = {}, uint32_t nElements_ = 0,
+        uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
+        int32_t nFractionalBits_ = 0, bool signedFlag_ = true, uint32_t nChannels_ = 1, bool is2DMultiplexed_ = false,
+        Access dataAccess_ = Access::READ_WRITE, Type dataType_ = Type::FIXED_POINT, uint32_t interruptCtrlNumber_ = 0,
+        uint32_t interruptNumber_ = 0);
 
     NumericAddressedRegisterInfo(const NumericAddressedRegisterInfo&) = default;
 
     NumericAddressedRegisterInfo& operator=(const NumericAddressedRegisterInfo& other) = default;
 
-    [[nodiscard]] RegisterPath getRegisterName() const override {
-      RegisterPath path = RegisterPath(module) / name;
-      path.setAltSeparator(".");
-      return path;
-    }
+    [[nodiscard]] RegisterPath getRegisterName() const override { return pathName; }
 
     [[nodiscard]] unsigned int getNumberOfElements() const override { return nElements; }
 
@@ -65,10 +63,13 @@ namespace ChimeraTK {
     [[nodiscard]] const DataDescriptor& getDataDescriptor() const override { return dataDescriptor; }
 
     [[nodiscard]] bool isReadable() const override {
-      return ((registerAccess & Access::READ) | (registerAccess & Access::INTERRUPT)) != 0;
+      return (registerAccess == Access::READ_ONLY) || (registerAccess == Access::READ_WRITE) ||
+          (registerAccess == Access::INTERRUPT);
     }
 
-    [[nodiscard]] bool isWriteable() const override { return (registerAccess & Access::WRITE) != 0; }
+    [[nodiscard]] bool isWriteable() const override {
+      return (registerAccess == Access::WRITE_ONLY) || (registerAccess == Access::READ_WRITE);
+    }
 
     [[nodiscard]] AccessModeFlags getSupportedAccessModes() const override {
       if(registerAccess == Access::INTERRUPT && ((dataType == Type::VOID) || (is2DMultiplexed))) {
@@ -83,7 +84,8 @@ namespace ChimeraTK {
       return {AccessMode::raw};
     }
 
-    std::string name;        /**< Name of register */
+    RegisterPath pathName;
+
     uint32_t nElements;      /**< Number of elements in register */
     uint32_t nChannels;      /**< Number of channels/sequences */
     bool is2DMultiplexed;    /**< Flag if register is a 2D multiplexed
@@ -95,7 +97,7 @@ namespace ChimeraTK {
     uint32_t width;          /**< Number of significant bits in the register */
     int32_t nFractionalBits; /**< Number of fractional bits */
     bool signedFlag;         /**< Signed/Unsigned flag */
-    std::string module;      /**< Name of the module this register is in*/
+
     Access registerAccess;   /**< Data access direction: Read, write, read
                                         and write or interrupt */
     Type dataType;           /**< Data type (fixpoint, floating point)*/
@@ -108,8 +110,7 @@ namespace ChimeraTK {
     DataDescriptor dataDescriptor;
 
     [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
-      auto* info = new NumericAddressedRegisterInfo(*this);
-      return std::unique_ptr<BackendRegisterInfoBase>(info);
+      return std::unique_ptr<BackendRegisterInfoBase>(new NumericAddressedRegisterInfo(*this));
     }
   };
 
