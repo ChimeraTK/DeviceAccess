@@ -75,10 +75,10 @@ namespace {
 
       ScalarRegisterAccessor<int> mirrorRequest_Type = dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/TYPE");
       ScalarRegisterAccessor<int> mirrorRequest_Busy = dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/BUSY");
-      ScalarRegisterAccessor<int> mirrorRequest_Updated = dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/UPDATED");
-      // TODO for later
-      //ScalarRegisterAccessor<int> mirrorRequestUpdated_Interrupt{
-      //    dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_0")};
+      ScalarRegisterAccessor<int> mirrorRequest_Updated =
+          dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/UPDATED/DUMMY_WRITEABLE");
+      ScalarRegisterAccessor<int> mirrorRequestUpdated_Interrupt{
+          dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_0")};
 
       do {
         // poll Busy until it is set to true, indicating a new request
@@ -99,12 +99,12 @@ namespace {
           case mirrorRequest_Stop:
             keepRunning = false;
         }
-        //mirrorRequest_Updated.readLatest();
-        //++mirrorRequest_Updated;
-        //mirrorRequest_Updated.write();
-        //TODO also trigger interrupt for this variable
-        //mirrorRequestUpdated_Interrupt = 1;
-        //mirrorRequestUpdated_Interrupt.write();
+        mirrorRequest_Updated.readLatest();
+        ++mirrorRequest_Updated;
+        mirrorRequest_Updated.write();
+        // also trigger interrupt for this variable
+        mirrorRequestUpdated_Interrupt = 1;
+        mirrorRequestUpdated_Interrupt.write();
 
         mirrorRequest_Busy = 0;
         mirrorRequest_Busy.write();
