@@ -15,7 +15,7 @@
 
 namespace ChimeraTK {
 
-  // foward declarations
+  // forward declarations
   template<typename T>
   class DummyRegisterAccessor;
 
@@ -26,7 +26,7 @@ namespace ChimeraTK {
 
   /** The dummy device opens a mapping file instead of a device, and
    *  implements all registers defined in the mapping file in memory.
-   *  Like this it mimiks the real PCIe device.
+   *  Like this it mimics the real PCIe device.
    *
    *  Deriving from this class, you can write dedicated implementations
    *  with special functionality.
@@ -71,7 +71,7 @@ namespace ChimeraTK {
 
     /** Get a raw accessor to the underlying memory with the convenience of using 
      *  register names. This accessor had nothing to do with regular, TransferElement based
-     *  accessors and serves as second, independet implementation for debugging.
+     *  accessors and serves as second, independent implementation for debugging.
      *
      *  We have to use the old module/register interface because the dummy uses the old style
      *  mapping internally.
@@ -114,7 +114,7 @@ namespace ChimeraTK {
 
     /// Not write-protected function for internal use only. It does not trigger
     /// the callback function so it can be used inside a callback function for
-    /// resynchronisation.
+    /// re-synchronization.
     void writeRegisterWithoutCallback(uint64_t bar, uint64_t address, int32_t data);
 
     /** map of instance names and pointers to allow re-connecting to the same

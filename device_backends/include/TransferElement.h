@@ -54,7 +54,7 @@ namespace ChimeraTK {
   };
 
   /**
-   * @brief Used to indicate the applicable opereation on a Transferelement.
+   * @brief Used to indicate the applicable operation on a Transferelement.
    */
   enum class TransferType { read, readNonBlocking, readLatest, write, writeDestructively };
 
@@ -165,7 +165,7 @@ namespace ChimeraTK {
         auto previousDataValidity = _dataValidity;
         // always call postRead with updateDataBuffer = false in case of an exception
         postReadAndHandleExceptions(TransferType::readNonBlocking, false);
-        // Usually we do not reach this point because postRead() is re-throwing the _activeExeption.
+        // Usually we do not reach this point because postRead() is re-throwing the _activeException.
         // If we reach this point the exception has been suppressed. We have to calculate a
         // new return value because the dataBuffer has not changed, but the meta data
         // could have, in which case we have to return true.
@@ -269,15 +269,15 @@ namespace ChimeraTK {
      * writeable. */
     virtual bool isReadOnly() const = 0;
 
-    /** Check if transfer element is readable. It throws an acception if you try
+    /** Check if transfer element is readable. It throws an exception if you try
      * to read and isReadable() is not true.*/
     virtual bool isReadable() const = 0;
 
-    /** Check if transfer element is writeable. It throws an acception if you try
+    /** Check if transfer element is writeable. It throws an exception if you try
      * to write and isWriteable() is not true.*/
     virtual bool isWriteable() const = 0;
 
-    /** Set an actice exception. This function is called by all decorator-like TransferElements
+    /** Set an active exception. This function is called by all decorator-like TransferElements
      *  to propagate exceptions to their target.
      *  The argument is passed by reference. After returning from this function, it is {nullptr}.
      *  This function must not be called with nullptr (see spec FIXME).
@@ -296,7 +296,7 @@ namespace ChimeraTK {
      *  This function is only to be called inside of DeviceBackend::getRegisterAccessor()!
      *
      *  It is virtual because some accessor implementations like NumericAddressedBackendRegisterAccessor have an inner layer (LowLevelTransferElement),
-     *  and all layers need to know the exception backend.Hence the functions needs to be overridden in this case.
+     *  and all layers need to know the exception backend. Hence the functions needs to be overridden in this case.
      */
     virtual void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) {
       _exceptionBackend = exceptionBackend;
@@ -312,8 +312,8 @@ namespace ChimeraTK {
     cppext::future_queue<void> getReadQueue() { return _readQueue; }
 
    protected:
-    /** The backend to which the runtime_errors are reported via DeviceBackend::setEception().
-     *  Creating backends set it in DeviceBackend::getRegisterAccessor(). Devorators have to set it in the constructor from their target.
+    /** The backend to which the runtime_errors are reported via DeviceBackend::setException().
+     *  Creating backends set it in DeviceBackend::getRegisterAccessor(). Decorators have to set it in the constructor from their target.
      */
     boost::shared_ptr<DeviceBackend> _exceptionBackend;
 
@@ -353,8 +353,8 @@ namespace ChimeraTK {
      *  must be called after preRead() and before postRead(). If the accessor has the AccessMode::wait_for_new_data
      *  flag, the function will block until new data has been pushed by the sender.
      *
-     *  This function internally calls doReadTransferSynchonously(), which is implemented by the backend, or waits
-     *  for data on the _readQueue, depening whether AccessMode::wait_for_new_data is set.
+     *  This function internally calls doReadTransferSynchronously(), which is implemented by the backend, or waits
+     *  for data on the _readQueue, depending whether AccessMode::wait_for_new_data is set.
      *  runtime_error exceptions thrown in the transfer are caught and rethrown in postRead().
      */
     void readTransfer() {
@@ -570,7 +570,7 @@ namespace ChimeraTK {
     }
 
    public:
-    /** Perform any post-write cleanups if necessary. If during preWrite() e.g.
+    /** Perform any post-write clean-ups if necessary. If during preWrite() e.g.
      * the user data buffer was swapped away, it must be swapped back in this
      * function so the just sent data is available again to the calling program.
      *
@@ -610,7 +610,7 @@ namespace ChimeraTK {
      *  return value is true, old data was lost on the write transfer (e.g. due to an buffer overflow). In case of an
      *  unbuffered write transfer, the return value will always be false.
      *
-     *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
+     *  This function internally calls doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
     bool writeTransfer(ChimeraTK::VersionNumber versionNumber) { return doWriteTransfer(versionNumber); }
@@ -634,7 +634,7 @@ namespace ChimeraTK {
      *  return value is true, old data was lost on the write transfer (e.g. due to an buffer overflow). In case of an
      *  unbuffered write transfer, the return value will always be false.
      *
-     *  This function internally calles doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
+     *  This function internally calls doWriteTransfer(), which is implemented by the backend. runtime_error exceptions
      *  thrown in doWriteTransfer() are caught and rethrown in postWrite().
      */
     bool writeTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
@@ -728,7 +728,7 @@ namespace ChimeraTK {
     virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() { return shared_from_this(); }
 
     /**
-     *  Search for all underlying TransferElements which are considered identicel
+     *  Search for all underlying TransferElements which are considered identical
      * (see sameRegister()) with the given TransferElement. These TransferElements
      * are then replaced with the new element. If no underlying element matches
      * the new element, this function has no effect.
@@ -778,7 +778,7 @@ namespace ChimeraTK {
      * _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data
      * is put into the queue just before the exception, this is received first. Hence it is not guaranteed
      * that the read call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that
-     * it returns immediately. An it is guarantted that eventually the boost::thread_interrupted exception will be received.
+     * it returns immediately. An it is guaranteed that eventually the boost::thread_interrupted exception will be received.
      *
      * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      *
@@ -856,7 +856,7 @@ namespace ChimeraTK {
     bool writeTransactionInProgress{false};
 
    protected:
-    /// The queue for asyncronous read transfers. This is the void queue which is a continuation of the actial data transport queue,
+    /// The queue for asynchronous read transfers. This is the void queue which is a continuation of the actual data transport queue,
     /// which is implementation dependent. With _readQueue the exception propagation and waiting for new data is implemented in TransferElement.
     cppext::future_queue<void> _readQueue;
 

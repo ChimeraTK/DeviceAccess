@@ -29,7 +29,7 @@ namespace ChimeraTK {
       : fpcptr(_fpc), nbytes(_nbytes), buffer(_buffer) {}
 
       /// Implicit type conversion to user type T.
-      /// This covers already a lot of operations like arithmetics and comparison
+      /// This covers already a lot of operations like arithmetic and comparison
       inline operator T() const { return fpcptr->template scalarToCooked<T>(*buffer); }
 
       /// assignment operator
@@ -66,7 +66,7 @@ namespace ChimeraTK {
       }
 
      protected:
-      /// constructer when used as a base class in DummyRegister
+      /// constructor when used as a base class in DummyRegister
       DummyRegisterElement() : fpcptr(NULL), nbytes(0), buffer(NULL) {}
 
       /// fixed point converter to be used for this element
@@ -240,7 +240,7 @@ namespace ChimeraTK {
     /// name when searching for the register.
     DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
     : _dev(dev), _path(module + "/" + name), pitch(0) {
-      _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
+      _dev->_registerMap->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
 
       int i = 0;
       while(true) {
@@ -264,7 +264,7 @@ namespace ChimeraTK {
       }
 
       if(fpc.empty()) {
-        throw ChimeraTK::logic_error("No sequenes found for name \"" + name + "\".");
+        throw ChimeraTK::logic_error("No sequences found for name \"" + name + "\".");
       }
 
       // compute number of elements per sequence
@@ -327,7 +327,7 @@ namespace ChimeraTK {
   /** Accessor for raw 32 bit integer access to the underlying memory space.
    *  Usually you want the interpreted version, but for debugging the converters themselves
    *  and functionality of the NumericAddressedBackendRegisterAccessor we directly
-   *  want to write to the registers, without having to mess with absoute addresses
+   *  want to write to the registers, without having to mess with absolute addresses
    *  (we still depend on the map file parser, but the whole dummy does. The address
    *   translation is re-done in the dummy, we are not using the one from the regular accessors.)
    *
@@ -361,7 +361,7 @@ namespace ChimeraTK {
     unsigned int getNumberOfElements() { return registerInfo.nElements; }
 
     /** Get a lock to safely modify the buffer. You have to release it as soon as possible because it will block all other
-     *  functionaltiy of the Dummy. This is a really low low level debugging interface!
+     *  functionality of the Dummy. This is a really low low level debugging interface!
      */
     std::unique_lock<std::mutex> getBufferLock() { return std::unique_lock<std::mutex>(_backend->mutex); }
 

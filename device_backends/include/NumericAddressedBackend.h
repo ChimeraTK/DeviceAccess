@@ -71,12 +71,12 @@ namespace ChimeraTK {
      */
     void close() final;
 
-    /** All backends derrived from NumericAddressedBackend must implement closeImpl() instead of close. Like this it
+    /** All backends derived from NumericAddressedBackend must implement closeImpl() instead of close. Like this it
      *  is assured that the deactivation of the asynchronous accessors is always executed.
      */
     virtual void closeImpl() {}
 
-    /** This function is called every time an accessor which is assicated with the particular interupt controller and interrupt number
+    /** This function is called every time an accessor which is associated with the particular interrupt controller and interrupt number
      *  is created. The idea is to have a lazy initialisation of the interrupt handling threads, so only those threads are running for which
      *  accessors have been created. The function implementation must check whether the according thread is already running and should do nothing
      *  when called a second time.
@@ -120,7 +120,7 @@ namespace ChimeraTK {
     VersionNumber dispatchInterrupt(int interruptControllerNumber, int interruptNumber);
 
    private:
-    /** This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
+    /** This variable is private so the map cannot be altered by deriving backends. The only thing the backends have to
      *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not modified.
      */
     std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
