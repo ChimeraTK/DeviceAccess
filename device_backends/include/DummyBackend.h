@@ -42,7 +42,7 @@ namespace ChimeraTK {
    *  case a write operation will just be ignored and no callback
    *  function is executed.
    */
-  class DummyBackend : public DummyBackendBase<DummyBackend> {
+  class DummyBackend : public DummyBackendBase {
    public:
     DummyBackend(std::string mapFileName);
     ~DummyBackend() override;
@@ -57,8 +57,8 @@ namespace ChimeraTK {
      */
     void closeImpl() override;
 
-    using DummyBackendBase<DummyBackend>::read;  // use the 32 bit version from the base class
-    using DummyBackendBase<DummyBackend>::write; // use the 32 bit version from the base class
+    using DummyBackendBase::read;  // use the 32 bit version from the base class
+    using DummyBackendBase::write; // use the 32 bit version from the base class
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
 
