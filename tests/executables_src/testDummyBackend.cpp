@@ -554,28 +554,31 @@ BOOST_AUTO_TEST_CASE(testCreateBackend) {
   BOOST_CHECK_THROW(DummyBackend::createInstance("", pararmeters), ChimeraTK::logic_error);
   /** Try creating a non existing backend */
   BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
-  /** Try creating an existing backend - don't use EXISTING_DEVICE here as it bypasses the dummy's factory */
-  auto backendInstance = FactoryInstance.createBackend("(dummy:createTest?map=" TEST_MAPPING_FILE ")");
+  std::string cdd1 = "(dummy?map=" TEST_MAPPING_FILE ")";
+  auto backendInstance = FactoryInstance.createBackend(cdd1);
   BOOST_CHECK(backendInstance);
   /** backend should be in connect state now */
   BOOST_CHECK(backendInstance->isConnected() == true);
   /** backend should not be in open state */
   BOOST_CHECK(backendInstance->isOpen() == false);
 
-  /** check if instance name is working properly */
-  pararmeters["map"] = TEST_MAPPING_FILE;
-  auto inst1 = DummyBackend::createInstance("", pararmeters);
-  auto inst2 = DummyBackend::createInstance("", pararmeters);
-  auto inst3 = DummyBackend::createInstance("FOO", pararmeters);
-  auto inst4 = DummyBackend::createInstance("FOO", pararmeters);
-  auto inst5 = DummyBackend::createInstance("BAR", pararmeters);
-  BOOST_CHECK(inst1.get() != inst2.get());
-  BOOST_CHECK(inst1.get() != inst3.get());
-  BOOST_CHECK(inst1.get() != inst4.get());
-  BOOST_CHECK(inst1.get() != inst5.get());
+  /** check that the creation of different instances with the same map file */
+  auto instance2 = BackendFactory::getInstance().createBackend(cdd1);
+  std::string cdd3 = "(dummy:FOO?map=" TEST_MAPPING_FILE ")";
+  auto instance3 = BackendFactory::getInstance().createBackend(cdd3);
+  auto instance4 = BackendFactory::getInstance().createBackend(cdd3);
+  std::string cdd5 = "(dummy:BAR?map=" TEST_MAPPING_FILE ")";
+  auto instance5 = BackendFactory::getInstance().createBackend(cdd5);
 
-  BOOST_CHECK(inst3.get() == inst4.get());
-  BOOST_CHECK(inst3.get() != inst5.get());
+  // instance 1 and 2 are the same
+  BOOST_CHECK(backendInstance.get() == instance2.get());
+  // instance 3 and 4 are the same
+  BOOST_CHECK(instance3.get() == instance4.get());
+
+  // instances 1, 3 and 5 are all different
+  BOOST_CHECK(backendInstance.get() != instance3.get());
+  BOOST_CHECK(backendInstance.get() != instance5.get());
+  BOOST_CHECK(instance3.get() != instance5.get());
 }
 
 /**********************************************************************************************************************/

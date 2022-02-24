@@ -104,7 +104,6 @@ namespace ChimeraTK {
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-
       // First check if the request is for one of the special DUMMY_INTEERRUPT_X_Y registers. if so, early return
       // this special accessor.
       // Pseudo-register to trigger interrupts for this register
@@ -249,6 +248,7 @@ namespace ChimeraTK {
       // name
       boost::weak_ptr<DeviceBackend> wp = instanceMap[instanceId];
       if(boost::shared_ptr<DeviceBackend> sp = wp.lock()) {
+        assert(false);
         // return existing instanceId from the map
         return sp;
       }
