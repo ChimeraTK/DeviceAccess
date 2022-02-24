@@ -117,15 +117,6 @@ namespace ChimeraTK {
     /// re-synchronization.
     void writeRegisterWithoutCallback(uint64_t bar, uint64_t address, int32_t data);
 
-    /** map of instance names and pointers to allow re-connecting to the same
-     * instance with multiple Devices */
-    static std::map<std::string, boost::weak_ptr<ChimeraTK::DeviceBackend>>& getInstanceMap() {
-      static std::map<std::string, boost::weak_ptr<ChimeraTK::DeviceBackend>> instanceMap;
-      return instanceMap;
-    }
-    // DummyBackendBase needs access to getInstanceMap()
-    friend class DummyBackendBase<DummyBackend>;
-
     /// register accessors must be friends to access the map and the registers
     template<typename T>
     friend class DummyRegisterAccessor;
