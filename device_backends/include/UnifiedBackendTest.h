@@ -3340,19 +3340,20 @@ namespace ChimeraTK {
       } // end of constexpr if
       if(this->isRaw(x)) {
         if(x.capabilities.testRawTransfer == TestCapability::disabled) {
-          BOOST_REQUIRE_MESSAGE(
-              false, "Test configuration error: testRawTransfer is disabled for register with AccessMode::raw!");
+          BOOST_REQUIRE_MESSAGE(false,
+              "Test configuration error: testRawTransfer is disabled for register '" + std::string(x.path()) +
+                  "' with AccessMode::raw!");
         }
         else if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
-          std::cout << "WARNING: testRawTransfer capability unspecified for a register with AccessMode::raw. This will "
-                       "turn into a test configuration error in a future release!"
+          std::cout << "WARNING: testRawTransfer capability unspecified for register '" + std::string(x.path()) +
+                  "' with AccessMode::raw. This will turn into a test configuration error in a future release!"
                     << std::endl;
         }
       }
       else {
         if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
-          std::cout << "Warning: testRawTransfer capability unspecified for a register without AccessMode::raw. Please "
-                       "explicitly disable this test."
+          std::cout << "Warning: testRawTransfer capability unspecified for register '" + std::string(x.path()) +
+                  "' without AccessMode::raw. Please explicitly disable this test."
                     << std::endl;
         }
       }

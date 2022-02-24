@@ -29,7 +29,7 @@ struct AreaType : Register {
   size_t nRuntimeErrorCases() { return 1; }
 
   static constexpr auto capabilities =
-      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().disableTestRawTransfer();
+      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
 
   DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
 
@@ -44,14 +44,22 @@ struct AreaType : Register {
     return {v};
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    std::vector<UserType> v;
+  // Use the same implementation for raw and cooked.
+  // Type can be UserType or RawType
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
+    std::vector<Type> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       assert(i + this->address() / 4 < 10);
-      v.push_back(this->fromRaw(acc[i + this->address() / 4]));
+      auto rawVal = acc[i + this->address() / 4];
+      v.push_back((raw ? rawVal : this->fromRaw(rawVal)));
     }
     return {v};
+  }
+
+  template<typename RawType>
+  std::vector<std::vector<RawType>> getRemoteRawValue() {
+    return getRemoteValue<RawType>(true);
   }
 
   void setRemoteValue() {
@@ -122,7 +130,8 @@ struct Regs3Type : Register {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  static constexpr auto capabilities =
+      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
@@ -141,18 +150,25 @@ struct Regs3Type : Register {
     return {v};
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    std::vector<UserType> v;
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
+    std::vector<Type> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
+      Type rawValue;
       if(!core.useArea) {
-        v.push_back(this->fromRaw(core.currentValue[i + this->address()]));
+        rawValue = core.currentValue[i + this->address()];
       }
       else {
-        v.push_back(this->fromRaw(core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize]));
+        rawValue = core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize];
       }
+      v.push_back(raw ? rawValue : this->fromRaw(rawValue));
     }
     return {v};
+  }
+
+  template<typename RawType>
+  std::vector<std::vector<RawType>> getRemoteRawValue() {
+    return getRemoteValue<RawType>(true);
   }
 
   void setRemoteValue() {
