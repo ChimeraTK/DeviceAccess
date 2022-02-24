@@ -38,7 +38,7 @@ namespace ChimeraTK {
    *  Accessing applications are required to the same mapping file (matching
    * absolute path) and to be run by the same user.
    */
-  class SharedDummyBackend : public DummyBackendBase<SharedDummyBackend> {
+  class SharedDummyBackend : public DummyBackendBase {
    public:
     SharedDummyBackend(std::string instanceId, std::string mapFileName);
     ~SharedDummyBackend() override;
@@ -46,8 +46,8 @@ namespace ChimeraTK {
     void open() override;
     void closeImpl() override;
 
-    using DummyBackendBase<SharedDummyBackend>::read;  // use the 32 bit version from the base class
-    using DummyBackendBase<SharedDummyBackend>::write; // use the 32 bit version from the base class
+    using DummyBackendBase::read;  // use the 32 bit version from the base class
+    using DummyBackendBase::write; // use the 32 bit version from the base class
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
 
@@ -154,15 +154,6 @@ namespace ChimeraTK {
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
-
-    /** map of instance names and pointers to allow re-connecting to the same
-     * instance with multiple Devices */
-    static std::map<std::string, boost::shared_ptr<DeviceBackend>>& getInstanceMap() {
-      static std::map<std::string, boost::shared_ptr<DeviceBackend>> instanceMap;
-      return instanceMap;
-    }
-    // DummyBackendBase needs access to getInstanceMap()
-    friend class DummyBackendBase<SharedDummyBackend>;
   };
 
 } // namespace ChimeraTK
