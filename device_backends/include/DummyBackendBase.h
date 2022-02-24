@@ -32,25 +32,14 @@
 namespace ChimeraTK {
   /**
    * Base class for DummyBackends, provides common functionality
-   *
-   * Note: This is implemented as a CRTP because we need to access
-   *       the static getInstanceMap() of the derived backends.
    */
-  template<typename DerivedBackendType>
   class DummyBackendBase : public NumericAddressedBackend {
-   private:
-    // ctor & dtor private with derived type as friend to enforce
-    // correct specialization
-    friend DerivedBackendType;
+   protected:
+    DummyBackendBase(std::string const& mapFileName);
 
-    DummyBackendBase(std::string const& mapFileName)
-    : NumericAddressedBackend(mapFileName), _registerMapping{_registerMap} {
-      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
-    }
+    ~DummyBackendBase() override;
 
-    ~DummyBackendBase() override {}
-
-    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
+    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override;
 
     /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
      *  for that particular interrupt controller and interrupt number, the data will be read out
@@ -78,33 +67,19 @@ namespace ChimeraTK {
     }
 
     /// All bars are valid in dummies.
-    bool barIndexValid([[maybe_unused]] uint64_t bar) override { return true; }
+    bool barIndexValid([[maybe_unused]] uint64_t bar) override;
 
-   protected:
     RegisterInfoMapPointer _registerMapping;
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
-    std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const {
-      std::map<uint64_t, size_t> barSizesInBytes;
-      for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-          mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
-        barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
-            static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
-      }
-      return barSizesInBytes;
-    }
+    std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
 
-    static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes) {
-      if(sizeInBytes % sizeof(int32_t)) {
-        throw ChimeraTK::logic_error("Read/write size has to be a multiple of 4");
-      }
-    }
+    static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
     /// Specific override which allows to create "DUMMY_WRITEABLE" accessors for read-only registers
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-
       // First check if the request is for one of the special DUMMY_INTEERRUPT_X_Y registers. if so, early return
       // this special accessor.
       // Pseudo-register to trigger interrupts for this register
@@ -220,13 +195,11 @@ namespace ChimeraTK {
     }
 
     /**
-     * @brief Method looks up and returns an existing instance of class 'T'
-     * corresponding to instanceId, if instanceId is a valid  key in the
-     * internal map. For an instanceId not in the internal map, a new instance
-     * of class T is created, cached and returned. Future calls to
-     * returnInstance with this instanceId, returns this cached instance. If
-     * the instanceId is "" a new instance of class T is created and
-     * returned. This instance will not be cached in the internal memory.
+     * @brief Backward compatibility: Leftover from the time when the dummy managed it's own map
+     * to return the same instance multiple times, and still allow to use the same map file with different instances.
+     *
+     * This functionality is now in the BackendFactory and has been removed here.
+     * The function is still in here because existing backend implementations use it in their createInstance() functions.
      *
      * @param instanceId Used as key for the object instance look up. "" as
      *                   instanceId will return a new T instance that is not
@@ -236,24 +209,9 @@ namespace ChimeraTK {
      *                   the argument list as parameters.
      */
     template<typename T, typename... Args>
-    static boost::shared_ptr<DeviceBackend> returnInstance(const std::string& instanceId, Args&&... arguments) {
-      if(instanceId == "") {
-        // std::forward because template accepts forwarding references
-        // (Args&&) and this can have both lvalue and rvalue references passed
-        // as arguments.
-        return boost::shared_ptr<DeviceBackend>(new T(std::forward<Args>(arguments)...));
-      }
-      auto instanceMap = DerivedBackendType::getInstanceMap();
-
-      // search instance map and create new instanceId, if not found under the
-      // name
-      if(DerivedBackendType::getInstanceMap().find(instanceId) == DerivedBackendType::getInstanceMap().end()) {
-        boost::shared_ptr<DeviceBackend> ptr(new T(std::forward<Args>(arguments)...));
-        DerivedBackendType::getInstanceMap().insert(std::make_pair(instanceId, ptr));
-        return ptr;
-      }
-      // return existing instanceId from the map
-      return boost::shared_ptr<DeviceBackend>(DerivedBackendType::getInstanceMap()[instanceId]);
+    static boost::shared_ptr<DeviceBackend> returnInstance(
+        [[maybe_unused]] const std::string& instanceId, Args&&... arguments) {
+      return boost::make_shared<T>(std::forward<Args>(arguments)...);
     }
 
   }; // class DummyBackendBase
