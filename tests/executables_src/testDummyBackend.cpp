@@ -427,6 +427,23 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnlyRegister) {
   // for the following test cases
 }
 
+BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
+  ChimeraTK::Device dummyDevice;
+  dummyDevice.open("DUMMYD0");
+
+  // Also get pointer to the backend in order to check the catalogue
+  TestableDummyBackend* dummyBackend = f.getBackendInstance();
+
+  const std::string DUMMY_INTERRUPT{"/DUMMY_INTERRUPT_3_0"};
+  auto ro_register = dummyDevice.getScalarRegisterAccessor<int>(DUMMY_INTERRUPT);
+
+  // The suffixed register must not appear in the catalogue
+  BOOST_CHECK(!dummyBackend->getRegisterCatalogue().hasRegister(DUMMY_INTERRUPT));
+
+  // Don't close the device here because the backend needs to stay open
+  // for the following test cases
+}
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAddressRange) {
@@ -495,7 +512,7 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
   BOOST_REQUIRE(bar2Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar2Iter->second.size() == 0x400); // 0x1000 bytes in 32 bit words
 
-  // the "prtmapFile" has an implicit converion to bool to check
+  // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL
   BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());

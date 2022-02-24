@@ -169,7 +169,6 @@ struct Integers_signed32_async_rw {
   }
 
   void forceAsyncReadInconsistency() {
-    // Change value without sending it via ZeroMQ
     acc = generateValue<minimumUserType>()[0][0];
   }
 

@@ -56,7 +56,7 @@ namespace ChimeraTK {
     class RegisterInfo : public ChimeraTK::RegisterInfo {
      public:
       enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE, INTERRUPT = 1 << 2 };
-      /** Enum descibing the data interpretation:
+      /** Enum describing the data interpretation:
        *  \li Fixed point (includes integer = 0 fractional bits)
        *  \li IEEE754 floating point
        *  \li ASCII ascii characters

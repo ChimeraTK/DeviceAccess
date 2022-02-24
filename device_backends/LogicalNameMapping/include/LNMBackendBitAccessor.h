@@ -49,7 +49,7 @@ namespace ChimeraTK {
       }
       if(numberOfWords > 1) {
         throw ChimeraTK::logic_error("LNMBackendBitAccessors must have size 1.");
-        // The case that the target size actually is 1 if numberOfWords == 0 cannnot be checked here.
+        // The case that the target size actually is 1 if numberOfWords == 0 cannot be checked here.
         // 0 is allowed. It is tested after the target has created the accessor with 0 as length parameter.
       }
 

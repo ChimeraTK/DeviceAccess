@@ -15,7 +15,7 @@
 
 namespace ChimeraTK {
 
-  /** Base class for the reigster accessor abstractors (ScalarRegisterAccessor,
+  /** Base class for the register accessor abstractors (ScalarRegisterAccessor,
    * OneDRegisterAccessor and TwoDRegisterAccessor). Provides a private
    * implementation of the TransferElement interface to allow the bridges to be
    * added to a TransferGroup. Also stores the shared pointer to the
@@ -34,7 +34,7 @@ namespace ChimeraTK {
      * Device must be called. */
     void replace(const NDRegisterAccessorAbstractor<UserType>& newAccessor) { _impl = newAccessor._impl; }
 
-    /** Alternative signature of relace() with the same functionality, used when a
+    /** Alternative signature of replace() with the same functionality, used when a
      * pointer to the implementation has been obtained directly (instead of a
      * NDRegisterAccessorAbstractor). */
     void replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
