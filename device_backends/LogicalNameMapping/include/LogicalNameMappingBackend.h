@@ -67,8 +67,9 @@ namespace ChimeraTK {
 
     /** We need to make the catalogue mutable, since we fill it within
      * getRegisterCatalogue() */
-    mutable BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue_mutable;
 
+    mutable BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue_mutable;
+    //mutable LNMRegisterCatalogue _catalogue_mutable;
     /** Flag whether the catalogue has already been filled with extra information
      * from the target backends */
     mutable bool catalogueCompleted{false};

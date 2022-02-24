@@ -14,6 +14,7 @@
 #include "ForwardDeclarations.h"
 #include "RegisterInfo.h"
 #include "TransferElement.h"
+#include "BackendRegisterCatalogue.h"
 
 namespace ChimeraTK {
 
@@ -30,9 +31,7 @@ namespace ChimeraTK {
     /** constuctor: initialise values */
     LNMBackendRegisterInfo() : targetType(TargetType::INVALID), supportedFlags({}) {}
     LNMBackendRegisterInfo(const LNMBackendRegisterInfo&) = default;
-
     LNMBackendRegisterInfo& operator=(const LNMBackendRegisterInfo& other) = default;
-
 
     RegisterPath getRegisterName() const override { return name; }
 
@@ -125,5 +124,14 @@ namespace ChimeraTK {
       return std::unique_ptr<RegisterInfoImpl>(info);
     }
   };
+  /********************************************************************************************************************/
 
+  /*class LNMRegisterCatalogue : public BackendRegisterCatalogue<LNMBackendRegisterInfo> {
+    public:
+      LNMRegisterCatalogue() = default;
+      LNMRegisterCatalogue& operator=(const LNMRegisterCatalogue& other) = default;
+      LNMRegisterCatalogue(const LNMRegisterCatalogue&) = default;
+  };*/
+
+  /********************************************************************************************************************/
 } /* namespace ChimeraTK */

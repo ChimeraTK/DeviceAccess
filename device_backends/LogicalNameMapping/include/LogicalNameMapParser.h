@@ -39,15 +39,18 @@ namespace ChimeraTK {
     LogicalNameMapParser() {}
 
     /** Obtain the parsed register catalogue */
-    RegisterCatalogue getCatalogue() {return RegisterCatalogue(_catalogue.clone()); }
+
+    //LNMRegisterCatalogue& getCatalogue() {return _catalogue; }
+    BackendRegisterCatalogue<LNMBackendRegisterInfo>& getCatalogue() {return _catalogue; }
 
     /** Obtain list of all target devices referenced in the map */
     std::unordered_set<std::string> getTargetDevices() const;
 
-   protected:
+   //protected:
     /** parse the given XML file */
     void parseFile(const std::string& fileName);
-
+    BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
+   protected:
     /** called inside parseFile() to parse an XML element and its sub-elements
      * recursivly */
     void parseElement(RegisterPath currentPath, const xmlpp::Element* element);
@@ -69,7 +72,8 @@ namespace ChimeraTK {
     RegisterPath currentModule;
 
     /** actual register info map (register name to target information) */
-    BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
+    //BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
+    //LNMRegisterCatalogue _catalogue;
 
     /** parameter map */
     std::map<std::string, std::string> _parameters;

@@ -27,6 +27,7 @@ namespace ChimeraTK {
 
     // parse the map fle
     LogicalNameMapParser parser = LogicalNameMapParser(_lmapFileName, _parameters);
+    //parser.
     _catalogue_mutable = parser.getCatalogue();
 
     // create all devices referenced in the map
@@ -205,7 +206,7 @@ namespace ChimeraTK {
         continue;
 
       std::string devName = info_cast.deviceName;
-      //boost::shared_ptr<RegisterInfoImpl> target_info;
+      //boost::shared_ptr<RegisterInfoImpl target_info;
       LNMBackendRegisterInfo target_info;
       if(devName != "this") {
         auto cat = _devices.at(devName)->getRegisterCatalogue();
