@@ -217,13 +217,11 @@ namespace ChimeraTK {
     }
 
     /**
-     * @brief Method looks up and returns an existing instance of class 'T'
-     * corresponding to instanceId, if instanceId is a valid  key in the
-     * internal map. For an instanceId not in the internal map, a new instance
-     * of class T is created, cached and returned. Future calls to
-     * returnInstance with this instanceId, returns this cached instance. If
-     * the instanceId is "" a new instance of class T is created and
-     * returned. This instance will not be cached in the internal memory.
+     * @brief Backward compatibility: Leftover from the time when the dummy managed it's own map
+     * to return the same instance multiple times, and still allow to use the same map file with different instances.
+     *
+     * This functionality is now in the BackendFactory and has been removed here.
+     * The function is still in here because existing backend implementations use it in their createInstance() functions.
      *
      * @param instanceId Used as key for the object instance look up. "" as
      *                   instanceId will return a new T instance that is not
@@ -233,28 +231,9 @@ namespace ChimeraTK {
      *                   the argument list as parameters.
      */
     template<typename T, typename... Args>
-    static boost::shared_ptr<DeviceBackend> returnInstance(const std::string& instanceId, Args&&... arguments) {
-      if(instanceId == "") {
-        // std::forward because template accepts forwarding references
-        // (Args&&) and this can have both lvalue and rvalue references passed
-        // as arguments.
-        return boost::shared_ptr<DeviceBackend>(new T(std::forward<Args>(arguments)...));
-      }
-      auto& instanceMap = DerivedBackendType::getInstanceMap();
-
-      // search instance map and create new instanceId, if not found under the
-      // name
-      boost::weak_ptr<DeviceBackend> wp = instanceMap[instanceId];
-      if(boost::shared_ptr<DeviceBackend> sp = wp.lock()) {
-        assert(false);
-        // return existing instanceId from the map
-        return sp;
-      }
-      else {
-        boost::shared_ptr<DeviceBackend> ptr(new T(std::forward<Args>(arguments)...));
-        instanceMap[instanceId] = ptr;
-        return ptr;
-      }
+    static boost::shared_ptr<DeviceBackend> returnInstance(
+        [[maybe_unused]] const std::string& instanceId, Args&&... arguments) {
+      return boost::make_shared<T>(std::forward<Args>(arguments)...);
     }
 
   }; // class DummyBackendBase
