@@ -32,17 +32,9 @@
 namespace ChimeraTK {
   /**
    * Base class for DummyBackends, provides common functionality
-   *
-   * Note: This is implemented as a CRTP because we need to access
-   *       the static getInstanceMap() of the derived backends.
    */
-  template<typename DerivedBackendType>
   class DummyBackendBase : public NumericAddressedBackend {
-   private:
-    // ctor & dtor private with derived type as friend to enforce
-    // correct specialization
-    friend DerivedBackendType;
-
+   protected:
     DummyBackendBase(std::string const& mapFileName)
     : NumericAddressedBackend(mapFileName), _registerMapping{_registerMap} {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
@@ -80,7 +72,6 @@ namespace ChimeraTK {
     /// All bars are valid in dummies.
     bool barIndexValid([[maybe_unused]] uint64_t bar) override { return true; }
 
-   protected:
     RegisterInfoMapPointer _registerMapping;
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
