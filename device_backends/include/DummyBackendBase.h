@@ -35,14 +35,11 @@ namespace ChimeraTK {
    */
   class DummyBackendBase : public NumericAddressedBackend {
    protected:
-    DummyBackendBase(std::string const& mapFileName)
-    : NumericAddressedBackend(mapFileName), _registerMapping{_registerMap} {
-      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
-    }
+    DummyBackendBase(std::string const& mapFileName);
 
-    ~DummyBackendBase() override {}
+    ~DummyBackendBase() override;
 
-    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
+    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override;
 
     /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
      *  for that particular interrupt controller and interrupt number, the data will be read out
@@ -70,26 +67,14 @@ namespace ChimeraTK {
     }
 
     /// All bars are valid in dummies.
-    bool barIndexValid([[maybe_unused]] uint64_t bar) override { return true; }
+    bool barIndexValid([[maybe_unused]] uint64_t bar) override;
 
     RegisterInfoMapPointer _registerMapping;
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
-    std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const {
-      std::map<uint64_t, size_t> barSizesInBytes;
-      for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-          mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
-        barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
-            static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
-      }
-      return barSizesInBytes;
-    }
+    std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
 
-    static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes) {
-      if(sizeInBytes % sizeof(int32_t)) {
-        throw ChimeraTK::logic_error("Read/write size has to be a multiple of 4");
-      }
-    }
+    static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
     /// Specific override which allows to create "DUMMY_WRITEABLE" accessors for read-only registers
     template<typename UserType>
