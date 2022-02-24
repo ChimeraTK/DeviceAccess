@@ -243,18 +243,18 @@ namespace ChimeraTK {
         // as arguments.
         return boost::shared_ptr<DeviceBackend>(new T(std::forward<Args>(arguments)...));
       }
-      auto instanceMap = DerivedBackendType::getInstanceMap();
+      auto& instanceMap = DerivedBackendType::getInstanceMap();
 
       // search instance map and create new instanceId, if not found under the
       // name
-      boost::weak_ptr<DeviceBackend> wp = DerivedBackendType::getInstanceMap()[instanceId];
+      boost::weak_ptr<DeviceBackend> wp = instanceMap[instanceId];
       if(boost::shared_ptr<DeviceBackend> sp = wp.lock()) {
         // return existing instanceId from the map
         return sp;
       }
       else {
         boost::shared_ptr<DeviceBackend> ptr(new T(std::forward<Args>(arguments)...));
-        DerivedBackendType::getInstanceMap().insert(std::make_pair(instanceId, ptr));
+        instanceMap[instanceId] = ptr;
         return ptr;
       }
     }
