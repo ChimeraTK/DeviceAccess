@@ -11,6 +11,7 @@
 #include "AsyncNDRegisterAccessor.h"
 #include "NumericAddressedInterruptDispatcher.h"
 #include "DummyBackendRegisterCatalogue.h"
+#include "DummyInterruptTriggerAccessor.h"
 
 #include <sstream>
 #include <regex>
@@ -37,8 +38,7 @@ namespace ChimeraTK {
    protected:
     // ctor & dtor private with derived type as friend to enforce correct specialization
 
-    explicit DummyBackendBase(std::string const& mapFileName)
-    : NumericAddressedBackend(mapFileName, std::make_unique<DummyBackendRegisterCatalogue>()) {
+    explicit DummyBackendBase(std::string const& mapFileName);
 
     ~DummyBackendBase() override;
 
@@ -75,12 +75,6 @@ namespace ChimeraTK {
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
     std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
-      for(auto const& info : _registerMap) {
-        if(info.elementPitchBits % 8 != 0) {
-          throw ChimeraTK::logic_error("DummyBackendBase: Elements have to be byte aligned.");
-        }
-        barSizesInBytes[info.bar] = std::max(
-            barSizesInBytes[info.bar], static_cast<size_t>(info.address + info.nElements * info.elementPitchBits / 8));
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
@@ -105,7 +99,7 @@ namespace ChimeraTK {
         auto controller = std::stoi(match[1].str());
         auto interrupt = std::stoi(match[2].str());
         try {
-          auto& interruptsForController = _registerMap->getListOfInterrupts().at(controller);
+          auto& interruptsForController = _registerMap.getListOfInterrupts().at(controller);
           if(interruptsForController.find(interrupt) == interruptsForController.end())
             throw ChimeraTK::logic_error("Invalid interrupt for controller (" + match[0].str() + ", " +
                 match[1].str() + ": " + regPathNameStr);
@@ -123,10 +117,9 @@ namespace ChimeraTK {
 
         return boost::shared_ptr<NDRegisterAccessor<UserType>>(d);
       }
-      
-      return NumericAddressedBackend::getRegisterAccessor_impl(registerPathName, numberOfWords, wordOffsetInRegister, flags);
-    }
 
+      return NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
+          registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
 
     /**
