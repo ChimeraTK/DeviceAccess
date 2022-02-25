@@ -164,50 +164,6 @@ struct Integers_signed32_DummyWritable : public Integers_base<Integers_signed32_
   bool isReadable() { return true; }
 };
 
-// TODO implement async read test
-// we need to support the sequence setRemoteValue, getRemoteValue, read
-// and pushing the new value must be initiated by the helper process
-// setRemoteValue of Integers_base will trigger new value for UPDATED
-struct Integers_signed32_async : public Integers_base<Integers_signed32_async> {
-  std::string path() { return "MIRRORREQUEST/UPDATED"; }
-  bool isWriteable() { return false; }
-  bool isReadable() { return true; }
-  ChimeraTK::AccessModeFlags supportedFlags() {
-    return { ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
-  }
-
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    // TODO check - do we need generateValue at all here?
-    ensureOpen();
-    minimumUserType val00 = gHelperProcess.mirrorRequest_Updated->accessData(0);
-    // incremented value of UPDATED
-    return {{val00 + 1}};
-  }
-
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    ensureOpen();
-    gHelperProcess.mirrorRequest_Updated->readLatest();
-    // TODO maybe accBackdoor will couse problems since non-existing ?
-    minimumUserType val00 = gHelperProcess.mirrorRequest_Updated->accessData(0);
-
-    return {{val00}};
-  }
-
-  void forceAsyncReadInconsistency() {
-    // TODO do we need this?
-    // Change value without sending interrupt
-    auto x = generateValue<minimumUserType>()[0][0];
-  }
-};
-struct Integers_signed32_async_rw : Integers_signed32_async {
-  // Using the DUMMY_WRITEABLE register here since usually an async regiter is r/o implicitly
-  std::string path() { return "MIRRORREQUEST/UPDATED/DUMMY_WRITEABLE"; }
-  bool isWriteable() { return true; }
-  bool isReadable() { return true; }
-};
-
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
