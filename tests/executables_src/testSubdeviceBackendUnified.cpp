@@ -58,11 +58,6 @@ struct AreaType : Register {
     return {v};
   }
 
-  template<typename RawType>
-  std::vector<std::vector<RawType>> getRemoteRawValue() {
-    return getRemoteValue<RawType>(true);
-  }
-
   void setRemoteValue() {
     auto v = generateValue<typename Register::minimumUserType>()[0];
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
@@ -167,11 +162,6 @@ struct Regs3Type : Register {
       v.push_back(raw ? rawValue : this->fromRaw(rawValue));
     }
     return {v};
-  }
-
-  template<typename RawType>
-  std::vector<std::vector<RawType>> getRemoteRawValue() {
-    return getRemoteValue<RawType>(true);
   }
 
   void setRemoteValue() {

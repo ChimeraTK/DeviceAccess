@@ -3316,7 +3316,7 @@ namespace ChimeraTK {
           if(x.isReadable()) {
             x.template setRemoteValue();
             reg.read();
-            auto expectedRawValue = x.template getRemoteRawValue<RawType>();
+            auto expectedRawValue = x.template getRemoteValue<RawType>(/* raw = */ true);
             CHECK_EQUALITY(reg, expectedRawValue);
 
             auto expectedCookedValue = x.template getRemoteValue<UserType>();
@@ -3332,10 +3332,10 @@ namespace ChimeraTK {
             CHECK_EQUALITY_VECTOR(readCookedValue, expectedCookedValue);
           }
           if(x.isWriteable()) {
-            auto newValue = x.template generateValue<RawType>(true);
+            auto newValue = x.template generateValue<RawType>(/* raw = */ true);
             reg = newValue;
             reg.write();
-            auto readbackValue = x.template getRemoteRawValue<RawType>();
+            auto readbackValue = x.template getRemoteValue<RawType>(/* raw = */ true);
             CHECK_EQUALITY_VECTOR(readbackValue, newValue);
 
             // test setting as cooked

@@ -66,12 +66,7 @@ struct Integers_signed32 {
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    return {{acc}};
-  }
-
-  template<typename RawType>
-  std::vector<std::vector<RawType>> getRemoteRawValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -114,12 +109,7 @@ struct Integers_signed32_async {
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    return {{acc}};
-  }
-
-  template<typename RawType>
-  std::vector<std::vector<RawType>> getRemoteRawValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -171,12 +161,7 @@ struct Integers_signed32_async_rw {
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    return {{acc}};
-  }
-
-  template<typename RawType>
-  std::vector<std::vector<RawType>> getRemoteRawValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -253,8 +238,8 @@ struct ShortRaw_base {
   }
 
   // We use the same function to implement raw and cooked reading.
-  // Don't implement getRemoteRawValue first (with the ++ in case of a padding error).
-  // and then only do the to cooked in getRemoteVale. rawToCooked might undo the ++ effect in case
+  // Do the calculation on the target type, then decide on the padding error.
+  // rawToCooked might undo the ++ effect in case
   // of rounding. When getting cooked, the ++ must happen on the UserType.
   // Type can be UserType or RawType.
   template<typename Type>
@@ -271,11 +256,6 @@ struct ShortRaw_base {
     }
     /* std::cout << "getRemoteValue " << derived->path() << " " << float(get()) << " -> " << float(v) << std::endl; */
     return {{v}};
-  }
-
-  template<typename RawType>
-  std::vector<std::vector<RawType>> getRemoteRawValue() {
-    return getRemoteValue<RawType>(true);
   }
 
   void setRemoteValue() {

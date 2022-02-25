@@ -154,11 +154,6 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     return {v};
   }
 
-  template<typename RawType>
-  std::vector<std::vector<RawType>> getRemoteRawValue() {
-    return getRemoteValue<RawType>(true);
-  }
-
   void setRemoteValue() {
     auto v = generateValue<typename Derived::rawUserType>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
