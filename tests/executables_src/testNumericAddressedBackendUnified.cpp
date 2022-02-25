@@ -55,17 +55,18 @@ struct Integers_signed32 {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -97,17 +98,18 @@ struct Integers_signed32_async {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -148,17 +150,18 @@ struct Integers_signed32_async_rw {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", "/Integers/signed32_async"};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -167,9 +170,7 @@ struct Integers_signed32_async_rw {
     if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
   }
 
-  void forceAsyncReadInconsistency() {
-    acc = generateValue<minimumUserType>()[0][0];
-  }
+  void forceAsyncReadInconsistency() { acc = generateValue<minimumUserType>()[0][0]; }
 
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
@@ -208,7 +209,8 @@ struct ShortRaw_base {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   // This register shares the address space with all our test registers. It gives us direct access to the 4 byte
   // address range, so we can test the correct placement of the unaligned values.
@@ -223,9 +225,11 @@ struct ShortRaw_base {
     acc |= (val << derived->bitshift) & derived->bitmask;
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    UserType v = ((rawUserType)(get() + derived->rawIncrement)) * derived->rawToCooked;
+  // Type can be user type or raw type, depeding of the raw flag
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool raw = false) {
+    rawUserType newRawValue = static_cast<rawUserType>(get() + derived->rawIncrement);
+    Type v = (raw ? newRawValue : (newRawValue * derived->rawToCooked));
     /* std::cout << "generateValue " << derived->path() << " " << float(rawUserType(get() + derived->rawIncrement))
               << " -> " << float(v) << std::endl; */
     lastPadding = acc & ~derived->bitmask;
@@ -233,9 +237,14 @@ struct ShortRaw_base {
     return {{v}};
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    UserType v = get() * derived->rawToCooked;
+  // We use the same function to implement raw and cooked reading.
+  // Do the calculation on the target type, then decide on the padding error.
+  // rawToCooked might undo the ++ effect in case
+  // of rounding. When getting cooked, the ++ must happen on the UserType.
+  // Type can be UserType or RawType.
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
+    Type v = get() * (raw ? 1 : derived->rawToCooked);
     if((acc & ~derived->bitmask) != lastPadding) {
       if(printPaddingChangedMessage) {
         std::cerr << "getRemoteValue(): Padding data has changed. Test will be failed by returing a false remote value "
@@ -389,7 +398,8 @@ struct MuxedNodma {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer();
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 
@@ -451,7 +461,8 @@ struct MuxedNodmaAsync {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer();
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMAASYNC"};
 

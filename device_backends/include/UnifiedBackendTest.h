@@ -42,7 +42,8 @@ namespace ChimeraTK {
       TestCapability _switchReadOnly = TestCapability::unspecified,
       TestCapability _switchWriteOnly = TestCapability::unspecified,
       TestCapability _writeNeverLosesData = TestCapability::unspecified,
-      TestCapability _testWriteOnly = TestCapability::disabled, TestCapability _testReadOnly = TestCapability::disabled>
+      TestCapability _testWriteOnly = TestCapability::disabled, TestCapability _testReadOnly = TestCapability::disabled,
+      TestCapability _testRawTransfer = TestCapability::unspecified>
   struct TestCapabilities {
     constexpr TestCapabilities() {}
 
@@ -52,57 +53,57 @@ namespace ChimeraTK {
     /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
     /// backend tests.
     constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         disableSyncRead() const {
       return {};
     }
 
     /// See setForceDataLossWrite() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly, _testRawTransfer>
         enableForceDataLossWrite() const {
       static_assert(_writeNeverLosesData != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutually exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         disableForceDataLossWrite() const {
       return {};
     }
 
     /// See forceAsyncReadInconsistency() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         enableAsyncReadInconsistency() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         disableAsyncReadInconsistency() const {
       return {};
     }
 
     /// See switchReadOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::enabled,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         enableSwitchReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::disabled,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         disableSwitchReadOnly() const {
       return {};
     }
 
     /// See switchWriteOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::enabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        TestCapability::enabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         enableSwitchWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::disabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        TestCapability::disabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer>
         disableSwitchWriteOnly() const {
       return {};
     }
@@ -111,39 +112,51 @@ namespace ChimeraTK {
     /// writes is performed and no data loss must be reported.
     /// Mutually exclusive with enableForceDataLossWrite().
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::enabled, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, TestCapability::enabled, _testWriteOnly, _testReadOnly, _testRawTransfer>
         enableTestWriteNeverLosesData() const {
       static_assert(_forceDataLossWrite != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly, _testRawTransfer>
         disableTestWriteNeverLosesData() const {
       return {};
     }
 
     /// Enable/disable testing only write operations, even if the register is readable
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, TestCapability::enabled, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::enabled, _testReadOnly, _testRawTransfer>
         enableTestWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, TestCapability::disabled, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::disabled, _testReadOnly, _testRawTransfer>
         disableTestWriteOnly() const {
       return {};
     }
 
     /// Enable/disable testing only read operations, even if the register is readable
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::enabled>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::enabled, _testRawTransfer>
         enableTestReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::disabled>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::disabled, _testRawTransfer>
         disableTestReadOnly() const {
+      return {};
+    }
+
+    /// Enable/disable testing the raw accessors
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, TestCapability::disabled>
+        disableTestRawTransfer() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, TestCapability::enabled>
+        enableTestRawTransfer() const {
       return {};
     }
 
@@ -155,6 +168,7 @@ namespace ChimeraTK {
     static constexpr TestCapability writeNeverLosesData{_writeNeverLosesData};
     static constexpr TestCapability testWriteOnly{_testWriteOnly};
     static constexpr TestCapability testReadOnly{_testReadOnly};
+    static constexpr TestCapability testRawTransfer{_testRawTransfer};
   };
 
   /**
@@ -214,15 +228,19 @@ namespace ChimeraTK {
      *    typedef int32_t minimumUserType;
      *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted, can be omitted otherwise
      * 
-     *    /// Generate value which can be represented by the register, convert it to the UserType (e.g. using
-     *    /// ChimeraTK::numericToUserType) and return it.
-     *    template<typename UserType>
-     *    std::vector<std::vector<UserType>> generateValue();
+     *    /// Generate value which can be represented by the register. Make sure it's different from the
+     *    /// previous one and that it's not all zero to ensure that the test is sensitive.
+     *    /// Template argument 'Type 'can be UserType or RawType if raw is supported. If the 'raw' flag  is
+     *    /// false, data is converted to the UserType (e.g. using ChimeraTK::numericToUserType), otherwise
+     *    /// unconverted (raw) data is returned.
+     *    /// In case the accessor does not support AccessMode::raw, the 'raw' argument can be omitted.
+     *    template<typename Type>
+     *    std::vector<std::vector<Type>> generateValue(bool raw = false);
      *
-     *    /// Obtain the current value of the register, convert it to the UserType (e.g. using
-     *    /// ChimeraTK::numericToUserType) and return it.
-     *    template<typename UserType>
-     *    std::vector<std::vector<UserType>> getRemoteValue();
+     *    /// Obtain the current value of the register. The value can be raw or converted to
+     *    /// UserType (see generateValue()).  In case the accessor does not support AccessMode::raw, the 'raw' argument can be omitted.
+     *    template<typename Type>
+     *    std::vector<std::vector<Type>> getRemoteValue(bool raw = false);
      *
      *    /// Set remote value to a value generated in the same way as in generateValue().
      *    void setRemoteValue();
@@ -3282,24 +3300,83 @@ namespace ChimeraTK {
     d.open();
 
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
-      if(not this->isRaw(x)) return;
+      // the test itself requires an extended interface, so the test can be disabled
+      if constexpr(x.capabilities.testRawTransfer == TestCapability::enabled) {
+        auto registerName = x.path();
+        std::cout << "... registerName = " << registerName << std::endl;
 
-      auto registerName = x.path();
-      std::cout << "... registerName = " << registerName << std::endl;
+        BOOST_REQUIRE_MESSAGE(this->isRaw(x),
+            "Test configuration error: testRawTransfer is enabled for register without AccessMode::raw!");
 
-      typedef typename decltype(x)::rawUserType RawUserType;
-      // Use double as example for a not working user type
-      BOOST_CHECK_THROW(
-          d.getTwoDRegisterAccessor<double>(registerName, 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
-      try {
-        // test creation
-        auto reg = d.getTwoDRegisterAccessor<RawUserType>(registerName, 0, 0, {AccessMode::raw});
-        //        if(x.isReadable()) {
-        //          reg.read();
-        //        }
+        typedef typename decltype(x)::minimumUserType UserType;
+        typedef typename decltype(x)::rawUserType RawType;
+        // Use double as example for a not working user type
+        BOOST_CHECK_THROW(
+            d.getTwoDRegisterAccessor<double>(registerName, 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
+        try {
+          // test creation
+          auto reg = d.getTwoDRegisterAccessor<RawType>(registerName, 0, 0, {AccessMode::raw});
+          // the test itself requires an extended interface, so the test can be disabled
+          if(x.isReadable()) {
+            x.template setRemoteValue();
+            reg.read();
+            auto expectedRawValue = x.template getRemoteValue<RawType>(/* raw = */ true);
+            CHECK_EQUALITY(reg, expectedRawValue);
+
+            auto expectedCookedValue = x.template getRemoteValue<UserType>();
+            // fill into a vector<vector> and use CHECK_EQUALITY_VECTOR. This stops at the first mismatch, prints a good error message, checks for all elements 0 etc.
+            std::vector<std::vector<UserType>> readCookedValue;
+            for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
+              std::vector<UserType> readCookedChannel;
+              for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
+                readCookedChannel.push_back(reg.template getAsCooked<UserType>(channel, element));
+              }
+              readCookedValue.push_back(readCookedChannel);
+            }
+            CHECK_EQUALITY_VECTOR(readCookedValue, expectedCookedValue);
+          }
+          if(x.isWriteable()) {
+            auto newValue = x.template generateValue<RawType>(/* raw = */ true);
+            reg = newValue;
+            reg.write();
+            auto readbackValue = x.template getRemoteValue<RawType>(/* raw = */ true);
+            CHECK_EQUALITY_VECTOR(readbackValue, newValue);
+
+            // test setting as cooked
+            auto newCookedValue = x.template generateValue<UserType>();
+            for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
+              for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
+                reg.template setAsCooked<UserType>(channel, element, newCookedValue[channel][element]);
+              }
+            }
+            reg.write();
+
+            auto readbackCookedValue = x.template getRemoteValue<UserType>();
+            CHECK_EQUALITY_VECTOR(readbackCookedValue, newCookedValue);
+          }
+        }
+        catch(std::exception& e) {
+          BOOST_CHECK_MESSAGE(false, std::string("Unexpected expeption: ") + e.what());
+        }
+      } // end of constexpr if
+      if(this->isRaw(x)) {
+        if(x.capabilities.testRawTransfer == TestCapability::disabled) {
+          BOOST_REQUIRE_MESSAGE(false,
+              "Test configuration error: testRawTransfer is disabled for register '" + std::string(x.path()) +
+                  "' with AccessMode::raw!");
+        }
+        else if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
+          std::cout << "WARNING: testRawTransfer capability unspecified for register '" + std::string(x.path()) +
+                  "' with AccessMode::raw. This will turn into a test configuration error in a future release!"
+                    << std::endl;
+        }
       }
-      catch(std::exception& e) {
-        BOOST_CHECK_MESSAGE(false, std::string("Unexpected expeption: ") + e.what());
+      else {
+        if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
+          std::cout << "Warning: testRawTransfer capability unspecified for register '" + std::string(x.path()) +
+                  "' without AccessMode::raw. Please explicitly disable this test."
+                    << std::endl;
+        }
       }
     });
   }

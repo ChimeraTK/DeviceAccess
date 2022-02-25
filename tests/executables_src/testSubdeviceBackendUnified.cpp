@@ -28,27 +28,32 @@ struct AreaType : Register {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  static constexpr auto capabilities =
+      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
 
   DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  std::vector<std::vector<UserType>> generateValue(bool raw = false) {
     std::vector<UserType> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       assert(i + this->address() / 4 < 10);
       typename Register::minimumUserType e = acc[i + this->address() / 4] + this->increment * (i + 1);
-      v.push_back(this->limitGenerated(e));
+      auto limited = this->limitGenerated(e);
+      v.push_back(raw ? this->toRaw(limited) : limited);
     }
     return {v};
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    std::vector<UserType> v;
+  // Use the same implementation for raw and cooked.
+  // Type can be UserType or RawType
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
+    std::vector<Type> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       assert(i + this->address() / 4 < 10);
-      v.push_back(this->fromRaw(acc[i + this->address() / 4]));
+      auto rawVal = acc[i + this->address() / 4];
+      v.push_back((raw ? rawVal : this->fromRaw(rawVal)));
     }
     return {v};
   }
@@ -121,11 +126,12 @@ struct Regs3Type : Register {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
+  static constexpr auto capabilities =
+      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    std::vector<UserType> v;
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool raw = false) {
+    std::vector<Type> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       uint32_t cv;
       if(!core.useArea) {
@@ -134,22 +140,26 @@ struct Regs3Type : Register {
       else {
         cv = core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize];
       }
+      // Do the calculation in cooked, and convert back to raw if necessary
       typename Register::minimumUserType e = this->fromRaw(cv) + this->increment * (i + 1);
-      v.push_back(this->limitGenerated(e));
+      auto limited = this->limitGenerated(e);
+      v.push_back(raw ? this->toRaw(limited) : limited);
     }
     return {v};
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    std::vector<UserType> v;
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
+    std::vector<Type> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
+      Type rawValue;
       if(!core.useArea) {
-        v.push_back(this->fromRaw(core.currentValue[i + this->address()]));
+        rawValue = core.currentValue[i + this->address()];
       }
       else {
-        v.push_back(this->fromRaw(core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize]));
+        rawValue = core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize];
       }
+      v.push_back(raw ? rawValue : this->fromRaw(rawValue));
     }
     return {v};
   }
