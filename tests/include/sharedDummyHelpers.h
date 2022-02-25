@@ -8,7 +8,7 @@
 enum MirrorRequest_Type { mirrorRequest_From = 1, mirrorRequest_To, mirrorRequest_Stop };
 
 // Static helper functions
-static std::string createExpectedShmName(std::string instanceId_, std::string mapFileName_, std::string userName) {
+std::string createExpectedShmName(std::string instanceId_, std::string mapFileName_, std::string userName) {
   std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName_))};
   std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId_))};
   std::string userHash{std::to_string(std::hash<std::string>{}(userName))};
@@ -16,7 +16,7 @@ static std::string createExpectedShmName(std::string instanceId_, std::string ma
   return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
 }
 
-static bool shm_exists(std::string shmName) {
+bool shm_exists(std::string shmName) {
   bool result;
 
   try {
