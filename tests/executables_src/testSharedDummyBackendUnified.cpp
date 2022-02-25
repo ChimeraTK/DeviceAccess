@@ -120,7 +120,8 @@ struct Integers_base {
   template<typename Type>
   std::vector<std::vector<Type>> generateValue(bool raw = false) {
     ensureOpen();
-    rawUserType rawVal00 = acc->accessData(0);
+    accBackdoor->readLatest();
+    rawUserType rawVal00 = accBackdoor->accessData(0);
     rawVal00 += 3;
     Type val00 = (raw ? rawVal00 : derived->template rawToCooked<Type, rawUserType>(rawVal00));
     return {{val00}};
