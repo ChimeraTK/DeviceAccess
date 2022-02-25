@@ -5,6 +5,7 @@
 #include "Device.h"
 #include "ProcessManagement.h"
 #include "Utilities.h"
+#include "sharedDummyHelpers.h"
 
 #include <algorithm>
 #include <boost/filesystem.hpp>
@@ -25,8 +26,6 @@ namespace {
 
   // Static function prototypes
   static void interrupt_handler(int);
-  static std::string createExpectedShmName(std::string, std::string);
-  static bool shm_exists(std::string);
 
   // Static variables
   //  Use hardcoded information from the dmap-file to
@@ -143,7 +142,7 @@ namespace {
 
     boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
 
-    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
+    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
     {
       Device dev;
@@ -255,7 +254,7 @@ namespace {
 
     boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
 
-    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
+    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
     // Test if memory is removed
     BOOST_CHECK(!shm_exists(shmName));
@@ -271,28 +270,6 @@ namespace {
   static void interrupt_handler(int signal) {
     std::cout << "Caught interrupt signal (" << signal << "). Terminating..." << std::endl;
     terminationCaught = true;
-  }
-
-  // Static helper functions
-  static std::string createExpectedShmName(std::string instanceId_, std::string mapFileName_) {
-    std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName_))};
-    std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId_))};
-    std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
-
-    return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
-  }
-
-  static bool shm_exists(std::string shmName) {
-    bool result;
-
-    try {
-      boost::interprocess::managed_shared_memory shm{boost::interprocess::open_only, shmName.c_str()};
-      result = shm.check_sanity();
-    }
-    catch(const std::exception& ex) {
-      result = false;
-    }
-    return result;
   }
 
 } // anonymous namespace

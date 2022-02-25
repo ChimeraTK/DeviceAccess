@@ -90,6 +90,7 @@ MACRO( COPY_MAPPING_FILES )
     subdeviceTest.dmap Subdevice.map SubdeviceMuxedArea.map SubdeviceTarget.map
     subdeviceTestAreaHandshake.dmap
     shareddummyTest.dmap shareddummy.map
+    sharedDummyUnified.dmap sharedDummyUnified.map
     registerAccess.map floatRawTest.map test3.map unifiedTest.xlmap
     interruptMapFile.map interruptMapFileWithError1.map interruptMapFileWithError2.map interruptMapFileWithError3.map interruptMapFileWithError4.map
     goodMapFileWithComments.map
