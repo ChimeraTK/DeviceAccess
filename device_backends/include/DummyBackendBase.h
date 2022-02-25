@@ -92,21 +92,23 @@ namespace ChimeraTK {
 
       if(not match.empty()) {
         // FIXME: Ideally, this test and the need for passing in the lambda function should be done
-        // in the constructor of the accessor. But passing down the base-class of the accessor is very weird
+        // in the constructor of the accessor. But passing down the base-class of the backend is very weird
         // due to the sort-of CRTP pattern used in this base class.
         auto controller = std::stoi(match[1].str());
         auto interrupt = std::stoi(match[2].str());
         try {
           auto& interruptsForController = _registerMap->getListOfInterrupts().at(controller);
           if(interruptsForController.find(interrupt) == interruptsForController.end())
-            throw std::out_of_range("Invalid interrupt for controller");
+            throw ChimeraTK::logic_error("Invalid interrupt for controller (" + match[0].str() + ", " +
+                match[1].str() + ": " + regPathNameStr);
         }
         catch(std::out_of_range&) {
-          throw ChimeraTK::logic_error("Invalid controller and interrupt combination (" + match[0].str() + ", " +
+          throw ChimeraTK::logic_error("Invalid interrupt controller (" + match[0].str() + ", " +
               match[1].str() + ": " + regPathNameStr);
         }
 
         // Delegate the other parameters down to the accessor which will throw accordingly, to satisfy the specification
+        // Since the accessor will keep a shared pointer to the backend, we can safely capture "this"
         auto d = new DummyInterruptTriggerAccessor<UserType>(
             shared_from_this(), [this, controller, interrupt]() { return triggerInterrupt(controller, interrupt); },
             registerPathName, numberOfWords, wordOffsetInRegister, flags);
