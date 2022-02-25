@@ -1,0 +1,21 @@
+#name               n_words  address  n_bytes  BAR  n_bits  n_fractionalBits  signed   accessMode
+# registers for the feature tests
+INTA_RO                   1        0        4    0      32                 0       0   RO
+INTB_WO                   1        4        4    0      32                 0       0   WO
+INTC_RW                   1        8        4    0      32                 0       0   RW
+# registers for back-door access
+MIRRORED.INTA_RO          1      400        4    0      32                 0       0   RW
+MIRRORED.INTB_WO          1      404        4    0      32                 0       0   RW
+MIRRORED.INTC_RW          1      408        4    0      32                 0       0   RW
+#test expects it but not used anywhere
+MIRRORED.MIRRORREQUEST.UPDATED 1 500        4    0      32                 0       0   RW
+
+# this area intentionally overlaps with the register for the feature tests
+FEATURE.AREA1           100        0      400    0      32                 0       0   RW
+# this area intentionally overlaps with the registers for back-door access
+MIRRORED.AREA1          100      400      400    0      32                 0       0   RW
+
+# status/command register for helper process
+MIRRORREQUEST.TYPE        1      800        4    0      16                 0       0   RW
+MIRRORREQUEST.BUSY        1      804        4    0       1                 0       0   RW
+MIRRORREQUEST.UPDATED     1      808        4    0      32                 0       0   INTERRUPT1:0
