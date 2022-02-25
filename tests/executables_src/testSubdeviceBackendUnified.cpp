@@ -34,12 +34,13 @@ struct AreaType : Register {
   DummyRegisterAccessor<uint32_t> acc{target.get(), "APP.0", "THE_AREA"};
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  std::vector<std::vector<UserType>> generateValue(bool raw = false) {
     std::vector<UserType> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       assert(i + this->address() / 4 < 10);
       typename Register::minimumUserType e = acc[i + this->address() / 4] + this->increment * (i + 1);
-      v.push_back(this->limitGenerated(e));
+      auto limited = this->limitGenerated(e);
+      v.push_back(raw ? this->toRaw(limited) : limited);
     }
     return {v};
   }
@@ -133,9 +134,9 @@ struct Regs3Type : Register {
   static constexpr auto capabilities =
       TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    std::vector<UserType> v;
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool raw = false) {
+    std::vector<Type> v;
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       uint32_t cv;
       if(!core.useArea) {
@@ -144,8 +145,10 @@ struct Regs3Type : Register {
       else {
         cv = core.currentAreaValue[this->address() + i / core.areaSize][i % core.areaSize];
       }
+      // Do the calculation in cooked, and convert back to raw if necessary
       typename Register::minimumUserType e = this->fromRaw(cv) + this->increment * (i + 1);
-      v.push_back(this->limitGenerated(e));
+      auto limited = this->limitGenerated(e);
+      v.push_back(raw ? this->toRaw(limited) : limited);
     }
     return {v};
   }

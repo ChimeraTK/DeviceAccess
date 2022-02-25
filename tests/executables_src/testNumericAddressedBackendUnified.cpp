@@ -60,8 +60,8 @@ struct Integers_signed32 {
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
@@ -108,8 +108,8 @@ struct Integers_signed32_async {
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
@@ -165,8 +165,8 @@ struct Integers_signed32_async_rw {
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", "/Integers/signed32_async"};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
@@ -240,9 +240,11 @@ struct ShortRaw_base {
     acc |= (val << derived->bitshift) & derived->bitmask;
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    UserType v = ((rawUserType)(get() + derived->rawIncrement)) * derived->rawToCooked;
+  // Type can be user type or raw type, depeding of the raw flag
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool raw = false) {
+    rawUserType newRawValue = static_cast<rawUserType>(get() + derived->rawIncrement);
+    Type v = (raw ? newRawValue : (newRawValue * derived->rawToCooked));
     /* std::cout << "generateValue " << derived->path() << " " << float(rawUserType(get() + derived->rawIncrement))
               << " -> " << float(v) << std::endl; */
     lastPadding = acc & ~derived->bitmask;

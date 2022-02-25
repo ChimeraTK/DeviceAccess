@@ -116,14 +116,15 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   template<typename UserType>
   void generateValueHook(std::vector<UserType>&) {} // override in derived if needed
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue(bool getRaw = false) {
-    std::vector<UserType> v;
+  // type can be user type or raw type
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool getRaw = false) {
+    std::vector<Type> v;
     typedef typename Derived::rawUserType Traw;
     typedef typename Derived::minimumUserType T;
     auto cv = derived->template getRemoteValue<Traw>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      Traw e = cv[i] + derived->increment * (static_cast<T>(i) + 1);
+      Traw e = cv[i] + derived->increment * (static_cast<Traw>(i) + 1);
       if(!getRaw) {
         v.push_back(derived->template convertRawToCooked<T, Traw>(e));
       }

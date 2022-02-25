@@ -3317,21 +3317,38 @@ namespace ChimeraTK {
             x.template setRemoteValue();
             reg.read();
             auto expectedRawValue = x.template getRemoteRawValue<RawType>();
+            CHECK_EQUALITY(reg, expectedRawValue);
+
             auto expectedCookedValue = x.template getRemoteValue<UserType>();
+            // fill into a vector<vector> and use CHECK_EQUALITY_VECTOR. This stops at the first mismatch, prints a good error message, checks for all elements 0 etc.
+            std::vector<std::vector<UserType>> readCookedValue;
+            for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
+              std::vector<UserType> readCookedChannel;
+              for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
+                readCookedChannel.push_back(reg.template getAsCooked<UserType>(channel, element));
+              }
+              readCookedValue.push_back(readCookedChannel);
+            }
+            CHECK_EQUALITY_VECTOR(readCookedValue, expectedCookedValue);
+          }
+          if(x.isWriteable()) {
+            auto newValue = x.template generateValue<RawType>(true);
+            reg = newValue;
+            reg.write();
+            auto readbackValue = x.template getRemoteRawValue<RawType>();
+            CHECK_EQUALITY_VECTOR(readbackValue, newValue);
+
+            // test setting as cooked
+            auto newCookedValue = x.template generateValue<UserType>();
             for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
               for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
-                auto readCookedVal = reg.template getAsCooked<UserType>(channel, element);
-                if(!compareHelper(expectedCookedValue[channel][element], readCookedVal)) {
-                  BOOST_ERROR("Comparing expected cooked value and getAsCooked() failed. First error in [" +
-                      std::to_string(channel) + "][" + std::to_string(element) +
-                      "] : " + std::to_string(expectedCookedValue[channel][element]) +
-                      " != " + std::to_string(readCookedVal) + " (raw " + std::to_string(reg[channel][element]) + ")");
-                  break;
-                }
+                reg.template setAsCooked<UserType>(channel, element, newCookedValue[channel][element]);
               }
-
-              CHECK_EQUALITY(reg, expectedRawValue);
             }
+            reg.write();
+
+            auto readbackCookedValue = x.template getRemoteValue<UserType>();
+            CHECK_EQUALITY_VECTOR(readbackCookedValue, newCookedValue);
           }
         }
         catch(std::exception& e) {
