@@ -228,15 +228,19 @@ namespace ChimeraTK {
      *    typedef int32_t minimumUserType;
      *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted, can be omitted otherwise
      * 
-     *    /// Generate value which can be represented by the register, convert it to the UserType (e.g. using
-     *    /// ChimeraTK::numericToUserType) and return it.
-     *    template<typename UserType>
-     *    std::vector<std::vector<UserType>> generateValue();
+     *    /// Generate value which can be represented by the register. Make sure it's different from the
+     *    /// previous one and that it's not all zero to ensure that the test is sensitive.
+     *    /// Template argument 'Type 'can be UserType or RawType if raw is supported. If the 'raw' flag  is
+     *    /// false, data is converted to the UserType (e.g. using ChimeraTK::numericToUserType), otherwise
+     *    /// unconverted (raw) data is returned.
+     *    /// In case the accessor does not support AccessMode::raw, the 'raw' argument can be omitted.
+     *    template<typename Type>
+     *    std::vector<std::vector<Type>> generateValue(bool raw = false);
      *
-     *    /// Obtain the current value of the register, convert it to the UserType (e.g. using
-     *    /// ChimeraTK::numericToUserType) and return it.
-     *    template<typename UserType>
-     *    std::vector<std::vector<UserType>> getRemoteValue();
+     *    /// Obtain the current value of the register. The value can be raw or converted to
+     *    /// UserType (see generateValue()).  In case the accessor does not support AccessMode::raw, the 'raw' argument can be omitted.
+     *    template<typename Type>
+     *    std::vector<std::vector<Type>> getRemoteValue(bool raw = false);
      *
      *    /// Set remote value to a value generated in the same way as in generateValue().
      *    void setRemoteValue();
