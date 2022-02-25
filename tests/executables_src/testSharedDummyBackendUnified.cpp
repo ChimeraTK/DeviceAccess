@@ -102,41 +102,60 @@ struct Integers_base {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   boost::shared_ptr<NDRegisterAccessor<minimumUserType>> acc{
       sharedDummy->getRegisterAccessor<minimumUserType>(derived->path(), 1, 0, AccessModeFlags{})};
-  boost::shared_ptr<NDRegisterAccessor<minimumUserType>> accBackdoor{sharedDummy->getRegisterAccessor<minimumUserType>(
-      std::string("MIRRORED/") + derived->path(), 1, 0, AccessModeFlags{})};
+  boost::shared_ptr<NDRegisterAccessor<rawUserType>> accBackdoor{sharedDummy->getRegisterAccessor<rawUserType>(
+      std::string("MIRRORED/") + derived->path(), 1, 0, {AccessMode::raw})};
 
   void ensureOpen() {
     // since the front-door and back-door access goes over the same SharedDummyBackend instance, the spec tests
     // unintentionally also close our back-door and we need to make sure it's open again.
     sharedDummy->open();
   }
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+
+  // Type can be raw type or user type
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool raw = false) {
     ensureOpen();
-    minimumUserType val00 = acc->accessData(0);
-    return {{val00 + 3}};
+    rawUserType rawVal00 = acc->accessData(0);
+    rawVal00 += 3;
+    Type val00 = (raw ? rawVal00 : derived->template rawToCooked<Type, rawUserType>(rawVal00));
+    return {{val00}};
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  // Type can be raw type or user type
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
     ensureOpen();
     gHelperProcess.requestMirroring(mirrorRequest_From);
     accBackdoor->readLatest();
-    minimumUserType val00 = accBackdoor->accessData(0);
+    rawUserType rawVal00 = accBackdoor->accessData(0);
+    Type val00 = (raw ? rawVal00 : derived->template rawToCooked<Type, rawUserType>(rawVal00));
 
     return {{val00}};
   }
 
   void setRemoteValue() {
     ensureOpen();
-    auto x = generateValue<minimumUserType>()[0][0];
+    auto x = generateValue<rawUserType>(/* raw = */ true)[0][0];
     accBackdoor->accessData(0) = x;
     accBackdoor->write();
     gHelperProcess.requestMirroring(mirrorRequest_To);
+  }
+
+  // default implementation just casting. Re-implement in derrived classes if needed.
+  template<typename UserType, typename RawType>
+  RawType cookedToRaw(UserType val) {
+    return static_cast<RawType>(val);
+  }
+
+  // default implementation just casting. Re-implement in derrived classes if needed.
+  template<typename UserType, typename RawType>
+  UserType rawToCooked(RawType val) {
+    return static_cast<UserType>(val);
   }
 
   // we need this because it's expected in template, but unused
