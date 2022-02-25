@@ -18,7 +18,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  NumericAddressedBackend::NumericAddressedBackend(std::string mapFileName) {
+  NumericAddressedBackend::NumericAddressedBackend(
+      std::string mapFileName, std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer)
+  : _registerMapPointer(std::move(registerMapPointer)), _registerMap(*_registerMapPointer) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
@@ -101,30 +103,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void NumericAddressedBackend::checkRegister(const std::string& regName, const std::string& regModule, size_t dataSize,
-      uint32_t addRegOffset, uint32_t& retDataSize, uint32_t& retRegOff, uint8_t& retRegBar) const {
-    auto registerInfo = _registerMap.getBackendRegister(RegisterPath(regModule) / regName);
-    if(addRegOffset % 4) {
-      throw ChimeraTK::logic_error("Register offset must be divisible by 4");
-    }
-    if(dataSize) {
-      if(dataSize % 4) {
-        throw ChimeraTK::logic_error("Data size must be divisible by 4");
-      }
-      if(dataSize > registerInfo.nBytes - addRegOffset) {
-        throw ChimeraTK::logic_error("Data size exceed register size");
-      }
-      retDataSize = dataSize;
-    }
-    else {
-      retDataSize = registerInfo.nBytes;
-    }
-    retRegBar = registerInfo.bar;
-    retRegOff = registerInfo.address + addRegOffset;
-  }
-
-  /********************************************************************************************************************/
-
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> NumericAddressedBackend::getRegisterAccessor_impl(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
@@ -162,8 +140,8 @@ namespace ChimeraTK {
 
     // 1D or scalar register
     if(registerInfo.getNumberOfDimensions() <= 1) {
-      if((registerInfo.dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) ||
-          (registerInfo.dataType == NumericAddressedRegisterInfo::Type::VOID)) {
+      if((registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) ||
+          (registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID)) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>(
@@ -175,7 +153,7 @@ namespace ChimeraTK {
                   shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
       }
-      else if(registerInfo.dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
+      else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(

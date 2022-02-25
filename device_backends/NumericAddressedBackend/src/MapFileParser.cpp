@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <boost/algorithm/string.hpp>
 
 #include "Exception.h"
 #include "MapFileParser.h"
@@ -11,228 +12,60 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::pair<NumericAddressedRegisterCatalogue, MetadataCatalogue> MapFileParser::parse(const std::string& file_name) {
+  std::pair<NumericAddressedRegisterCatalogue, MetadataCatalogue> MapFileParser::parse(const std::string& file_name_) {
+    file_name = file_name_;
     std::ifstream file;
-    std::string line;
-    std::istringstream is;
-    uint32_t line_nr = 0;
 
     file.open(file_name.c_str());
     if(!file) {
       throw ChimeraTK::logic_error("Cannot open file \"" + file_name + "\"");
     }
-    NumericAddressedRegisterCatalogue pmap;
-    MetadataCatalogue metadataCatalogue;
-    std::string pathName;    /**< Name of register */
-    uint32_t nElements;      /**< Number of elements in register */
-    uint64_t address;        /**< Relative address in bytes from beginning  of the
-                                bar(Base Address Range)*/
-    uint32_t nBytes;         /**< Size of register expressed in bytes */
-    uint64_t bar;            /**< Number of bar with register */
-    uint32_t width;          /**< Number of significant bits in the register */
-    int32_t nFractionalBits; /**< Number of fractional bits */
-    bool signedFlag;         /**< Signed/Unsigned flag */
-    NumericAddressedRegisterInfo::Access registerAccess;
-    NumericAddressedRegisterInfo::Type type;
 
-    uint32_t interruptCtrlNumber;
-    uint32_t interruptNumber;
-
+    std::string line;
     while(std::getline(file, line)) {
-      bool failed = false;
       line_nr++;
+
       // Remove whitespace from beginning of line
       line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c) { return !isspace(c); }));
-      if(!line.size()) {
-        continue;
-      }
-      if(line[0] == '#') {
-        continue;
-      }
-      //remove comments from the end of the line
-      auto pos = line.find("#");
+
+      // Remove comments from the end of the line
+      auto pos = line.find('#');
       if(pos != std::string::npos) {
         line.erase(pos, std::string::npos);
       }
-      // parse meta data
-      if(line[0] == '@') {
-        std::string org_line = line;
-        std::string metadata_name, metadata_value;
-        // Remove the '@' character...
-        line.erase(line.begin(), line.begin() + 1);
-        // ... and remove all the whitespace after it
-        line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c) { return !isspace(c); }));
-        is.str(line);
-        is >> metadata_name;
-        if(!is) {
-          throw ChimeraTK::logic_error(
-              "Parsing error in map file '" + file_name + "' on line " + std::to_string(line_nr));
-        }
-        line.erase(line.begin(), line.begin() + metadata_name.length()); // remove name from the string
-        line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }),
-            line.end()); //remove whitespaces from rest of the string (before and after the value)
-        metadata_value = line;
-        metadataCatalogue.addMetadata(metadata_name, metadata_value);
-        is.clear();
+
+      // Ignore empty lines (including all-comment lines)
+      if(line.empty()) {
         continue;
       }
-      is.str(line);
 
-      is >> pathName;
-
-      if(pathName.empty()) {
-        throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-            std::to_string(line_nr) + ": empty register name");
+      // Parse meta data line
+      if(line[0] == '@') {
+        parseMetaData(line);
+        continue;
       }
 
-      is >> std::setbase(0) >> nElements >> std::setbase(0) >> address >> std::setbase(0) >> nBytes;
-      if(!is) {
-        throw ChimeraTK::logic_error(
-            "Parsing error in map file '" + file_name + "' on line " + std::to_string(line_nr));
-      }
-      // first, set default values for 'optional' fields
-      bar = 0x0;
-      width = 32;
-      nFractionalBits = 0;
-      signedFlag = true;
-      registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
-      type = NumericAddressedRegisterInfo::Type::FIXED_POINT;
-      interruptCtrlNumber = 0;
-      interruptNumber = 0;
-
-      is >> std::setbase(0) >> bar;
-      if(is.fail()) {
-        failed = true;
-      }
-      if(!failed) {
-        is >> std::setbase(0) >> width;
-        if(is.fail()) {
-          failed = true;
-        }
-        else {
-          if(width > 32) {
-            throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-                std::to_string(line_nr) + ": register width too big");
-          }
-        }
-      }
-      if(!failed) {
-        std::string bitInterpretation;
-        is >> bitInterpretation;
-        if(is.fail()) {
-          failed = true;
-        }
-        else {
-          // width is needed to determine whether type is VOID
-          auto type_and_nFractionBits = getTypeAndNFractionalBits(bitInterpretation, width);
-          type = type_and_nFractionBits.first;
-          nFractionalBits = type_and_nFractionBits.second;
-
-          if(nFractionalBits > 1023 || nFractionalBits < -1024) {
-            throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-                std::to_string(line_nr) + ": too many fractional bits");
-          }
-        }
-      }
-
-      if(!failed) {
-        is >> std::setbase(0) >> signedFlag;
-        if(is.fail()) {
-          failed = true;
-        }
-      }
-
-      if(!failed) {
-        std::string accessString;
-        is >> accessString;
-        if(is.fail()) {
-          failed = true;
-        }
-        else {
-          // first transform to uppercase
-          std::transform(accessString.begin(), accessString.end(), accessString.begin(),
-              [](unsigned char c) { return std::toupper(c); });
-
-          // first check if access mode is INTERRUPT and additionally check the interrupt controller number and
-          // interrupt number
-          auto interruptData = getInterruptData(accessString);
-
-          if(interruptData.first) {
-            registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
-            interruptCtrlNumber = interruptData.second.first;
-            interruptNumber = interruptData.second.second;
-          }
-          else if(accessString == "RO")
-            registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
-          else if(accessString == "RW")
-            registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
-          else if(accessString == "WO")
-            registerAccess = NumericAddressedRegisterInfo::Access::WRITE_ONLY;
-          else
-            throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
-                std::to_string(line_nr) + ": invalid data access");
-        }
-      }
-      is.clear();
-
-      checkFileConsitencyAndThrowIfError(
-          registerAccess, type, nElements, address, nBytes, bar, width, nFractionalBits, signedFlag);
-
-      auto registerInfo = NumericAddressedRegisterInfo(pathName, nElements, address, nBytes, bar, width,
-          nFractionalBits, signedFlag, 1, false, registerAccess, type, interruptCtrlNumber, interruptNumber);
-      pmap.addRegister(std::move(registerInfo));
+      // Parse register line
+      parsedLines.push_back(parseLine(line));
     }
 
-    // search for 2D registers and add 2D entries
-    std::vector<NumericAddressedRegisterInfo> newInfos;
-    for(auto& info : pmap) {
-      auto [module, name] = splitStringAtLastDot(info.pathName);
-
-      // check if 2D register, otherwise ignore
-      if(name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
-
-      // name of the 2D register is the name without the sequence prefix
-      name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
-
-      // count number of channels and number of entries per channel
-      size_t nChannels = 0;
-      size_t nBytesPerEntry = 0; // nb. of bytes per entry for all channels together
-
-      // We have to aggregate the fractional/ signed information of all cannels.
-      // Afterwards we set fractional to 9999 (way out of range, max allowed is
-      // 1023) if there are fractional bits, just to indicate that the register is
-      // not integer and probably a floating point accessor should be used (e.g.
-      // in QtHardMon).
-      bool isSigned = false;
-      bool isInteger = true;
-      uint32_t maxWidth = 0;
-      while(pmap.hasRegister(RegisterPath(module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)))) {
-        auto subInfo =
-            pmap.getBackendRegister(RegisterPath(module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(nChannels)));
-        nBytesPerEntry += subInfo.nBytes;
-        nChannels++;
-        if(subInfo.signedFlag) {
-          isSigned = true;
-        }
-        if(subInfo.nFractionalBits > 0) {
-          isInteger = false;
-        }
-        maxWidth = std::max(maxWidth, subInfo.width);
-      }
-      if(nChannels == 0) continue;
-
-      // Compute number of elements. Note that there may be additional padding bytes specified in the map file. The
-      // integer division is then rounding down, so it may be that nElements * nBytesPerEntry != info.nBytes.
-      nElements = info.nBytes / nBytesPerEntry;
-
-      // add it to the map
-      newInfos.emplace_back(RegisterPath(module) / name, nElements, info.address, nElements * nBytesPerEntry, info.bar,
-          maxWidth, (isInteger ? 0 : 9999) /*fractional bits*/, isSigned, nChannels, true, info.registerAccess,
-          info.dataType, info.interruptCtrlNumber, info.interruptNumber);
+    // create map of registeer names to parsed lines
+    // This cannot be done in the above parsing loop, as the vector might get resized which invalidates the references
+    for(const auto& pl : parsedLines) {
+      parsedLinesMap.emplace(pl.pathName, pl);
     }
-    // insert the new entries to the catalogue
-    for(auto& entry : newInfos) {
-      pmap.addRegister(entry);
+
+    // add registers to the catalogue
+    for(const auto& pl : parsedLines) {
+      if(isScalarOr1D(pl.pathName)) {
+        auto registerInfo = NumericAddressedRegisterInfo(pl.pathName, pl.nElements, pl.address, pl.nBytes, pl.bar,
+            pl.width, pl.nFractionalBits, pl.signedFlag, pl.registerAccess, pl.type, pl.interruptCtrlNumber,
+            pl.interruptNumber);
+        pmap.addRegister(std::move(registerInfo));
+      }
+      else if(is2D(pl.pathName)) {
+        handle2D(pl);
+      }
     }
 
     return {std::move(pmap), std::move(metadataCatalogue)};
@@ -354,6 +187,215 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(
             std::string("Map file error. Register Type is VOID (width field set to 0). All other fields must be '0'."));
     }
+  }
+
+  /********************************************************************************************************************/
+
+  void MapFileParser::parseMetaData(std::string line) {
+    std::string metadata_name, metadata_value;
+
+    // Remove the '@' character...
+    line.erase(line.begin(), line.begin() + 1);
+
+    // ... and remove all the whitespace after it
+    line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c) { return !isspace(c); }));
+
+    std::istringstream is;
+    is.str(line);
+    is >> metadata_name;
+    if(!is) {
+      throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " + std::to_string(line_nr));
+    }
+    line.erase(line.begin(), line.begin() + metadata_name.length()); // remove name from the string
+    line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }),
+        line.end()); //remove whitespaces from rest of the string (before and after the value)
+    metadata_value = line;
+    metadataCatalogue.addMetadata(metadata_name, metadata_value);
+    is.clear();
+  }
+
+  /********************************************************************************************************************/
+
+  MapFileParser::ParsedLine MapFileParser::parseLine(std::string line) {
+    ParsedLine pl;
+
+    std::istringstream is;
+    is.str(line);
+
+    // extract register name
+    is >> pl.pathName;
+
+    // extract mandatory address information
+    is >> std::setbase(0) >> pl.nElements >> std::setbase(0) >> pl.address >> std::setbase(0) >> pl.nBytes;
+    if(!is) {
+      throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " + std::to_string(line_nr));
+    }
+
+    // Note: default values for optional information are set in ParsedLine declaration
+
+    // extract bar
+    is >> std::setbase(0) >> pl.bar;
+
+    // extract width
+    if(!is.fail()) {
+      is >> std::setbase(0) >> pl.width;
+      if(pl.width > 32) {
+        throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
+            std::to_string(line_nr) + ": register width too big");
+      }
+    }
+
+    // extract bit interpretation field (nb. of fractional bits, IEEE754, VOID, ...)
+    if(!is.fail()) {
+      std::string bitInterpretation;
+      is >> bitInterpretation;
+      if(!is.fail()) {
+        // width is needed to determine whether type is VOID
+        std::tie(pl.type, pl.nFractionalBits) = getTypeAndNFractionalBits(bitInterpretation, pl.width);
+        if(pl.nFractionalBits > 1023 || pl.nFractionalBits < -1024) {
+          throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
+              std::to_string(line_nr) + ": too many fractional bits");
+        }
+      }
+    }
+
+    // extract signed flag
+    if(!is.fail()) {
+      is >> std::setbase(0) >> pl.signedFlag;
+    }
+
+    // extract access mode string (RO, RW, WO, INTERRUPT)
+    if(!is.fail()) {
+      std::string accessString;
+      is >> accessString;
+      if(!is.fail()) {
+        // first transform to uppercase
+        std::transform(accessString.begin(), accessString.end(), accessString.begin(),
+            [](unsigned char c) { return std::toupper(c); });
+
+        // first check if access mode is INTERRUPT and additionally check the interrupt controller number and
+        // interrupt number
+        auto interruptData = getInterruptData(accessString);
+
+        if(interruptData.first) {
+          pl.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
+          pl.interruptCtrlNumber = interruptData.second.first;
+          pl.interruptNumber = interruptData.second.second;
+        }
+        else if(accessString == "RO") {
+          pl.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+        }
+        else if(accessString == "RW") {
+          pl.registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
+        }
+        else if(accessString == "WO") {
+          pl.registerAccess = NumericAddressedRegisterInfo::Access::WRITE_ONLY;
+        }
+        else
+          throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
+              std::to_string(line_nr) + ": invalid data access");
+      }
+    }
+
+    checkFileConsitencyAndThrowIfError(pl.registerAccess, pl.type, pl.nElements, pl.address, pl.nBytes, pl.bar,
+        pl.width, pl.nFractionalBits, pl.signedFlag);
+
+    return pl;
+  }
+
+  /********************************************************************************************************************/
+
+  bool MapFileParser::isScalarOr1D(const std::string& pathName) {
+    auto [module, name] = splitStringAtLastDot(pathName);
+    return !boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX) &&
+        !boost::algorithm::starts_with(name, SEQUENCE_PREFIX);
+  }
+
+  /********************************************************************************************************************/
+
+  bool MapFileParser::is2D(const std::string& pathName) {
+    auto [module, name] = splitStringAtLastDot(pathName);
+    return boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX);
+  }
+
+  /********************************************************************************************************************/
+
+  std::string MapFileParser::makeSequenceName(const std::string& pathName, size_t index) {
+    auto [module, name] = splitStringAtLastDot(pathName);
+    assert(boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX));
+    name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.size()); // strip prefix
+    return module + "." + (SEQUENCE_PREFIX + name + "_" + std::to_string(index));
+  }
+
+  /********************************************************************************************************************/
+
+  std::string MapFileParser::make2DName(const std::string& pathName) {
+    auto [module, name] = splitStringAtLastDot(pathName);
+    assert(boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX));
+    name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.size()); // strip prefix
+    return RegisterPath(module) / name;
+  }
+
+  /********************************************************************************************************************/
+
+  void MapFileParser::handle2D(const ParsedLine& pl) {
+    // search for sequence entries matching the given register, create ChannelInfos from them
+    std::vector<NumericAddressedRegisterInfo::ChannelInfo> channels;
+    size_t bytesPerBlock = 0; // size of one block in bytes (one sample for all channels)
+    while(true) {
+      auto it = parsedLinesMap.find(makeSequenceName(pl.pathName, channels.size()));
+      if(it == parsedLinesMap.end()) break;
+      auto plch = it->second;
+
+      if(plch.address < pl.address) {
+        throw ChimeraTK::logic_error(
+            "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
+      }
+
+      channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{
+          uint32_t(plch.address - pl.address) * 8, plch.type, plch.width, plch.nFractionalBits, plch.signedFlag});
+
+      bytesPerBlock += plch.nBytes;
+      if(plch.nBytes != 1 && plch.nBytes != 2 && plch.nBytes != 4) {
+        throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
+      }
+    }
+
+    if(channels.empty()) {
+      throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
+    }
+    assert(bytesPerBlock > 0);
+
+    // make sure channel bit interpretation widthes are not wider than the actual channel width
+    for(size_t i = 0; i < channels.size() - 1; ++i) {
+      auto actualWidth = channels[i + 1].bitOffset - channels[i].bitOffset;
+      if(channels[i].width > actualWidth) {
+        channels[i].width = actualWidth;
+      }
+    }
+    {
+      // last channel needs special treatment
+      auto actualWidth = bytesPerBlock * 8 - channels.back().bitOffset;
+      if(channels.back().width > actualWidth) {
+        channels.back().width = actualWidth;
+      }
+    }
+
+    // compute number of blocks (= samples per channel)
+    auto nBlocks = std::floor(pl.nBytes / bytesPerBlock);
+
+    // create 2D entry
+    auto name2D = make2DName(pl.pathName);
+    auto registerInfo = NumericAddressedRegisterInfo(name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels,
+        pl.registerAccess, pl.interruptCtrlNumber, pl.interruptNumber);
+    pmap.addRegister(registerInfo);
+
+    // create 1D entry for reading the multiplexed raw data
+    assert(pl.nBytes % 4 == 0);
+    auto registerInfoMuxedRaw = NumericAddressedRegisterInfo(name2D + ".MULTIPLEXED_RAW", pl.nBytes / 4, pl.address,
+        pl.nBytes, pl.bar, 32, 0, true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+        pl.interruptCtrlNumber, pl.interruptNumber);
+    pmap.addRegister(registerInfoMuxedRaw);
   }
 
   /********************************************************************************************************************/

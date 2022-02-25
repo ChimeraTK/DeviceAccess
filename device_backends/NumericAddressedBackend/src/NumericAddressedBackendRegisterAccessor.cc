@@ -12,8 +12,8 @@ namespace ChimeraTK {
   namespace detail {
     template<>
     FixedPointConverter createDataConverter<FixedPointConverter>(const NumericAddressedRegisterInfo& registerInfo) {
-      return FixedPointConverter(
-          registerInfo.pathName, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
+      return FixedPointConverter(registerInfo.pathName, registerInfo.channels.front().width,
+          registerInfo.channels.front().nFractionalBits, registerInfo.channels.front().signedFlag);
     }
 
     template<>

@@ -26,7 +26,7 @@ class BackendRegisterInfoBase {
   [[nodiscard]] virtual unsigned int getNumberOfChannels() const = 0;
 
   /** Return number of dimensions of this register */
-  [[nodiscard]] virtual unsigned int getNumberOfDimensions() const = 0;
+  [[nodiscard]] unsigned int getNumberOfDimensions() const;
 
   /** Return desciption of the actual payload data for this register. See the
      * description of DataDescriptor for more information. */
@@ -44,5 +44,13 @@ class BackendRegisterInfoBase {
   /** Create copy of the object */
   [[nodiscard]] virtual std::unique_ptr<BackendRegisterInfoBase> clone() const = 0;
 };
+
+/*******************************************************************************************************************/
+
+inline unsigned int BackendRegisterInfoBase::getNumberOfDimensions() const {
+  if(getNumberOfChannels() > 1) return 2;
+  if(getNumberOfElements() > 1) return 1;
+  return 0;
+}
 
 } // namespace ChimeraTK

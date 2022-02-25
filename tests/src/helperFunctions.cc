@@ -29,22 +29,3 @@ bool compareDeviceInfos(
       (deviceInfo1.dmapFileLineNumber == deviceInfo2.dmapFileLineNumber);
   return result;
 }
-
-bool compareRegisterInfoents(
-    const ChimeraTK::NumericAddressedRegisterInfo& element1, const ChimeraTK::NumericAddressedRegisterInfo& element2) {
-  bool result = (element1.address == element2.address) && (element1.bar == element2.bar) &&
-      (element1.nElements == element2.nElements) && (element1.nFractionalBits == element2.nFractionalBits) &&
-      (element1.pathName == element2.pathName) && (element1.signedFlag == element2.signedFlag) &&
-      (element1.nBytes == element2.nBytes) && (element1.width == element2.width) &&
-      (element1.registerAccess == element2.registerAccess) && (element1.dataType == element2.dataType) &&
-      (element1.getNumberOfDimensions() == element2.getNumberOfDimensions()) &&
-      (element1.interruptCtrlNumber == element2.interruptCtrlNumber) &&
-      (element1.interruptNumber == element2.interruptNumber);
-  if(!result) {
-    std::cout << "Error in comparison. Register 1: " << std::endl
-              << element1.pathName << std::endl
-              << "Register 2:" << std::endl
-              << element2.pathName << std::endl;
-  }
-  return result;
-}

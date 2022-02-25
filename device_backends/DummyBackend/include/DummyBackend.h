@@ -11,7 +11,6 @@
 
 #include "Exception.h"
 #include "DummyBackendBase.h"
-#include "NumericAddressedRegisterCatalogue.h"
 
 namespace ChimeraTK {
 

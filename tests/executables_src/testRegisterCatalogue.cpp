@@ -43,8 +43,6 @@ class myRegisterInfo : public BackendRegisterInfoBase {
 
   unsigned int getNumberOfChannels() const override { return _nbOfChannels; }
 
-  unsigned int getNumberOfDimensions() const override { return _nbOfDimensions; }
-
   const DataDescriptor& getDataDescriptor() const override { return _dataDescriptor; }
 
   bool isReadable() const override { return _readable; }

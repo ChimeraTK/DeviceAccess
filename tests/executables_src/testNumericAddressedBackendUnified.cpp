@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   ChimeraTK::UnifiedBackendTest<>()
       .addRegister<Integers_signed32>()
       .addRegister<Integers_signed32_async>()
-      .addRegister<Integers_signed32_async_rw>()
+      /* .addRegister<Integers_signed32_async_rw>()  // disabled for now as .DUMMY_WRITABLE no longer supports wait_for_new_data */
       .addRegister<ShortRaw_signed16>()
       .addRegister<ShortRaw_unsigned16>()
       .addRegister<ShortRaw_fixedPoint16_8u>()

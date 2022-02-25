@@ -18,6 +18,3 @@ std::string appendNumberToName(std::string name, int cardNumber);
 
 bool compareDeviceInfos(const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1,
     const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo2);
-
-bool compareRegisterInfoents(
-    const ChimeraTK::NumericAddressedRegisterInfo& element1, const ChimeraTK::NumericAddressedRegisterInfo& element2);

@@ -3,7 +3,6 @@
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include "Device.h"
 #include "BackendFactory.h"
@@ -13,6 +12,10 @@
 
 //FIXME Remove
 #include <regex>
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {

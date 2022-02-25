@@ -10,7 +10,7 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "AsyncNDRegisterAccessor.h"
 #include "NumericAddressedInterruptDispatcher.h"
-#include "DummyInterruptTriggerAccessor.h"
+#include "DummyBackendRegisterCatalogue.h"
 
 #include <sstream>
 #include <regex>
@@ -24,6 +24,7 @@
     std::stringstream errorMessage;                                                                                    \
     errorMessage << "Invalid address offset " << address << " in bar " << bar << "."                                   \
                  << "Caught out_of_range exception: " << outOfRangeException.what();                                   \
+    std::cout << errorMessage.str() << std::endl;                                                                      \
     throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
   }                                                                                                                    \
   while(false)
@@ -34,8 +35,10 @@ namespace ChimeraTK {
    */
   class DummyBackendBase : public NumericAddressedBackend {
    protected:
-    DummyBackendBase(std::string const& mapFileName);
-    DummyBackendBase(std::string const& mapFileName) : NumericAddressedBackend(mapFileName) {
+    // ctor & dtor private with derived type as friend to enforce correct specialization
+
+    explicit DummyBackendBase(std::string const& mapFileName)
+    : NumericAddressedBackend(mapFileName, std::make_unique<DummyBackendRegisterCatalogue>()) {
 
     ~DummyBackendBase() override;
 
@@ -73,12 +76,15 @@ namespace ChimeraTK {
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
     std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
       for(auto const& info : _registerMap) {
-        barSizesInBytes[info.bar] =
-            std::max(barSizesInBytes[info.bar], static_cast<size_t>(info.address + info.nBytes));
+        if(info.elementPitchBits % 8 != 0) {
+          throw ChimeraTK::logic_error("DummyBackendBase: Elements have to be byte aligned.");
+        }
+        barSizesInBytes[info.bar] = std::max(
+            barSizesInBytes[info.bar], static_cast<size_t>(info.address + info.nElements * info.elementPitchBits / 8));
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
-    /// Specific override which allows to create "DUMMY_WRITEABLE" accessors for read-only registers
+    /// Specific override which allows to create "DUMMY_INTEERRUPT_X_Y" accessors
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
@@ -117,83 +123,10 @@ namespace ChimeraTK {
 
         return boost::shared_ptr<NDRegisterAccessor<UserType>>(d);
       }
+      
+      return NumericAddressedBackend::getRegisterAccessor_impl(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+    }
 
-      // Suffix to mark writeable references to read-only registers
-      // This is just a special case of a "normal" register, so can be handled together with getting the regular accessor.
-      static const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
-      bool isDummyWriteableAccessor = false;
-      RegisterPath actualRegisterPath{registerPathName};
-
-      // Check if register name ends on DUMMY_WRITEABLE_SUFFIX,
-      // in that case, set actual path to the "real" register
-      // which exists in the catalogue.
-      //std::smatch match;
-      const std::regex re{DUMMY_WRITEABLE_SUFFIX + "$"};
-      std::regex_search(regPathNameStr, match, re);
-
-      if(!match.empty()) {
-        isDummyWriteableAccessor = true;
-        actualRegisterPath = RegisterPath{match.prefix()};
-      }
-
-      auto accessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
-          actualRegisterPath, numberOfWords, wordOffsetInRegister, flags);
-
-      // Modify write-ability of the synchronous NumericAddressedBackendRegisterAccessor
-      if(isDummyWriteableAccessor) {
-        // the accessor might be synchronous or asynchronous. If it is an async accessor we have to add a dummy-writeable accessor
-        boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
-        if(flags.has(AccessMode::wait_for_new_data)) {
-          auto syncFlags = flags;
-          syncFlags.remove(AccessMode::wait_for_new_data);
-          syncAccessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
-              actualRegisterPath, numberOfWords, wordOffsetInRegister, syncFlags);
-          // we cannot add the new sync accessor to the async accessor as writeAccessor here, because it is not writeable yet
-        }
-        else {
-          syncAccessor = accessor;
-        }
-
-        const auto info{getRegisterInfo(actualRegisterPath)};
-
-        if(info.dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) {
-          if(flags.has(AccessMode::raw)) {
-            boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(
-                syncAccessor)
-                ->makeWriteable();
-          }
-          else {
-            if(info.getNumberOfDimensions() < 2) {
-              boost::dynamic_pointer_cast<
-                  NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(syncAccessor)
-                  ->makeWriteable();
-            }
-            else {
-              boost::dynamic_pointer_cast<NumericAddressedBackendMuxedRegisterAccessor<UserType>>(syncAccessor)
-                  ->makeWriteable();
-            }
-          }
-        }
-        else if(info.dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
-          if(flags.has(AccessMode::raw)) {
-            boost::dynamic_pointer_cast<
-                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(syncAccessor)
-                ->makeWriteable();
-          }
-          else {
-            boost::dynamic_pointer_cast<
-                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>>(syncAccessor)
-                ->makeWriteable();
-          }
-        }
-
-        if(flags.has(AccessMode::wait_for_new_data)) {
-          // We still have to set the now writeable synchronous accessor in the asynchronous accessor to enable writing
-          boost::dynamic_pointer_cast<AsyncNDRegisterAccessor<UserType>>(accessor)->setWriteAccessor(syncAccessor);
-        }
-      }
-
-      return accessor;
     }
 
     /**

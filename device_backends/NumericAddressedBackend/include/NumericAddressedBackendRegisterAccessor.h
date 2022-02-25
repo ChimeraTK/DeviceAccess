@@ -20,6 +20,9 @@ namespace ChimeraTK {
   // Forward declarations
   class DummyBackendBase;
 
+  template<typename UserType, typename DataConverterType, bool isRaw>
+  class NumericAddressedBackendRegisterAccessor;
+
   namespace detail {
     /** This function is external to allow template specialisation. */
     template<typename ConverterT>
@@ -31,164 +34,12 @@ namespace ChimeraTK {
     template<>
     IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(
         const NumericAddressedRegisterInfo& registerInfo);
-
-    /** We need partial template specialisations of some functions. However, in C++ this is only possible for full classes.
-     *  Hence we introduce an implementer class which only holds the functions which we have to re-implement anyway.
-     *  The functions are doPostRead, doPreWrite and doPostWrite.
-     */
-    template<typename UserType, typename DataConverterType, bool isRaw>
-    struct NumericAddressedPrePostActionsImplementor {
-      // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
-      std::vector<std::vector<UserType>>& _buffer_2D;
-      boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
-      size_t& _startAddress;
-      DataConverterType& _dataConverter;
-      const bool& _isNotWriteable;
-      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temporary
-
-      NumericAddressedPrePostActionsImplementor(std::vector<std::vector<UserType>>& buffer,
-          boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
-          DataConverterType& dataConverter, const bool& isNotWriteable)
-      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _dataConverter(dataConverter),
-        _isNotWriteable(isNotWriteable) {}
-
-      void doPostRead();
-      void doPreWrite();
-    };
-
-    // int32_t as raw needs special treatment
-    template<typename DataConverterType>
-    struct NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true> {
-      // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
-      std::vector<std::vector<int32_t>>& _buffer_2D;
-      boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
-      size_t& _startAddress;
-      const bool& _isNotWriteable;
-      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temporary
-
-      NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int32_t>>& buffer,
-          boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
-          DataConverterType&, const bool& isNotWriteable)
-      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _isNotWriteable(isNotWriteable) {}
-
-      void doPostRead();
-      void doPreWrite();
-    };
-
-    // int16_t as raw needs special treatment
-    template<typename DataConverterType>
-    struct NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true> {
-      // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
-      std::vector<std::vector<int16_t>>& _buffer_2D;
-      boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
-      size_t& _startAddress;
-      const bool& _isNotWriteable;
-      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temprary
-
-      NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int16_t>>& buffer,
-          boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
-          DataConverterType&, const bool& isNotWriteable)
-      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _isNotWriteable(isNotWriteable) {}
-
-      void doPostRead();
-      void doPreWrite();
-    };
-
-    // int8_t as raw needs special treatment
-    template<typename DataConverterType>
-    struct NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true> {
-      // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
-      std::vector<std::vector<int8_t>>& _buffer_2D;
-      boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
-      size_t& _startAddress;
-      const bool& _isNotWriteable;
-      NumericAddressedRegisterInfo _registerInfo; // must not be a reference as it is obtained from a temprary
-
-      NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int8_t>>& buffer,
-          boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
-          DataConverterType&, const bool& isNotWriteable)
-      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _isNotWriteable(isNotWriteable) {}
-
-      void doPostRead();
-      void doPreWrite();
-    };
-
-    template<typename UserType, typename DataConverterType, bool isRaw>
-    void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPostRead() {
-      callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
-        typedef decltype(t) RawType;
-        auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
-        _dataConverter.template vectorToCooked<UserType>(itsrc, itsrc + _buffer_2D[0].size(), _buffer_2D[0].begin());
-      });
-    }
-
-    template<typename UserType, typename DataConverterType, bool isRaw>
-    void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPreWrite() {
-      if(_isNotWriteable) {
-        throw ChimeraTK::logic_error(
-            "NumericAddressedBackend: Writing to a non-writable register is not allowed (Register name: " +
-            _registerInfo.getRegisterName() + ").");
-      }
-      callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
-        typedef decltype(t) RawType;
-        auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
-        for(auto itdst = _buffer_2D[0].begin(); itdst != _buffer_2D[0].end(); ++itdst) {
-          *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
-          ++itsrc;
-        }
-      });
-    }
-
-    // special implementations for int32 raw
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPostRead() {
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      auto itdst = _buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
-    }
-
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPreWrite() {
-      auto itdst = _rawAccessor->begin(_startAddress);
-      auto itsrc = _buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int32_t));
-    }
-
-    // special implementations for int16 raw
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true>::doPostRead() {
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      auto itdst = _buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int16_t));
-    }
-
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int16_t, DataConverterType, true>::doPreWrite() {
-      auto itdst = _rawAccessor->begin(_startAddress);
-      auto itsrc = _buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int16_t));
-    }
-
-    // special implementations for int8 raw
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPostRead() {
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      auto itdst = _buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int8_t));
-    }
-
-    template<typename DataConverterType>
-    void NumericAddressedPrePostActionsImplementor<int8_t, DataConverterType, true>::doPreWrite() {
-      auto itdst = _rawAccessor->begin(_startAddress);
-      auto itsrc = _buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size() * sizeof(int8_t));
-    }
-
   } // namespace detail
 
   /*********************************************************************************************************************/
-  /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for
-   * scalar and 1D registers.
+
+  /** 
+   * Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.
    */
   template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor : public NDRegisterAccessor<UserType> {
@@ -196,38 +47,46 @@ namespace ChimeraTK {
     NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : NDRegisterAccessor<UserType>(registerPathName, flags), _dataConverter(registerPathName),
-      _registerPathName(registerPathName), _numberOfWords(numberOfWords),
-      _prePostActionsImplementor(
-          NDRegisterAccessor<UserType>::buffer_2D, _rawAccessor, _startAddress, _dataConverter, _isNotWriteable) {
+      _numberOfWords(numberOfWords), _dev(boost::dynamic_pointer_cast<NumericAddressedBackend>(dev)) {
       // check for unknown flags
       flags.checkForUnknownFlags({AccessMode::raw});
 
       // check device backend
       _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
       if(!_dev) {
-        throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor "
-                                     "is used with a backend which is not "
+        throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor is used with a backend which is not "
                                      "a NumericAddressedBackend.");
       }
 
       // obtain register information
       _registerInfo = _dev->getRegisterInfo(registerPathName);
-      _prePostActionsImplementor._registerInfo = _registerInfo;
-      _bar = _registerInfo.bar;
-      _startAddress = _registerInfo.address + wordOffsetInRegister * _registerInfo.nBytesPerElement();
+      assert(!_registerInfo.channels.empty());
+
+      if(_registerInfo.elementPitchBits % 8 != 0) {
+        throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor: Elements must be byte aligned.");
+      }
+      _startAddress = _registerInfo.address + wordOffsetInRegister * _registerInfo.elementPitchBits / 8;
+
+      if(_registerInfo.channels.size() > 1) {
+        throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor is used with a 2D register.");
+      }
+
+      if(_registerInfo.channels.front().bitOffset > 0) {
+        throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor: Registers must be byte aligned.");
+      }
 
       // check number of words
-      if(_registerInfo.dataType == NumericAddressedRegisterInfo::Type::VOID) {
+      if(_registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID) {
         // in void registers we always create one element
         if(_numberOfWords == 0) {
           _numberOfWords = 1;
         }
         if(_numberOfWords > 1) {
           throw ChimeraTK::logic_error(
-              "Requested number of words is larger than 1 in VOID register '" + _registerPathName + "'!");
+              "Requested number of words is larger than 1 in VOID register '" + registerPathName + "'!");
         }
         if(wordOffsetInRegister > 0) {
-          throw ChimeraTK::logic_error("No offset allowed in VOID register '" + _registerPathName + "'!");
+          throw ChimeraTK::logic_error("No offset allowed in VOID register '" + registerPathName + "'!");
         }
       }
       else { // do the regular consistency check
@@ -236,20 +95,17 @@ namespace ChimeraTK {
         }
         if(_numberOfWords + wordOffsetInRegister > _registerInfo.getNumberOfElements()) {
           throw ChimeraTK::logic_error(
-              "Requested number of words exceeds the size of the register '" + _registerPathName + "'!");
+              "Requested number of words exceeds the size of the register '" + registerPathName + "'!");
         }
         if(wordOffsetInRegister >= _registerInfo.getNumberOfElements()) {
-          throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + _registerPathName + "'!");
+          throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + registerPathName + "'!");
         }
       }
 
-      // Cache writeability
-      _isNotWriteable = !_registerInfo.isWriteable();
-
-      // create low-level transfer element handling the actual data transfer to
-      // the hardware with raw data
+      // create low-level transfer element handling the actual data transfer to the hardware with raw data
+      assert(_registerInfo.elementPitchBits % 8 == 0);
       _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(
-          _dev, _bar, _startAddress, _numberOfWords * _registerInfo.nBytesPerElement()));
+          _dev, _registerInfo.bar, _startAddress, _numberOfWords * _registerInfo.elementPitchBits / 8));
 
       // allocated the buffers
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
@@ -265,10 +121,8 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in "
                                        "raw mode does not match the expected type. Use an " +
               _registerInfo.getDataDescriptor().rawDataType().getAsString() +
-              " instead! (Register name: " + _registerPathName + "')");
+              " instead! (Register name: " + registerPathName + "')");
         }
-        // FIXME: this has to move to the creation
-        //isRaw = true;
       }
 
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
@@ -290,7 +144,21 @@ namespace ChimeraTK {
       _rawAccessor->postRead(type, hasNewData);
 
       if(!hasNewData) return;
-      _prePostActionsImplementor.doPostRead();
+
+      if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
+        callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
+          typedef decltype(t) RawType;
+          auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
+          _dataConverter.template vectorToCooked<UserType>(itsrc, itsrc + buffer_2D[0].size(), buffer_2D[0].begin());
+        });
+      }
+      else {
+        // optimised variant for raw transfers (unless type is a string)
+        auto itsrc = _rawAccessor->begin(_startAddress);
+        auto itdst = buffer_2D[0].begin();
+        memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(int32_t));
+      }
+
       // we don't put the setting of the version number into the PrePostActionImplementor
       // because it does not need template specialisation, and the implementer does not
       // know about _versionNumber. It's just easier here.
@@ -303,7 +171,29 @@ namespace ChimeraTK {
       // raw accessor preWrite must be called before our _prePostActionsImplementor.doPreWrite(), as it needs to
       // prepare the buffer in case of unaligned access and acquire the lock.
       _rawAccessor->preWrite(type, versionNumber);
-      _prePostActionsImplementor.doPreWrite();
+
+      if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
+        if(!_registerInfo.isWriteable()) {
+          throw ChimeraTK::logic_error(
+              "NumericAddressedBackend: Writeing to a non-writeable register is not allowed (Register name: " +
+              _registerInfo.getRegisterName() + ").");
+        }
+        callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
+          typedef decltype(t) RawType;
+          auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
+          for(auto itdst = buffer_2D[0].begin(); itdst != buffer_2D[0].end(); ++itdst) {
+            *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
+            ++itsrc;
+          }
+        });
+      }
+      else {
+        // optimised variant for raw transfers (unless type is a string)
+        auto itdst = _rawAccessor->begin(_startAddress);
+        auto itsrc = buffer_2D[0].begin();
+        memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(UserType));
+      }
+
       _rawAccessor->setDataValidity(this->_dataValidity);
     }
 
@@ -323,10 +213,9 @@ namespace ChimeraTK {
           const NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>>(other);
       if(!rhsCasted) return false;
       if(_dev != rhsCasted->_dev) return false;
-      if(_bar != rhsCasted->_bar) return false;
+      if(_registerInfo != rhsCasted->_registerInfo) return false;
       if(_startAddress != rhsCasted->_startAddress) return false;
       if(_numberOfWords != rhsCasted->_numberOfWords) return false;
-      // if(isRaw != rhsCasted->isRaw) return false; FIXME remove this line when cleaning up. obsolete with the template parameters. Just keeping in in case I have to revert
       if(_dataConverter != rhsCasted->_dataConverter) return false;
       return true;
     }
@@ -335,7 +224,7 @@ namespace ChimeraTK {
 
     bool isReadable() const override { return _registerInfo.isReadable(); }
 
-    bool isWriteable() const override { return !_isNotWriteable; }
+    bool isWriteable() const override { return _registerInfo.isWriteable(); }
 
     template<typename COOKED_TYPE>
     COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample);
@@ -345,7 +234,7 @@ namespace ChimeraTK {
 
     // a local typename so the DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER does
     // not get confused by the comma which separates the two template parameters
-    typedef NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw> THIS_TYPE;
+    using THIS_TYPE = NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>;
 
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, setAsCooked_impl, 3);
@@ -363,22 +252,11 @@ namespace ChimeraTK {
     /** Converter to interpret the data */
     DataConverterType _dataConverter;
 
-    /** register and module name */
-    RegisterPath _registerPathName;
-
-    /** start address w.r.t. the PCIe bar */
-    size_t _bar;
-
-    /** start address w.r.t. the PCIe bar */
+    /** start address w.r.t. the PCIe bar (includes wordOffsetInRegister) */
     size_t _startAddress;
 
-    /** number of 4-byte words to access */
+    /** number of 4-byte words to access (takes into account numberOfWords) */
     size_t _numberOfWords;
-
-    /** cache for negated writable status to avoid repeated evaluation */
-    bool _isNotWriteable;
-
-    detail::NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw> _prePostActionsImplementor;
 
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
@@ -407,9 +285,9 @@ namespace ChimeraTK {
       _rawAccessor->setExceptionBackend(this->_exceptionBackend);
     }
 
-    /** A helper class to implement template specialisation on certain functions.
-     *  We can do a partial specialisation on this class which we cannot/don't
-     * want to do for the whole accessor.
+    /** 
+     * A helper class to implement template specialisation on certain functions. We can do a partial specialisation on
+     * this class which we cannot/don't want to do for the whole accessor.
      */
     template<typename RawT, typename CookedT>
     struct dataConverterTemplateSpecialisationHelper {
@@ -452,9 +330,7 @@ namespace ChimeraTK {
       static int32_t toRaw(DataConverterType& dataConverter, CookedT& value) { return dataConverter.toRaw(value); }
     };
 
-   private:
-    friend class DummyBackendBase;
-    void makeWriteable() { _isNotWriteable = false; }
+    using NDRegisterAccessor<UserType>::buffer_2D;
   }; // namespace ChimeraTK
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -470,9 +346,7 @@ namespace ChimeraTK {
           NDRegisterAccessor<UserType>::buffer_2D[channel].begin() + sample + 1, cookedData.begin());
       return cookedData[0];
     }
-    else {
-      throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
-    }
+    throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////

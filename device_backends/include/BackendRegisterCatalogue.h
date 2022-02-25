@@ -59,13 +59,14 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   class BackendRegisterCatalogue : public BackendRegisterCatalogueBase {
    public:
-    [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const override;
-
-    [[nodiscard]] BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName);
-
-    [[nodiscard]] const BackendRegisterInfo& getBackendRegister(const RegisterPath& registerPathName) const;
+    /// Note: Override this function if backend has "hidden" registers which are not added to the map and hence do not
+    /// appear when iterating. Do not forget to also override hasRegister() in this case.
+    [[nodiscard]] virtual BackendRegisterInfo getBackendRegister(const RegisterPath& registerPathName) const;
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
+
+    /// Note: Implementation internally uses getBackendRegister(), so no need to override
+    [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const final;
 
     [[nodiscard]] size_t getNumberOfRegisters() const override;
 
@@ -79,7 +80,7 @@ namespace ChimeraTK {
      * Add register information to the catalogue. The full path name of the register is taken from the RegisterInfo
      * structure.
      */
-    void addRegister(BackendRegisterInfo registerInfo);
+    void addRegister(const BackendRegisterInfo& registerInfo);
 
     /**
      * Remove register as identified by the given name from the catalogue. Throws ChimeraTK::logic_error if register
@@ -225,30 +226,13 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   RegisterInfo BackendRegisterCatalogue<BackendRegisterInfo>::getRegister(const RegisterPath& name) const {
-    try {
-      return RegisterInfo(std::make_unique<BackendRegisterInfo>(catalogue.at(name)));
-    }
-    catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
-    }
+    return RegisterInfo(std::make_unique<BackendRegisterInfo>(getBackendRegister(name)));
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(const RegisterPath& name) {
-    try {
-      return catalogue.at(name);
-    }
-    catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename BackendRegisterInfo>
-  const BackendRegisterInfo& BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
+  BackendRegisterInfo BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
       const RegisterPath& name) const {
     try {
       return catalogue.at(name);
@@ -306,12 +290,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
-  void BackendRegisterCatalogue<BackendRegisterInfo>::addRegister(BackendRegisterInfo registerInfo) {
+  void BackendRegisterCatalogue<BackendRegisterInfo>::addRegister(const BackendRegisterInfo& registerInfo) {
     if(hasRegister(registerInfo.getRegisterName())) {
       throw ChimeraTK::logic_error("BackendRegisterCatalogue::addRegister(): Register with the name " +
           registerInfo.getRegisterName() + " already exists!");
     }
-    catalogue[registerInfo.getRegisterName()] = std::move(registerInfo);
+    catalogue[registerInfo.getRegisterName()] = registerInfo;
     insertionOrderedCatalogue.push_back(&catalogue[registerInfo.getRegisterName()]);
   }
 

@@ -15,7 +15,9 @@ namespace ChimeraTK {
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
    public:
-    NumericAddressedBackend(std::string mapFileName = "");
+    explicit NumericAddressedBackend(std::string mapFileName = "",
+        std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer =
+            std::make_unique<NumericAddressedRegisterCatalogue>());
 
     ~NumericAddressedBackend() override {}
 
@@ -118,12 +120,12 @@ namespace ChimeraTK {
     virtual void startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber);
 
    protected:
-    /// resolve register name to address with error checks
-    void checkRegister(const std::string& regName, const std::string& regModule, size_t dataSize, uint32_t addRegOffset,
-        uint32_t& retDataSize, uint32_t& retRegOff, uint8_t& retRegBar) const;
-
-    /// register catalogue
-    NumericAddressedRegisterCatalogue _registerMap;
+    /*
+     * Register catalogue. A reference is used here which is filled from _registerMapPointer in the constructor to allow
+     * backend implementations to provide their own type based on the NumericAddressedRegisterCatalogue.
+     */
+    std::unique_ptr<NumericAddressedRegisterCatalogue> _registerMapPointer;
+    NumericAddressedRegisterCatalogue& _registerMap;
 
     /// metadata catalogue
     MetadataCatalogue _metadataCatalogue;
@@ -144,6 +146,9 @@ namespace ChimeraTK {
 
     friend NumericAddressedLowLevelTransferElement;
     friend NumericAddressedInterruptDispatcher;
+
+    template<class UserType>
+    friend class NumericAddressedBackendMuxedRegisterAccessor;
 
     /** 
      *  Function to be called by implementing backend when an interrupt arrives. It usually is

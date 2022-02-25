@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(SmokeTest) {
   asyncAccessor.getHighLevelImplElement()->interrupt();
   d.close();
 }
-
+/*
 BOOST_AUTO_TEST_CASE(SmokeTestWritable) {
   Device d("(dummy?map=goodMapFile.map)");
   d.open();
@@ -95,3 +95,4 @@ BOOST_AUTO_TEST_CASE(SmokeTestWritable) {
 
   BOOST_CHECK_EQUAL(d.read<int>("MODULE0/INTERRUPT_TYPE"), 43);
 }
+*/
