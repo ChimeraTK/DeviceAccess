@@ -103,8 +103,8 @@ This document describes the behaviour of the TransferElement base class, the NDR
     - ChimeraTK::Void
   - 2.2 Applications select a data type for the buffer via the UserType template argument of Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor().
   - 2.3 If needed, the register value is converted between the actual register's data type and the application-selected UserType.
-    - 2.3.1 When the UserType is ChimeraTK::Void, reading from the device discards any actual data. The resulting user buffer is of type <vectorctk::Void>.
-    - 2.3.2 Converting into another UserType from ChimeraTK::Void will fill the user buffer with 0, false or the respective value for that type.
+    - 2.3.1 Reading from an actual void register into a UserType which is not ChimeraTK::Void fills the user buffer with 0. The user buffer has 1 channel with 1 element.
+    - 2.3.2 Writing from a user buffer with ChimeraTK::Void to an actual non-void value writes 0 to the register. The user buffer matches the register's dimension. 
   - 2.4  In read operations, values outside the possible range of the UserType are moved to the nearest possible value (rounding and clamping).
     - 2.4.1 The data is marked with DataValidity::faulty in case of an overflow/underflow.
   - 2.5 In write operations, values outside the possible range of the actual register's data type are moved to the nearest possible value (rounding and clamping).
@@ -387,11 +387,10 @@ This document describes the behaviour of the TransferElement base class, the NDR
     - 5.2.7 A write operation is executed on a transfer element that cannot be written
       - 5.2.7.1 Check with TransferElement::isWriteable() or TransferElement::isReadOnly()
       - \anchor transferElement_C_5_2_7_2 5.2.7.2 Thrown in doPreWrite() [\ref UnifiedTest_TransferElement_C_5_2_7_2 "U"]
-    - 5.2.8 ScalarRegisterAccessor, OneDRegisterAccessor or TwoDRegisterAccessor Instantiation with UserType ChimeraTK::Void is forbidden
+    - \anchor transferElement_C_5_2_8 5.2.8 A ScalarRegisterAccessor, OneDRegisterAccessor or TwoDRegisterAccessor is instantiated with UserType ChimeraTK::Void. \ref transferElement_comment_C_5_2_8 "(*)"
       - Throws in constructor
-    - 5.2.9 UserType Void in combination with read-only while not having wait_for_new_data
-      - Read only is solely useful in tandem with the wait_for_new_data AccessMode.
-      - Thrown in constructor.
+    - 5.2.9 A read-only VoidRegisterAccessor that does not have the wait_for_new_data flag is instantiated.
+      - Throws in constructor.
   - \anchor transferElement_C_5_3 5.3 The information mentioned in 5.2 which determines whether a ChimeraTK::logic_error is thrown is considered to be constant for each TransferElement. Only when a ChimeraTK::runtime_error is thrown by the TransferElement, the information might change and applications are expected to check it again. [\ref UnifiedTest_TransferElement_C_5_3 "U"]
     - \anchor transferElement_C_5_3_1 5.3.1 If a device is changing this information on its own (e.g. makes a register read-only which was readable before), and the application hence performes an operation which is no longer possible, a ChimeraTK::runtime_error must be thrown (unexpected behaviour of the device). \ref transferElement_comment_C_5_3_1 "(*)" [\ref UnifiedTest_TransferElement_C_5_3_1 "U"]
     - \anchor transferElement_C_5_3_2 5.3.2 If an implementation needs to obtain the information from the device (and hence the information might potentially change), it caches the information for each TransferElement separately. [\ref UnifiedTest_TransferElement_C_5_3_2 "U"]
@@ -412,6 +411,7 @@ This document describes the behaviour of the TransferElement base class, the NDR
 - \anchor transferElement_comment_C_5_2_1_1 \ref transferElement_C_5_2_1_1  "5.2.1.1" It is legal to provide "hidden" registers not present in the catalogue, but a register listed in the catalogue must always work.
 - \anchor transferElement_comment_C_5_2_2 \ref transferElement_C_5_2_2  "5.2.2" This also includes that the offset in a one dimensional case is so large that there are not enough elements left to provide the requested data.
 - \anchor transferElement_comment_C_5_2_5_2 \ref transferElement_C_5_2_5_2 "5.2.5.2" The generic tests if a backend is opened, or if an accessor readable or writeable are intentionally not implemented in TransferElement because they would invovle additional virtual function calls. To avoid these each implementation has to implement the checks in doPreXxx().
+- \anchor transferElement_comment_C_5_2_8 \ref transferElement_C_5_2_8 "5.2.8" A VoidRegisterAccessor has to be used instead.
 - \anchor transferElement_comment_C_5_3_1 \ref transferElement_C_5_3_1 "5.3.1" To recover from the ChimeraTK::runtime_error, the application must call open(). At that point, the information is allowed to be changed. If the application fails to recheck the information, a retry of the failed operation will result in a ChimeraTK::logic_error. This behaviour follows the requirement to throw logic_errors only in doPreXxx(): if during a transfer the backend discovers that the operation is no longer allowed, a runtime_error must be thrown.
 
 ## D. Requirements for full implementations (e.g. in backends) ##
