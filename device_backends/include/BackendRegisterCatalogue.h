@@ -24,6 +24,11 @@ namespace ChimeraTK {
 
     BackendRegisterCatalogueBase& operator=(BackendRegisterCatalogueBase&& other) = default;
 
+    // Copy constructor/assignment is deleted. It could be implemented (need to take care of pointers in
+    // insertionOrderedCatalogue), but currently there is no need for this and hence it is not done.
+    BackendRegisterCatalogueBase(const BackendRegisterCatalogueBase& other) = delete;
+    BackendRegisterCatalogueBase& operator=(const BackendRegisterCatalogueBase& other) = delete;
+
     /** 
      *  Get register information for a given full path name.
      *  
@@ -311,7 +316,7 @@ namespace ChimeraTK {
 
     // remove from insertion-ordered vector
     auto it = std::find_if(insertionOrderedCatalogue.begin(), insertionOrderedCatalogue.end(),
-        [&](auto reg) { return reg.getRegisterName() == name; });
+        [&](auto reg) { return reg->getRegisterName() == name; });
     assert(it != insertionOrderedCatalogue.end());
     insertionOrderedCatalogue.erase(it);
 

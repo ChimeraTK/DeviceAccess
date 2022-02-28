@@ -7,13 +7,12 @@
 
 #pragma once
 
-#if 0
+#include "SubdeviceBackend.h"
 
-#  include <algorithm>
+#include "Device.h"
+#include "NDRegisterAccessor.h"
 
-#  include "Device.h"
-#  include "SubdeviceBackend.h"
-#  include "NDRegisterAccessor.h"
+#include <algorithm>
 
 namespace ChimeraTK {
 
@@ -69,5 +68,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif

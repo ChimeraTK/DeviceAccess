@@ -140,17 +140,20 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("NumericAddressedBackendMuxedRegisterAccessor: blocks must be byte aligned.");
     }
 
+    // compute effective numberOfElements
+    if(numberOfElements == 0) {
+      numberOfElements = _registerInfo.nElements;
+    }
+
     // check number of words
-    if(numberOfElements != 0 && numberOfElements + elementsOffset > _registerInfo.nElements) {
+    if(numberOfElements + elementsOffset > _registerInfo.nElements) {
       throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register! Requested end: " +
           std::to_string(numberOfElements + elementsOffset) +
           ", register length: " + std::to_string(_registerInfo.nElements));
     }
 
-    // update local registerInfo
-    if(numberOfElements != 0) {
-      _registerInfo.nElements = numberOfElements;
-    }
+    // update register info
+    _registerInfo.nElements = numberOfElements;
     assert(_registerInfo.elementPitchBits % 8 == 0);
     _registerInfo.address += elementsOffset * _registerInfo.elementPitchBits / 8;
 

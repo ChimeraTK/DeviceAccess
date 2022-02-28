@@ -99,7 +99,7 @@ namespace ChimeraTK {
     void add(const AccessMode flag) { _flags.insert(flag); }
 
     /** Get a comma seperated list of all flag strings contained in the class */
-    std::string serialize() {
+    std::string serialize() const {
       std::string list{};
       for(auto& f : _flags) {
         list += getString(f) + ",";
