@@ -99,8 +99,6 @@ namespace ChimeraTK {
     std::vector<int32_t> _ioBuffer;
 
     NumericAddressedRegisterInfo _registerInfo;
-    size_t _numberOfElements;
-    size_t _elementsOffset;
 
     std::vector<detail::pitched_iterator<int32_t>> _startIterators;
     std::vector<detail::pitched_iterator<int32_t>> _endIterators;
@@ -124,8 +122,7 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, size_t numberOfElements, size_t elementsOffset,
       boost::shared_ptr<DeviceBackend> _backend)
   : NDRegisterAccessor<UserType>(registerPathName, {}),
-    _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _numberOfElements(numberOfElements),
-    _elementsOffset(elementsOffset) {
+    _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)) {
     // Obtain information about the area
     _registerInfo = _ioDevice->_registerMap.getBackendRegister(registerPathName);
     assert(!_registerInfo.channels.empty());
@@ -144,31 +141,34 @@ namespace ChimeraTK {
     }
 
     // check number of words
-    if(_numberOfElements == 0) {
-      _numberOfElements = _registerInfo.nElements;
-    }
-    if(_numberOfElements + _elementsOffset > _registerInfo.nElements) {
+    if(numberOfElements != 0 && numberOfElements + elementsOffset > _registerInfo.nElements) {
       throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register! Requested end: " +
-          std::to_string(_numberOfElements + _elementsOffset) +
+          std::to_string(numberOfElements + elementsOffset) +
           ", register length: " + std::to_string(_registerInfo.nElements));
     }
+
+    // update local registerInfo
+    if(numberOfElements != 0) {
+      _registerInfo.nElements = numberOfElements;
+    }
+    assert(_registerInfo.elementPitchBits % 8 == 0);
+    _registerInfo.address += elementsOffset * _registerInfo.elementPitchBits / 8;
 
     // allocate the buffer for the converted data
     NDRegisterAccessor<UserType>::buffer_2D.resize(_converters.size());
     for(size_t i = 0; i < _converters.size(); ++i) {
-      NDRegisterAccessor<UserType>::buffer_2D[i].resize(_numberOfElements);
+      NDRegisterAccessor<UserType>::buffer_2D[i].resize(_registerInfo.nElements);
     }
 
     // allocate the raw io buffer. Make it one element larger to make sure we can access the last byte via int32_t*
-    assert(_registerInfo.elementPitchBits % 8 == 0);
-    _ioBuffer.resize(_registerInfo.elementPitchBits / 8 * _numberOfElements / sizeof(int32_t) + 1);
+    _ioBuffer.resize(_registerInfo.elementPitchBits / 8 * _registerInfo.nElements / sizeof(int32_t) + 1);
 
     // compute pitched iterators for accessing the channels
     auto* ioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(auto& c : _registerInfo.channels) {
       assert(c.bitOffset % 8 == 0);
       _startIterators.emplace_back(ioBuffer + c.bitOffset / 8, _registerInfo.elementPitchBits / 8);
-      _endIterators.push_back(_startIterators.back() + _numberOfElements);
+      _endIterators.push_back(_startIterators.back() + _registerInfo.nElements);
     }
   }
 
@@ -178,11 +178,10 @@ namespace ChimeraTK {
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransferSynchronously() {
     assert(_registerInfo.elementPitchBits % 8 == 0);
 
-    auto startAddress = _registerInfo.address + _elementsOffset * _registerInfo.elementPitchBits / 8;
-    auto nbt = _registerInfo.elementPitchBits / 8 * _numberOfElements;
+    auto nbt = _registerInfo.elementPitchBits / 8 * _registerInfo.nElements;
     nbt = ((nbt - 1) / 4 + 1) * 4; // round up to multiple of 4 bytes
 
-    _ioDevice->read(_registerInfo.bar, startAddress, _ioBuffer.data(), nbt);
+    _ioDevice->read(_registerInfo.bar, _registerInfo.address, _ioBuffer.data(), nbt);
   }
 
   /********************************************************************************************************************/
@@ -208,11 +207,10 @@ namespace ChimeraTK {
   bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(VersionNumber) {
     assert(_registerInfo.elementPitchBits % 8 == 0);
 
-    auto startAddress = _registerInfo.address + _elementsOffset * _registerInfo.elementPitchBits / 8;
-    auto nbt = _registerInfo.elementPitchBits / 8 * _numberOfElements;
+    auto nbt = _registerInfo.elementPitchBits / 8 * _registerInfo.nElements;
     nbt = ((nbt - 1) / 4 + 1) * 4; // round up to multiple of 4 bytes
 
-    _ioDevice->write(_registerInfo.bar, startAddress, &(_ioBuffer[0]), nbt);
+    _ioDevice->write(_registerInfo.bar, _registerInfo.address, &(_ioBuffer[0]), nbt);
     return false;
   }
 
