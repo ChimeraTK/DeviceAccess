@@ -316,7 +316,7 @@ namespace ChimeraTK {
 
     // remove from insertion-ordered vector
     auto it = std::find_if(insertionOrderedCatalogue.begin(), insertionOrderedCatalogue.end(),
-        [&](auto reg) { return reg.getRegisterName() == name; });
+        [&](auto reg) { return reg->getRegisterName() == name; });
     assert(it != insertionOrderedCatalogue.end());
     insertionOrderedCatalogue.erase(it);
 
