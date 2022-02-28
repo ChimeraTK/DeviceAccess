@@ -5,11 +5,11 @@
  *      Author: Martin Hierholzer
  */
 
-#  include "LogicalNameMappingBackend.h"
-#  include "LNMBackendBitAccessor.h"
-#  include "LNMBackendChannelAccessor.h"
-#  include "LNMBackendVariableAccessor.h"
-#  include "LogicalNameMapParser.h"
+#include "LogicalNameMappingBackend.h"
+#include "LNMBackendBitAccessor.h"
+#include "LNMBackendChannelAccessor.h"
+#include "LNMBackendVariableAccessor.h"
+#include "LogicalNameMapParser.h"
 
 namespace ChimeraTK {
 
@@ -26,12 +26,12 @@ namespace ChimeraTK {
     hasParsed = true;
 
     // parse the map fle
-    LogicalNameMapParser parser = LogicalNameMapParser(_lmapFileName, _parameters);
+    LogicalNameMapParser parser = LogicalNameMapParser(_parameters);
     //parser.
-    _catalogue_mutable = parser.getCatalogue();
+    _catalogue_mutable = parser.parseFile(_lmapFileName);
 
     // create all devices referenced in the map
-    for(auto& devName : parser.getTargetDevices()) {
+    for(auto& devName : getTargetDevices()) {
       _devices[devName] = BackendFactory::getInstance().createBackend(devName);
     }
   }
@@ -207,14 +207,13 @@ namespace ChimeraTK {
 
       std::string devName = info_cast.deviceName;
       //boost::shared_ptr<RegisterInfoImpl target_info;
-      LNMBackendRegisterInfo target_info;
+
+      RegisterInfo target_info(info.clone()); //Start with a clone of this info as there is not default constructor
+      // In case the devide is not "this" replace it with the real target register info
       if(devName != "this") {
         auto cat = _devices.at(devName)->getRegisterCatalogue();
         if(!cat.hasRegister(info_cast.registerName)) continue;
         target_info = cat.getRegister(info_cast.registerName);
-      }
-      else {
-        target_info = _catalogue_mutable.getBackendRegister(std::string(info_cast.registerName));
       }
 
       info_cast.supportedFlags = target_info.getSupportedAccessModes();
@@ -222,8 +221,7 @@ namespace ChimeraTK {
         info_cast._dataDescriptor = target_info.getDataDescriptor();
       }
       else {
-        info_cast._dataDescriptor =
-            DataDescriptor(DataDescriptor::FundamentalType::boolean, true, false, 1, 0);
+        info_cast._dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::boolean, true, false, 1, 0);
         info_cast.supportedFlags.remove(AccessMode::raw);
       }
       info_cast.readable = target_info.isReadable();
@@ -234,10 +232,9 @@ namespace ChimeraTK {
       }
 
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
-        info_cast.nDimensions = target_info.getNumberOfDimensions();
         info_cast.nChannels = target_info.getNumberOfChannels();
       }
-      if((int)info_cast.length == 0) info_cast.length = target_info.getNumberOfElements();
+      if(info_cast.length == 0) info_cast.length = target_info.getNumberOfElements();
     }
 
     // update catalogue info by plugins
@@ -355,5 +352,16 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-} // namespace ChimeraTK
+  std::unordered_set<std::string> LogicalNameMappingBackend::getTargetDevices() const {
+    std::unordered_set<std::string> ret;
+    for(auto it = _catalogue_mutable.begin(); it != _catalogue_mutable.end(); ++it) {
+      auto info = it->deviceName;
+      std::string dev = info; //infodeviceName;
+      if(dev != "this" && dev != "") ret.insert(dev);
+    }
+    return ret;
+  }
 
+  /********************************************************************************************************************/
+
+} // namespace ChimeraTK

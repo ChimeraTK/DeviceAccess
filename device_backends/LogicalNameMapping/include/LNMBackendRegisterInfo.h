@@ -15,6 +15,7 @@
 #include "RegisterInfo.h"
 #include "TransferElement.h"
 #include "BackendRegisterCatalogue.h"
+#include "BackendRegisterInfoBase.h"
 
 namespace ChimeraTK {
 
@@ -23,7 +24,7 @@ namespace ChimeraTK {
   }
 
   /** RegisterInfo structure for the LogicalNameMappingBackend */
-  class LNMBackendRegisterInfo : public RegisterInfoImpl {
+  class LNMBackendRegisterInfo : public BackendRegisterInfoBase {
    public:
     /** Potential target types */
     enum TargetType { INVALID, REGISTER, CHANNEL, BIT, CONSTANT, VARIABLE };
@@ -36,8 +37,6 @@ namespace ChimeraTK {
     RegisterPath getRegisterName() const override { return name; }
 
     unsigned int getNumberOfElements() const override { return length; }
-
-    unsigned int getNumberOfDimensions() const override { return nDimensions; }
 
     unsigned int getNumberOfChannels() const override { return nChannels; }
 
@@ -72,9 +71,6 @@ namespace ChimeraTK {
 
     /** The bit of the target register (if TargetType::BIT) */
     unsigned int bit;
-
-    /** The number of dimensions of the logical register */
-    unsigned int nDimensions;
 
     /** The number of channels of the logical register */
     unsigned int nChannels;
@@ -119,9 +115,8 @@ namespace ChimeraTK {
 
     DataDescriptor _dataDescriptor;
 
-    [[nodiscard]] std::unique_ptr<RegisterInfoImpl> clone() const override {
-      auto* info = new LNMBackendRegisterInfo(*this);
-      return std::unique_ptr<RegisterInfoImpl>(info);
+    [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
+      return std::make_unique<LNMBackendRegisterInfo>(*this);
     }
   };
   /********************************************************************************************************************/

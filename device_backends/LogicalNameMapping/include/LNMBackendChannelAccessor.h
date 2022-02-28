@@ -31,8 +31,7 @@ namespace ChimeraTK {
       _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
 
       // copy the register info and create the internal accessors, if needed
-      _info =
-          _dev->_catalogue_mutable.getBackendRegister(_registerPathName);
+      _info = _dev->_catalogue_mutable.getBackendRegister(_registerPathName);
 
       // check for incorrect usage of this accessor
       assert(_info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);

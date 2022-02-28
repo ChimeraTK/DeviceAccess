@@ -9,13 +9,12 @@
 
 #include <boost/shared_ptr.hpp>
 #include <map>
-#include <unordered_set>
 
 #include "BackendRegisterCatalogue.h"
+#include "LNMBackendRegisterInfo.h"
 #include "RegisterPath.h"
 
 #include "LNMAccessorPlugin.h"
-
 
 // forward declaration
 namespace xmlpp {
@@ -30,40 +29,29 @@ namespace ChimeraTK {
   class LogicalNameMapParser {
    public:
     /** Constructor: parse map from XML file */
-    LogicalNameMapParser(const std::string& fileName, const std::map<std::string, std::string>& parameters)
-    : _parameters(parameters) {
-      parseFile(fileName);
-    }
+    LogicalNameMapParser(const std::map<std::string, std::string>& parameters) : _parameters(parameters) {}
 
-    /** Default constructor: Create empty map. */
-    LogicalNameMapParser() {}
-
-    /** Obtain the parsed register catalogue */
-
-    //LNMRegisterCatalogue& getCatalogue() {return _catalogue; }
-    BackendRegisterCatalogue<LNMBackendRegisterInfo>& getCatalogue() {return _catalogue; }
-
-    /** Obtain list of all target devices referenced in the map */
-    std::unordered_set<std::string> getTargetDevices() const;
-
-   //protected:
     /** parse the given XML file */
-    void parseFile(const std::string& fileName);
-    BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
+    BackendRegisterCatalogue<LNMBackendRegisterInfo> parseFile(const std::string& fileName);
+    //BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
+
    protected:
     /** called inside parseFile() to parse an XML element and its sub-elements
      * recursivly */
-    void parseElement(RegisterPath currentPath, const xmlpp::Element* element);
+    void parseElement(RegisterPath currentPath, const xmlpp::Element* element,
+        BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue);
 
     /** throw a parsing error with more information */
     [[noreturn]] void parsingError(const xmlpp::Node* node, const std::string& message);
 
     /** Build a Value object for a given subnode. */
     template<typename ValueType>
-    ValueType getValueFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault = false,
+    ValueType getValueFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName,
+        BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue, bool hasDefault = false,
         ValueType defaultValue = ValueType());
     template<typename ValueType>
-    std::vector<ValueType> getValueVectorFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName);
+    std::vector<ValueType> getValueVectorFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName,
+        BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue);
 
     /** file name of the logical map */
     std::string _fileName;
@@ -80,7 +68,8 @@ namespace ChimeraTK {
   };
 
   template<>
-  std::string LogicalNameMapParser::getValueFromXmlSubnode<std::string>(
-      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, std::string defaultValue);
+  std::string LogicalNameMapParser::getValueFromXmlSubnode<std::string>(const xmlpp::Node* node,
+      const std::string& subnodeName, BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue,
+      bool hasDefault, std::string defaultValue);
 
 } // namespace ChimeraTK

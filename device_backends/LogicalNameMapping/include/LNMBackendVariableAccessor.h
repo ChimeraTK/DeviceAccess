@@ -8,13 +8,13 @@
 
 #pragma once
 
-#  include <algorithm>
+#include <algorithm>
 
-#  include "BufferingRegisterAccessor.h"
-#  include "Device.h"
-#  include "FixedPointConverter.h"
-#  include "LogicalNameMappingBackend.h"
-#  include "NDRegisterAccessor.h"
+#include "BufferingRegisterAccessor.h"
+#include "Device.h"
+#include "FixedPointConverter.h"
+#include "LogicalNameMappingBackend.h"
+#include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
@@ -165,7 +165,7 @@ namespace ChimeraTK {
   LNMBackendVariableAccessor<UserType>::~LNMBackendVariableAccessor() {
     if(_flags.has(AccessMode::wait_for_new_data)) {
       // unsubscribe the update queue
-        //fix this
+      //fix this
       //std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
       callForType(_info.valueType, [&, this](auto arg) {
         typedef decltype(arg) T;

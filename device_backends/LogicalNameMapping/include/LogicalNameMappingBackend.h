@@ -13,6 +13,7 @@
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
 #include "BackendRegisterCatalogue.h"
+#include <unordered_set>
 
 namespace ChimeraTK {
 
@@ -50,6 +51,8 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_internal(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
+    MetadataCatalogue getMetadataCatalogue() const override { return MetadataCatalogue(); }
+
     /// parse the logical map file, if not yet done
     void parse() const;
 
@@ -67,7 +70,6 @@ namespace ChimeraTK {
 
     /** We need to make the catalogue mutable, since we fill it within
      * getRegisterCatalogue() */
-
     mutable BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue_mutable;
     //mutable LNMRegisterCatalogue _catalogue_mutable;
     /** Flag whether the catalogue has already been filled with extra information
@@ -109,6 +111,9 @@ namespace ChimeraTK {
 
     /// Flag storing whether asynchronous read has been activated.
     std::atomic<bool> _asyncReadActive{false};
+
+    /** Obtain list of all target devices referenced in the catalogue */
+    std::unordered_set<std::string> getTargetDevices() const;
   };
 
 } // namespace ChimeraTK
