@@ -49,7 +49,7 @@ namespace ChimeraTK {
       bool signedFlag;         /**< Signed/Unsigned flag */
       bool operator==(const ChannelInfo& rhs) const;
       bool operator!=(const ChannelInfo& rhs) const;
-      DataType getRawType() const; /**< Return raw type matching the given width */
+      [[nodiscard]] DataType getRawType() const; /**< Return raw type matching the given width */
     };
 
     /** 

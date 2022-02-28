@@ -47,7 +47,7 @@ namespace ChimeraTK {
     NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : NDRegisterAccessor<UserType>(registerPathName, flags), _dataConverter(registerPathName),
-      _numberOfWords(numberOfWords), _dev(boost::dynamic_pointer_cast<NumericAddressedBackend>(dev)) {
+      _dev(boost::dynamic_pointer_cast<NumericAddressedBackend>(dev)) {
       // check for unknown flags
       flags.checkForUnknownFlags({AccessMode::raw});
 
@@ -65,7 +65,6 @@ namespace ChimeraTK {
       if(_registerInfo.elementPitchBits % 8 != 0) {
         throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor: Elements must be byte aligned.");
       }
-      _startAddress = _registerInfo.address + wordOffsetInRegister * _registerInfo.elementPitchBits / 8;
 
       if(_registerInfo.channels.size() > 1) {
         throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor is used with a 2D register.");
@@ -78,10 +77,10 @@ namespace ChimeraTK {
       // check number of words
       if(_registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID) {
         // in void registers we always create one element
-        if(_numberOfWords == 0) {
-          _numberOfWords = 1;
+        if(numberOfWords == 0) {
+          numberOfWords = 1;
         }
-        if(_numberOfWords > 1) {
+        if(numberOfWords > 1) {
           throw ChimeraTK::logic_error(
               "Requested number of words is larger than 1 in VOID register '" + registerPathName + "'!");
         }
@@ -90,10 +89,10 @@ namespace ChimeraTK {
         }
       }
       else { // do the regular consistency check
-        if(_numberOfWords == 0) {
-          _numberOfWords = _registerInfo.getNumberOfElements();
+        if(numberOfWords == 0) {
+          numberOfWords = _registerInfo.getNumberOfElements();
         }
-        if(_numberOfWords + wordOffsetInRegister > _registerInfo.getNumberOfElements()) {
+        if(numberOfWords + wordOffsetInRegister > _registerInfo.getNumberOfElements()) {
           throw ChimeraTK::logic_error(
               "Requested number of words exceeds the size of the register '" + registerPathName + "'!");
         }
@@ -102,14 +101,18 @@ namespace ChimeraTK {
         }
       }
 
+      // change registerInfo (local copy!) to account for given offset and length override
+      _registerInfo.address += wordOffsetInRegister * _registerInfo.elementPitchBits / 8;
+      _registerInfo.nElements = numberOfWords;
+
       // create low-level transfer element handling the actual data transfer to the hardware with raw data
       assert(_registerInfo.elementPitchBits % 8 == 0);
-      _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(
-          _dev, _registerInfo.bar, _startAddress, _numberOfWords * _registerInfo.elementPitchBits / 8));
+      _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev, _registerInfo.bar, _registerInfo.address,
+          _registerInfo.nElements * _registerInfo.elementPitchBits / 8));
 
       // allocated the buffers
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-      NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
+      NDRegisterAccessor<UserType>::buffer_2D[0].resize(_registerInfo.nElements);
 
       // We don't have to fill it in a special way if the accessor is raw
       // because we have an overloaded, more efficient implementation
@@ -148,13 +151,13 @@ namespace ChimeraTK {
       if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
         callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
           typedef decltype(t) RawType;
-          auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
+          auto itsrc = (RawType*)_rawAccessor->begin(_registerInfo.address);
           _dataConverter.template vectorToCooked<UserType>(itsrc, itsrc + buffer_2D[0].size(), buffer_2D[0].begin());
         });
       }
       else {
         // optimised variant for raw transfers (unless type is a string)
-        auto itsrc = _rawAccessor->begin(_startAddress);
+        auto itsrc = _rawAccessor->begin(_registerInfo.address);
         auto itdst = buffer_2D[0].begin();
         memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(int32_t));
       }
@@ -180,7 +183,7 @@ namespace ChimeraTK {
         }
         callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
           typedef decltype(t) RawType;
-          auto itsrc = (RawType*)_rawAccessor->begin(_startAddress);
+          auto itsrc = (RawType*)_rawAccessor->begin(_registerInfo.address);
           for(auto itdst = buffer_2D[0].begin(); itdst != buffer_2D[0].end(); ++itdst) {
             *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
             ++itsrc;
@@ -189,7 +192,7 @@ namespace ChimeraTK {
       }
       else {
         // optimised variant for raw transfers (unless type is a string)
-        auto itdst = _rawAccessor->begin(_startAddress);
+        auto itdst = _rawAccessor->begin(_registerInfo.address);
         auto itsrc = buffer_2D[0].begin();
         memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(UserType));
       }
@@ -214,8 +217,6 @@ namespace ChimeraTK {
       if(!rhsCasted) return false;
       if(_dev != rhsCasted->_dev) return false;
       if(_registerInfo != rhsCasted->_registerInfo) return false;
-      if(_startAddress != rhsCasted->_startAddress) return false;
-      if(_numberOfWords != rhsCasted->_numberOfWords) return false;
       if(_dataConverter != rhsCasted->_dataConverter) return false;
       return true;
     }
@@ -251,12 +252,6 @@ namespace ChimeraTK {
 
     /** Converter to interpret the data */
     DataConverterType _dataConverter;
-
-    /** start address w.r.t. the PCIe bar (includes wordOffsetInRegister) */
-    size_t _startAddress;
-
-    /** number of 4-byte words to access (takes into account numberOfWords) */
-    size_t _numberOfWords;
 
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
