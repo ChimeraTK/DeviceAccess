@@ -150,7 +150,7 @@ namespace ChimeraTK {
     registerBackendType("dummy", &DummyBackend::createInstance, {"map"});
     registerBackendType("rebot", &RebotBackend::createInstance, {"ip", "port", "map", "timeout"});
     //registerBackendType("logicalNameMap", &LogicalNameMappingBackend::createInstance, {"map"});
-    //registerBackendType("subdevice", &SubdeviceBackend::createInstance, {"map"});
+    registerBackendType("subdevice", &SubdeviceBackend::createInstance, {"map"});
     registerBackendType("sharedMemoryDummy", &SharedDummyBackend::createInstance, {"map"});
   }
   /********************************************************************************************************************/

@@ -1,19 +1,17 @@
-
-#  define BOOST_TEST_DYN_LINK
-#  define BOOST_TEST_MODULE SubdeviceBackendUnifiedTest
-#  include <boost/test/unit_test.hpp>
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE SubdeviceBackendUnifiedTest
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#  include "Device.h"
-#  include "ExceptionDummyBackend.h"
-#  include "UnifiedBackendTest.h"
-#  include "DummyRegisterAccessor.h"
+#include "Device.h"
+#include "ExceptionDummyBackend.h"
+#include "UnifiedBackendTest.h"
+#include "DummyRegisterAccessor.h"
 
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(SubdeviceBackendUnifiedTestSuite)
 
-#if 0
 /**********************************************************************************************************************/
 
 static std::string cdd("(ExceptionDummy:1?map=SubdeviceTarget.map)");
@@ -276,7 +274,5 @@ BOOST_AUTO_TEST_CASE(testUnified) {
 }
 
 /*********************************************************************************************************************/
-
-#endif
 
 BOOST_AUTO_TEST_SUITE_END()
