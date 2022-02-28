@@ -5,20 +5,20 @@
 #ifndef CHIMERA_TK_DEVICE_H
 #  define CHIMERA_TK_DEVICE_H
 
-#include <boost/algorithm/string.hpp>
-#include <boost/shared_ptr.hpp>
+#  include <boost/algorithm/string.hpp>
+#  include <boost/shared_ptr.hpp>
 
-#include "AccessMode.h"
-#include "BackendFactory.h"
-#include "BufferingRegisterAccessor.h"
-#include "DeviceBackend.h"
-#include "Exception.h"
-#include "ForwardDeclarations.h"
-#include "VoidRegisterAccessor.h"
-#include "OneDRegisterAccessor.h"
-#include "ScalarRegisterAccessor.h"
-#include "TwoDRegisterAccessor.h"
-#include "Utilities.h" // make setDMapFilePath() available
+#  include "AccessMode.h"
+#  include "BackendFactory.h"
+#  include "BufferingRegisterAccessor.h"
+#  include "DeviceBackend.h"
+#  include "Exception.h"
+#  include "ForwardDeclarations.h"
+#  include "VoidRegisterAccessor.h"
+#  include "OneDRegisterAccessor.h"
+#  include "ScalarRegisterAccessor.h"
+#  include "TwoDRegisterAccessor.h"
+#  include "Utilities.h" // make setDMapFilePath() available
 
 // Note: for backwards compatibility there is RegisterAccessor.h and
 // MultiplexedDataAccessor.h included at the end of this file.

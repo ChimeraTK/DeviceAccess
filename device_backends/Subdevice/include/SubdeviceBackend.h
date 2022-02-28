@@ -2,13 +2,13 @@
 
 #  pragma once
 
-#include <fcntl.h>
-#include <mutex>
-#include <stdint.h>
-#include <string>
-#include <vector>
+#  include <fcntl.h>
+#  include <mutex>
+#  include <stdint.h>
+#  include <string>
+#  include <vector>
 
-#include "DeviceBackendImpl.h"
+#  include "DeviceBackendImpl.h"
 
 namespace ChimeraTK {
   class SubdeviceRegisterAccessor;

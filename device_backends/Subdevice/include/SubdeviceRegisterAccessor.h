@@ -9,11 +9,11 @@
 
 #if 0
 
-#include <algorithm>
+#  include <algorithm>
 
-#include "Device.h"
-#include "SubdeviceBackend.h"
-#include "NDRegisterAccessor.h"
+#  include "Device.h"
+#  include "SubdeviceBackend.h"
+#  include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
