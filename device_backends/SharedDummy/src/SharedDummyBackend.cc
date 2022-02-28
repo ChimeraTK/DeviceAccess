@@ -136,16 +136,203 @@ namespace ChimeraTK {
   }
 
   VersionNumber SharedDummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
-    // FIXME: This is the "one process" version taken from the regular DummyBackend. The correct implementation should
-    // * Signal the interrupt to all processes which are accessing this shared memory (and to itself, depending on the implementation)
-    // * Execute the dispatch (either based on the signal or directly here, depending on the implementation)
+    this->sharedMemoryManager.intDispatcherIf->triggerInterrupt(interruptControllerNumber, interruptNumber);
+
+    //TODO discuss - what VersionNumber shall we return?
+    // we could generate a version number here and pass it over to trigger destinations, but does that make sense?
+    // Instead, we could wait for a return value  from triggered process, but does that make sense?
+    return VersionNumber();
+  }
+
+  SharedDummyBackend::InterruptDispatcherInterface::InterruptDispatcherInterface(SharedDummyBackend& backend,
+      boost::interprocess::managed_shared_memory& shm, boost::interprocess::named_mutex& shmMutex)
+  : _shmMutex(shmMutex), _backend(backend) {
+    // locking not needed, already defined as atomic
+    _semBuf = shm.find_or_construct<ShmForSems>(ShmForSems::shmName)();
+    _semId = getOwnPID();
+
+    _dispatcherThread = boost::shared_ptr<InterruptDispatcherThread>(new InterruptDispatcherThread(this));
+  }
+
+  SharedDummyBackend::InterruptDispatcherInterface::~InterruptDispatcherInterface() {
+    // stop thread and remove semaphore on destruction
+    _dispatcherThread.reset(); // stops and deletes thread which uses semaphore
+    std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
+    _semBuf->removeSem(_semId);
+  }
+
+  void SharedDummyBackend::InterruptDispatcherInterface::triggerInterrupt(int controllerId, int intNumber) {
+    std::list<boost::interprocess::interprocess_semaphore*> semList;
+    {
+      std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
+      // find list of processes and their semaphores
+      // update interrupt info
+      semList = _semBuf->findSems(InterruptInfo(controllerId, intNumber), true);
+    }
+    // trigger the interrupts
+    for(auto sem : semList) {
+      _semBuf->print();
+      std::cout << " post sem for interrupt: " << intNumber << std::endl;
+      sem->post();
+    }
+  }
+
+  SharedDummyBackend::InterruptDispatcherThread::InterruptDispatcherThread(
+      InterruptDispatcherInterface* dispatcherInterf)
+  : _dispatcherInterf(dispatcherInterf), _semId(dispatcherInterf->_semId), _semShm(dispatcherInterf->_semBuf) {
+    _thr = new boost::thread(&InterruptDispatcherThread::run, this);
+  }
+
+  SharedDummyBackend::InterruptDispatcherThread::~InterruptDispatcherThread() {
+    stop();
+    _thr->join();
+    delete _thr;
+  }
+
+  void SharedDummyBackend::InterruptDispatcherThread::run() {
+    // copy interrupt counts at the beginning, and then
+    // only look for different values. count up all values till they match
+    // map (controller,intNumber) -> count
+    // use map instead of vector because search is more efficient
+    std::map<std::pair<int, int>, std::uint32_t> lastInterruptState;
+    {
+      std::lock_guard<boost::interprocess::named_mutex> lock(_dispatcherInterf->_shmMutex);
+      for(auto& entry : _semShm->interruptEntries) {
+        //lastInterruptState_.push_back(entry);
+        lastInterruptState[std::make_pair(entry._controllerId, entry._intNumber)] = entry._counter;
+      }
+      _sem = _semShm->addSem(_semId);
+    }
+
+    while(!_stop) {
+      _sem->wait();
+      std::lock_guard<boost::interprocess::named_mutex> lock(_dispatcherInterf->_shmMutex);
+
+      for(auto& entry : _semShm->interruptEntries) {
+        if(!entry.used) continue;
+
+        // find match with controllerId and intNumber
+        auto key = std::make_pair(entry._controllerId, entry._intNumber);
+        auto it = lastInterruptState.find(key);
+        if(it != lastInterruptState.end()) {
+          while(it->second != entry._counter) {
+            // call trigger/dispatch
+            // std::cout << "existing interrupt event for x,y = " << entry._controllerId << ", " << entry._intNumber
+            //          << std::endl;
+            handleInterrupt(entry._controllerId, entry._intNumber);
+            it->second++;
+          }
+        }
+        else {
+          // new interrupt number
+          // call trigger/dispatch count times
+          // std::cout << "count = " << entry._counter << " interrupt events for x,y = " << entry._controllerId << ", "
+          //          << entry._intNumber << std::endl;
+          handleInterrupt(entry._controllerId, entry._intNumber);
+          lastInterruptState[key] = entry._counter;
+        }
+      }
+    }
+  }
+  void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(
+      int interruptControllerNumber, int interruptNumber) {
     try {
-      return dispatchInterrupt(interruptControllerNumber, interruptNumber);
+      SharedDummyBackend& backend = _dispatcherInterf->_backend;
+      VersionNumber vNumber = backend.dispatchInterrupt(interruptControllerNumber, interruptNumber);
     }
     catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("DummyBackend::triggerInterrupt(): Error: Unknown interrupt " +
+      throw ChimeraTK::logic_error("InterruptDispatcherThread::triggerInterrupt(): Error: Unknown interrupt " +
           std::to_string(interruptControllerNumber) + ", " + std::to_string(interruptNumber));
     }
+  }
+
+  SharedDummyBackend::ShmForSems::Sem* SharedDummyBackend::ShmForSems::addSem(SemId semId) {
+    // look up whether semaphore for id already exists and return error
+    for(auto& entry : semEntries) {
+      if(entry.used && entry.semId == semId)
+        throw logic_error("error: semId already exists - check assumption about identifiers!");
+    }
+
+    for(auto& entry : semEntries) {
+      if(!entry.used) {
+        entry.semId = semId;
+        entry.used = true;
+        // It would be nice to also reset semaphores state, but if
+        // interrupt dispatcher thread which last used it terminated property its not necessary
+        // (since it calls post in destructor)
+        return &entry.s;
+      }
+    }
+    // increasing size not implemented
+    throw runtime_error("error: semaphore array full - increase maxSems!");
+  }
+
+  void SharedDummyBackend::ShmForSems::removeSem(SemId semId) {
+    for(auto& entry : semEntries) {
+      if(entry.used && entry.semId == semId) {
+        entry.used = 0;
+        break;
+      }
+    }
+  }
+
+  void SharedDummyBackend::ShmForSems::addInterrupt(InterruptInfo ii) {
+    bool found = false;
+    for(auto& entry : interruptEntries) {
+      if(entry.used && entry._controllerId == ii._controllerId && entry._intNumber == ii._intNumber) {
+        entry._counter++;
+        found = true;
+        break;
+      }
+    }
+    if(!found) {
+      bool added = false;
+      for(auto& entry : interruptEntries) {
+        if(!entry.used) {
+          entry.used = true;
+          //entry.semId = semId;
+          entry._controllerId = ii._controllerId;
+          entry._intNumber = ii._intNumber;
+          entry._counter = 1;
+          added = true;
+          break;
+        }
+      }
+      if(!added) {
+        throw runtime_error("no place left in interruptEntries!");
+      }
+    }
+  }
+
+  std::list<SharedDummyBackend::ShmForSems::Sem*> SharedDummyBackend::ShmForSems::findSems(
+      InterruptInfo ii, bool update) {
+    std::list<Sem*> ret;
+    for(auto& entry : semEntries) {
+      if(entry.used) {
+        // we simply return all semaphores
+        ret.push_back(&entry.s);
+      }
+    }
+    if(update) addInterrupt(ii);
+    return ret;
+  }
+
+  void SharedDummyBackend::ShmForSems::print() {
+    std::cout << "shmem contents: " << std::endl;
+    int i = 0;
+    for(auto& entry : semEntries) {
+      if(entry.used) std::cout << "sem : " << entry.semId << std::endl;
+      i++;
+    }
+    i = 0;
+    for(auto& entry : interruptEntries) {
+      if(entry.used)
+        std::cout << "interrupt : " << entry._controllerId << "," << entry._intNumber << " count = " << entry._counter
+                  << std::endl;
+      i++;
+    }
+
+    std::cout << std::endl;
   }
 
 } // Namespace ChimeraTK
