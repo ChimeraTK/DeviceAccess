@@ -63,6 +63,9 @@ namespace ChimeraTK {
   }
 
   SharedDummyBackend::SharedMemoryManager::~SharedMemoryManager() {
+    // stop and delete dispatcher thread first since it uses shm and mutex
+    intDispatcherIf.reset();
+
     // lock guard with the interprocess mutex
     std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
 

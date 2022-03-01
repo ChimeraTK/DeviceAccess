@@ -162,11 +162,13 @@ namespace ChimeraTK {
 
     /****************** definitions for across-instance triggering ********/
 
-    // We are using the process id as an id of the semaphore which is to be triggered for the interrupt dispatcher thread. Since there
-    // is only one interrupt dispatcher thread per mapped shared memory region in a process, and the semaphore is set inside the shared memory, this means we
-    // can identify all semaphores per shared memory this way.
-    // However, this implies the restriction that you must not create more than one backend instance per shared memory region inside a process.
-    // E.g. if you wanted to write a test by tricking the backend factory into creating more than one backend instance for the same process and shared memory, you will have a problem.
+    // We are using the process id as an id of the semaphore which is to be triggered for the interrupt dispatcher
+    // thread. Since there is only one interrupt dispatcher thread per mapped shared memory region in a process, and
+    // the semaphore is set inside the shared memory, this means we can identify all semaphores per shared memory
+    // this way.
+    // However, this implies the restriction that you must not create more than one backend instance per shared memory
+    // region inside a process. E.g. if you wanted to write a test by tricking the backend factory into creating more
+    // than one backend instance for the same process and shared memory, you will have a problem.
     typedef std::uint32_t SemId;
 
     // info about interrupt (for API)
@@ -264,10 +266,7 @@ namespace ChimeraTK {
       ~InterruptDispatcherThread();
 
       void run();
-      void stop() {
-        _stop = true;
-        _sem->post();
-      }
+      void stop();
       /// called for each interrupt event. Implements actual dispatching
       void handleInterrupt(int interruptControllerNumber, int interruptNumber);
 

@@ -138,9 +138,8 @@ namespace ChimeraTK {
   VersionNumber SharedDummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
     this->sharedMemoryManager.intDispatcherIf->triggerInterrupt(interruptControllerNumber, interruptNumber);
 
-    //TODO discuss - what VersionNumber shall we return?
-    // we could generate a version number here and pass it over to trigger destinations, but does that make sense?
-    // Instead, we could wait for a return value  from triggered process, but does that make sense?
+    // Since VersionNumber consistency is defined only per process, we generate a new one here
+    // and also in the triggered process
     return VersionNumber();
   }
 
@@ -171,8 +170,11 @@ namespace ChimeraTK {
     }
     // trigger the interrupts
     for(auto sem : semList) {
+#ifdef _DEBUG
+      std::cout << " InterruptDispatcherInterface::triggerInterrupt: post sem for interrupt: " << intNumber
+                << std::endl;
       _semBuf->print();
-      std::cout << " post sem for interrupt: " << intNumber << std::endl;
+#endif
       sem->post();
     }
   }
@@ -217,8 +219,10 @@ namespace ChimeraTK {
         if(it != lastInterruptState.end()) {
           while(it->second != entry._counter) {
             // call trigger/dispatch
-            // std::cout << "existing interrupt event for x,y = " << entry._controllerId << ", " << entry._intNumber
-            //          << std::endl;
+#ifdef _DEBUG
+            std::cout << "existing interrupt event for x,y = " << entry._controllerId << ", " << entry._intNumber
+                      << std::endl;
+#endif
             handleInterrupt(entry._controllerId, entry._intNumber);
             it->second++;
           }
@@ -226,14 +230,22 @@ namespace ChimeraTK {
         else {
           // new interrupt number
           // call trigger/dispatch count times
-          // std::cout << "count = " << entry._counter << " interrupt events for x,y = " << entry._controllerId << ", "
-          //          << entry._intNumber << std::endl;
+#ifdef _DEBUG
+          std::cout << "count = " << entry._counter << " interrupt events for x,y = " << entry._controllerId << ", "
+                    << entry._intNumber << std::endl;
+#endif
           handleInterrupt(entry._controllerId, entry._intNumber);
           lastInterruptState[key] = entry._counter;
         }
       }
     }
   }
+
+  void SharedDummyBackend::InterruptDispatcherThread::stop() {
+    _stop = true;
+    _sem->post();
+  }
+
   void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(
       int interruptControllerNumber, int interruptNumber) {
     try {
