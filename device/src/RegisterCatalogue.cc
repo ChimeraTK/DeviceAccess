@@ -9,6 +9,28 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
+  RegisterCatalogue::RegisterCatalogue(const RegisterCatalogue& other) : _impl(other._impl->clone()) {}
+
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue::RegisterCatalogue(RegisterCatalogue&& other) noexcept : _impl(std::move(other._impl)) {}
+
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue& RegisterCatalogue::operator=(const RegisterCatalogue& other) {
+    _impl = other._impl->clone();
+    return *this;
+  }
+
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue& RegisterCatalogue::operator=(RegisterCatalogue&& other) noexcept {
+    _impl = std::move(other._impl);
+    return *this;
+  }
+
+  /*******************************************************************************************************************/
+
   // need to declare in .cc file, since the type RegisterCatalogueImpl must be complete
   RegisterCatalogue::~RegisterCatalogue() = default;
 
