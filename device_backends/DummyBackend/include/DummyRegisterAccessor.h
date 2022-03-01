@@ -173,6 +173,8 @@ namespace ChimeraTK {
           writeCallback);
     }
 
+    const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
+
    protected:
     /// pointer to VirtualDevice
     DummyBackend* _dev;
@@ -270,6 +272,8 @@ namespace ChimeraTK {
 
     /// Return the register path
     const RegisterPath& getRegisterPath() const { return _path; }
+
+    const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
 
    protected:
     /// pointer to VirtualDevice
