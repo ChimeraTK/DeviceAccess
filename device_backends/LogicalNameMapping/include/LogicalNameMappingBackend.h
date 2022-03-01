@@ -51,8 +51,6 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_internal(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    MetadataCatalogue getMetadataCatalogue() const override { return MetadataCatalogue(); }
-
     /// parse the logical map file, if not yet done
     void parse() const;
 
