@@ -1,32 +1,14 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use
-/// BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#define BOOST_TEST_DYN_LINK
+
+#define BOOST_TEST_MODULE RegisterCatalogue
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
 #include "BackendRegisterCatalogue.h"
 
 using namespace ChimeraTK;
 
-class RegisterCatalogueTest {
- public:
-  void testRegisterCatalogue();
-};
-
-class registerCatalogueTestSuite : public test_suite {
- public:
-  registerCatalogueTestSuite() : test_suite("RegisterCatalogue class test suite") {
-    boost::shared_ptr<RegisterCatalogueTest> test(new RegisterCatalogueTest());
-
-    add(BOOST_CLASS_TEST_CASE(&RegisterCatalogueTest::testRegisterCatalogue, test));
-  }
-};
-
-bool init_unit_test() {
-  framework::master_test_suite().p_name.value = "RegisterCatalogue class test suite";
-  framework::master_test_suite().add(new registerCatalogueTestSuite());
-
-  return true;
-}
+/*******************************************************************************************************************/
 
 class myRegisterInfo : public BackendRegisterInfoBase {
  public:
@@ -70,21 +52,40 @@ class myRegisterInfo : public BackendRegisterInfoBase {
   AccessModeFlags _supportedFlags;
 };
 
-void RegisterCatalogueTest::testRegisterCatalogue() {
-  BackendRegisterCatalogue<myRegisterInfo> catalogue;
+/*******************************************************************************************************************/
 
-  DataDescriptor dataDescriptor(DataDescriptor::FundamentalType::numeric, false, false, 8, 3, DataType::int32);
-  myRegisterInfo theInfo("/some/register/name", 42, 3, 2, dataDescriptor, true, false, {AccessMode::raw});
-  catalogue.addRegister(theInfo);
+class CatalogueGenerator {
+ public:
+  BackendRegisterCatalogue<myRegisterInfo> generateCatalogue() {
+    BackendRegisterCatalogue<myRegisterInfo> catalogue;
 
-  DataDescriptor dataDescriptor2(DataDescriptor::FundamentalType::numeric, true, false, 12);
-  myRegisterInfo theInfo2(
-      "/some/other/name", 1, 1, 0, dataDescriptor2, true, true, {AccessMode::raw, AccessMode::wait_for_new_data});
-  catalogue.addRegister(theInfo2);
+    catalogue.addRegister(theInfo);
+    catalogue.addRegister(theInfo2);
+    catalogue.addRegister(theInfo3);
 
-  DataDescriptor dataDescriptor3(DataDescriptor::FundamentalType::string);
-  myRegisterInfo theInfo3("/justAName", 1, 1, 0, dataDescriptor3, false, false, {});
-  catalogue.addRegister(theInfo3);
+    return catalogue;
+  }
+
+  DataDescriptor dataDescriptor{DataDescriptor::FundamentalType::numeric, false, false, 8, 3, DataType::int32};
+  myRegisterInfo theInfo{"/some/register/name", 42, 3, 2, dataDescriptor, true, false, {AccessMode::raw}};
+
+  DataDescriptor dataDescriptor2{DataDescriptor::FundamentalType::numeric, true, false, 12};
+  myRegisterInfo theInfo2{
+      "/some/other/name", 1, 1, 0, dataDescriptor2, true, true, {AccessMode::raw, AccessMode::wait_for_new_data}};
+
+  DataDescriptor dataDescriptor3{DataDescriptor::FundamentalType::string};
+  myRegisterInfo theInfo3{"/justAName", 1, 1, 0, dataDescriptor3, false, false, {}};
+};
+
+/*******************************************************************************************************************/
+
+BOOST_AUTO_TEST_SUITE(RegisterCatalogueTestSuite)
+
+/*******************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDirectAccess) {
+  CatalogueGenerator generator;
+  auto catalogue = generator.generateCatalogue();
 
   BOOST_TEST(catalogue.getNumberOfRegisters() == 3);
 
@@ -111,7 +112,7 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   auto& theImpl = info.getImpl();
   auto theImpl_casted = dynamic_cast<myRegisterInfo*>(&theImpl);
   BOOST_TEST(theImpl_casted != nullptr);
-  BOOST_TEST(theImpl_casted != &theInfo);
+  BOOST_TEST(theImpl_casted != &generator.theInfo);
 
   info = catalogue.getRegister("/some/other/name");
   BOOST_TEST(info.getRegisterName() == "/some/other/name");
@@ -145,14 +146,86 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_TEST(info.isWriteable() == false);
   BOOST_TEST(info.getSupportedAccessModes().has(AccessMode::raw) == false);
   BOOST_TEST(info.getSupportedAccessModes().has(AccessMode::wait_for_new_data) == false);
+}
+/*******************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testClone) {
+  CatalogueGenerator generator;
+  auto catalogue = generator.generateCatalogue();
 
   // create clone of the entire catalogue (must be a deep copy)
-  auto cat_copy = RegisterCatalogue(catalogue.clone());
-  BOOST_TEST(cat_copy.getNumberOfRegisters() == 3);
-  for(auto& info_copy : cat_copy) {
-    auto info_orig = catalogue.getBackendRegister(info_copy.getRegisterName());
-    auto& info_copy_casted = dynamic_cast<const myRegisterInfo&>(info_copy);
-    BOOST_CHECK(info_orig == info_copy_casted);
-    BOOST_TEST(&info_orig != &info_copy);
+  std::unique_ptr<BackendRegisterCatalogue<myRegisterInfo>> cat_copy(
+      dynamic_cast<BackendRegisterCatalogue<myRegisterInfo>*>(catalogue.clone().release()));
+  BOOST_TEST(cat_copy->getNumberOfRegisters() == 3);
+
+  BOOST_CHECK(
+      catalogue.getBackendRegister("/some/register/name") == cat_copy->getBackendRegister("/some/register/name"));
+  BOOST_CHECK(catalogue.getBackendRegister("/some/other/name") == cat_copy->getBackendRegister("/some/other/name"));
+  BOOST_CHECK(catalogue.getBackendRegister("/justAName") == cat_copy->getBackendRegister("/justAName"));
+
+  std::vector<myRegisterInfo> seenObjects;
+  for(auto& i : *cat_copy) {
+    seenObjects.push_back(i);
   }
+
+  BOOST_TEST(seenObjects.size() == 3);
+  BOOST_CHECK(seenObjects[0] == generator.theInfo);
+  BOOST_CHECK(seenObjects[1] == generator.theInfo2);
+  BOOST_CHECK(seenObjects[2] == generator.theInfo3);
 }
+
+/*******************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testRangeBasedLoopBackend) {
+  CatalogueGenerator generator;
+  auto catalogue = generator.generateCatalogue();
+
+  std::vector<myRegisterInfo> seenObjects;
+  for(auto& elem : catalogue) {
+    seenObjects.push_back(elem);
+  }
+
+  BOOST_TEST(seenObjects.size() == 3);
+  BOOST_CHECK(seenObjects[0] == generator.theInfo);
+  BOOST_CHECK(seenObjects[1] == generator.theInfo2);
+  BOOST_CHECK(seenObjects[2] == generator.theInfo3);
+}
+
+/*******************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testRangeBasedLoopBackendConst) {
+  CatalogueGenerator generator;
+  const auto catalogue = generator.generateCatalogue();
+
+  std::vector<myRegisterInfo> seenObjects;
+  for(const auto& elem : catalogue) {
+    seenObjects.push_back(elem);
+  }
+
+  BOOST_TEST(seenObjects.size() == 3);
+  BOOST_CHECK(seenObjects[0] == generator.theInfo);
+  BOOST_CHECK(seenObjects[1] == generator.theInfo2);
+  BOOST_CHECK(seenObjects[2] == generator.theInfo3);
+}
+
+/*******************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testRangeBasedLoopFrontend) {
+  CatalogueGenerator generator;
+  auto backend_catalogue = generator.generateCatalogue();
+  RegisterCatalogue catalogue(backend_catalogue.clone());
+
+  std::vector<RegisterInfo> seenObjects;
+  for(const auto& elem : catalogue) {
+    seenObjects.emplace_back(elem.clone());
+  }
+
+  BOOST_TEST(seenObjects.size() == 3);
+  BOOST_TEST(seenObjects[0].getRegisterName() == generator.theInfo.getRegisterName());
+  BOOST_TEST(seenObjects[1].getRegisterName() == generator.theInfo2.getRegisterName());
+  BOOST_TEST(seenObjects[2].getRegisterName() == generator.theInfo3.getRegisterName());
+}
+
+/*******************************************************************************************************************/
+
+BOOST_AUTO_TEST_SUITE_END()

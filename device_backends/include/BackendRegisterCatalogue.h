@@ -289,6 +289,9 @@ namespace ChimeraTK {
     for(auto& p : catalogue) {
       c->catalogue[p.first] = getBackendRegister(p.first);
     }
+    for(auto& ptr : insertionOrderedCatalogue) {
+      c->insertionOrderedCatalogue.push_back(&c->catalogue[ptr->getRegisterName()]);
+    }
     return std::unique_ptr<BackendRegisterCatalogueBase>(c);
   }
 
