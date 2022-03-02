@@ -275,8 +275,9 @@ namespace ChimeraTK {
       InterruptDispatcherInterface* _dispatcherInterf;
       SemId _semId;
       ShmForSems* _semShm;
-      ShmForSems::Sem* _sem;
+      ShmForSems::Sem* _sem = nullptr;
       boost::thread* _thr;
+      std::atomic_bool _started{false};
       std::atomic_bool _stop{false};
     };
   };

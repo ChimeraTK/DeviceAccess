@@ -200,10 +200,12 @@ namespace ChimeraTK {
     {
       std::lock_guard<boost::interprocess::named_mutex> lock(_dispatcherInterf->_shmMutex);
       for(auto& entry : _semShm->interruptEntries) {
-        //lastInterruptState_.push_back(entry);
+        if(!entry.used) continue;
         lastInterruptState[std::make_pair(entry._controllerId, entry._intNumber)] = entry._counter;
       }
+      // we register a semaphore only after being ready
       _sem = _semShm->addSem(_semId);
+      _started = true;
     }
 
     while(!_stop) {
@@ -243,6 +245,8 @@ namespace ChimeraTK {
 
   void SharedDummyBackend::InterruptDispatcherThread::stop() {
     _stop = true;
+    // we must wait until the semaphore is registered
+    while(!_started) boost::this_thread::sleep_for(boost::chrono::milliseconds{10});
     _sem->post();
   }
 
