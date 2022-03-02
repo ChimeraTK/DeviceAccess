@@ -8,12 +8,17 @@ namespace ChimeraTK {
 
   /**********************************************************************************************************************/
 
-  RegisterInfo::RegisterInfo(const RegisterInfo& other) : _impl(other.getImpl().clone()) {}
+  RegisterInfo::RegisterInfo(const RegisterInfo& other) { operator=(other); }
 
   /**********************************************************************************************************************/
 
   RegisterInfo& RegisterInfo::operator=(const RegisterInfo& other) {
-    _impl = other.getImpl().clone();
+    if(other.isValid()) {
+      _impl = other.getImpl().clone();
+    }
+    else {
+      _impl = nullptr;
+    }
     return *this;
   }
 
