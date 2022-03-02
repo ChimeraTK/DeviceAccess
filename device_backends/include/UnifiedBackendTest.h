@@ -440,7 +440,6 @@ namespace ChimeraTK {
       std::string readDeviceInfo() override { return ""; }
 
       RegisterCatalogue getRegisterCatalogue() const override { throw; }
-      MetadataCatalogue getMetadataCatalogue() const override { throw; }
 
      private:
       boost::shared_ptr<DeviceBackend> _target;

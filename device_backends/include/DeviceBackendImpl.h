@@ -8,10 +8,11 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /**
-   *  DeviceBackendImpl implements some basic functionality which should be
-   * available for all backends. This is required to allow proper decorator
-   * patterns which should not have this functionality in the decorator itself.
+   * DeviceBackendImpl implements some basic functionality which should be available for all backends. This is required
+   * to allow proper decorator patterns which should not have this functionality in the decorator itself.
    */
   class DeviceBackendImpl : public DeviceBackend {
    public:
@@ -23,11 +24,14 @@ namespace ChimeraTK {
       std::terminate();
     }
 
+    MetadataCatalogue getMetadataCatalogue() const override { return MetadataCatalogue(); }
+
    protected:
 
     /** flag if device is opened */
     std::atomic<bool> _opened{false};
-
   };
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

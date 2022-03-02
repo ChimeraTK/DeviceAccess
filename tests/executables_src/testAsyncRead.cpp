@@ -34,7 +34,6 @@ class AsyncTestDummy : public DeviceBackendImpl {
   std::string readDeviceInfo() override { return std::string("AsyncTestDummy"); }
 
   RegisterCatalogue getRegisterCatalogue() const override { throw; }
-  MetadataCatalogue getMetadataCatalogue() const override { throw; }
 
   static boost::shared_ptr<DeviceBackend> createInstance(
       std::string, std::string, std::list<std::string>, std::string) {

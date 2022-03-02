@@ -25,6 +25,11 @@ namespace ChimeraTK {
    public:
     explicit RegisterCatalogue(std::unique_ptr<BackendRegisterCatalogueBase>&& impl);
 
+    RegisterCatalogue(const RegisterCatalogue& other);
+    RegisterCatalogue(RegisterCatalogue&& other) noexcept;
+    RegisterCatalogue& operator=(const RegisterCatalogue& other);
+    RegisterCatalogue& operator=(RegisterCatalogue&& other) noexcept;
+
     ~RegisterCatalogue();
 
     /** 
