@@ -26,7 +26,7 @@ namespace ChimeraTK {
     hasParsed = true;
 
     // parse the map fle
-    LogicalNameMapParser parser = LogicalNameMapParser(_parameters);
+    LogicalNameMapParser parser = LogicalNameMapParser(_parameters, _variables);
     //parser.
     _catalogue_mutable = parser.parseFile(_lmapFileName);
 
@@ -298,7 +298,8 @@ namespace ChimeraTK {
         auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
         if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
           callForType(info.valueType, [&](auto arg) {
-            auto& vtEntry = boost::fusion::at_key<decltype(arg)>(info.valueTable.table);
+            auto& lnmVariable = _variables[info.name];
+            auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
             for(auto& sub : vtEntry.subscriptions) {
               try {
                 throw ChimeraTK::runtime_error("previous, unrecovered fault");
@@ -340,8 +341,9 @@ namespace ChimeraTK {
     for(auto& r : _catalogue_mutable) {
       auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
       if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
+        auto& lnmVariable = _variables[info.name];
         callForType(info.valueType, [&](auto arg) {
-          auto& vtEntry = boost::fusion::at_key<decltype(arg)>(info.valueTable.table);
+          auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
           for(auto& sub : vtEntry.subscriptions) {
             sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, v});
           }

@@ -13,6 +13,7 @@
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
 #include "BackendRegisterCatalogue.h"
+#include "LNMVariable.h"
 #include <unordered_set>
 
 namespace ChimeraTK {
@@ -84,12 +85,17 @@ namespace ChimeraTK {
     /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of
      *  LNMBackendBitAccessor. Multiple instances of LNMBackendBitAccessor referring to different bits of the same
      *  register share their target accessor. This sharing is governed by this map. */
-    using SharedAccessorKey = std::pair<DeviceBackend*, std::string>;
+    using AccessorKey = std::pair<DeviceBackend*, std::string>;
     template<typename UserType>
-    using SharedAccessorMap = std::map<SharedAccessorKey, SharedAccessor<UserType>>;
+    using SharedAccessorMap = std::map<AccessorKey, SharedAccessor<UserType>>;
     TemplateUserTypeMap<SharedAccessorMap> sharedAccessorMap;
     /// a mutex to be locked when sharedAccessorMap (the container) is changed
     std::mutex sharedAccessorMap_mutex;
+
+    /** Map of variables and constants. This map contains the mpl tables with the actual values and a mutex for each of them.
+     *  It has to be mutable as the parse function must be const.
+     */
+    mutable std::map<std::string /*name*/, LNMVariable> _variables;
 
     template<typename T>
     friend class LNMBackendRegisterAccessor;
