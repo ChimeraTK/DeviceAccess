@@ -13,7 +13,8 @@ BOOST_AUTO_TEST_SUITE(LMapFileTestSuite)
 /********************************************************************************************************************/
 
 void testErrorInDmapFileSingle(std::string fileName) {
-  LogicalNameMapParser lmap({});
+  std::map<std::string, LNMVariable> variables;
+  LogicalNameMapParser lmap({}, variables);
   BOOST_CHECK_THROW(lmap.parseFile(fileName), ChimeraTK::logic_error);
 }
 
@@ -47,7 +48,8 @@ BOOST_AUTO_TEST_CASE(testErrorInDmapFile) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testParseFile) {
-  LogicalNameMapParser lmap({});
+  std::map<std::string, LNMVariable> variables;
+  LogicalNameMapParser lmap({}, variables);
   auto catalogue = lmap.parseFile("valid.xlmap");
 
   auto info = catalogue.getBackendRegister("SingleWord");
@@ -82,12 +84,12 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   info = catalogue.getBackendRegister("Constant");
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT);
   BOOST_CHECK(info.valueType == ChimeraTK::DataType::int32);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue[0] == 42);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[0] == 42);
 
   info = catalogue.getBackendRegister("/MyModule/SomeSubmodule/Variable");
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
   BOOST_CHECK(info.valueType == ChimeraTK::DataType::int32);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue[0] == 2);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[0] == 2);
   info = catalogue.getBackendRegister("MyModule/ConfigurableChannel");
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
   BOOST_CHECK(info.deviceName == "PCIE3");
@@ -98,12 +100,12 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT);
   BOOST_CHECK(info.valueType == ChimeraTK::DataType::int32);
   BOOST_CHECK(info.length == 5);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue.size() == 5);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue[0] == 1111);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue[1] == 2222);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue[2] == 3333);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue[3] == 4444);
-  BOOST_CHECK(boost::fusion::at_key<int32_t>(info.valueTable.table).latestValue[4] == 5555);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue.size() == 5);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[0] == 1111);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[1] == 2222);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[2] == 3333);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[3] == 4444);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[4] == 5555);
 
   info = catalogue.getBackendRegister("Bit0ofVar");
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::BIT);
@@ -137,8 +139,9 @@ BOOST_AUTO_TEST_CASE(testParameters) {
     std::map<std::string, std::string> params;
     params["ParamA"] = "ValueA";
     params["ParamB"] = "ValueB";
+    std::map<std::string, LNMVariable> variables;
 
-    LogicalNameMapParser lmap(params);
+    LogicalNameMapParser lmap(params, variables);
     auto catalogue = lmap.parseFile("withParams.xlmap");
 
     auto info = catalogue.getBackendRegister("SingleWordWithParams");
@@ -151,8 +154,9 @@ BOOST_AUTO_TEST_CASE(testParameters) {
     std::map<std::string, std::string> params;
     params["ParamA"] = "OtherValues";
     params["ParamB"] = "ThisTime";
+    std::map<std::string, LNMVariable> variables;
 
-    LogicalNameMapParser lmap(params);
+    LogicalNameMapParser lmap(params, variables);
     auto catalogue = lmap.parseFile("withParams.xlmap");
 
     auto info = catalogue.getBackendRegister("SingleWordWithParams");

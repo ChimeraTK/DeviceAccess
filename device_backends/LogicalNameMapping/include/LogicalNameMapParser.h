@@ -12,6 +12,7 @@
 
 #include "BackendRegisterCatalogue.h"
 #include "LNMBackendRegisterInfo.h"
+#include "LNMVariable.h"
 #include "RegisterPath.h"
 
 #include "LNMAccessorPlugin.h"
@@ -29,7 +30,9 @@ namespace ChimeraTK {
   class LogicalNameMapParser {
    public:
     /** Constructor: parse map from XML file */
-    LogicalNameMapParser(const std::map<std::string, std::string>& parameters) : _parameters(parameters) {}
+    LogicalNameMapParser(
+        const std::map<std::string, std::string>& parameters, std::map<std::string, LNMVariable>& variables)
+    : _parameters(parameters), _variables(variables) {}
 
     /** parse the given XML file */
     BackendRegisterCatalogue<LNMBackendRegisterInfo> parseFile(const std::string& fileName);
@@ -65,6 +68,9 @@ namespace ChimeraTK {
 
     /** parameter map */
     std::map<std::string, std::string> _parameters;
+
+    /** Reference to the variables map inside the LNM backend. Is filled with initial values in the parser **/
+    std::map<std::string, LNMVariable>& _variables;
   };
 
   template<>

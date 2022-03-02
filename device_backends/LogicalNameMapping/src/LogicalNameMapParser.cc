@@ -55,9 +55,10 @@ namespace ChimeraTK {
               parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");
             }
             // put to stream buffer
+            auto& lnmVariable = _variables[reg.name];
             callForType(reg.valueType, [&](auto arg) {
               std::stringstream buf;
-              buf << boost::fusion::at_key<decltype(arg)>(reg.valueTable.table).latestValue[0];
+              buf << boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue[0];
               value = buf.str();
             });
             continue;
@@ -173,8 +174,10 @@ namespace ChimeraTK {
             }
             // convert via string
             std::stringstream buf;
-            callForType(reg.valueType,
-                [&](auto arg) { buf << boost::fusion::at_key<decltype(arg)>(reg.valueTable.table).latestValue[0]; });
+            auto& lnmVariable = _variables[reg.name];
+            callForType(reg.valueType, [&](auto arg) {
+              buf << boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue[0];
+            });
             buf >> valueVector[index];
             continue;
           }
@@ -277,8 +280,16 @@ namespace ChimeraTK {
       // obtain the type
       std::string type = element->get_name();
 
+      // obtain name of logical register
+      auto nameAttr = element->get_attribute("name");
+      if(!nameAttr) {
+        parsingError(element, "Missing name attribute of '" + type + "' tag.");
+      }
+      RegisterPath registerName = currentPath / std::string(nameAttr->get_value());
+
       // create new RegisterInfo object
       LNMBackendRegisterInfo info;
+      info.name = registerName;
       if(type == "redirectedRegister") {
         info.targetType = LNMBackendRegisterInfo::TargetType::REGISTER;
         info.deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice", catalogue);
@@ -310,8 +321,9 @@ namespace ChimeraTK {
         if(constantType == "integer") constantType = "int32";
         info.targetType = LNMBackendRegisterInfo::TargetType::CONSTANT;
         info.valueType = DataType(constantType);
+        auto& lnmVariable = _variables[info.name];
         callForType(info.valueType, [&](auto arg) {
-          boost::fusion::at_key<decltype(arg)>(info.valueTable.table).latestValue =
+          boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue =
               this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value", catalogue);
         });
         info.firstIndex = 0;
@@ -326,8 +338,9 @@ namespace ChimeraTK {
         if(constantType == "integer") constantType = "int32";
         info.targetType = LNMBackendRegisterInfo::TargetType::VARIABLE;
         info.valueType = DataType(constantType);
+        auto& lnmVariable = _variables[info.name];
         callForType(info.valueType, [&](auto arg) {
-          boost::fusion::at_key<decltype(arg)>(info.valueTable.table).latestValue =
+          boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue =
               this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value", catalogue);
         });
         info.firstIndex = 0;
@@ -341,14 +354,6 @@ namespace ChimeraTK {
       else {
         parsingError(element, "Wrong logical register type: " + type);
       }
-
-      // obtain name of logical register
-      auto nameAttr = element->get_attribute("name");
-      if(!nameAttr) {
-        parsingError(element, "Missing name attribute of '" + type + "' tag.");
-      }
-      RegisterPath registerName = currentPath / std::string(nameAttr->get_value());
-      info.name = registerName;
 
       // iterate over childs of the register to find plugins
       for(const auto& child : element->get_children()) {

@@ -64,7 +64,7 @@ namespace ChimeraTK {
 
     /// Intermediate buffer used when receiving value from queue, as writing to application buffer must only happen
     /// in doPostRead(). Only used when wait_for_new_data is set.
-    typename LNMBackendRegisterInfo::ValueTable<UserType>::QueuedValue _queueValue;
+    typename LNMVariable::ValueTable<UserType>::QueuedValue _queueValue;
 
     /// Version number of the last transfer
     VersionNumber currentVersion{nullptr};
@@ -128,17 +128,19 @@ namespace ChimeraTK {
       // allocate _queueValue buffer
       this->_queueValue.value.resize(numberOfWords);
 
-      //std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+      auto& lnmVariable = _dev->_variables[_info.name];
+      std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
+
       callForType(_info.valueType, [&, this](auto arg) {
         typedef decltype(arg) T;
-        auto& vtEntry = boost::fusion::at_key<T>(_info.valueTable.table);
+        auto& vtEntry = boost::fusion::at_key<T>(lnmVariable.valueTable.table);
         // create subscription queue
-        cppext::future_queue<typename LNMBackendRegisterInfo::ValueTable<T>::QueuedValue> queue(3);
+        cppext::future_queue<typename LNMVariable::ValueTable<T>::QueuedValue> queue(3);
         // place queue in map
         vtEntry.subscriptions[this->getId()] = queue;
         // make void-typed continuationof subscription queue, which stores the received value into the _queueValue
         this->_readQueue = queue.template then<void>(
-            [this](const typename LNMBackendRegisterInfo::ValueTable<T>::QueuedValue& queueValue) {
+            [this](const typename LNMVariable::ValueTable<T>::QueuedValue& queueValue) {
               this->_queueValue.validity = queueValue.validity;
               this->_queueValue.version = queueValue.version;
               for(size_t i = 0; i < queueValue.value.size(); ++i) {
@@ -165,11 +167,11 @@ namespace ChimeraTK {
   LNMBackendVariableAccessor<UserType>::~LNMBackendVariableAccessor() {
     if(_flags.has(AccessMode::wait_for_new_data)) {
       // unsubscribe the update queue
-      //fix this
-      //std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+      auto& lnmVariable = _dev->_variables[_info.name];
+      std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
       callForType(_info.valueType, [&, this](auto arg) {
         typedef decltype(arg) T;
-        auto vtEntry = boost::fusion::at_key<T>(_info.valueTable.table);
+        auto& vtEntry = boost::fusion::at_key<T>(lnmVariable.valueTable.table);
         vtEntry.subscriptions.erase(this->getId());
       });
     }
@@ -205,9 +207,11 @@ namespace ChimeraTK {
     if(_dev->_hasException) {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
-    //std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+    auto& lnmVariable = _dev->_variables[_info.name];
+    std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
+
     callForType(_info.valueType, [&, this](auto arg) {
-      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info.valueTable.table);
+      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
 
       // store new value as latest value
       for(size_t i = 0; i < this->buffer_2D[0].size(); ++i) {
@@ -271,9 +275,11 @@ namespace ChimeraTK {
 
     if(!_flags.has(AccessMode::wait_for_new_data)) {
       // poll-type read transfer: fetch latest value from ValueTable
-      //fix this std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+      auto& lnmVariable = _dev->_variables[_info.name];
+      std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
+
       callForType(_info.valueType, [&, this](auto arg) {
-        auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info.valueTable.table);
+        auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
         for(size_t i = 0; i < this->buffer_2D[0].size(); ++i) {
           this->buffer_2D[0][i] = userTypeToUserType<UserType>(vtEntry.latestValue[i + _wordOffsetInRegister]);
           this->_dataValidity = vtEntry.latestValidity;
@@ -293,9 +299,11 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void LNMBackendVariableAccessor<UserType>::interrupt() {
-    //fix this std::lock_guard<std::mutex> lock(_info.valueTable_mutex);
+    auto& lnmVariable = _dev->_variables[_info.name];
+    std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
+
     callForType(_info.valueType, [&, this](auto arg) {
-      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(_info.valueTable.table);
+      auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
       this->interrupt_impl(vtEntry.subscriptions[this->getId()]);
     });
   }
