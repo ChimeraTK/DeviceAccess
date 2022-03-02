@@ -21,9 +21,11 @@ namespace ChimeraTK {
     setupBarContents();
   }
 
-  // Nothing to clean up, all objects clean up for themselves when
-  // they go out of scope.
-  SharedDummyBackend::~SharedDummyBackend() {}
+  SharedDummyBackend::~SharedDummyBackend() {
+    // Destroy the InterruptDispatcherInterface first because it keeps a reference to this backend.
+    sharedMemoryManager.intDispatcherIf.reset();
+    // all other objects clean up for themselves when they go out of scope.
+  }
 
   // Construct a segment for each bar and set required size
   void SharedDummyBackend::setupBarContents() {
@@ -150,7 +152,7 @@ namespace ChimeraTK {
     _semBuf = shm.find_or_construct<ShmForSems>(ShmForSems::shmName)();
     _semId = getOwnPID();
 
-    _dispatcherThread = boost::shared_ptr<InterruptDispatcherThread>(new InterruptDispatcherThread(this));
+    _dispatcherThread = boost::movelib::unique_ptr<InterruptDispatcherThread>(new InterruptDispatcherThread(this));
   }
 
   SharedDummyBackend::InterruptDispatcherInterface::~InterruptDispatcherInterface() {
@@ -254,7 +256,7 @@ namespace ChimeraTK {
       int interruptControllerNumber, int interruptNumber) {
     try {
       SharedDummyBackend& backend = _dispatcherInterf->_backend;
-      VersionNumber vNumber = backend.dispatchInterrupt(interruptControllerNumber, interruptNumber);
+      backend.dispatchInterrupt(interruptControllerNumber, interruptNumber);
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("InterruptDispatcherThread::triggerInterrupt(): Error: Unknown interrupt " +
@@ -283,13 +285,16 @@ namespace ChimeraTK {
     throw runtime_error("error: semaphore array full - increase maxSems!");
   }
 
-  void SharedDummyBackend::ShmForSems::removeSem(SemId semId) {
+  bool SharedDummyBackend::ShmForSems::removeSem(SemId semId) {
+    bool found = false;
     for(auto& entry : semEntries) {
       if(entry.used && entry.semId == semId) {
-        entry.used = 0;
+        entry.used = false;
+        found = true;
         break;
       }
     }
+    return found;
   }
 
   void SharedDummyBackend::ShmForSems::addInterrupt(InterruptInfo ii) {

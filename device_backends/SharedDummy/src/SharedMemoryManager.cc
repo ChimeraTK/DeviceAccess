@@ -58,7 +58,7 @@ namespace ChimeraTK {
 
       pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
     }
-    this->intDispatcherIf = boost::shared_ptr<InterruptDispatcherInterface>(
+    this->intDispatcherIf = boost::movelib::unique_ptr<InterruptDispatcherInterface>(
         new InterruptDispatcherInterface(sharedDummyBackend, segment, interprocessMutex));
   }
 

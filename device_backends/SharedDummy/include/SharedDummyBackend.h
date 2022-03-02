@@ -15,6 +15,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
+#include <boost/move/unique_ptr.hpp>
 #include <boost/unordered_set.hpp>
 
 #include "Exception.h"
@@ -144,7 +145,7 @@ namespace ChimeraTK {
       // interprocess mutex, has to be accessible by SharedDummyBackend class
       boost::interprocess::named_mutex interprocessMutex;
 
-      boost::shared_ptr<InterruptDispatcherInterface> intDispatcherIf;
+      boost::movelib::unique_ptr<InterruptDispatcherInterface> intDispatcherIf;
     }; /* class SharedMemoryManager */
 
     // Managed shared memory object
@@ -217,7 +218,7 @@ namespace ChimeraTK {
 
       /// find unsed semaphore, mark it as used and return pointer to it
       Sem* addSem(SemId semId);
-      void removeSem(SemId semId);
+      bool removeSem(SemId semId);
 
       /// update shm entry to tell that interrupt is triggered
       /// implementation: increase interrupt count of given interrupt
@@ -243,6 +244,8 @@ namespace ChimeraTK {
      public:
       /// adds semaphore & dispatcher thread on creation of interface
       /// shm will contain semaphore array and is protected by shmMutex
+      /// <br>Since this object stores a reference to the backend it should be destroyed before the components
+      /// of the backend required by the dispatcher thread
       InterruptDispatcherInterface(SharedDummyBackend& backend, boost::interprocess::managed_shared_memory& shm,
           boost::interprocess::named_mutex& shmMutex);
 
@@ -254,7 +257,7 @@ namespace ChimeraTK {
       boost::interprocess::named_mutex& _shmMutex;
       SemId _semId;
       ShmForSems* _semBuf;
-      boost::shared_ptr<InterruptDispatcherThread> _dispatcherThread;
+      boost::movelib::unique_ptr<InterruptDispatcherThread> _dispatcherThread;
       SharedDummyBackend& _backend;
     };
 
