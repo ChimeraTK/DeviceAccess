@@ -50,8 +50,19 @@ namespace ChimeraTK {
     /** Return all supported AccessModes for this register */
     [[nodiscard]] AccessModeFlags getSupportedAccessModes() const;
 
+    /** Check whether the RegisterPath object is valid (i.e. contains an implementation object) */
+    [[nodiscard]] bool isValid() const;
+
+    /**
+     * Return a reference to the implementation object. Only for advanced use, e.g. when backend-depending code shall
+     * be written.
+     */
     [[nodiscard]] BackendRegisterInfoBase& getImpl();
 
+    /**
+     * Return a const reference to the implementation object. Only for advanced use, e.g. when backend-depending code
+     * shall be written.
+     */
     [[nodiscard]] const BackendRegisterInfoBase& getImpl() const;
 
    protected:
