@@ -7,7 +7,7 @@ using namespace boost::unit_test_framework;
  */
 
 #include "Device.h"
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_CASE(testLargeBarNumber) {
@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(testLargeBarNumber) {
 
   // Checking the large bar in the RegisterInfo checks the map file parser and the data type in the catalogue
   auto registerInfo = d.getRegisterCatalogue().getRegister("LARGE_BAR/NUMBER");
-  BOOST_CHECK_EQUAL(boost::dynamic_pointer_cast<RegisterInfoMap::RegisterInfo>(registerInfo)->bar, 0x100000000);
+  BOOST_CHECK_EQUAL(dynamic_cast<NumericAddressedRegisterInfo&>(registerInfo.getImpl()).bar, 0x100000000);
 
   // this is a smoke test that reading and writing works with a large BAR map file
   auto intAccessor = d.getScalarRegisterAccessor<int32_t>("LARGE_BAR/NUMBER");

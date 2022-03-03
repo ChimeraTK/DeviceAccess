@@ -1,4 +1,3 @@
-
 #include "SubdeviceRegisterAccessor.h"
 
 namespace ChimeraTK {

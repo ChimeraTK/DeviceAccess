@@ -21,26 +21,26 @@ BOOST_AUTO_TEST_CASE(test) {
 
   auto cat = device.getRegisterCatalogue();
   auto info = cat.getRegister("test");
-  auto descriptor = info->getDataDescriptor();
+  auto descriptor = info.getDataDescriptor();
   BOOST_CHECK(descriptor.isIntegral());
   BOOST_CHECK(descriptor.isSigned());
   BOOST_CHECK_EQUAL(descriptor.nDigits(), 11);
 
   // Basically check if integer aliases to int32
   info = cat.getRegister("test2");
-  descriptor = info->getDataDescriptor();
+  descriptor = info.getDataDescriptor();
   BOOST_CHECK(descriptor.isIntegral());
   BOOST_CHECK(descriptor.isSigned());
   BOOST_CHECK_EQUAL(descriptor.nDigits(), 11);
 
   info = cat.getRegister("test3");
-  descriptor = info->getDataDescriptor();
+  descriptor = info.getDataDescriptor();
   BOOST_CHECK(descriptor.isIntegral());
   BOOST_CHECK(not descriptor.isSigned());
   BOOST_CHECK_EQUAL(descriptor.nDigits(), 20);
 
   info = cat.getRegister("test4");
-  descriptor = info->getDataDescriptor();
+  descriptor = info.getDataDescriptor();
   BOOST_CHECK(not descriptor.isIntegral());
   BOOST_CHECK(descriptor.isSigned());
   BOOST_CHECK_EQUAL(descriptor.nFractionalDigits(), 325);

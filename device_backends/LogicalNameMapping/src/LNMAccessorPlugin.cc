@@ -1,14 +1,14 @@
-#include <boost/make_shared.hpp>
+#  include <boost/make_shared.hpp>
 
-#include "LNMBackendRegisterInfo.h"
-#include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessorDecorator.h"
+#  include "LNMBackendRegisterInfo.h"
+#  include "LNMAccessorPlugin.h"
+#  include "NDRegisterAccessorDecorator.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<AccessorPluginBase> makePlugin(boost::shared_ptr<LNMBackendRegisterInfo> info,
+  boost::shared_ptr<AccessorPluginBase> makePlugin(LNMBackendRegisterInfo info,
       const std::string& name, const std::map<std::string, std::string>& parameters) {
     if(name == "multiply") {
       return boost::make_shared<MultiplierPlugin>(info, parameters);

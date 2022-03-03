@@ -79,7 +79,7 @@ MACRO( COPY_MAPPING_FILES )
   FILE( COPY mtcadummy_withoutModules.map mtcadummy.map mtcadummyB.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map
     mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map bam_fmc25_r1225.mapp
     MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
-    IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map badMapFile.map
+    IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map
     dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map invalidSequences.map muxedDataAcessor.map
     testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
     invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap

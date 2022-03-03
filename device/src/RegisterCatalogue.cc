@@ -1,75 +1,122 @@
 #include "RegisterCatalogue.h"
-#include "Device.h"
+#include "BackendRegisterCatalogue.h"
 
 namespace ChimeraTK {
 
-  boost::shared_ptr<RegisterInfo> RegisterCatalogue::getRegister(const RegisterPath& registerPathName) const {
-    auto it =
-        std::find_if(catalogue.begin(), catalogue.end(), [registerPathName](boost::shared_ptr<RegisterInfo> info) {
-          return info->getRegisterName() == registerPathName;
-        });
-    if(it == catalogue.end()) {
-      throw ChimeraTK::logic_error("Register '" + (registerPathName) + "' was not found in the catalogue.");
-    }
-    return *it;
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue::RegisterCatalogue(std::unique_ptr<BackendRegisterCatalogueBase>&& impl) : _impl(std::move(impl)) {}
+
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue::RegisterCatalogue(const RegisterCatalogue& other) : _impl(other._impl->clone()) {}
+
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue::RegisterCatalogue(RegisterCatalogue&& other) noexcept : _impl(std::move(other._impl)) {}
+
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue& RegisterCatalogue::operator=(const RegisterCatalogue& other) {
+    _impl = other._impl->clone();
+    return *this;
   }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue& RegisterCatalogue::operator=(RegisterCatalogue&& other) noexcept {
+    _impl = std::move(other._impl);
+    return *this;
+  }
+
+  /*******************************************************************************************************************/
+
+  // need to declare in .cc file, since the type RegisterCatalogueImpl must be complete
+  RegisterCatalogue::~RegisterCatalogue() = default;
+
+  /*******************************************************************************************************************/
+
+  RegisterInfo RegisterCatalogue::getRegister(const RegisterPath& registerPathName) const {
+    return _impl->getRegister(registerPathName);
+  }
+
+  /*******************************************************************************************************************/
 
   bool RegisterCatalogue::hasRegister(const RegisterPath& registerPathName) const {
-    auto it =
-        std::find_if(catalogue.begin(), catalogue.end(), [registerPathName](boost::shared_ptr<RegisterInfo> info) {
-          return info->getRegisterName() == registerPathName;
-        });
-    if(it == catalogue.end()) {
-      return false;
-    }
-    return true;
+    return _impl->hasRegister(registerPathName);
   }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  void RegisterCatalogue::addRegister(boost::shared_ptr<RegisterInfo> registerInfo) {
-    catalogue.push_back(registerInfo);
+  size_t RegisterCatalogue::getNumberOfRegisters() const { return _impl->getNumberOfRegisters(); }
+
+  /*******************************************************************************************************************/
+
+  RegisterCatalogue::const_iterator RegisterCatalogue::begin() const {
+    return RegisterCatalogue::const_iterator(_impl->getConstIteratorBegin());
   }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  const std::string& RegisterCatalogue::getMetadata(const std::string& key) const {
-    try {
-      return metadata.at(key);
-    }
-    catch(std::out_of_range& e) {
-      throw ChimeraTK::logic_error("Metadata '" + (key) + "' was not found in the catalogue (" + e.what() + ").");
-    }
+  RegisterCatalogue::const_iterator RegisterCatalogue::end() const {
+    return RegisterCatalogue::const_iterator(_impl->getConstIteratorEnd());
   }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  void RegisterCatalogue::addMetadata(const std::string& key, const std::string& value) { metadata[key] = value; }
+  RegisterCatalogue::const_iterator::const_iterator(std::unique_ptr<const_RegisterCatalogueImplIterator> it)
+  : _impl(std::move(it)) {}
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  size_t RegisterCatalogue::getNumberOfRegisters() const { return catalogue.size(); }
+  RegisterCatalogue::const_iterator& RegisterCatalogue::const_iterator::operator++() {
+    _impl->increment();
+    return *this;
+  }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  size_t RegisterCatalogue::getNumberOfMetadata() const { return metadata.size(); }
+  RegisterCatalogue::const_iterator RegisterCatalogue::const_iterator::operator++(int) {
+    RegisterCatalogue::const_iterator temp(_impl->clone());
+    _impl->increment();
+    return temp;
+  }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  RegisterCatalogue::metadata_iterator RegisterCatalogue::metadata_begin() { return metadata.begin(); }
+  RegisterCatalogue::const_iterator& RegisterCatalogue::const_iterator::operator--() {
+    _impl->decrement();
+    return *this;
+  }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  RegisterCatalogue::metadata_const_iterator RegisterCatalogue::metadata_begin() const { return metadata.cbegin(); }
+  RegisterCatalogue::const_iterator RegisterCatalogue::const_iterator::operator--(int) {
+    RegisterCatalogue::const_iterator temp(_impl->clone());
+    _impl->decrement();
+    return temp;
+  }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  RegisterCatalogue::metadata_iterator RegisterCatalogue::metadata_end() { return metadata.end(); }
+  const BackendRegisterInfoBase& RegisterCatalogue::const_iterator::operator*() { return *(_impl->get()); }
 
-  /********************************************************************************************************************/
+  /*******************************************************************************************************************/
 
-  RegisterCatalogue::metadata_const_iterator RegisterCatalogue::metadata_end() const { return metadata.cend(); }
+  const BackendRegisterInfoBase* RegisterCatalogue::const_iterator::operator->() { return _impl->get(); }
+
+  /*******************************************************************************************************************/
+
+  bool RegisterCatalogue::const_iterator::operator==(const RegisterCatalogue::const_iterator& rightHandSide) const {
+    return _impl->isEqual(rightHandSide._impl);
+  }
+
+  /*******************************************************************************************************************/
+
+  bool RegisterCatalogue::const_iterator::operator!=(const RegisterCatalogue::const_iterator& rightHandSide) const {
+    return !_impl->isEqual(rightHandSide._impl);
+  }
+
+  /*******************************************************************************************************************/
 
 } /* namespace ChimeraTK */

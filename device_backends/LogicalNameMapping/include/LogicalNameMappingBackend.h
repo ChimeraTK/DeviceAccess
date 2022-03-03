@@ -5,14 +5,16 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
-#define CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
+#pragma once
 
 #include <mutex>
 #include <utility>
 
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
+#include "BackendRegisterCatalogue.h"
+#include "LNMVariable.h"
+#include <unordered_set>
 
 namespace ChimeraTK {
 
@@ -36,7 +38,7 @@ namespace ChimeraTK {
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
-    const RegisterCatalogue& getRegisterCatalogue() const override;
+    RegisterCatalogue getRegisterCatalogue() const override;
 
     void setException() override;
 
@@ -67,8 +69,8 @@ namespace ChimeraTK {
 
     /** We need to make the catalogue mutable, since we fill it within
      * getRegisterCatalogue() */
-    mutable RegisterCatalogue _catalogue_mutable;
-
+    mutable BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue_mutable;
+    //mutable LNMRegisterCatalogue _catalogue_mutable;
     /** Flag whether the catalogue has already been filled with extra information
      * from the target backends */
     mutable bool catalogueCompleted{false};
@@ -83,12 +85,17 @@ namespace ChimeraTK {
     /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of
      *  LNMBackendBitAccessor. Multiple instances of LNMBackendBitAccessor referring to different bits of the same
      *  register share their target accessor. This sharing is governed by this map. */
-    using SharedAccessorKey = std::pair<DeviceBackend*, std::string>;
+    using AccessorKey = std::pair<DeviceBackend*, std::string>;
     template<typename UserType>
-    using SharedAccessorMap = std::map<SharedAccessorKey, SharedAccessor<UserType>>;
+    using SharedAccessorMap = std::map<AccessorKey, SharedAccessor<UserType>>;
     TemplateUserTypeMap<SharedAccessorMap> sharedAccessorMap;
     /// a mutex to be locked when sharedAccessorMap (the container) is changed
     std::mutex sharedAccessorMap_mutex;
+
+    /** Map of variables and constants. This map contains the mpl tables with the actual values and a mutex for each of them.
+     *  It has to be mutable as the parse function must be const.
+     */
+    mutable std::map<std::string /*name*/, LNMVariable> _variables;
 
     template<typename T>
     friend class LNMBackendRegisterAccessor;
@@ -108,8 +115,9 @@ namespace ChimeraTK {
 
     /// Flag storing whether asynchronous read has been activated.
     std::atomic<bool> _asyncReadActive{false};
+
+    /** Obtain list of all target devices referenced in the catalogue */
+    std::unordered_set<std::string> getTargetDevices() const;
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H */

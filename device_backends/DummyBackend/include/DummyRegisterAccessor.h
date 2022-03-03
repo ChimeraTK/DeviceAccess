@@ -114,28 +114,6 @@ namespace ChimeraTK {
   } // namespace proxies
 
   /*********************************************************************************************************************/
-  /** Class providing a function to check whether a given address is inside the
-   * address range of a register or not.
-   */
-  class DummyRegisterAddressChecker {
-   public:
-    DummyRegisterAddressChecker(RegisterInfoMap::RegisterInfo _registerInfo) : registerInfo(_registerInfo) {}
-
-    /// check if the given address is in range of the register
-    bool isAddressInRange(uint8_t bar, uint32_t address, size_t length) {
-      return (bar == registerInfo.bar && address >= registerInfo.address &&
-          address + length <= registerInfo.address + registerInfo.nBytes);
-    }
-
-   protected:
-    /// constructor for derived classes
-    DummyRegisterAddressChecker() {}
-
-    /// register map information
-    RegisterInfoMap::RegisterInfo registerInfo;
-  };
-
-  /*********************************************************************************************************************/
   /** Register accessor for accessing single word or 1D array registers internally
    * of a DummyBackend implementation. This accessor should be used to access the
    * dummy registers through the "backdoor" when unit-testing e.g. a library or
@@ -152,7 +130,7 @@ namespace ChimeraTK {
    * without using the [0] operator.
    */
   template<typename T>
-  class DummyRegisterAccessor : public proxies::DummyRegisterElement<T>, public DummyRegisterAddressChecker {
+  class DummyRegisterAccessor : public proxies::DummyRegisterElement<T> {
    public:
     /// Constructor should normally be called in the constructor of the
     /// DummyBackend implementation. dev must be the pointer to the DummyBackend
@@ -160,9 +138,9 @@ namespace ChimeraTK {
     /// itself. module and name denominate the register entry in the map file.
     DummyRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
     : _dev(dev), _path(module + "/" + name), fpc(module + "/" + name) {
-      _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
-      fpc = FixedPointConverter(
-          module + "/" + name, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
+      registerInfo = _dev->_registerMap.getBackendRegister(_path);
+      fpc = FixedPointConverter(module + "/" + name, registerInfo.channels.front().width,
+          registerInfo.channels.front().nFractionalBits, registerInfo.channels.front().signedFlag);
       // initialise the base DummyRegisterElement
       proxies::DummyRegisterElement<T>::fpcptr = &fpc;
       proxies::DummyRegisterElement<T>::nbytes = sizeof(int32_t);
@@ -188,14 +166,21 @@ namespace ChimeraTK {
 
     /// Set callback function which is called when the register is written to (through the normal Device interface)
     void setWriteCallback(const std::function<void()>& writeCallback) {
+      assert(registerInfo.elementPitchBits % 8 == 0);
       _dev->setWriteCallbackFunction(
-          {static_cast<uint8_t>(registerInfo.bar), static_cast<uint32_t>(registerInfo.address), registerInfo.nBytes},
+          {static_cast<uint8_t>(registerInfo.bar), static_cast<uint32_t>(registerInfo.address),
+              registerInfo.nElements * registerInfo.elementPitchBits / 8},
           writeCallback);
     }
+
+    const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
 
    protected:
     /// pointer to VirtualDevice
     DummyBackend* _dev;
+
+    /// register map information
+    NumericAddressedRegisterInfo registerInfo;
 
     /// path of the register
     RegisterPath _path;
@@ -230,7 +215,7 @@ namespace ChimeraTK {
    * variable of the type T.
    */
   template<typename T>
-  class DummyMultiplexedRegisterAccessor : public DummyRegisterAddressChecker {
+  class DummyMultiplexedRegisterAccessor {
    public:
     /// Constructor should normally be called in the constructor of the
     /// DummyBackend implementation. dev must be the pointer to the DummyBackend
@@ -240,35 +225,26 @@ namespace ChimeraTK {
     /// name when searching for the register.
     DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
     : _dev(dev), _path(module + "/" + name), pitch(0) {
-      _dev->_registerMap->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
+      registerInfo = _dev->_registerMap.getBackendRegister(module + "." + name);
 
-      int i = 0;
-      while(true) {
-        // obtain register information for sequence
-        RegisterInfoMap::RegisterInfo elem;
-        std::stringstream sequenceNameStream;
-        sequenceNameStream << SEQUENCE_PREFIX << name << "_" << i++;
-        try {
-          _dev->_registerMapping->getRegisterInfo(sequenceNameStream.str(), elem, module);
-        }
-        catch(ChimeraTK::logic_error&) {
-          break;
-        }
+      // create fixed point converters for each channel
+      for(auto& c : registerInfo.channels) {
         // create fixed point converter for sequence
-        fpc.push_back(FixedPointConverter(module + "/" + name, elem.width, elem.nFractionalBits, elem.signedFlag));
+        fpc.emplace_back(registerInfo.pathName, c.width, c.nFractionalBits, c.signedFlag);
         // store offsets and number of bytes per word
-        offsets.push_back(elem.address);
-        nbytes.push_back(elem.nBytes);
-        // determine pitch
-        pitch += elem.nBytes;
+        assert(c.bitOffset % 8 == 0);
+        offsets.push_back(registerInfo.address + c.bitOffset / 8);
+        nbytes.push_back((c.width - 1) / 8 + 1); // width/8 rounded up
       }
 
       if(fpc.empty()) {
         throw ChimeraTK::logic_error("No sequences found for name \"" + name + "\".");
       }
 
-      // compute number of elements per sequence
-      nElements = registerInfo.nBytes / pitch;
+      // cache some information
+      nElements = registerInfo.nElements;
+      assert(registerInfo.elementPitchBits % 8 == 0);
+      pitch = registerInfo.elementPitchBits / 8;
     }
 
     // declare that we want the default copy constructor. Needed because we have a custom = operator
@@ -297,9 +273,14 @@ namespace ChimeraTK {
     /// Return the register path
     const RegisterPath& getRegisterPath() const { return _path; }
 
+    const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
+
    protected:
     /// pointer to VirtualDevice
     DummyBackend* _dev;
+
+    /// register map information
+    NumericAddressedRegisterInfo registerInfo;
 
     /// path of the register
     RegisterPath _path;
@@ -308,10 +289,10 @@ namespace ChimeraTK {
     std::vector<FixedPointConverter> fpc;
 
     /// offsets in bytes for sequences
-    std::vector<int> offsets;
+    std::vector<uint32_t> offsets;
 
     /// number of bytes per word for sequences
-    std::vector<int> nbytes;
+    std::vector<uint32_t> nbytes;
 
     /// pitch in bytes (distance between samples of the same sequence)
     int pitch;
@@ -334,7 +315,7 @@ namespace ChimeraTK {
    *   WARNING: You must not touch any data content of the accessor without holding a lock to
    *   the memory mutex for the internal data buffer (see getBufferLock()).
    */
-  class DummyRegisterRawAccessor : public DummyRegisterAddressChecker {
+  class DummyRegisterRawAccessor {
    public:
     /// Implicit type conversion to int32_t.
     /// This basically covers all operators for single integers.
@@ -343,7 +324,7 @@ namespace ChimeraTK {
     DummyRegisterRawAccessor(boost::shared_ptr<DeviceBackend> backend, std::string module, std::string name)
     : _backend(boost::dynamic_pointer_cast<DummyBackend>(backend)) {
       assert(_backend);
-      _backend->_registerMapping->getRegisterInfo(name, registerInfo, module);
+      registerInfo = _backend->_registerMap.getBackendRegister(module + "." + name);
       buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t)]);
     }
     // declare that we want the default copy constructor. Needed because we have a custom = operator
@@ -368,6 +349,9 @@ namespace ChimeraTK {
    protected:
     /// pointer to dummy backend
     boost::shared_ptr<DummyBackend> _backend;
+
+    /// register map information
+    NumericAddressedRegisterInfo registerInfo;
 
     /// raw buffer of this accessor
     int32_t* buffer;

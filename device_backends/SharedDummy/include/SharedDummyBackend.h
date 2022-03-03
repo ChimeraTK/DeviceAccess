@@ -19,7 +19,7 @@
 #include "Exception.h"
 #include "DummyBackendBase.h"
 #include "ProcessManagement.h"
-#include "RegisterInfoMap.h"
+#include "NumericAddressedRegisterCatalogue.h"
 
 // Define shared-memory compatible vector type and corresponding allocator
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>

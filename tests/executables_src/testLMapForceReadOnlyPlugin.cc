@@ -11,8 +11,6 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-BOOST_AUTO_TEST_SUITE(LMapForceReadOnlyPluginTestSuite)
-
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test) {
@@ -21,8 +19,8 @@ BOOST_AUTO_TEST_CASE(test) {
 
   auto cat = device.getRegisterCatalogue();
   auto info = cat.getRegister("test");
-  BOOST_CHECK(!info->isWriteable());
-  BOOST_CHECK(info->isReadable());
+  BOOST_CHECK(!info.isWriteable());
+  BOOST_CHECK(info.isReadable());
 
   auto acc = device.getScalarRegisterAccessor<double>("test");
   BOOST_CHECK(!acc.isWriteable());
@@ -33,5 +31,3 @@ BOOST_AUTO_TEST_CASE(test) {
 }
 
 /********************************************************************************************************************/
-
-BOOST_AUTO_TEST_SUITE_END()

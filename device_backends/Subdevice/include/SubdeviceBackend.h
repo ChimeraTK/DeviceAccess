@@ -1,13 +1,10 @@
-#ifndef CHIMERATK_SUBDEVICE_BACKEND_H
-#define CHIMERATK_SUBDEVICE_BACKEND_H
-
-#include <fcntl.h>
-#include <mutex>
-#include <stdint.h>
-#include <string>
-#include <vector>
+#pragma once
 
 #include "DeviceBackendImpl.h"
+#include "NumericAddressedRegisterCatalogue.h"
+
+#include <mutex>
+#include <string>
 
 namespace ChimeraTK {
   class SubdeviceRegisterAccessor;
@@ -57,20 +54,22 @@ namespace ChimeraTK {
    */
   class SubdeviceBackend : public DeviceBackendImpl {
    public:
-    SubdeviceBackend(std::map<std::string, std::string> parameters);
-
-    ~SubdeviceBackend() {}
+    explicit SubdeviceBackend(std::map<std::string, std::string> parameters);
 
     void open() override;
 
     void close() override;
 
     std::string readDeviceInfo() override {
-      return std::string("Subdevice"); /// @todo extend information
+      return "Subdevice"; /// @todo extend information
     }
 
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
+
+    RegisterCatalogue getRegisterCatalogue() const override;
+
+    MetadataCatalogue getMetadataCatalogue() const override;
 
    protected:
     friend class SubdeviceRegisterAccessor;
@@ -102,8 +101,7 @@ namespace ChimeraTK {
     /// for type == area: the name of the target register
     std::string targetArea;
 
-    /// for type == threeRegisters or twoRegisters: the name of the target
-    /// registers
+    /// for type == threeRegisters or twoRegisters: the name of the target registers
     std::string targetAddress, targetData, targetControl;
 
     /// for type == threeRegisters or twoRegisters: sleep time of polling loop resp. between operations, in usecs.
@@ -113,11 +111,12 @@ namespace ChimeraTK {
     size_t addressToDataDelay{0};
 
     /// map from register names to addresses
-    boost::shared_ptr<RegisterInfoMap> _registerMap;
+    NumericAddressedRegisterCatalogue _registerMap;
+    MetadataCatalogue _metadataCatalogue;
 
     /// Check consistency of the passed sizes and offsets against the information in the map file
     /// Will adjust numberOfWords to the default value if 0
-    void verifyRegisterAccessorSize(boost::shared_ptr<RegisterInfoMap::RegisterInfo> info, size_t& numberOfWords,
+    void verifyRegisterAccessorSize(const NumericAddressedRegisterInfo& info, size_t& numberOfWords,
         size_t wordOffsetInRegister, bool enforceAlignment);
 
     template<typename UserType>
@@ -146,12 +145,10 @@ namespace ChimeraTK {
 
     bool needAreaParam() { return type == Type::area || type == Type::areaHandshake; }
     bool needStatusParam() { return type == Type::threeRegisters || type == Type::areaHandshake; }
+
     // helper for reducing code duplication among template specializations
-    boost::shared_ptr<SubdeviceRegisterAccessor> getRegisterAccessor_helper(const RegisterPath& registerPathName,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo>& info);
+    boost::shared_ptr<SubdeviceRegisterAccessor> getRegisterAccessor_helper(const NumericAddressedRegisterInfo& info,
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
   };
 
 } // namespace ChimeraTK
-
-#endif /*CHIMERATK_SUBDEVICE_BACKEND_H*/

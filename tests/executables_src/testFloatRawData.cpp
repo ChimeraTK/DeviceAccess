@@ -17,24 +17,24 @@ BOOST_AUTO_TEST_CASE(testCatalogueEntries) {
   auto registerCatalogue = d.getRegisterCatalogue();
   auto scalarInfo = registerCatalogue.getRegister("FLOAT_TEST/SCALAR");
 
-  BOOST_CHECK_EQUAL(scalarInfo->getRegisterName(), "FLOAT_TEST/SCALAR");
-  BOOST_CHECK_EQUAL(scalarInfo->getNumberOfElements(), 1);
-  BOOST_CHECK_EQUAL(scalarInfo->getNumberOfChannels(), 1);
-  BOOST_CHECK_EQUAL(scalarInfo->getNumberOfDimensions(), 0);
-  BOOST_CHECK(scalarInfo->isReadable());
-  BOOST_CHECK(scalarInfo->isWriteable());
+  BOOST_CHECK_EQUAL(scalarInfo.getRegisterName(), "FLOAT_TEST/SCALAR");
+  BOOST_CHECK_EQUAL(scalarInfo.getNumberOfElements(), 1);
+  BOOST_CHECK_EQUAL(scalarInfo.getNumberOfChannels(), 1);
+  BOOST_CHECK_EQUAL(scalarInfo.getNumberOfDimensions(), 0);
+  BOOST_CHECK(scalarInfo.isReadable());
+  BOOST_CHECK(scalarInfo.isWriteable());
 
-  BOOST_CHECK(scalarInfo->getSupportedAccessModes() == AccessModeFlags({AccessMode::raw}));
+  BOOST_CHECK(scalarInfo.getSupportedAccessModes() == AccessModeFlags({AccessMode::raw}));
 
-  auto dataDescriptor = scalarInfo->getDataDescriptor();
-  BOOST_CHECK(dataDescriptor.fundamentalType() == RegisterInfo::FundamentalType::numeric);
+  auto dataDescriptor = scalarInfo.getDataDescriptor();
+  BOOST_CHECK(dataDescriptor.fundamentalType() == DataDescriptor::FundamentalType::numeric);
   BOOST_CHECK(dataDescriptor.isSigned());
   BOOST_CHECK(dataDescriptor.isIntegral() == false);
   BOOST_CHECK_EQUAL(dataDescriptor.nDigits(), 48);
   BOOST_CHECK_EQUAL(dataDescriptor.nFractionalDigits(), 45);
-  BOOST_CHECK_EQUAL(dataDescriptor.rawDataType(), DataType::TheType::int32);
+  BOOST_CHECK_EQUAL(dataDescriptor.rawDataType(), DataType::int32);
   // FIXME: the following should be int32, but this layer is not accessible through the interface anyway.
-  BOOST_CHECK_EQUAL(dataDescriptor.transportLayerDataType(), DataType::TheType::none);
+  BOOST_CHECK_EQUAL(dataDescriptor.transportLayerDataType(), DataType::none);
 }
 
 BOOST_AUTO_TEST_CASE(testReading) {

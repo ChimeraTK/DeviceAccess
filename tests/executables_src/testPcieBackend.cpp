@@ -39,6 +39,8 @@ using ChimeraTK::numeric_address::BAR;
 #define PCIE_UNI_DEVICE "PCIE0"
 #define NON_EXISTING_DEVICE "DUMMY9"
 
+/*******************************************************************************************************************/
+
 // Use a file lock on /var/run/lock/mtcadummy/<devicenode> for all device nodes
 // we are using in this test, to ensure we are not running concurrent tests in
 // parallel using the same kernel dummy drivers.
@@ -77,6 +79,8 @@ struct TestLocker {
   }
 };
 static TestLocker testLocker;
+
+/*******************************************************************************************************************/
 
 /** The unit tests for the PcieBackend class, based on the
  *  boost unit test library. We use a class which holds a private
@@ -139,6 +143,8 @@ class PcieBackendTest {
   std::string checkDmaValues(std::vector<int32_t> const& dmaBuffer);
 };
 
+/*******************************************************************************************************************/
+
 class PcieBackendTestSuite : public test_suite {
  public:
   PcieBackendTestSuite(std::string const& deviceFileName, unsigned int slot) : test_suite("PcieBackend test suite") {
@@ -197,6 +203,8 @@ class PcieBackendTestSuite : public test_suite {
  private:
 };
 
+/*******************************************************************************************************************/
+
 bool init_unit_test() {
   framework::master_test_suite().p_name.value = "PcieBackend test suite";
 
@@ -219,13 +227,14 @@ bool init_unit_test() {
   return true;
 }
 
+/*******************************************************************************************************************/
+
 // The implementations of the individual tests
 
 void PcieBackendTest::testConstructor() {
   std::cout << "testConstructor" << std::endl;
   PcieBackend pcieBackend("");
   BOOST_CHECK(pcieBackend.isOpen() == false);
-  BOOST_CHECK(pcieBackend.isConnected() == true);
 }
 
 PcieBackendTest::PcieBackendTest(std::string const& deviceFileName, unsigned int slot)
@@ -254,6 +263,8 @@ std::string PcieBackendTest::checkDmaValues(std::vector<int32_t> const& dmaBuffe
   return errorMessage.str();
 }
 
+/*******************************************************************************************************************/
+
 void PcieBackendTest::testReadDeviceInfo() {
   std::cout << "testReadDeviceInfo" << std::endl;
   // The device info returns slot and driver version (major and minor).
@@ -272,6 +283,8 @@ void PcieBackendTest::testReadDeviceInfo() {
   deviceInfo = _pcieBackendInstance->readDeviceInfo();
   BOOST_CHECK(referenceInfo.str() == deviceInfo);
 }
+
+/*******************************************************************************************************************/
 
 void PcieBackendTest::testReadDMA() {
   std::cout << "testReadDMA" << std::endl;
@@ -301,9 +314,13 @@ void PcieBackendTest::testReadDMA() {
   }
 }
 
+/*******************************************************************************************************************/
+
 void PcieBackendTest::testWriteDMA() {
   std::cout << "testWriteDMA" << std::endl;
 }
+
+/*******************************************************************************************************************/
 
 void PcieBackendTest::testRead() {
   std::cout << "testRead" << std::endl;
@@ -344,6 +361,8 @@ void PcieBackendTest::testRead() {
   BOOST_CHECK_MESSAGE(errorMessage.empty(), errorMessage);
 }
 
+/*******************************************************************************************************************/
+
 void PcieBackendTest::testWriteArea() {
   std::cout << "testWriteArea" << std::endl;
   // FIXME: Change the driver to have the standard register set and adapt this
@@ -377,6 +396,8 @@ void PcieBackendTest::testWriteArea() {
   BOOST_CHECK(readbackBuffer == writeBuffer);
 }
 
+/*******************************************************************************************************************/
+
 void PcieBackendTest::testReadRegister() {
   std::cout << "testReadRegister" << std::endl;
   // FIXME: Change the driver to have the standard register set and adapt this
@@ -398,6 +419,8 @@ void PcieBackendTest::testReadRegister() {
   BOOST_CHECK_THROW(_pcieBackendInstance->getRegisterAccessor<int>("#6/0x3C", 4, 0, {}), ChimeraTK::logic_error);
 }
 
+/*******************************************************************************************************************/
+
 void PcieBackendTest::testWriteRegister() {
   std::cout << "testWriteRegister" << std::endl;
   // FIXME: Change the driver to have the standard register set and adapt this
@@ -415,28 +438,31 @@ void PcieBackendTest::testWriteRegister() {
   BOOST_CHECK_EQUAL(originalUserWord + 1, newUserWord);
 }
 
+/*******************************************************************************************************************/
+
 void PcieBackendTest::testClose() {
   std::cout << "testClose" << std::endl;
   /* Try closing the backend */
   _pcieBackendInstance->close();
   /* backend should not be open now */
   BOOST_CHECK(_pcieBackendInstance->isOpen() == false);
-  /* backend should remain in connected state */
-  BOOST_CHECK(_pcieBackendInstance->isConnected() == true);
   // It always has to be possible to call close again.
   _pcieBackendInstance->close();
   BOOST_CHECK(_pcieBackendInstance->isOpen() == false);
 }
 
+/*******************************************************************************************************************/
+
 void PcieBackendTest::testOpen() {
   std::cout << "testOpen" << std::endl;
   _pcieBackendInstance->open();
   BOOST_CHECK(_pcieBackendInstance->isOpen() == true);
-  BOOST_CHECK(_pcieBackendInstance->isConnected() == true);
   // It must always be possible to re-open a backend. It should try to re-connect.
   _pcieBackendInstance->open();
   BOOST_CHECK(_pcieBackendInstance->isOpen());
 }
+
+/*******************************************************************************************************************/
 
 void PcieBackendTest::testCreateBackend() {
   std::cout << "testCreateBackend" << std::endl;
@@ -445,8 +471,6 @@ void PcieBackendTest::testCreateBackend() {
   /** Try creating an existing backend */
   _pcieBackendInstance = boost::dynamic_pointer_cast<PcieBackend>(factoryInstance.createBackend(_deviceFileName));
   BOOST_CHECK(_pcieBackendInstance != nullptr);
-  /** Backend should be in connect state now */
-  BOOST_CHECK(_pcieBackendInstance->isConnected() == true);
   /** Backend should not be in open state */
   BOOST_CHECK(_pcieBackendInstance->isOpen() == false);
 
@@ -498,3 +522,5 @@ void PcieBackendTest::testCreateBackend() {
   // it...
   _pcieBackendInstance->close();
 }
+
+/*******************************************************************************************************************/

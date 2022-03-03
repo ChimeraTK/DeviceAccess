@@ -132,7 +132,7 @@ namespace ChimeraTK {
       // create entry in _writeOrderMap and _writeCounterMap if necessary
       if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE" && (pathComponents[0].find("DUMMY_INTERRUPT_") != 0)) {
         auto info = getRegisterInfo(path);
-        auto adrPair = std::make_pair(info->bar, info->address);
+        auto adrPair = std::make_pair(info.bar, info.address);
         if(_writeOrderMap.find(adrPair) == _writeOrderMap.end()) {
           _writeOrderMap[adrPair] = 0;
           _writeCounterMap[adrPair] = 0;
@@ -420,7 +420,7 @@ namespace ChimeraTK {
 
   size_t ExceptionDummy::getWriteOrder(const RegisterPath& path) {
     auto info = getRegisterInfo(path);
-    auto adrPair = std::make_pair(info->bar, info->address);
+    auto adrPair = std::make_pair(info.bar, info.address);
     return _writeOrderMap.at(adrPair);
   }
 
@@ -428,7 +428,7 @@ namespace ChimeraTK {
 
   size_t ExceptionDummy::getWriteCount(const RegisterPath& path) {
     auto info = getRegisterInfo(path);
-    auto adrPair = std::make_pair(info->bar, info->address);
+    auto adrPair = std::make_pair(info.bar, info.address);
     return _writeCounterMap.at(adrPair);
   }
 

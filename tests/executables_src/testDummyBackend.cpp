@@ -3,7 +3,6 @@
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include "Device.h"
 #include "BackendFactory.h"
@@ -13,6 +12,10 @@
 
 //FIXME Remove
 #include <regex>
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {
@@ -33,15 +36,17 @@ using namespace ChimeraTK;
 
 static BackendFactory& FactoryInstance = BackendFactory::getInstance();
 
-/** The TestableDummybackend is derived from
+/** 
+ *  The TestableDummybackend is derived from
  *  DummyBackend to get access to the protected members.
  *  This is done by declaring DummybackendTest as a friend.
+ *  
+ *  FIXME get away from testing implementation details!
  */
 class TestableDummyBackend : public DummyBackend {
  public:
   explicit TestableDummyBackend(std::string mapFileName) : DummyBackend(mapFileName) {}
   using DummyBackend::checkSizeIsMultipleOfWordSize;
-  using DummyBackend::_registerMapping;
   using DummyBackend::_barContents;
   using DummyBackend::setReadOnly;
   using DummyBackend::AddressRange;
@@ -114,11 +119,10 @@ BOOST_AUTO_TEST_CASE(testCheckSizeIsMultipleOfWordSize) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
+  // WORD_CLK_RST                      0x00000001    0x00000040    0x00000004    0x00000000       32         0         0
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING, mappingElement);
-  uint64_t offset = mappingElement.address;
-  uint64_t bar = mappingElement.bar;
+  uint64_t offset = 0x40;
+  uint64_t bar = 0;
   int32_t dataContent = -1;
   // BOOST_CHECK_NO_THROW(dummyBackend->readReg(bar, offset, &dataContent));
   BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &dataContent, 4));
@@ -141,14 +145,13 @@ BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
+  // WORD_CLK_MUX                      0x00000004    0x00000020    0x00000010    0x00000000       32         0         0
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
-  uint64_t offset = mappingElement.address;
-  uint64_t bar = mappingElement.bar;
-  size_t sizeInBytes = mappingElement.nBytes;
-  size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
+  uint64_t offset = 0x20;
+  uint64_t bar = 0;
+  size_t sizeInBytes = 0x10;
+  size_t sizeInWords = 0x4;
   std::vector<int32_t> dataContent(sizeInWords, -1);
 
   BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes));
@@ -197,6 +200,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
 
 /**********************************************************************************************************************/
 
+#if 0
 BOOST_AUTO_TEST_CASE(testReadDeviceInfo) {
   std::string deviceInfo;
   auto dummyBackend = FactoryInstance.createBackend("DUMMYD0");
@@ -210,18 +214,18 @@ BOOST_AUTO_TEST_CASE(testReadDeviceInfo) {
 
   BOOST_CHECK(deviceInfo == (std::string("DummyBackend with mapping file ") + absolutePathToMapfile));
 }
+#endif
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadOnly) {
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
-  uint64_t offset = mappingElement.address;
-  uint64_t bar = mappingElement.bar;
-  size_t sizeInBytes = mappingElement.nBytes;
-  size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
+  // WORD_CLK_MUX                      0x00000004    0x00000020    0x00000010    0x00000000       32         0         0
+  uint64_t offset = 0x20;
+  uint64_t bar = 0;
+  size_t sizeInBytes = 0x10;
+  size_t sizeInWords = 0x4;
   std::stringstream errorMessage;
   errorMessage << "This register should have 4 words. If you changed your "
                   "mapping you have to adapt the testReadOnly() test.";
@@ -514,7 +518,7 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
 
   // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL
-  BOOST_CHECK(dummyBackend->_registerMapping);
+  //BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());
   // it must always be possible to re-open a backend
   dummyBackend->open();
@@ -534,8 +538,6 @@ BOOST_AUTO_TEST_CASE(testClose) {
   f._backendInstance->close();
   /** backend should not be open now */
   BOOST_CHECK(f._backendInstance->isOpen() == false);
-  /** backend should remain in connected state */
-  BOOST_CHECK(f._backendInstance->isConnected() == true);
 }
 
 /**********************************************************************************************************************/
@@ -543,7 +545,6 @@ BOOST_AUTO_TEST_CASE(testClose) {
 BOOST_AUTO_TEST_CASE(testOpen) {
   f._backendInstance->open();
   BOOST_CHECK(f._backendInstance->isOpen() == true);
-  BOOST_CHECK(f._backendInstance->isConnected() == true);
 }
 
 /**********************************************************************************************************************/
@@ -557,8 +558,6 @@ BOOST_AUTO_TEST_CASE(testCreateBackend) {
   std::string cdd1 = "(dummy?map=" TEST_MAPPING_FILE ")";
   auto backendInstance = FactoryInstance.createBackend(cdd1);
   BOOST_CHECK(backendInstance);
-  /** backend should be in connect state now */
-  BOOST_CHECK(backendInstance->isConnected() == true);
   /** backend should not be in open state */
   BOOST_CHECK(backendInstance->isOpen() == false);
 

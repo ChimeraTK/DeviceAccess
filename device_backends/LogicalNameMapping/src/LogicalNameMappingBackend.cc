@@ -26,11 +26,12 @@ namespace ChimeraTK {
     hasParsed = true;
 
     // parse the map fle
-    LogicalNameMapParser parser = LogicalNameMapParser(_lmapFileName, _parameters);
-    _catalogue_mutable = parser.getCatalogue();
+    LogicalNameMapParser parser = LogicalNameMapParser(_parameters, _variables);
+    //parser.
+    _catalogue_mutable = parser.parseFile(_lmapFileName);
 
     // create all devices referenced in the map
-    for(auto& devName : parser.getTargetDevices()) {
+    for(auto& devName : getTargetDevices()) {
       _devices[devName] = BackendFactory::getInstance().createBackend(devName);
     }
   }
@@ -105,14 +106,14 @@ namespace ChimeraTK {
     parse();
     // check if accessor plugin present
     boost::shared_ptr<NDRegisterAccessor<UserType>> returnValue;
-    auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue_mutable.getRegister(registerPathName));
-    if(info->plugins.size() <= omitPlugins) {
+    auto info = _catalogue_mutable.getBackendRegister(registerPathName);
+    if(info.plugins.size() <= omitPlugins) {
       // no plugin: directly return the accessor
       returnValue =
           getRegisterAccessor_internal<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
     else {
-      returnValue = info->plugins[omitPlugins]->getAccessor<UserType>(
+      returnValue = info.plugins[omitPlugins]->getAccessor<UserType>(
           boost::static_pointer_cast<LogicalNameMappingBackend>(shared_from_this()), numberOfWords,
           wordOffsetInRegister, flags, omitPlugins);
     }
@@ -128,14 +129,14 @@ namespace ChimeraTK {
   boost::shared_ptr<NDRegisterAccessor<UserType>> LogicalNameMappingBackend::getRegisterAccessor_internal(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     // obtain register info
-    auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue_mutable.getRegister(registerPathName));
+    auto info = _catalogue_mutable.getBackendRegister(registerPathName);
 
     // Check that the requested requested accessor fits into the register as described by the info. It is not enough to let
     // the target do the check. It might be a sub-register of a much larger one and for the target it is fine.
-    if(info->length != 0) {
+    if(info.length != 0) {
       // If info->length is 0 we let the target device do the checking. Nothing we can decide here.
-      if(numberOfWords == 0) numberOfWords = info->length;
-      if((numberOfWords + wordOffsetInRegister) > info->length) {
+      if(numberOfWords == 0) numberOfWords = info.length;
+      if((numberOfWords + wordOffsetInRegister) > info.length) {
         throw ChimeraTK::logic_error(
             std::string(
                 "LogicalNameMappingBackend: Error creating accessor. Number of words plus offset too large in ") +
@@ -144,16 +145,16 @@ namespace ChimeraTK {
     }
 
     // determine the offset and length
-    size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
-    size_t actualLength = (numberOfWords > 0 ? numberOfWords : size_t(info->length));
+    size_t actualOffset = size_t(info.firstIndex) + wordOffsetInRegister;
+    size_t actualLength = (numberOfWords > 0 ? numberOfWords : size_t(info.length));
 
     // implementation for each type
     boost::shared_ptr<NDRegisterAccessor<UserType>> ptr;
-    if(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
+    if(info.targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
       DeviceBackend* _targetDevice;
-      std::string devName = info->deviceName;
+      std::string devName = info.deviceName;
       if(devName != "this") {
-        _targetDevice = _devices[info->deviceName].get();
+        _targetDevice = _devices[info.deviceName].get();
       }
       else {
         _targetDevice = this;
@@ -165,18 +166,18 @@ namespace ChimeraTK {
       }
       // obtain underlying register accessor
       ptr = _targetDevice->getRegisterAccessor<UserType>(
-          RegisterPath(info->registerName), actualLength, actualOffset, flags);
+          RegisterPath(info.registerName), actualLength, actualOffset, flags);
     }
-    else if(info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
+    else if(info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
       ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(new LNMBackendChannelAccessor<UserType>(
           shared_from_this(), registerPathName, actualLength, actualOffset, flags));
     }
-    else if(info->targetType == LNMBackendRegisterInfo::TargetType::BIT) {
+    else if(info.targetType == LNMBackendRegisterInfo::TargetType::BIT) {
       ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(
           new LNMBackendBitAccessor<UserType>(shared_from_this(), registerPathName, actualLength, actualOffset, flags));
     }
-    else if(info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT ||
-        info->targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
+    else if(info.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT ||
+        info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
       ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(new LNMBackendVariableAccessor<UserType>(
           shared_from_this(), registerPathName, actualLength, actualOffset, flags));
     }
@@ -191,63 +192,58 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  const RegisterCatalogue& LogicalNameMappingBackend::getRegisterCatalogue() const {
-    if(catalogueCompleted) return _catalogue_mutable;
+  RegisterCatalogue LogicalNameMappingBackend::getRegisterCatalogue() const {
+    if(catalogueCompleted) return RegisterCatalogue(_catalogue_mutable.clone());
     parse();
 
     // fill in information to the catalogue from the target devices
-    for(auto& info : _catalogue_mutable) {
-      LNMBackendRegisterInfo& info_cast = static_cast<LNMBackendRegisterInfo&>(info);
-      auto targetType = info_cast.targetType;
+    for(auto& lnmInfo : _catalogue_mutable) {
+      auto targetType = lnmInfo.targetType;
       if(targetType != LNMBackendRegisterInfo::TargetType::REGISTER &&
           targetType != LNMBackendRegisterInfo::TargetType::CHANNEL &&
           targetType != LNMBackendRegisterInfo::TargetType::BIT)
         continue;
 
-      std::string devName = info_cast.deviceName;
-      boost::shared_ptr<RegisterInfo> target_info;
+      std::string devName = lnmInfo.deviceName;
+
+      RegisterInfo target_info(lnmInfo.clone()); //Start with a clone of this info as there is not default constructor
+      // In case the devide is not "this" replace it with the real target register info
       if(devName != "this") {
-        auto& cat = _devices.at(devName)->getRegisterCatalogue();
-        if(!cat.hasRegister(info_cast.registerName)) continue;
-        target_info = cat.getRegister(info_cast.registerName);
-      }
-      else {
-        target_info = _catalogue_mutable.getRegister(std::string(info_cast.registerName));
+        auto cat = _devices.at(devName)->getRegisterCatalogue();
+        if(!cat.hasRegister(lnmInfo.registerName)) continue;
+        target_info = cat.getRegister(lnmInfo.registerName);
       }
 
-      info_cast.supportedFlags = target_info->getSupportedAccessModes();
+      lnmInfo.supportedFlags = target_info.getSupportedAccessModes();
       if(targetType != LNMBackendRegisterInfo::TargetType::BIT) {
-        info_cast._dataDescriptor = target_info->getDataDescriptor();
+        lnmInfo._dataDescriptor = target_info.getDataDescriptor();
       }
       else {
-        info_cast._dataDescriptor =
-            RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::boolean, true, false, 1, 0);
-        info_cast.supportedFlags.remove(AccessMode::raw);
+        lnmInfo._dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::boolean, true, false, 1, 0);
+        lnmInfo.supportedFlags.remove(AccessMode::raw);
       }
-      info_cast.readable = target_info->isReadable();
-      info_cast.writeable = target_info->isWriteable();
+      lnmInfo.readable = target_info.isReadable();
+      lnmInfo.writeable = target_info.isWriteable();
 
       if(targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
-        info_cast.writeable = false;
+        lnmInfo.writeable = false;
       }
 
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
-        info_cast.nDimensions = target_info->getNumberOfDimensions();
-        info_cast.nChannels = target_info->getNumberOfChannels();
+        lnmInfo.nChannels = target_info.getNumberOfChannels();
       }
-      if((int)info_cast.length == 0) info_cast.length = target_info->getNumberOfElements();
+      if(lnmInfo.length == 0) lnmInfo.length = target_info.getNumberOfElements();
     }
 
     // update catalogue info by plugins
-    for(auto& info : _catalogue_mutable) {
-      LNMBackendRegisterInfo& info_cast = static_cast<LNMBackendRegisterInfo&>(info);
-      for(auto& plugin : info_cast.plugins) {
-        plugin->updateRegisterInfo();
+    for(auto& lnmInfo : _catalogue_mutable) {
+      for(auto& plugin : lnmInfo.plugins) {
+        plugin->updateRegisterInfo(_catalogue_mutable);
       }
     }
 
     catalogueCompleted = true;
-    return _catalogue_mutable;
+    return RegisterCatalogue(_catalogue_mutable.clone());
   }
 
   /********************************************************************************************************************/
@@ -299,7 +295,8 @@ namespace ChimeraTK {
         auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
         if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
           callForType(info.valueType, [&](auto arg) {
-            auto& vtEntry = boost::fusion::at_key<decltype(arg)>(info.valueTable.table);
+            auto& lnmVariable = _variables[info.name];
+            auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
             for(auto& sub : vtEntry.subscriptions) {
               try {
                 throw ChimeraTK::runtime_error("previous, unrecovered fault");
@@ -341,14 +338,27 @@ namespace ChimeraTK {
     for(auto& r : _catalogue_mutable) {
       auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
       if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
+        auto& lnmVariable = _variables[info.name];
         callForType(info.valueType, [&](auto arg) {
-          auto& vtEntry = boost::fusion::at_key<decltype(arg)>(info.valueTable.table);
+          auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
           for(auto& sub : vtEntry.subscriptions) {
             sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, v});
           }
         });
       }
     }
+  }
+
+  /********************************************************************************************************************/
+
+  std::unordered_set<std::string> LogicalNameMappingBackend::getTargetDevices() const {
+    std::unordered_set<std::string> ret;
+    for(auto it = _catalogue_mutable.begin(); it != _catalogue_mutable.end(); ++it) {
+      auto info = it->deviceName;
+      std::string dev = info; //infodeviceName;
+      if(dev != "this" && dev != "") ret.insert(dev);
+    }
+    return ret;
   }
 
   /********************************************************************************************************************/

@@ -11,15 +11,13 @@ namespace ChimeraTK {
 
   namespace detail {
     template<>
-    FixedPointConverter createDataConverter<FixedPointConverter>(
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo) {
-      return FixedPointConverter(
-          registerInfo->name, registerInfo->width, registerInfo->nFractionalBits, registerInfo->signedFlag);
+    FixedPointConverter createDataConverter<FixedPointConverter>(const NumericAddressedRegisterInfo& registerInfo) {
+      return FixedPointConverter(registerInfo.pathName, registerInfo.channels.front().width,
+          registerInfo.channels.front().nFractionalBits, registerInfo.channels.front().signedFlag);
     }
 
     template<>
-    IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo> /*registerInfo*/) {
+    IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(const NumericAddressedRegisterInfo&) {
       return IEEE754_SingleConverter();
     }
 

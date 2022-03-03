@@ -16,8 +16,9 @@
 namespace ChimeraTK {
 
   template<>
-  std::string LogicalNameMapParser::getValueFromXmlSubnode<std::string>(
-      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, std::string defaultValue) {
+  std::string LogicalNameMapParser::getValueFromXmlSubnode<std::string>(const xmlpp::Node* node,
+      const std::string& subnodeName, BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue,
+      bool hasDefault, std::string defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() < 1 && hasDefault) return defaultValue;
     if(list.size() != 1) {
@@ -42,21 +43,22 @@ namespace ChimeraTK {
         const xmlpp::TextNode* refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
-          if(!_catalogue.hasRegister(regName)) {
+          if(!catalogue.hasRegister(regName)) {
             parsingError(child, "Reference to constant '" + regName + "' could not be resolved.");
           }
-          auto reg = _catalogue.getRegister(regName);
-          auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
-          assert(reg_casted != nullptr); // this is our own catalogue
+          auto reg = catalogue.getBackendRegister(regName);
+          //auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
+          //assert(reg_casted != nullptr); // this is our own catalogue
           // fetch the value of the target constant
-          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
-            if(reg_casted->plugins.size() > 0) {
+          if(reg.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
+            if(reg.plugins.size() > 0) {
               parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");
             }
             // put to stream buffer
-            callForType(reg_casted->valueType, [&](auto arg) {
+            auto& lnmVariable = _variables[reg.name];
+            callForType(reg.valueType, [&](auto arg) {
               std::stringstream buf;
-              buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table).latestValue[0];
+              buf << boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue[0];
               value = buf.str();
             });
             continue;
@@ -94,16 +96,17 @@ namespace ChimeraTK {
               child->get_name() + "' was found.");
     }
     return value;
-  }
+  } // namespace ChimeraTK
 
   /********************************************************************************************************************/
 
   template<typename T>
-  T LogicalNameMapParser::getValueFromXmlSubnode(
-      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, T defaultValue) {
+  T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName,
+      BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue, bool hasDefault, T defaultValue) {
     // obtain result as string an put into stream
     std::stringstream stream;
-    stream << getValueFromXmlSubnode<std::string>(node, subnodeName, hasDefault, std::to_string(defaultValue));
+    stream << getValueFromXmlSubnode<std::string>(
+        node, subnodeName, catalogue, hasDefault, std::to_string(defaultValue));
 
     // interpret stream as value of type T and return it
     T value;
@@ -114,8 +117,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename T>
-  std::vector<T> LogicalNameMapParser::getValueVectorFromXmlSubnode(
-      const xmlpp::Node* node, const std::string& subnodeName) {
+  std::vector<T> LogicalNameMapParser::getValueVectorFromXmlSubnode(const xmlpp::Node* node,
+      const std::string& subnodeName, BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue) {
     auto list = node->find(subnodeName);
     if(list.size() < 1) {
       parsingError(node,
@@ -160,21 +163,20 @@ namespace ChimeraTK {
         const xmlpp::TextNode* refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
-          if(!_catalogue.hasRegister(regName)) {
+          if(!catalogue.hasRegister(regName)) {
             parsingError(childList.front(), "Reference to constant '" + regName + "' could not be resolved.");
           }
-          auto reg = _catalogue.getRegister(regName);
-          auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
-          assert(reg_casted != nullptr); // this is our own catalogue
+          auto reg = catalogue.getBackendRegister(regName);
           // fetch the value of the target constant
-          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
-            if(reg_casted->plugins.size() > 0) {
+          if(reg.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
+            if(reg.plugins.size() > 0) {
               parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");
             }
             // convert via string
             std::stringstream buf;
-            callForType(reg_casted->valueType, [&](auto arg) {
-              buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table).latestValue[0];
+            auto& lnmVariable = _variables[reg.name];
+            callForType(reg.valueType, [&](auto arg) {
+              buf << boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue[0];
             });
             buf >> valueVector[index];
             continue;
@@ -218,8 +220,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMapParser::parseFile(const std::string& fileName) {
+  BackendRegisterCatalogue<LNMBackendRegisterInfo> LogicalNameMapParser::parseFile(const std::string& fileName) {
     _fileName = fileName;
+
+    BackendRegisterCatalogue<LNMBackendRegisterInfo> catalogue;
 
     // parse the file into a DOM structure
     xmlpp::DomParser parser;
@@ -243,11 +247,14 @@ namespace ChimeraTK {
       if(!element) continue;
 
       // parse the element
-      parseElement(RegisterPath(), element);
+      parseElement(RegisterPath(), element, catalogue);
     }
+
+    return catalogue;
   }
 
-  void LogicalNameMapParser::parseElement(RegisterPath currentPath, const xmlpp::Element* element) {
+  void LogicalNameMapParser::parseElement(RegisterPath currentPath, const xmlpp::Element* element,
+      BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
     // module tag found: look for registers and sub-modules in module
     if(element->get_name() == "module") {
       // obtain name of the module
@@ -264,7 +271,7 @@ namespace ChimeraTK {
         if(!childElement) continue;
 
         // parse the element
-        parseElement(currentPath / moduleName, childElement);
+        parseElement(currentPath / moduleName, childElement, catalogue);
       }
     }
 
@@ -273,84 +280,80 @@ namespace ChimeraTK {
       // obtain the type
       std::string type = element->get_name();
 
-      // create new RegisterInfo object
-      auto info = boost::shared_ptr<LNMBackendRegisterInfo>(new LNMBackendRegisterInfo());
-
-      if(type == "redirectedRegister") {
-        info->targetType = LNMBackendRegisterInfo::TargetType::REGISTER;
-        info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
-        info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
-        info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "targetStartIndex", true, 0);
-        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 0);
-        info->nDimensions = 0;
-        info->nChannels = 0;
-      }
-      else if(type == "redirectedChannel") {
-        info->targetType = LNMBackendRegisterInfo::TargetType::CHANNEL;
-        info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
-        info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
-        info->channel = getValueFromXmlSubnode<unsigned int>(element, "targetChannel");
-        info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "targetStartIndex", true, 0);
-        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 0);
-        info->nDimensions = 1;
-        info->nChannels = 1;
-      }
-      else if(type == "redirectedBit") {
-        info->targetType = LNMBackendRegisterInfo::TargetType::BIT;
-        info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
-        info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
-        info->bit = getValueFromXmlSubnode<unsigned int>(element, "targetBit");
-        info->firstIndex = 0;
-        info->length = 0;
-        info->nDimensions = 1;
-        info->nChannels = 1;
-      }
-      else if(type == "constant") {
-        std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
-        if(constantType == "integer") constantType = "int32";
-        info->targetType = LNMBackendRegisterInfo::TargetType::CONSTANT;
-        info->valueType = DataType(constantType);
-        callForType(info->valueType, [&](auto arg) {
-          boost::fusion::at_key<decltype(arg)>(info->valueTable.table).latestValue =
-              this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value");
-        });
-        info->firstIndex = 0;
-        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
-        info->nDimensions = info->length > 1 ? 1 : 0;
-        info->nChannels = 1;
-        info->writeable = false;
-        info->readable = true;
-        info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(info->valueType);
-      }
-      else if(type == "variable") {
-        std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
-        if(constantType == "integer") constantType = "int32";
-        info->targetType = LNMBackendRegisterInfo::TargetType::VARIABLE;
-        info->valueType = DataType(constantType);
-        callForType(info->valueType, [&](auto arg) {
-          boost::fusion::at_key<decltype(arg)>(info->valueTable.table).latestValue =
-              this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value");
-        });
-        info->firstIndex = 0;
-        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
-        info->nDimensions = info->length > 1 ? 1 : 0;
-        info->nChannels = 1;
-        info->writeable = true;
-        info->readable = true;
-        info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(info->valueType);
-        info->supportedFlags = {AccessMode::wait_for_new_data};
-      }
-      else {
-        parsingError(element, "Wrong logical register type: " + type);
-      }
-
       // obtain name of logical register
       auto nameAttr = element->get_attribute("name");
       if(!nameAttr) {
         parsingError(element, "Missing name attribute of '" + type + "' tag.");
       }
       RegisterPath registerName = currentPath / std::string(nameAttr->get_value());
-      info->name = registerName;
+
+      // create new RegisterInfo object
+      LNMBackendRegisterInfo info;
+      info.name = registerName;
+      if(type == "redirectedRegister") {
+        info.targetType = LNMBackendRegisterInfo::TargetType::REGISTER;
+        info.deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice", catalogue);
+        info.registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister", catalogue);
+        info.firstIndex = getValueFromXmlSubnode<unsigned int>(element, "targetStartIndex", catalogue, true, 0);
+        info.length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", catalogue, true, 0);
+        info.nChannels = 0;
+      }
+      else if(type == "redirectedChannel") {
+        info.targetType = LNMBackendRegisterInfo::TargetType::CHANNEL;
+        info.deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice", catalogue);
+        info.registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister", catalogue);
+        info.channel = getValueFromXmlSubnode<unsigned int>(element, "targetChannel", catalogue);
+        info.firstIndex = getValueFromXmlSubnode<unsigned int>(element, "targetStartIndex", catalogue, true, 0);
+        info.length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", catalogue, true, 0);
+        info.nChannels = 1;
+      }
+      else if(type == "redirectedBit") {
+        info.targetType = LNMBackendRegisterInfo::TargetType::BIT;
+        info.deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice", catalogue);
+        info.registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister", catalogue);
+        info.bit = getValueFromXmlSubnode<unsigned int>(element, "targetBit", catalogue);
+        info.firstIndex = 0;
+        info.length = 0;
+        info.nChannels = 1;
+      }
+      else if(type == "constant") {
+        std::string constantType = getValueFromXmlSubnode<std::string>(element, "type", catalogue);
+        if(constantType == "integer") constantType = "int32";
+        info.targetType = LNMBackendRegisterInfo::TargetType::CONSTANT;
+        info.valueType = DataType(constantType);
+        auto& lnmVariable = _variables[info.name];
+        callForType(info.valueType, [&](auto arg) {
+          boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue =
+              this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value", catalogue);
+        });
+        info.firstIndex = 0;
+        info.length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", catalogue, true, 1);
+        info.nChannels = 1;
+        info.writeable = false;
+        info.readable = true;
+        info._dataDescriptor = ChimeraTK::DataDescriptor(info.valueType);
+      }
+      else if(type == "variable") {
+        std::string constantType = getValueFromXmlSubnode<std::string>(element, "type", catalogue);
+        if(constantType == "integer") constantType = "int32";
+        info.targetType = LNMBackendRegisterInfo::TargetType::VARIABLE;
+        info.valueType = DataType(constantType);
+        auto& lnmVariable = _variables[info.name];
+        callForType(info.valueType, [&](auto arg) {
+          boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue =
+              this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value", catalogue);
+        });
+        info.firstIndex = 0;
+        info.length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", catalogue, true, 1);
+        info.nChannels = 1;
+        info.writeable = true;
+        info.readable = true;
+        info._dataDescriptor = ChimeraTK::DataDescriptor(info.valueType);
+        info.supportedFlags = {AccessMode::wait_for_new_data};
+      }
+      else {
+        parsingError(element, "Wrong logical register type: " + type);
+      }
 
       // iterate over childs of the register to find plugins
       for(const auto& child : element->get_children()) {
@@ -385,28 +388,16 @@ namespace ChimeraTK {
 
           // get value of parameter and store in map
           parameters[parameterName] =
-              getValueFromXmlSubnode<std::string>(childElement, "parameter[@name='" + parameterName + "']");
+              getValueFromXmlSubnode<std::string>(childElement, "parameter[@name='" + parameterName + "']", catalogue);
         }
 
         // create instance of plugin and add to the list in the register info
-        info->plugins.push_back(LNMBackend::makePlugin(info, pluginName, parameters));
+        info.plugins.push_back(LNMBackend::makePlugin(info, pluginName, parameters));
       }
 
       // add register to catalogue
-      _catalogue.addRegister(info);
+      catalogue.addRegister(info);
     }
-  }
-
-  /********************************************************************************************************************/
-
-  std::unordered_set<std::string> LogicalNameMapParser::getTargetDevices() const {
-    std::unordered_set<std::string> ret;
-    for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
-      auto info = boost::static_pointer_cast<const LNMBackendRegisterInfo>(it.get());
-      std::string dev = info->deviceName;
-      if(dev != "this" && dev != "") ret.insert(dev);
-    }
-    return ret;
   }
 
   /********************************************************************************************************************/

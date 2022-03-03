@@ -30,8 +30,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  MathPlugin::MathPlugin(
-      boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters)
+  MathPlugin::MathPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin(info), _parameters(parameters) {
     // extract parameters
     if(_parameters.find("formula") == _parameters.end()) {
@@ -45,24 +44,26 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     // create MathPluginFormulaHelper and set name
     _h = boost::make_shared<MathPluginFormulaHelper>();
-    _h->varName = info->name;
-    _info = info;
+    _h->varName = info.name;
   }
 
   /********************************************************************************************************************/
 
-  void MathPlugin::updateRegisterInfo() {
-    auto info = _info.lock();
+  void MathPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // first update the info so we have the latest version from the catalogue.
+    _info = catalogue.getBackendRegister(_info.name);
 
     // Change data type to non-integral
-    info->_dataDescriptor = RegisterInfo::DataDescriptor(DataType("float64"));
-    info->supportedFlags.remove(AccessMode::raw);
+    _info._dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
+    _info.supportedFlags.remove(AccessMode::raw);
 
     // Fix to unidirectional operation
-    if(info->writeable && info->readable) {
-      info->readable = false;
+    if(_info.writeable && _info.readable) {
+      _info.readable = false;
     }
-    _isWrite = _info.lock()->writeable;
+    catalogue.modifyRegister(_info);
+
+    _isWrite = _info.writeable;
   }
 
   /********************************************************************************************************************/
@@ -75,7 +76,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // the backend is not yet available there.
     if(_backend._empty()) {
       // make sure the register info is up to date
-      updateRegisterInfo();
+      updateRegisterInfo(backend->_catalogue_mutable);
 
       // store backend as weak pointer for later use
       _backend = backend;
@@ -83,7 +84,7 @@ namespace ChimeraTK { namespace LNMBackend {
       // If write direction, check for push-type parameters if enabled
       if(_isWrite && _enablePushParameters) {
         for(auto& parpair : _parameters) {
-          auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second)->getSupportedAccessModes();
+          auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
           if(paramFlags.has(AccessMode::wait_for_new_data)) {
             _hasPushParameter = true;
             break;
@@ -96,7 +97,7 @@ namespace ChimeraTK { namespace LNMBackend {
           for(auto& parpair : _parameters) {
             // push-type parameters need to be obtained with wait_for_new_data, others without
             AccessModeFlags flags{};
-            auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second)->getSupportedAccessModes();
+            auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
             if(paramFlags.has(AccessMode::wait_for_new_data)) {
               flags = {AccessMode::wait_for_new_data};
             }
@@ -104,18 +105,19 @@ namespace ChimeraTK { namespace LNMBackend {
             if(acc->getNumberOfChannels() != 1) {
               throw ChimeraTK::logic_error(
                   "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: '" +
-                  _info.lock()->name + "', parameter name: '" + parpair.first + "'");
+                  _info.name + "', parameter name: '" + parpair.first + "'");
             }
             _pushParameterReadGroup.add(acc);
             _pushParameterAccessorMap[parpair.first] = acc;
           }
           _pushParameterReadGroup.finalise();
-          _lastWrittenValue.resize(_info.lock()->length);
+          _lastWrittenValue.resize(_info.length);
         }
 
         // compile formula
         try {
-          _h->compileFormula(_formula, _backend.lock(), _pushParameterAccessorMap, _info.lock()->length);
+          _lastWrittenValue.resize(_info.length);
+          _h->compileFormula(_formula, _backend.lock(), _pushParameterAccessorMap, _info.length);
         }
         catch(...) {
           // Do not throw errors at this point, only when accessing the register directly
@@ -142,9 +144,8 @@ namespace ChimeraTK { namespace LNMBackend {
       boost::barrier waitUntilThreadLaunched(2);
       _pushParameterWriteThread = boost::thread([this, &waitUntilThreadLaunched] {
         // obtain target accessor
-        auto targetDevice = BackendFactory::getInstance().createBackend(_info.lock()->deviceName);
-        auto info = _info.lock();
-        auto target = targetDevice->getRegisterAccessor<double>(info->registerName, info->length, info->firstIndex, {});
+        auto targetDevice = BackendFactory::getInstance().createBackend(_info.deviceName);
+        auto target = targetDevice->getRegisterAccessor<double>(_info.registerName, _info.length, _info.firstIndex, {});
         // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
         while(true) {
           auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();

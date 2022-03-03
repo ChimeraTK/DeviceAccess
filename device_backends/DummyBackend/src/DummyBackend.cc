@@ -84,7 +84,7 @@ namespace ChimeraTK {
 
   std::string DummyBackend::readDeviceInfo() {
     std::stringstream info;
-    info << "DummyBackend with mapping file " << _registerMapping->getMapFileName();
+    info << "DummyBackend"; // TODO add map file name again
     return info.str();
   }
 

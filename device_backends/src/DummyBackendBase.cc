@@ -3,7 +3,7 @@
 namespace ChimeraTK {
 
   DummyBackendBase::DummyBackendBase(std::string const& mapFileName)
-  : NumericAddressedBackend(mapFileName), _registerMapping{_registerMap} {
+  : NumericAddressedBackend(mapFileName, std::make_unique<DummyBackendRegisterCatalogue>()) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
   }
 
@@ -16,10 +16,12 @@ namespace ChimeraTK {
 
   std::map<uint64_t, size_t> DummyBackendBase::getBarSizesInBytesFromRegisterMapping() const {
     std::map<uint64_t, size_t> barSizesInBytes;
-    for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-        mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
-      barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
-          static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
+    for(auto const& info : _registerMap) {
+      if(info.elementPitchBits % 8 != 0) {
+        throw ChimeraTK::logic_error("DummyBackendBase: Elements have to be byte aligned.");
+      }
+      barSizesInBytes[info.bar] = std::max(
+          barSizesInBytes[info.bar], static_cast<size_t>(info.address + info.nElements * info.elementPitchBits / 8));
     }
     return barSizesInBytes;
   }

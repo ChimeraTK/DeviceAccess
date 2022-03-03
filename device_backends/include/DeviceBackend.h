@@ -1,20 +1,15 @@
-#ifndef CHIMERATK_DEVICE_BACKEND_H
-#define CHIMERATK_DEVICE_BACKEND_H
-
-#include <boost/any.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <fcntl.h>
-#include <list>
-#include <stdint.h>
-#include <string>
-#include <vector>
+#pragma once
 
 #include "AccessMode.h"
 #include "Exception.h"
 #include "ForwardDeclarations.h"
 #include "RegisterCatalogue.h"
-#include "RegisterInfoMap.h"
+#include "MetadataCatalogue.h"
 #include "VirtualFunctionTemplate.h"
+
+#include <boost/enable_shared_from_this.hpp>
+
+#include <string>
 
 namespace ChimeraTK {
 
@@ -37,9 +32,8 @@ namespace ChimeraTK {
     /** Return whether a device has been opened or not. */
     virtual bool isOpen() = 0;
 
-    /** Return whether a device has been connected or not. A device is considered
-     * connected when it is created. */
-    virtual bool isConnected() = 0;
+    /** Deprecated. Do not use. */
+    [[deprecated]] virtual bool isConnected() = 0;
 
     /** Return wether a device is working as intended, usually this means it is opened
      *  and does not have any errors. The default implementeation in DeviceBackendImpl reports
@@ -52,9 +46,15 @@ namespace ChimeraTK {
      */
     virtual bool isFunctional() const = 0;
 
-    /** Return the register catalogue with detailed information on all registers.
+    /** 
+     *  Return the register catalogue with detailed information on all registers.
      */
-    virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
+    virtual RegisterCatalogue getRegisterCatalogue() const = 0;
+
+    /** 
+     *  Return the device metadata catalogue
+     */
+    virtual MetadataCatalogue getMetadataCatalogue() const = 0;
 
     /** Get a NDRegisterAccessor object from the register name. */
     template<typename UserType>
@@ -101,5 +101,3 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
-
-#endif /*CHIMERATK_DEVICE_BACKEND_H*/

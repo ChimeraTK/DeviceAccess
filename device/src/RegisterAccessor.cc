@@ -2,10 +2,12 @@
  * RegisterAccessor.cc - Non-buffering accessor for device registers
  */
 
-#include "RegisterAccessor.h"
-#include "Device.h"
+#if 0
 
-#include <typeinfo>
+#  include "RegisterAccessor.h"
+#  include "Device.h"
+
+#  include <typeinfo>
 
 namespace ChimeraTK {
 
@@ -43,3 +45,5 @@ namespace ChimeraTK {
   }                                         // LCOV_EXCL_LINE
 
 } // namespace ChimeraTK
+
+#endif
