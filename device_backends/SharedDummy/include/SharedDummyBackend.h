@@ -225,6 +225,8 @@ namespace ChimeraTK {
       /// find unsed semaphore, mark it as used and return pointer to it
       Sem* addSem(SemId semId);
       bool removeSem(SemId semId);
+      /// compare against PidSet and remove unused entries
+      void cleanup(PidSet* pidSet);
 
       /// update shm entry to tell that interrupt is triggered
       /// implementation: increase interrupt count of given interrupt
@@ -257,7 +259,9 @@ namespace ChimeraTK {
       ~InterruptDispatcherInterface();
       /// cleanup our objects in given shm. This is only needed when corrupt shm was detected which
       ///  needs re-initialization
+      /// If pidSet given, remove unmatching entries. Otherwise, remove whole object in shm
       static void cleanupShm(boost::interprocess::managed_shared_memory& shm);
+      static void cleanupShm(boost::interprocess::managed_shared_memory& shm, PidSet* pidSet);
 
       /// to be called from process which whishes to trigger some interrupt
       void triggerInterrupt(int controllerId, int intNumber);

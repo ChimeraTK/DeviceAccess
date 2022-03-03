@@ -46,6 +46,7 @@ namespace ChimeraTK {
         std::string errMsg{"Maximum number of accessing members reached."};
         throw ChimeraTK::runtime_error(errMsg);
       }
+      InterruptDispatcherInterface::cleanupShm(segment, pidSet);
 
       pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
     }

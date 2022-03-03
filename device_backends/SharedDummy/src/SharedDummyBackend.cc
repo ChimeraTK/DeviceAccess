@@ -166,6 +166,11 @@ namespace ChimeraTK {
   void SharedDummyBackend::InterruptDispatcherInterface::cleanupShm(boost::interprocess::managed_shared_memory& shm) {
     shm.destroy<SharedMemoryVector>(boost::interprocess::unique_instance);
   }
+  void SharedDummyBackend::InterruptDispatcherInterface::cleanupShm(
+      boost::interprocess::managed_shared_memory& shm, PidSet* pidSet) {
+    ShmForSems* semBuf = shm.find_or_construct<ShmForSems>(boost::interprocess::unique_instance)();
+    semBuf->cleanup(pidSet);
+  }
 
   void SharedDummyBackend::InterruptDispatcherInterface::triggerInterrupt(int controllerId, int intNumber) {
     std::list<boost::interprocess::interprocess_semaphore*> semList;
@@ -305,6 +310,14 @@ namespace ChimeraTK {
       }
     }
     return found;
+  }
+  void SharedDummyBackend::ShmForSems::cleanup(PidSet* pidSet) {
+    for(auto& entry : semEntries) {
+      if(entry.used) {
+        if(std::find(std::begin(*pidSet), std::end(*pidSet), (int32_t)entry.semId) == std::end(*pidSet))
+          entry.used = false;
+      }
+    }
   }
 
   void SharedDummyBackend::ShmForSems::addInterrupt(InterruptInfo ii) {
