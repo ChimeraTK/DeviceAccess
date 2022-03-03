@@ -1,24 +1,25 @@
-#  include <boost/make_shared.hpp>
+#include <boost/make_shared.hpp>
 
-#  include "LNMBackendRegisterInfo.h"
-#  include "LNMAccessorPlugin.h"
-#  include "NDRegisterAccessorDecorator.h"
-#  include "TransferElement.h"
+#include "LNMBackendRegisterInfo.h"
+#include "LNMAccessorPlugin.h"
+#include "NDRegisterAccessorDecorator.h"
+#include "TransferElement.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  ForceReadOnlyPlugin::ForceReadOnlyPlugin(
-      LNMBackendRegisterInfo info, const std::map<std::string, std::string>&)
+  ForceReadOnlyPlugin::ForceReadOnlyPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>&)
   : AccessorPlugin(info) {}
 
   /********************************************************************************************************************/
 
-  void ForceReadOnlyPlugin::updateRegisterInfo() {
+  void ForceReadOnlyPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // first update the info so we have the latest version from the catalogue.
+    _info = catalogue.getBackendRegister(_info.name);
     // Change register info to read-only
-    //_info.lock()->writeable = false;
-      _info.writeable = false;
+    _info.writeable = false;
+    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/

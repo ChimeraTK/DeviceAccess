@@ -197,51 +197,48 @@ namespace ChimeraTK {
     parse();
 
     // fill in information to the catalogue from the target devices
-    for(auto& info : _catalogue_mutable) {
-      LNMBackendRegisterInfo& info_cast = static_cast<LNMBackendRegisterInfo&>(info);
-      auto targetType = info_cast.targetType;
+    for(auto& lnmInfo : _catalogue_mutable) {
+      auto targetType = lnmInfo.targetType;
       if(targetType != LNMBackendRegisterInfo::TargetType::REGISTER &&
           targetType != LNMBackendRegisterInfo::TargetType::CHANNEL &&
           targetType != LNMBackendRegisterInfo::TargetType::BIT)
         continue;
 
-      std::string devName = info_cast.deviceName;
-      //boost::shared_ptr<RegisterInfoImpl target_info;
+      std::string devName = lnmInfo.deviceName;
 
-      RegisterInfo target_info(info.clone()); //Start with a clone of this info as there is not default constructor
+      RegisterInfo target_info(lnmInfo.clone()); //Start with a clone of this info as there is not default constructor
       // In case the devide is not "this" replace it with the real target register info
       if(devName != "this") {
         auto cat = _devices.at(devName)->getRegisterCatalogue();
-        if(!cat.hasRegister(info_cast.registerName)) continue;
-        target_info = cat.getRegister(info_cast.registerName);
+        if(!cat.hasRegister(lnmInfo.registerName)) continue;
+        target_info = cat.getRegister(lnmInfo.registerName);
       }
 
-      info_cast.supportedFlags = target_info.getSupportedAccessModes();
+      lnmInfo.supportedFlags = target_info.getSupportedAccessModes();
       if(targetType != LNMBackendRegisterInfo::TargetType::BIT) {
-        info_cast._dataDescriptor = target_info.getDataDescriptor();
+        lnmInfo._dataDescriptor = target_info.getDataDescriptor();
       }
       else {
-        info_cast._dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::boolean, true, false, 1, 0);
-        info_cast.supportedFlags.remove(AccessMode::raw);
+        lnmInfo._dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::boolean, true, false, 1, 0);
+        lnmInfo.supportedFlags.remove(AccessMode::raw);
       }
-      info_cast.readable = target_info.isReadable();
-      info_cast.writeable = target_info.isWriteable();
+      lnmInfo.readable = target_info.isReadable();
+      lnmInfo.writeable = target_info.isWriteable();
 
       if(targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
-        info_cast.writeable = false;
+        lnmInfo.writeable = false;
       }
 
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
-        info_cast.nChannels = target_info.getNumberOfChannels();
+        lnmInfo.nChannels = target_info.getNumberOfChannels();
       }
-      if(info_cast.length == 0) info_cast.length = target_info.getNumberOfElements();
+      if(lnmInfo.length == 0) lnmInfo.length = target_info.getNumberOfElements();
     }
 
     // update catalogue info by plugins
-    for(auto& info : _catalogue_mutable) {
-      LNMBackendRegisterInfo& info_cast = static_cast<LNMBackendRegisterInfo&>(info);
-      for(auto& plugin : info_cast.plugins) {
-        plugin->updateRegisterInfo();
+    for(auto& lnmInfo : _catalogue_mutable) {
+      for(auto& plugin : lnmInfo.plugins) {
+        plugin->updateRegisterInfo(_catalogue_mutable);
       }
     }
 

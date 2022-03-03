@@ -93,6 +93,16 @@ namespace ChimeraTK {
      */
     void removeRegister(const RegisterPath& name);
 
+    /**
+     * Replaces the register information for the matching register.
+     * The full path name of the register to be modified is taken from the RegisterInfo
+     * structure. You cannot change the name of the register.
+     *
+     * Throws ChimeraTK::logic_error if register
+     * does not exist in the catalogue.
+     */
+    void modifyRegister(const BackendRegisterInfo& registerInfo);
+
     /** Return begin iterator for iterating through the registers in the catalogue */
     [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() {
       return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.begin()};
@@ -323,6 +333,18 @@ namespace ChimeraTK {
     // remove from catalogue map
     auto removed = catalogue.erase(name);
     assert(removed == 1);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  void BackendRegisterCatalogue<BackendRegisterInfo>::modifyRegister(const BackendRegisterInfo& registerInfo) {
+    if(!hasRegister(registerInfo.getRegisterName())) {
+      throw ChimeraTK::logic_error("BackendRegisterCatalogue::modifyRegister(): Register '" +
+          registerInfo.getRegisterName() + "' cannot be modified because it does not exist!");
+    }
+    catalogue[registerInfo.getRegisterName()] = registerInfo;
+    // We don't have to touch the insertionOrderedCatalogue because is stores references, and this has not changed.
   }
 
   /*******************************************************************************************************************/

@@ -1,10 +1,10 @@
-#  include <boost/make_shared.hpp>
+#include <boost/make_shared.hpp>
 
-#  include <thread>
+#include <thread>
 
-#  include "LNMBackendRegisterInfo.h"
-#  include "LNMAccessorPlugin.h"
-#  include "NDRegisterAccessorDecorator.h"
+#include "LNMBackendRegisterInfo.h"
+#include "LNMAccessorPlugin.h"
+#include "NDRegisterAccessorDecorator.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -33,12 +33,14 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MonostableTriggerPlugin::updateRegisterInfo() {
+  void MonostableTriggerPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // first update the info so we have the latest version from the catalogue.
+    _info = catalogue.getBackendRegister(_info.name);
     // Change register info to write-only and data type nodata
-    auto info = _info;//.lock();
-    info.readable = false;
-    info._dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
-    info.supportedFlags.remove(AccessMode::raw);
+    _info.readable = false;
+    _info._dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
+    _info.supportedFlags.remove(AccessMode::raw);
+    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/

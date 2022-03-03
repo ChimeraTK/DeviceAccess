@@ -1,25 +1,25 @@
-#  include <boost/make_shared.hpp>
+#include <boost/make_shared.hpp>
 
-#  include "LNMBackendRegisterInfo.h"
-#  include "LNMAccessorPlugin.h"
-#  include "NDRegisterAccessor.h"
+#include "LNMBackendRegisterInfo.h"
+#include "LNMAccessorPlugin.h"
+#include "NDRegisterAccessor.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  ForcePollingReadPlugin::ForcePollingReadPlugin(
-      LNMBackendRegisterInfo info, const std::map<std::string, std::string>&)
+  ForcePollingReadPlugin::ForcePollingReadPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>&)
   : AccessorPlugin(info) {}
 
   /********************************************************************************************************************/
 
-  void ForcePollingReadPlugin::updateRegisterInfo() {
-    // remove wait_for_new_data flag, if present
-    auto info = _info;//.lock();
-    if(info.supportedFlags.has(AccessMode::wait_for_new_data)) {
-      info.supportedFlags.remove(AccessMode::wait_for_new_data);
+  void ForcePollingReadPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // first update the info so we have the latest version from the catalogue.
+    _info = catalogue.getBackendRegister(_info.name);
+    if(_info.supportedFlags.has(AccessMode::wait_for_new_data)) {
+      _info.supportedFlags.remove(AccessMode::wait_for_new_data);
     }
+    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/
