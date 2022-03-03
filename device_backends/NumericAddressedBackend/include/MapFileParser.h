@@ -37,7 +37,7 @@ namespace ChimeraTK {
    private:
     /** Hold parsed content of a single line */
     struct ParsedLine {
-      std::string pathName;       /**< Name of register */
+      RegisterPath pathName;      /**< Name of register */
       uint32_t nElements{0};      /**< Number of elements in register */
       uint64_t address{0};        /**< Relative address in bytes from beginning of the bar (Base Address Range) */
       uint32_t nBytes{0};         /**< Size of register expressed in bytes */
@@ -58,7 +58,7 @@ namespace ChimeraTK {
      * dot, the first part is empty and the full string is returned as second (the
      * part up to the first dot is considered as prefix).
      */
-    std::pair<std::string, std::string> splitStringAtLastDot(std::string moduleDotName);
+    std::pair<RegisterPath, std::string> splitStringAtLastDot(RegisterPath moduleDotName);
 
     std::pair<NumericAddressedRegisterInfo::Type, int> getTypeAndNFractionalBits(
         std::string bitInterpretation, uint32_t width);
@@ -79,23 +79,23 @@ namespace ChimeraTK {
      * Checks whether the register name does not contain the special prefixes marking multiplexed registers and
      * sequences etc.
      */
-    bool isScalarOr1D(const std::string& pathName);
+    bool isScalarOr1D(const RegisterPath& pathName);
 
     /**
      * Checks whether the register name contains the prefix for a multiplexed register (but not for the individual
      * sequences, so only the "main" entry matches).
      */
-    bool is2D(const std::string& pathName);
+    bool is2D(const RegisterPath& pathName);
 
     /**
      * Generate sequence name from main entry for multiplexed registers
      */
-    std::string makeSequenceName(const std::string& pathName, size_t index);
+    RegisterPath makeSequenceName(const RegisterPath& pathName, size_t index);
 
     /**
      * Generate 2D register name from main entry for multiplexed registers
      */
-    std::string make2DName(const std::string& pathName);
+    RegisterPath make2DName(const RegisterPath& pathName);
 
     NumericAddressedRegisterCatalogue pmap;
     MetadataCatalogue metadataCatalogue;
@@ -104,7 +104,7 @@ namespace ChimeraTK {
     uint32_t line_nr = 0;
 
     std::vector<ParsedLine> parsedLines;
-    std::map<std::string, const ParsedLine&> parsedLinesMap;
+    std::map<RegisterPath, const ParsedLine&> parsedLinesMap;
   };
 
 } // namespace ChimeraTK

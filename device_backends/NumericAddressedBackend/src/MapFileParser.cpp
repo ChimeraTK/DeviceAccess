@@ -73,40 +73,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::pair<std::string, std::string> MapFileParser::splitStringAtLastDot(std::string moduleDotName) {
-    size_t lastDotPosition = moduleDotName.rfind('.');
-    size_t lastSlashPosition = moduleDotName.rfind('/');
-    if(lastDotPosition != std::string::npos && lastSlashPosition != std::string::npos) {
-      lastDotPosition = std::max(lastDotPosition, lastSlashPosition);
-    }
-    else if(lastDotPosition == std::string::npos) {
-      lastDotPosition = lastSlashPosition;
-    }
-
-    // some special case handlings to avoid string::split from throwing exceptions
-    if(lastDotPosition == std::string::npos) {
-      // no dot found, the whole string is the second argument
-      return std::make_pair(std::string(), moduleDotName);
-    }
-
-    if(lastDotPosition == 0) {
-      // the first character is a dot, everything from pos 1 is the second
-      // argument
-      if(moduleDotName.size() == 1) {
-        // it's just a dot, return  two empty strings
-        return std::make_pair(std::string(), std::string());
-      }
-
-      // split after the first character
-      return std::make_pair(std::string(), moduleDotName.substr(1));
-    }
-
-    if(lastDotPosition == (moduleDotName.size() - 1)) {
-      // the last character is a dot. The second argument is empty
-      return std::make_pair(moduleDotName.substr(0, lastDotPosition), std::string());
-    }
-
-    return std::make_pair(moduleDotName.substr(0, lastDotPosition), moduleDotName.substr(lastDotPosition + 1));
+  std::pair<RegisterPath, std::string> MapFileParser::splitStringAtLastDot(RegisterPath moduleDotName) {
+    moduleDotName.setAltSeparator(".");
+    auto regname = moduleDotName.getComponents().back();
+    moduleDotName--;
+    return {moduleDotName, regname};
   }
 
   /********************************************************************************************************************/
@@ -223,7 +194,10 @@ namespace ChimeraTK {
     is.str(line);
 
     // extract register name
-    is >> pl.pathName;
+    std::string name;
+    is >> name;
+    pl.pathName = name;
+    pl.pathName.setAltSeparator(".");
 
     // extract mandatory address information
     is >> std::setbase(0) >> pl.nElements >> std::setbase(0) >> pl.address >> std::setbase(0) >> pl.nBytes;
@@ -305,7 +279,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool MapFileParser::isScalarOr1D(const std::string& pathName) {
+  bool MapFileParser::isScalarOr1D(const RegisterPath& pathName) {
     auto [module, name] = splitStringAtLastDot(pathName);
     return !boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX) &&
         !boost::algorithm::starts_with(name, SEQUENCE_PREFIX);
@@ -313,27 +287,31 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool MapFileParser::is2D(const std::string& pathName) {
+  bool MapFileParser::is2D(const RegisterPath& pathName) {
     auto [module, name] = splitStringAtLastDot(pathName);
     return boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX);
   }
 
   /********************************************************************************************************************/
 
-  std::string MapFileParser::makeSequenceName(const std::string& pathName, size_t index) {
+  RegisterPath MapFileParser::makeSequenceName(const RegisterPath& pathName, size_t index) {
     auto [module, name] = splitStringAtLastDot(pathName);
     assert(boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX));
     name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.size()); // strip prefix
-    return module + "." + (SEQUENCE_PREFIX + name + "_" + std::to_string(index));
+    auto r = RegisterPath(module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(index));
+    r.setAltSeparator(".");
+    return r;
   }
 
   /********************************************************************************************************************/
 
-  std::string MapFileParser::make2DName(const std::string& pathName) {
+  RegisterPath MapFileParser::make2DName(const RegisterPath& pathName) {
     auto [module, name] = splitStringAtLastDot(pathName);
     assert(boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX));
     name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.size()); // strip prefix
-    return RegisterPath(module) / name;
+    auto r = RegisterPath(module) / name;
+    r.setAltSeparator(".");
+    return r;
   }
 
   /********************************************************************************************************************/
