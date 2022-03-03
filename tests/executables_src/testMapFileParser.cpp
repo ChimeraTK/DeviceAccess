@@ -114,6 +114,16 @@ BOOST_AUTO_TEST_CASE(testGoodMapFileParse) {
   RegisterInfoents.emplace_back("WORD_USER1", 0x00000001, 0x0000000C, 0x00000004, 0x00000000, 32, 0, true);
   RegisterInfoents.emplace_back("WORD_USER2", 0x00000001, 0x00000010, 0x00000004, 0x00000000, 32, 0, false);
 
+  RegisterInfoents.emplace_back(ChimeraTK::NumericAddressedRegisterInfo("INT2D", 0x0, 0x0, 0x05, 96,
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false}},
+      NumericAddressedRegisterInfo::Access::READ_WRITE, 0, 0));
+
+  RegisterInfoents.emplace_back(
+      ChimeraTK::NumericAddressedRegisterInfo("INT2D.MULTIPLEXED_RAW", 0x0f, 0x0, 0x3c, 0x0, 32, 0, true,
+          NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, 0, 0));
+
   compareCatalogue(regcat, RegisterInfoents);
 }
 
