@@ -2,6 +2,7 @@
 #include <functional>
 #include <sstream>
 #include <regex>
+#include <cstring>
 
 #include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -210,11 +211,16 @@ namespace ChimeraTK {
       _started = true;
     }
 
+    // local copy of shm contents, used to reduce lock time
+    InterruptEntry interruptEntries[maxInterruptEntries];
+
     while(!_stop) {
       _sem->wait();
-      std::lock_guard<boost::interprocess::named_mutex> lock(_dispatcherInterf->_shmMutex);
-
-      for(auto& entry : _semShm->interruptEntries) {
+      {
+        std::lock_guard<boost::interprocess::named_mutex> lock(_dispatcherInterf->_shmMutex);
+        std::memcpy(interruptEntries, _semShm->interruptEntries, sizeof(interruptEntries));
+      }
+      for(auto& entry : interruptEntries) {
         if(!entry.used) continue;
 
         // find match with controllerId and intNumber
