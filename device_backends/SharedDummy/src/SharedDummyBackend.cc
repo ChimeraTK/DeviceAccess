@@ -150,7 +150,7 @@ namespace ChimeraTK {
       boost::interprocess::managed_shared_memory& shm, boost::interprocess::named_mutex& shmMutex)
   : _shmMutex(shmMutex), _backend(backend) {
     // locking not needed, already defined as atomic
-    _semBuf = shm.find_or_construct<ShmForSems>(ShmForSems::shmName)();
+    _semBuf = shm.find_or_construct<ShmForSems>(boost::interprocess::unique_instance)();
     _semId = getOwnPID();
 
     _dispatcherThread = boost::movelib::unique_ptr<InterruptDispatcherThread>(new InterruptDispatcherThread(this));
@@ -161,6 +161,10 @@ namespace ChimeraTK {
     _dispatcherThread.reset(); // stops and deletes thread which uses semaphore
     std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
     _semBuf->removeSem(_semId);
+  }
+
+  void SharedDummyBackend::InterruptDispatcherInterface::cleanupShm(boost::interprocess::managed_shared_memory& shm) {
+    shm.destroy<SharedMemoryVector>(boost::interprocess::unique_instance);
   }
 
   void SharedDummyBackend::InterruptDispatcherInterface::triggerInterrupt(int controllerId, int intNumber) {

@@ -27,7 +27,7 @@
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>
     ShmemAllocator;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-typedef boost::interprocess::vector<pid_t, ShmemAllocator> PidSet;
+typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
 
 namespace ChimeraTK {
 
@@ -134,10 +134,16 @@ namespace ChimeraTK {
       // to facilitate compatibility checks later
       unsigned* requiredVersion{nullptr};
 
-      bool _reInitRequired = false;
-
       size_t getRequiredMemoryWithOverhead(void);
-      void checkPidSetConsistency(void);
+      /**
+       * Checks and if needed corrects the state of the pid set, i.e
+       * if accessing processes have been terminated and could not clean up for
+       * themselves, their entries are removed. This way, if at least the last
+       * accessing process exits gracefully, the shared memory will be removed.
+       * returns bool reInitRequired
+       */
+      bool checkPidSetConsistency(void);
+      /// Resets all elements in shared memory except for the pidSet.
       void reInitMemory(void);
       std::vector<std::string> listNamedElements(void);
 
@@ -232,8 +238,6 @@ namespace ChimeraTK {
       /// for debugging purposes
       void print();
 
-      static constexpr const char* shmName = "SemBuf";
-
       SemEntry semEntries[SHARED_MEMORY_N_MAX_MEMBER];
       InterruptEntry interruptEntries[maxInterruptEntries];
     };
@@ -251,6 +255,9 @@ namespace ChimeraTK {
 
       /// stops dispatcher thread and removes semaphore
       ~InterruptDispatcherInterface();
+      /// cleanup our objects in given shm. This is only needed when corrupt shm was detected which
+      ///  needs re-initialization
+      static void cleanupShm(boost::interprocess::managed_shared_memory& shm);
 
       /// to be called from process which whishes to trigger some interrupt
       void triggerInterrupt(int controllerId, int intNumber);

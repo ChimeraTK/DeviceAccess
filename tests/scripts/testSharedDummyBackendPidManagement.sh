@@ -51,7 +51,7 @@
     # Start the supported number of processes in parallel
     while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do 
 
-        ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
+        ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite -- KEEP_RUNNING & >/dev/null
         PID[$CNT]=$!
         BGPIDS+=("$!")
 
@@ -75,7 +75,7 @@
     # Attempt to start another process, this should fail
     #FIXME Boost 1.60 introduces a change in the command line interface, this call
     #      will issue an warning.
-    ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
+    ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite -- KEEP_RUNNING & >/dev/null
     PID_SURPLUS=$!
     BGPIDS+=("$!")
 
@@ -139,7 +139,7 @@
     printf "\n#####Test removal of dead processes from the PID list on deconstruction.\n"
 
     #FIXME Interface change in Boost 1.60, see above
-    ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING &
+    ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite -- KEEP_RUNNING &
     PID_STILL_RUNNING_PROCESS=$!
     BGPIDS+=("$!")
 

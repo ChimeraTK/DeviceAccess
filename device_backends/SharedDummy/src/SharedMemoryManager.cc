@@ -24,25 +24,17 @@ namespace ChimeraTK {
     interprocessMutex(boost::interprocess::open_or_create, name.c_str()) {
     {
       // lock guard with the interprocess mutex
+      // TODO use timeout locking?
       std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
 
-      // Determine, if shared memory has already been created
-      auto pidSetData = segment.find<SharedMemoryVector>(SHARED_MEMORY_PID_SET_NAME);
-      if(pidSetData.second != 1) { // if not found: create it
-        pidSet = segment.construct<SharedMemoryVector>(SHARED_MEMORY_PID_SET_NAME)(
-            SHARED_MEMORY_N_MAX_MEMBER, sharedMemoryIntAllocator);
-        pidSet->clear();
-      }
-      else {
-        pidSet = pidSetData.first;
-      }
+      pidSet = findOrConstructVector(SHARED_MEMORY_PID_SET_NAME, 0);
 
       // Clean up pidSet, if needed
-      checkPidSetConsistency();
+      bool reInitRequired = checkPidSetConsistency();
 
       // If only "zombie" processes were found in PidSet,
       // reset data entries in shared memory.
-      if(_reInitRequired) {
+      if(reInitRequired) {
         reInitMemory();
       }
 
@@ -110,13 +102,7 @@ namespace ChimeraTK {
     return std::make_pair(segment.get_size(), segment.get_free_memory());
   }
 
-  /**
-   * Checks and if needed corrects the state of the pid set, i.e
-   * if accessing processes have been terminated and could not clean up for
-   * themselves, their entries are removed. This way, if at least the last
-   * accessing process exits gracefully, the shared memory will be removed.
-   */
-  void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency() {
+  bool SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency() {
     unsigned pidSetSizeBeforeCleanup = pidSet->size();
 
     for(auto it = pidSet->begin(); it != pidSet->end();) {
@@ -130,13 +116,11 @@ namespace ChimeraTK {
     }
 
     if(pidSetSizeBeforeCleanup != 0 && pidSet->size() == 0) {
-      _reInitRequired = true;
+      return true;
     }
+    return false;
   }
 
-  /**
-   * Resets all elements in shared memory except for the pidSet.
-   */
   void SharedDummyBackend::SharedMemoryManager::reInitMemory() {
     std::vector<std::string> nameList = listNamedElements();
 
@@ -144,10 +128,13 @@ namespace ChimeraTK {
       if(item->compare(SHARED_MEMORY_REQUIRED_VERSION_NAME) == 0) {
         segment.destroy<unsigned>(item->c_str());
       }
+      // reset the BAR vectors in shm.
+      // Note, InterruptDispatcherInterface uses unique_instance mechanism so it is not affected here
       else if(item->compare(SHARED_MEMORY_PID_SET_NAME) != 0) {
         segment.destroy<SharedMemoryVector>(item->c_str());
       }
     }
+    InterruptDispatcherInterface::cleanupShm(segment);
   }
 
   std::vector<std::string> SharedDummyBackend::SharedMemoryManager::listNamedElements() {
