@@ -24,7 +24,6 @@ namespace ChimeraTK {
     interprocessMutex(boost::interprocess::open_or_create, name.c_str()) {
     {
       // lock guard with the interprocess mutex
-      // TODO use timeout locking?
       std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
 
       pidSet = findOrConstructVector(SHARED_MEMORY_PID_SET_NAME, 0);
@@ -57,26 +56,28 @@ namespace ChimeraTK {
   SharedDummyBackend::SharedMemoryManager::~SharedMemoryManager() {
     // stop and delete dispatcher thread first since it uses shm and mutex
     intDispatcherIf.reset();
+    int pidSetSize;
+    {
+      // lock guard with the interprocess mutex
+      std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
 
-    // lock guard with the interprocess mutex
-    std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
+      // Clean up
+      checkPidSetConsistency();
 
-    // Clean up
-    checkPidSetConsistency();
-
-    int32_t ownPid = static_cast<int32_t>(getOwnPID());
-    for(auto it = pidSet->begin(); it != pidSet->end();) {
-      if(*it == ownPid) {
-        it = pidSet->erase(it);
+      int32_t ownPid = static_cast<int32_t>(getOwnPID());
+      for(auto it = pidSet->begin(); it != pidSet->end();) {
+        if(*it == ownPid) {
+          it = pidSet->erase(it);
+        }
+        else {
+          ++it;
+        }
       }
-      else {
-        ++it;
-      }
+      pidSetSize = pidSet->size();
     }
-
     // If size of pidSet is 0 (i.e, the instance belongs to the last accessing
     // process), destroy shared memory and the interprocess mutex
-    if(pidSet->size() == 0) {
+    if(pidSetSize == 0) {
       boost::interprocess::shared_memory_object::remove(name.c_str());
       boost::interprocess::named_mutex::remove(name.c_str());
     }
