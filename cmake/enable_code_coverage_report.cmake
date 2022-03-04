@@ -25,16 +25,24 @@
 #
 #######################################################################################################################
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 # The make coverage command is only available in debug mode.  Also
 # factor in that cmake treats CMAKE_BUILD_TYPE string as case
 # insensitive.
+
+option(ENABLE_COVERAGE_REPORT "Create coverage target to generate code coverage reports" ON)
+
 string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uppercase)
-IF(build_type_uppercase STREQUAL "DEBUG")
+IF(build_type_uppercase STREQUAL "DEBUG" AND ENABLE_COVERAGE_REPORT)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --coverage")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} --coverage")
     configure_file(cmake/make_coverage.sh.in
-    ${PROJECT_BINARY_DIR}/make_coverage.sh @ONLY)
+        ${PROJECT_BINARY_DIR}/make_coverage.sh @ONLY)
     add_custom_target(coverage
-    ./make_coverage.sh
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating test coverage documentation" VERBATIM)
+        ./make_coverage.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating test coverage documentation" VERBATIM)
+    add_custom_target(clean-gcda
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMAND find -name "*.gcda" -exec rm {} \;
+        COMMENT "Removing old coverage files" VERBATIM)
 ENDIF()
