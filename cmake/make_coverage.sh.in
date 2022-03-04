@@ -23,7 +23,7 @@
 #
 #######################################################################################################################
 
-rm -f `find . -name "*\.gcda"`
+cmake --build . --target clean-gcda
 cmake --build . --target test
 lcov --capture --directory . --output-file coverage_all.info --ignore-errors gcov
 
