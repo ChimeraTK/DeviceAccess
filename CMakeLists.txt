@@ -13,6 +13,7 @@ set(${PROJECT_NAME}_CXX_FLAGS "${${PROJECT_NAME}_CXX_FLAGS} -DFUSION_MAX_MAP_SIZ
 
 include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
+include(cmake/enable_code_coverage_report.cmake)
 
 # use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
 # build. The 'make doc' target will still exist
@@ -87,16 +88,6 @@ link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES}
                                       ${glib_LIBRARIES} ${RT_LIBRARIES} Threads::Threads ${ChimeraTK-cppext_LIBRARIES})
-
-# The make coverage command is only available in debug mode
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
-  add_custom_target(coverage
-    make -f Makefile.coverage
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating test coverage documentation" VERBATIM
-  )
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Install the library and the executables
 install( TARGETS ${PROJECT_NAME}
