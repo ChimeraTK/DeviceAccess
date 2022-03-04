@@ -84,8 +84,15 @@ namespace ChimeraTK {
       const uint64_t offset;
       const uint32_t sizeInBytes;
       const uint64_t bar;
+
       AddressRange(uint64_t bar_, uint64_t address, size_t sizeInBytes_)
       : offset(address), sizeInBytes(sizeInBytes_), bar(bar_) {}
+
+      explicit AddressRange(const NumericAddressedRegisterInfo& info)
+      : offset(info.address), sizeInBytes(info.nElements * info.elementPitchBits / 8), bar(info.bar) {
+        assert(info.elementPitchBits % 8 == 0);
+      }
+
       bool operator<(AddressRange const& right) const {
         return (bar == right.bar ? (offset < right.offset) : bar < right.bar);
       }
