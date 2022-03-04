@@ -1143,7 +1143,7 @@ namespace ChimeraTK {
 /********************************************************************************************************************/
 
 /// Helper macros for test_B_4_2_4
-#define STORE_APPLICATION_BUFFER(UserType, accessor)                                                                   \
+#define ALTER_AND_STORE_APPLICATION_BUFFER(UserType, accessor)                                                         \
   std::vector<std::vector<UserType>> STORE_APPLICATION_BUFFER_data;                                                    \
   VersionNumber STORE_APPLICATION_BUFFER_version;                                                                      \
   DataValidity STORE_APPLICATION_BUFFER_validity;                                                                      \
@@ -1187,7 +1187,7 @@ namespace ChimeraTK {
       reg = theValue;
       VersionNumber ver;
       te->preWrite(TransferType::write, ver);
-      STORE_APPLICATION_BUFFER(UserType, reg);
+      ALTER_AND_STORE_APPLICATION_BUFFER(UserType, reg);
       te->writeTransfer(ver);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->postWrite(TransferType::write, ver);
@@ -1207,7 +1207,7 @@ namespace ChimeraTK {
       reg = theValue;
       VersionNumber ver;
       te->preWrite(TransferType::writeDestructively, ver);
-      STORE_APPLICATION_BUFFER(UserType, reg);
+      ALTER_AND_STORE_APPLICATION_BUFFER(UserType, reg);
       te->writeTransferDestructively(ver);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->postWrite(TransferType::writeDestructively, ver);
@@ -1226,7 +1226,7 @@ namespace ChimeraTK {
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
       VersionNumber ver;
-      STORE_APPLICATION_BUFFER(UserType, reg);
+      ALTER_AND_STORE_APPLICATION_BUFFER(UserType, reg);
       te->preRead(TransferType::read);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->readTransfer();
