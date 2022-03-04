@@ -343,6 +343,7 @@ namespace ChimeraTK {
     void test_C_5_2_5_2();
     void test_C_5_2_6_2();
     void test_C_5_2_7_2();
+    void test_C_5_2_8();
     void test_C_5_3();
     void test_C_5_3_2();
     void test_C_5_3_3();
@@ -884,6 +885,7 @@ namespace ChimeraTK {
     test_C_5_2_5_2();
     test_C_5_2_6_2();
     test_C_5_2_7_2();
+    test_C_5_2_8();
     test_C_5_3();
     test_C_5_3_2();
     test_C_5_3_3();
@@ -2863,6 +2865,39 @@ namespace ChimeraTK {
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
       BOOST_CHECK_THROW(reg.write(), logic_error);
+    });
+  }
+
+  /********************************************************************************************************************/
+ 
+  /**
+   *  Test logic_error on instantiation of non-VoidRegisters with ctk::Void UserType
+   *  * \anchor UnifiedTest_TransferElement_C_5_2_8 \ref transferElement_C_5_2_8 "C.5.2.8"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_C_5_2_8() {
+    std::cout << "--- test_C_5_2_8 - logic_error on instantiation of non-VoidRegisters with ctk::Void UserType" << std::endl;
+    Device d(cdd);
+    // Constructor must throw for ScalarRegisterAccessor
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << " (ScalarRegisterAccessor throws)" << std::endl;
+      BOOST_CHECK_THROW(
+          d.getScalarRegisterAccessor<ChimeraTK::Void>(registerName), logic_error);
+    });
+    // Constructor must throw for OneDRegisterAccessor
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << " (OneDRegisterAccessor throws)" << std::endl;
+      BOOST_CHECK_THROW(
+          d.getOneDRegisterAccessor<ChimeraTK::Void>(registerName), logic_error);
+    });
+    // Constructor must throw for TwoDRegisterAccessor
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << " (TwoDRegisterAccessor throws)" << std::endl;
+      BOOST_CHECK_THROW(
+          d.getTwoDRegisterAccessor<ChimeraTK::Void>(registerName), logic_error);
     });
   }
 
