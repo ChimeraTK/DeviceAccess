@@ -16,39 +16,39 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
 
 /**********************************************************************************************************************/
 
-//static std::string dbdevice("(ExceptionDummy:1?map=doubleBuffer.map)");
-static std::string db("(logicalNameMap?map=doubleBuffer.xlmap)");
-static auto target = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(db));
-//static auto device = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dbdevice));
-static boost::shared_ptr<ExceptionDummy> exceptionDummy;
-static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
+static std::string rawDeviceCdd("(ExceptionDummy?map=doubleBuffer.map)");
+static auto backdoor =
+    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(rawDeviceCdd));
+//static boost::shared_ptr<ExceptionDummy> exceptionDummy;
+
 /**********************************************************************************************************************/
 
 template<typename Register>
 struct AreaType : Register {
-  //Register* derived{static_cast<Register*>(this)};
+  static uint32_t _currentBufferNumber;
 
-  bool isWriteable() { return true; }
+  bool isWriteable() { return false; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
   size_t nChannels() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 0; }
 
-  static constexpr auto capabilities = TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency();
-
-  // !!! here tests crashes - target is null , cannot cast logical name mapping backend to ExceptionDummy !!!!
-  DummyRegisterAccessor<uint32_t> acc{target.get(), "/doubleBuffer", "doubleBuffer"};
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableTestWriteNeverLosesData()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly();
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
-    std::vector<UserType> v;
-    for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
-      assert(i + this->address() / 4 < 10);
-      typename Register::minimumUserType e = acc[i + this->address() / 4] + this->increment * (i + 1);
-      v.push_back(this->limitGenerated(e));
-    }
-    return {v};
+    auto values = this->getRemoteValue<typename Register::minimumUserType>();
+    for(size_t i = 0; i < this->nChannels(); ++i)
+      for(size_t j = 0; j < this->nElementsPerChannel(); ++j) {
+        values[i][j] += this->increment * (i + j + 1);
+      }
+    return values;
   }
 
   template<typename UserType>
@@ -60,40 +60,84 @@ struct AreaType : Register {
 
     // We might have to open the backend to perform the operation. We have to remember
     // that we did so and close it again it we did. Some tests require the backend to be closed.
-    bool backendWasOpened = lmapBackend->isOpen();
-    if(!backendWasOpened) {
-      lmapBackend->open();
+
+    auto currentBufferNumber = backdoor->getRegisterAccessor<uint32_t>("APP.1.WORD_DUB_BUF_CURR", 0, 0, {});
+    auto buffer0 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
+        "APP/0/DAQ0_BUF0", this->nElementsPerChannel(), 0, {});
+    auto buffer1 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
+        "APP/0/DAQ0_BUF1", this->nElementsPerChannel(), 0, {});
+
+    bool deviceWasOpened = false;
+    if(!backdoor->isOpen()) {
+      backdoor->open();
+      deviceWasOpened = true;
     }
-    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(this->path(), 0, 0, {});
-    acc->read();
-    if(!backendWasOpened) {
-      lmapBackend->close();
+
+    boost::shared_ptr<NDRegisterAccessor<typename Register::minimumUserType>> currentBuffer;
+
+    currentBufferNumber->read();
+
+    if(currentBufferNumber->accessData(0) == 1) {
+      currentBuffer = buffer0;
     }
-    std::vector<UserType> v;
-    for(size_t k = 0; k < this->nElementsPerChannel(); ++k) {
-      v.push_back(acc->accessData(k));
+    else {
+      currentBuffer = buffer1;
     }
-    return {v};
+    currentBuffer->read();
+    std::vector<std::vector<UserType>> v;
+    for(size_t i = 0; i < this->nChannels(); ++i) {
+      v.push_back(std::vector<UserType>());
+      for(size_t j = 0; j < this->nElementsPerChannel(); ++j) {
+        v[i].push_back(currentBuffer->accessData(j));
+      }
+    }
+
+    if(deviceWasOpened) {
+      backdoor->close();
+    }
+
+    return v;
   }
 
   void setRemoteValue() {
-    auto acc = lmapBackend->getRegisterAccessor<typename Register::minimumUserType>(this->path(), 0, 0, {});
-    auto v = getRemoteValue<typename Register::minimumUserType>()[0];
-    //    auto v = derived->template generateValue<typename Register::minimumUserType>()[0];
-    for(size_t k = 0; k < this->nElementsPerChannel(); ++k) {
-      acc->accessData(k) = v[k];
+    auto currentBufferNumber = backdoor->getRegisterAccessor<uint32_t>("APP.1.WORD_DUB_BUF_CURR", 0, 0, {});
+    auto buffer0 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
+        "APP/0/DAQ0_BUF0", this->nElementsPerChannel(), 0, {});
+    auto buffer1 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
+        "APP/0/DAQ0_BUF1", this->nElementsPerChannel(), 0, {});
+    boost::shared_ptr<NDRegisterAccessor<typename Register::minimumUserType>> currentBuffer;
+
+    bool deviceWasOpened = false;
+    if(!backdoor->isOpen()) {
+      backdoor->open();
+      deviceWasOpened = true;
     }
-    bool backendWasOpened = lmapBackend->isOpen();
-    if(!backendWasOpened) {
-      lmapBackend->open();
+
+    currentBufferNumber->accessData(0) = _currentBufferNumber;
+    currentBufferNumber->write();
+    _currentBufferNumber = _currentBufferNumber ? 0 : 1; // change current buffer no. 0->1 or 1->0
+
+    auto values = this->generateValue<typename Register::minimumUserType>();
+
+    if(currentBufferNumber->accessData(0) == 1) {
+      currentBuffer = buffer0;
     }
-    acc->write();
-    if(!backendWasOpened) {
-      lmapBackend->close();
+    else {
+      currentBuffer = buffer1;
+    }
+    for(size_t i = 0; i < this->nChannels(); ++i) {
+      for(size_t j = 0; j < this->nElementsPerChannel(); ++j) {
+        currentBuffer->accessData(i, j) = values[i][j];
+      }
+    }
+    currentBuffer->write();
+
+    if(deviceWasOpened) {
+      backdoor->close();
     }
   }
 
-  void setForceRuntimeError(bool enable, size_t) {
+  void setForceRuntimeError(bool /*enable*/, size_t) {
     //    target->throwExceptionRead = enable;
     //    target->throwExceptionWrite = enable;
     assert(false);
@@ -106,25 +150,30 @@ struct MyArea1 {
   std::string path() { return "/doubleBuffer"; }
   size_t nElementsPerChannel() { return 10; }
   size_t address() { return 20; }
-  uint32_t toRaw(float v) { return v * 65536.F; }
-  float fromRaw(uint32_t v) { return v / 65536.F; }
-  float limitGenerated(float e) {
-    while(e > 32768.F) e -= 65535.F;
-    while(e < -32767.F) e += 65535.F;
-    return e;
-  }
-  float increment = 666. / 65536.;
-  typedef float minimumUserType;
+  //uint32_t toRaw(float v) { return v * 65536.F; }
+  //float fromRaw(uint32_t v) { return v / 65536.F; }
+  //float limitGenerated(float e) {
+  //  while(e > 32768.F) e -= 65535.F;
+  //  while(e < -32767.F) e += 65535.F;
+  //  return e;
+  //}
+  int32_t increment = 3;
+
+  typedef uint32_t minimumUserType;
   typedef int32_t rawUserType;
 };
 
 /*********************************************************************************************************************/
 
+template<typename Register>
+uint32_t AreaType<Register>::_currentBufferNumber = 0;
+
 BOOST_AUTO_TEST_CASE(testUnified) {
-  // test area type
-  std::string dummy = "(ExceptionDummy?map=doubleBuffer.map)";
-  std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + dummy + ")";
-  exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy));
+  //"(logicalNameMap?map=doubleBuffer.xlmap&target=(ExceptionDummy?map=doubleBuffer.map))";
+  std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + rawDeviceCdd + ")";
+
+  //exceptionDummy =
+  //    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(rawDeviceCdd));
 
   ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyArea1>>().runTests(lmap);
 }

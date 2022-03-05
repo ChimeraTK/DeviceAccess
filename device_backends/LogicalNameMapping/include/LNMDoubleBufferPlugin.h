@@ -23,6 +23,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
    private:
     std::map<std::string, std::string> _parameters;
+    std::string _targetDeviceName;
   };
 
   template<typename UserType>
@@ -32,7 +33,8 @@ namespace ChimeraTK { namespace LNMBackend {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
     DoubleBufferAccessor(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters);
+        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters,
+        std::string _targetDeviceName);
 
     void doPreRead(TransferType type) override;
 
@@ -49,8 +51,10 @@ namespace ChimeraTK { namespace LNMBackend {
     }
 
    private:
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _bufferRegister;
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<int32_t>> _controlRegister;
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<int32_t>> _statusRegister;
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _secondBufferReg;
+
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
+    uint32_t _currentBuffer{0};
   };
 }} // namespace ChimeraTK::LNMBackend
