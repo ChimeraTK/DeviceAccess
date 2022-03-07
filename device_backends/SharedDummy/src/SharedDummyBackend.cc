@@ -70,7 +70,6 @@ namespace ChimeraTK {
     uint64_t wordBaseIndex = address / sizeof(int32_t);
 
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
-
     for(uint64_t wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
       TRY_REGISTER_ACCESS(data[wordIndex] = _barContents[bar]->at(wordBaseIndex + wordIndex););
     }
