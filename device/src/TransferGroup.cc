@@ -206,7 +206,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void TransferGroup::addAccessor(TransferElementAbstractor& accessor) {
+  void TransferGroup::addAccessorImpl(TransferElementAbstractor& accessor, bool isTemporary) {
     // check if accessor is already in a transfer group
     if(accessor.getHighLevelImplElement()->_isInTransferGroup) {
       throw ChimeraTK::logic_error("The given accessor is already in a TransferGroup and cannot be added "
@@ -234,8 +234,8 @@ namespace ChimeraTK {
 
       for(auto& replacement : list) {
         // try on the abstractor first, to make sure we replace at the highest
-        // level if possible
-        accessor.replaceTransferElement(replacement);
+        // level if possible, but only if this isn't a temporary abstractor
+        if(not isTemporary) accessor.replaceTransferElement(replacement);
         // try on all high-level elements already stored in the list
         for(auto& hlElem : highLevelElementsWithNewAccessor) {
           hlElem->replaceTransferElement(replacement); // note: this does nothing, if the replacement cannot
@@ -295,7 +295,13 @@ namespace ChimeraTK {
   void TransferGroup::addAccessor(const boost::shared_ptr<TransferElement>& accessor) {
     /// @todo implement smarter and more efficient!
     auto x = detail::TransferGroupTransferElementAbstractor(accessor);
-    addAccessor(x);
+    addAccessorImpl(x, true);
+  }
+
+  /*********************************************************************************************************************/
+
+  void TransferGroup::addAccessor(TransferElementAbstractor& accessor) {
+    addAccessorImpl(accessor, false);
   }
 
   /*********************************************************************************************************************/

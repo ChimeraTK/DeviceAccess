@@ -105,6 +105,9 @@ namespace ChimeraTK {
 
     // Counter how many runtime errors have been thrown.
     size_t _nRuntimeErrors;
+
+   private:
+    void addAccessorImpl(TransferElementAbstractor& accessor, bool isTemporaryAbstractor);
   };
 
 } /* namespace ChimeraTK */
