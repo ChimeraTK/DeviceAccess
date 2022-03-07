@@ -71,7 +71,7 @@ namespace ChimeraTK {
 
    protected:
     /** List of low-level TransferElements in this group, which are directly
-     * responsible for the hardware access, and a flag whether there has been an exception in pre-pread */
+     * responsible for the hardware access, and a flag whether there has been an exception in pre-read */
     std::map<boost::shared_ptr<TransferElement>, bool /*hasSeenException*/> _lowLevelElementsAndExceptionFlags;
 
     /** List of all CopyRegisterDecorators in the group. On these elements,
@@ -82,7 +82,7 @@ namespace ChimeraTK {
      * by the user */
     std::set<boost::shared_ptr<TransferElement>> _highLevelElements;
 
-    /** List of all exception backens. We check on them whether they are opened, and we want to do it for all accessors
+    /** List of all exception backends. We check on them whether they are opened, and we want to do it for all accessors
      *  of the same backend just once.
      */
     std::set<boost::shared_ptr<DeviceBackend>> _exceptionBackends;

@@ -8,7 +8,7 @@
 
 namespace ChimeraTK {
   /** Typeless base class. The implementations will have a list of all asynchronous
-  *  accessors and one synchrounous accessor.
+  *  accessors and one synchronous accessor.
   */
   struct NumericAddressedAsyncVariable {
     virtual ~NumericAddressedAsyncVariable() = default;
@@ -24,7 +24,7 @@ namespace ChimeraTK {
    *
    *  This is done in a single class because the container with the fluctuating number of
    *  subscribed variables is not thread safe. This class has implements a lock so
-   *  dispatching an interrupt is safe against concurrent subscriptions/unsibscriptions.
+   *  dispatching an interrupt is safe against concurrent subscription/unsubscription.
    */
   class NumericAddressedInterruptDispatcher : public AsyncAccessorManager {
    public:

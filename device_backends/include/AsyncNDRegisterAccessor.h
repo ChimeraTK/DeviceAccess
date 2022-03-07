@@ -42,7 +42,7 @@ namespace ChimeraTK {
       _isActive = false;
     }
 
-    /** You can only send descructively. If you want to keep a copy you have to make once yourself.
+    /** You can only send destructively. If you want to keep a copy you have to make one yourself.
      *  This is more efficient that having one extra buffer within each AsyncNDRegisterAccessor.
      */
     void sendDestructively(typename NDRegisterAccessor<UserType>::Buffer& data) {

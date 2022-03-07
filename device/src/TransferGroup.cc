@@ -23,7 +23,7 @@ namespace ChimeraTK {
     for(auto& elem : elements) {
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
-        // In case there are mupliple exceptions we take the last one, but this does not matter. They are all
+        // In case there are multiple exceptions we take the last one, but this does not matter. They are all
         // ChimeraTK::runtime_errors and the first detected runtime error, which is re-thrown, has already been
         // determined by previously.
         if(lowLevelElem->_activeException) {
@@ -95,7 +95,7 @@ namespace ChimeraTK {
     _nRuntimeErrors = 0;
     runPostReads(_highLevelElements, firstDetectedRuntimeError);
 
-    // re-throw exceptions in the order of occurence
+    // re-throw exceptions in the order of occurrence
 
     // The runtime error which was seen as _activeException in the pre or transfer phase might
     // have been handled in postRead, and thus become invalid (for instance because it
@@ -108,7 +108,7 @@ namespace ChimeraTK {
     // level element, and for each high level element it loops all the low level elements again
     // because some might and others might not have exceptions, and if there was an exception for
     // that high level element on any of its low level elements, postRead must be called with
-    // an exception set each time. (I gues this sentense in close to not understandabel, that's
+    // an exception set each time. (I guess this sentence in close to not understandable, that's
     // why I am not trying to implement it).
     // In practice this will not happen because either all elements will have an ExceptionHandlingDecorator, or none.
 
@@ -159,7 +159,7 @@ namespace ChimeraTK {
     for(auto& elem : _highLevelElements) {
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
-        // In case there are mupliple exceptions we take the last one, but this does not matter. They are all ChimeraTK::runtime_errors and
+        // In case there are multiple exceptions we take the last one, but this does not matter. They are all ChimeraTK::runtime_errors and
         // the first detected runtime error, which is re-thrown, has already been determined by previously.
         if(lowLevelElem->_activeException) {
           // copy the runtime error from low level element into the high level element so it is processed in  post-read

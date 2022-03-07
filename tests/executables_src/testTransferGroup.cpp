@@ -955,7 +955,7 @@ BOOST_AUTO_TEST_CASE(testCallsToPrePostFunctionsInLowLevel) {
 
   device.open("DUMMYD3");
 
-  // create register accessors of four registers with adjecent addresses
+  // create register accessors of four registers with adjacent addresses
   auto mux0 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
   auto mux0_2 = mux0; // make duplicate of one accessor
   auto mux2 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
