@@ -510,6 +510,78 @@ struct MuxedNodmaAsync {
 
 /**********************************************************************************************************************/
 
+struct MuxedFloat {
+  std::string path() { return "/TEST/FLOAT"; }
+  bool isWriteable() { return true; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+
+  size_t nChannels() { return 4; }
+  size_t nElementsPerChannel() { return 8; }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef float minimumUserType;
+  //typedef int32_t rawUserType;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer();
+
+  DummyMultiplexedRegisterAccessor<int32_t> rawAcc{exceptionDummyMuxed.get(), "TEST", "FLOAT"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    std::vector<std::vector<UserType>> v;
+    v.resize(nChannels());
+    for(uint32_t c = 0; c < nChannels(); ++c) {
+      for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
+        int32_t rawValue = rawAcc[c][e];
+        float* cookedValue = reinterpret_cast<float*>(&rawValue);
+        v[c].push_back(*cookedValue + 0.7f * c + 3 * e);
+      }
+    }
+    return v;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    std::vector<std::vector<UserType>> v;
+    v.resize(nChannels());
+    for(uint32_t c = 0; c < nChannels(); ++c) {
+      for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
+        int32_t rawValue = rawAcc[c][e];
+        float* cookedValue = reinterpret_cast<float*>(&rawValue);
+        v[c].push_back(*cookedValue);
+      }
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<minimumUserType>();
+    for(uint32_t c = 0; c < nChannels(); ++c) {
+      for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
+        int32_t rawValue;
+        float* cookedValue = reinterpret_cast<float*>(&rawValue);
+        *cookedValue = v[c][e];
+        std::cout << "raw value is " << rawValue << "; cookedValue is " << *cookedValue << std::endl;
+        rawAcc[c][e] = rawValue;
+      }
+    }
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+  }
+};
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
@@ -531,7 +603,11 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
 
 BOOST_AUTO_TEST_CASE(testMultiplexedRegisterAccessor) {
   std::cout << "*** testMultiplexedRegisterAccessor *** " << std::endl;
-  ChimeraTK::UnifiedBackendTest<>().addRegister<MuxedNodma>().addRegister<MuxedNodmaAsync>().runTests(cddMuxed);
+  ChimeraTK::UnifiedBackendTest<>()
+      .addRegister<MuxedNodma>()
+      .addRegister<MuxedNodmaAsync>()
+      .addRegister<MuxedFloat>()
+      .runTests(cddMuxed);
 }
 
 /**********************************************************************************************************************/

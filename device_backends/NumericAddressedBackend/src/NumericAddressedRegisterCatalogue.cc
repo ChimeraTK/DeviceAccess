@@ -83,6 +83,9 @@ namespace ChimeraTK {
       else if(elementPitchBits == 32) {
         rawDataInfo = DataType::int32;
       }
+      else if(elementPitchBits == 64) {
+        rawDataInfo = DataType::int64;
+      }
       else {
         throw ChimeraTK::logic_error(
             "Unsupported raw size: " + std::to_string(elementPitchBits) + " bits in register " + pathName);
@@ -101,7 +104,7 @@ namespace ChimeraTK {
             true,                                                                 // isSigned
             3 + 45,                                                               // nDigits
             45,                                                                   // nFractionalDigits
-            DataType::int32); // we have integer in the transport layer
+            rawDataInfo); // we have integer in the transport layer, or none if multiplexed
       }
       else if(width == 64) {
         // smallest possible 5e-324, largest 2e308
@@ -110,7 +113,7 @@ namespace ChimeraTK {
             true,                                                                 // isSigned
             3 + 325,                                                              // nDigits
             325,                                                                  // nFractionalDigits
-            DataType::int64);
+            rawDataInfo);
       }
       else {
         throw logic_error("Wrong data width for data type IEEE754 for register " + pathName + ". Check your map file!");

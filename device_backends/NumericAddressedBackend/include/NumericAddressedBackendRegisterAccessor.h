@@ -12,6 +12,7 @@
 #include "IEEE754_SingleConverter.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "NDRegisterAccessor.h"
+#include "createDataConverter.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -22,19 +23,6 @@ namespace ChimeraTK {
 
   template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor;
-
-  namespace detail {
-    /** This function is external to allow template specialisation. */
-    template<typename ConverterT>
-    ConverterT createDataConverter(const NumericAddressedRegisterInfo& registerInfo);
-
-    template<>
-    FixedPointConverter createDataConverter<FixedPointConverter>(const NumericAddressedRegisterInfo& registerInfo);
-
-    template<>
-    IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(
-        const NumericAddressedRegisterInfo& registerInfo);
-  } // namespace detail
 
   /*********************************************************************************************************************/
 

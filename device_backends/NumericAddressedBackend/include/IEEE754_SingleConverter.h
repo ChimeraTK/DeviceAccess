@@ -78,6 +78,7 @@ namespace ChimeraTK {
 
     // all IEEE754_SingleConverters are the same
     bool operator!=(const IEEE754_SingleConverter& /*other*/) const { return false; }
+    bool operator==(const IEEE754_SingleConverter& /*other*/) const { return true; }
   };
 
   template<typename CookedType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
