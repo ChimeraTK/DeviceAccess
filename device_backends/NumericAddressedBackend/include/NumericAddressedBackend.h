@@ -147,7 +147,7 @@ namespace ChimeraTK {
     friend NumericAddressedLowLevelTransferElement;
     friend NumericAddressedInterruptDispatcher;
 
-    template<class UserType>
+    template<class UserType, class ConverterType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;
 
     /** 

@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include "Exception.h"
-#include "FixedPointConverter.h"
+#include "createDataConverter.h"
 #include "MapFileParser.h"
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedRegisterCatalogue.h"
@@ -56,7 +56,7 @@ namespace ChimeraTK {
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for
    * multiplexd 2D registers
    */
-  template<class UserType>
+  template<class UserType, class ConverterType>
   class NumericAddressedBackendMuxedRegisterAccessor : public NDRegisterAccessor<UserType> {
    public:
     NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath& registerPathName, size_t numberOfElements,
@@ -75,7 +75,9 @@ namespace ChimeraTK {
     }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
-      auto rhsCasted = boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType>>(other);
+      auto rhsCasted =
+          boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>>(
+              other);
       if(!rhsCasted) return false;
       if(_ioDevice != rhsCasted->_ioDevice) return false;
       if(_registerInfo != rhsCasted->_registerInfo) return false;
@@ -90,8 +92,8 @@ namespace ChimeraTK {
     bool isWriteable() const override { return _registerInfo.isWriteable(); }
 
    protected:
-    /** One fixed point converter for each sequence. */
-    std::vector<FixedPointConverter> _converters;
+    /** One converter for each sequence. Fixed point converters can have different parameters.*/
+    std::vector<ConverterType> _converters;
 
     /** The device from (/to) which to perform the DMA transfer */
     boost::shared_ptr<NumericAddressedBackend> _ioDevice;
@@ -117,8 +119,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
-  NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
+  template<class UserType, class ConverterType>
+  NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>::NumericAddressedBackendMuxedRegisterAccessor(
       const RegisterPath& registerPathName, size_t numberOfElements, size_t elementsOffset,
       boost::shared_ptr<DeviceBackend> _backend)
   : NDRegisterAccessor<UserType>(registerPathName, {}),
@@ -128,13 +130,12 @@ namespace ChimeraTK {
     assert(!_registerInfo.channels.empty());
 
     // Create a fixed point converter for each channel
-    for(auto& c : _registerInfo.channels) {
-      if(c.bitOffset % 8 != 0) {
+    for(size_t i = 0; i < _registerInfo.getNumberOfChannels(); ++i) {
+      if(_registerInfo.channels[i].bitOffset % 8 != 0) {
         throw ChimeraTK::logic_error("NumericAddressedBackendMuxedRegisterAccessor: elements must be byte aligned.");
       }
-      _converters.emplace_back(registerPathName, c.width, c.nFractionalBits, c.signedFlag);
+      _converters.emplace_back(detail::createDataConverter<ConverterType>(_registerInfo, i));
     }
-
     // check information
     if(_registerInfo.elementPitchBits % 8 != 0) {
       throw ChimeraTK::logic_error("NumericAddressedBackendMuxedRegisterAccessor: blocks must be byte aligned.");
@@ -177,8 +178,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransferSynchronously() {
+  template<class UserType, class ConverterType>
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>::doReadTransferSynchronously() {
     assert(_registerInfo.elementPitchBits % 8 == 0);
 
     auto nbt = _registerInfo.elementPitchBits / 8 * _registerInfo.nElements;
@@ -189,8 +190,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead(TransferType, bool hasNewData) {
+  template<class UserType, class ConverterType>
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>::doPostRead(
+      TransferType, bool hasNewData) {
     if(hasNewData) {
       for(size_t i = 0; i < _converters.size(); ++i) {
         _converters[i].template vectorToCooked<UserType>(_startIterators[i], _endIterators[i], buffer_2D[i].begin());
@@ -206,8 +208,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
-  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(VersionNumber) {
+  template<class UserType, class ConverterType>
+  bool NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>::doWriteTransfer(VersionNumber) {
     assert(_registerInfo.elementPitchBits % 8 == 0);
 
     auto nbt = _registerInfo.elementPitchBits / 8 * _registerInfo.nElements;
@@ -219,8 +221,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite(TransferType, VersionNumber) {
+  template<class UserType, class ConverterType>
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>::doPreWrite(TransferType, VersionNumber) {
     if(!_ioDevice->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
 
     assert(_registerInfo.channels.size() == _converters.size());
@@ -241,6 +243,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendMuxedRegisterAccessor);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendMuxedRegisterAccessor, FixedPointConverter);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+      NumericAddressedBackendMuxedRegisterAccessor, IEEE754_SingleConverter);
 
 } // namespace ChimeraTK

@@ -173,9 +173,16 @@ namespace ChimeraTK {
     // 2D multiplexed register
     else {
       flags.checkForUnknownFlags({});
-      accessor =
-          boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendMuxedRegisterAccessor<UserType>(
-              registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+      if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
+        accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+            new NumericAddressedBackendMuxedRegisterAccessor<UserType, IEEE754_SingleConverter>(
+                registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+      }
+      else {
+        accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+            new NumericAddressedBackendMuxedRegisterAccessor<UserType, FixedPointConverter>(
+                registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+      }
     }
 
     accessor->setExceptionBackend(shared_from_this());
