@@ -185,7 +185,7 @@ namespace ChimeraTK {
     void replace(boost::shared_ptr<TransferElement> newImpl) { _impl = newImpl; }
 
     /**
-     *  Search for all underlying TransferElements which are considered identicel
+     *  Search for all underlying TransferElements which are considered identical
      * (see mayReplaceOther()) with the given TransferElement. These
      * TransferElements are then replaced with the new element. If no underlying
      *  element matches the new element, this function has no effect.

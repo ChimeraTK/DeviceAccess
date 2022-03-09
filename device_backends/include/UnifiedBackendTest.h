@@ -3318,7 +3318,7 @@ namespace ChimeraTK {
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_rawTransfer() {
-    std::cout << "--- test_NOSPEC_rawTransfer - test creation and readig/writing with access mode raw." << std::endl;
+    std::cout << "--- test_NOSPEC_rawTransfer - test creation and reading/writing with access mode raw." << std::endl;
     Device d(cdd);
     d.open();
 

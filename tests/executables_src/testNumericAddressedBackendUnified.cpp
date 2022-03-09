@@ -119,7 +119,6 @@ struct Integers_signed32_async {
   }
 
   void forceAsyncReadInconsistency() {
-    // Change value without sending it via ZeroMQ
     acc = generateValue<minimumUserType>()[0][0];
   }
 
@@ -131,7 +130,7 @@ struct Integers_signed32_async {
   }
 };
 struct Integers_signed32_async_rw {
-  // Using the DUMMY_WRITEABLE register here since usually an async regiter is r/o implicitly
+  // Using the DUMMY_WRITEABLE register here since usually an async register is r/o implicitly
   std::string path() { return "/Integers/signed32_async/DUMMY_WRITEABLE"; }
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
