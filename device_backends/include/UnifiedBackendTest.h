@@ -389,6 +389,7 @@ namespace ChimeraTK {
     void test_NOSPEC_backendNotClosedAfterException();
     void test_NOSPEC_rawTransfer();
     void test_NOSPEC_catalogueRaw();
+    void test_NOSPEC_catalogueReadWrite();
 
     /// Utility functions for recurring tasks
     void recoverDevice(ChimeraTK::Device& d);
@@ -934,6 +935,7 @@ namespace ChimeraTK {
     test_NOSPEC_backendNotClosedAfterException();
     test_NOSPEC_rawTransfer();
     test_NOSPEC_catalogueRaw();
+    test_NOSPEC_catalogueReadWrite();
   }
 
   /********************************************************************************************************************/
@@ -3442,6 +3444,44 @@ namespace ChimeraTK {
         BOOST_CHECK(not registerInfo.getSupportedAccessModes().has(AccessMode::raw));
         BOOST_TEST(registerInfo.getDataDescriptor().rawDataType() == DataType::none);
       }
+    });
+  }
+
+  /**
+   *  Test that the catalogue and accessor information for read and write are correct.
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_catalogueReadWrite() {
+    std::cout << "--- test_NOSPEC_catalogueReadWrite- test catalogue and accessor entries for read/write." << std::endl;
+    Device d(cdd);
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(x.capabilities.testCatalogue == TestCapability::disabled) {
+        return;
+      }
+
+      typedef typename decltype(x)::minimumUserType UserType;
+
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // workaround for DUMMY_WRITABLE not having information in the catalogue yet
+      if(std::string(registerName).find("DUMMY_WRITEABLE") != std::string::npos) {
+        return;
+      }
+
+      if(std::string(registerName).find("DUMMY_INTERRUPT_") != std::string::npos) {
+        return;
+      }
+
+      auto registerInfo = d.getRegisterCatalogue().getRegister(registerName);
+      auto accessor = d.getScalarRegisterAccessor<UserType>(registerName);
+
+      BOOST_CHECK_EQUAL(this->isRead(x), registerInfo.isReadable());
+      BOOST_CHECK_EQUAL(this->isRead(x), accessor.isReadable());
+      BOOST_CHECK_EQUAL(this->isWrite(x), registerInfo.isWriteable());
+      BOOST_CHECK_EQUAL(this->isWrite(x), accessor.isWriteable());
     });
   }
 
