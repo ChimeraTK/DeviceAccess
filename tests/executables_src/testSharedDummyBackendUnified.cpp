@@ -157,13 +157,13 @@ struct Integers_base {
     gHelperProcess.requestMirroring(MirrorRequestType::to);
   }
 
-  // default implementation just casting. Re-implement in derrived classes if needed.
+  // default implementation just casting. Re-implement in derived classes if needed.
   template<typename UserType, typename RawType>
   RawType cookedToRaw(UserType val) {
     return static_cast<RawType>(val);
   }
 
-  // default implementation just casting. Re-implement in derrived classes if needed.
+  // default implementation just casting. Re-implement in derived classes if needed.
   template<typename UserType, typename RawType>
   UserType rawToCooked(RawType val) {
     return static_cast<UserType>(val);

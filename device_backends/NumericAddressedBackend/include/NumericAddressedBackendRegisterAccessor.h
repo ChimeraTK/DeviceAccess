@@ -279,7 +279,7 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
       }
       static RawT toRaw(DataConverterType&, CookedT&) {
-        throw ChimeraTK::logic_error("Seting as cooked is only available for raw accessors!");
+        throw ChimeraTK::logic_error("Setting as cooked is only available for raw accessors!");
       }
     };
     template<typename CookedT>

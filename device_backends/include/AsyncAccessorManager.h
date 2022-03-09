@@ -222,7 +222,7 @@ namespace ChimeraTK {
     auto newSubscriber = boost::make_shared<AsyncNDRegisterAccessor<UserType>>(backend, shared_from_this(), name,
         asyncVariable->getNumberOfChannels(), asyncVariable->getNumberOfSamples(), flags, asyncVariable->getUnit(),
         asyncVariable->getDescription());
-    // Set the exception backend here. It might be that the accessor is already activated during subscription, and the backend shoud be set at that point
+    // Set the exception backend here. It might be that the accessor is already activated during subscription, and the backend should be set at that point
     newSubscriber->setExceptionBackend(backend);
 
     if(asyncVariable->isWriteable()) {

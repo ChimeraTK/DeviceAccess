@@ -263,7 +263,7 @@ namespace ChimeraTK {
       static void cleanupShm(boost::interprocess::managed_shared_memory& shm);
       static void cleanupShm(boost::interprocess::managed_shared_memory& shm, PidSet* pidSet);
 
-      /// to be called from process which whishes to trigger some interrupt
+      /// to be called from process which wishes to trigger some interrupt
       void triggerInterrupt(int controllerId, int intNumber);
       boost::interprocess::named_mutex& _shmMutex;
       SemId _semId;
