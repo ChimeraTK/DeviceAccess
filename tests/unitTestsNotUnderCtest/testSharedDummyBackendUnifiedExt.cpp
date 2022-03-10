@@ -95,7 +95,7 @@ namespace {
         } while(mirrorRequest_Busy == 0);
 
         mirrorRequest_Type.readLatest();
-        switch(mirrorRequest_Type) {
+        switch(static_cast<MirrorRequestType>((int)mirrorRequest_Type)) {
           case MirrorRequestType::from:
             mirrorArea(processVarsMirror, processVarsFeature);
             break;

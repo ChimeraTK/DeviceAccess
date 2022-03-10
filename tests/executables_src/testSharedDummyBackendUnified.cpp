@@ -59,7 +59,7 @@ struct HelperProcess {
     // trigger mirror operation by helper thread and wait on completion
     mirrorRequest.triggerInterrupt->accessData(0) = triggerDataInterrupt ? 1 : 0;
     mirrorRequest.triggerInterrupt->write();
-    mirrorRequest.type->accessData(0) = reqType;
+    mirrorRequest.type->accessData(0) = (int)reqType;
     mirrorRequest.type->write();
     mirrorRequest.busy->accessData(0) = 1;
     mirrorRequest.busy->write();

@@ -5,7 +5,7 @@
 
 #include <sys/file.h>
 
-enum MirrorRequestType { from = 1, to, stop };
+enum class MirrorRequestType : int { from = 1, to, stop };
 
 // Static helper functions
 std::string createExpectedShmName(std::string instanceId_, std::string mapFileName_, std::string userName) {
