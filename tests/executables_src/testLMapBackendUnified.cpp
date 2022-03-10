@@ -547,6 +547,8 @@ struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
 
 struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
   bool isWriteable() { return false; }
+  // turn off the catalogue check. It reports that the register is writeable, which is correct. Writing is just turned off for the test.
+  static constexpr auto capabilities = RegSingleWordScaled<RegSingleWordScaled_R>::capabilities.disableTestCatalogue();
 
   template<typename T, typename Traw>
   T convertRawToCooked(Traw value) {
@@ -556,11 +558,24 @@ struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
 
 struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
   bool isReadable() { return false; }
+  // turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned off for the test.
+  static constexpr auto capabilities = RegSingleWordScaled<RegSingleWordScaled_W>::capabilities.disableTestCatalogue();
 
   // the scale plugin applies the same factor in both directions, so we have to inverse it for write tests
   template<typename T, typename Traw>
   T convertRawToCooked(Traw value) {
     return value / 4.2;
+  }
+};
+
+struct RegSingleWordScaled_RW : RegSingleWordScaled<RegSingleWordScaled_RW> {
+  std::string path() { return "/SingleWord_NotScaled"; }
+
+  // The scale plugin applies the same factor in both directions, so it has to be 1 to make the test pass
+  // for both reading and writing.
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
+    return value;
   }
 };
 
@@ -590,6 +605,10 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
 struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   std::string path() { return "/FullArea_Scaled"; }
   bool isWriteable() { return false; }
+  //Mutliply plugin does not support access mode raw
+  // turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned off for the test.
+  static constexpr auto capabilities =
+      OneDRegisterDescriptorBase<RegFullAreaScaled>::capabilities.disableTestRawTransfer().disableTestCatalogue();
 
   const double increment = std::exp(4.);
   size_t nElementsPerChannel() { return 0x400; }
@@ -601,9 +620,7 @@ struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
 
   typedef double minimumUserType;
   typedef int32_t rawUserType;
-  //Mutliply plugin does not support access mode raw
-  static constexpr auto capabilities =
-      OneDRegisterDescriptorBase<RegFullAreaScaled>::capabilities.disableTestRawTransfer();
+  //Mutliply plugin does not support access mode raw. Capabilities already turned off above.
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
@@ -711,9 +728,11 @@ static double RegVariableAsPushParameterInMathBase_lastX;
 
 template<typename Derived>
 struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Derived> {
-  // test only write direction, as we are writing to the variable parameter in this test
-  static constexpr auto capabilities =
-      ScalarRegisterDescriptorBase<Derived>::capabilities.enableTestWriteOnly().disableTestRawTransfer();
+  // Test only write direction, as we are writing to the variable parameter in this test
+  // Also turn off the catalogue test which would fail because the register actually is readable.
+  static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.enableTestWriteOnly()
+                                           .disableTestRawTransfer()
+                                           .disableTestCatalogue();
 
   // no runtime error test cases, as writes happen to the variable only!
   size_t nRuntimeErrorCases() { return 0; }
@@ -858,6 +877,7 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegBit2OfWordFirmware_push>()
       .addRegister<RegSingleWordScaled_R>()
       .addRegister<RegSingleWordScaled_W>()
+      .addRegister<RegSingleWordScaled_RW>()
       .addRegister<RegSingleWordScaledTwice_push>()
       .addRegister<RegFullAreaScaled>()
       .addRegister<RegWordFirmwareForcedReadOnly>()

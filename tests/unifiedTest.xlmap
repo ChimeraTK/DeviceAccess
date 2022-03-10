@@ -104,6 +104,15 @@
           <parameter name="factor">4.2</parameter>
         </plugin>
     </redirectedRegister>
+    <!-- Used for catalogue test. Tests needs to read and write,-->
+    <!-- so the factor has to be 1 such that the test works in both directions. -->
+    <redirectedRegister name="SingleWord_NotScaled">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">1.</parameter>
+        </plugin>
+    </redirectedRegister>
     <redirectedRegister name="SingleWord_Scaled_Twice_push">
         <targetDevice><par>target3</par></targetDevice>
         <targetRegister>BOARD.WORD_FIRMWARE_ASYNC</targetRegister>

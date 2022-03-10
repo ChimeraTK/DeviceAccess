@@ -225,6 +225,9 @@ namespace ChimeraTK { namespace LNMBackend {
       _target->preRead(type);
     }
 
+    // registers are either readable or writeable
+    bool isReadable() const override { return !_p->_isWrite; }
+
     void doPostRead(TransferType type, bool hasNewData) override;
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;

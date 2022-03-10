@@ -152,6 +152,14 @@ namespace ChimeraTK {
     }
     MapFileParser parser;
     std::tie(_registerMap, _metadataCatalogue) = parser.parse(parameters["map"]);
+    if(type == Type::twoRegisters || type == Type::threeRegisters) {
+      // FIXME: Turn off readable flag in 2reg/3reg mode
+      for(auto info : _registerMap) {
+        // we are modifying a copy here
+        info.registerAccess = NumericAddressedRegisterInfo::Access::WRITE_ONLY;
+        _registerMap.modifyRegister(info); // Should be OK. Should not change the iterator
+      }
+    }
   }
 
   /*******************************************************************************************************************/
