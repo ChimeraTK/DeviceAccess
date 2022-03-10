@@ -77,8 +77,14 @@ namespace {
       ScalarRegisterAccessor<int> mirrorRequest_Busy = dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/BUSY");
       ScalarRegisterAccessor<int> mirrorRequest_Updated =
           dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/UPDATED/DUMMY_WRITEABLE");
+      ScalarRegisterAccessor<int> mirrorRequest_DataInterrupt =
+          dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/DATA_INTERRUPT");
       ScalarRegisterAccessor<int> mirrorRequestUpdated_Interrupt{
           dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_0")};
+
+      ScalarRegisterAccessor<int> dataInterrupt{
+          dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_1")};
+
 
       do {
         // poll Busy until it is set to true, indicating a new request
@@ -89,14 +95,14 @@ namespace {
         } while(mirrorRequest_Busy == 0);
 
         mirrorRequest_Type.readLatest();
-        switch(mirrorRequest_Type) {
-          case mirrorRequest_From:
+        switch(static_cast<MirrorRequestType>((int)mirrorRequest_Type)) {
+          case MirrorRequestType::from:
             mirrorArea(processVarsMirror, processVarsFeature);
             break;
-          case mirrorRequest_To:
+          case MirrorRequestType::to:
             mirrorArea(processVarsFeature, processVarsMirror);
             break;
-          case mirrorRequest_Stop:
+          case MirrorRequestType::stop:
             keepRunning = false;
         }
         mirrorRequest_Updated.readLatest();
@@ -108,6 +114,13 @@ namespace {
 
         mirrorRequest_Busy = 0;
         mirrorRequest_Busy.write();
+
+        mirrorRequest_DataInterrupt.readLatest();
+        if(mirrorRequest_DataInterrupt == 1) {
+          dataInterrupt.write();
+          mirrorRequest_DataInterrupt = 0;
+          mirrorRequest_DataInterrupt.write();
+        }
       } while(keepRunning);
       dev.close();
     }

@@ -14,6 +14,8 @@
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
+#include <boost/move/unique_ptr.hpp>
 #include <boost/unordered_set.hpp>
 
 #include "Exception.h"
@@ -25,9 +27,12 @@
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>
     ShmemAllocator;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-typedef boost::interprocess::vector<pid_t, ShmemAllocator> PidSet;
+typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
 
 namespace ChimeraTK {
+
+  // max. allowed SharedDummyBackend instances using common shared mem segment (global count, over all processes)
+  const int SHARED_MEMORY_N_MAX_MEMBER = 10;
 
   /** The shared dummy device opens a mapping file defining the registers and
    * implements them in shared memory instead of connecting to the real device.
@@ -73,6 +78,8 @@ namespace ChimeraTK {
     // Naming of bars as shared memory elements
     const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";
 
+    class InterruptDispatcherInterface;
+
     // Helper class to manage the shared memory: automatically construct if
     // necessary, automatically destroy if last using process closes.
     class SharedMemoryManager {
@@ -101,8 +108,6 @@ namespace ChimeraTK {
       static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
       static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 160;
 
-      const size_t SHARED_MEMORY_N_MAX_MEMBER = 10;
-
       const char* SHARED_MEMORY_PID_SET_NAME = "PidSet";
       const char* SHARED_MEMORY_REQUIRED_VERSION_NAME = "RequiredVersion";
 
@@ -129,10 +134,16 @@ namespace ChimeraTK {
       // to facilitate compatibility checks later
       unsigned* requiredVersion{nullptr};
 
-      bool _reInitRequired = false;
-
       size_t getRequiredMemoryWithOverhead(void);
-      void checkPidSetConsistency(void);
+      /**
+       * Checks and if needed corrects the state of the pid set, i.e
+       * if accessing processes have been terminated and could not clean up for
+       * themselves, their entries are removed. This way, if at least the last
+       * accessing process exits gracefully, the shared memory will be removed.
+       * returns bool reInitRequired
+       */
+      bool checkPidSetConsistency(void);
+      /// Resets all elements in shared memory except for the pidSet.
       void reInitMemory(void);
       std::vector<std::string> listNamedElements(void);
 
@@ -140,6 +151,7 @@ namespace ChimeraTK {
       // interprocess mutex, has to be accessible by SharedDummyBackend class
       boost::interprocess::named_mutex interprocessMutex;
 
+      boost::movelib::unique_ptr<InterruptDispatcherInterface> intDispatcherIf;
     }; /* class SharedMemoryManager */
 
     // Managed shared memory object
@@ -154,8 +166,135 @@ namespace ChimeraTK {
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
-  };
 
+    /****************** definitions for across-instance triggering ********/
+
+    // We are using the process id as an id of the semaphore which is to be triggered for the interrupt dispatcher
+    // thread. Since there is only one interrupt dispatcher thread per mapped shared memory region in a process, and
+    // the semaphore is set inside the shared memory, this means we can identify all semaphores per shared memory
+    // this way.
+    // However, this implies the restriction that you must not create more than one backend instance per shared memory
+    // region inside a process. E.g. if you wanted to write a test by tricking the backend factory into creating more
+    // than one backend instance for the same process and shared memory, you will have a problem.
+    typedef std::uint32_t SemId;
+
+    // info about interrupt (for API)
+    struct InterruptInfo {
+      InterruptInfo() {}
+      InterruptInfo(int controllerId, int intNumber) : _controllerId(controllerId), _intNumber(intNumber) {}
+      int _controllerId;
+      int _intNumber;
+    };
+
+    /// entry per semaphore in shared memory
+    struct SemEntry {
+      SemEntry() {}
+      boost::interprocess::interprocess_semaphore s{0};
+      SemId semId;
+      bool used = false;
+    };
+
+    /// info about interrupt that can be placed in shm
+    struct InterruptEntry {
+      int _controllerId;
+      int _intNumber;
+      std::uint32_t _counter = 0;
+      bool used = false;
+    };
+
+    /// this limits the allowed number of different (controllerId, intNumber) pairs
+    static const int maxInterruptEntries = 1000;
+
+    /// Shm layout for semaphore management
+    /// not thread safe
+    struct ShmForSems {
+      // In addition to the semaphores themselves, shm stores a vector of
+      // interrupt numbers and their current counts.
+      // Vector entries are not moved and marked as unused when no longer needed.
+      // We need
+      // - a find function which returns list of appropriate  semaphores to be triggered
+      //   current concept does not use interrupt number for that
+      // - add/remove functions to add/remove a semaphore
+      // - functions to update interrupt counts
+
+      typedef boost::interprocess::interprocess_semaphore Sem;
+
+      ShmForSems() {}
+      ShmForSems(const ShmForSems&) = delete;
+
+      /// find unsed semaphore, mark it as used and return pointer to it
+      Sem* addSem(SemId semId);
+      bool removeSem(SemId semId);
+      /// compare against PidSet and remove unused entries
+      void cleanup(PidSet* pidSet);
+
+      /// update shm entry to tell that interrupt is triggered
+      /// implementation: increase interrupt count of given interrupt
+      void addInterrupt(InterruptInfo ii);
+
+      /// find list of semaphores to be triggered for given interrupt info
+      /// if requested, update associated info
+      /// i.e. store interrupt number so it can be found by triggered process
+      std::list<Sem*> findSems(InterruptInfo ii = {}, bool update = false);
+
+      /// for debugging purposes
+      void print();
+
+      SemEntry semEntries[SHARED_MEMORY_N_MAX_MEMBER];
+      InterruptEntry interruptEntries[maxInterruptEntries];
+    };
+
+    struct InterruptDispatcherThread;
+
+    class InterruptDispatcherInterface {
+     public:
+      /// adds semaphore & dispatcher thread on creation of interface
+      /// shm will contain semaphore array and is protected by shmMutex
+      /// <br>Since this object stores a reference to the backend it should be destroyed before the components
+      /// of the backend required by the dispatcher thread
+      InterruptDispatcherInterface(SharedDummyBackend& backend, boost::interprocess::managed_shared_memory& shm,
+          boost::interprocess::named_mutex& shmMutex);
+
+      /// stops dispatcher thread and removes semaphore
+      ~InterruptDispatcherInterface();
+      /// cleanup our objects in given shm. This is only needed when corrupt shm was detected which
+      ///  needs re-initialization
+      /// If pidSet given, remove unmatching entries. Otherwise, remove whole object in shm
+      static void cleanupShm(boost::interprocess::managed_shared_memory& shm);
+      static void cleanupShm(boost::interprocess::managed_shared_memory& shm, PidSet* pidSet);
+
+      /// to be called from process which wishes to trigger some interrupt
+      void triggerInterrupt(int controllerId, int intNumber);
+      boost::interprocess::named_mutex& _shmMutex;
+      SemId _semId;
+      ShmForSems* _semBuf;
+      boost::movelib::unique_ptr<InterruptDispatcherThread> _dispatcherThread;
+      SharedDummyBackend& _backend;
+    };
+
+    struct InterruptDispatcherThread {
+      /// starts dispatcher thread and then registers a semaphore of the semaphore array
+      InterruptDispatcherThread(InterruptDispatcherInterface* dispatcherInterf);
+      InterruptDispatcherThread(const InterruptDispatcherThread&) = delete;
+      /// stops and removes thread
+      ~InterruptDispatcherThread();
+
+      void run();
+      void stop();
+      /// called for each interrupt event. Implements actual dispatching
+      void handleInterrupt(int interruptControllerNumber, int interruptNumber);
+
+     private:
+      // plain pointer, because of cyclic dependency
+      InterruptDispatcherInterface* _dispatcherInterf;
+      SemId _semId;
+      ShmForSems* _semShm;
+      ShmForSems::Sem* _sem = nullptr;
+      boost::thread* _thr;
+      std::atomic_bool _started{false};
+      std::atomic_bool _stop{false};
+    };
+  };
 } // namespace ChimeraTK
 
 #endif // MTCA4U_SHARED_DUMMY_BACKEND_H

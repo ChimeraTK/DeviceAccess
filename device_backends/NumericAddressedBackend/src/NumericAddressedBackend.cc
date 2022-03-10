@@ -192,7 +192,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void NumericAddressedBackend::activateAsyncRead() noexcept {
-    for(auto it : _interruptDispatchers) {
+    for(auto& it : _interruptDispatchers) {
       it.second->activate();
     }
   }
@@ -206,7 +206,7 @@ namespace ChimeraTK {
     }
     catch(...) {
       // FIXME: This is not thread-safe!
-      for(auto it : _interruptDispatchers) {
+      for(auto& it : _interruptDispatchers) {
         it.second->sendException(std::current_exception());
       }
     }
