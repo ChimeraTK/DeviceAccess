@@ -5,8 +5,7 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef CHIMERA_TK_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H
-#define CHIMERA_TK_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H
+#pragma once
 
 #include <algorithm>
 
@@ -32,14 +31,13 @@ namespace ChimeraTK {
       _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
 
       // copy the register info and create the internal accessors, if needed
-      _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
-          _dev->getRegisterCatalogue().getRegister(_registerPathName));
+      _info = _dev->_catalogue_mutable.getBackendRegister(_registerPathName);
 
       // check for incorrect usage of this accessor
-      assert(_info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
+      assert(_info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
 
       // get target device and accessor
-      std::string devName = _info->deviceName;
+      std::string devName = _info.deviceName;
       boost::shared_ptr<DeviceBackend> targetDevice;
       if(devName != "this") {
         targetDevice = _dev->_devices[devName];
@@ -48,12 +46,12 @@ namespace ChimeraTK {
         targetDevice = dev;
       }
       _accessor = targetDevice->getRegisterAccessor<UserType>(
-          RegisterPath(_info->registerName), numberOfWords, wordOffsetInRegister, flags);
+          RegisterPath(_info.registerName), numberOfWords, wordOffsetInRegister, flags);
 
       // verify channel number
-      if(_info->channel >= _accessor->getNumberOfChannels()) {
+      if(_info.channel >= _accessor->getNumberOfChannels()) {
         throw ChimeraTK::logic_error("LNMBackendChannelAccessor: Requested channel number " +
-            std::to_string(_info->channel) +
+            std::to_string(_info.channel) +
             " exceeds number of channels of target register,"
             " in accesor for register '" +
             registerPathName + "'.");
@@ -85,7 +83,7 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override {
       _accessor->postRead(type, hasNewData);
       if(!hasNewData) return;
-      _accessor->accessChannel(_info->channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
+      _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
       this->_versionNumber = _accessor->getVersionNumber();
       this->_dataValidity = _accessor->dataValidity();
     }
@@ -122,7 +120,7 @@ namespace ChimeraTK {
     boost::shared_ptr<LogicalNameMappingBackend> _dev;
 
     /// register information
-    boost::shared_ptr<LNMBackendRegisterInfo> _info;
+    LNMBackendRegisterInfo _info;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return _accessor->getHardwareAccessingElements();
@@ -149,5 +147,3 @@ namespace ChimeraTK {
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LNMBackendChannelAccessor);
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H */

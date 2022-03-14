@@ -10,6 +10,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "Device.h"
+#include "DeviceBackendImpl.h"
 
 // disable shadow warning, boost::mpl::for_each is triggering this warning on Ubuntu 16.04
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -26,7 +27,7 @@ namespace ChimeraTK {
   };
 
   /**
-   *  Descriptor for the test capabilites for each register. This allows a schema evolution of the test. New tests
+   *  Descriptor for the test capabilities for each register. This allows a schema evolution of the test. New tests
    *  which require a new backend-specific function in the test in the register descriptor will be enabled through
    *  a corresponding Capability flag.
    * 
@@ -42,7 +43,9 @@ namespace ChimeraTK {
       TestCapability _switchReadOnly = TestCapability::unspecified,
       TestCapability _switchWriteOnly = TestCapability::unspecified,
       TestCapability _writeNeverLosesData = TestCapability::unspecified,
-      TestCapability _testWriteOnly = TestCapability::disabled, TestCapability _testReadOnly = TestCapability::disabled>
+      TestCapability _testWriteOnly = TestCapability::disabled, TestCapability _testReadOnly = TestCapability::disabled,
+      TestCapability _testRawTransfer = TestCapability::unspecified,
+      TestCapability _testCatalogue = TestCapability::enabled>
   struct TestCapabilities {
     constexpr TestCapabilities() {}
 
@@ -52,57 +55,57 @@ namespace ChimeraTK {
     /// handed out by real backends must always support this, to the syncReadTests capability should be enable for all
     /// backend tests.
     constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         disableSyncRead() const {
       return {};
     }
 
     /// See setForceDataLossWrite() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         enableForceDataLossWrite() const {
       static_assert(_writeNeverLosesData != TestCapability::enabled,
-          "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
+          "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutually exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         disableForceDataLossWrite() const {
       return {};
     }
 
     /// See forceAsyncReadInconsistency() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         enableAsyncReadInconsistency() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         disableAsyncReadInconsistency() const {
       return {};
     }
 
     /// See switchReadOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::enabled,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         enableSwitchReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::disabled,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         disableSwitchReadOnly() const {
       return {};
     }
 
     /// See switchWriteOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::enabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        TestCapability::enabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         enableSwitchWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        TestCapability::disabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly>
+        TestCapability::disabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         disableSwitchWriteOnly() const {
       return {};
     }
@@ -111,39 +114,69 @@ namespace ChimeraTK {
     /// writes is performed and no data loss must be reported.
     /// Mutually exclusive with enableForceDataLossWrite().
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::enabled, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, TestCapability::enabled, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         enableTestWriteNeverLosesData() const {
       static_assert(_forceDataLossWrite != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly>
+        _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue>
         disableTestWriteNeverLosesData() const {
       return {};
     }
 
     /// Enable/disable testing only write operations, even if the register is readable
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, TestCapability::enabled, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::enabled, _testReadOnly, _testRawTransfer,
+        _testCatalogue>
         enableTestWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, TestCapability::disabled, _testReadOnly>
+        _switchWriteOnly, _writeNeverLosesData, TestCapability::disabled, _testReadOnly, _testRawTransfer,
+        _testCatalogue>
         disableTestWriteOnly() const {
       return {};
     }
 
     /// Enable/disable testing only read operations, even if the register is readable
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::enabled>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::enabled, _testRawTransfer,
+        _testCatalogue>
         enableTestReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
-        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::disabled>
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::disabled, _testRawTransfer,
+        _testCatalogue>
         disableTestReadOnly() const {
+      return {};
+    }
+
+    /// Enable/disable testing the raw accessors
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, TestCapability::disabled, _testCatalogue>
+        disableTestRawTransfer() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, TestCapability::enabled, _testCatalogue>
+        enableTestRawTransfer() const {
+      return {};
+    }
+
+    /// Enable/disable testing of catalogue content
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer,
+        TestCapability::disabled>
+        disableTestCatalogue() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer,
+        TestCapability::enabled>
+        enableTestCatalogue() const {
       return {};
     }
 
@@ -155,10 +188,12 @@ namespace ChimeraTK {
     static constexpr TestCapability writeNeverLosesData{_writeNeverLosesData};
     static constexpr TestCapability testWriteOnly{_testWriteOnly};
     static constexpr TestCapability testReadOnly{_testReadOnly};
+    static constexpr TestCapability testRawTransfer{_testRawTransfer};
+    static constexpr TestCapability testCatalogue{_testCatalogue};
   };
 
   /**
-   *  Class to test any backend for correct behavior. Instantiate this class and call all (!) preparatory functions to
+   *  Class to test any backend for correct behaviour. Instantiate this class and call all (!) preparatory functions to
    *  provide the tests with the backend-specific test actions etc. Finally call runTests() to execute all tests.
    *  Internally the BOOST unit test framework is used, so this shall be called inside a normal unit test.
    * 
@@ -166,7 +201,7 @@ namespace ChimeraTK {
    *  more backend specific actions for enabling and disabling test conditions are needed for the tests and the backend
    *  test has not yet been updated, tests will fail.
    * 
-   *  Actions are usually speficied as list of pairs of functors. The pair's first element is always the action to enable
+   *  Actions are usually specified as list of pairs of functors. The pair's first element is always the action to enable
    *  the the test condition, the second is the action to disable it. By providing multiple entries in the lists it is
    *  possible to test several code paths the backend has to end up in the intended test condition.
    *  For example in case of forceRuntimeErrorOnRead(): runtime_errors in a read can be caused by a timeout in the
@@ -178,7 +213,7 @@ namespace ChimeraTK {
    *  In the same way as for the actions, names of registers etc. are provided as lists, so all test can be repeated for
    *  different registers, if required for full coverage.
    * 
-   *  Instatiate with default template argument, then call addRegister() to add any number of registers, i.e.:
+   *  Instantiate with default template argument, then call addRegister() to add any number of registers, i.e.:
    *
    *    auto ubt = UnifiedBackendTest<>.addRegister<RegisterA>().addRegister<RegisterB>().addRegister<RegisterC>()
    *    ubt.runTest("myCDD");
@@ -214,15 +249,19 @@ namespace ChimeraTK {
      *    typedef int32_t minimumUserType;
      *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted, can be omitted otherwise
      * 
-     *    /// Generate value which can be represented by the register, convert it to the UserType (e.g. using
-     *    /// ChimeraTK::numericToUserType) and return it.
-     *    template<typename UserType>
-     *    std::vector<std::vector<UserType>> generateValue();
+     *    /// Generate value which can be represented by the register. Make sure it's different from the
+     *    /// previous one and that it's not all zero to ensure that the test is sensitive.
+     *    /// Template argument 'Type 'can be UserType or RawType if raw is supported. If the 'raw' flag  is
+     *    /// false, data is converted to the UserType (e.g. using ChimeraTK::numericToUserType), otherwise
+     *    /// unconverted (raw) data is returned.
+     *    /// In case the accessor does not support AccessMode::raw, the 'raw' argument can be omitted.
+     *    template<typename Type>
+     *    std::vector<std::vector<Type>> generateValue(bool raw = false);
      *
-     *    /// Obtain the current value of the register, convert it to the UserType (e.g. using
-     *    /// ChimeraTK::numericToUserType) and return it.
-     *    template<typename UserType>
-     *    std::vector<std::vector<UserType>> getRemoteValue();
+     *    /// Obtain the current value of the register. The value can be raw or converted to
+     *    /// UserType (see generateValue()).  In case the accessor does not support AccessMode::raw, the 'raw' argument can be omitted.
+     *    template<typename Type>
+     *    std::vector<std::vector<Type>> getRemoteValue(bool raw = false);
      *
      *    /// Set remote value to a value generated in the same way as in generateValue().
      *    void setRemoteValue();
@@ -244,7 +283,7 @@ namespace ChimeraTK {
      *    /// Used by setForceDataLossWrite(). Can be omitted if Capability forceDataLossWrite = disabled.
      *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}
      * 
-     *    /// Force data loss during write operations. It is expected that data loss occurse exactly writeQueueLength
+     *    /// Force data loss during write operations. It is expected that data loss occurs exactly writeQueueLength
      *    /// write operations after calling this function with enable=true.
      *    /// Can be omitted if Capability forceDataLossWrite = disabled.
      *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
@@ -252,7 +291,7 @@ namespace ChimeraTK {
      *    void setForceDataLossWrite(bool enable);
      * 
      *    /// Do whatever necessary that data last received via a push-type subscription is inconsistent with the actual 
-     *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishng
+     *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishing
      *    /// the update to the subscribers.
      *    /// Can be omitted if Capability asyncReadInconsistency = disabled. This should be done only if such
      *    /// inconsistencies are already prevented by the protocol.
@@ -275,7 +314,7 @@ namespace ChimeraTK {
      *  any data (e.g. seeds for generating values), use static member variables.
      * 
      *  Properties of the register are implemented as functions instead of data members to make it easier to override
-     *  values when using a common base clase for multiple descriptors to avoid code duplication (without triggering a
+     *  values when using a common base class for multiple descriptors to avoid code duplication (without triggering a
      *  shadowing warning).
      */
     template<typename REG_T>
@@ -286,7 +325,7 @@ namespace ChimeraTK {
     }
 
     /**
-     *  "Strong typedef" for list of pairs of functors for enabling and disbaling a test condition.
+     *  "Strong typedef" for list of pairs of functors for enabling and disabling a test condition.
      */
     class EnableDisableActionList : public std::list<std::pair<std::function<void(void)>, std::function<void(void)>>> {
      public:
@@ -348,6 +387,9 @@ namespace ChimeraTK {
     void test_C_5_3_3();
     void test_NOSPEC_valueAfterConstruction();
     void test_NOSPEC_backendNotClosedAfterException();
+    void test_NOSPEC_rawTransfer();
+    void test_NOSPEC_catalogueRaw();
+    void test_NOSPEC_catalogueReadWrite();
 
     /// Utility functions for recurring tasks
     void recoverDevice(ChimeraTK::Device& d);
@@ -393,7 +435,7 @@ namespace ChimeraTK {
     /// CDD for backend to test
     std::string cdd, cdd2;
 
-    /// Flag wheter to disable tests for the backend itself
+    /// Flag whether to disable tests for the backend itself
     bool _testOnlyTransferElement{false};
 
     /// Special DeviceBackend used for testing the exception reporting to the backend
@@ -417,6 +459,8 @@ namespace ChimeraTK {
       void close() override {}
       bool isFunctional() const override { return false; }
       std::string readDeviceInfo() override { return ""; }
+
+      RegisterCatalogue getRegisterCatalogue() const override { throw; }
 
      private:
       boost::shared_ptr<DeviceBackend> _target;
@@ -673,8 +717,8 @@ namespace ChimeraTK {
   }                                                                                                                    \
   (void)(0)
 
-// Simiar to CHECK_EQUALITY, but runs readLatest() on the accessor in a loop until the expected value has arrived, for
-// at most maxMillisecods. If the expected value is not seen within that time, an error is risen.
+// Similar to CHECK_EQUALITY, but runs readLatest() on the accessor in a loop until the expected value has arrived, for
+// at most maxMilliseconds. If the expected value is not seen within that time, an error is risen.
 #define CHECK_EQUALITY_TIMEOUT(accessor, expectedValue, maxMilliseconds)                                               \
   {                                                                                                                    \
     typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
@@ -889,6 +933,9 @@ namespace ChimeraTK {
     test_C_5_3_3();
     test_NOSPEC_valueAfterConstruction();
     test_NOSPEC_backendNotClosedAfterException();
+    test_NOSPEC_rawTransfer();
+    test_NOSPEC_catalogueRaw();
+    test_NOSPEC_catalogueReadWrite();
   }
 
   /********************************************************************************************************************/
@@ -1098,7 +1145,7 @@ namespace ChimeraTK {
 /********************************************************************************************************************/
 
 /// Helper macros for test_B_4_2_4
-#define STORE_APPLICATION_BUFFER(UserType, accessor)                                                                   \
+#define ALTER_AND_STORE_APPLICATION_BUFFER(UserType, accessor)                                                         \
   std::vector<std::vector<UserType>> STORE_APPLICATION_BUFFER_data;                                                    \
   VersionNumber STORE_APPLICATION_BUFFER_version;                                                                      \
   DataValidity STORE_APPLICATION_BUFFER_validity;                                                                      \
@@ -1142,7 +1189,7 @@ namespace ChimeraTK {
       reg = theValue;
       VersionNumber ver;
       te->preWrite(TransferType::write, ver);
-      STORE_APPLICATION_BUFFER(UserType, reg);
+      ALTER_AND_STORE_APPLICATION_BUFFER(UserType, reg);
       te->writeTransfer(ver);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->postWrite(TransferType::write, ver);
@@ -1162,7 +1209,7 @@ namespace ChimeraTK {
       reg = theValue;
       VersionNumber ver;
       te->preWrite(TransferType::writeDestructively, ver);
-      STORE_APPLICATION_BUFFER(UserType, reg);
+      ALTER_AND_STORE_APPLICATION_BUFFER(UserType, reg);
       te->writeTransferDestructively(ver);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->postWrite(TransferType::writeDestructively, ver);
@@ -1181,7 +1228,7 @@ namespace ChimeraTK {
       auto theValue = x.template generateValue<UserType>();
       reg = theValue;
       VersionNumber ver;
-      STORE_APPLICATION_BUFFER(UserType, reg);
+      ALTER_AND_STORE_APPLICATION_BUFFER(UserType, reg);
       te->preRead(TransferType::read);
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->readTransfer();
@@ -1916,7 +1963,7 @@ namespace ChimeraTK {
         d.close();
       }
 
-      // Second check: Concurrent updates do not cause inconsistency. Note: This test cannot possilby cover all
+      // Second check: Concurrent updates do not cause inconsistency. Note: This test cannot possibly cover all
       // potential scenarios for race conditions, hence only one simple scenario is tested.
       {
         // Set initial remote value, to make sure it is different from the next remote value set below
@@ -2374,7 +2421,7 @@ namespace ChimeraTK {
 
       // recover device
       this->recoverDevice(d);
-      d.activateAsyncRead(); // re-activate asyn read after recovery
+      d.activateAsyncRead(); // re-activate async read after recovery
     });
 
     // close device again
@@ -2433,14 +2480,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /**
-   *  Test doReadTransferSynchonously throws runtime_error after setException() until recovery
+   *  Test doReadTransferSynchronously throws runtime_error after setException() until recovery
    *  * \anchor UnifiedTest_TransferElement_B_9_4_1 \ref transferElement_B_9_4_1 "B.9.4.1"
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_9_4_1() {
     if(_testOnlyTransferElement) return;
     std::cout
-        << "--- test_B_9_4_1 - doReadTransferSynchonously throws runtime_error after setException() until recovery"
+        << "--- test_B_9_4_1 - doReadTransferSynchronously throws runtime_error after setException() until recovery"
         << std::endl;
     Device d(cdd);
     d.open();
@@ -2984,7 +3031,7 @@ namespace ChimeraTK {
         // disable exceptions on read
         x.setForceRuntimeError(false, i);
 
-        // recover shouldn't even be necessary, since no communcation happened
+        // recover shouldn't even be necessary, since no communication happened
         BOOST_CHECK(d.isFunctional() == true);
       }
     });
@@ -3049,7 +3096,7 @@ namespace ChimeraTK {
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
 
-        // check a failed attept to recover does not change this
+        // check a failed attempt to recover does not change this
         BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
@@ -3084,7 +3131,7 @@ namespace ChimeraTK {
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
 
-        // check a failed attept to recover does not change this
+        // check a failed attempt to recover does not change this
         BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
@@ -3118,7 +3165,7 @@ namespace ChimeraTK {
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
 
-        // check a failed attept to recover does not change this
+        // check a failed attempt to recover does not change this
         BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
         BOOST_CHECK(d.isOpened());
         BOOST_CHECK(!d.isFunctional());
@@ -3154,7 +3201,7 @@ namespace ChimeraTK {
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
 
-          // check a failed attept to recover does not change this
+          // check a failed attempt to recover does not change this
           BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
@@ -3198,7 +3245,7 @@ namespace ChimeraTK {
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
 
-          // check a failed attept to recover does not change this
+          // check a failed attempt to recover does not change this
           BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
@@ -3241,7 +3288,7 @@ namespace ChimeraTK {
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
 
-          // check a failed attept to recover does not change this
+          // check a failed attempt to recover does not change this
           BOOST_CHECK_THROW(d.open(), runtime_error); // no test intended, just catch
           BOOST_CHECK(d.isOpened());
           BOOST_CHECK(!d.isFunctional());
@@ -3267,6 +3314,178 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  /**
+   *  Test that the backend does not close itself after seeing an exception
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_rawTransfer() {
+    std::cout << "--- test_NOSPEC_rawTransfer - test creation and reading/writing with access mode raw." << std::endl;
+    Device d(cdd);
+    d.open();
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      // the test itself requires an extended interface, so the test can be disabled
+      if constexpr(x.capabilities.testRawTransfer == TestCapability::enabled) {
+        auto registerName = x.path();
+        std::cout << "... registerName = " << registerName << std::endl;
+
+        BOOST_REQUIRE_MESSAGE(this->isRaw(x),
+            "Test configuration error: testRawTransfer is enabled for register without AccessMode::raw!");
+
+        typedef typename decltype(x)::minimumUserType UserType;
+        typedef typename decltype(x)::rawUserType RawType;
+        // Use double as example for a not working user type
+        BOOST_CHECK_THROW(
+            d.getTwoDRegisterAccessor<double>(registerName, 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
+        try {
+          // test creation
+          auto reg = d.getTwoDRegisterAccessor<RawType>(registerName, 0, 0, {AccessMode::raw});
+          // the test itself requires an extended interface, so the test can be disabled
+          if(x.isReadable()) {
+            x.template setRemoteValue();
+            reg.read();
+            auto expectedRawValue = x.template getRemoteValue<RawType>(/* raw = */ true);
+            CHECK_EQUALITY(reg, expectedRawValue);
+
+            auto expectedCookedValue = x.template getRemoteValue<UserType>();
+            // fill into a vector<vector> and use CHECK_EQUALITY_VECTOR. This stops at the first mismatch, prints a good error message, checks for all elements 0 etc.
+            std::vector<std::vector<UserType>> readCookedValue;
+            for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
+              std::vector<UserType> readCookedChannel;
+              for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
+                readCookedChannel.push_back(reg.template getAsCooked<UserType>(channel, element));
+              }
+              readCookedValue.push_back(readCookedChannel);
+            }
+            CHECK_EQUALITY_VECTOR(readCookedValue, expectedCookedValue);
+          }
+          if(x.isWriteable()) {
+            auto newValue = x.template generateValue<RawType>(/* raw = */ true);
+            reg = newValue;
+            reg.write();
+            auto readbackValue = x.template getRemoteValue<RawType>(/* raw = */ true);
+            CHECK_EQUALITY_VECTOR(readbackValue, newValue);
+
+            // test setting as cooked
+            auto newCookedValue = x.template generateValue<UserType>();
+            for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
+              for(size_t element = 0; element < reg.getNElementsPerChannel(); ++element) {
+                reg.template setAsCooked<UserType>(channel, element, newCookedValue[channel][element]);
+              }
+            }
+            reg.write();
+
+            auto readbackCookedValue = x.template getRemoteValue<UserType>();
+            CHECK_EQUALITY_VECTOR(readbackCookedValue, newCookedValue);
+          }
+        }
+        catch(std::exception& e) {
+          BOOST_CHECK_MESSAGE(false, std::string("Unexpected expeption: ") + e.what());
+        }
+      } // end of constexpr if
+      if(this->isRaw(x)) {
+        if(x.capabilities.testRawTransfer == TestCapability::disabled) {
+          BOOST_REQUIRE_MESSAGE(false,
+              "Test configuration error: testRawTransfer is disabled for register '" + std::string(x.path()) +
+                  "' with AccessMode::raw!");
+        }
+        else if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
+          std::cout << "WARNING: testRawTransfer capability unspecified for register '" + std::string(x.path()) +
+                  "' with AccessMode::raw. This will turn into a test configuration error in a future release!"
+                    << std::endl;
+        }
+      }
+      else {
+        if(x.capabilities.testRawTransfer == TestCapability::unspecified) {
+          std::cout << "Warning: testRawTransfer capability unspecified for register '" + std::string(x.path()) +
+                  "' without AccessMode::raw. Please explicitly disable this test."
+                    << std::endl;
+        }
+      }
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test that the catalogue information for the raw accessor is correct
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_catalogueRaw() {
+    std::cout << "--- test_NOSPEC_catalogueRaw - test catalogue entries for access mode raw." << std::endl;
+    Device d(cdd);
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(x.capabilities.testCatalogue == TestCapability::disabled) {
+        return;
+      }
+
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // workaround for DUMMY_WRITABLE not having information in the catalogue yet
+      if(std::string(registerName).find("DUMMY_WRITEABLE") != std::string::npos) {
+        return;
+      }
+
+      if(std::string(registerName).find("DUMMY_INTERRUPT_") != std::string::npos) {
+        return;
+      }
+
+      auto registerInfo = d.getRegisterCatalogue().getRegister(registerName);
+
+      if(this->isRaw(x)) {
+        BOOST_CHECK(registerInfo.getSupportedAccessModes().has(AccessMode::raw));
+        BOOST_TEST(registerInfo.getDataDescriptor().rawDataType() != DataType::none);
+      }
+      else {
+        BOOST_CHECK(not registerInfo.getSupportedAccessModes().has(AccessMode::raw));
+        BOOST_TEST(registerInfo.getDataDescriptor().rawDataType() == DataType::none);
+      }
+    });
+  }
+
+  /**
+   *  Test that the catalogue and accessor information for read and write are correct.
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_catalogueReadWrite() {
+    std::cout << "--- test_NOSPEC_catalogueReadWrite- test catalogue and accessor entries for read/write." << std::endl;
+    Device d(cdd);
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(x.capabilities.testCatalogue == TestCapability::disabled) {
+        return;
+      }
+
+      typedef typename decltype(x)::minimumUserType UserType;
+
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+
+      // workaround for DUMMY_WRITABLE not having information in the catalogue yet
+      if(std::string(registerName).find("DUMMY_WRITEABLE") != std::string::npos) {
+        return;
+      }
+
+      if(std::string(registerName).find("DUMMY_INTERRUPT_") != std::string::npos) {
+        return;
+      }
+
+      auto registerInfo = d.getRegisterCatalogue().getRegister(registerName);
+      auto accessor = d.getScalarRegisterAccessor<UserType>(registerName);
+
+      BOOST_CHECK_EQUAL(this->isRead(x), registerInfo.isReadable());
+      BOOST_CHECK_EQUAL(this->isRead(x), accessor.isReadable());
+      BOOST_CHECK_EQUAL(this->isWrite(x), registerInfo.isWriteable());
+      BOOST_CHECK_EQUAL(this->isWrite(x), accessor.isWriteable());
+    });
+  }
+
+  /********************************************************************************************************************/
   /**
    *  Test small getter functions of accessors
    * 

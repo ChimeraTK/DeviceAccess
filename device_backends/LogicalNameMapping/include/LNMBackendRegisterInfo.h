@@ -5,8 +5,7 @@
  *      Author: mhier
  */
 
-#ifndef CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
-#define CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
+#pragma once
 
 #include <mutex>
 
@@ -15,6 +14,8 @@
 #include "ForwardDeclarations.h"
 #include "RegisterInfo.h"
 #include "TransferElement.h"
+#include "BackendRegisterCatalogue.h"
+#include "BackendRegisterInfoBase.h"
 
 namespace ChimeraTK {
 
@@ -23,19 +24,19 @@ namespace ChimeraTK {
   }
 
   /** RegisterInfo structure for the LogicalNameMappingBackend */
-  class LNMBackendRegisterInfo : public RegisterInfo {
+  class LNMBackendRegisterInfo : public BackendRegisterInfoBase {
    public:
     /** Potential target types */
     enum TargetType { INVALID, REGISTER, CHANNEL, BIT, CONSTANT, VARIABLE };
 
     /** constuctor: initialise values */
     LNMBackendRegisterInfo() : targetType(TargetType::INVALID), supportedFlags({}) {}
+    LNMBackendRegisterInfo(const LNMBackendRegisterInfo&) = default;
+    LNMBackendRegisterInfo& operator=(const LNMBackendRegisterInfo& other) = default;
 
     RegisterPath getRegisterName() const override { return name; }
 
     unsigned int getNumberOfElements() const override { return length; }
-
-    unsigned int getNumberOfDimensions() const override { return nDimensions; }
 
     unsigned int getNumberOfChannels() const override { return nChannels; }
 
@@ -71,35 +72,32 @@ namespace ChimeraTK {
     /** The bit of the target register (if TargetType::BIT) */
     unsigned int bit;
 
-    /** The number of dimensions of the logical register */
-    unsigned int nDimensions;
-
     /** The number of channels of the logical register */
     unsigned int nChannels;
 
     /** Data type of CONSTANT or VARIABLE type. */
     DataType valueType;
 
-    /** Hold values of CONSTANT or VARIABLE types in a type-dependent table. Only the entry matching the valueType
-     *  is actually valid.
-     *  Note: We cannot directly put the std::vector in a TemplateUserTypeMap, since it has more than one template
-     *  arguments (with defaults). */
-    template<typename T>
-    struct ValueTable {
-      std::vector<T> latestValue;
-      DataValidity latestValidity;
-      VersionNumber latestVersion;
-      struct QueuedValue {
-        std::vector<T> value;
-        DataValidity validity;
-        VersionNumber version;
-      };
-      std::map<TransferElementID, cppext::future_queue<QueuedValue>> subscriptions;
-    };
-    TemplateUserTypeMap<ValueTable> valueTable;
+    //    /** Hold values of CONSTANT or VARIABLE types in a type-dependent table. Only the entry matching the valueType
+    //     *  is actually valid.
+    //     *  Note: We cannot directly put the std::vector in a TemplateUserTypeMap, since it has more than one template
+    //     *  arguments (with defaults). */
+    //    template<typename T>
+    //    struct ValueTable {
+    //      std::vector<T> latestValue;
+    //      DataValidity latestValidity;
+    //      VersionNumber latestVersion;
+    //      struct QueuedValue {
+    //        std::vector<T> value;
+    //        DataValidity validity;
+    //        VersionNumber version;
+    //      };
+    //      std::map<TransferElementID, cppext::future_queue<QueuedValue>> subscriptions;
+    //    };
+    //    TemplateUserTypeMap<ValueTable> valueTable;
 
-    /** Mutex one needs to hold while accessing valueTable. */
-    std::mutex valueTable_mutex;
+    //    /** Mutex one needs to hold while accessing valueTable. */
+    //    std::mutex valueTable_mutex;
 
     /** Flag if the register is readable. Might be derived from the target
      * register */
@@ -116,8 +114,19 @@ namespace ChimeraTK {
     std::vector<boost::shared_ptr<LNMBackend::AccessorPluginBase>> plugins;
 
     DataDescriptor _dataDescriptor;
+
+    [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
+      return std::make_unique<LNMBackendRegisterInfo>(*this);
+    }
   };
+  /********************************************************************************************************************/
 
+  /*class LNMRegisterCatalogue : public BackendRegisterCatalogue<LNMBackendRegisterInfo> {
+    public:
+      LNMRegisterCatalogue() = default;
+      LNMRegisterCatalogue& operator=(const LNMRegisterCatalogue& other) = default;
+      LNMRegisterCatalogue(const LNMRegisterCatalogue&) = default;
+  };*/
+
+  /********************************************************************************************************************/
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H */

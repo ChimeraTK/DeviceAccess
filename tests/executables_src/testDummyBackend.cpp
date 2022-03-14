@@ -3,7 +3,6 @@
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include "Device.h"
 #include "BackendFactory.h"
@@ -13,6 +12,10 @@
 
 //FIXME Remove
 #include <regex>
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {
@@ -33,15 +36,17 @@ using namespace ChimeraTK;
 
 static BackendFactory& FactoryInstance = BackendFactory::getInstance();
 
-/** The TestableDummybackend is derived from
+/** 
+ *  The TestableDummybackend is derived from
  *  DummyBackend to get access to the protected members.
  *  This is done by declaring DummybackendTest as a friend.
+ *  
+ *  FIXME get away from testing implementation details!
  */
 class TestableDummyBackend : public DummyBackend {
  public:
   explicit TestableDummyBackend(std::string mapFileName) : DummyBackend(mapFileName) {}
   using DummyBackend::checkSizeIsMultipleOfWordSize;
-  using DummyBackend::_registerMapping;
   using DummyBackend::_barContents;
   using DummyBackend::setReadOnly;
   using DummyBackend::AddressRange;
@@ -115,11 +120,10 @@ BOOST_AUTO_TEST_CASE(testCheckSizeIsMultipleOfWordSize) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
+  // WORD_CLK_RST                      0x00000001    0x00000040    0x00000004    0x00000000       32         0         0
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING, mappingElement);
-  uint64_t offset = mappingElement.address;
-  uint64_t bar = mappingElement.bar;
+  uint64_t offset = 0x40;
+  uint64_t bar = 0;
   int32_t dataContent = -1;
   // BOOST_CHECK_NO_THROW(dummyBackend->readReg(bar, offset, &dataContent));
   BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &dataContent, 4));
@@ -142,14 +146,13 @@ BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
+  // WORD_CLK_MUX                      0x00000004    0x00000020    0x00000010    0x00000000       32         0         0
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
-  uint64_t offset = mappingElement.address;
-  uint64_t bar = mappingElement.bar;
-  size_t sizeInBytes = mappingElement.nBytes;
-  size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
+  uint64_t offset = 0x20;
+  uint64_t bar = 0;
+  size_t sizeInBytes = 0x10;
+  size_t sizeInWords = 0x4;
   std::vector<int32_t> dataContent(sizeInWords, -1);
 
   BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes));
@@ -198,6 +201,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
 
 /**********************************************************************************************************************/
 
+#if 0
 BOOST_AUTO_TEST_CASE(testReadDeviceInfo) {
   std::string deviceInfo;
   auto dummyBackend = FactoryInstance.createBackend("DUMMYD0");
@@ -211,18 +215,18 @@ BOOST_AUTO_TEST_CASE(testReadDeviceInfo) {
 
   BOOST_CHECK(deviceInfo == (std::string("DummyBackend with mapping file ") + absolutePathToMapfile));
 }
+#endif
 
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadOnly) {
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
-  uint64_t offset = mappingElement.address;
-  uint64_t bar = mappingElement.bar;
-  size_t sizeInBytes = mappingElement.nBytes;
-  size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
+  // WORD_CLK_MUX                      0x00000004    0x00000020    0x00000010    0x00000000       32         0         0
+  uint64_t offset = 0x20;
+  uint64_t bar = 0;
+  size_t sizeInBytes = 0x10;
+  size_t sizeInWords = 0x4;
   std::stringstream errorMessage;
   errorMessage << "This register should have 4 words. If you changed your "
                   "mapping you have to adapt the testReadOnly() test.";
@@ -453,6 +457,23 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnlyRegister) {
   // for the following test cases
 }
 
+BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
+  ChimeraTK::Device dummyDevice;
+  dummyDevice.open("DUMMYD0");
+
+  // Also get pointer to the backend in order to check the catalogue
+  TestableDummyBackend* dummyBackend = f.getBackendInstance();
+
+  const std::string DUMMY_INTERRUPT{"/DUMMY_INTERRUPT_3_0"};
+  auto ro_register = dummyDevice.getScalarRegisterAccessor<int>(DUMMY_INTERRUPT);
+
+  // The suffixed register must not appear in the catalogue
+  BOOST_CHECK(!dummyBackend->getRegisterCatalogue().hasRegister(DUMMY_INTERRUPT));
+
+  // Don't close the device here because the backend needs to stay open
+  // for the following test cases
+}
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAddressRange) {
@@ -521,9 +542,9 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
   BOOST_REQUIRE(bar2Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar2Iter->second.size() == 0x400); // 0x1000 bytes in 32 bit words
 
-  // the "prtmapFile" has an implicit converion to bool to check
+  // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL
-  BOOST_CHECK(dummyBackend->_registerMapping);
+  //BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());
   // it must always be possible to re-open a backend
   dummyBackend->open();
@@ -543,8 +564,6 @@ BOOST_AUTO_TEST_CASE(testClose) {
   f._backendInstance->close();
   /** backend should not be open now */
   BOOST_CHECK(f._backendInstance->isOpen() == false);
-  /** backend should remain in connected state */
-  BOOST_CHECK(f._backendInstance->isConnected() == true);
 }
 
 /**********************************************************************************************************************/
@@ -552,7 +571,6 @@ BOOST_AUTO_TEST_CASE(testClose) {
 BOOST_AUTO_TEST_CASE(testOpen) {
   f._backendInstance->open();
   BOOST_CHECK(f._backendInstance->isOpen() == true);
-  BOOST_CHECK(f._backendInstance->isConnected() == true);
 }
 
 /**********************************************************************************************************************/
@@ -563,28 +581,29 @@ BOOST_AUTO_TEST_CASE(testCreateBackend) {
   BOOST_CHECK_THROW(DummyBackend::createInstance("", pararmeters), ChimeraTK::logic_error);
   /** Try creating a non existing backend */
   BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
-  /** Try creating an existing backend - don't use EXISTING_DEVICE here as it bypasses the dummy's factory */
-  auto backendInstance = FactoryInstance.createBackend("(dummy:createTest?map=" TEST_MAPPING_FILE ")");
+  std::string cdd1 = "(dummy?map=" TEST_MAPPING_FILE ")";
+  auto backendInstance = FactoryInstance.createBackend(cdd1);
   BOOST_CHECK(backendInstance);
-  /** backend should be in connect state now */
-  BOOST_CHECK(backendInstance->isConnected() == true);
   /** backend should not be in open state */
   BOOST_CHECK(backendInstance->isOpen() == false);
 
-  /** check if instance name is working properly */
-  pararmeters["map"] = TEST_MAPPING_FILE;
-  auto inst1 = DummyBackend::createInstance("", pararmeters);
-  auto inst2 = DummyBackend::createInstance("", pararmeters);
-  auto inst3 = DummyBackend::createInstance("FOO", pararmeters);
-  auto inst4 = DummyBackend::createInstance("FOO", pararmeters);
-  auto inst5 = DummyBackend::createInstance("BAR", pararmeters);
-  BOOST_CHECK(inst1.get() != inst2.get());
-  BOOST_CHECK(inst1.get() != inst3.get());
-  BOOST_CHECK(inst1.get() != inst4.get());
-  BOOST_CHECK(inst1.get() != inst5.get());
+  /** check that the creation of different instances with the same map file */
+  auto instance2 = BackendFactory::getInstance().createBackend(cdd1);
+  std::string cdd3 = "(dummy:FOO?map=" TEST_MAPPING_FILE ")";
+  auto instance3 = BackendFactory::getInstance().createBackend(cdd3);
+  auto instance4 = BackendFactory::getInstance().createBackend(cdd3);
+  std::string cdd5 = "(dummy:BAR?map=" TEST_MAPPING_FILE ")";
+  auto instance5 = BackendFactory::getInstance().createBackend(cdd5);
 
-  BOOST_CHECK(inst3.get() == inst4.get());
-  BOOST_CHECK(inst3.get() != inst5.get());
+  // instance 1 and 2 are the same
+  BOOST_CHECK(backendInstance.get() == instance2.get());
+  // instance 3 and 4 are the same
+  BOOST_CHECK(instance3.get() == instance4.get());
+
+  // instances 1, 3 and 5 are all different
+  BOOST_CHECK(backendInstance.get() != instance3.get());
+  BOOST_CHECK(backendInstance.get() != instance5.get());
+  BOOST_CHECK(instance3.get() != instance5.get());
 }
 
 /**********************************************************************************************************************/

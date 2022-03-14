@@ -9,8 +9,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  MultiplierPlugin::MultiplierPlugin(
-      boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters)
+  MultiplierPlugin::MultiplierPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin(info) {
     // extract parameters
     if(parameters.find("factor") == parameters.end()) {
@@ -21,15 +20,12 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MultiplierPlugin::updateRegisterInfo() {
-    // Change data type to non-integral, if we are multiplying with a non-integer factor
-    if(std::abs(_factor - std::round(_factor)) <= std::numeric_limits<double>::epsilon()) {
-      auto info = _info.lock();
-      auto d = info->_dataDescriptor;
-      info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(d.fundamentalType(), false, false,
-          std::numeric_limits<double>::max_digits10, -std::numeric_limits<double>::min_exponent10, d.rawDataType(),
-          d.transportLayerDataType());
-    }
+  void MultiplierPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // first update the info so we have the latest version from the catalogue.
+    _info = catalogue.getBackendRegister(_info.name);
+    _info._dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
+    _info.supportedFlags.remove(AccessMode::raw);
+    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/

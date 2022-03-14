@@ -29,32 +29,27 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  const RegisterCatalogue& Device::getRegisterCatalogue() const {
+  RegisterCatalogue Device::getRegisterCatalogue() const {
     checkPointersAreNotNull();
     return _deviceBackendPointer->getRegisterCatalogue();
   }
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<const RegisterInfoMap> Device::getRegisterMap() const {
+  MetadataCatalogue Device::getMetadataCatalogue() const {
     checkPointersAreNotNull();
-    auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_deviceBackendPointer);
-    if(!castedBackend) {
-      throw ChimeraTK::logic_error("Device::getRegisterMap() called for a "
-                                   "non-NumericAddressedBackend. Use "
-                                   "Device::getRegisterCatalogue() instead!");
-    }
-    return castedBackend->getRegisterMap();
+    return _deviceBackendPointer->getMetadataCatalogue();
   }
 
   /********************************************************************************************************************/
-
+#if 0
   boost::shared_ptr<RegisterAccessor> Device::getRegisterAccessor(
       const std::string& regName, const std::string& module) const {
     checkPointersAreNotNull();
     return boost::shared_ptr<RegisterAccessor>(
         new RegisterAccessor(_deviceBackendPointer, RegisterPath(module) / regName));
   }
+#endif
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -279,34 +274,6 @@ namespace ChimeraTK {
     _deviceBackendPointer = factoryInstance.createBackend(aliasName);
     _deviceBackendPointer->open();
   }
-
-  /********************************************************************************************************************/
-
-  void Device::open(boost::shared_ptr<DeviceBackend>,
-      boost::shared_ptr<ChimeraTK::RegisterInfoMap>&) { // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Usage of removed function detected.                         "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Signature:                                                  "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Device::open(boost::shared_ptr<DeviceBackend>, "
-                 "boost::shared_ptr<ChimeraTK::RegisterInfoMap>&) **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "**                                                             "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Use open() by alias name instead!                           "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::terminate();
-  } // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
 

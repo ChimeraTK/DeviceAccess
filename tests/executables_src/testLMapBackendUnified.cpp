@@ -1,3 +1,4 @@
+
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE LMapBackendUnifiedTest
 #include <boost/test/unit_test.hpp>
@@ -17,7 +18,7 @@ BOOST_AUTO_TEST_SUITE(LMapBackendUnifiedTestSuite)
 
 /**********************************************************************************************************************/
 
-static boost::shared_ptr<ExceptionDummy> exceptionDummy, exceptionDummy2, exceptionDummy3;
+static boost::shared_ptr<ExceptionDummy> exceptionDummyLikeMtcadummy, exceptionDummyMuxed, exceptionDummyPush;
 static boost::shared_ptr<LogicalNameMappingBackend> lmapBackend;
 
 /**********************************************************************************************************************/
@@ -33,7 +34,9 @@ struct RegisterDescriptorBase {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
+  // Note: I set enableTestRawTransfer to enabled here and disable it where necessary, so new registers will be tested by default.
 
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
@@ -52,7 +55,7 @@ struct RegisterDescriptorBase {
     dummy.throwExceptionWrite = enable;
     dummy.throwExceptionOpen = enable;
     if(derived->isPush() && enable) {
-      dummy.triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
+      dummy.triggerInterrupt(5, 6);
     }
   }
 };
@@ -61,6 +64,7 @@ struct RegisterDescriptorBase {
 template<typename Derived>
 struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
+  static constexpr auto capabilities = RegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
 
   size_t nChannels() { return 1; }
   bool isWriteable() { return false; }
@@ -89,8 +93,8 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       derived->acc[derived->channel][k] = v[k];
     }
     if(derived->isPush()) {
-      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend())
-          .triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
+      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
+      dynamic_cast<DummyBackend&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
     }
   }
 };
@@ -105,24 +109,25 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   size_t myOffset() { return 0; }
 
   // T is always minimumUserType, but C++ doesn't allow to use Derived::minimumUserType here (circular dependency)
-  template<typename T>
-  T convertRawToCooked(T value) {
-    return value;
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
+    return static_cast<T>(value);
   }
 
   template<typename UserType>
   void generateValueHook(std::vector<UserType>&) {} // override in derived if needed
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue(bool getRaw = false) {
-    std::vector<UserType> v;
+  // type can be user type or raw type
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool getRaw = false) {
+    std::vector<Type> v;
     typedef typename Derived::rawUserType Traw;
     typedef typename Derived::minimumUserType T;
     auto cv = derived->template getRemoteValue<Traw>(true)[0];
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      Traw e = cv[i] + derived->increment * (static_cast<T>(i) + 1);
+      Traw e = cv[i] + derived->increment * (static_cast<Traw>(i) + 1);
       if(!getRaw) {
-        v.push_back(derived->template convertRawToCooked<T>(e));
+        v.push_back(derived->template convertRawToCooked<T, Traw>(e));
       }
       else {
         v.push_back(static_cast<T>(e));
@@ -140,10 +145,11 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       Traw e = derived->acc[i + derived->myOffset()];
       if(!getRaw) {
-        v.push_back(derived->template convertRawToCooked<T>(e));
+        v.push_back(derived->template convertRawToCooked<T, Traw>(e));
       }
       else {
-        v.push_back(static_cast<T>(e));
+        v.push_back(static_cast<T>(
+            e)); // you can only use raw if user type and raw type are the same, so the static cast is a no-op
       }
     }
     return {v};
@@ -155,8 +161,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       derived->acc[i + derived->myOffset()] = v[i];
     }
     if(derived->isPush()) {
-      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend())
-          .triggerPush(derived->acc.getRegisterPath() / "PUSH_READ");
+      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
     }
   }
 };
@@ -171,6 +176,7 @@ struct ScalarRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
 template<typename Derived>
 struct ConstantRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
+  static constexpr auto capabilities = RegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
 
   size_t nChannels() { return 1; }
   bool isWriteable() { return false; }
@@ -201,6 +207,7 @@ struct ConstantRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 template<typename Derived>
 struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
+  static constexpr auto capabilities = RegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
 
   size_t nChannels() { return 1; }
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
@@ -265,12 +272,13 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
 template<typename Derived>
 struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   using RegisterDescriptorBase<Derived>::derived;
+  static constexpr auto capabilities = RegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
 
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
 
   typedef ChimeraTK::Boolean minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
 
@@ -289,7 +297,13 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
     return {{result}};
   }
 
-  void setRemoteValue() { derived->target.setRemoteValue(); }
+  void setRemoteValue() {
+    derived->target.setRemoteValue();
+    if(derived->isPush()) {
+      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
+      exceptionDummyPush->triggerInterrupt(5, 6);
+    }
+  }
 
   void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }
 };
@@ -304,31 +318,36 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   const uint32_t increment = 3;
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  typedef int32_t rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
-/// Test passing through scalar accessors - dummy target 3
+/// Test passing through scalar accessors - use another target. We use the one with the push accessors (target 3 in lmap file)
 struct RegSingleWordB : ScalarRegisterDescriptorBase<RegSingleWordB> {
   std::string path() { return "/SingleWord"; }
 
   const uint32_t increment = 3;
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy3.get(), "", "/BOARD.WORD_FIRMWARE"};
+  typedef int32_t rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test passing through push-type scalar accessors
 struct RegSingleWord_push : ScalarRegisterDescriptorBase<RegSingleWord_push> {
   std::string path() { return "/SingleWord_push"; }
   bool isPush() { return true; }
+  bool isWriteable() {
+    std::cout << "Warning: Writing test for /SingleWord_push has been disabled due to missing support in the dummy."
+              << std::endl;
+    return false;
+  }
 
   const uint32_t increment = 3;
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  typedef int32_t rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test passing through 1D array accessors
@@ -339,8 +358,8 @@ struct RegFullArea : OneDRegisterDescriptorBase<RegFullArea> {
   size_t nElementsPerChannel() { return 0x400; }
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
+  typedef int32_t rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
 /// Test passing through partial array accessors
@@ -352,8 +371,8 @@ struct RegPartOfArea : OneDRegisterDescriptorBase<RegPartOfArea> {
   size_t myOffset() { return 10; }
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
+  typedef int32_t rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
 /// Test channel accessor
@@ -365,8 +384,11 @@ struct RegChannel3 : ChannelRegisterDescriptorBase<RegChannel3> {
   const size_t channel{3};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+  typedef int32_t rawUserType;
+
+  // Multiplexed 2d accessors don't have access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 };
 
 /// Test channel accessors
@@ -379,8 +401,11 @@ struct RegChannel4_push : ChannelRegisterDescriptorBase<RegChannel4_push> {
   const size_t channel{4};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+  typedef int32_t rawUserType;
+
+  // Multiplexed 2d accessors don't have access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 };
 
 /// Test channel accessors
@@ -392,8 +417,11 @@ struct RegChannelLast : ChannelRegisterDescriptorBase<RegChannelLast> {
   const size_t channel{15};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummy2.get(), "TEST", "NODMA"};
+  typedef int32_t rawUserType;
+
+  // Multiplexed 2d accessors don't have access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyMultiplexedRegisterAccessor<minimumUserType> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 };
 
 /// Test constant accessor
@@ -404,7 +432,7 @@ struct RegConstant : ConstantRegisterDescriptorBase<RegConstant> {
   const std::vector<int32_t> value{42};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test constant accessor
@@ -415,7 +443,7 @@ struct RegConstant2 : ConstantRegisterDescriptorBase<RegConstant2> {
   const std::vector<int32_t> value{666};
 
   typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test variable accessor
@@ -426,7 +454,7 @@ struct RegVariable : VariableRegisterDescriptorBase<RegVariable> {
   size_t nElementsPerChannel() { return 1; }
 
   typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test constant accessor with arrays
@@ -437,7 +465,7 @@ struct RegArrayConstant : ConstantRegisterDescriptorBase<RegArrayConstant> {
   size_t nElementsPerChannel() { return 5; }
 
   typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test variable accessor with arrays
@@ -448,7 +476,7 @@ struct RegArrayVariable : VariableRegisterDescriptorBase<RegArrayVariable> {
   size_t nElementsPerChannel() { return 6; }
 
   typedef float minimumUserType;
-  typedef minimumUserType rawUserType;
+  typedef int32_t rawUserType;
 };
 
 /// Test bit accessor with a variable accessor as target
@@ -491,8 +519,14 @@ struct RegBit2OfWordFirmwareB : BitRegisterDescriptorBase<RegBit2OfWordFirmwareB
 struct RegBit2OfWordFirmware_push : BitRegisterDescriptorBase<RegBit2OfWordFirmware_push> {
   std::string path() { return "/Bit2ofWordFirmware_push"; }
   bool isPush() { return true; }
+  bool isWriteable() {
+    std::cout
+        << "Warning: Writing test for /Bit2ofWordFirmware_push has been disabled due to missing support in the dummy."
+        << std::endl;
+    return false;
+  }
 
-  RegSingleWord target;
+  RegSingleWordB target;
   size_t bit = 2;
 };
 
@@ -505,25 +539,43 @@ struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  //Mutliply plugin does not support access mode raw
+  static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
   bool isWriteable() { return false; }
+  // turn off the catalogue check. It reports that the register is writeable, which is correct. Writing is just turned off for the test.
+  static constexpr auto capabilities = RegSingleWordScaled<RegSingleWordScaled_R>::capabilities.disableTestCatalogue();
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value * 4.2;
   }
 };
 
 struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
   bool isReadable() { return false; }
+  // turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned off for the test.
+  static constexpr auto capabilities = RegSingleWordScaled<RegSingleWordScaled_W>::capabilities.disableTestCatalogue();
 
   // the scale plugin applies the same factor in both directions, so we have to inverse it for write tests
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value / 4.2;
+  }
+};
+
+struct RegSingleWordScaled_RW : RegSingleWordScaled<RegSingleWordScaled_RW> {
+  std::string path() { return "/SingleWord_NotScaled"; }
+
+  // The scale plugin applies the same factor in both directions, so it has to be 1 to make the test pass
+  // for both reading and writing.
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
+    return value;
   }
 };
 
@@ -535,32 +587,42 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
 
   const double increment = std::exp(3.);
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return 6 * value;
   }
 
   typedef double minimumUserType;
   typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  //Mutliply plugin does not support access mode raw
+  static constexpr auto capabilities =
+      ScalarRegisterDescriptorBase<RegSingleWordScaledTwice_push>::capabilities.disableTestRawTransfer();
+  ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test multiply plugin applied to array (just one direction for sake of simplicity)
 struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   std::string path() { return "/FullArea_Scaled"; }
   bool isWriteable() { return false; }
+  //Mutliply plugin does not support access mode raw
+  // turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned off for the test.
+  static constexpr auto capabilities =
+      OneDRegisterDescriptorBase<RegFullAreaScaled>::capabilities.disableTestRawTransfer().disableTestCatalogue();
 
   const double increment = std::exp(4.);
   size_t nElementsPerChannel() { return 0x400; }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return 0.5 * value;
   }
 
   typedef double minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/ADC.AREA_DMAABLE"};
+  typedef int32_t rawUserType;
+  //Mutliply plugin does not support access mode raw. Capabilities already turned off above.
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
 
 /// Test force readonly plugin
@@ -571,8 +633,8 @@ struct RegWordFirmwareForcedReadOnly : ScalarRegisterDescriptorBase<RegWordFirmw
   bool isWriteable() { return false; }
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  typedef int32_t rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test force readonly plugin with wait_for_new_data
@@ -584,27 +646,29 @@ struct RegWordFirmwareForcedReadOnly_push : ScalarRegisterDescriptorBase<RegWord
   bool isWriteable() { return false; }
 
   typedef uint32_t minimumUserType;
-  typedef minimumUserType rawUserType;
-  DummyRegisterAccessor<minimumUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  typedef int32_t rawUserType;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test math plugin - needs to be done separately for reading and writing (see below)
 template<typename Derived>
 struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
-
   const double increment = 7;
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  //Math plugin does not support access mode raw
+  static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 struct RegWordFirmwareWithMath_R : RegWordFirmwareWithMath<RegWordFirmwareWithMath_R> {
   std::string path() { return "/WordFirmwareWithMath_r"; }
   bool isWriteable() { return false; }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value + 2.345;
   }
 };
@@ -614,10 +678,12 @@ struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareW
   bool isPush() { return true; }
   std::string path() { return "/WordFirmwareWithMath_push"; }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value + 2.345;
   }
+  //Mutliply plugin does not support access mode raw
+  ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
 };
 
 struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMath_W> {
@@ -625,8 +691,8 @@ struct RegWordFirmwareWithMath_W : RegWordFirmwareWithMath<RegWordFirmwareWithMa
   bool isReadable() { return false; }
 
   // the math plugin applies the same formula in both directions, so we have to reverse the formula for write tests
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value - 2.345;
   }
 };
@@ -640,14 +706,18 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
 
   const double increment = 91;
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     return value - 42;
   }
 
   typedef double minimumUserType;
-  typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+  typedef minimumUserType rawUserType;
+  //Mutliply plugin does not support access mode raw
+  static constexpr auto capabilities =
+      ScalarRegisterDescriptorBase<RegWordFirmwareAsParameterInMath>::capabilities.disableTestRawTransfer();
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
 /// Test math plugin with push-type parameter. In this test we write to one of the variables which is
@@ -658,8 +728,11 @@ static double RegVariableAsPushParameterInMathBase_lastX;
 
 template<typename Derived>
 struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Derived> {
-  // test only write direction, as we are writing to the variable parameter in this test
-  static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.enableTestWriteOnly();
+  // Test only write direction, as we are writing to the variable parameter in this test
+  // Also turn off the catalogue test which would fail because the register actually is readable.
+  static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.enableTestWriteOnly()
+                                           .disableTestRawTransfer()
+                                           .disableTestCatalogue();
 
   // no runtime error test cases, as writes happen to the variable only!
   size_t nRuntimeErrorCases() { return 0; }
@@ -678,7 +751,7 @@ struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Deriv
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
+  DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 struct RegVariableAsPushParameterInMath_var1
@@ -687,8 +760,8 @@ struct RegVariableAsPushParameterInMath_var1
 
   const double increment = 17;
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
     variable2->read();
     return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
@@ -701,8 +774,8 @@ struct RegVariableAsPushParameterInMath_var2
 
   const double increment = 23;
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     variable1->read();
     return (value - variable1->accessData(0) * 120 - RegVariableAsPushParameterInMathBase_lastX) / 121;
@@ -721,8 +794,8 @@ struct RegVariableAsPushParameterInMath_x : RegVariableAsPushParameterInMathBase
     RegVariableAsPushParameterInMathBase_lastX = v[0];
   }
 
-  template<typename T>
-  T convertRawToCooked(T value) {
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
     auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     variable1->read();
     auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
@@ -757,23 +830,30 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
 
   // FIXME: This is Boolean until the UnifiedTest is modified to support Void correctly
   typedef ChimeraTK::Boolean minimumUserType;
-  typedef uint32_t rawUserType;
+  typedef minimumUserType rawUserType;
 
-  DummyRegisterAccessor<rawUserType> acc{exceptionDummy.get(), "", "/BOARD.WORD_STATUS"};
+  //Mutliply plugin does not support access mode raw
+  static constexpr auto capabilities =
+      ScalarRegisterDescriptorBase<RegMonostableTrigger>::capabilities.disableTestRawTransfer();
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   std::string dummyCdd = "(ExceptionDummy?map=mtcadummy.map)";
-  std::string dummy2Cdd = "(ExceptionDummy?map=muxedDataAcessor.map)";
-  std::string dummy3Cdd = "(ExceptionDummy?map=mtcadummyB.map)";
-  std::string lmapCdd = "(logicalNameMap?map=unifiedTest.xlmap&target=" + dummyCdd + "&target2=" + dummy2Cdd +
-      "&target3=" + dummy3Cdd + ")";
-  exceptionDummy = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummyCdd));
-  exceptionDummy2 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy2Cdd));
+  std::string muxedDummyCdd = "(ExceptionDummy?map=muxedDataAcessor.map)";
+  std::string pushDummyCdd = "(ExceptionDummy?map=mtcadummyB.map)";
+  std::string lmapCdd = "(logicalNameMap?map=unifiedTest.xlmap&target=" + dummyCdd + "&target2=" + muxedDummyCdd +
+      "&target3=" + pushDummyCdd + ")";
+  exceptionDummyLikeMtcadummy =
+      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummyCdd));
+  exceptionDummyMuxed =
+      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(muxedDummyCdd));
   // needed for a test that redirected bit goes to right target device
-  exceptionDummy3 = boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(dummy3Cdd));
+  exceptionDummyPush =
+      boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(pushDummyCdd));
   lmapBackend =
       boost::dynamic_pointer_cast<LogicalNameMappingBackend>(BackendFactory::getInstance().createBackend(lmapCdd));
 
@@ -797,6 +877,7 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegBit2OfWordFirmware_push>()
       .addRegister<RegSingleWordScaled_R>()
       .addRegister<RegSingleWordScaled_W>()
+      .addRegister<RegSingleWordScaled_RW>()
       .addRegister<RegSingleWordScaledTwice_push>()
       .addRegister<RegFullAreaScaled>()
       .addRegister<RegWordFirmwareForcedReadOnly>()

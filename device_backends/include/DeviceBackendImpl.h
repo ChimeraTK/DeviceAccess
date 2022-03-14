@@ -1,43 +1,37 @@
-#ifndef CHIMERA_TK_DEVICE_BACKEND_IMPL_H
-#define CHIMERA_TK_DEVICE_BACKEND_IMPL_H
-
-#include <list>
-#include <atomic>
+#pragma once
 
 #include "DeviceBackend.h"
 #include "Exception.h"
 
+#include <atomic>
+#include <list>
+
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /**
-   *  DeviceBackendImpl implements some basic functionality which should be
-   * available for all backends. This is required to allow proper decorator
-   * patterns which should not have this functionality in the decorator itself.
+   * DeviceBackendImpl implements some basic functionality which should be available for all backends. This is required
+   * to allow proper decorator patterns which should not have this functionality in the decorator itself.
    */
   class DeviceBackendImpl : public DeviceBackend {
    public:
-    DeviceBackendImpl();
-    virtual ~DeviceBackendImpl();
+    bool isOpen() override { return _opened; }
 
-    virtual bool isOpen() { return _opened; }
+    bool isConnected() final {
+      std::cerr << "Removed function DeviceBackendImpl::isConnected() called." << std::endl;
+      std::cerr << "Do not use. This function has no valid meaning." << std::endl;
+      std::terminate();
+    }
 
-    virtual bool isConnected() { return _connected; }
-
-    virtual const RegisterCatalogue& getRegisterCatalogue() const { return _catalogue; }
+    MetadataCatalogue getMetadataCatalogue() const override { return MetadataCatalogue(); }
 
    protected:
-    /** the register catalogue containing describing the registers known by this
-     * backend */
-    RegisterCatalogue _catalogue;
 
     /** flag if device is opened */
-    std::atomic<bool> _opened = {true};
-
-    /** flag if device is connected. */
-    bool _connected;
-
+    std::atomic<bool> _opened{false};
   };
 
-} // namespace ChimeraTK
+  /********************************************************************************************************************/
 
-#endif /*CHIMERA_TK_DEVICE_BACKEND_IMPL_H*/
+} // namespace ChimeraTK

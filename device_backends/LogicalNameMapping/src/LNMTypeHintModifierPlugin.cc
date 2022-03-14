@@ -3,10 +3,11 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
 #include "NDRegisterAccessor.h"
+#include "DataDescriptor.h"
 
 namespace ChimeraTK { namespace LNMBackend {
-  TypeHintModifierPlugin::TypeHintModifierPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info,
-      const std::map<std::string, std::string>& parameters)
+  TypeHintModifierPlugin::TypeHintModifierPlugin(
+      LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin<TypeHintModifierPlugin>(info) {
     try {
       std::string typeName = parameters.at("type");
@@ -23,12 +24,14 @@ namespace ChimeraTK { namespace LNMBackend {
     }
   }
 
-  void TypeHintModifierPlugin::updateRegisterInfo() {
-    auto info = _info.lock();
-    auto d = info->_dataDescriptor;
-    auto newDescriptor = RegisterInfo::DataDescriptor(_dataType);
-    info->_dataDescriptor = RegisterInfo::DataDescriptor(newDescriptor.fundamentalType(), newDescriptor.isIntegral(),
+  void TypeHintModifierPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // first update the info so we have the latest version from the catalogue.
+    _info = catalogue.getBackendRegister(_info.name);
+    auto d = _info._dataDescriptor;
+    auto newDescriptor = DataDescriptor(_dataType);
+    _info._dataDescriptor = DataDescriptor(newDescriptor.fundamentalType(), newDescriptor.isIntegral(),
         newDescriptor.isSigned(), newDescriptor.nDigits(),
         _dataType.isIntegral() ? 0 : newDescriptor.nFractionalDigits(), d.rawDataType(), d.transportLayerDataType());
+    catalogue.modifyRegister(_info);
   }
 }} // namespace ChimeraTK::LNMBackend

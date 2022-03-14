@@ -68,10 +68,10 @@ namespace ChimeraTK {
    *
    *  This is done in a single class because the container with the fluctuating number of
    *  subscribed variables is not thread safe. This class implements a lock so
-   *  dispatching an interrupt is safe against concurrent subscriptions/unsibscriptions.
+   *  dispatching an interrupt is safe against concurrent subscriptions/unsubscriptions.
    *
    *  The AsyncAccessorManager has some pure virtual functions. The implementation is backend
-   *  specific and must be provided by a derrived version of the AsyncAccessorManager.
+   *  specific and must be provided by a derived version of the AsyncAccessorManager.
    */
   class AsyncAccessorManager : public boost::enable_shared_from_this<AsyncAccessorManager> {
    public:
@@ -104,19 +104,19 @@ namespace ChimeraTK {
     void deactivate();
 
    protected:
-    /*** Each implementation must provice a function to create specific AsyncVariables.
+    /*** Each implementation must provide a function to create specific AsyncVariables.
      *   When the variable is returned, async accessor is not set yet. This would leave the whole creation
      *   of the async accessor to the backend, would mean a lot of code duplication. It also cannot be
-     *   retreived from the AsyncVariable as this only contains a waek pointer.
-     *   If the isActiv flag is set, the _sendBuffer must already contain the initial value. The variable itself
+     *   retrieved from the AsyncVariable as this only contains a weak pointer.
+     *   If the isActive flag is set, the _sendBuffer must already contain the initial value. The variable itself
      *   is not activated yet as the async accessor is still not set.
      */
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable,
         std::unique_ptr<AsyncVariable>(
             boost::shared_ptr<DeviceBackend>, AccessorInstanceDescriptor const&, bool isActive));
 
-    // This mutext protects the _asyncVariables container and all its contents, and the _isActive flag. You must not touch those variables
-    // without holding the mutex. It serves two pruposes:
+    // This mutex protects the _asyncVariables container and all its contents, and the _isActive flag. You must not touch those variables
+    // without holding the mutex. It serves two purposes:
     // 1. Variables can be added or removed from the container at any time. It is not safe to handle an element without holding the lock.
     // 2. The elements in the container are not thread-safe as well. We use the same lock as it is needed for 1. anyway.
     std::recursive_mutex _variablesMutex;
@@ -222,7 +222,7 @@ namespace ChimeraTK {
     auto newSubscriber = boost::make_shared<AsyncNDRegisterAccessor<UserType>>(backend, shared_from_this(), name,
         asyncVariable->getNumberOfChannels(), asyncVariable->getNumberOfSamples(), flags, asyncVariable->getUnit(),
         asyncVariable->getDescription());
-    // Set the exception backend here. It might be that the accessor is already activated during subscription, and the backend shoud be set at that point
+    // Set the exception backend here. It might be that the accessor is already activated during subscription, and the backend should be set at that point
     newSubscriber->setExceptionBackend(backend);
 
     if(asyncVariable->isWriteable()) {

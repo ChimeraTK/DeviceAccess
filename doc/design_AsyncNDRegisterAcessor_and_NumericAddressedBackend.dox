@@ -59,7 +59,7 @@ backend implementations:
   AsyncVariable::getDescription() and AsyncVariable::isWriteable() must be provided by deriving from AsyncVariable or
   AsyncVariableImpl. The information must directly be provided by the backend.
   The generating code cannot rely on the catalogue here (which might not even be filled yet when the accessor
-  is being created).\ref asyncAccessor_comment_AsyncVariable "(*2)"
+  is being created).\ref asyncAccessor_comment_AsyncVariable2 "(*2)"
 - The 'virtual function template' AsyncAccessorManager::createAsyncVariable() must return an AsyncVariable
   implementation with the implemented accessor-describing functions from the previous bullet point.
   When the AsyncVariable object is returned by createAsyncVariable(), its weak pointer to the AsyncNDRegisterAccessor
@@ -97,7 +97,7 @@ The code sending the data has to follow a similar sequence as AsyncAccessorManag
 - 3. and 4. can also be implemented together by looping all variables once, i.e. preparing the _sendBuffer and
   calling send() for one variable before continuing with the next one.
 
-\anchor asyncAccessor_comment_AsyncVariable (*2) The reason to put this into the AsyncVariable is coming from the
+\anchor asyncAccessor_comment_AsyncVariable2 (*2) The reason to put this into the AsyncVariable is coming from the
   NumericAddressedBackend. It adds a synchronous accessor to the AsyncVariable which is used for reading and
   provides this information. The logic to generate this information is in the creation code for the synchronous
   accessor. Other backends might have similar advantages from having the functions the AsyncVariable, or at least

@@ -4,8 +4,8 @@
         <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
     </redirectedRegister>
     <redirectedRegister name="SingleWord_push">
-        <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+        <targetDevice><par>target3</par></targetDevice>
+        <targetRegister>BOARD.WORD_FIRMWARE_ASYNC</targetRegister>
     </redirectedRegister>
     <redirectedRegister name="FullArea">
         <targetDevice><par>target</par></targetDevice>
@@ -24,7 +24,7 @@
     </redirectedChannel>
     <redirectedChannel name="Channel4_push">
         <targetDevice><par>target2</par></targetDevice>
-        <targetRegister>TEST.NODMA/PUSH_READ</targetRegister>
+        <targetRegister>TEST.NODMAASYNC</targetRegister>
         <targetChannel>4</targetChannel>
     </redirectedChannel>
     <redirectedChannel name="LastChannelInRegister">
@@ -93,8 +93,8 @@
       <targetBit>2</targetBit>
     </redirectedBit>
     <redirectedBit name="Bit2ofWordFirmware_push">
-      <targetDevice><par>target</par></targetDevice>
-      <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+      <targetDevice><par>target3</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE_ASYNC</targetRegister>
       <targetBit>2</targetBit>
     </redirectedBit>
     <redirectedRegister name="SingleWord_Scaled">
@@ -104,9 +104,18 @@
           <parameter name="factor">4.2</parameter>
         </plugin>
     </redirectedRegister>
-    <redirectedRegister name="SingleWord_Scaled_Twice_push">
+    <!-- Used for catalogue test. Tests needs to read and write,-->
+    <!-- so the factor has to be 1 such that the test works in both directions. -->
+    <redirectedRegister name="SingleWord_NotScaled">
         <targetDevice><par>target</par></targetDevice>
-        <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+        <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">1.</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="SingleWord_Scaled_Twice_push">
+        <targetDevice><par>target3</par></targetDevice>
+        <targetRegister>BOARD.WORD_FIRMWARE_ASYNC</targetRegister>
         <plugin name="multiply">
           <parameter name="factor">2</parameter>
         </plugin>
@@ -128,20 +137,20 @@
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="WordFirmwareForcedReadOnly_push">
-      <targetDevice><par>target</par></targetDevice>
-      <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+      <targetDevice><par>target3</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE_ASYNC</targetRegister>
       <plugin name="forceReadOnly">
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="WordFirmwareWithMath_w">
-      <targetDevice><par>target</par></targetDevice>
+      <targetDevice><par>target3</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <plugin name="math">
         <parameter name="formula">x + 2.345</parameter>
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="WordFirmwareWithMath_r">
-      <targetDevice><par>target</par></targetDevice>
+      <targetDevice><par>target3</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <plugin name="forceReadOnly"/>
       <plugin name="math">
@@ -149,15 +158,15 @@
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="WordFirmwareWithMath_push">
-      <targetDevice><par>target</par></targetDevice>
-      <targetRegister>BOARD.WORD_FIRMWARE/PUSH_READ</targetRegister>
+      <targetDevice><par>target3</par></targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE_ASYNC</targetRegister>
       <plugin name="forceReadOnly"/>
       <plugin name="math">
         <parameter name="formula">x + 2.345</parameter>
       </plugin>
     </redirectedRegister>
     <redirectedRegister name="WordFirmwareAsParameterInMath">
-      <targetDevice><par>target</par></targetDevice>
+      <targetDevice><par>target3</par></targetDevice>
       <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
       <plugin name="forceReadOnly"/>
       <plugin name="math">

@@ -2,13 +2,12 @@
 #define BOOST_TEST_MODULE SharedDummyBackendTest
 #include <boost/test/unit_test.hpp>
 
-#include <sys/file.h>
-
 #include "Device.h"
 #include "SharedDummyBackend.h"
 #include "BackendFactory.h"
 #include "ProcessManagement.h"
 #include "Utilities.h"
+#include "sharedDummyHelpers.h"
 
 #include <algorithm>
 #include <boost/filesystem.hpp>
@@ -26,31 +25,7 @@ namespace {
   using namespace ChimeraTK;
   using namespace boost::unit_test_framework;
 
-  // Use a file lock on shareddummyTest.dmap to ensure we are not running
-  // concurrent tests in parallel using the same shared dummies.
-  //
-  // Note: flock() creates an advisory lock only, plain file access is not
-  // prevented. The lock is automatically released when the process terminates!
-  struct TestLocker {
-    TestLocker() {
-      // open dmap file for locking
-      fd = open("shareddummyTest.dmap", O_RDONLY);
-      if(fd == -1) {
-        std::cout << "Cannot open file 'shareddummyTest.dmap' for locking." << std::endl;
-        exit(1);
-      }
-
-      // obtain lock
-      int res = flock(fd, LOCK_EX);
-      if(res == -1) {
-        std::cout << "Cannot acquire lock on file 'shareddummyTest.dmap'." << std::endl;
-        exit(1);
-      }
-    }
-
-    int fd;
-  };
-  static TestLocker testLocker;
+  static TestLocker testLocker("shareddummyTest.dmap");
 
   struct TestFixture {
     bool testRegisterNotInCatalogue(const std::string& registerPath) {

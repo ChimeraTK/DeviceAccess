@@ -14,8 +14,8 @@ mskrebot  sdm://./rebot=127.0.0.1,5001 mtcadummy_rebot.map
 mskrebot1 sdm://./rebot=localhost,5001 mtcadummy_rebot.map
 #an entry with the old /dev/ syntax for compatibility tests
 OLD_PCIE  /dev/mtcadummys0 mtcadummy.map
-SEQUENCES   sdm://./dummy=sequences.map sequences.map
-MIXED_SEQUENCES   sdm://./dummy=bam_fmc25_r1225.mapp bam_fmc25_r1225.mapp
-INVALID_SEQUENCES   sdm://./dummy=invalidSequences.map invalidSequences.map
+SEQUENCES   (dummy?map=sequences.map)
+MIXED_SEQUENCES   (dummy?map=bam_fmc25_r1225.mapp)
+INVALID_SEQUENCES   (dummy?map=invalidSequences.map)
 PCIE_DOUBLEMAP sdm://./pci:pcieunidummys6=mtcadummy.map mtcadummy.map
 REBOT_DOUBLEMAP sdm://./rebot=localhost,5001,mtcadummy_rebot.map mtcadummy_rebot.map

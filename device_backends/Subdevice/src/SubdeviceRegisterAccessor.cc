@@ -1,4 +1,3 @@
-
 #include "SubdeviceRegisterAccessor.h"
 
 namespace ChimeraTK {
@@ -96,7 +95,7 @@ namespace ChimeraTK {
     // FIXME: Code cleanup. This following code is never executed:
     assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
-    // dont't care about version number or data validity. This code is nerver executed  anyway.
+    // don't care about version number or data validity. This code is never executed  anyway.
   }
 
   /*********************************************************************************************************************/

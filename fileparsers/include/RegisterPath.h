@@ -82,7 +82,11 @@ namespace ChimeraTK {
      * NOT a post operator! It returns the already modified register path.
      */
     RegisterPath& operator--(int) {
-      std::size_t found = path.find_last_of(std::string(separator));
+      auto found = path.find_last_of(std::string(separator));
+      if(separator_alt.length() != 0) {
+        auto found_alt = path.find_last_of(std::string(separator_alt));
+        if(found_alt != std::string::npos) found = std::max(found, found_alt);
+      }
       if(found != std::string::npos && found > 0) { // don't find the leading separator...
         path = path.substr(0, found);
       }
@@ -97,6 +101,9 @@ namespace ChimeraTK {
      *  Remove the first element form the path and return the modified path. */
     RegisterPath& operator--() {
       std::size_t found = path.find_first_of(std::string(separator), 1); // don't find the leading separator...
+      if(separator_alt.length() != 0) {
+        found = std::min(found, path.find_first_of(std::string(separator_alt)));
+      }
       if(found != std::string::npos) {
         path = std::string(separator) + path.substr(found + 1);
       }
@@ -136,6 +143,15 @@ namespace ChimeraTK {
       std::string pathConverted(getWithOtherSeparatorReplaced(sepalt));
       std::string otherPathConverted(compare.getWithOtherSeparatorReplaced(sepalt));
       return pathConverted.substr(0, compare.length()) == otherPathConverted;
+    }
+
+    /** check if the register path ends with the given path component(s) */
+    bool endsWith(const RegisterPath& compare) const {
+      std::string sepalt = getCommonAltSeparator(compare);
+      std::string pathConverted(getWithOtherSeparatorReplaced(sepalt));
+      std::string otherPathConverted(compare.getWithOtherSeparatorReplaced(sepalt));
+      if(pathConverted.size() < compare.length()) return false;
+      return pathConverted.substr(pathConverted.size() - compare.length()) == otherPathConverted;
     }
 
     /** split path into components */

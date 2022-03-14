@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 3.0.2)
 Project(ChimeraTK-DeviceAccess)
 
-set(${PROJECT_NAME}_MAJOR_VERSION 02)
-set(${PROJECT_NAME}_MINOR_VERSION 08)
+set(${PROJECT_NAME}_MAJOR_VERSION 03)
+set(${PROJECT_NAME}_MINOR_VERSION 00)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
@@ -13,6 +13,7 @@ set(${PROJECT_NAME}_CXX_FLAGS "${${PROJECT_NAME}_CXX_FLAGS} -DFUSION_MAX_MAP_SIZ
 
 include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
+include(cmake/enable_code_coverage_report.cmake)
 
 # use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
 # build. The 'make doc' target will still exist
@@ -53,7 +54,9 @@ include_directories(${PROJECT_BINARY_DIR}/generated_include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/generated_include/ DESTINATION include/ChimeraTK)
 
 # Add source files and include directories
-set(subdirs exception util fileparsers device_backends device device_backends/LogicalNameMapping device_backends/Subdevice device_backends/SharedDummy device_backends/Rebot)
+set(subdirs device device_backends exception util fileparsers
+            device_backends/NumericAddressedBackend device_backends/DummyBackend device_backends/LogicalNameMapping
+            device_backends/Subdevice device_backends/SharedDummy device_backends/Rebot)
 if(HAVE_PCIE_BACKEND)
   set(subdirs ${subdirs} device_backends/pcie)
 endif()
@@ -83,18 +86,8 @@ add_library( ${PROJECT_NAME} SHARED ${SOURCE} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES}
-    ${RT_LIBRARIES} Threads::Threads ${ChimeraTK-cppext_LIBRARIES})
-
-# The make coverage command is only available in debug mode
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
-  add_custom_target(coverage
-    make -f Makefile.coverage
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating test coverage documentation" VERBATIM
-  )
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES}
+                                      ${glib_LIBRARIES} ${RT_LIBRARIES} Threads::Threads ${ChimeraTK-cppext_LIBRARIES})
 
 # Install the library and the executables
 install( TARGETS ${PROJECT_NAME}

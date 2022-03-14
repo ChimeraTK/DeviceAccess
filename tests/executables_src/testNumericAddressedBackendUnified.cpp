@@ -55,17 +55,18 @@ struct Integers_signed32 {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -83,7 +84,7 @@ struct Integers_signed32_async {
   bool isWriteable() { return false; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() {
-    return { ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
+    return {ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
   }
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
@@ -97,17 +98,18 @@ struct Integers_signed32_async {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", path()};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -116,9 +118,7 @@ struct Integers_signed32_async {
     if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
   }
 
-
   void forceAsyncReadInconsistency() {
-    // Change value without sending it via ZeroMQ
     acc = generateValue<minimumUserType>()[0][0];
   }
 
@@ -130,12 +130,12 @@ struct Integers_signed32_async {
   }
 };
 struct Integers_signed32_async_rw {
-  // Using the DUMMY_WRITEABLE register here since usually an async regiter is r/o implicitly
+  // Using the DUMMY_WRITEABLE register here since usually an async register is r/o implicitly
   std::string path() { return "/Integers/signed32_async/DUMMY_WRITEABLE"; }
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() {
-    return { ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
+    return {ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
   }
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
@@ -149,17 +149,18 @@ struct Integers_signed32_async_rw {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   DummyRegisterAccessor<int32_t> acc{exceptionDummy.get(), "", "/Integers/signed32_async"};
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
     return {{acc + 3}};
   }
 
   template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
     return {{acc}};
   }
 
@@ -168,11 +169,7 @@ struct Integers_signed32_async_rw {
     if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
   }
 
-
-  void forceAsyncReadInconsistency() {
-    // Change value without sending it via ZeroMQ
-    acc = generateValue<minimumUserType>()[0][0];
-  }
+  void forceAsyncReadInconsistency() { acc = generateValue<minimumUserType>()[0][0]; }
 
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
@@ -211,7 +208,8 @@ struct ShortRaw_base {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
 
   // This register shares the address space with all our test registers. It gives us direct access to the 4 byte
   // address range, so we can test the correct placement of the unaligned values.
@@ -226,9 +224,11 @@ struct ShortRaw_base {
     acc |= (val << derived->bitshift) & derived->bitmask;
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> generateValue() {
-    UserType v = ((rawUserType)(get() + derived->rawIncrement)) * derived->rawToCooked;
+  // Type can be user type or raw type, depeding of the raw flag
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool raw = false) {
+    rawUserType newRawValue = static_cast<rawUserType>(get() + derived->rawIncrement);
+    Type v = (raw ? newRawValue : (newRawValue * derived->rawToCooked));
     /* std::cout << "generateValue " << derived->path() << " " << float(rawUserType(get() + derived->rawIncrement))
               << " -> " << float(v) << std::endl; */
     lastPadding = acc & ~derived->bitmask;
@@ -236,9 +236,14 @@ struct ShortRaw_base {
     return {{v}};
   }
 
-  template<typename UserType>
-  std::vector<std::vector<UserType>> getRemoteValue() {
-    UserType v = get() * derived->rawToCooked;
+  // We use the same function to implement raw and cooked reading.
+  // Do the calculation on the target type, then decide on the padding error.
+  // rawToCooked might undo the ++ effect in case
+  // of rounding. When getting cooked, the ++ must happen on the UserType.
+  // Type can be UserType or RawType.
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
+    Type v = get() * (raw ? 1 : derived->rawToCooked);
     if((acc & ~derived->bitmask) != lastPadding) {
       if(printPaddingChangedMessage) {
         std::cerr << "getRemoteValue(): Padding data has changed. Test will be failed by returing a false remote value "
@@ -270,6 +275,7 @@ struct ShortRaw_base {
 struct ShortRaw_signed16 : ShortRaw_base<ShortRaw_signed16, int16_t> {
   std::string path() { return "/ShortRaw/signed16"; }
   typedef int16_t minimumUserType;
+  typedef minimumUserType rawUserType;
 
   int16_t rawToCooked = 1;
   // The rawIncrements are chosen such that we generate different values for different variables, and to cover the
@@ -285,6 +291,7 @@ struct ShortRaw_signed16 : ShortRaw_base<ShortRaw_signed16, int16_t> {
 struct ShortRaw_unsigned16 : ShortRaw_base<ShortRaw_unsigned16, uint16_t> {
   std::string path() { return "/ShortRaw/unsigned16"; }
   typedef uint16_t minimumUserType;
+  typedef int16_t rawUserType;
 
   int16_t rawToCooked = 1;
   int16_t rawIncrement = 17119;
@@ -297,6 +304,7 @@ struct ShortRaw_unsigned16 : ShortRaw_base<ShortRaw_unsigned16, uint16_t> {
 struct ShortRaw_fixedPoint16_8u : ShortRaw_base<ShortRaw_fixedPoint16_8u, uint16_t> {
   std::string path() { return "/ShortRaw/fixedPoint16_8u"; }
   typedef float minimumUserType;
+  typedef int16_t rawUserType;
 
   float rawToCooked = 1. / 256.;
   int16_t rawIncrement = 17121;
@@ -309,6 +317,7 @@ struct ShortRaw_fixedPoint16_8u : ShortRaw_base<ShortRaw_fixedPoint16_8u, uint16
 struct ShortRaw_fixedPoint16_8s : ShortRaw_base<ShortRaw_fixedPoint16_8s, int16_t> {
   std::string path() { return "/ShortRaw/fixedPoint16_8s"; }
   typedef float minimumUserType;
+  typedef int16_t rawUserType;
 
   float rawToCooked = 1. / 256.;
   int16_t rawIncrement = 17123;
@@ -321,6 +330,7 @@ struct ShortRaw_fixedPoint16_8s : ShortRaw_base<ShortRaw_fixedPoint16_8s, int16_
 struct ByteRaw_signed8 : ShortRaw_base<ByteRaw_signed8, int8_t> {
   std::string path() { return "/ByteRaw/signed8"; }
   typedef int8_t minimumUserType;
+  typedef int8_t rawUserType;
 
   int8_t rawToCooked = 1;
   int8_t rawIncrement = 119;
@@ -333,6 +343,7 @@ struct ByteRaw_signed8 : ShortRaw_base<ByteRaw_signed8, int8_t> {
 struct ByteRaw_unsigned8 : ShortRaw_base<ByteRaw_unsigned8, uint8_t> {
   std::string path() { return "/ByteRaw/unsigned8"; }
   typedef uint8_t minimumUserType;
+  typedef int8_t rawUserType;
 
   uint8_t rawToCooked = 1;
   int8_t rawIncrement = 121;
@@ -345,6 +356,7 @@ struct ByteRaw_unsigned8 : ShortRaw_base<ByteRaw_unsigned8, uint8_t> {
 struct ByteRaw_fixedPoint8_4u : ShortRaw_base<ByteRaw_fixedPoint8_4u, uint8_t> {
   std::string path() { return "/ByteRaw/fixedPoint8_4u"; }
   typedef float minimumUserType;
+  typedef int8_t rawUserType;
 
   float rawToCooked = 1. / 16.;
   int8_t rawIncrement = 123;
@@ -357,6 +369,7 @@ struct ByteRaw_fixedPoint8_4u : ShortRaw_base<ByteRaw_fixedPoint8_4u, uint8_t> {
 struct ByteRaw_fixedPoint8_4s : ShortRaw_base<ByteRaw_fixedPoint8_4s, int8_t> {
   std::string path() { return "/ByteRaw/fixedPoint8_4s"; }
   typedef float minimumUserType;
+  typedef int8_t rawUserType;
 
   float rawToCooked = 1. / 16.;
   int8_t rawIncrement = 125;
@@ -384,7 +397,8 @@ struct MuxedNodma {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer();
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMA"};
 
@@ -446,7 +460,8 @@ struct MuxedNodmaAsync {
                                            .disableAsyncReadInconsistency()
                                            .disableSwitchReadOnly()
                                            .disableSwitchWriteOnly()
-                                           .disableTestWriteNeverLosesData();
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer();
 
   DummyMultiplexedRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST", "NODMAASYNC"};
 
@@ -494,12 +509,84 @@ struct MuxedNodmaAsync {
 
 /**********************************************************************************************************************/
 
+struct MuxedFloat {
+  std::string path() { return "/TEST/FLOAT"; }
+  bool isWriteable() { return true; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+
+  size_t nChannels() { return 4; }
+  size_t nElementsPerChannel() { return 8; }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef float minimumUserType;
+  //typedef int32_t rawUserType;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer();
+
+  DummyMultiplexedRegisterAccessor<int32_t> rawAcc{exceptionDummyMuxed.get(), "TEST", "FLOAT"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    std::vector<std::vector<UserType>> v;
+    v.resize(nChannels());
+    for(uint32_t c = 0; c < nChannels(); ++c) {
+      for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
+        int32_t rawValue = rawAcc[c][e];
+        float* cookedValue = reinterpret_cast<float*>(&rawValue);
+        v[c].push_back(*cookedValue + 0.7f * c + 3 * e);
+      }
+    }
+    return v;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    std::vector<std::vector<UserType>> v;
+    v.resize(nChannels());
+    for(uint32_t c = 0; c < nChannels(); ++c) {
+      for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
+        int32_t rawValue = rawAcc[c][e];
+        float* cookedValue = reinterpret_cast<float*>(&rawValue);
+        v[c].push_back(*cookedValue);
+      }
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<minimumUserType>();
+    for(uint32_t c = 0; c < nChannels(); ++c) {
+      for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
+        int32_t rawValue;
+        float* cookedValue = reinterpret_cast<float*>(&rawValue);
+        *cookedValue = v[c][e];
+        std::cout << "raw value is " << rawValue << "; cookedValue is " << *cookedValue << std::endl;
+        rawAcc[c][e] = rawValue;
+      }
+    }
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+  }
+};
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
       .addRegister<Integers_signed32>()
       .addRegister<Integers_signed32_async>()
-      .addRegister<Integers_signed32_async_rw>()
+      /* .addRegister<Integers_signed32_async_rw>()  // disabled for now as .DUMMY_WRITABLE no longer supports wait_for_new_data */
       .addRegister<ShortRaw_signed16>()
       .addRegister<ShortRaw_unsigned16>()
       .addRegister<ShortRaw_fixedPoint16_8u>()
@@ -515,7 +602,11 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
 
 BOOST_AUTO_TEST_CASE(testMultiplexedRegisterAccessor) {
   std::cout << "*** testMultiplexedRegisterAccessor *** " << std::endl;
-  ChimeraTK::UnifiedBackendTest<>().addRegister<MuxedNodma>().addRegister<MuxedNodmaAsync>().runTests(cddMuxed);
+  ChimeraTK::UnifiedBackendTest<>()
+      .addRegister<MuxedNodma>()
+      .addRegister<MuxedNodmaAsync>()
+      .addRegister<MuxedFloat>()
+      .runTests(cddMuxed);
 }
 
 /**********************************************************************************************************************/

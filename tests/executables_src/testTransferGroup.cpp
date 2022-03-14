@@ -955,7 +955,7 @@ BOOST_AUTO_TEST_CASE(testCallsToPrePostFunctionsInLowLevel) {
 
   device.open("DUMMYD3");
 
-  // create register accessors of four registers with adjecent addresses
+  // create register accessors of four registers with adjacent addresses
   auto mux0 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
   auto mux0_2 = mux0; // make duplicate of one accessor
   auto mux2 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
@@ -1077,6 +1077,35 @@ BOOST_AUTO_TEST_CASE(testCallsToPrePostFunctionsInLowLevel) {
   mux2 = 30;
   mux3 = 33;
   BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
+}
+
+BOOST_AUTO_TEST_CASE(testTemporaryAbstractorWorks) {
+  // Testing that adding a plain transfer element to the TransferGroup still works as expected.
+  BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  ChimeraTK::Device device;
+
+  device.open("(dummy?map=mtcadummy.map)");
+
+  TransferGroup group;
+  auto a = device.getScalarRegisterAccessor<int32_t>("BOARD.WORD_FIRMWARE");
+  auto b = device.getBackend()->getRegisterAccessor<int32_t>("BOARD.WORD_FIRMWARE", 1, 0, {});
+
+  auto c = device.getScalarRegisterAccessor<int32_t>("BOARD.WORD_FIRMWARE");
+
+  group.addAccessor(a);
+  c = 12;
+  c.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(a, 12);
+  group.addAccessor(b);
+
+  c = 13;
+  c.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(a, 13);
+  BOOST_CHECK_EQUAL(b->accessChannel(0)[0], 13);
 }
 
 /**********************************************************************************************************************/

@@ -1,3 +1,4 @@
+
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE LMapBackendTest
 #include <boost/test/unit_test.hpp>
@@ -52,23 +53,23 @@ BOOST_AUTO_TEST_CASE(testCatalogue) {
 
   const RegisterCatalogue& catalogue = device.getRegisterCatalogue();
 
-  boost::shared_ptr<RegisterInfo> info = catalogue.getRegister("SingleWord");
-  BOOST_CHECK(info->getRegisterName() == "/SingleWord");
-  BOOST_CHECK(info->getNumberOfElements() == 1);
-  BOOST_CHECK(info->getNumberOfChannels() == 1);
-  BOOST_CHECK(info->getNumberOfDimensions() == 0);
+  auto info = catalogue.getRegister("SingleWord");
+  BOOST_CHECK(info.getRegisterName() == "/SingleWord");
+  BOOST_CHECK(info.getNumberOfElements() == 1);
+  BOOST_CHECK(info.getNumberOfChannels() == 1);
+  BOOST_CHECK(info.getNumberOfDimensions() == 0);
 
   info = catalogue.getRegister("FullArea");
-  BOOST_CHECK(info->getRegisterName() == "/FullArea");
-  BOOST_CHECK(info->getNumberOfElements() == 0x400);
-  BOOST_CHECK(info->getNumberOfChannels() == 1);
-  BOOST_CHECK(info->getNumberOfDimensions() == 1);
+  BOOST_CHECK(info.getRegisterName() == "/FullArea");
+  BOOST_CHECK(info.getNumberOfElements() == 0x400);
+  BOOST_CHECK(info.getNumberOfChannels() == 1);
+  BOOST_CHECK(info.getNumberOfDimensions() == 1);
 
   info = catalogue.getRegister("PartOfArea");
-  BOOST_CHECK(info->getRegisterName() == "/PartOfArea");
-  BOOST_CHECK(info->getNumberOfElements() == 20);
-  BOOST_CHECK(info->getNumberOfChannels() == 1);
-  BOOST_CHECK(info->getNumberOfDimensions() == 1);
+  BOOST_CHECK(info.getRegisterName() == "/PartOfArea");
+  BOOST_CHECK(info.getNumberOfElements() == 20);
+  BOOST_CHECK(info.getNumberOfChannels() == 1);
+  BOOST_CHECK(info.getNumberOfDimensions() == 1);
 
   ChimeraTK::Device target1;
   target1.open("PCIE3");
@@ -76,22 +77,28 @@ BOOST_AUTO_TEST_CASE(testCatalogue) {
   unsigned int nSamples = accTarget[3].size();
 
   info = catalogue.getRegister("Channel3");
-  BOOST_CHECK(info->getRegisterName() == "/Channel3");
-  BOOST_CHECK(info->getNumberOfElements() == nSamples);
-  BOOST_CHECK(info->getNumberOfChannels() == 1);
-  BOOST_CHECK(info->getNumberOfDimensions() == 1);
+  BOOST_CHECK(info.getRegisterName() == "/Channel3");
+  BOOST_CHECK(info.getNumberOfElements() == nSamples);
+  BOOST_CHECK(info.getNumberOfChannels() == 1);
+  BOOST_CHECK(info.getNumberOfDimensions() == 1);
 
   info = catalogue.getRegister("Constant2");
-  BOOST_CHECK(info->getRegisterName() == "/Constant2");
-  BOOST_CHECK(info->getNumberOfElements() == 1);
-  BOOST_CHECK(info->getNumberOfChannels() == 1);
-  BOOST_CHECK(info->getNumberOfDimensions() == 0);
+  BOOST_CHECK(info.getRegisterName() == "/Constant2");
+  BOOST_CHECK(info.getNumberOfElements() == 1);
+  BOOST_CHECK(info.getNumberOfChannels() == 1);
+  BOOST_CHECK(info.getNumberOfDimensions() == 0);
 
   info = catalogue.getRegister("/MyModule/SomeSubmodule/Variable");
-  BOOST_CHECK(info->getRegisterName() == "/MyModule/SomeSubmodule/Variable");
-  BOOST_CHECK(info->getNumberOfElements() == 1);
-  BOOST_CHECK(info->getNumberOfChannels() == 1);
-  BOOST_CHECK(info->getNumberOfDimensions() == 0);
+  BOOST_CHECK(info.getRegisterName() == "/MyModule/SomeSubmodule/Variable");
+  BOOST_CHECK(info.getNumberOfElements() == 1);
+  BOOST_CHECK(info.getNumberOfChannels() == 1);
+  BOOST_CHECK(info.getNumberOfDimensions() == 0);
+
+  //std::unordered_set<std::string> targetDevices = lmap.getTargetDevices();
+  //BOOST_CHECK(targetDevices.size() == 2);
+  //BOOST_CHECK(targetDevices.count("PCIE2") == 1);
+  //BOOST_CHECK(targetDevices.count("PCIE3") == 1);
+
   device.close();
 }
 
