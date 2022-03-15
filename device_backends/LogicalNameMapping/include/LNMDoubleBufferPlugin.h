@@ -13,9 +13,9 @@
 namespace ChimeraTK { namespace LNMBackend {
   class DoubleBufferPlugin : public AccessorPlugin<DoubleBufferPlugin> {
    public:
-    DoubleBufferPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info, std::map<std::string, std::string> parameters);
+    DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters);
 
-    void updateRegisterInfo() override;
+    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
@@ -41,6 +41,8 @@ namespace ChimeraTK { namespace LNMBackend {
     void doReadTransferSynchronously() override;
 
     void doPostRead(TransferType type, bool hasNewData) override;
+
+    bool isWriteable() const override { return false; }
 
     void doPreWrite(TransferType, VersionNumber) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend DoubleBufferPlugin: Writing is not allowed.");

@@ -15,17 +15,17 @@ std::string getValue(const std::map<std::string, std::string>& m, std::string ke
 }
 
 namespace ChimeraTK { namespace LNMBackend {
-  DoubleBufferPlugin::DoubleBufferPlugin(
-      boost::shared_ptr<LNMBackendRegisterInfo> info, std::map<std::string, std::string> parameters)
+  DoubleBufferPlugin::DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters)
   : AccessorPlugin(info), _parameters(std::move(parameters)) {
-    _targetDeviceName = info->deviceName;
+    _targetDeviceName = info.deviceName;
   }
 
-  void DoubleBufferPlugin::updateRegisterInfo() {
-    auto p = _info.lock();
-    if(p) {
-      p->writeable = false;
-    }
+  void DoubleBufferPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // first update the info so we have the latest version from the catalogue.
+    _info = catalogue.getBackendRegister(_info.name);
+    // Change register info to read-only
+    _info.writeable = false;
+    catalogue.modifyRegister(_info);
   }
 
   /*************************************************/
