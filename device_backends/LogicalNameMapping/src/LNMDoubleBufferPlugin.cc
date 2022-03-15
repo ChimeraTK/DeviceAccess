@@ -44,7 +44,7 @@ namespace ChimeraTK { namespace LNMBackend {
     static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
         const std::map<std::string, std::string>& parameters, std::string targetDeviceName) {
-      return boost::make_shared<DoubleBufferAccessor<UserType>>(backend, target, parameters, targetDeviceName);
+      return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(backend, target, parameters, targetDeviceName);
     }
   };
   /*************************************************/
@@ -57,9 +57,9 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
   template<typename UserType>
-  DoubleBufferAccessor<UserType>::DoubleBufferAccessor(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-      boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters,
-      std::string targetDeviceName)
+  DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
+      boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
+      const std::map<std::string, std::string>& parameters, std::string targetDeviceName)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target) {
     _enableDoubleBufferReg = backend->_devices[targetDeviceName]->getRegisterAccessor<uint32_t>(
         getValue(parameters, "enableDoubleBuffering"), 0, 0, {});
@@ -70,7 +70,7 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
   template<typename UserType>
-  void DoubleBufferAccessor<UserType>::doPreRead(TransferType type) {
+  void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
     //accquire a lock in firmware (dissable double buffering)
     _enableDoubleBufferReg->accessData(0) = 0;
     _enableDoubleBufferReg->write();
@@ -85,7 +85,7 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
   template<typename UserType>
-  void DoubleBufferAccessor<UserType>::doReadTransferSynchronously() {
+  void DoubleBufferAccessorDecorator<UserType>::doReadTransferSynchronously() {
     if(_currentBuffer)
       _target->readTransfer();
     else
@@ -93,7 +93,7 @@ namespace ChimeraTK { namespace LNMBackend {
   }
 
   template<typename UserType>
-  void DoubleBufferAccessor<UserType>::doPostRead(TransferType type, bool hasNewData) {
+  void DoubleBufferAccessorDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     if(_currentBuffer)
       _target->postRead(type, hasNewData);
     else
@@ -119,13 +119,6 @@ namespace ChimeraTK { namespace LNMBackend {
       for(size_t i = 0; i < _secondBufferReg->getNumberOfChannels(); ++i)
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_secondBufferReg->accessChannel(i));
     }
-
-    /*if(_currentBuffer) {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D = _target->accessChannels();
-    }
-    else {
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D = _secondBufferReg->accessChannels();
-    }*/
   }
 
 }} // namespace ChimeraTK::LNMBackend

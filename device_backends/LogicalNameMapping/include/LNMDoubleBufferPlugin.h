@@ -27,12 +27,12 @@ namespace ChimeraTK { namespace LNMBackend {
   };
 
   template<typename UserType>
-  class DoubleBufferAccessor : public NDRegisterAccessorDecorator<UserType> {
+  class DoubleBufferAccessorDecorator : public NDRegisterAccessorDecorator<UserType> {
    public:
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D;
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
-    DoubleBufferAccessor(boost::shared_ptr<LogicalNameMappingBackend>& backend,
+    DoubleBufferAccessorDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters,
         std::string _targetDeviceName);
 
