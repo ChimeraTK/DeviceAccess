@@ -249,4 +249,13 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  std::unique_ptr<BackendRegisterCatalogueBase> NumericAddressedRegisterCatalogue::clone() const {
+    auto* c = new NumericAddressedRegisterCatalogue;
+    fillFromThis(c);
+    c->_mapOfInterrupts = _mapOfInterrupts;
+    return std::unique_ptr<BackendRegisterCatalogueBase>(c);
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK

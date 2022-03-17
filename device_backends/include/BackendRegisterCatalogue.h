@@ -133,6 +133,12 @@ namespace ChimeraTK {
       return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.end()};
     }
 
+   protected:
+    /** Helper function for clone functions. It copies/clones the content of the private variables of the
+     *  BackendRegisterCatalogue into the target catalogue. See implementation of the clone() function.
+     */
+    void fillFromThis(BackendRegisterCatalogue<BackendRegisterInfo>* target) const;
+
    private:
     // Always access the catalogue through the member functions. Modifications need special care to keep the two
     // containers synchronised, hence these members are made private.
@@ -295,14 +301,34 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   std::unique_ptr<BackendRegisterCatalogueBase> BackendRegisterCatalogue<BackendRegisterInfo>::clone() const {
+    // FIXME: Change BackendRegisterCatalogue to CRTP, i.e. it has the DERRIVED class as template parameter.
+    // Like this the correct catalogue type is already created here and inherriting backends can call this clone,
+    // then cast to the actual type and fill the rest of it's properties. Would get rid of the "fillFromThis()" workaround and
+    // safe clone() implementations in case no data members are added.
+
+    // Create a new instance of a BackendRegisterCatalogue with the correct type.
+    // Inheriting backends will create the derrived type here.
     auto* c = new BackendRegisterCatalogue<BackendRegisterInfo>();
+    // Fill the contents of the BackendRegisterCatalogue base class into the target c. This is accessing the
+    // private variables and ensures consistency.
+    fillFromThis(c);
+    // Derrived backends will copy/clone their additional data members here, before
+    // returning a unique_ptr of the new catalogue which from now on takes the ownership.
+    return std::unique_ptr<BackendRegisterCatalogueBase>(c);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename BackendRegisterInfo>
+  void BackendRegisterCatalogue<BackendRegisterInfo>::fillFromThis(
+      BackendRegisterCatalogue<BackendRegisterInfo>* target) const {
+    // FIXME: change this to a single loop which is just filling the new catalogue through the public API
     for(auto& p : catalogue) {
-      c->catalogue[p.first] = getBackendRegister(p.first);
+      target->catalogue[p.first] = getBackendRegister(p.first);
     }
     for(auto& ptr : insertionOrderedCatalogue) {
-      c->insertionOrderedCatalogue.push_back(&c->catalogue[ptr->getRegisterName()]);
+      target->insertionOrderedCatalogue.push_back(&target->catalogue[ptr->getRegisterName()]);
     }
-    return std::unique_ptr<BackendRegisterCatalogueBase>(c);
   }
 
   /********************************************************************************************************************/
