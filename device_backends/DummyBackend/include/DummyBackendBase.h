@@ -14,7 +14,6 @@
 #include "DummyInterruptTriggerAccessor.h"
 
 #include <sstream>
-#include <regex>
 
 // macro to avoid code duplication
 #define TRY_REGISTER_ACCESS(COMMAND)                                                                                   \
@@ -72,7 +71,6 @@ namespace ChimeraTK {
     /// All bars are valid in dummies.
     bool barIndexValid([[maybe_unused]] uint64_t bar) override;
 
-
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
     std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
 
@@ -84,30 +82,12 @@ namespace ChimeraTK {
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
       // First check if the request is for one of the special DUMMY_INTEERRUPT_X_Y registers. if so, early return
       // this special accessor.
-      // Pseudo-register to trigger interrupts for this register
-      static const std::string DUMMY_INTERRUPT_REGISTER_NAME{"^/DUMMY_INTERRUPT_([0-9]+)_([0-9]+)$"};
+      if(registerPathName.startsWith("DUMMY_INTERRUPT_")) {
+        int controller, interrupt;
 
-      const std::string regPathNameStr{registerPathName};
-      const std::regex dummyInterruptRegex{DUMMY_INTERRUPT_REGISTER_NAME};
-      std::smatch match;
-      std::regex_search(regPathNameStr, match, dummyInterruptRegex);
-
-      if(not match.empty()) {
-        // FIXME: Ideally, this test and the need for passing in the lambda function should be done
-        // in the constructor of the accessor. But passing down the base-class of the backend is very weird
-        // due to the sort-of CRTP pattern used in this base class.
-        auto controller = std::stoi(match[1].str());
-        auto interrupt = std::stoi(match[2].str());
-        try {
-          auto& interruptsForController = _registerMap.getListOfInterrupts().at(controller);
-          if(interruptsForController.find(interrupt) == interruptsForController.end())
-            throw ChimeraTK::logic_error("Invalid interrupt for controller (" + match[0].str() + ", " +
-                match[1].str() + ": " + regPathNameStr);
-        }
-        catch(std::out_of_range&) {
-          throw ChimeraTK::logic_error("Invalid interrupt controller (" + match[0].str() + ", " +
-              match[1].str() + ": " + regPathNameStr);
-        }
+        auto dummyCatalogue = dynamic_cast<DummyBackendRegisterCatalogue*>(_registerMapPointer.get());
+        assert(dummyCatalogue);
+        std::tie(controller, interrupt) = dummyCatalogue->extractControllerInterrupt(registerPathName);
 
         // Delegate the other parameters down to the accessor which will throw accordingly, to satisfy the specification
         // Since the accessor will keep a shared pointer to the backend, we can safely capture "this"
