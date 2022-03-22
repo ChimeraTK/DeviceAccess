@@ -3343,7 +3343,7 @@ namespace ChimeraTK {
           auto reg = d.getTwoDRegisterAccessor<RawType>(registerName, 0, 0, {AccessMode::raw});
           // the test itself requires an extended interface, so the test can be disabled
           if(x.isReadable()) {
-            x.template setRemoteValue();
+            x.setRemoteValue();
             reg.read();
             auto expectedRawValue = x.template getRemoteValue<RawType>(/* raw = */ true);
             CHECK_EQUALITY(reg, expectedRawValue);

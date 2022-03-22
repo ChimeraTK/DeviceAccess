@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
   Device d("sdm://./dummy=goodMapFile.map");
   auto catalogue = d.getRegisterCatalogue();
-  BOOST_CHECK_NO_THROW(catalogue.getRegister("MODULE0/WORD_USER1"));
+  BOOST_CHECK_NO_THROW((void)catalogue.getRegister("MODULE0/WORD_USER1"));
 
   BOOST_CHECK(d.isOpened() == false);
   BOOST_CHECK_NO_THROW(d.open());
