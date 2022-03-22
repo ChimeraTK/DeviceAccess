@@ -24,6 +24,8 @@ namespace ChimeraTK {
 
     BackendRegisterCatalogueBase& operator=(BackendRegisterCatalogueBase&& other) = default;
 
+    virtual ~BackendRegisterCatalogueBase() = default;
+
     // Copy constructor/assignment is deleted. It could be implemented (need to take care of pointers in
     // insertionOrderedCatalogue), but currently there is no need for this and hence it is not done.
     BackendRegisterCatalogueBase(const BackendRegisterCatalogueBase& other) = delete;
