@@ -142,6 +142,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     std::vector<UserType> v;
     typedef typename Derived::rawUserType Traw;
     typedef typename Derived::minimumUserType T;
+    auto bufferLock = derived->acc.getBufferLock();
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       Traw e = derived->acc[i + derived->myOffset()];
       if(!getRaw) {
@@ -157,9 +158,12 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   void setRemoteValue() {
     auto v = generateValue<typename Derived::rawUserType>(true)[0];
-    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      derived->acc[i + derived->myOffset()] = v[i];
-    }
+    { //scope for the buffer lock
+      auto bufferLock = derived->acc.getBufferLock();
+      for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+        derived->acc[i + derived->myOffset()] = v[i];
+      }
+    } // release the buffer lock before triggering another thread
     if(derived->isPush()) {
       dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
     }
