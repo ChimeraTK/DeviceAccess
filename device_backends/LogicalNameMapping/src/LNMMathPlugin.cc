@@ -165,11 +165,11 @@ namespace ChimeraTK { namespace LNMBackend {
         while(true) {
           try {
             {
+              _pushParameterReadGroup.readAny();
               std::unique_lock<std::mutex> lk(_mx_lastWrittenValue);
               _h->computeResult(_lastWrittenValue, target->accessChannel(0));
             }
             target->writeDestructively();
-            _pushParameterReadGroup.readAny();
           }
           catch(ChimeraTK::runtime_error& e) {
             // no need to report the exception, as the accessor should have already done it
