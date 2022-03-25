@@ -181,6 +181,11 @@ namespace ChimeraTK { namespace LNMBackend {
     std::map<std::string, std::string> _parameters;
     std::string _formula;              // extracted from _parameters
     bool _enablePushParameters{false}; // extracted from _parameters
+
+    // Checks that all parameters have been written since opening the device.
+    // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
+    bool checkAllParametersWritten(
+        std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap);
   };
 
   /** Monostable Trigger Plugin: Write value to target which falls back to another value after defined time. */

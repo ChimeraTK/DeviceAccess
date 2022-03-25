@@ -51,6 +51,10 @@ namespace ChimeraTK {
     _opened = true;
     _hasException = false;
     _asyncReadActive = false;
+    {
+      std::unique_lock<std::mutex> lk(_versionOnOpenMutex);
+      _versionOnOpen = {};
+    }
 
     // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
@@ -334,13 +338,14 @@ namespace ChimeraTK {
     }
 
     // iterate all push subscriptions of variables and place initial value into queue
-    VersionNumber v{};
+    VersionNumber v = getVersionOnOpen();
     for(auto& r : _catalogue_mutable) {
       auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
       if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
         auto& lnmVariable = _variables[info.name];
         callForType(info.valueType, [&](auto arg) {
           auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
+          vtEntry.latestVersion = v; // store in case an accessor is created after calling activateAsyncRead
           for(auto& sub : vtEntry.subscriptions) {
             sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, v});
           }
@@ -359,6 +364,13 @@ namespace ChimeraTK {
       if(dev != "this" && dev != "") ret.insert(dev);
     }
     return ret;
+  }
+
+  /********************************************************************************************************************/
+
+  ChimeraTK::VersionNumber LogicalNameMappingBackend::getVersionOnOpen() {
+    std::unique_lock<std::mutex> lk(_versionOnOpenMutex);
+    return _versionOnOpen;
   }
 
   /********************************************************************************************************************/

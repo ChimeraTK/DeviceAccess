@@ -181,6 +181,8 @@ namespace ChimeraTK { namespace LNMBackend {
       try {
         _pushParameterReadGroup.readAny();
         if(!_mainValueWrittenAfterOpen) continue;
+        if(!checkAllParametersWritten(_pushParameterAccessorMap)) continue;
+
         {
           std::unique_lock<std::recursive_mutex> lk(_writeMutex);
           _h->computeResult(_lastWrittenValue, target->accessChannel(0));
@@ -219,6 +221,20 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
+  bool MathPlugin::checkAllParametersWritten(
+      std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap) {
+    bool allUpdated = true;
+    auto backend = _backend.lock(); // get a shared pointer from the weak pointer
+    for(auto& acc : accessorsMap) {
+      if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
+        allUpdated = false;
+      }
+    }
+    return allUpdated;
+  }
+
+  /********************************************************************************************************************/
+
   template<typename UserType>
   struct MathPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, double> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::buffer_2D;
@@ -243,8 +259,13 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override;
 
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override;
+
     MathPluginFormulaHelper h;
     MathPlugin* _p;
+
+    // if not all parameters have been updated in the plugin, the write transfer will not be executed
+    bool _skipWriteTransfer{false};
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::_target;
 
@@ -307,6 +328,9 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
 
+    // The readLatest might throw an exception. In this case preWrite() is never delegated and we must not call the target's portWrite().
+    _skipWriteTransfer = true;
+
     // update parameters
     for(auto& p : h.params) p.first->readLatest();
 
@@ -323,14 +347,34 @@ namespace ChimeraTK { namespace LNMBackend {
       // This is save because it is guaranteed by the frameworn that pre- and post actions are called in pairs.
       _p->_writeMutex.lock();
       _p->_lastWrittenValue = _target->accessChannel(0);
+      _p->_mainValueWrittenAfterOpen = true; // We have stored the value for the parameters thread,
+                                             // even if it's not written yet because not all parameters are there.
     }
+
+    // Until now the code has to be always exeuted to make sure incoming parameters changes write the
+    // correct value. If not all parameters have been written, we skip all further steps.
+    // Further incoming parameter updates might execute the write.
+    if(!_p->checkAllParametersWritten(_p->_pushParameterAccessorMap)) {
+      return;
+    }
+    // we are OK to go through with the transfer
+    _skipWriteTransfer = false;
 
     // evaluate the expression and store into target accessor
     h.computeResult(_target->accessChannel(0), _target->accessChannel(0));
 
     // pass validity to target and delegate preWrite
+    // FIXME: #9622 The data validity of the parameters should be considered
     _target->setDataValidity(this->_dataValidity);
     _target->preWrite(type, versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool MathPluginDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+    if(_skipWriteTransfer) return false; // No data loss. Value has been stored in preWrite for the parameters thread.
+    return _target->writeTransfer(versionNumber);
   }
 
   /********************************************************************************************************************/
@@ -343,11 +387,19 @@ namespace ChimeraTK { namespace LNMBackend {
         _p->_writeMutex.unlock();
       }
     });
+
+    if(_skipWriteTransfer) {
+      if(this->_activeException != nullptr) {
+        // Something has thrown before the target's preWrite was called. Re-throw it here.
+        std::rethrow_exception(this->_activeException);
+      }
+      return; // the trarget preWrite() has not been executed, so stop here
+    }
+
+    // delegate to the target
     _target->setActiveException(this->_activeException);
     _target->postWrite(type, versionNumber);
-    // only once everything is comlete we indicate that the write was done
-    _p->_mainValueWrittenAfterOpen = true;
-    // (the finally lambda releasing the lock is executed here if there has been no exception)
+    // (the "finally" lambda releasing the lock is executed here latest)
   }
 
   /********************************************************************************************************************/
