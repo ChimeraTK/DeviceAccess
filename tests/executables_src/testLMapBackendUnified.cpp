@@ -751,6 +751,11 @@ struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Deriv
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
+    // In addion we have to write the accessor which has the math plugin. Otherwise writing of the parameters will
+    // have no effect.
+    auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
+    x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
+    x->write();
   }
 
   typedef double minimumUserType;
@@ -786,8 +791,9 @@ struct RegVariableAsPushParameterInMath_var2
   }
 };
 
+// This is the actual register that is "decoreated" with the math plugin (the x in the formula)
 struct RegVariableAsPushParameterInMath_x : RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_x> {
-  std::string path() { return "/VariableAsPushParameterInMath"; }
+  std::string path() { return "/RegisterWithVariableAsPushParameterInMath"; }
 
   const double increment = 42;
 
