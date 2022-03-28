@@ -745,19 +745,6 @@ struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Deriv
   // the test "sees" the variable which supports wait_for_new_data
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
 
-  template<typename UserType>
-  void generateValueHook(std::vector<UserType>&) {
-    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
-    // async read here which is required for the test to be successful. The assumption is that generateValue is not
-    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
-    lmapBackend->activateAsyncRead();
-    // In addion we have to write the accessor which has the math plugin. Otherwise writing of the parameters will
-    // have no effect.
-    auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
-    x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
-    x->write();
-  }
-
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
   DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
@@ -768,6 +755,22 @@ struct RegVariableAsPushParameterInMath_var1
   std::string path() { return "/VariableForMathTest1"; }
 
   const double increment = 17;
+
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->activateAsyncRead();
+    // In addion we have to write the accessor which has the math plugin and the second parameter.
+    // Otherwise writing of the parameters will have no effect.
+    auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
+    x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
+    x->write();
+    auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    p2->read();
+    p2->write();
+  }
 
   template<typename T, typename Traw>
   T convertRawToCooked(Traw value) {
@@ -782,6 +785,22 @@ struct RegVariableAsPushParameterInMath_var2
   std::string path() { return "/VariableForMathTest2"; }
 
   const double increment = 23;
+
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->activateAsyncRead();
+    // In addion we have to write the accessor which has the math plugin and the first parameter.
+    // Otherwise writing of the parameters will have no effect.
+    auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
+    x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
+    x->write();
+    auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
+    p1->read();
+    p1->write();
+  }
 
   template<typename T, typename Traw>
   T convertRawToCooked(Traw value) {
@@ -802,6 +821,17 @@ struct RegVariableAsPushParameterInMath_x : RegVariableAsPushParameterInMathBase
     // Note: This in particular is a hack, since we have no guarantee that this gets actually written!
     // FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     RegVariableAsPushParameterInMathBase_lastX = v[0];
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->activateAsyncRead();
+    // In addion we have to write the two parameters. Otherwise writing will have no effect.
+    auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
+    p1->read();
+    p1->write();
+    auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    p2->read();
+    p2->write();
   }
 
   template<typename T, typename Traw>
