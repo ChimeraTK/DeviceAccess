@@ -683,10 +683,10 @@ namespace ChimeraTK {
       else if(info == typeid(std::string)) {
         _value = string;
       }
-      else if(info == typeid(Boolean)) {
+      else if(info == typeid(ChimeraTK::Boolean)) {
         _value = Boolean;
       }
-      else if(info == typeid(Void)) {
+      else if(info == typeid(ChimeraTK::Void)) {
         _value = Void;
       }
       else {
