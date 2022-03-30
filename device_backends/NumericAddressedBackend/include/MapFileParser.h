@@ -23,10 +23,8 @@ namespace ChimeraTK {
      * file.
      *
      *
-     * @throw exMapFileParser [LibMapException::EX_MAP_FILE_PARSE_ERROR] if
-     * parsing error detected or exMapFileParser
-     * [LibMapException::EX_CANNOT_OPEN_MAP_FILE] if specified MAP file cannot be
-     * opened
+     * @throw ChimeraTK::logic_error if parsing error detected or the specified MAP
+     * file cannot be opened
      * @param file_name name of MAP file
      * @return pointer to RegisterInfoMap object
      *
@@ -75,6 +73,8 @@ namespace ChimeraTK {
 
     void handle2D(const ParsedLine& pl);
 
+    void handle2DNewStyle(const ParsedLine& pl);
+
     /** 
      * Checks whether the register name does not contain the special prefixes marking multiplexed registers and
      * sequences etc.
@@ -88,6 +88,12 @@ namespace ChimeraTK {
     bool is2D(const RegisterPath& pathName);
 
     /**
+     * Checks whether the register name contains the prefix for a multiplexed register (but not for the individual
+     * sequences, so only the "main" entry matches).
+     */
+    bool is2DNewStyle(RegisterPath pathName);
+
+    /**
      * Generate sequence name from main entry for multiplexed registers
      */
     RegisterPath makeSequenceName(const RegisterPath& pathName, size_t index);
@@ -95,7 +101,7 @@ namespace ChimeraTK {
     /**
      * Generate 2D register name from main entry for multiplexed registers
      */
-    RegisterPath make2DName(const RegisterPath& pathName);
+    RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
 
     NumericAddressedRegisterCatalogue pmap;
     MetadataCatalogue metadataCatalogue;
