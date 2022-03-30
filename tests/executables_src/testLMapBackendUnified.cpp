@@ -746,12 +746,13 @@ struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Deriv
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
 
   typedef double minimumUserType;
-  typedef uint32_t rawUserType;
+  typedef minimumUserType rawUserType; // for this context raw means before the math conversion
   DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
-struct RegVariableAsPushParameterInMath_var1
-: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var1> {
+// path, increment, valuehook and convertion for var 1
+template<typename Derived>
+struct RegVariableAsPushParameterInMath_var1_base : RegVariableAsPushParameterInMathBase<Derived> {
   std::string path() { return "/VariableForMathTest1"; }
 
   const double increment = 17;
@@ -777,6 +778,91 @@ struct RegVariableAsPushParameterInMath_var1
     auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
     variable2->read();
     return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
+  }
+};
+
+//The actual working instance of the variable. Use as is
+struct RegVariableAsPushParameterInMath_var1
+: RegVariableAsPushParameterInMath_var1_base<RegVariableAsPushParameterInMath_var1> {};
+
+template<typename Derived>
+struct RegVariableAsPushParameterInMath_var1_not_written : RegVariableAsPushParameterInMath_var1_base<Derived> {
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue(bool /*getRaw */ = false) {
+    registerValueBeforeWrite = getRemoteValue<double>(true)[0][0]; // remember for comparison later
+
+    auto generatedValue = RegVariableAsPushParameterInMath_var1_base<Derived>::template generateValue<UserType>();
+    lastGeneratedValue = generatedValue[0][0]; // remember for comparison later
+    return generatedValue;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue(bool getRaw = false) {
+    // We have to trick the unified test into passing. It expects to see the data it has written.
+    // However, the test here is that the data actually has not been written.
+    // So we do the real test here, and return what we gave out in generateValue, so the unified test can succeed.
+
+    auto remoteRawValue = RegVariableAsPushParameterInMath_var1_base<Derived>::template getRemoteValue<UserType>(true);
+
+    // Hack:
+    // getRemoteValue is used by the generateValue base implementation in raw mode to access the device. We still need that.
+    // As the register with math pluin does not have a raw value, the unified test will always see the tricked version with
+    // the data it expects.
+    if(getRaw) {
+      return remoteRawValue;
+    }
+
+    auto convertedValue = this->derived->template convertRawToCooked<double, double>(registerValueBeforeWrite);
+    assert(convertedValue != lastGeneratedValue);
+    if(remoteRawValue[0][0] == registerValueBeforeWrite) {
+      // test successful. Return what is expected
+      return {{lastGeneratedValue}};
+    }
+    else {
+      if((lastReportedRemoteValue != remoteRawValue[0][0]) ||
+          (lastReportedValueBeforeWrite != registerValueBeforeWrite)) {
+        std::cout << "FAILED TEST: Register content altered when it should not have been. (" << remoteRawValue[0][0]
+                  << " !=  " << registerValueBeforeWrite << ")" << std::endl;
+        lastReportedRemoteValue = remoteRawValue[0][0];
+        lastReportedValueBeforeWrite = registerValueBeforeWrite;
+      }
+      return {{convertedValue}};
+    }
+  }
+
+  double registerValueBeforeWrite;
+  double lastGeneratedValue;
+  double lastReportedRemoteValue{0};
+  double lastReportedValueBeforeWrite{0};
+};
+
+struct RegVariableAsPushParameterInMath_var1_not_written1
+: RegVariableAsPushParameterInMath_var1_not_written<RegVariableAsPushParameterInMath_var1_not_written1> {
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->activateAsyncRead();
+    // Only write the accessor, not the second parameter.
+    auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
+    x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
+    x->write();
+  }
+};
+
+struct RegVariableAsPushParameterInMath_var1_not_written2
+: RegVariableAsPushParameterInMath_var1_not_written<RegVariableAsPushParameterInMath_var1_not_written2> {
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->activateAsyncRead();
+    // Only write the second parameter, not the accessor.
+    auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    p2->read();
+    p2->write();
   }
 };
 
@@ -927,6 +1013,8 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegWordFirmwareWithMath_W>()
       .addRegister<RegWordFirmwareAsParameterInMath>()
       .addRegister<RegVariableAsPushParameterInMath_var1>()
+      .addRegister<RegVariableAsPushParameterInMath_var1_not_written1>()
+      .addRegister<RegVariableAsPushParameterInMath_var1_not_written2>()
       .addRegister<RegVariableAsPushParameterInMath_var2>()
       .addRegister<RegVariableAsPushParameterInMath_x>()
       .addRegister<RegMonostableTrigger>()
