@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <list>
 
 namespace ChimeraTK {
 
@@ -102,6 +103,8 @@ namespace ChimeraTK {
      * Generate 2D register name from main entry for multiplexed registers
      */
     RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
+
+    void createMuxedAccessors(const ParsedLine &pl, std::list<ParsedLine>& channelLines, const std::string& prefix);
 
     NumericAddressedRegisterCatalogue pmap;
     MetadataCatalogue metadataCatalogue;

@@ -346,11 +346,15 @@ namespace ChimeraTK {
       }
     }
 
+    channelLines.sort([](auto& a, auto& b) { return a.address < b.address; });
+    createMuxedAccessors(pl, channelLines, MEM_MULTIPLEXED_PREFIX);
+  }
+
+  void MapFileParser::createMuxedAccessors(const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix) {
     if(channelLines.empty()) {
       throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
     }
 
-    channelLines.sort([](auto& a, auto& b) { return a.address < b.address; });
     std::vector<NumericAddressedRegisterInfo::ChannelInfo> channels;
     size_t bytesPerBlock = 0;
 
@@ -365,7 +369,7 @@ namespace ChimeraTK {
 
     assert(bytesPerBlock > 0);
 
-    // make sure channel bit interpretation widthes are not wider than the actual channel width
+    // make sure channel bit interpretation widths are not wider than the actual channel width
     for(size_t i = 0; i < channels.size() - 1; ++i) {
       auto actualWidth = channels[i + 1].bitOffset - channels[i].bitOffset;
       if(channels[i].width > actualWidth) {
@@ -382,7 +386,7 @@ namespace ChimeraTK {
 
     // compute number of blocks (= samples per channel)
     auto nBlocks = std::floor(pl.nBytes / bytesPerBlock);
-    auto name2D = make2DName(pl.pathName, MEM_MULTIPLEXED_PREFIX);
+    auto name2D = make2DName(pl.pathName, prefix);
     auto registerInfo = NumericAddressedRegisterInfo(name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels,
         pl.registerAccess, pl.interruptCtrlNumber, pl.interruptNumber);
     pmap.addRegister(registerInfo);
@@ -399,62 +403,17 @@ namespace ChimeraTK {
 
   void MapFileParser::handle2D(const ParsedLine& pl) {
     // search for sequence entries matching the given register, create ChannelInfos from them
-    std::vector<NumericAddressedRegisterInfo::ChannelInfo> channels;
-    size_t bytesPerBlock = 0; // size of one block in bytes (one sample for all channels)
+    std::list<ParsedLine> channelLines;
     while(true) {
-      auto it = parsedLinesMap.find(makeSequenceName(pl.pathName, channels.size()));
+      auto it = parsedLinesMap.find(makeSequenceName(pl.pathName, channelLines.size()));
       if(it == parsedLinesMap.end()) break;
-      auto plch = it->second;
-
-      if(plch.address < pl.address) {
+      if(it->second.address < pl.address)
         throw ChimeraTK::logic_error(
             "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
-      }
-
-      channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{
-          uint32_t(plch.address - pl.address) * 8, plch.type, plch.width, plch.nFractionalBits, plch.signedFlag});
-
-      bytesPerBlock += plch.nBytes;
-      if(plch.nBytes != 1 && plch.nBytes != 2 && plch.nBytes != 4) {
-        throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
-      }
+      channelLines.push_back(it->second);
     }
 
-    if(channels.empty()) {
-      throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
-    }
-    assert(bytesPerBlock > 0);
-
-    // make sure channel bit interpretation widthes are not wider than the actual channel width
-    for(size_t i = 0; i < channels.size() - 1; ++i) {
-      auto actualWidth = channels[i + 1].bitOffset - channels[i].bitOffset;
-      if(channels[i].width > actualWidth) {
-        channels[i].width = actualWidth;
-      }
-    }
-    {
-      // last channel needs special treatment
-      auto actualWidth = bytesPerBlock * 8 - channels.back().bitOffset;
-      if(channels.back().width > actualWidth) {
-        channels.back().width = actualWidth;
-      }
-    }
-
-    // compute number of blocks (= samples per channel)
-    auto nBlocks = std::floor(pl.nBytes / bytesPerBlock);
-
-    // create 2D entry
-    auto name2D = make2DName(pl.pathName, MULTIPLEXED_SEQUENCE_PREFIX);
-    auto registerInfo = NumericAddressedRegisterInfo(name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels,
-        pl.registerAccess, pl.interruptCtrlNumber, pl.interruptNumber);
-    pmap.addRegister(registerInfo);
-
-    // create 1D entry for reading the multiplexed raw data
-    assert(pl.nBytes % 4 == 0);
-    auto registerInfoMuxedRaw = NumericAddressedRegisterInfo(name2D + ".MULTIPLEXED_RAW", pl.nBytes / 4, pl.address,
-        pl.nBytes, pl.bar, 32, 0, true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT,
-        pl.interruptCtrlNumber, pl.interruptNumber);
-    pmap.addRegister(registerInfoMuxedRaw);
+    createMuxedAccessors(pl, channelLines, MULTIPLEXED_SEQUENCE_PREFIX);
   }
 
   /********************************************************************************************************************/
