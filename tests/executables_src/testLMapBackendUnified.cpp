@@ -730,7 +730,7 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
 /// RegVariableAsPushParameterInMath_x definition.
 static double RegVariableAsPushParameterInMathBase_lastX;
 
-template<typename Derived>
+template<typename Derived, typename RawToCookedProvider>
 struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Derived> {
   // Test only write direction, as we are writing to the variable parameter in this test
   // Also turn off the catalogue test which would fail because the register actually is readable.
@@ -745,14 +745,42 @@ struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Deriv
   // the test "sees" the variable which supports wait_for_new_data
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
 
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
+    return RawToCookedProvider::convertRawToCooked_impl(value, lmapBackend);
+  }
+
   typedef double minimumUserType;
   typedef minimumUserType rawUserType; // for this context raw means before the math conversion
   DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
+// template type UserType and RawType have to be double for the math plugin, so we make that explicit in this helper function
+struct RawToCookedProvider_Var1 {
+  static double convertRawToCooked_impl(double value, boost::shared_ptr<LogicalNameMappingBackend>& lmapBackend) {
+    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    variable2->read();
+    return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
+  }
+};
+
 // path, increment, valuehook and convertion for var 1
-template<typename Derived>
-struct RegVariableAsPushParameterInMath_var1_base : RegVariableAsPushParameterInMathBase<Derived> {
+//template<typename Derived>
+//struct RegVariableAsPushParameterInMath_var1_base : RegVariableAsPushParameterInMathBase<Derived> {
+//  std::string path() { return "/VariableForMathTest1"; }
+
+//  const double increment = 17;
+
+//  template<typename T, typename Traw>
+//  T convertRawToCooked(Traw value) {
+//    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+//    variable2->read();
+//    return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
+//  }
+//};
+
+struct RegVariableAsPushParameterInMath_var1
+: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var1, RawToCookedProvider_Var1> {
   std::string path() { return "/VariableForMathTest1"; }
 
   const double increment = 17;
@@ -772,26 +800,17 @@ struct RegVariableAsPushParameterInMath_var1_base : RegVariableAsPushParameterIn
     p2->read();
     p2->write();
   }
-
-  template<typename T, typename Traw>
-  T convertRawToCooked(Traw value) {
-    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
-    variable2->read();
-    return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
-  }
 };
 
-//The actual working instance of the variable. Use as is
-struct RegVariableAsPushParameterInMath_var1
-: RegVariableAsPushParameterInMath_var1_base<RegVariableAsPushParameterInMath_var1> {};
-
 template<typename Derived>
-struct RegVariableAsPushParameterInMath_var1_not_written : RegVariableAsPushParameterInMath_var1_base<Derived> {
+struct RegVariableAsPushParameterInMath_var1_not_written
+: RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider_Var1> {
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue(bool /*getRaw */ = false) {
     registerValueBeforeWrite = getRemoteValue<double>(true)[0][0]; // remember for comparison later
 
-    auto generatedValue = RegVariableAsPushParameterInMath_var1_base<Derived>::template generateValue<UserType>();
+    auto generatedValue =
+        RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider_Var1>::template generateValue<UserType>();
     lastGeneratedValue = generatedValue[0][0]; // remember for comparison later
     return generatedValue;
   }
@@ -802,7 +821,9 @@ struct RegVariableAsPushParameterInMath_var1_not_written : RegVariableAsPushPara
     // However, the test here is that the data actually has not been written.
     // So we do the real test here, and return what we gave out in generateValue, so the unified test can succeed.
 
-    auto remoteRawValue = RegVariableAsPushParameterInMath_var1_base<Derived>::template getRemoteValue<UserType>(true);
+    auto remoteRawValue =
+        RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider_Var1>::template getRemoteValue<UserType>(
+            true);
 
     // Hack:
     // getRemoteValue is used by the generateValue base implementation in raw mode to access the device. We still need that.
@@ -838,6 +859,10 @@ struct RegVariableAsPushParameterInMath_var1_not_written : RegVariableAsPushPara
 
 struct RegVariableAsPushParameterInMath_var1_not_written1
 : RegVariableAsPushParameterInMath_var1_not_written<RegVariableAsPushParameterInMath_var1_not_written1> {
+  std::string path() { return "/VariableForMathTest1"; }
+
+  const double increment = 18;
+
   template<typename UserType>
   void generateValueHook(std::vector<UserType>&) {
     // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
@@ -853,6 +878,10 @@ struct RegVariableAsPushParameterInMath_var1_not_written1
 
 struct RegVariableAsPushParameterInMath_var1_not_written2
 : RegVariableAsPushParameterInMath_var1_not_written<RegVariableAsPushParameterInMath_var1_not_written2> {
+  std::string path() { return "/VariableForMathTest1"; }
+
+  const double increment = 19;
+
   template<typename UserType>
   void generateValueHook(std::vector<UserType>&) {
     // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
@@ -867,7 +896,7 @@ struct RegVariableAsPushParameterInMath_var1_not_written2
 };
 
 struct RegVariableAsPushParameterInMath_var2
-: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var2> {
+: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var2, int> {
   std::string path() { return "/VariableForMathTest2"; }
 
   const double increment = 23;
@@ -897,7 +926,8 @@ struct RegVariableAsPushParameterInMath_var2
 };
 
 // This is the actual register that is "decoreated" with the math plugin (the x in the formula)
-struct RegVariableAsPushParameterInMath_x : RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_x> {
+struct RegVariableAsPushParameterInMath_x
+: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_x, int> {
   std::string path() { return "/RegisterWithVariableAsPushParameterInMath"; }
 
   const double increment = 42;
