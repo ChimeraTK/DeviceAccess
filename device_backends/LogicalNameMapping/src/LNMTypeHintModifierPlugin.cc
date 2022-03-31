@@ -27,11 +27,25 @@ namespace ChimeraTK { namespace LNMBackend {
   void TypeHintModifierPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
     // first update the info so we have the latest version from the catalogue.
     _info = catalogue.getBackendRegister(_info.name);
+
+    // keep raw data type and transport layer data type from original entry
     auto d = _info._dataDescriptor;
+
     auto newDescriptor = DataDescriptor(_dataType);
-    _info._dataDescriptor = DataDescriptor(newDescriptor.fundamentalType(), newDescriptor.isIntegral(),
-        newDescriptor.isSigned(), newDescriptor.nDigits(),
-        _dataType.isIntegral() ? 0 : newDescriptor.nFractionalDigits(), d.rawDataType(), d.transportLayerDataType());
+
+    if(newDescriptor.fundamentalType() == DataDescriptor::FundamentalType::numeric) {
+      _info._dataDescriptor = DataDescriptor(newDescriptor.fundamentalType(), newDescriptor.isIntegral(),
+          newDescriptor.isSigned(), newDescriptor.nDigits(),
+          _dataType.isIntegral() ? 0 : newDescriptor.nFractionalDigits(), d.rawDataType(), d.transportLayerDataType());
+    }
+    else {
+      // can't call isIntegral() etc. if not numeric (just provide dummy info for those fields as they are ignored)
+      _info._dataDescriptor = DataDescriptor(
+          newDescriptor.fundamentalType(), false, false, 0, 0, d.rawDataType(), d.transportLayerDataType());
+    }
+
+    d = _info._dataDescriptor;
+
     catalogue.modifyRegister(_info);
   }
 }} // namespace ChimeraTK::LNMBackend
