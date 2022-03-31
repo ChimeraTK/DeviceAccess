@@ -12,44 +12,61 @@
 
 #define BOOST_TEST_MODULE MultiplexedDataAccessorTest
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
 static const std::string DMAP_FILE_NAME("dummies.dmap");
-static const std::string DEVICE_ALIAS("SEQUENCES");
-static const std::string DEVICE_INVALID_SEQUENCES_ALIAS("INVALID_SEQUENCES");
-static const std::string DEVICE_MIXED_ALIAS("MIXED_SEQUENCES");
-
-static const std::string MAP_FILE_NAME("sequences.map");
 static const std::string TEST_MODULE_NAME("TEST");
 static const std::string INVALID_MODULE_NAME("INVALID");
 static const RegisterPath TEST_MODULE_PATH(TEST_MODULE_NAME);
 static const RegisterPath INVALID_MODULE_PATH(INVALID_MODULE_NAME);
 
+struct TestParameters {
+  std::string deviceAlias;
+  std::string deviceInvalidAlias;
+  std::string deviceMixedAlias;
+  std::string mapFileName;
+};
+
+// This is necessary for the data test cases
+std::ostream& operator<<(std::ostream& o, const TestParameters& p) {
+  o << p.deviceAlias << " " << p.deviceInvalidAlias << " " << p.deviceMixedAlias << " "
+    << p.mapFileName;
+
+  return o;
+}
+
+static TestParameters AREA_PARAMS{
+    "SEQUENCES", "INVALID_SEQUENCES", "MIXED_SEQUENCES", "sequences.map"};
+
+static TestParameters NEW_AREA_PARAMS{
+    "NEW_SEQUENCES", "NEW_INVALID_SEQUENCES", "NEW_MIXED_SEQUENCES", "newSequences.mapp"};
+
 BOOST_AUTO_TEST_SUITE(MultiplexedDataAccessorTestSuite)
 
-BOOST_AUTO_TEST_CASE(testConstructor) {
+BOOST_DATA_TEST_CASE(testConstructor, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
-  device.open(DEVICE_ALIAS);
+  device.open(sample.deviceAlias);
   TwoDRegisterAccessor<double> deMultiplexer = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH / "FRAC_INT");
   BOOST_TEST(deMultiplexer[0].size() == 5);
 
   device.close();
-  BOOST_CHECK_THROW(device.open(DEVICE_INVALID_SEQUENCES_ALIAS), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device.open(sample.deviceInvalidAlias), ChimeraTK::logic_error);
 }
 
 // test the de-multiplexing itself, with 'identity' fixed point conversion
 template<class SequenceWordType>
-void testDeMultiplexing(std::string areaName) {
+void testDeMultiplexing(std::string areaName, const TestParameters& sample) {
   std::cout << "testDeMultiplexing areaName = " << areaName
             << "  SequenceWordType = " << typeid(SequenceWordType).name() << std::endl;
 
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
-  device.open(DEVICE_ALIAS);
+  device.open(sample.deviceAlias);
 
   std::vector<SequenceWordType> ioBuffer(15);
   auto area = device.getOneDRegisterAccessor<int32_t>(TEST_MODULE_NAME + "/" + areaName + ".MULTIPLEXED_RAW");
@@ -124,24 +141,24 @@ void testDeMultiplexing(std::string areaName) {
   BOOST_TEST(ioBuffer[14] == '9');
 }
 
-BOOST_AUTO_TEST_CASE(testDeMultiplexing32) {
-  testDeMultiplexing<int32_t>("INT");
+BOOST_DATA_TEST_CASE(testDeMultiplexing32, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
+  testDeMultiplexing<int32_t>("INT", sample);
 }
-BOOST_AUTO_TEST_CASE(testDeMultiplexing16) {
-  testDeMultiplexing<int16_t>("SHORT");
+BOOST_DATA_TEST_CASE(testDeMultiplexing16, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
+  testDeMultiplexing<int16_t>("SHORT", sample);
 }
-BOOST_AUTO_TEST_CASE(testDeMultiplexing8) {
-  testDeMultiplexing<int8_t>("CHAR");
+BOOST_DATA_TEST_CASE(testDeMultiplexing8, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
+  testDeMultiplexing<int8_t>("CHAR", sample);
 }
 
 // test the de-multiplexing itself, with  fixed point conversion
 // and using the factory function
 template<class SequenceWordType>
-void testWithConversion(std::string multiplexedSequenceName) {
+void testWithConversion(std::string multiplexedSequenceName, const TestParameters& sample) {
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
-  device.open(DEVICE_ALIAS);
+  device.open(sample.deviceAlias);
 
   std::vector<SequenceWordType> ioBuffer(15);
   auto area = device.getOneDRegisterAccessor<int32_t>(TEST_MODULE_PATH / multiplexedSequenceName / "MULTIPLEXED_RAW");
@@ -194,21 +211,21 @@ void testWithConversion(std::string multiplexedSequenceName) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(testWithConversion32) {
-  testWithConversion<int32_t>("FRAC_INT");
+BOOST_DATA_TEST_CASE(testWithConversion32, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
+  testWithConversion<int32_t>("FRAC_INT", sample);
 }
-BOOST_AUTO_TEST_CASE(testWithConversion16) {
-  testWithConversion<int16_t>("FRAC_SHORT");
+BOOST_DATA_TEST_CASE(testWithConversion16, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
+  testWithConversion<int16_t>("FRAC_SHORT", sample);
 }
-BOOST_AUTO_TEST_CASE(testWithConversion8) {
-  testWithConversion<int8_t>("FRAC_CHAR");
+BOOST_DATA_TEST_CASE(testWithConversion8, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
+  testWithConversion<int8_t>("FRAC_CHAR", sample);
 }
 
-BOOST_AUTO_TEST_CASE(testMixed) {
+BOOST_DATA_TEST_CASE(testMixed, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
-  device.open(DEVICE_MIXED_ALIAS);
+  device.open(sample.deviceMixedAlias);
 
   TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM");
   auto myRawData = device.getOneDRegisterAccessor<int32_t>("APP0/DAQ0_BAM.MULTIPLEXED_RAW", 0, 0, {AccessMode::raw});
@@ -253,23 +270,23 @@ BOOST_AUTO_TEST_CASE(testMixed) {
   BOOST_TEST(myMixedData[10][0] == -12);
 }
 
-BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
-  auto registerMap = MapFileParser().parse(MAP_FILE_NAME).first;
+BOOST_DATA_TEST_CASE(testNumberOfSequencesDetected, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
+  auto registerMap = MapFileParser().parse(sample.mapFileName).first;
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
-  device.open(DEVICE_ALIAS);
+  device.open(sample.deviceAlias);
 
   TwoDRegisterAccessor<double> deMuxedData = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH / "FRAC_INT");
 
   BOOST_TEST(deMuxedData.getNChannels() == 3);
 }
 
-BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
+BOOST_DATA_TEST_CASE(testAreaOfInterestOffset, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
-  device.open(DEVICE_MIXED_ALIAS);
+  device.open(sample.deviceMixedAlias);
 
   // There are 44 bytes per block. In total the area is 4096 bytes long
   // => There are 372 elements (=4092 bytes) in the area, the last 4 bytes are unused.
@@ -357,11 +374,11 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(testAreaOfInterestLength) {
+BOOST_DATA_TEST_CASE(testAreaOfInterestLength, boost::unit_test::data::make({AREA_PARAMS, NEW_AREA_PARAMS})) {
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
-  device.open(DEVICE_MIXED_ALIAS);
+  device.open(sample.deviceMixedAlias);
 
   const size_t nWordsPerBlock = 44 / sizeof(int32_t);
 
