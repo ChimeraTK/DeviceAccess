@@ -1,0 +1,3 @@
+NEW_SEQUENCES (dummy?map=newSequences.mapp)
+NEW_MIXED_SEQUENCES   (dummy?map=bam_fmc25_r1225_new_muxed.mapp)
+NEW_INVALID_SEQUENCES   (dummy?map=newInvalidSequences.mapp)

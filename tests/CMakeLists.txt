@@ -81,7 +81,7 @@ MACRO( COPY_MAPPING_FILES )
     MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
     IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map
     dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map newSequences.mapp invalidSequences.map newInvalidSequences.mapp
-    muxedDataAcessor.map
+    muxedDataAcessor.map newMuxedDataAcessor.mapp newMuxedDummies.dmap
     testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
     invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap
     invalid8.xlmap withParams.xlmap is_functional.xlmap logicalnamemap.dmap
