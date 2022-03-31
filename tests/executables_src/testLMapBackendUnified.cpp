@@ -764,21 +764,6 @@ struct RawToCookedProvider_Var1 {
   }
 };
 
-// path, increment, valuehook and convertion for var 1
-//template<typename Derived>
-//struct RegVariableAsPushParameterInMath_var1_base : RegVariableAsPushParameterInMathBase<Derived> {
-//  std::string path() { return "/VariableForMathTest1"; }
-
-//  const double increment = 17;
-
-//  template<typename T, typename Traw>
-//  T convertRawToCooked(Traw value) {
-//    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
-//    variable2->read();
-//    return (value - variable2->accessData(0) * 121 - RegVariableAsPushParameterInMathBase_lastX) / 120;
-//  }
-//};
-
 struct RegVariableAsPushParameterInMath_var1
 : RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var1, RawToCookedProvider_Var1> {
   std::string path() { return "/VariableForMathTest1"; }
@@ -802,15 +787,16 @@ struct RegVariableAsPushParameterInMath_var1
   }
 };
 
-template<typename Derived>
-struct RegVariableAsPushParameterInMath_var1_not_written
-: RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider_Var1> {
+template<typename Derived, typename RawToCookedProvider>
+struct RegVariableAsPushParameterInMath_not_written
+: RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider> {
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue(bool /*getRaw */ = false) {
+    // raw has been set to true, so we get the value as it is on the device
     registerValueBeforeWrite = getRemoteValue<double>(true)[0][0]; // remember for comparison later
 
     auto generatedValue =
-        RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider_Var1>::template generateValue<UserType>();
+        RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider>::template generateValue<UserType>();
     lastGeneratedValue = generatedValue[0][0]; // remember for comparison later
     return generatedValue;
   }
@@ -822,11 +808,10 @@ struct RegVariableAsPushParameterInMath_var1_not_written
     // So we do the real test here, and return what we gave out in generateValue, so the unified test can succeed.
 
     auto remoteRawValue =
-        RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider_Var1>::template getRemoteValue<UserType>(
-            true);
+        RegVariableAsPushParameterInMathBase<Derived, RawToCookedProvider>::template getRemoteValue<UserType>(true);
 
     // Hack:
-    // getRemoteValue is used by the generateValue base implementation in raw mode to access the device. We still need that.
+    // getRemoteValue is used by the generateValue implementation in raw mode to access the device. We still need that.
     // As the register with math pluin does not have a raw value, the unified test will always see the tricked version with
     // the data it expects.
     if(getRaw) {
@@ -834,12 +819,14 @@ struct RegVariableAsPushParameterInMath_var1_not_written
     }
 
     auto convertedValue = this->derived->template convertRawToCooked<double, double>(registerValueBeforeWrite);
-    assert(convertedValue != lastGeneratedValue);
+    assert(convertedValue !=
+        lastGeneratedValue); // test that the unified test does not accidentally pass because something in generateValue went wrong.
     if(remoteRawValue[0][0] == registerValueBeforeWrite) {
       // test successful. Return what is expected
       return {{lastGeneratedValue}};
     }
     else {
+      // print limiter because this function is called many times in a timeout loop due to the multi-threading
       if((lastReportedRemoteValue != remoteRawValue[0][0]) ||
           (lastReportedValueBeforeWrite != registerValueBeforeWrite)) {
         std::cout << "FAILED TEST: Register content altered when it should not have been. (" << remoteRawValue[0][0]
@@ -853,12 +840,13 @@ struct RegVariableAsPushParameterInMath_var1_not_written
 
   double registerValueBeforeWrite;
   double lastGeneratedValue;
-  double lastReportedRemoteValue{0};
-  double lastReportedValueBeforeWrite{0};
+  double lastReportedRemoteValue{0};      // for the print limiter
+  double lastReportedValueBeforeWrite{0}; // for the print limiter
 };
 
 struct RegVariableAsPushParameterInMath_var1_not_written1
-: RegVariableAsPushParameterInMath_var1_not_written<RegVariableAsPushParameterInMath_var1_not_written1> {
+: RegVariableAsPushParameterInMath_not_written<RegVariableAsPushParameterInMath_var1_not_written1,
+      RawToCookedProvider_Var1> {
   std::string path() { return "/VariableForMathTest1"; }
 
   const double increment = 18;
@@ -877,7 +865,8 @@ struct RegVariableAsPushParameterInMath_var1_not_written1
 };
 
 struct RegVariableAsPushParameterInMath_var1_not_written2
-: RegVariableAsPushParameterInMath_var1_not_written<RegVariableAsPushParameterInMath_var1_not_written2> {
+: RegVariableAsPushParameterInMath_not_written<RegVariableAsPushParameterInMath_var1_not_written2,
+      RawToCookedProvider_Var1> {
   std::string path() { return "/VariableForMathTest1"; }
 
   const double increment = 19;
@@ -895,8 +884,16 @@ struct RegVariableAsPushParameterInMath_var1_not_written2
   }
 };
 
+struct RawToCookedProvider_Var2 {
+  static double convertRawToCooked_impl(double value, boost::shared_ptr<LogicalNameMappingBackend>& lmapBackend) {
+    auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
+    variable1->read();
+    return (value - variable1->accessData(0) * 120 - RegVariableAsPushParameterInMathBase_lastX) / 121;
+  }
+};
+
 struct RegVariableAsPushParameterInMath_var2
-: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var2, int> {
+: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_var2, RawToCookedProvider_Var2> {
   std::string path() { return "/VariableForMathTest2"; }
 
   const double increment = 23;
@@ -916,18 +913,21 @@ struct RegVariableAsPushParameterInMath_var2
     p1->read();
     p1->write();
   }
+};
 
-  template<typename T, typename Traw>
-  T convertRawToCooked(Traw value) {
+struct RawToCookedProvider_x {
+  static double convertRawToCooked_impl(double value, boost::shared_ptr<LogicalNameMappingBackend>& lmapBackend) {
     auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     variable1->read();
-    return (value - variable1->accessData(0) * 120 - RegVariableAsPushParameterInMathBase_lastX) / 121;
+    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    variable2->read();
+    return value - variable1->accessData(0) * 120 - variable2->accessData(0) * 121;
   }
 };
 
 // This is the actual register that is "decoreated" with the math plugin (the x in the formula)
 struct RegVariableAsPushParameterInMath_x
-: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_x, int> {
+: RegVariableAsPushParameterInMathBase<RegVariableAsPushParameterInMath_x, RawToCookedProvider_x> {
   std::string path() { return "/RegisterWithVariableAsPushParameterInMath"; }
 
   const double increment = 42;
@@ -948,15 +948,6 @@ struct RegVariableAsPushParameterInMath_x
     auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
     p2->read();
     p2->write();
-  }
-
-  template<typename T, typename Traw>
-  T convertRawToCooked(Traw value) {
-    auto variable1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
-    variable1->read();
-    auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
-    variable2->read();
-    return value - variable1->accessData(0) * 120 - variable2->accessData(0) * 121;
   }
 };
 
