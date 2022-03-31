@@ -1,0 +1,42 @@
+@MAPFILE_REVISION 0.0.0-19-g015f0b61
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0                  262144            0      1048576   13   32    0    0   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.FIRST                                                  1            0            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.SECOND                                                  1            2            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.INDEX_2                                                  1            4            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.FOO                                                  1            6            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.BAR                                                  1            8            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.SOME_CHANNEL                                                  1           10            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.ANOTHER_CHANNEL                                                  1           12            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.RAW_0                                                 1           14            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.RAW_1                                                  1           16            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.RAW_2                                                  1           18            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.RAW_4                                                1           20            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.SUPER_0                                                 1           22            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.SUPER_1                                                 1           24            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.SUPER_4                                                 1           26            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.SUPER_7                                                 1           28            2   13   16    0    1   RO
+DAQ_MEM.MEM_MULTIPLEXED_DAQ_CTRL_BUF0.SUPER_5                                                 1           30            2   13   16    0    1   RO
+
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0              262144      4194304      1048576   13   32    0    0   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_0                                                  1      4194304            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_1                                                  1      4194306            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_2                                                  1      4194308            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_3                                                  1      4194310            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_4                                                  1      4194312            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_5                                                  1      4194314            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_6                                                  1      4194316            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_7                                                  1      4194318            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_8                                                  1      4194320            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_9                                                  1      4194322            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_10                                                 1      4194324            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_11                                                 1      4194326            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_12                                                 1      4194328            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_13                                                 1      4194330            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_14                                                 1      4194332            2   13   16    0    1   RW
+DAQ_MEM_RAW.MEM_MULTIPLEXED_DAQ1_RAW_BUF0.SEQUENCE_15                                                 1      4194334            2   13   16    0    1   RW
+
+ch13_DAQ_MEM.DAQ_MEM                                  2359296            0      9437184   13   32    0    0   RW
+ch13_DAQ_MEM_RAW.DAQ_MEM_RAW                          2359296            0      9437184   13   32    0    0   RW
+ch13_top.ch13_DAQ_MEM                                 2359296            0      9437184   13   32    0    0   RW
+ch13_top.ch13_DAQ_MEM_RAW                             2359296            0      9437184   13   32    0    0   RW
+

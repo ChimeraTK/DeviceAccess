@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
   ChimeraTK::MapFileParser map_file_parser;
   auto [regcat, mdcat] = map_file_parser.parse("newMuxedDataAcessor.mapp");
 
-  BOOST_CHECK_EQUAL(regcat.getNumberOfRegisters(), 22);
+  BOOST_CHECK_EQUAL(regcat.getNumberOfRegisters(), 8);
 }
 
 /*******************************************************************************************************************/
