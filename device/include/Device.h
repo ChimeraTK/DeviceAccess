@@ -418,16 +418,6 @@ namespace ChimeraTK {
     /** \brief <b>DEPRECATED</b>
      *
      *  \deprecated
-     *  This function is deprecated. Use the getBufferingRegisterAccessor instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use getScalarRegisterAccessor() or getOneDRegisterAccessor() "
-                 "instead!")]] boost::shared_ptr<ChimeraTK::RegisterAccessor>
-        getRegisterAccessor(const std::string& registerName, const std::string& module = std::string()) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
      *  This function is deprecated. Open by alias name instead.
      *  @todo Change warning into runtime error after release of version 0.9
      */
