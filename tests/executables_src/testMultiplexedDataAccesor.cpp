@@ -40,10 +40,10 @@ std::ostream& operator<<(std::ostream& o, const TestParameters& p) {
 }
 
 static TestParameters AREA_PARAMS{
-    "dummies.dmap", "SEQUENCES", "INVALID_SEQUENCES", "MIXED_SEQUENCES", "sequences.map"};
+    "dummies.dmap", "SEQUENCES", "INVALID_SEQUENCES", "SEQUENCES", "sequences.map"};
 
 static TestParameters NEW_AREA_PARAMS{
-    "newMuxedDummies.dmap", "NEW_SEQUENCES", "NEW_INVALID_SEQUENCES", "NEW_MIXED_SEQUENCES", "newSequences.mapp"};
+    "newMuxedDummies.dmap", "NEW_SEQUENCES", "NEW_INVALID_SEQUENCES", "NEW_SEQUENCES", "newSequences.mapp"};
 
 BOOST_AUTO_TEST_SUITE(MultiplexedDataAccessorTestSuite)
 

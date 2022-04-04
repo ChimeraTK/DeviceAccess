@@ -59,3 +59,24 @@ TEST.MEM_MULTIPLEXED_MIXED 6 0 24 0x3
 TEST.MEM_MULTIPLEXED_MIXED.0 1 0x00 1 0x3
 TEST.MEM_MULTIPLEXED_MIXED.1 1 0x01 2 0x3
 TEST.MEM_MULTIPLEXED_MIXED.2 1 0x03 4 0x3
+
+# real-life mixed word sizes
+APP0.MEM_MULTIPLEXED_DAQ0_BAM                                   4096            0        16384      2     32      0    0
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.0                                    1            0            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.1                                    1            2            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.2                                    1            4            4      2     18      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.3                                    1            8            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.4                                    1           10            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.5                                    1           12            2      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.6                                    1           14            2      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.7                                    1           16            1      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.8                                    1           17            1      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.9                                    1           18            1      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.10                                   1           19            1      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.11                                   1           20            4      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.12                                   1           24            4      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.13                                   1           28            4      2     32      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.14                                   1           32            4      2     32      0    0
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.15                                   1           36            4      2     32      0    0
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.16                                   1           40            4      2     32      0    0
+

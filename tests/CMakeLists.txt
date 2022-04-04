@@ -77,7 +77,7 @@ COPY_CONTENT_TO_BUILD_DIR("${CMAKE_CURRENT_SOURCE_DIR}/manualTests")
 MACRO( COPY_MAPPING_FILES )
   # run_performance_test.sh is not a map file but should be copied also into the tests directory
   FILE( COPY mtcadummy_withoutModules.map mtcadummy.map mtcadummyB.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map
-    mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map bam_fmc25_r1225.mapp bam_fmc25_r1225_new_muxed.mapp
+    mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map
     MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
     IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map
     dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map newSequences.mapp invalidSequences.map newInvalidSequences.mapp
