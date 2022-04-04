@@ -126,9 +126,11 @@ namespace ChimeraTK { namespace LNMBackend {
       }
     }
 
-    // The main value has to be written once before the parameter thread will write anything
+    // The main value has  to be written once before the parameter thread will write anything,
+    // and all parameters have to be written before the accessor itself will write to the device.
     // Set this before launching the thread, so we don't have to fiddle with the mutex here.
     _mainValueWrittenAfterOpen = false;
+    _allParametersWrittenAfterOpen = false;
 
     // if we have push-type parameters triggering a write of the target, start the _pushParameterWriteThread
     if(_hasPushParameter) {
@@ -180,11 +182,18 @@ namespace ChimeraTK { namespace LNMBackend {
     while(true) {
       try {
         _pushParameterReadGroup.readAny();
-        if(!_mainValueWrittenAfterOpen) continue;
-        if(!checkAllParametersWritten(_pushParameterAccessorMap)) continue;
-
         {
           std::unique_lock<std::recursive_mutex> lk(_writeMutex);
+          // Look at the cached value. If all parameters have already been written we don't have to re-check
+          if(!_allParametersWrittenAfterOpen) {
+            // We are intentionally using the result of the assignment for the if evaluation.
+            // It must not be an == comparison here.
+            if(!(_allParametersWrittenAfterOpen = checkAllParametersWritten(_pushParameterAccessorMap))) {
+              continue;
+            }
+          }
+          if(!_mainValueWrittenAfterOpen) continue;
+
           _h->computeResult(_lastWrittenValue, target->accessChannel(0));
           target->writeDestructively();
         }
@@ -260,6 +269,7 @@ namespace ChimeraTK { namespace LNMBackend {
     void doPostWrite(TransferType type, VersionNumber versionNumber) override;
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override;
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber) override;
 
     MathPluginFormulaHelper h;
     MathPlugin* _p;
@@ -349,15 +359,23 @@ namespace ChimeraTK { namespace LNMBackend {
       _p->_lastWrittenValue = _target->accessChannel(0);
       _p->_mainValueWrittenAfterOpen = true; // We have stored the value for the parameters thread,
                                              // even if it's not written yet because not all parameters are there.
+
+      // Note: There is a potential race condition that the parameter thread has not processed a parameter yet but the poll
+      // registers here have already seen it and could in principle run. However, this would lead to inconsistent behaviour
+      // because sometimes writing all parameters and then the accessor itself exactly once after opening would lead to
+      // two writes, because eventually the thread will also write.
+      // So there are two reasons we must wait for the flag from the thread
+      // 1. Ensure a consistent number of write operations
+      // 2. We cannot determine the correct version number from the poll-type accessors anyway because they always get
+      //    a fresh version number. (We could use read_latest on push-type, but this would be less efficient,
+      //    and still leave point 1.)
+      if(!_p->_allParametersWrittenAfterOpen) {
+        return;
+      }
     }
 
-    // Until now the code has to be always exeuted to make sure incoming parameters changes write the
-    // correct value. If not all parameters have been written, we skip all further steps.
-    // Further incoming parameter updates might execute the write.
-    if(!_p->checkAllParametersWritten(_p->_pushParameterAccessorMap)) {
-      return;
-    }
-    // we are OK to go through with the transfer
+    // There either are onyl poll-type parameters, or all push-type parameters have been received.
+    // We are OK to go through with the transfer
     _skipWriteTransfer = false;
 
     // evaluate the expression and store into target accessor
@@ -373,8 +391,18 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   bool MathPluginDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-    if(_skipWriteTransfer) return false; // No data loss. Value has been stored in preWrite for the parameters thread.
+    if(_skipWriteTransfer) {
+      return false; // No data loss. Value has been stored in preWrite for the parameters thread.
+    }
+
     return _target->writeTransfer(versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool MathPluginDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
+    return doWriteTransfer(versionNumber);
   }
 
   /********************************************************************************************************************/

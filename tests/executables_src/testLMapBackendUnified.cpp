@@ -730,6 +730,16 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
 /// RegVariableAsPushParameterInMath_x definition.
 static double RegVariableAsPushParameterInMathBase_lastX;
 
+/* We use a has-a-pattern mixin-like pattern to break the "diamond of death".
+ * - There is a convertRawToCooked() per variable (var1, var2, x)
+ * - There is a base implementation and a "not written" implementation of generateValue() and getRemoteValue()
+ * All combinations of them have to be tested, and each of them has a unique generateValueHook().
+ * If we try multiple inveritance this ends up in a diamond of death.
+ *
+ * Solution: The convertRawToCooked() is not done by inheritance but coming from a RawToCookedProvider, which is a
+ * template parameter. Like this RegVariableAsPushParameterInMathBase and RegVariableAsPushParameterInMath_not_written
+ * can be used with all conversion functions and there is no code duplication.
+ */
 template<typename Derived, typename RawToCookedProvider>
 struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Derived> {
   // Test only write direction, as we are writing to the variable parameter in this test
@@ -856,6 +866,8 @@ struct RegVariableAsPushParameterInMath_var1_not_written1
     // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->close();
+    lmapBackend->open(); // this test is explicitly for writing after open
     lmapBackend->activateAsyncRead();
     // Only write the accessor, not the second parameter.
     auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
@@ -876,6 +888,8 @@ struct RegVariableAsPushParameterInMath_var1_not_written2
     // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->close();
+    lmapBackend->open(); // this test is explicitly for writing after open
     lmapBackend->activateAsyncRead();
     // Only write the second parameter, not the accessor.
     auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
@@ -945,6 +959,56 @@ struct RegVariableAsPushParameterInMath_x
     auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     p1->read();
     p1->write();
+    auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
+    p2->read();
+    p2->write();
+  }
+};
+
+struct RegVariableAsPushParameterInMath_x_not_written1
+: RegVariableAsPushParameterInMath_not_written<RegVariableAsPushParameterInMath_x_not_written1, RawToCookedProvider_x> {
+  std::string path() { return "/RegisterWithVariableAsPushParameterInMath"; }
+
+  const double increment = 43;
+
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>& v) {
+    // Note: This in particular is a hack, since we have no guarantee that this gets actually written!
+    // FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    RegVariableAsPushParameterInMathBase_lastX = v[0];
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->close();
+    lmapBackend->open(); // this test is explicitly for writing after open
+    lmapBackend->activateAsyncRead();
+    // In addion we have to write the two parameters. Otherwise writing will have no effect.
+    auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
+    p1->read();
+    p1->write();
+    // don't write p2
+  }
+};
+
+struct RegVariableAsPushParameterInMath_x_not_written2
+: RegVariableAsPushParameterInMath_not_written<RegVariableAsPushParameterInMath_x_not_written2, RawToCookedProvider_x> {
+  std::string path() { return "/RegisterWithVariableAsPushParameterInMath"; }
+
+  const double increment = 44;
+
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>& v) {
+    // Note: This in particular is a hack, since we have no guarantee that this gets actually written!
+    // FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    RegVariableAsPushParameterInMathBase_lastX = v[0];
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->close();
+    lmapBackend->open(); // this test is explicitly for writing after open
+    lmapBackend->activateAsyncRead();
+    // In addion we have to write the two parameters. Otherwise writing will have no effect.
+    // Don't write p2
     auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
     p2->read();
     p2->write();
@@ -1038,6 +1102,8 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegVariableAsPushParameterInMath_var1_not_written2>()
       .addRegister<RegVariableAsPushParameterInMath_var2>()
       .addRegister<RegVariableAsPushParameterInMath_x>()
+      .addRegister<RegVariableAsPushParameterInMath_x_not_written1>()
+      .addRegister<RegVariableAsPushParameterInMath_x_not_written2>()
       .addRegister<RegMonostableTrigger>()
       .runTests(lmapCdd);
 }

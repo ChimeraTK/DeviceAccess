@@ -159,10 +159,11 @@ namespace ChimeraTK { namespace LNMBackend {
     void parameterReadLoop(boost::barrier& waitUntilThreadLaunched);
 
     bool _isWrite{false};
-    bool _hasPushParameter{false};           // can only be true if _isWrite == true
-    bool _mainValueWrittenAfterOpen{false};  // only needed if _hasPushParameter == true
-    boost::thread _pushParameterWriteThread; // only used if _hasPushParameter == true
-    ReadAnyGroup _pushParameterReadGroup;    // only used if _hasPushParameter == true
+    bool _hasPushParameter{false};              // can only be true if _isWrite == true
+    bool _mainValueWrittenAfterOpen{false};     // only needed if _hasPushParameter == true
+    bool _allParametersWrittenAfterOpen{false}; // only needed if _hasPushParameter == true
+    boost::thread _pushParameterWriteThread;    // only used if _hasPushParameter == true
+    ReadAnyGroup _pushParameterReadGroup;       // only used if _hasPushParameter == true
     std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>>
         _pushParameterAccessorMap;                 // only used if _hasPushParameter == true
     boost::shared_ptr<MathPluginFormulaHelper> _h; // only used if _hasPushParameter == true
