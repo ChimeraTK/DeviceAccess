@@ -15,7 +15,6 @@ namespace ChimeraTK {
   class DeviceBackend;
   class Device;
   class TransferGroup;
-  class RegisterAccessor;
 
   template<typename UserType>
   class BufferingRegisterAccessor;
