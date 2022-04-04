@@ -210,12 +210,15 @@ namespace ChimeraTK {
 
       std::string devName = lnmInfo.deviceName;
 
-      RegisterInfo target_info(lnmInfo.clone()); //Start with a clone of this info as there is not default constructor
-      // In case the devide is not "this" replace it with the real target register info
+      RegisterInfo target_info(lnmInfo.clone()); // Start with a clone of this info as there is not default constructor
+      // In case the device is not "this" replace it with the real target register info
       if(devName != "this") {
         auto cat = _devices.at(devName)->getRegisterCatalogue();
         if(!cat.hasRegister(lnmInfo.registerName)) continue;
         target_info = cat.getRegister(lnmInfo.registerName);
+      }
+      else {
+        target_info = _catalogue_mutable.getRegister(lnmInfo.registerName);
       }
 
       lnmInfo.supportedFlags = target_info.getSupportedAccessModes();
@@ -237,6 +240,8 @@ namespace ChimeraTK {
         lnmInfo.nChannels = target_info.getNumberOfChannels();
       }
       if(lnmInfo.length == 0) lnmInfo.length = target_info.getNumberOfElements();
+
+      _catalogue_mutable.modifyRegister(lnmInfo);
     }
 
     // update catalogue info by plugins
