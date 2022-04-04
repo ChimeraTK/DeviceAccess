@@ -409,6 +409,12 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void MathPluginDecorator<UserType>::doPostWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+    if(_skipWriteTransfer && (this->_activeException != nullptr)) {
+      // Something has thrown before the target's preWrite was called. Re-throw it here.
+      // Do not unlock the mutex. It never has been locked.
+      std::rethrow_exception(this->_activeException);
+    }
+
     // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
     auto _ = cppext::finally([&] {
       if(_p->_hasPushParameter) {
@@ -417,10 +423,6 @@ namespace ChimeraTK { namespace LNMBackend {
     });
 
     if(_skipWriteTransfer) {
-      if(this->_activeException != nullptr) {
-        // Something has thrown before the target's preWrite was called. Re-throw it here.
-        std::rethrow_exception(this->_activeException);
-      }
       return; // the trarget preWrite() has not been executed, so stop here
     }
 
@@ -428,7 +430,7 @@ namespace ChimeraTK { namespace LNMBackend {
     _target->setActiveException(this->_activeException);
     _target->postWrite(type, versionNumber);
     // (the "finally" lambda releasing the lock is executed here latest)
-  }
+  } // namespace LNMBackend
 
   /********************************************************************************************************************/
 
