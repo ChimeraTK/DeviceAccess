@@ -72,8 +72,16 @@ namespace ChimeraTK {
 
     ParsedLine parseLine(std::string line);
 
+    /**
+     * On detection of a AREA_MULTIPLEXED_SEQUENCE line, collects the associated paresed lines and creates the
+     * according RegisterInfo instance(s)
+     */
     void handle2D(const ParsedLine& pl);
 
+    /**
+     * On detection of line with a MEM_MULTIPLEXED 2D declaration collects the associated paresed lines and
+     * creates the according RegisterInfo instance(s)
+     */
     void handle2DNewStyle(const ParsedLine& pl);
 
     /** 
@@ -104,7 +112,11 @@ namespace ChimeraTK {
      */
     RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
 
-    void createMuxedAccessors(const ParsedLine &pl, std::list<ParsedLine>& channelLines, const std::string& prefix);
+    /**
+     * Creates the two RegisterInfos that belong to a 2D multiplexed area, with a prefix according to the old or
+     * new syntax
+     */
+    void make2DRegisterInfos(const ParsedLine &pl, std::list<ParsedLine>& channelLines, const std::string& prefix);
 
     NumericAddressedRegisterCatalogue pmap;
     MetadataCatalogue metadataCatalogue;

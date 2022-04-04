@@ -347,10 +347,10 @@ namespace ChimeraTK {
     }
 
     channelLines.sort([](auto& a, auto& b) { return a.address < b.address; });
-    createMuxedAccessors(pl, channelLines, MEM_MULTIPLEXED_PREFIX);
+    make2DRegisterInfos(pl, channelLines, MEM_MULTIPLEXED_PREFIX);
   }
 
-  void MapFileParser::createMuxedAccessors(const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix) {
+  void MapFileParser::make2DRegisterInfos(const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix) {
     if(channelLines.empty()) {
       throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
     }
@@ -413,7 +413,7 @@ namespace ChimeraTK {
       channelLines.push_back(it->second);
     }
 
-    createMuxedAccessors(pl, channelLines, MULTIPLEXED_SEQUENCE_PREFIX);
+    make2DRegisterInfos(pl, channelLines, MULTIPLEXED_SEQUENCE_PREFIX);
   }
 
   /********************************************************************************************************************/
