@@ -27,14 +27,10 @@ namespace ChimeraTK {
     VersionNumber() : _value(nextVersionNumber()), _time(std::chrono::system_clock::now()) {}
 
     /** Copy constructor */
-    VersionNumber(const VersionNumber& other) : _value(other._value), _time(other._time) {}
+    VersionNumber(const VersionNumber& other) = default;
 
     /** Copy the full state of another VersionNumber object. */
-    VersionNumber& operator=(const VersionNumber& other) {
-      _value = other._value;
-      _time = other._time;
-      return *this;
-    }
+    VersionNumber& operator=(const VersionNumber& other) = default;
 
     /** Generate new unique version number with a given time stamp. */
     explicit VersionNumber(std::chrono::system_clock::time_point timestamp)
