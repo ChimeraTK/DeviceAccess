@@ -9,6 +9,8 @@ TEST.SEQUENCE_INT_2 1 8 4 0
 # There are only 15 entries in the sequence, but the AREA has to be a multiple
 # of 4 bytes (32 bits) in order to work with the librabry and the drivers.
 # The other words are not directly readably, they will cause I/O errors.
+# Multiplexed registers still cannot handle this.
+# https://redmine.msktools.desy.de/issues/9660
 TEST.AREA_MULTIPLEXED_SEQUENCE_CHAR       4           0x40            16          0
 TEST.SEQUENCE_CHAR_0                      1           0x40            1           0
 TEST.SEQUENCE_CHAR_1                      1           0x41            1           0
