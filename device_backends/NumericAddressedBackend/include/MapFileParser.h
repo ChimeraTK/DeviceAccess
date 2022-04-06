@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <list>
 
 namespace ChimeraTK {
 
@@ -23,10 +24,8 @@ namespace ChimeraTK {
      * file.
      *
      *
-     * @throw exMapFileParser [LibMapException::EX_MAP_FILE_PARSE_ERROR] if
-     * parsing error detected or exMapFileParser
-     * [LibMapException::EX_CANNOT_OPEN_MAP_FILE] if specified MAP file cannot be
-     * opened
+     * @throw ChimeraTK::logic_error if parsing error detected or the specified MAP
+     * file cannot be opened
      * @param file_name name of MAP file
      * @return pointer to RegisterInfoMap object
      *
@@ -73,7 +72,17 @@ namespace ChimeraTK {
 
     ParsedLine parseLine(std::string line);
 
+    /**
+     * On detection of a AREA_MULTIPLEXED_SEQUENCE line, collects the associated paresed lines and creates the
+     * according RegisterInfo instance(s)
+     */
     void handle2D(const ParsedLine& pl);
+
+    /**
+     * On detection of line with a MEM_MULTIPLEXED 2D declaration collects the associated paresed lines and
+     * creates the according RegisterInfo instance(s)
+     */
+    void handle2DNewStyle(const ParsedLine& pl);
 
     /** 
      * Checks whether the register name does not contain the special prefixes marking multiplexed registers and
@@ -88,6 +97,12 @@ namespace ChimeraTK {
     bool is2D(const RegisterPath& pathName);
 
     /**
+     * Checks whether the register name contains the prefix for a multiplexed register (but not for the individual
+     * sequences, so only the "main" entry matches).
+     */
+    bool is2DNewStyle(RegisterPath pathName);
+
+    /**
      * Generate sequence name from main entry for multiplexed registers
      */
     RegisterPath makeSequenceName(const RegisterPath& pathName, size_t index);
@@ -95,7 +110,13 @@ namespace ChimeraTK {
     /**
      * Generate 2D register name from main entry for multiplexed registers
      */
-    RegisterPath make2DName(const RegisterPath& pathName);
+    RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
+
+    /**
+     * Creates the two RegisterInfos that belong to a 2D multiplexed area, with a prefix according to the old or
+     * new syntax
+     */
+    void make2DRegisterInfos(const ParsedLine &pl, std::list<ParsedLine>& channelLines, const std::string& prefix);
 
     NumericAddressedRegisterCatalogue pmap;
     MetadataCatalogue metadataCatalogue;

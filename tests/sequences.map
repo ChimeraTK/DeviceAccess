@@ -9,6 +9,8 @@ TEST.SEQUENCE_INT_2 1 8 4 0
 # There are only 15 entries in the sequence, but the AREA has to be a multiple
 # of 4 bytes (32 bits) in order to work with the librabry and the drivers.
 # The other words are not directly readably, they will cause I/O errors.
+# Multiplexed registers still cannot handle this.
+# https://redmine.msktools.desy.de/issues/9660
 TEST.AREA_MULTIPLEXED_SEQUENCE_CHAR       4           0x40            16          0
 TEST.SEQUENCE_CHAR_0                      1           0x40            1           0
 TEST.SEQUENCE_CHAR_1                      1           0x41            1           0
@@ -59,3 +61,24 @@ TEST.AREA_MULTIPLEXED_SEQUENCE_MIXED 6 0 24 0x3
 TEST.SEQUENCE_MIXED_0 1 0x00 1 0x3
 TEST.SEQUENCE_MIXED_1 1 0x01 2 0x3
 TEST.SEQUENCE_MIXED_2 1 0x03 4 0x3
+
+# real-life mixed word sizes
+APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM                  4096            0        16384      2     32      0    0
+APP0.SEQUENCE_DAQ0_BAM_0                                    1            0            2      2     16      0    1
+APP0.SEQUENCE_DAQ0_BAM_1                                    1            2            2      2     16      0    1
+APP0.SEQUENCE_DAQ0_BAM_2                                    1            4            4      2     18      0    1
+APP0.SEQUENCE_DAQ0_BAM_3                                    1            8            2      2     16      0    1
+APP0.SEQUENCE_DAQ0_BAM_4                                    1           10            2      2     16      0    1
+APP0.SEQUENCE_DAQ0_BAM_5                                    1           12            2      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_6                                    1           14            2      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_7                                    1           16            1      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_8                                    1           17            1      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_9                                    1           18            1      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_10                                   1           19            1      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_11                                   1           20            4      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_12                                   1           24            4      2      8      0    1
+APP0.SEQUENCE_DAQ0_BAM_13                                   1           28            4      2     32      0    1
+APP0.SEQUENCE_DAQ0_BAM_14                                   1           32            4      2     32      0    0
+APP0.SEQUENCE_DAQ0_BAM_15                                   1           36            4      2     32      0    0
+APP0.SEQUENCE_DAQ0_BAM_16                                   1           40            4      2     32      0    0
+

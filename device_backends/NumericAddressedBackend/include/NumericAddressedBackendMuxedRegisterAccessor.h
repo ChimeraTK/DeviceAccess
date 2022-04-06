@@ -15,6 +15,8 @@ namespace ChimeraTK {
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX = "AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX = "SEQUENCE_";
 
+  static const std::string MEM_MULTIPLEXED_PREFIX = "MEM_MULTIPLEXED_";
+
   /********************************************************************************************************************/
 
   namespace detail {

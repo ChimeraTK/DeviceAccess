@@ -49,7 +49,7 @@ namespace ChimeraTK {
       parsedLines.push_back(parseLine(line));
     }
 
-    // create map of registeer names to parsed lines
+    // create map of register names to parsed lines
     // This cannot be done in the above parsing loop, as the vector might get resized which invalidates the references
     for(const auto& pl : parsedLines) {
       parsedLinesMap.emplace(pl.pathName, pl);
@@ -65,6 +65,9 @@ namespace ChimeraTK {
       }
       else if(is2D(pl.pathName)) {
         handle2D(pl);
+      }
+      else if(is2DNewStyle(pl.pathName)) {
+        handle2DNewStyle(pl);
       }
     }
 
@@ -282,7 +285,9 @@ namespace ChimeraTK {
   bool MapFileParser::isScalarOr1D(const RegisterPath& pathName) {
     auto [module, name] = splitStringAtLastDot(pathName);
     return !boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX) &&
-        !boost::algorithm::starts_with(name, SEQUENCE_PREFIX);
+        !boost::algorithm::starts_with(name, SEQUENCE_PREFIX) &&
+        !boost::algorithm::starts_with(name, MEM_MULTIPLEXED_PREFIX) &&
+        !is2DNewStyle(module);
   }
 
   /********************************************************************************************************************/
@@ -290,6 +295,16 @@ namespace ChimeraTK {
   bool MapFileParser::is2D(const RegisterPath& pathName) {
     auto [module, name] = splitStringAtLastDot(pathName);
     return boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX);
+  }
+
+  /********************************************************************************************************************/
+
+  bool MapFileParser::is2DNewStyle(RegisterPath pathName) {
+    // Intentional copy of the parameter
+    pathName.setAltSeparator(".");
+    auto components = pathName.getComponents();
+    if(components.size() != 2) return false;
+    return boost::algorithm::starts_with(components[1], MEM_MULTIPLEXED_PREFIX);
   }
 
   /********************************************************************************************************************/
@@ -305,10 +320,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  RegisterPath MapFileParser::make2DName(const RegisterPath& pathName) {
+  RegisterPath MapFileParser::make2DName(const RegisterPath& pathName, const std::string& prefix) {
     auto [module, name] = splitStringAtLastDot(pathName);
-    assert(boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX));
-    name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.size()); // strip prefix
+    assert(boost::algorithm::starts_with(name, prefix));
+    name = name.substr(prefix.size()); // strip prefix
     auto r = RegisterPath(module) / name;
     r.setAltSeparator(".");
     return r;
@@ -316,35 +331,45 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void MapFileParser::handle2D(const ParsedLine& pl) {
+  void MapFileParser::handle2DNewStyle(const ParsedLine& pl) {
     // search for sequence entries matching the given register, create ChannelInfos from them
-    std::vector<NumericAddressedRegisterInfo::ChannelInfo> channels;
-    size_t bytesPerBlock = 0; // size of one block in bytes (one sample for all channels)
-    while(true) {
-      auto it = parsedLinesMap.find(makeSequenceName(pl.pathName, channels.size()));
-      if(it == parsedLinesMap.end()) break;
-      auto plch = it->second;
 
-      if(plch.address < pl.address) {
-        throw ChimeraTK::logic_error(
-            "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
+    // Find all channels associated with the area
+    std::list<ParsedLine> channelLines;
+    for(auto& [key, value] : parsedLinesMap) {
+      if(key.startsWith(pl.pathName) and pl.pathName.length() < key.length()) {
+        // First sanity check, address must not be smaller than start address
+        if(value.address < pl.address)
+          throw ChimeraTK::logic_error(
+              "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
+        channelLines.push_back(value);
       }
+    }
 
-      channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{
-          uint32_t(plch.address - pl.address) * 8, plch.type, plch.width, plch.nFractionalBits, plch.signedFlag});
+    channelLines.sort([](auto& a, auto& b) { return a.address < b.address; });
+    make2DRegisterInfos(pl, channelLines, MEM_MULTIPLEXED_PREFIX);
+  }
 
-      bytesPerBlock += plch.nBytes;
-      if(plch.nBytes != 1 && plch.nBytes != 2 && plch.nBytes != 4) {
+  void MapFileParser::make2DRegisterInfos(const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix) {
+    if(channelLines.empty()) {
+      throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
+    }
+
+    std::vector<NumericAddressedRegisterInfo::ChannelInfo> channels;
+    size_t bytesPerBlock = 0;
+
+    for(auto& channel : channelLines) {
+      channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{uint32_t(channel.address - pl.address) * 8,
+          channel.type, channel.width, channel.nFractionalBits, channel.signedFlag});
+      bytesPerBlock += channel.nBytes;
+      if (channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4) {
         throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
       }
     }
 
-    if(channels.empty()) {
-      throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
-    }
     assert(bytesPerBlock > 0);
 
-    // make sure channel bit interpretation widthes are not wider than the actual channel width
+    // make sure channel bit interpretation widths are not wider than the actual channel width
     for(size_t i = 0; i < channels.size() - 1; ++i) {
       auto actualWidth = channels[i + 1].bitOffset - channels[i].bitOffset;
       if(channels[i].width > actualWidth) {
@@ -361,9 +386,7 @@ namespace ChimeraTK {
 
     // compute number of blocks (= samples per channel)
     auto nBlocks = std::floor(pl.nBytes / bytesPerBlock);
-
-    // create 2D entry
-    auto name2D = make2DName(pl.pathName);
+    auto name2D = make2DName(pl.pathName, prefix);
     auto registerInfo = NumericAddressedRegisterInfo(name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels,
         pl.registerAccess, pl.interruptCtrlNumber, pl.interruptNumber);
     pmap.addRegister(registerInfo);
@@ -374,6 +397,23 @@ namespace ChimeraTK {
         pl.nBytes, pl.bar, 32, 0, true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT,
         pl.interruptCtrlNumber, pl.interruptNumber);
     pmap.addRegister(registerInfoMuxedRaw);
+  }
+
+  /********************************************************************************************************************/
+
+  void MapFileParser::handle2D(const ParsedLine& pl) {
+    // search for sequence entries matching the given register, create ChannelInfos from them
+    std::list<ParsedLine> channelLines;
+    while(true) {
+      auto it = parsedLinesMap.find(makeSequenceName(pl.pathName, channelLines.size()));
+      if(it == parsedLinesMap.end()) break;
+      if(it->second.address < pl.address)
+        throw ChimeraTK::logic_error(
+            "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
+      channelLines.push_back(it->second);
+    }
+
+    make2DRegisterInfos(pl, channelLines, MULTIPLEXED_SEQUENCE_PREFIX);
   }
 
   /********************************************************************************************************************/
