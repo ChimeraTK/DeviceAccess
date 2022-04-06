@@ -185,6 +185,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
     // Checks that all parameters have been written since opening the device.
     // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
+    // Only call this function when holding the _writeMutex. It updates the _allParametersWrittenAfterOpen
+    // variable which is protected by that mutex.
     bool checkAllParametersWritten(
         std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap);
   };

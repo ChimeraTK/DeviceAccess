@@ -184,13 +184,8 @@ namespace ChimeraTK { namespace LNMBackend {
         _pushParameterReadGroup.readAny();
         {
           std::unique_lock<std::recursive_mutex> lk(_writeMutex);
-          // Look at the cached value. If all parameters have already been written we don't have to re-check
-          if(!_allParametersWrittenAfterOpen) {
-            // We are intentionally using the result of the assignment for the if evaluation.
-            // It must not be an == comparison here.
-            if(!(_allParametersWrittenAfterOpen = checkAllParametersWritten(_pushParameterAccessorMap))) {
-              continue;
-            }
+          if(!checkAllParametersWritten(_pushParameterAccessorMap)) {
+            continue;
           }
           if(!_mainValueWrittenAfterOpen) continue;
 
@@ -232,14 +227,23 @@ namespace ChimeraTK { namespace LNMBackend {
 
   bool MathPlugin::checkAllParametersWritten(
       std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap) {
-    bool allUpdated = true;
+    if(_allParametersWrittenAfterOpen == true) {
+      return true;
+    }
+
+    // we can assign temporary values to _allParametersWrittenAfterOpen because it's protected by the mutex
+    // (must be locked before calling this function)
+    _allParametersWrittenAfterOpen = true;
     auto backend = _backend.lock(); // get a shared pointer from the weak pointer
     for(auto& acc : accessorsMap) {
       if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
-        allUpdated = false;
+        _allParametersWrittenAfterOpen = false;
+        break;
       }
     }
-    return allUpdated;
+    // The _allParametersWrittenAfterOpen is transporting the result to the accessor thread, the
+    // return value is going to the parameter thread.
+    return _allParametersWrittenAfterOpen;
   }
 
   /********************************************************************************************************************/
