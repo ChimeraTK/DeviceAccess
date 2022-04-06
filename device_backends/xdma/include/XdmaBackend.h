@@ -25,7 +25,7 @@ namespace ChimeraTK {
 
     const std::string _devicePath;
 
-    XdmaIntfAbstract* _intfFromBar(uint64_t bar);
+    XdmaIntfAbstract& _intfFromBar(uint64_t bar);
 
    public:
     explicit XdmaBackend(std::string devicePath, std::string mapFileName = "");
