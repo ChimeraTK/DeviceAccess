@@ -1,6 +1,7 @@
 #include <boost/make_shared.hpp>
 
 #include <exprtk.hpp>
+#include <ChimeraTK/cppext/finally.hpp>
 
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
@@ -147,36 +148,40 @@ namespace ChimeraTK { namespace LNMBackend {
       }
 
       // start write thread
-      boost::barrier waitUntilThreadLaunched(2);
-      _pushParameterWriteThread = boost::thread([&] { parameterReadLoop(waitUntilThreadLaunched); });
+      _pushParameterWriteThread = boost::thread([&] { parameterReadLoop(); });
 
       // do not proceed before the thread is ready to receive new data
-      waitUntilThreadLaunched.wait();
+      _waitUntilParameterThreadLaunched.wait();
     }
   }
 
   /********************************************************************************************************************/
 
-  void MathPlugin::parameterReadLoop(boost::barrier& waitUntilThreadLaunched) {
-    // obtain target accessor
-    auto targetDevice = BackendFactory::getInstance().createBackend(_info.deviceName);
-    auto target = targetDevice->getRegisterAccessor<double>(_info.registerName, _info.length, _info.firstIndex, {});
-    // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
-    while(true) {
-      auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();
-      if(!notfy.isReady()) break;
-      try {
-        notfy.accept();
-      }
-      catch(...) {
-        continue;
-      }
-    }
-    assert(!_backend.lock()->_asyncReadActive);
-    assert(_lastWrittenValue.size() == target->getNumberOfSamples());
+  void MathPlugin::parameterReadLoop() {
+    boost::shared_ptr<NDRegisterAccessor<double>> target;
+    { // scope for the barrier wait caller
+      // Use finally to ensure that the barrier::wait is always called, even if the thread kicks out with an exception
+      auto barrierWaitCaller = cppext::finally([&] { _waitUntilParameterThreadLaunched.wait(); });
 
-    // need to get to this point before the openHook completes
-    waitUntilThreadLaunched.wait();
+      // obtain target accessor
+      auto targetDevice = BackendFactory::getInstance().createBackend(_info.deviceName);
+      target = targetDevice->getRegisterAccessor<double>(_info.registerName, _info.length, _info.firstIndex, {});
+      // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
+      while(true) {
+        auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();
+        if(!notfy.isReady()) break;
+        try {
+          notfy.accept();
+        }
+        catch(...) {
+          continue;
+        }
+      }
+      assert(!_backend.lock()->_asyncReadActive);
+      assert(_lastWrittenValue.size() == target->getNumberOfSamples());
+
+    } // end scope of the barrierWaitCaller. At this point the finally is executed and other thread is notified that
+    // this thread has started and the opend hook can complete.
 
     // start processing loop
     while(true) {
