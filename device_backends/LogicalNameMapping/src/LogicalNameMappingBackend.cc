@@ -51,10 +51,7 @@ namespace ChimeraTK {
     _opened = true;
     _hasException = false;
     _asyncReadActive = false;
-    {
-      std::unique_lock<std::mutex> lk(_versionOnOpenMutex);
-      _versionOnOpen = {};
-    }
+    _versionOnOpen = ChimeraTK::VersionNumber{};
 
     // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
@@ -373,10 +370,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  ChimeraTK::VersionNumber LogicalNameMappingBackend::getVersionOnOpen() {
-    std::unique_lock<std::mutex> lk(_versionOnOpenMutex);
-    return _versionOnOpen;
-  }
+  ChimeraTK::VersionNumber LogicalNameMappingBackend::getVersionOnOpen() const { return _versionOnOpen; }
 
   /********************************************************************************************************************/
 

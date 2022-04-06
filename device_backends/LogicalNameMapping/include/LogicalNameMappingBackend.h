@@ -122,12 +122,10 @@ namespace ChimeraTK {
    private:
     // A version number created when opening the backend. All variables will report this version number until they are changed for the first time
     // after opening the device.
-    ChimeraTK::VersionNumber _versionOnOpen;
-    // We cannot use atomic<VersionNumber> because then share_from_this is not working any more (something with not trivially copyable if I remember correctly)
-    std::mutex _versionOnOpenMutex;
+    std::atomic<ChimeraTK::VersionNumber> _versionOnOpen{ChimeraTK::VersionNumber{nullptr}};
 
    public:
-    ChimeraTK::VersionNumber getVersionOnOpen();
+    ChimeraTK::VersionNumber getVersionOnOpen() const;
   };
 
 } // namespace ChimeraTK
