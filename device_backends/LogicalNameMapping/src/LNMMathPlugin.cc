@@ -1,6 +1,7 @@
 #include <boost/make_shared.hpp>
 
 #include <exprtk.hpp>
+#include <ChimeraTK/cppext/finally.hpp>
 
 #include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
@@ -126,9 +127,11 @@ namespace ChimeraTK { namespace LNMBackend {
       }
     }
 
-    // The main value has to be written once before the parameter thread will write anything
+    // The main value has  to be written once before the parameter thread will write anything,
+    // and all parameters have to be written before the accessor itself will write to the device.
     // Set this before launching the thread, so we don't have to fiddle with the mutex here.
     _mainValueWrittenAfterOpen = false;
+    _allParametersWrittenAfterOpen = false;
 
     // if we have push-type parameters triggering a write of the target, start the _pushParameterWriteThread
     if(_hasPushParameter) {
@@ -145,44 +148,52 @@ namespace ChimeraTK { namespace LNMBackend {
       }
 
       // start write thread
-      boost::barrier waitUntilThreadLaunched(2);
-      _pushParameterWriteThread = boost::thread([&] { parameterReadLoop(waitUntilThreadLaunched); });
+      _pushParameterWriteThread = boost::thread([&] { parameterReadLoop(); });
 
       // do not proceed before the thread is ready to receive new data
-      waitUntilThreadLaunched.wait();
+      _waitUntilParameterThreadLaunched.wait();
     }
   }
 
   /********************************************************************************************************************/
 
-  void MathPlugin::parameterReadLoop(boost::barrier& waitUntilThreadLaunched) {
-    // obtain target accessor
-    auto targetDevice = BackendFactory::getInstance().createBackend(_info.deviceName);
-    auto target = targetDevice->getRegisterAccessor<double>(_info.registerName, _info.length, _info.firstIndex, {});
-    // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
-    while(true) {
-      auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();
-      if(!notfy.isReady()) break;
-      try {
-        notfy.accept();
-      }
-      catch(...) {
-        continue;
-      }
-    }
-    assert(!_backend.lock()->_asyncReadActive);
-    assert(_lastWrittenValue.size() == target->getNumberOfSamples());
+  void MathPlugin::parameterReadLoop() {
+    boost::shared_ptr<NDRegisterAccessor<double>> target;
+    { // scope for the barrier wait caller
+      // Use finally to ensure that the barrier::wait is always called, even if the thread kicks out with an exception
+      auto barrierWaitCaller = cppext::finally([&] { _waitUntilParameterThreadLaunched.wait(); });
 
-    // need to get to this point before the openHook completes
-    waitUntilThreadLaunched.wait();
+      // obtain target accessor
+      auto targetDevice = BackendFactory::getInstance().createBackend(_info.deviceName);
+      target = targetDevice->getRegisterAccessor<double>(_info.registerName, _info.length, _info.firstIndex, {});
+      // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
+      while(true) {
+        auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();
+        if(!notfy.isReady()) break;
+        try {
+          notfy.accept();
+        }
+        catch(...) {
+          continue;
+        }
+      }
+      assert(!_backend.lock()->_asyncReadActive);
+      assert(_lastWrittenValue.size() == target->getNumberOfSamples());
+
+    } // end scope of the barrierWaitCaller. At this point the finally is executed and other thread is notified that
+    // this thread has started and the opend hook can complete.
 
     // start processing loop
     while(true) {
       try {
         _pushParameterReadGroup.readAny();
-        if(!_mainValueWrittenAfterOpen) continue;
         {
           std::unique_lock<std::recursive_mutex> lk(_writeMutex);
+          if(!checkAllParametersWritten(_pushParameterAccessorMap)) {
+            continue;
+          }
+          if(!_mainValueWrittenAfterOpen) continue;
+
           _h->computeResult(_lastWrittenValue, target->accessChannel(0));
           target->writeDestructively();
         }
@@ -219,6 +230,32 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
+  bool MathPlugin::checkAllParametersWritten(
+      std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap) {
+    if(_allParametersWrittenAfterOpen == true) {
+      return true;
+    }
+
+    // we can assign temporary values to _allParametersWrittenAfterOpen because it's protected by the mutex
+    // (must be locked before calling this function)
+    _allParametersWrittenAfterOpen = true;
+    auto backend = _backend.lock(); // No need to check the lock of the weak pointer, it cannot fail.
+    // The backend is holding the plugin, and the weak pointer is to avoid the backend holind a
+    // shared pointer of it self.
+
+    for(auto& acc : accessorsMap) {
+      if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
+        _allParametersWrittenAfterOpen = false;
+        break;
+      }
+    }
+    // The _allParametersWrittenAfterOpen is transporting the result to the accessor thread, the
+    // return value is going to the parameter thread.
+    return _allParametersWrittenAfterOpen;
+  }
+
+  /********************************************************************************************************************/
+
   template<typename UserType>
   struct MathPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, double> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::buffer_2D;
@@ -243,8 +280,15 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override;
 
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override;
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber) override;
+
     MathPluginFormulaHelper h;
     MathPlugin* _p;
+
+    // If not all parameters have been updated in the plugin, all parts of the write
+    // transaction (preWrite, writeTransfer and postWrite) are not delegated to the target
+    bool _skipWriteDelegation{false};
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::_target;
 
@@ -307,6 +351,9 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
 
+    // The readLatest might throw an exception. In this case preWrite() is never delegated and we must not call the target's portWrite().
+    _skipWriteDelegation = true;
+
     // update parameters
     for(auto& p : h.params) p.first->readLatest();
 
@@ -323,12 +370,32 @@ namespace ChimeraTK { namespace LNMBackend {
       // This is save because it is guaranteed by the frameworn that pre- and post actions are called in pairs.
       _p->_writeMutex.lock();
       _p->_lastWrittenValue = _target->accessChannel(0);
+      _p->_mainValueWrittenAfterOpen = true; // We have stored the value for the parameters thread,
+                                             // even if it's not written yet because not all parameters are there.
+
+      // Note: There is a potential race condition that the parameter thread has not processed a parameter yet but the poll
+      // registers here have already seen it and could in principle run. However, this would lead to inconsistent behaviour
+      // because sometimes writing all parameters and then the accessor itself exactly once after opening would lead to
+      // two writes, because eventually the thread will also write.
+      // So there are two reasons we must wait for the flag from the thread
+      // 1. Ensure a consistent number of write operations
+      // 2. We cannot determine the correct version number from the poll-type accessors anyway because they always get
+      //    a fresh version number. (We could use read_latest on push-type, but this would be less efficient,
+      //    and still leave point 1.)
+      if(!_p->_allParametersWrittenAfterOpen) {
+        return;
+      }
     }
+
+    // There either are onyl poll-type parameters, or all push-type parameters have been received.
+    // We are OK to go through with the transfer
+    _skipWriteDelegation = false;
 
     // evaluate the expression and store into target accessor
     h.computeResult(_target->accessChannel(0), _target->accessChannel(0));
 
     // pass validity to target and delegate preWrite
+    // FIXME: #9622 The data validity of the parameters should be considered
     _target->setDataValidity(this->_dataValidity);
     _target->preWrite(type, versionNumber);
   }
@@ -336,19 +403,47 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  bool MathPluginDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+    if(_skipWriteDelegation) {
+      return false; // No data loss. Value has been stored in preWrite for the parameters thread.
+    }
+
+    return _target->writeTransfer(versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool MathPluginDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
+    return doWriteTransfer(versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
   void MathPluginDecorator<UserType>::doPostWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+    if(_skipWriteDelegation && (this->_activeException != nullptr)) {
+      // Something has thrown before the target's preWrite was called. Re-throw it here.
+      // Do not unlock the mutex. It never has been locked.
+      std::rethrow_exception(this->_activeException);
+    }
+
     // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
     auto _ = cppext::finally([&] {
       if(_p->_hasPushParameter) {
         _p->_writeMutex.unlock();
       }
     });
+
+    if(_skipWriteDelegation) {
+      return; // the trarget preWrite() has not been executed, so stop here
+    }
+
+    // delegate to the target
     _target->setActiveException(this->_activeException);
     _target->postWrite(type, versionNumber);
-    // only once everything is comlete we indicate that the write was done
-    _p->_mainValueWrittenAfterOpen = true;
-    // (the finally lambda releasing the lock is executed here if there has been no exception)
-  }
+    // (the "finally" lambda releasing the lock is executed here latest)
+  } // namespace LNMBackend
 
   /********************************************************************************************************************/
 

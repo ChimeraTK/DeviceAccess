@@ -156,13 +156,15 @@ namespace ChimeraTK { namespace LNMBackend {
     void exceptionHook() override;
 
     // This function is starting a loop and will be executed in the _parameterThread;
-    void parameterReadLoop(boost::barrier& waitUntilThreadLaunched);
+    void parameterReadLoop();
 
     bool _isWrite{false};
-    bool _hasPushParameter{false};           // can only be true if _isWrite == true
-    bool _mainValueWrittenAfterOpen{false};  // only needed if _hasPushParameter == true
-    boost::thread _pushParameterWriteThread; // only used if _hasPushParameter == true
-    ReadAnyGroup _pushParameterReadGroup;    // only used if _hasPushParameter == true
+    bool _hasPushParameter{false};                       // can only be true if _isWrite == true
+    bool _mainValueWrittenAfterOpen{false};              // only needed if _hasPushParameter == true
+    bool _allParametersWrittenAfterOpen{false};          // only needed if _hasPushParameter == true
+    boost::thread _pushParameterWriteThread;             // only used if _hasPushParameter == true
+    boost::barrier _waitUntilParameterThreadLaunched{2}; // sync point for parameter thread and accessor thread
+    ReadAnyGroup _pushParameterReadGroup;                // only used if _hasPushParameter == true
     std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>>
         _pushParameterAccessorMap;                 // only used if _hasPushParameter == true
     boost::shared_ptr<MathPluginFormulaHelper> _h; // only used if _hasPushParameter == true
@@ -181,6 +183,13 @@ namespace ChimeraTK { namespace LNMBackend {
     std::map<std::string, std::string> _parameters;
     std::string _formula;              // extracted from _parameters
     bool _enablePushParameters{false}; // extracted from _parameters
+
+    // Checks that all parameters have been written since opening the device.
+    // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
+    // Only call this function when holding the _writeMutex. It updates the _allParametersWrittenAfterOpen
+    // variable which is protected by that mutex.
+    bool checkAllParametersWritten(
+        std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap);
   };
 
   /** Monostable Trigger Plugin: Write value to target which falls back to another value after defined time. */
