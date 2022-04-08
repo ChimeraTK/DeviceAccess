@@ -531,6 +531,11 @@ namespace ChimeraTK {
       }
       assert(false); // we must never end up at this point
     }
+    catch(ChimeraTK::runtime_error&) {
+      // While peeking we found another runtime which is stored in the queue.
+      // Don't let it through, but leave it on the queue and continue with the waitAny().
+      // It will be handled later.
+    }
 
     // now that we know that an update is available, we can defer to waitAny()
     return waitAny();
