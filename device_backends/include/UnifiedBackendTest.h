@@ -3118,9 +3118,10 @@ namespace ChimeraTK {
       auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
-      reg.read(); // initial value
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        reg.read(); // initial value
+        
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
