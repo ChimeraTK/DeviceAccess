@@ -536,6 +536,15 @@ namespace ChimeraTK {
       // Don't let it through, but leave it on the queue and continue with the waitAny().
       // It will be handled later.
     }
+    catch(boost::thread_interrupted&) {
+      // Also suppress the thread_interrupted exception here.
+      // It will stay on the queue, hence it's not lost and will be handled later.
+    }
+    catch(...) {
+      std::cout << "Fatal ERROR in ReadAnyGroup: Found unexpected exception on the read queue. Terminating!"
+                << std::endl;
+      std::terminate();
+    }
 
     // now that we know that an update is available, we can defer to waitAny()
     return waitAny();
