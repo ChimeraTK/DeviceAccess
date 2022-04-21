@@ -12,8 +12,11 @@ namespace ChimeraTK {
     DeviceFile _file;
     void* _mem;
 
-    // Map whole PCIe BAR area (16 MiB)
-    static constexpr size_t _mmapSize = 16 * (1024 * 1024);
+    // Size of mmap'ed area in PCI BAR
+    size_t _mmapSize;
+    // 4 KiB is the minimum size available in Vivado
+    static constexpr size_t _mmapSizeMin = 4 * 1024;
+    static constexpr size_t _mmapSizeMax = 16 * 1024 * 1024;
 
     volatile int32_t* _reg_ptr(uintptr_t offs) const;
     void _check_range(const std::string access_type, uintptr_t address, size_t nBytes) const;

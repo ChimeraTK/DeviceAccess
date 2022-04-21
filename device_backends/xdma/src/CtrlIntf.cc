@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sstream>
+#include <iostream>
+#include <cstring>
 
 #include "DeviceFile.h"
 #include "Exception.h"
@@ -10,7 +12,21 @@
 namespace ChimeraTK {
 
   CtrlIntf::CtrlIntf(const std::string& devicePath) : _file(devicePath + "/user", O_RDWR) {
-    _mem = ::mmap(NULL, _mmapSize, PROT_READ | PROT_WRITE, MAP_SHARED, _file, 0);
+    for(_mmapSize = _mmapSizeMax; _mmapSize >= _mmapSizeMin; _mmapSize /= 2) {
+      _mem = ::mmap(NULL, _mmapSize, PROT_READ | PROT_WRITE, MAP_SHARED, _file, 0);
+      if(_mem != reinterpret_cast<void*>(-1)) {
+        // Successfully mapped the BAR
+#ifdef _DEBUG
+        std::cout << "XDMA: mapped " << _mmapSize << " bytes" << std::endl;
+#endif
+        return;
+      }
+    }
+    char mmap_err[100];
+    std::stringstream err_msg;
+    err_msg << "XDMA: couldn't mmap the minimum size of " << _mmapSizeMin
+            << " bytes: " << strerror_r(errno, mmap_err, sizeof(mmap_err));
+    throw ChimeraTK::runtime_error(err_msg.str());
   }
 
   CtrlIntf::~CtrlIntf() { ::munmap(_mem, _mmapSize); }
@@ -23,7 +39,7 @@ namespace ChimeraTK {
     }
     std::stringstream err_msg;
     err_msg << "XDMA: attempt to " << access_type << " beyond mapped area: " << nBytes << " bytes at 0x" << std::hex
-            << address << std::dec;
+            << address << std::dec << " (" << _mmapSize << " bytes mapped)";
     throw ChimeraTK::runtime_error(err_msg.str());
   }
 
