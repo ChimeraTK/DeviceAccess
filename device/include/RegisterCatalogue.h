@@ -45,6 +45,12 @@ namespace ChimeraTK {
     /** Get number of registers in the catalogue */
     [[nodiscard]] size_t getNumberOfRegisters() const;
 
+    /**
+     * Return a const reference to the implementation object. Only for advanced use, e.g. when backend-depending code
+     * shall be written.
+     */
+    [[nodiscard]] const BackendRegisterCatalogueBase& getImpl() const;
+
     /** Const iterator for iterating through the registers in the catalogue */
     class const_iterator {
      public:

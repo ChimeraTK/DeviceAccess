@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0.2)
 Project(ChimeraTK-DeviceAccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
-set(${PROJECT_NAME}_MINOR_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 01)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
@@ -27,7 +27,7 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 # add dependencies
 include(cmake/add_dependency.cmake)
 add_dependency(Boost COMPONENTS thread system chrono filesystem REQUIRED)
-add_dependency(ChimeraTK-cppext REQUIRED 01.03)
+add_dependency(ChimeraTK-cppext REQUIRED 01.04)
 add_dependency(exprtk REQUIRED 01.00)
 
 FIND_PACKAGE(PkgConfig REQUIRED)

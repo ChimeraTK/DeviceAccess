@@ -182,7 +182,7 @@
       <type>float64</type>
       <value>11</value>
     </variable>
-    <redirectedRegister name="VariableAsPushParameterInMath">
+    <redirectedRegister name="RegisterWithVariableAsPushParameterInMath">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD.WORD_STATUS</targetRegister>
       <plugin name="math">

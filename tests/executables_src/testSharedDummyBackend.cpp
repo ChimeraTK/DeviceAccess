@@ -34,7 +34,16 @@ namespace {
 
       auto catalogue = backendInstance->getRegisterCatalogue();
 
-      return !catalogue.hasRegister(registerPath);
+      // the register is not in the iterable catalogue (might be a hidden register though)
+      bool found = false;
+      for(auto& info : catalogue) {
+        if(info.getRegisterName() == registerPath) {
+          found = true;
+          break;
+        }
+      }
+
+      return !found;
     }
   };
 

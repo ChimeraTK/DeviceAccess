@@ -3118,9 +3118,10 @@ namespace ChimeraTK {
       auto registerName = x.path();
       std::cout << "    registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
-      reg.read(); // initial value
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        reg.read(); // initial value
+        
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
@@ -3343,7 +3344,7 @@ namespace ChimeraTK {
           auto reg = d.getTwoDRegisterAccessor<RawType>(registerName, 0, 0, {AccessMode::raw});
           // the test itself requires an extended interface, so the test can be disabled
           if(x.isReadable()) {
-            x.template setRemoteValue();
+            x.setRemoteValue();
             reg.read();
             auto expectedRawValue = x.template getRemoteValue<RawType>(/* raw = */ true);
             CHECK_EQUALITY(reg, expectedRawValue);

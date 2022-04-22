@@ -20,7 +20,7 @@ namespace ChimeraTK {
     if(type == DataType::int8) { // 8 bit signed
       _nDigits = 4;              // -127 .. 128
     }
-    if(type == DataType::uint8) { // 8 bit unsigned
+    else if(type == DataType::uint8) { // 8 bit unsigned
       _nDigits = 3;               // 0..256
     }
     else if(type == DataType::int16) { // 16 bit signed
@@ -48,6 +48,12 @@ namespace ChimeraTK {
     else if(type == DataType::float64) { // 64 bit float IEEE 754
       _nDigits = 3 + 325;                //  todo. fix comments. see RegisterInfoMap::RegisterInfo::RegisterInfo
       _nFractionalDigits = 325;
+    }
+    else if(type == DataType::Boolean) {
+      _fundamentalType = FundamentalType::boolean;
+    }
+    else if(type == DataType::Void) {
+      _fundamentalType = FundamentalType::nodata;
     }
   }
 

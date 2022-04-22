@@ -51,6 +51,7 @@ namespace ChimeraTK {
     _opened = true;
     _hasException = false;
     _asyncReadActive = false;
+    _versionOnOpen = ChimeraTK::VersionNumber{};
 
     // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
@@ -206,12 +207,15 @@ namespace ChimeraTK {
 
       std::string devName = lnmInfo.deviceName;
 
-      RegisterInfo target_info(lnmInfo.clone()); //Start with a clone of this info as there is not default constructor
-      // In case the devide is not "this" replace it with the real target register info
+      RegisterInfo target_info(lnmInfo.clone()); // Start with a clone of this info as there is not default constructor
+      // In case the device is not "this" replace it with the real target register info
       if(devName != "this") {
         auto cat = _devices.at(devName)->getRegisterCatalogue();
         if(!cat.hasRegister(lnmInfo.registerName)) continue;
         target_info = cat.getRegister(lnmInfo.registerName);
+      }
+      else {
+        target_info = _catalogue_mutable.getRegister(lnmInfo.registerName);
       }
 
       lnmInfo.supportedFlags = target_info.getSupportedAccessModes();
@@ -233,6 +237,8 @@ namespace ChimeraTK {
         lnmInfo.nChannels = target_info.getNumberOfChannels();
       }
       if(lnmInfo.length == 0) lnmInfo.length = target_info.getNumberOfElements();
+
+      _catalogue_mutable.modifyRegister(lnmInfo);
     }
 
     // update catalogue info by plugins
@@ -334,13 +340,14 @@ namespace ChimeraTK {
     }
 
     // iterate all push subscriptions of variables and place initial value into queue
-    VersionNumber v{};
+    VersionNumber v = getVersionOnOpen();
     for(auto& r : _catalogue_mutable) {
       auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
       if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
         auto& lnmVariable = _variables[info.name];
         callForType(info.valueType, [&](auto arg) {
           auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
+          vtEntry.latestVersion = v; // store in case an accessor is created after calling activateAsyncRead
           for(auto& sub : vtEntry.subscriptions) {
             sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, v});
           }
@@ -360,6 +367,10 @@ namespace ChimeraTK {
     }
     return ret;
   }
+
+  /********************************************************************************************************************/
+
+  ChimeraTK::VersionNumber LogicalNameMappingBackend::getVersionOnOpen() const { return _versionOnOpen; }
 
   /********************************************************************************************************************/
 

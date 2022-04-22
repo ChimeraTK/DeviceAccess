@@ -1,0 +1,86 @@
+# name                    number of elements       address          size           bar    width   fracbits    signed
+
+# The sequences with default fixed point interpretation 32 bit int (also the shorter ones)
+TEST.MEM_MULTIPLEXED_INT 15 0 60 0
+TEST.MEM_MULTIPLEXED_INT.0 1 0 4 0
+TEST.MEM_MULTIPLEXED_INT.1 1 4 4 0
+TEST.MEM_MULTIPLEXED_INT.2 1 8 4 0
+
+# There are only 15 entries in the sequence, but the AREA has to be a multiple
+# of 4 bytes (32 bits) in order to work with the librabry and the drivers.
+# The other words are not directly readably, they will cause I/O errors.
+# Multiplexed registers still cannot handle this.
+# https://redmine.msktools.desy.de/issues/9660
+TEST.MEM_MULTIPLEXED_CHAR       4           0x40            16          0
+TEST.MEM_MULTIPLEXED_CHAR.0                      1           0x40            1           0
+TEST.MEM_MULTIPLEXED_CHAR.1                      1           0x41            1           0
+TEST.MEM_MULTIPLEXED_CHAR.2                      1           0x42            1           0
+
+TEST.MEM_MULTIPLEXED_SHORT      8           0x50            32          0
+TEST.MEM_MULTIPLEXED_SHORT.0                     1           0x50            2           0
+TEST.MEM_MULTIPLEXED_SHORT.1                     1           0x52            2           0
+TEST.MEM_MULTIPLEXED_SHORT.2                     1           0x54            2           0
+
+# The sequences with one, two and three fractional bits, signed 8 bit
+TEST.MEM_MULTIPLEXED_FRAC_INT 15 0 60 1
+TEST.MEM_MULTIPLEXED_FRAC_INT.0 1 0 4 1 8 1 1
+TEST.MEM_MULTIPLEXED_FRAC_INT.1 1 4 4 1 8 2 1
+TEST.MEM_MULTIPLEXED_FRAC_INT.2 1 8 4 1 8 3 1
+
+TEST.MEM_MULTIPLEXED_FRAC_CHAR 4 0x40 16 1
+TEST.MEM_MULTIPLEXED_FRAC_CHAR.0 1 0x40 1 1 8 1 1
+TEST.MEM_MULTIPLEXED_FRAC_CHAR.1 1 0x41 1 1 8 2 1
+TEST.MEM_MULTIPLEXED_FRAC_CHAR.2 1 0x42 1 1 8 3 1
+
+TEST.MEM_MULTIPLEXED_FRAC_SHORT 8 0x50 32 1
+TEST.MEM_MULTIPLEXED_FRAC_SHORT.0 1 0x50 2 1 8 1 1
+TEST.MEM_MULTIPLEXED_FRAC_SHORT.1 1 0x52 2 1 8 2 1
+TEST.MEM_MULTIPLEXED_FRAC_SHORT.2 1 0x54 2 1 8 3 1
+
+# A typical DMA example: 32 bytes per block, 16 bit words
+TEST.MEM_MULTIPLEXED_DMA 32 0 128 0xD
+TEST.MEM_MULTIPLEXED_DMA.FIRST 1 0x00 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.SECOND 1 0x02 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.INDEX_2 1 0x04 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.FOO 1 0x06 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.BAR 1 0x08 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.SOME_CHANNEL 1 0x0A 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.ANOTHER_CHANNEL 1 0x0C 2 0xD 16 -2 1
+# Addresses back to front
+TEST.MEM_MULTIPLEXED_DMA.RAW_1 1 0x14 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.RAW_2 1 0x12 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.RAW_3 1 0x10 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.RAW_4 1 0x0E 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.SUPER_0 1 0x16 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.SUPER_1 1 0x18 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.SUPER_4 1 0x1A 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.SUPER_7 1 0x1C 2 0xD 16 -2 1
+TEST.MEM_MULTIPLEXED_DMA.SUPER_5 1 0x1E 2 0xD 16 -2 1
+
+# mixed word sizes
+TEST.MEM_MULTIPLEXED_MIXED 6 0 24 0x3
+TEST.MEM_MULTIPLEXED_MIXED.0 1 0x00 1 0x3
+TEST.MEM_MULTIPLEXED_MIXED.1 1 0x01 2 0x3
+TEST.MEM_MULTIPLEXED_MIXED.2 1 0x03 4 0x3
+
+# real-life mixed word sizes - mixed entries and named channels
+APP0.MEM_MULTIPLEXED_DAQ0_BAM                                   4096            0        16384      2     32      0    0
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.13                                   1           28            4      2     32      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.14                                   1           32            4      2     32      0    0
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.15                                   1           36            4      2     32      0    0
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.16                                   1           40            4      2     32      0    0
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.RAW_1                                1           10            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.RAW_2                                1           12            2      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.RAW_3                                1           14            2      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.RAW_4                                1           16            1      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.RAW_5                                1           17            1      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.RAW_6                                1           18            1      2      8      0    1
+
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.FOO                                  1            0            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.BAR                                  1            2            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.REGISTER_A                           1            4            4      2     18      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.3                                    1            8            2      2     16      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.10                                   1           19            1      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.11                                   1           20            4      2      8      0    1
+APP0.MEM_MULTIPLEXED_DAQ0_BAM.12                                   1           24            4      2      8      0    1
+

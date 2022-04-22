@@ -496,6 +496,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::Notification ReadAnyGroup::waitAnyNonBlocking() {
+  restart_after_discard_value:
     // check if update is available
     if(notification_queue.empty()) {
       // If no notification is present, do not even execute preRead. This is necessary for two reasons:
@@ -507,6 +508,42 @@ namespace ChimeraTK {
       //   possible subsequend blocking readAny(), hence there would be no way to release the testable mode lock in the
       //   right place.
       return {};
+    }
+
+    // if update is available, peek into the queue to check whether a DiscardValueException will be read
+    auto id = notification_queue.front();
+    try {
+      // call to empty() necessary before call to front(), to gain ownership of front element
+      if(push_elements[id].getHighLevelImplElement()->_readQueue.empty()) {
+        // cannot place the call to empty() into the assert, since it must be executed also in release builds
+        assert(false);
+      }
+      push_elements[id].getHighLevelImplElement()->_readQueue.front();
+    }
+    catch(detail::DiscardValueException&) {
+      // Remove discarded transfer from the queues and go back to square one
+      notification_queue.pop();
+      try {
+        push_elements[id].getHighLevelImplElement()->_readQueue.pop();
+      }
+      catch(detail::DiscardValueException&) {
+        goto restart_after_discard_value;
+      }
+      assert(false); // we must never end up at this point
+    }
+    catch(ChimeraTK::runtime_error&) {
+      // While peeking we found another runtime which is stored in the queue.
+      // Don't let it through, but leave it on the queue and continue with the waitAny().
+      // It will be handled later.
+    }
+    catch(boost::thread_interrupted&) {
+      // Also suppress the thread_interrupted exception here.
+      // It will stay on the queue, hence it's not lost and will be handled later.
+    }
+    catch(...) {
+      std::cout << "Fatal ERROR in ReadAnyGroup: Found unexpected exception on the read queue. Terminating!"
+                << std::endl;
+      std::terminate();
     }
 
     // now that we know that an update is available, we can defer to waitAny()

@@ -143,6 +143,7 @@ namespace ChimeraTK {
     [[nodiscard]] const std::map<unsigned int, std::set<unsigned int>>& getListOfInterrupts() const;
 
     void addRegister(const NumericAddressedRegisterInfo& registerInfo);
+    [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
    protected:
     /** 
