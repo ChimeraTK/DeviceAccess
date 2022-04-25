@@ -10,27 +10,4 @@
     </plugin>
   </redirectedRegister>
 
-
-
-
-
-
-
-
-<!-- This part is not used in double buffering tests. Seems to be left over from preparing a file based on some template -->
-<!--
-  <redirectedRegister name="controlRegister">
-    <targetDevice>(dummy?map=doubleBuffer.map)</targetDevice>
-    <targetRegister>APP.1.WORD_DUB_BUF_ENA</targetRegister>
-  </redirectedRegister>
-  <redirectedRegister name="statusRegister">
-    <targetDevice>(dummy?map=doubleBuffer.map)</targetDevice>
-    <targetRegister>APP.1.WORD_DUB_BUF_CURR</targetRegister>
-  </redirectedRegister>
-
-  <redirectedRegister name="secondBuffer">
-    <targetDevice>(dummy?map=doubleBuffer.map)</targetDevice>
-    <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
-  </redirectedRegister>
--->
 </logicalNameMap>

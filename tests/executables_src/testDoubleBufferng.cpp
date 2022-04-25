@@ -19,7 +19,6 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
 static std::string rawDeviceCdd("(ExceptionDummy?map=doubleBuffer.map)");
 static auto backdoor =
     boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(rawDeviceCdd));
-//static boost::shared_ptr<ExceptionDummy> exceptionDummy;
 
 /**********************************************************************************************************************/
 
@@ -150,13 +149,6 @@ struct MyArea1 {
   std::string path() { return "/doubleBuffer"; }
   size_t nElementsPerChannel() { return 10; }
   size_t address() { return 20; }
-  //uint32_t toRaw(float v) { return v * 65536.F; }
-  //float fromRaw(uint32_t v) { return v / 65536.F; }
-  //float limitGenerated(float e) {
-  //  while(e > 32768.F) e -= 65535.F;
-  //  while(e < -32767.F) e += 65535.F;
-  //  return e;
-  //}
   int32_t increment = 3;
 
   typedef uint32_t minimumUserType;
@@ -169,12 +161,7 @@ template<typename Register>
 uint32_t AreaType<Register>::_currentBufferNumber = 0;
 
 BOOST_AUTO_TEST_CASE(testUnified) {
-  //"(logicalNameMap?map=doubleBuffer.xlmap&target=(ExceptionDummy?map=doubleBuffer.map))";
   std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + rawDeviceCdd + ")";
-
-  //exceptionDummy =
-  //    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(rawDeviceCdd));
-
   ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyArea1>>().runTests(lmap);
 }
 
