@@ -61,9 +61,6 @@ namespace ChimeraTK {
       TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
                               ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
     }
-    // we call the callback functions after releasing the mutex in order to
-    // avoid the risk of deadlocks.
-    //runReadCallbackFunctionsForAddressRange(AddressRange(bar, address, sizeInBytes));
   }
 
   void DummyBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
