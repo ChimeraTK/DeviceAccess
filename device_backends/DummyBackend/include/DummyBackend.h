@@ -104,20 +104,17 @@ namespace ChimeraTK {
     std::map<uint64_t, std::vector<int32_t>> _barContents;
     std::set<std::pair<uint64_t, uint64_t>> _readOnlyAddresses; // bar/address combinations which are read only
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
-    std::multimap<AddressRange, boost::function<void(void)>> _readCallbackFunctions;
     std::mutex mutex;
 
     void resizeBarContents();
 
     void runWriteCallbackFunctionsForAddressRange(AddressRange addressRange);
-    void runReadCallbackFunctionsForAddressRange(AddressRange addressRange);
     std::list<boost::function<void(void)>> findCallbackFunctionsForAddressRange(AddressRange addressRange);
-    std::list<boost::function<void(void)>> findReadCallbackFunctionsForAddressRange(AddressRange addressRange);
+
     void setReadOnly(uint64_t bar, uint64_t address, size_t sizeInWords);
     void setReadOnly(AddressRange addressRange);
     bool isReadOnly(uint64_t bar, uint64_t address) const;
     void setWriteCallbackFunction(AddressRange addressRange, boost::function<void(void)> const& writeCallbackFunction);
-    void setReadCallbackFunction(AddressRange addressRange, boost::function<void(void)> const& readCallbackFunction);
     /// returns true if the ranges overlap and at least one of the overlapping
     /// registers can be written
     bool isWriteRangeOverlap(AddressRange firstRange, AddressRange secondRange);

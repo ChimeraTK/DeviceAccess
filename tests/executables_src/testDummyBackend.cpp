@@ -51,7 +51,7 @@ class TestableDummyBackend : public DummyBackend {
   using DummyBackend::setReadOnly;
   using DummyBackend::AddressRange;
   using DummyBackend::setWriteCallbackFunction;
-  using DummyBackend::setReadCallbackFunction;
+  //using DummyBackend::setReadCallbackFunction;
   using DummyBackend::writeRegisterWithoutCallback;
   using DummyBackend::isWriteRangeOverlap;
   using DummyBackend::_readOnlyAddresses;
@@ -276,33 +276,6 @@ BOOST_AUTO_TEST_CASE(testReadOnly) {
   dummyBackend->read(bar, offset + sizeInBytes, &readbackWord, 4);
   BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
 }
-/**********************************************************************************************************************/
-
-BOOST_AUTO_TEST_CASE(testReadCallbackFunctions) {
-  //That is just a copy freom write calbacl function
-  std::cout << "... Test Read Callback Function." << std::endl;
-  TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  BOOST_REQUIRE(dummyBackend->_barContents[0].size() >= 13);
-  f.a = 0;
-  f.b = 0;
-  f.c = 0;
-  dummyBackend->setReadCallbackFunction(TestableDummyBackend::AddressRange(0, 36, 4), [] { f.increaseA(); });
-  dummyBackend->setReadCallbackFunction(TestableDummyBackend::AddressRange(0, 28, 24), [] { f.increaseB(); });
-  dummyBackend->setReadCallbackFunction(TestableDummyBackend::AddressRange(0, 20, 12), [] { f.increaseC(); });
-
-  // test single reads
-  int32_t dataWord(42);
-  dummyBackend->read((uint64_t)0, (uint64_t)12, &dataWord, 4); // nothing
-  BOOST_CHECK(f.a == 0);
-  BOOST_CHECK(f.b == 0);
-  BOOST_CHECK(f.c == 0);
-  dummyBackend->read((uint64_t)0, (uint64_t)20, &dataWord, 4); // c
-  BOOST_CHECK(f.a == 0);
-  BOOST_CHECK(f.b == 0);
-  BOOST_CHECK(f.c == 1);
-}
-
-/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
   // We just require the first bar to be 12 registers long.

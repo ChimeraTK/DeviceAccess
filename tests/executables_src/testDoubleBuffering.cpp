@@ -136,11 +136,7 @@ struct AreaType : Register {
     }
   }
 
-  void setForceRuntimeError(bool /*enable*/, size_t) {
-    //    target->throwExceptionRead = enable;
-    //    target->throwExceptionWrite = enable;
-    assert(false);
-  }
+  void setForceRuntimeError(bool /*enable*/, size_t) { assert(false); }
 };
 
 /*********************************************************************************************************************/
