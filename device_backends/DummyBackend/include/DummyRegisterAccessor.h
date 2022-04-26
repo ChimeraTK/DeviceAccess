@@ -173,12 +173,6 @@ namespace ChimeraTK {
           writeCallback);
     }
 
-    /// Set callback function which is called when the register is readed to (through the normal Device interface)
-    //void setReadCallback(const std::function<void()>& readCallback) {
-    //  _dev->setReadCallbackFunction(
-    //      {uint8_t(registerInfo.bar), registerInfo.address, registerInfo.nBytes}, readCallback);
-    //}
-
     const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
 
     /** Get a lock to safely modify the buffer in a multi-treaded environment. You have to release it as soon as possible because it will block all other
