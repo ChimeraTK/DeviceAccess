@@ -51,7 +51,6 @@ class TestableDummyBackend : public DummyBackend {
   using DummyBackend::setReadOnly;
   using DummyBackend::AddressRange;
   using DummyBackend::setWriteCallbackFunction;
-  //using DummyBackend::setReadCallbackFunction;
   using DummyBackend::writeRegisterWithoutCallback;
   using DummyBackend::isWriteRangeOverlap;
   using DummyBackend::_readOnlyAddresses;
