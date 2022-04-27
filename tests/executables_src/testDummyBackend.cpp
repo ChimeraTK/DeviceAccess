@@ -276,8 +276,6 @@ BOOST_AUTO_TEST_CASE(testReadOnly) {
   BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
 }
 
-/**********************************************************************************************************************/
-
 BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
   // We just require the first bar to be 12 registers long.
   // Everything else would overcomplicate this test. For a real

@@ -27,6 +27,9 @@ are complete and fully functional.
 \li \ref exceptions
 \li \ref q_and_a
 
+\subsection lnm Logical Name Mapping plugins
+\li \ref double_buffering_plugin
+
 \page basic_example Basic Example
 
 To use the ChimeraTK::Device class you need a so called "device map" file (dmap file).

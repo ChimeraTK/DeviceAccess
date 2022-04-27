@@ -50,15 +50,17 @@ namespace ChimeraTK {
   }
 
   void DummyBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
-    std::lock_guard<std::mutex> lock(mutex);
-    assert(_opened);
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      assert(_opened);
+      if(_hasActiveException) {
+        throw ChimeraTK::runtime_error("previous, unrecovered fault");
+      }
+      checkSizeIsMultipleOfWordSize(sizeInBytes);
+      unsigned int wordBaseIndex = address / sizeof(int32_t);
+      TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
+                              ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
     }
-    checkSizeIsMultipleOfWordSize(sizeInBytes);
-    uint64_t wordBaseIndex = address / sizeof(int32_t);
-    TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
-                            ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
   }
 
   void DummyBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
@@ -111,9 +113,8 @@ namespace ChimeraTK {
   void DummyBackend::runWriteCallbackFunctionsForAddressRange(AddressRange addressRange) {
     std::list<boost::function<void(void)>> callbackFunctionsForThisRange =
         findCallbackFunctionsForAddressRange(addressRange);
-    for(std::list<boost::function<void(void)>>::iterator functionIter = callbackFunctionsForThisRange.begin();
-        functionIter != callbackFunctionsForThisRange.end(); ++functionIter) {
-      (*functionIter)();
+    for(auto& function : callbackFunctionsForThisRange) {
+      function();
     }
   }
 

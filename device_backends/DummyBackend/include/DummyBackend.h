@@ -110,6 +110,7 @@ namespace ChimeraTK {
 
     void runWriteCallbackFunctionsForAddressRange(AddressRange addressRange);
     std::list<boost::function<void(void)>> findCallbackFunctionsForAddressRange(AddressRange addressRange);
+
     void setReadOnly(uint64_t bar, uint64_t address, size_t sizeInWords);
     void setReadOnly(AddressRange addressRange);
     bool isReadOnly(uint64_t bar, uint64_t address) const;
