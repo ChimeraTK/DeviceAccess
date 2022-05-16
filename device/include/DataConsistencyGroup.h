@@ -111,14 +111,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline bool DataConsistencyGroup::update(TransferElementID transferElementID) {
-    // if matching mode is none, always return true
-    if(mode == MatchingMode::none) return true;
-    assert(mode == MatchingMode::exact);
-
     // ignore transferElementID does not belong to DataConsistencyGroup
     if(push_elements.find(transferElementID) == push_elements.end()) {
       return false;
     }
+    // if matching mode is none, always return true
+    if(mode == MatchingMode::none) return true;
+    assert(mode == MatchingMode::exact);
+
     auto getVNFromElement = push_elements[transferElementID].getVersionNumber();
     assert(getVNFromElement != VersionNumber{nullptr});
     if(getVNFromElement < versionNumberToBeConsistentTo){
