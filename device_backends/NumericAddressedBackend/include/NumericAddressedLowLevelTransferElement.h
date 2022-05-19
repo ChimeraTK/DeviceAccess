@@ -16,6 +16,8 @@ namespace ChimeraTK {
   template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor;
 
+  class NumericAddressedBackendASCIIAccessor;
+
   namespace detail {
     template<typename UserType, typename DataConverterType, bool isRaw>
     struct NumericAddressedPrePostActionsImplementor;
@@ -197,8 +199,11 @@ namespace ChimeraTK {
 
     template<typename UserType, typename DataConverterType, bool isRaw>
     friend class NumericAddressedBackendRegisterAccessor;
+
     template<typename UserType, typename DataConverterType, bool isRaw>
     friend struct detail::NumericAddressedPrePostActionsImplementor;
+
+    friend class NumericAddressedBackendASCIIAccessor;
   };
 
 } // namespace ChimeraTK

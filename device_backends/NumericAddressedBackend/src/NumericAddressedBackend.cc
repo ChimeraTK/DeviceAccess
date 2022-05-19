@@ -11,6 +11,7 @@
 #include "NumericAddress.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
+#include "NumericAddressedBackendASCIIAccessor.h"
 #include "AsyncNDRegisterAccessor.h"
 #include "NumericAddressedInterruptDispatcher.h"
 
@@ -165,9 +166,17 @@ namespace ChimeraTK {
                   shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
       }
+      else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {
+        if constexpr(!std::is_same<UserType, std::string>::value) {
+          throw ChimeraTK::logic_error("NumericAddressedBackend: ASCII data must be read with std::string UserType.");
+        }
+        else {
+          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendASCIIAccessor(
+              shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+        }
+      }
       else {
-        throw ChimeraTK::logic_error("NumericAddressedBackend:: trying to get "
-                                     "accessor for unsupported data type");
+        throw ChimeraTK::logic_error("NumericAddressedBackend: trying to get accessor for unsupported data type");
       }
     }
     // 2D multiplexed register

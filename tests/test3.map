@@ -1,25 +1,27 @@
 # both registers have the same address, so whatever we write to actuator we can read back from readBack
-/MyModule/actuator                1  0 4 1 32 0 1 RW
-/MyModule/readBack                1  4 4 1 32 0 1 RO
-/Integers/signed32                1  8 4 1 32 0 1 RW
-/Integers/unsigned32              1 12 4 1 32 0 0 RW
-/Integers/signed16                1 16 4 1 16 0 1 RW
-/Integers/unsigned16              1 20 4 1 16 0 0 RW
-/Integers/signed8                 1 24 4 1  8 0 1 RW
-/Integers/unsigned8               1 28 4 1  8 0 0 RW
-/FixedPoint/value                 1 32 4 1 32 8 1 RW
-/Deep/Hierarchies/Need/Tests/As/well  1 36 4 1 32 0 1 RW
-/Deep/Hierarchies/Need/Another/test   1 40 4 1 32 0 1 RW
+/MyModule/actuator                    1  0  4 1 32     0 1 RW
+/MyModule/readBack                    1  4  4 1 32     0 1 RO
+/Integers/signed32                    1  8  4 1 32     0 1 RW
+/Integers/unsigned32                  1 12  4 1 32     0 0 RW
+/Integers/signed16                    1 16  4 1 16     0 1 RW
+/Integers/unsigned16                  1 20  4 1 16     0 0 RW
+/Integers/signed8                     1 24  4 1  8     0 1 RW
+/Integers/unsigned8                   1 28  4 1  8     0 0 RW
+/FixedPoint/value                     1 32  4 1 32     8 1 RW
+/Deep/Hierarchies/Need/Tests/As/well  1 36  4 1 32     0 1 RW
+/Deep/Hierarchies/Need/Another/test   1 40  4 1 32     0 1 RW
+/Text/someAsciiData                   1 44 35 1  8 ASCII 0 RW
+/Text/someAsciiData_as_i32            9 44 36 1 32     0 0 RW
 
 # These registers are only 16 rep. 8 bit wide. They overlap with /Integers/unsigned32 to allow cross checks
-/ShortRaw/signed16                1 12 2 1 16 0 1 RW
-/ShortRaw/unsigned16              1 14 2 1 16 0 0 RW
-/ShortRaw/fixedPoint16_8u         1 12 2 1 16 8 0 RW
-/ShortRaw/fixedPoint16_8s         1 14 2 1 16 8 1 RW
-/ByteRaw/signed8                  1 12 1 1  8 0 1 RW
-/ByteRaw/unsigned8                1 13 1 1  8 0 0 RW
-/ByteRaw/fixedPoint8_4u           1 14 1 1  8 4 0 RW
-/ByteRaw/fixedPoint8_4s           1 15 1 1  8 4 1 RW
+/ShortRaw/signed16                    1 12  2 1 16     0 1 RW
+/ShortRaw/unsigned16                  1 14  2 1 16     0 0 RW
+/ShortRaw/fixedPoint16_8u             1 12  2 1 16     8 0 RW
+/ShortRaw/fixedPoint16_8s             1 14  2 1 16     8 1 RW
+/ByteRaw/signed8                      1 12  1 1  8     0 1 RW
+/ByteRaw/unsigned8                    1 13  1 1  8     0 0 RW
+/ByteRaw/fixedPoint8_4u               1 14  1 1  8     4 0 RW
+/ByteRaw/fixedPoint8_4s               1 15  1 1  8     4 1 RW
 
 # These registers are interrupt-backed registers
-/Integers/signed32_async          1  8 4 1 32 0 1 INTERRUPT5:6
+/Integers/signed32_async              1  8  4 1 32     0 1 INTERRUPT5:6
