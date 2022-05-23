@@ -48,7 +48,21 @@ namespace ChimeraTK {
       }
       InterruptDispatcherInterface::cleanupShm(segment, pidSet);
 
-      pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
+      /* TODO 
+       * debug problem with bcm_server running on shm dummies. There shm does not get cleaned up.
+       */
+      int32_t pid = static_cast<int32_t>(getOwnPID());
+      bool foundPid = false;
+      for(auto it = pidSet->begin(); it != pidSet->end(); ++it) {
+        if(pid == *it) {
+          std::cerr
+              << "Warning, PID " << *it
+              << " already in shm/PidSet! Using more than one shm backend from the same process can lead to problems! "
+              << std::endl;
+          foundPid = true;
+        }
+      }
+      if(!foundPid) pidSet->emplace_back(pid);
     }
     this->intDispatcherIf = boost::movelib::unique_ptr<InterruptDispatcherInterface>(
         new InterruptDispatcherInterface(sharedDummyBackend, segment, interprocessMutex));
