@@ -100,7 +100,7 @@ namespace ChimeraTK {
         flags.add(AccessMode::wait_for_new_data);
       }
 
-      if(channels.size() == 1 && channels.front().dataType != Type::VOID) {
+      if(channels.size() == 1 && channels.front().dataType != Type::VOID && channels.front().dataType != Type::ASCII) {
         flags.add(AccessMode::raw);
       }
 

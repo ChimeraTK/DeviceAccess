@@ -33,8 +33,9 @@ namespace ChimeraTK {
 
     for(std::map<uint64_t, size_t>::const_iterator barSizeInBytesIter = barSizesInBytes.begin();
         barSizeInBytesIter != barSizesInBytes.end(); ++barSizeInBytesIter) {
-      // the size of the vector is in words, not in bytes -> convert fist
-      _barContents[barSizeInBytesIter->first].resize(barSizeInBytesIter->second / sizeof(int32_t), 0);
+      // the size of the vector is in words, not in bytes -> convert fist with rounding up
+      auto nwords = (barSizeInBytesIter->second + sizeof(int32_t) - 1) / sizeof(int32_t);
+      _barContents[barSizeInBytesIter->first].resize(nwords, 0);
     }
   }
 

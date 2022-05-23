@@ -87,8 +87,10 @@ namespace ChimeraTK {
         rawDataInfo = DataType::int64;
       }
       else {
-        throw ChimeraTK::logic_error(
-            "Unsupported raw size: " + std::to_string(elementPitchBits) + " bits in register " + pathName);
+        if(dataType != Type::ASCII) {
+          throw ChimeraTK::logic_error(
+              "Unsupported raw size: " + std::to_string(elementPitchBits) + " bits in register " + pathName);
+        }
       }
     }
 

@@ -379,6 +379,75 @@ struct ByteRaw_fixedPoint8_4s : ShortRaw_base<ByteRaw_fixedPoint8_4s, int8_t> {
 
 /**********************************************************************************************************************/
 
+struct AsciiData {
+  static std::string path() { return "/Text/someAsciiData"; }
+  static bool isWriteable() { return true; }
+  static bool isReadable() { return true; }
+  using minimumUserType = std::string;
+  static ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+
+  static size_t nChannels() { return 1; }
+  static size_t nElementsPerChannel() { return 1; }
+  static size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  static size_t nRuntimeErrorCases() { return 1; }
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer();
+
+  // Note: The DummyRegisterAccessor does not yet work properly with none 32-bit word sizes.
+  DummyRegisterAccessor<uint32_t> acc{exceptionDummy.get(), "Text", "someAsciiData_as_i32"};
+
+  std::string textBase{"Some $%#@! characters "};
+  size_t counter{0};
+  const size_t asciiLength{35};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return {{textBase + std::to_string(counter++)}};
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    std::vector<std::vector<UserType>> v{{""}};
+    for(size_t i = 0; i < asciiLength; ++i) {
+      size_t word = i / 4;
+      size_t byteInWord = i % 4;
+      char ch = char((acc[word] >> (byteInWord * 8U)) & 0xFF);
+      if(ch == 0) break;
+      v[0][0] += ch;
+    }
+    std::cout << "getRemoteValue: " << v[0][0] << std::endl;
+    return v;
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<minimumUserType>();
+    for(size_t i = 0; i < acc.getNumberOfElements(); ++i) {
+      acc[i] = 0;
+    }
+    for(size_t i = 0; i < std::min(asciiLength, v[0][0].length()); ++i) {
+      char ch = v[0][0][i];
+      size_t word = i / 4;
+      size_t byteInWord = i % 4;
+      acc[word] = acc[word] | uint32_t(ch) << (byteInWord * 8U);
+    }
+    std::cout << "setRemoteValue: " << v[0][0] << std::endl;
+  }
+
+  static void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummy->throwExceptionRead = enable;
+    exceptionDummy->throwExceptionWrite = enable;
+    exceptionDummy->throwExceptionOpen = enable;
+  }
+};
+
+/**********************************************************************************************************************/
+
 struct MuxedNodma {
   std::string path() { return "/TEST/NODMA"; }
   bool isWriteable() { return true; }
@@ -595,6 +664,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
       .addRegister<ByteRaw_unsigned8>()
       .addRegister<ByteRaw_fixedPoint8_4s>()
       .addRegister<ByteRaw_fixedPoint8_4u>()
+      .addRegister<AsciiData>()
       .runTests(cdd);
 }
 
