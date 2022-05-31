@@ -164,8 +164,15 @@ namespace ChimeraTK {
     /** 
      *  This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
      *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not modified.
+     *  This map is filled in the constructor. The rest of the code is accessing it through the const _interruptDispatchers
+     *  reference, which is thread safe.
      */
-    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchers;
+    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchersNonConst;
+
+    /** Access to const members of std::containers is thread safe. So we use a const reference throughout the code.
+     */
+    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> const& _interruptDispatchers{
+        _interruptDispatchersNonConst};
   };
 
 } // namespace ChimeraTK

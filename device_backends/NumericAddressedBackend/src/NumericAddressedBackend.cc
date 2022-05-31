@@ -31,7 +31,7 @@ namespace ChimeraTK {
       for(auto& interruptController : _registerMap.getListOfInterrupts()) {
         // interruptController is a pair<int, set<int>>, containing the controller number and a set of associated interrupts
         for(auto interruptNumber : interruptController.second) {
-          _interruptDispatchers[{interruptController.first, interruptNumber}] =
+          _interruptDispatchersNonConst[{interruptController.first, interruptNumber}] =
               boost::make_shared<NumericAddressedInterruptDispatcher>();
         }
       }
@@ -116,7 +116,7 @@ namespace ChimeraTK {
       }
 
       auto interruptDispatcher =
-          _interruptDispatchers[{registerInfo.interruptCtrlNumber, registerInfo.interruptNumber}];
+          _interruptDispatchers.at({registerInfo.interruptCtrlNumber, registerInfo.interruptNumber});
       assert(interruptDispatcher);
       auto newSubscriber = interruptDispatcher->subscribe<UserType>(
           boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
@@ -214,7 +214,6 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("NumericAddressedBackend is in exception state.");
     }
     catch(...) {
-      // FIXME: This is not thread-safe!
       for(auto& it : _interruptDispatchers) {
         it.second->sendException(std::current_exception());
       }
