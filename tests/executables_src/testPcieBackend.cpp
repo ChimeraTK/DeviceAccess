@@ -281,7 +281,7 @@ void PcieBackendTest::testReadDeviceInfo() {
 
   std::string deviceInfo;
   deviceInfo = _pcieBackendInstance->readDeviceInfo();
-  BOOST_CHECK(referenceInfo.str() == deviceInfo);
+  BOOST_CHECK_EQUAL(referenceInfo.str(), deviceInfo);
 }
 
 /*******************************************************************************************************************/

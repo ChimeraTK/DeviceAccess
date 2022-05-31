@@ -286,7 +286,8 @@ namespace ChimeraTK {
     if(ioctl(_deviceID, _ioctlDriverVersion, &ioctlData) < 0) {
       throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read device info: "));
     }
-    os << " DRV VER: " << (float)(ioctlData.offset / 10.0) + (float)ioctlData.data;
+    // major and minor version are in data and offset, respectively
+    os << " DRV VER: " << ioctlData.data << "." << ioctlData.offset;
     return os.str();
   }
 
