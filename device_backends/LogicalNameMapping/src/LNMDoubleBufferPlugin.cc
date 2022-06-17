@@ -24,9 +24,8 @@ namespace ChimeraTK { namespace LNMBackend {
       return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(
           backend, target, _parameters, _targetDeviceName);
     }
-    else {
-      assert(false);
-    }
+    assert(false);
+    return {};
   }
 
   template<typename UserType>
