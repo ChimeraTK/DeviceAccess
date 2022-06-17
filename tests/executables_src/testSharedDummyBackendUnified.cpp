@@ -81,8 +81,11 @@ struct HelperProcess {
   // request helper to stop gracefully - this includes a handshake waiting on it's termination
   void stopGracefully() { requestMirroring(MirrorRequestType::stop); }
   void kill() {
-    std::system("pidfile=./testSharedDummyBackendUnifiedExt.pid; if [ -f $pidfile ]; "
-                "then kill $(cat $pidfile); rm $pidfile; fi ");
+    auto ret = std::system("pidfile=./testSharedDummyBackendUnifiedExt.pid; if [ -f $pidfile ]; "
+                           "then kill $(cat $pidfile); rm $pidfile; fi ");
+    if(ret == -1) {
+      throw std::runtime_error("Attempt to kill helper process failed.");
+    }
   }
   // discard all accessors. do not use after this point
   void reset() {
