@@ -6,6 +6,7 @@
 build
 .project
 .cproject
+.pydevproject
 .settings
 .kdev4
 *.kdev4
