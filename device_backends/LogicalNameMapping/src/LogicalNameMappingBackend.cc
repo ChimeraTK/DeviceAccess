@@ -27,7 +27,6 @@ namespace ChimeraTK {
 
     // parse the map fle
     LogicalNameMapParser parser = LogicalNameMapParser(_parameters, _variables);
-    //parser.
     _catalogue_mutable = parser.parseFile(_lmapFileName);
 
     // create all devices referenced in the map
@@ -347,9 +346,12 @@ namespace ChimeraTK {
         auto& lnmVariable = _variables[info.name];
         callForType(info.valueType, [&](auto arg) {
           auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
-          vtEntry.latestVersion = v; // store in case an accessor is created after calling activateAsyncRead
+          // override version number if last write to variable was before reopening the device
+          if(vtEntry.latestVersion < v) {
+            vtEntry.latestVersion = v; // store in case an accessor is created after calling activateAsyncRead
+          }
           for(auto& sub : vtEntry.subscriptions) {
-            sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, v});
+            sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, vtEntry.latestVersion});
           }
         });
       }
@@ -370,7 +372,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  ChimeraTK::VersionNumber LogicalNameMappingBackend::getVersionOnOpen() const { return _versionOnOpen; }
+  ChimeraTK::VersionNumber LogicalNameMappingBackend::getVersionOnOpen() const {
+    return _versionOnOpen;
+  }
 
   /********************************************************************************************************************/
 

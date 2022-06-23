@@ -138,7 +138,7 @@ namespace ChimeraTK {
         cppext::future_queue<typename LNMVariable::ValueTable<T>::QueuedValue> queue(3);
         // place queue in map
         vtEntry.subscriptions[this->getId()] = queue;
-        // make void-typed continuationof subscription queue, which stores the received value into the _queueValue
+        // make void-typed continuation of subscription queue, which stores the received value into the _queueValue
         this->_readQueue = queue.template then<void>(
             [this](const typename LNMVariable::ValueTable<T>::QueuedValue& queueValue) {
               this->_queueValue.validity = queueValue.validity;
