@@ -192,7 +192,9 @@ namespace ChimeraTK { namespace LNMBackend {
           if(!checkAllParametersWritten(_pushParameterAccessorMap)) {
             continue;
           }
-          if(!_mainValueWrittenAfterOpen) continue;
+          if(!_mainValueWrittenAfterOpen) {
+            continue;
+          }
 
           _h->computeResult(_lastWrittenValue, target->accessChannel(0));
           target->writeDestructively();
