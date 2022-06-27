@@ -26,9 +26,11 @@ namespace ChimeraTK {
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
     size_t nTransfers;
-    if(_backend->type == SubdeviceBackend::Type::areaHandshake)
+    if(_backend->type == SubdeviceBackend::Type::areaHandshake) {
       // for areaHandshake case with 1D array
+      // TODO FIXME shouldn't this be nTransfers = 1 ???
       nTransfers = _numberOfWords;
+    }
     else {
       assert(_backend->type == SubdeviceBackend::Type::threeRegisters ||
           _backend->type == SubdeviceBackend::Type::twoRegisters);
@@ -38,32 +40,20 @@ namespace ChimeraTK {
     try {
       size_t idx = 0;
       for(size_t adr = _startAddress; adr < _startAddress + nTransfers; ++adr) {
-        if(_backend->type == SubdeviceBackend::Type::threeRegisters ||
-            _backend->type == SubdeviceBackend::Type::areaHandshake) {
-          size_t retry = 0;
-          size_t max_retry = _backend->timeout * 1000 / _backend->sleepTime;
-          while(true) {
-            _accStatus->read();
-            if(_accStatus->accessData(0) == 0) break;
-            if(++retry > max_retry) {
-              throw ChimeraTK::runtime_error("Write to register '" + _name +
-                  "' failed: timeout waiting for cleared busy flag (" + _accStatus->getName() + ")");
-            }
-            usleep(_backend->sleepTime);
-          }
+        // write address register (if applicable)
+        if(_backend->type != SubdeviceBackend::Type::areaHandshake) {
+          _accAddress->accessData(0) = adr;
+          _accAddress->write();
+          usleep(_backend->addressToDataDelay);
         }
-        else { // twoRegisters type
-          usleep(_backend->sleepTime);
-        }
+
+        // write data register
         if(_backend->type == SubdeviceBackend::Type::areaHandshake) {
           int32_t val = (idx < _numberOfWords) ? _buffer[idx] : 0;
           _accDataArea->accessData(0, idx) = val;
           ++idx;
         }
         else {
-          _accAddress->accessData(0) = adr;
-          _accAddress->write();
-          usleep(_backend->addressToDataDelay);
           for(size_t innerOffset = 0; innerOffset < _accDataArea->getNumberOfSamples(); ++innerOffset) {
             // pad data with zeros, if _numberOfWords isn't an integer multiple of _accData->getNumberOfSamples()
             int32_t val = (idx < _numberOfWords) ? _buffer[idx] : 0;
@@ -72,6 +62,27 @@ namespace ChimeraTK {
           }
         }
         _accDataArea->write();
+
+        // wait until transaction is complete
+        if(_backend->type == SubdeviceBackend::Type::threeRegisters ||
+            _backend->type == SubdeviceBackend::Type::areaHandshake) {
+          // for 3regs/areaHandshake, wait until status register is 0 again
+          size_t retry = 0;
+          size_t max_retry = _backend->timeout * 1000 / _backend->sleepTime;
+          while(true) {
+            usleep(_backend->sleepTime);
+            _accStatus->read();
+            if(_accStatus->accessData(0) == 0) break;
+            if(++retry > max_retry) {
+              throw ChimeraTK::runtime_error("Write to register '" + _name +
+                  "' failed: timeout waiting for cleared busy flag (" + _accStatus->getName() + ")");
+            }
+          }
+        }
+        else {
+          // for 2regs, wait given time
+          usleep(_backend->sleepTime);
+        }
       }
     }
     catch(ChimeraTK::runtime_error&) {
@@ -89,13 +100,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doPostRead(TransferType, bool hasNewData) {
-    assert(!hasNewData);
-    if(!hasNewData) return;
-    // FIXME: Code cleanup. This following code is never executed:
-    assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
-    NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
-    // don't care about version number or data validity. This code is never executed  anyway.
+  void SubdeviceRegisterAccessor::doPostRead(TransferType, bool) {
+    throw ChimeraTK::logic_error("Reading this register is not supported.");
   }
 
   /*********************************************************************************************************************/
