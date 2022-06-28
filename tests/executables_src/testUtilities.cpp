@@ -7,6 +7,7 @@ using namespace boost::unit_test_framework;
 #include "DeviceInfoMap.h"
 #include "Exception.h"
 #include "Utilities.h"
+#include "SupportedUserTypes.h"
 
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"
@@ -236,6 +237,27 @@ BOOST_AUTO_TEST_CASE(testgetAliasList) {
   for(auto alias : expectedListOfAliases) {
     BOOST_CHECK(alias == returnedListOfAliases.at(index++));
   }
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testUserTypeToUserType_Boolean) {
+  ChimeraTK::Boolean myBool{true};
+  BOOST_TEST(ChimeraTK::userTypeToUserType<std::string>(myBool) == "true");
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(myBool) == 1);
+
+  myBool = false;
+  BOOST_TEST(ChimeraTK::userTypeToUserType<std::string>(myBool) == "false");
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(myBool) == 0);
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("false")) == false);
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("False")) == false);
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("fAlSe")) == false);
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0")) == false);
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("")) == false);
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("true")) == true);
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("TRUE")) == true);
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("anyOtherString")) == true);
 }
 
 /**********************************************************************************************************************/

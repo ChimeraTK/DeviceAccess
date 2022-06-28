@@ -9,6 +9,7 @@
 #ifndef CHIMERA_TK_SUPPORTED_USER_TYPES_H
 #define CHIMERA_TK_SUPPORTED_USER_TYPES_H
 
+#include <algorithm>
 #include <iterator>
 #include <sstream>
 #include <boost/fusion/algorithm.hpp>
@@ -38,10 +39,30 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline std::istream& operator>>(std::istream& is, Boolean& value) {
-    int temp;
-    is >> temp;
-    value = temp;
+    std::string data;
+    is >> data;
+
+    std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c) { return std::tolower(c); });
+
+    if(data == "false" || data == "0" || data.empty()) {
+      value = false;
+    }
+    else {
+      value = true;
+    }
     return is;
+  }
+
+  /********************************************************************************************************************/
+
+  // Define ChimeraTK::to_string to convert Boolean into string. We cannot define std::to_string(Boolean), as it would
+  // violate the C++ standard. The right definition can be autoselected with
+  // "using std::to_string; using ChimeraTK::to_string;".
+  inline std::string to_string(Boolean& value) {
+    if(value) {
+      return "true";
+    }
+    return "false";
   }
 
   /********************************************************************************************************************/
@@ -49,7 +70,6 @@ namespace ChimeraTK {
   /**
    * Wrapper Class for void. return is always  0.
    */
-
   class Void {
    public:
     Void() = default;
@@ -251,7 +271,8 @@ namespace ChimeraTK {
 
   template<typename NUMERIC>
   std::string detail::numericToUserType_impl<std::string, NUMERIC>::impl(NUMERIC value) {
-    return std::to_string(value);
+    using std::to_string;
+    return to_string(value);
   }
 
   /********************************************************************************************************************/
@@ -264,6 +285,14 @@ namespace ChimeraTK {
 
   template<typename NUMERIC>
   NUMERIC detail::userTypeToNumeric_impl<std::string, NUMERIC>::impl(const std::string& value) {
+    if constexpr(std::is_same<NUMERIC, Boolean>::value) {
+      // special treatment for Boolean
+      std::stringstream ss(value);
+      Boolean converted;
+      ss >> converted;
+      return converted;
+    }
+
     if constexpr(!std::is_same<NUMERIC, int8_t>::value && !std::is_same<NUMERIC, uint8_t>::value) {
       NUMERIC v;
       std::stringstream ss(value);
