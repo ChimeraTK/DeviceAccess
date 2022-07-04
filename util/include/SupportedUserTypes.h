@@ -792,9 +792,9 @@ namespace ChimeraTK {
         case uint32:
           return "uint32";
         case int64:
-          return "in64";
+          return "int64";
         case uint64:
-          return "uin64";
+          return "uint64";
         case float32:
           return "float32";
         case float64:
