@@ -302,7 +302,14 @@ namespace ChimeraTK {
     else {
       // int8_t and uint8_t are interpreted as char resp. unsigned char, in which case the stream operator does the
       // wrong thing...
-      auto temp = std::stoi(value);
+      int temp;
+      try {
+        temp = std::stoi(value);
+      }
+      catch(...) {
+        // ignore any parsing errors and just return 0 in that case
+        temp = 0;
+      }
       return detail::userTypeToNumeric_impl<decltype(temp), NUMERIC>::impl(temp);
     }
   }
