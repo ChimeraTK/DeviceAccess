@@ -60,7 +60,8 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType, bool hasNewData) override {
       if(hasNewData) {
-        // it is acceptable to create a new version number only in doPostRead because the LowLevelTransferElement never has wait_for_new_data.
+        // it is acceptable to create a new version number only in doPostRead because the LowLevelTransferElement never
+        // has wait_for_new_data.
         _versionNumber = {};
       }
     }

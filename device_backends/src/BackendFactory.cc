@@ -5,27 +5,30 @@
  *      Author: nshehzad
  */
 
-#include <boost/algorithm/string.hpp>
-
 #include "BackendFactory.h"
+
 #include "MapFileParser.h"
 #include "RebotBackend.h"
 #include "Utilities.h"
+
+#include <boost/algorithm/string.hpp>
 #ifdef CHIMERATK_HAVE_PCIE_BACKEND
 #  include "PcieBackend.h"
 #endif
 #ifdef CHIMERATK_HAVE_XDMA_BACKEND
 #  include "XdmaBackend.h"
 #endif
-#include "DMapFileParser.h"
 #include "DeviceAccessVersion.h"
+#include "DMapFileParser.h"
 #include "DummyBackend.h"
 #include "Exception.h"
 #include "LogicalNameMappingBackend.h"
 #include "SharedDummyBackend.h"
 #include "SubdeviceBackend.h"
+
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
+
 #include <dlfcn.h>
 
 namespace ChimeraTK {
@@ -137,7 +140,9 @@ namespace ChimeraTK {
   }
   /********************************************************************************************************************/
 
-  std::string BackendFactory::getDMapFilePath() { return _dMapFile; }
+  std::string BackendFactory::getDMapFilePath() {
+    return _dMapFile;
+  }
   /********************************************************************************************************************/
 
   BackendFactory::BackendFactory() {

@@ -1,6 +1,7 @@
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/DeviceAccessVersion.h>
 #include <ChimeraTK/DummyBackend.h> // Would probably be DeviceBackendImpl or NumericAddressedBackend in a real application
+
 #include <boost/make_shared.hpp>
 
 /*
@@ -25,9 +26,8 @@ class CustomBackend : public ChimeraTK::DummyBackend {
    * signature. This function is later given to the BackendFactory to create
    * this type of backend when it is requested.
    */
-  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string /*address*/,
-      std::map<std::string, std::string>
-          parameters) {
+  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(
+      std::string /*address*/, std::map<std::string, std::string> parameters) {
     /*
      * Inside createInstance the parameters are interpreted and passed on to the
      * constructor. Like this the backend constructor can have arbitrary

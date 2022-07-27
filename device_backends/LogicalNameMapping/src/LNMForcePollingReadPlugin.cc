@@ -1,8 +1,8 @@
-#include <boost/make_shared.hpp>
-
-#include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
+#include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessor.h"
+
+#include <boost/make_shared.hpp>
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -24,7 +24,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  /** Helper class to implement MonostableTriggerPluginPlugin::decorateAccessor (can later be realised with if constexpr) */
+  /** Helper class to implement MonostableTriggerPluginPlugin::decorateAccessor (can later be realised with if
+   * constexpr) */
   template<typename UserType, typename TargetType>
   struct ForcePollingReadPlugin_Helper {
     static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(

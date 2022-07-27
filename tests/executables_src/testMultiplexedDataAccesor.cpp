@@ -1,8 +1,5 @@
 #define BOOST_TEST_DYN_LINK
 
-#include <iostream>
-#include <sstream>
-
 #include "BackendFactory.h"
 #include "Device.h"
 #include "DummyBackend.h"
@@ -10,9 +7,12 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
 
+#include <iostream>
+#include <sstream>
+
 #define BOOST_TEST_MODULE MultiplexedDataAccessorTest
-#include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
@@ -39,8 +39,7 @@ std::ostream& operator<<(std::ostream& o, const TestParameters& p) {
   return o;
 }
 
-static TestParameters AREA_PARAMS{
-    "dummies.dmap", "SEQUENCES", "INVALID_SEQUENCES", "SEQUENCES", "sequences.map"};
+static TestParameters AREA_PARAMS{"dummies.dmap", "SEQUENCES", "INVALID_SEQUENCES", "SEQUENCES", "sequences.map"};
 
 static TestParameters NEW_AREA_PARAMS{
     "newMuxedDummies.dmap", "NEW_SEQUENCES", "NEW_INVALID_SEQUENCES", "NEW_SEQUENCES", "newSequences.mapp"};

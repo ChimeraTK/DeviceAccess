@@ -8,11 +8,11 @@
 #ifndef CHIMERA_TK_UTILITES_H
 #define CHIMERA_TK_UTILITES_H
 
-#include <list>
-#include <map>
-
 #include "DeviceInfoMap.h"
 #include "Exception.h"
+
+#include <list>
+#include <map>
 
 namespace ChimeraTK {
 

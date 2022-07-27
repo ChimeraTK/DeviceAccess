@@ -8,13 +8,14 @@
 #ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
 #define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
 
-#include <boost/shared_ptr.hpp>
-#include <iostream>
-#include <list>
-
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/DeviceAccessVersion.h>
 #include <ChimeraTK/DeviceBackendImpl.h>
+
+#include <boost/shared_ptr.hpp>
+
+#include <iostream>
+#include <list>
 
 /**
  * An Example to show how to write a backend device class and add it to the
@@ -27,9 +28,8 @@ class ExampleBackend : public ChimeraTK::DeviceBackendImpl {
   virtual ~ExampleBackend();
   virtual void open();
   virtual void close();
-  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string address,
-      std::map<std::string, std::string>
-          parameters);
+  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(
+      std::string address, std::map<std::string, std::string> parameters);
 
   virtual std::string readDeviceInfo() { return std::string("Example_Device"); }
 

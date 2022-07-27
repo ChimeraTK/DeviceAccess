@@ -5,13 +5,13 @@
  */
 #pragma once
 
-#include "NumericAddressedBackend.h"
-#include "NumericAddressedBackendRegisterAccessor.h"
-#include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "AsyncNDRegisterAccessor.h"
-#include "NumericAddressedInterruptDispatcher.h"
 #include "DummyBackendRegisterCatalogue.h"
 #include "DummyInterruptTriggerAccessor.h"
+#include "NumericAddressedBackend.h"
+#include "NumericAddressedBackendMuxedRegisterAccessor.h"
+#include "NumericAddressedBackendRegisterAccessor.h"
+#include "NumericAddressedInterruptDispatcher.h"
 
 #include <sstream>
 
@@ -107,7 +107,8 @@ namespace ChimeraTK {
      * to return the same instance multiple times, and still allow to use the same map file with different instances.
      *
      * This functionality is now in the BackendFactory and has been removed here.
-     * The function is still in here because existing backend implementations use it in their createInstance() functions.
+     * The function is still in here because existing backend implementations use it in their createInstance()
+     * functions.
      *
      * @param instanceId Used as key for the object instance look up. "" as
      *                   instanceId will return a new T instance that is not
@@ -124,4 +125,4 @@ namespace ChimeraTK {
 
   }; // class DummyBackendBase
 
-} //namespace ChimeraTK
+} // namespace ChimeraTK

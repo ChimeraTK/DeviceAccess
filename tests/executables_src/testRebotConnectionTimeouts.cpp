@@ -5,10 +5,10 @@ using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "RebotDummyServer.h"
-
-#include <thread>
-#include <chrono>
 #include <condition_variable>
+
+#include <chrono>
+#include <thread>
 
 using namespace ChimeraTK;
 

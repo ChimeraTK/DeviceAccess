@@ -1,18 +1,18 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
+#include "BackendFactory.h"
 #include "boost_dynamic_init_test.h"
+#include "Device.h"
+#include "OneDRegisterAccessor.h"
 
-#include <algorithm>
 #include <boost/bind/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
-#include <math.h>
 
-#include "BackendFactory.h"
-#include "Device.h"
-#include "OneDRegisterAccessor.h"
+#include <algorithm>
+#include <math.h>
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {

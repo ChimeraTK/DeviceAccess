@@ -8,28 +8,27 @@
 #ifndef CHIMERA_TK_TRANSFER_ELEMENT_H
 #define CHIMERA_TK_TRANSFER_ELEMENT_H
 
+#include "AccessMode.h"
+#include "DeviceBackend.h"
+#include "Exception.h"
+#include "TransferElementID.h"
+#include "VersionNumber.h"
+
+#include <ChimeraTK/cppext/future_queue.hpp>
+
+#include <boost/bind/bind.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/numeric/conversion/cast.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/future.hpp>
+
 #include <functional>
+#include <iostream>
 #include <list>
 #include <string>
 #include <typeinfo>
 #include <vector>
-#include <iostream>
-
-#include <boost/bind/bind.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/numeric/conversion/cast.hpp>
-
-#include <boost/thread.hpp>
-#include <boost/thread/future.hpp>
-
-#include <ChimeraTK/cppext/future_queue.hpp>
-
-#include "AccessMode.h"
-#include "Exception.h"
-#include "TransferElementID.h"
-#include "VersionNumber.h"
-#include "DeviceBackend.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -60,10 +59,10 @@ namespace ChimeraTK {
 
   namespace detail {
     /**
-     *  Exception to be thrown by continuations of the _readQueue when a value shall be discarded. This is needed to avoid
-     * notifications of the application if a value should never reach the
-     * application. The exception is caught in readTransferAyncWaitingImpl() and
-     * readTransferAyncNonWaitingImpl() and should never be visible to the application.
+     *  Exception to be thrown by continuations of the _readQueue when a value shall be discarded. This is needed to
+     * avoid notifications of the application if a value should never reach the application. The exception is caught in
+     * readTransferAyncWaitingImpl() and readTransferAyncNonWaitingImpl() and should never be visible to the
+     * application.
      */
     class DiscardValueException {};
 
@@ -136,13 +135,13 @@ namespace ChimeraTK {
       postReadAndHandleExceptions(TransferType::read, !_activeException);
     }
 
-    /** 
+    /**
      *  Read the next value, if available in the input buffer.
      *
      *  If AccessMode::wait_for_new_data was set, this function returns immediately and the return value indicated if
      *  a new value was available (<code>true</code>) or not (<code>false</code>).
      *
-     *  If AccessMode::wait_for_new_data was not set, this function is identical to read(), which will still return 
+     *  If AccessMode::wait_for_new_data was not set, this function is identical to read(), which will still return
      *  quickly. Depending on the actual transfer implementation, the backend might need to transfer data to obtain
      *  the current value before returning. Also this function is not guaranteed to be lock free. The return value will
      *  be always true in this mode.
@@ -214,8 +213,8 @@ namespace ChimeraTK {
             "' which is part of a TransferGroup is not allowed.");
       }
       this->writeTransactionInProgress = false;
-      bool previousDataLost =
-          true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
+      bool previousDataLost = true; // the value here does not matter. If there was an exception, it will be re-thrown
+                                    // in postWrite, so it is never returned
 
       preWriteAndHandleExceptions(TransferType::write, versionNumber);
       if(!_activeException) {
@@ -238,8 +237,8 @@ namespace ChimeraTK {
       this->writeTransactionInProgress = false;
 
       preWriteAndHandleExceptions(TransferType::writeDestructively, versionNumber);
-      bool previousDataLost =
-          true; // the value here does not matter. If there was an exception, it will be re-thrown in postWrite, so it is never returned
+      bool previousDataLost = true; // the value here does not matter. If there was an exception, it will be re-thrown
+                                    // in postWrite, so it is never returned
       if(!_activeException) {
         handleTransferException([&] { previousDataLost = writeTransferDestructively(versionNumber); });
       }
@@ -291,12 +290,13 @@ namespace ChimeraTK {
 
     /** Set the backend to which the exception has to be reported.
      *  Each backend has to do this when creating TransferElements. However, not
-     *  all TransferElements will have it set, for instance ProcessArrays in the ControlSystemAdapter and Application core,#
-     *  which don't have backends at all.
-     *  This function is only to be called inside of DeviceBackend::getRegisterAccessor()!
+     *  all TransferElements will have it set, for instance ProcessArrays in the ControlSystemAdapter and Application
+     * core,# which don't have backends at all. This function is only to be called inside of
+     * DeviceBackend::getRegisterAccessor()!
      *
-     *  It is virtual because some accessor implementations like NumericAddressedBackendRegisterAccessor have an inner layer (LowLevelTransferElement),
-     *  and all layers need to know the exception backend. Hence the functions needs to be overridden in this case.
+     *  It is virtual because some accessor implementations like NumericAddressedBackendRegisterAccessor have an inner
+     * layer (LowLevelTransferElement), and all layers need to know the exception backend. Hence the functions needs to
+     * be overridden in this case.
      */
     virtual void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) {
       _exceptionBackend = exceptionBackend;
@@ -313,7 +313,8 @@ namespace ChimeraTK {
 
    protected:
     /** The backend to which the runtime_errors are reported via DeviceBackend::setException().
-     *  Creating backends set it in DeviceBackend::getRegisterAccessor(). Decorators have to set it in the constructor from their target.
+     *  Creating backends set it in DeviceBackend::getRegisterAccessor(). Decorators have to set it in the constructor
+     * from their target.
      */
     boost::shared_ptr<DeviceBackend> _exceptionBackend;
 
@@ -368,14 +369,15 @@ namespace ChimeraTK {
 
    protected:
     /**
-     *  Implementation version of readTransfer() for synchronous reads. This function must be implemented by the backend. For the
-     *  functional description read the documentation of readTransfer().
-     *  
+     *  Implementation version of readTransfer() for synchronous reads. This function must be implemented by the
+     * backend. For the functional description read the documentation of readTransfer().
+     *
      *  Implementation notes:
      *  - This function must return within ~1 second after boost::thread::interrupt() has been called on the thread
      *    calling this function.
      *  - Decorators must delegate the call to readTransfer() of the decorated target.
-     *  - Delegations within the same object should go to the "do" version, e.g. to BaseClass::doReadTransferSynchronously()
+     *  - Delegations within the same object should go to the "do" version, e.g. to
+     * BaseClass::doReadTransferSynchronously()
      */
     virtual void doReadTransferSynchronously() = 0;
 
@@ -399,9 +401,9 @@ namespace ChimeraTK {
      *  flag, this function will not block if no new data is available. For the meaning of the return value, see
      *  readNonBlocking().
      *
-     *  For TransferElements with AccessMode::wait_for_new_data this function checks whether there is new data on the _readQueue.
-     *  Without AccessMode::wait_for_new_data it calls doReadTransferSynchronously, which is implemented by the backend.
-     *  runtime_error exceptions thrown in the transfer are caught and rethrown in postRead().
+     *  For TransferElements with AccessMode::wait_for_new_data this function checks whether there is new data on the
+     * _readQueue. Without AccessMode::wait_for_new_data it calls doReadTransferSynchronously, which is implemented by
+     * the backend. runtime_error exceptions thrown in the transfer are caught and rethrown in postRead().
      */
     bool readTransferNonBlocking() {
       if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
@@ -439,14 +441,14 @@ namespace ChimeraTK {
       if(readTransactionInProgress) return;
       _activeException = {nullptr};
 
-      readTransactionInProgress =
-          true; // remember that doPreRead has been called. It might throw, so we remember before we call it
+      readTransactionInProgress = true; // remember that doPreRead has been called. It might throw, so we remember
+                                        // before we call it
       doPreRead(type);
     }
 
     /** Backend specific implementation of preRead(). preRead() will call this function, but it will make sure that
      *  it gets called only once per transfer.
-     * 
+     *
      *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
@@ -483,10 +485,10 @@ namespace ChimeraTK {
         doPostRead(type, updateDataBuffer);
       }
 
-      // Throw on each call of postRead(). All high-level elements for a shared low-level transfer element must see the exception.
-      // Note: doPostRead can throw an exception, but in that case _activeException must be false (we can only have one
-      // exception at a time). In case other code is added here later which needs to be executed after doPostRead()
-      // always, a try-catch block may be necessary.
+      // Throw on each call of postRead(). All high-level elements for a shared low-level transfer element must see the
+      // exception. Note: doPostRead can throw an exception, but in that case _activeException must be false (we can
+      // only have one exception at a time). In case other code is added here later which needs to be executed after
+      // doPostRead() always, a try-catch block may be necessary.
       if(_activeException) {
         // don't clear the active connection. This is done in preRead().
         std::rethrow_exception(_activeException);
@@ -495,15 +497,15 @@ namespace ChimeraTK {
 
     /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
      *  it gets called only once per transfer.
-     * 
+     *
      *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown.
      *
      *  Notes for backend implementations:
-     *  - If the flag updateDataBuffer is false, the data buffer must stay unaltered. Full implementations (backends) must
-     *    also leave the meta data (version number and data validity) unchanged. Decorators are allowed to change the meta data (for instance
-     *    set the DataValidity::faulty).
+     *  - If the flag updateDataBuffer is false, the data buffer must stay unaltered. Full implementations (backends)
+     * must also leave the meta data (version number and data validity) unchanged. Decorators are allowed to change the
+     * meta data (for instance set the DataValidity::faulty).
      */
    protected:
     virtual void doPostRead(TransferType, bool /*updateDataBuffer*/) {}
@@ -547,7 +549,7 @@ namespace ChimeraTK {
 
     /** Backend specific implementation of preWrite(). preWrite() will call this function, but it will make sure that
      *  it gets called only once per transfer.
-     * 
+     *
      *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
@@ -597,7 +599,7 @@ namespace ChimeraTK {
 
     /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
      *  it gets called only once per transfer.
-     * 
+     *
      *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
      *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
      *  no exception is thrown. */
@@ -619,7 +621,7 @@ namespace ChimeraTK {
     /**
      *  Implementation version of writeTransfer(). This function must be implemented by the backend. For the
      *  functional description read the documentation of writeTransfer().
-     *  
+     *
      *  Implementation notes:
      *  - Decorators must delegate the call to writeTransfer() of the decorated target.
      */
@@ -629,7 +631,7 @@ namespace ChimeraTK {
     /**
      *  Write the data to the device. The implementation is allowed to destroy the content of the user buffer in the
      *  process. This is an optional optimisation, hence the behaviour might be identical to writeTransfer().
-     * 
+     *
      *  This function must be called after preWrite() and before postWrite(). If the
      *  return value is true, old data was lost on the write transfer (e.g. due to an buffer overflow). In case of an
      *  unbuffered write transfer, the return value will always be false.
@@ -645,7 +647,7 @@ namespace ChimeraTK {
     /**
      *  Implementation version of writeTransferDestructively(). This function must be implemented by the backend. For
      *  the functional description read the documentation of writeTransfer().
-     *  
+     *
      *  Implementation notes:
      *  - Decorators must delegate the call to writeTransfer() of the decorated target.
      *  - Delegations within the same object should go to the "do" version, e.g. to this->doWriteTransfer()
@@ -774,11 +776,11 @@ namespace ChimeraTK {
      * This function can only be used for TransferElements with AccessMode::wait_for_new_data. Otherwise it
      * will throw a ChimeraTK::logic_error.
      *
-     * Note that this function does not stop the sending thread. It just places a boost::thread_interrupted exception on the
-     * _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data
-     * is put into the queue just before the exception, this is received first. Hence it is not guaranteed
-     * that the read call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that
-     * it returns immediately. An it is guaranteed that eventually the boost::thread_interrupted exception will be received.
+     * Note that this function does not stop the sending thread. It just places a boost::thread_interrupted exception on
+     * the _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data is
+     * put into the queue just before the exception, this is received first. Hence it is not guaranteed that the read
+     * call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that it returns
+     * immediately. An it is guaranteed that eventually the boost::thread_interrupted exception will be received.
      *
      * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      *
@@ -856,14 +858,17 @@ namespace ChimeraTK {
     bool writeTransactionInProgress{false};
 
    protected:
-    /// The queue for asynchronous read transfers. This is the void queue which is a continuation of the actual data transport queue,
-    /// which is implementation dependent. With _readQueue the exception propagation and waiting for new data is implemented in TransferElement.
+    /// The queue for asynchronous read transfers. This is the void queue which is a continuation of the actual data
+    /// transport queue, which is implementation dependent. With _readQueue the exception propagation and waiting for
+    /// new data is implemented in TransferElement.
     cppext::future_queue<void> _readQueue;
 
-    /// The version number of the last successful transfer. Part of the application buffer \ref transferElement_A_5 "(see TransferElement specification A.5)"
+    /// The version number of the last successful transfer. Part of the application buffer \ref transferElement_A_5
+    /// "(see TransferElement specification A.5)"
     VersionNumber _versionNumber{nullptr};
 
-    /// The validity of the data in the application buffer. Part of the application buffer \ref transferElement_A_5 "(see TransferElement specification A.5)"
+    /// The validity of the data in the application buffer. Part of the application buffer \ref transferElement_A_5
+    /// "(see TransferElement specification A.5)"
     DataValidity _dataValidity{DataValidity::ok};
 
     /// Exception to be rethrown in postXXX() in case hasSeenException == true

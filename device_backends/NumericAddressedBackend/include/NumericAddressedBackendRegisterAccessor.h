@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include "createDataConverter.h"
 #include "FixedPointConverter.h"
 #include "ForwardDeclarations.h"
 #include "IEEE754_SingleConverter.h"
-#include "NumericAddressedLowLevelTransferElement.h"
 #include "NDRegisterAccessor.h"
-#include "createDataConverter.h"
+#include "NumericAddressedLowLevelTransferElement.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -26,7 +26,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  /** 
+  /**
    * Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.
    */
   template<typename UserType, typename DataConverterType, bool isRaw>
@@ -268,7 +268,7 @@ namespace ChimeraTK {
       _rawAccessor->setExceptionBackend(this->_exceptionBackend);
     }
 
-    /** 
+    /**
      * A helper class to implement template specialisation on certain functions. We can do a partial specialisation on
      * this class which we cannot/don't want to do for the whole accessor.
      */

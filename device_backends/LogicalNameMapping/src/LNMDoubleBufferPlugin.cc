@@ -33,7 +33,7 @@ namespace ChimeraTK { namespace LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
       const std::map<std::string, std::string>& parameters, std::string targetDeviceName)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target) {
-    std::string key; //store key searched in 'parameters' map in order to print later correctly exception message
+    std::string key; // store key searched in 'parameters' map in order to print later correctly exception message
     try {
       _enableDoubleBufferReg = backend->_devices[targetDeviceName]->getRegisterAccessor<uint32_t>(
           parameters.at(key.assign("enableDoubleBuffering")), 0, 0, {});
@@ -54,10 +54,11 @@ namespace ChimeraTK { namespace LNMBackend {
     // acquire a lock in firmware (disable buffer swapping)
     _enableDoubleBufferReg->accessData(0) = 0;
     _enableDoubleBufferReg->write();
-    //check which buffer is now in use by the firmware
+    // check which buffer is now in use by the firmware
     _currentBufferNumberReg->read();
     _currentBuffer = _currentBufferNumberReg->accessData(0);
-    // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use _secondBufferReg (buffer 1)
+    // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use _secondBufferReg
+    // (buffer 1)
     if(_currentBuffer)
       _target->preRead(type);
     else

@@ -5,12 +5,11 @@ using namespace boost::unit_test_framework;
 
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
+#include "ExceptionDummyBackend.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "NumericAddressedLowLevelTransferElement.h"
-#include "TransferGroup.h"
-
-#include "ExceptionDummyBackend.h"
 #include "TransferElementTestAccessor.h"
+#include "TransferGroup.h"
 
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
@@ -356,7 +355,7 @@ BOOST_AUTO_TEST_CASE(test_B_12_10_1_2) {
 /**
  *  Test that exceptions are propagated to high-level elements
  *  * \anchor testTransferElement_B_12_10_3 \ref transferElement_B_12_10_3 "B.12.10.3"
- *  
+ *
  *  INCOMPLETE: Only tested for reading. Test for writing is missing.
  */
 BOOST_AUTO_TEST_CASE(test_B_12_10_3) {

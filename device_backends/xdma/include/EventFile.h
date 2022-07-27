@@ -1,14 +1,14 @@
 #pragma once
 
-#include <string>
-#include <thread>
-#include <memory>
-#include <functional>
+#include "DeviceFile.h"
 
 #include <boost/asio.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 
-#include "DeviceFile.h"
+#include <functional>
+#include <memory>
+#include <string>
+#include <thread>
 
 namespace ChimeraTK {
   using EventCallback = std::function<void()>;

@@ -7,15 +7,14 @@ using namespace boost::unit_test_framework;
 #define LLRFDRV_TEST_SLOT 4
 #define PCIEUNI_TEST_SLOT 6
 
-#include <sys/file.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include "BackendFactory.h"
 #include "Device.h"
 #include "Exception.h"
 #include "NumericAddress.h"
 #include "PcieBackend.h"
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 namespace ChimeraTK {
   using namespace ChimeraTK;

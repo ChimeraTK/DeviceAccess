@@ -1,8 +1,8 @@
 #include "EventFile.h"
 
-#include <iostream>
-
 #include "Exception.h"
+
+#include <iostream>
 
 namespace io = boost::asio;
 
@@ -80,7 +80,9 @@ namespace ChimeraTK {
   EventFile::EventFile(const std::string& devicePath, size_t interruptIdx, EventCallback callback)
   : _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _callback{callback} {}
 
-  EventFile::~EventFile() { _evtThread.reset(nullptr); }
+  EventFile::~EventFile() {
+    _evtThread.reset(nullptr);
+  }
 
   void EventFile::startThread() {
     if(_evtThread) {

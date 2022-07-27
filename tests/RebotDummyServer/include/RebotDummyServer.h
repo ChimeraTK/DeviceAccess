@@ -4,10 +4,10 @@
 #include "DummyBackend.h"
 #include "DummyProtocolImplementor.h"
 
-#include <memory>
+#include <boost/asio.hpp>
 
 #include <atomic>
-#include <boost/asio.hpp>
+#include <memory>
 #include <string>
 
 namespace ip = boost::asio::ip;
@@ -28,8 +28,9 @@ namespace ChimeraTK {
   class RebotDummySession : public std::enable_shared_from_this<RebotDummySession> {
     // everything is public so all protocol implementors can reach it. They are
     // only called from within the server
-  public:
-    RebotDummySession(unsigned int protocolVersion, ip::tcp::socket socket, std::shared_ptr<DummyBackend> regsiterSpace);
+   public:
+    RebotDummySession(
+        unsigned int protocolVersion, ip::tcp::socket socket, std::shared_ptr<DummyBackend> regsiterSpace);
     void start();
     virtual ~RebotDummySession();
 
@@ -76,14 +77,14 @@ namespace ChimeraTK {
 
     // most commands have a single word as response. Avoid code duplication.
     void sendSingleWord(int32_t response);
-    void acceptHandler(const boost::system::error_code &error);
+    void acceptHandler(const boost::system::error_code& error);
     void doRead();
     void doWrite();
     void write(std::vector<uint32_t> data);
   };
 
   class RebotDummyServer {
-  public:
+   public:
     RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion);
 
     void start();
@@ -94,7 +95,7 @@ namespace ChimeraTK {
     boost::asio::io_service& service() { return _io; }
     std::shared_ptr<RebotDummySession> session() { return _currentSession.lock(); }
 
-  private:
+   private:
     void do_accept();
     unsigned int _protocolVersion;
     boost::asio::io_service _io;

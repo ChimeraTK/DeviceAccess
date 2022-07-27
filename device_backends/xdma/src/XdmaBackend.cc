@@ -1,8 +1,9 @@
 #include "XdmaBackend.h"
 
 #include <boost/make_shared.hpp>
-#include <iomanip>
+
 #include <functional>
+#include <iomanip>
 
 namespace ChimeraTK {
 
@@ -58,7 +59,9 @@ namespace ChimeraTK {
     _dmaChannels.clear();
   }
 
-  bool XdmaBackend::isOpen() { return _ctrlIntf.has_value(); }
+  bool XdmaBackend::isOpen() {
+    return _ctrlIntf.has_value();
+  }
 
   bool XdmaBackend::isFunctional() const {
     if(!_ctrlIntf || _hasActiveException) {

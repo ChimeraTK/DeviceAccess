@@ -96,7 +96,7 @@ namespace ChimeraTK {
     }
 
     /* Convert content of (cooked) buffer into std::vector */
-    operator const std::vector<UserType> &() { return get()->accessChannel(0); }
+    operator const std::vector<UserType>&() { return get()->accessChannel(0); }
 
     /** Return a direct pointer to the memory buffer storng the elements.
      *  @attention Note that this pointer will be invalidated during read(),

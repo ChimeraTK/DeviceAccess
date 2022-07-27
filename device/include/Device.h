@@ -5,20 +5,20 @@
 #ifndef CHIMERA_TK_DEVICE_H
 #  define CHIMERA_TK_DEVICE_H
 
-#  include <boost/algorithm/string.hpp>
-#  include <boost/shared_ptr.hpp>
+#include "AccessMode.h"
+#include "BackendFactory.h"
+#include "BufferingRegisterAccessor.h"
+#include "DeviceBackend.h"
+#include "Exception.h"
+#include "ForwardDeclarations.h"
+#include "OneDRegisterAccessor.h"
+#include "ScalarRegisterAccessor.h"
+#include "TwoDRegisterAccessor.h"
+#include "Utilities.h" // make setDMapFilePath() available
+#include "VoidRegisterAccessor.h"
 
-#  include "AccessMode.h"
-#  include "BackendFactory.h"
-#  include "BufferingRegisterAccessor.h"
-#  include "DeviceBackend.h"
-#  include "Exception.h"
-#  include "ForwardDeclarations.h"
-#  include "VoidRegisterAccessor.h"
-#  include "OneDRegisterAccessor.h"
-#  include "ScalarRegisterAccessor.h"
-#  include "TwoDRegisterAccessor.h"
-#  include "Utilities.h" // make setDMapFilePath() available
+#include <boost/algorithm/string.hpp>
+#include <boost/shared_ptr.hpp>
 
 // Note: for backwards compatibility there is RegisterAccessor.h and
 // MultiplexedDataAccessor.h included at the end of this file.
@@ -158,12 +158,12 @@ namespace ChimeraTK {
         size_t numberOfElements = 0, size_t elementsOffset = 0,
         const AccessModeFlags& flags = AccessModeFlags({})) const;
 
-    /** 
+    /**
      *  Return the register catalogue with detailed information on all registers.
      */
     RegisterCatalogue getRegisterCatalogue() const;
 
-    /** 
+    /**
      *  Return the register catalogue with detailed information on all registers.
      */
     MetadataCatalogue getMetadataCatalogue() const;
@@ -186,14 +186,15 @@ namespace ChimeraTK {
      *  If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no
      *  effect. If it is called when no deactivated transfer element exists, this call also has no effect. When
      *  Device::activateAsyncRead() returns, it is not guaranteed that all initial values have been received already.
-     * 
+     *
      *  For more details, see \ref transferElement_B_8_5 "Technical specification: TransferElement B.8.5".
      */
     void activateAsyncRead() noexcept;
 
     /** Set the device into an exception state.
      *
-     * * All asynchronous reads will be deactivated. Transfer elements with asynchronous read will reveice a ChimeraTK::runtime_error.
+     * * All asynchronous reads will be deactivated. Transfer elements with asynchronous read will reveice a
+     * ChimeraTK::runtime_error.
      * * All write and synchronous read operations will see a ChimeraTK::runtime_error.
      * * The exception state stays until open() has successfully been called again.
      */
@@ -201,7 +202,7 @@ namespace ChimeraTK {
 
     /**
      *  Obtain the backend.
-     * 
+     *
      *  Note: using the backend in normal application code likely breaks the abstraction.
      */
     boost::shared_ptr<DeviceBackend> getBackend() { return _deviceBackendPointer; };

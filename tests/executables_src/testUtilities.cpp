@@ -6,8 +6,8 @@ using namespace boost::unit_test_framework;
 #include "BackendFactory.h"
 #include "DeviceInfoMap.h"
 #include "Exception.h"
-#include "Utilities.h"
 #include "SupportedUserTypes.h"
+#include "Utilities.h"
 
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"

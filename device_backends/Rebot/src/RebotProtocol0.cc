@@ -1,7 +1,9 @@
 #include "RebotProtocol0.h"
+
+#include "Connection.h"
 #include "Exception.h"
 #include "RebotProtocolDefinitions.h"
-#include "Connection.h"
+
 #include <iostream>
 
 namespace ChimeraTK {
@@ -50,14 +52,13 @@ namespace ChimeraTK {
     // Implementation for protocol version 0: Only single word write possible
     std::vector<uint32_t> packet(3);
     for(unsigned int i = 0; i < registerInfo.nWords; ++i) {
-        packet[0] = SINGLE_WORD_WRITE;
-        packet[1] = registerInfo.addressInWords++;
-        packet[2] = static_cast<uint32_t>(data[i]);
-        _tcpCommunicator->write(packet);
-        _tcpCommunicator->read(1); // response is ignored for now
+      packet[0] = SINGLE_WORD_WRITE;
+      packet[1] = registerInfo.addressInWords++;
+      packet[2] = static_cast<uint32_t>(data[i]);
+      _tcpCommunicator->write(packet);
+      _tcpCommunicator->read(1); // response is ignored for now
     }
   }
-
 
   void RebotProtocol0::fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords, int32_t* dataLocation) {
     sendRebotReadRequest(wordAddress, numberOfWords);

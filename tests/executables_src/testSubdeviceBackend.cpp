@@ -1,4 +1,5 @@
 #include "Device.h"
+
 #include <thread>
 
 #define BOOST_TEST_DYN_LINK
@@ -620,9 +621,9 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
   usleep(10000);
   BOOST_CHECK(done == false);
   int countStatusResets = 0;
-  // the dummyForAreaHandshake backend which we use for this test does not set back the status register. we do it manually from the test, and count how often we need do so
-  // Like this we can check that the accessor waits on status==0 _each_ time before writing,
-  // in particular each array entry counts.
+  // the dummyForAreaHandshake backend which we use for this test does not set back the status register. we do it
+  // manually from the test, and count how often we need do so Like this we can check that the accessor waits on
+  // status==0 _each_ time before writing, in particular each array entry counts.
   while(true) {
     // wait for status=busy
     do {
@@ -642,7 +643,6 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
   BOOST_CHECK(accArea[2] == 65536 * vec[0]);
   BOOST_CHECK(accArea[3] == 65536 * vec[1]);
   dev.close();
-
 }
 
 /*********************************************************************************************************************/
@@ -688,9 +688,9 @@ BOOST_AUTO_TEST_CASE(testIsFunctional) {
   Device target;
   target.open("TARGET1");
   BOOST_CHECK(dev.isFunctional());
-  //Close target device.
+  // Close target device.
   target.close();
-  //Device should not be functional anymore
+  // Device should not be functional anymore
   BOOST_CHECK(!dev.isFunctional());
   target.open();
   BOOST_CHECK(dev.isFunctional());

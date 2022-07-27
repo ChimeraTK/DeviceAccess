@@ -1,7 +1,7 @@
 #include "RebotProtocol1.h"
 
-#include "RebotProtocolDefinitions.h"
 #include "Connection.h"
+#include "RebotProtocolDefinitions.h"
 
 namespace ChimeraTK {
   using namespace Rebot;

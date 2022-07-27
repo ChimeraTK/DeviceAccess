@@ -3,10 +3,10 @@
 #include "boost_dynamic_init_test.h"
 using namespace boost::unit_test_framework;
 
+#include "VersionNumber.h"
+
 #include <iostream>
 #include <thread>
-
-#include "VersionNumber.h"
 
 using namespace ChimeraTK;
 

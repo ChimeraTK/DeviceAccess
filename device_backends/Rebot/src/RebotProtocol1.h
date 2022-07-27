@@ -2,6 +2,7 @@
 #define CHIMERATK_REBOT_PROTOCOL_1
 
 #include "RebotProtocol0.h"
+
 #include <chrono>
 
 namespace ChimeraTK {

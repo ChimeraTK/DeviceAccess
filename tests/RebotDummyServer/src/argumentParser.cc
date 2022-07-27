@@ -1,4 +1,5 @@
 #include "argumentParser.h"
+
 #include <string>
 
 static const unsigned int DEFAULT_SERVER_PORT = 5001;

@@ -3,21 +3,20 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <algorithm>
+#include "accessPrivateData.h"
+#include "Device.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
+#include "ScalarRegisterAccessor.h"
 #include <unordered_map>
 
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
+
+#include <algorithm>
 #include <math.h>
-
-#include "Device.h"
-#include "DummyBackend.h"
-#include "DummyRegisterAccessor.h"
-#include "ScalarRegisterAccessor.h"
-
-#include "accessPrivateData.h"
 
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;

@@ -1,5 +1,6 @@
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/Utilities.h>
+
 #include <iostream>
 
 int main() {

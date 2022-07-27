@@ -1,11 +1,12 @@
-#include <cmath>
-#include <string.h>
-
 #include "Device.h"
+
 #include "DeviceBackend.h"
 #include "MapFileParser.h"
 #include "RegisterAccessor.h"
 #include "Utilities.h"
+
+#include <cmath>
+#include <string.h>
 
 // for compatibility only:
 #include "NumericAddress.h"
@@ -295,11 +296,15 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void Device::activateAsyncRead() noexcept { _deviceBackendPointer->activateAsyncRead(); }
+  void Device::activateAsyncRead() noexcept {
+    _deviceBackendPointer->activateAsyncRead();
+  }
 
   /********************************************************************************************************************/
 
-  void Device::setException() { _deviceBackendPointer->setException(); }
+  void Device::setException() {
+    _deviceBackendPointer->setException();
+  }
 
   /********************************************************************************************************************/
 

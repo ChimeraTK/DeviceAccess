@@ -12,9 +12,8 @@ using namespace ChimeraTK;
 // registered, thus it is never instantiated
 struct WrongVersionBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string address,
-      std::map<std::string, std::string>
-          parameters) {
+  static boost::shared_ptr<DeviceBackend> createInstance(
+      std::string address, std::map<std::string, std::string> parameters) {
     return returnInstance<WrongVersionBackend>(address, convertPathRelativeToDmapToAbs(parameters["map"]));
   }
 

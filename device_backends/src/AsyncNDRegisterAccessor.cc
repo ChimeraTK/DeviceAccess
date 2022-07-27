@@ -1,4 +1,5 @@
 #include "AsyncNDRegisterAccessor.h"
+
 #include "AsyncAccessorManager.h"
 
 namespace ChimeraTK {
@@ -16,8 +17,8 @@ namespace ChimeraTK {
   : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(backend),
     _accessorManager(manager), _receiveBuffer(nChannels, nElements) {
     // Don't throw a ChimeraTK::logic_error here. They are for mistakes an application is doing when using DeviceAccess.
-    // If an AsyncNDRegisterAccessor is created without wait_for_new_data it is a mistake in the backend, which is not part
-    // of the application.
+    // If an AsyncNDRegisterAccessor is created without wait_for_new_data it is a mistake in the backend, which is not
+    // part of the application.
     assert(accessModeFlags.has(AccessMode::wait_for_new_data));
     buffer_2D.resize(nChannels);
     for(auto& chan : buffer_2D) chan.resize(nElements);

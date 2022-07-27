@@ -8,10 +8,10 @@
 #ifndef CHIMERATK_READ_ANY_H
 #define CHIMERATK_READ_ANY_H
 
-#include <ChimeraTK/cppext/future_queue.hpp>
-
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
+
+#include <ChimeraTK/cppext/future_queue.hpp>
 
 namespace ChimeraTK {
 
@@ -172,7 +172,7 @@ namespace ChimeraTK {
     /** Read the next available update in the group, but do not block if no update is available. If no update is
      *  available, a default-constructed TransferElementID is returned after all poll-type elements in the group
      *  have been updated.
-     * 
+     *
      *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
     TransferElementID readAnyNonBlocking();
 
@@ -216,16 +216,16 @@ namespace ChimeraTK {
      *  This allows e.g. to acquire a lock before executing accept().
      *
      *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined.
-     * 
+     *
      *  The returned Notification object is only valid as long as the ReadAnyGroup still exists.
      */
     Notification waitAny();
 
     /** Check if an update is available in the group, but do not block if no update is available. If no update is
      *  available, an invalid Notification object is returned (i.e. Notification::isReady() will return false).
-     * 
+     *
      *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined.
-     * 
+     *
      *  The returned Notification object is only valid as long as the ReadAnyGroup still exists.
      */
     Notification waitAnyNonBlocking();
@@ -355,7 +355,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline bool ReadAnyGroup::Notification::isReady() { return this->valid && !this->accepted; }
+  inline bool ReadAnyGroup::Notification::isReady() {
+    return this->valid && !this->accepted;
+  }
 
   /********************************************************************************************************************/
 
@@ -409,7 +411,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::add(boost::shared_ptr<TransferElement> element) { add(TransferElementAbstractor(element)); }
+  inline void ReadAnyGroup::add(boost::shared_ptr<TransferElement> element) {
+    add(TransferElementAbstractor(element));
+  }
 
   /********************************************************************************************************************/
 
@@ -570,7 +574,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::readUntil(const TransferElementAbstractor& element) { readUntil(element.getId()); }
+  inline void ReadAnyGroup::readUntil(const TransferElementAbstractor& element) {
+    readUntil(element.getId());
+  }
 
   /********************************************************************************************************************/
 

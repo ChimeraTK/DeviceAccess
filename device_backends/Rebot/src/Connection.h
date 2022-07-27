@@ -5,21 +5,20 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
+
 #include <chrono>
 #include <memory>
 #include <thread>
 #include <vector>
 
-namespace ChimeraTK {
-namespace Rebot {
+namespace ChimeraTK { namespace Rebot {
 
   /// Handles the communication over TCP protocol with RebotDevice-based devices
   class Connection {
-  public:
+   public:
     /// Gets an IP address and port of the device but does not open the
     /// connection
-    Connection(const std::string& address, const std::string& port,
-               uint32_t connectionTimeout_sec);
+    Connection(const std::string& address, const std::string& port, uint32_t connectionTimeout_sec);
 
     /// Opens a connection to the device.
     void open();
@@ -36,7 +35,7 @@ namespace Rebot {
     /// Get the connection state.
     bool isOpen();
 
-  private:
+   private:
     std::string address_;
     const std::string port_;
     boost::asio::io_service ioService_;
@@ -47,7 +46,4 @@ namespace Rebot {
     void disconnectionTimerStart();
     void disconnectionTimerCancel(const boost::system::error_code& ec);
   };
-} // namespace Rebot
-
-} // namespace ChimeraTK
-
+}} // namespace ChimeraTK::Rebot

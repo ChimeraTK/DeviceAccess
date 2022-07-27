@@ -5,14 +5,14 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "Device.h"
-#include "TransferGroup.h"
 #include "BackendFactory.h"
+#include "Device.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "SharedDummyBackend.h"
-#include "UnifiedBackendTest.h"
 #include "sharedDummyHelpers.h"
+#include "TransferGroup.h"
+#include "UnifiedBackendTest.h"
 
 using namespace ChimeraTK;
 
@@ -39,12 +39,13 @@ struct HelperProcess {
     sharedDummy->open();
     mirrorRequest.type = sharedDummy->getRegisterAccessor<uint32_t>("MIRRORREQUEST/TYPE", 1, 0, AccessModeFlags{});
     mirrorRequest.busy = sharedDummy->getRegisterAccessor<uint32_t>("MIRRORREQUEST/BUSY", 1, 0, AccessModeFlags{});
-    //TODO debug - it seems this register causes clean-up to fail
-    // Potentially because there is still a reference in the TransferGroup in the asyncInterruptDispatcher, causing a circular
-    // reference to the device shared pointer
+    // TODO debug - it seems this register causes clean-up to fail
+    //  Potentially because there is still a reference in the TransferGroup in the asyncInterruptDispatcher, causing a
+    //  circular reference to the device shared pointer
     mirrorRequest.updated = sharedDummy->getRegisterAccessor<uint32_t>(
         "MIRRORREQUEST/UPDATED", 1, 0, AccessModeFlags{AccessMode::wait_for_new_data});
-    mirrorRequest.triggerInterrupt = sharedDummy->getRegisterAccessor<uint32_t>("MIRRORREQUEST/DATA_INTERRUPT", 1, 0, {});
+    mirrorRequest.triggerInterrupt =
+        sharedDummy->getRegisterAccessor<uint32_t>("MIRRORREQUEST/DATA_INTERRUPT", 1, 0, {});
   }
 
   struct {
@@ -203,7 +204,7 @@ struct Integers_signed32_async : public Integers_base<Integers_signed32_async> {
   bool isWriteable() { return false; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() {
-    return { ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
+    return {ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
   }
 
   template<typename UserType>
@@ -240,8 +241,8 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
 }
 
 /**
-   * Checks that shared memory has been removed, after all backend instances (including background process) are gone
-   */
+ * Checks that shared memory has been removed, after all backend instances (including background process) are gone
+ */
 BOOST_AUTO_TEST_CASE(testVerifyMemoryDeleted) {
   gHelperProcess.start();
   gHelperProcess.stopGracefully();
@@ -255,7 +256,9 @@ BOOST_AUTO_TEST_CASE(testVerifyMemoryDeleted) {
   std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
   // Check that memory is removed
-  BOOST_CHECK_MESSAGE(shm_exists(shmName), "This test was expected to pass while https://redmine.msktools.desy.de/issues/9542 is not fixed. Please update this test");
+  BOOST_CHECK_MESSAGE(shm_exists(shmName),
+      "This test was expected to pass while https://redmine.msktools.desy.de/issues/9542 is not fixed. Please update "
+      "this test");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

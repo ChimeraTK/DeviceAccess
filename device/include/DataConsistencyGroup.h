@@ -8,9 +8,9 @@
 #ifndef CHIMERATK_DATAC_ONSISTENCY_GROUP_H
 #define CHIMERATK_DATAC_ONSISTENCY_GROUP_H
 
-#include <unordered_set>
 #include "TransferElementAbstractor.h"
 #include "VersionNumber.h"
+#include <unordered_set>
 
 namespace ChimeraTK {
   /** Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
@@ -121,7 +121,7 @@ namespace ChimeraTK {
 
     auto getVNFromElement = push_elements[transferElementID].getVersionNumber();
     assert(getVNFromElement != VersionNumber{nullptr});
-    if(getVNFromElement < versionNumberToBeConsistentTo){
+    if(getVNFromElement < versionNumberToBeConsistentTo) {
       return false;
     }
     if(versionNumberToBeConsistentTo != getVNFromElement) {

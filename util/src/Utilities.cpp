@@ -5,16 +5,17 @@
  *      Author: nshehzad
  */
 
-#include <cxxabi.h>
-#include <execinfo.h>
+#include "Utilities.h"
+
+#include "BackendFactory.h"
+#include "DMapFileParser.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <vector>
 
-#include "BackendFactory.h"
-#include "Utilities.h"
-#include "DMapFileParser.h"
+#include <cxxabi.h>
+#include <execinfo.h>
+#include <vector>
 
 namespace ChimeraTK {
 
@@ -320,11 +321,15 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::string getDMapFilePath() { return (BackendFactory::getInstance().getDMapFilePath()); }
+  std::string getDMapFilePath() {
+    return (BackendFactory::getInstance().getDMapFilePath());
+  }
 
   /********************************************************************************************************************/
 
-  void setDMapFilePath(std::string dmapFilePath) { BackendFactory::getInstance().setDMapFilePath(dmapFilePath); }
+  void setDMapFilePath(std::string dmapFilePath) {
+    BackendFactory::getInstance().setDMapFilePath(dmapFilePath);
+  }
 
   /********************************************************************************************************************/
 

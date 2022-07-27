@@ -1,11 +1,11 @@
 #pragma once
 
-#include "NumericAddressedRegisterCatalogue.h"
 #include "DeviceBackendImpl.h"
+#include "NumericAddressedRegisterCatalogue.h"
 #include "VersionNumber.h"
 
-#include <string>
 #include <mutex>
+#include <string>
 
 namespace ChimeraTK {
 
@@ -23,14 +23,14 @@ namespace ChimeraTK {
 
     /**
      * Read function to be implemented by backends.
-     * 
+     *
      * TODO: Add documentation!
      */
     virtual void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
 
     /**
      * Write function to be implemented by backends.
-     * 
+     *
      * TODO: Add documentation!
      */
     virtual void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
@@ -88,9 +88,9 @@ namespace ChimeraTK {
     /**
      * @brief getRegisterInfo returns a NumericAddressedRegisterInfo object for the given register. This is mainly used
      * by accessor implementations
-     * 
+     *
      * @param registerPathName identifies which register to return the RegisterInfo for.
-     * 
+     *
      * @return Shared pointer to the NumericAddressedRegisterInfo object in the catalogue.
      */
     NumericAddressedRegisterInfo getRegisterInfo(const RegisterPath& registerPathName);
@@ -98,18 +98,18 @@ namespace ChimeraTK {
     void activateAsyncRead() noexcept override;
     void setException() override;
 
-    /** 
+    /**
      *  Deactivates all asynchronous accessors and calls closeImpl().
      */
     void close() final;
 
-    /** 
+    /**
      *  All backends derrived from NumericAddressedBackend must implement closeImpl() instead of close. Like this it
      *  is assured that the deactivation of the asynchronous accessors is always executed.
      */
     virtual void closeImpl() {}
 
-    /** 
+    /**
      *  This function is called every time an accessor which is assicated with the particular interupt controller and
      *  interrupt number is created. The idea is to have a lazy initialisation of the interrupt handling threads, so
      *  only those threads are running for which accessors have been created. The function implementation must check
@@ -137,7 +137,8 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version internally, but is not given out
+    // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version
+    // internally, but is not given out
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
@@ -150,7 +151,7 @@ namespace ChimeraTK {
     template<class UserType, class ConverterType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;
 
-    /** 
+    /**
      *  Function to be called by implementing backend when an interrupt arrives. It usually is
      *  called from the interrupt handling thread.
      *
@@ -161,11 +162,11 @@ namespace ChimeraTK {
     VersionNumber dispatchInterrupt(int interruptControllerNumber, int interruptNumber);
 
    private:
-    /** 
+    /**
      *  This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
-     *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not modified.
-     *  This map is filled in the constructor. The rest of the code is accessing it through the const _interruptDispatchers
-     *  reference, which is thread safe.
+     *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not
+     * modified. This map is filled in the constructor. The rest of the code is accessing it through the const
+     * _interruptDispatchers reference, which is thread safe.
      */
     std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchersNonConst;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AsyncNDRegisterAccessor.h"
+
 #include <mutex>
 
 namespace ChimeraTK {
@@ -46,8 +47,8 @@ namespace ChimeraTK {
 
   /** Helper class to have a complete descriton to create an Accessor.
    *  It contains all the information given to DeviceBackend:getNDRegisterAccessor, incl. the offset in the
-   *  register which is not known to the accessor itself. Just just to keep the number of parameters for createAsyncVariable
-   *  in check.
+   *  register which is not known to the accessor itself. Just just to keep the number of parameters for
+   * createAsyncVariable in check.
    */
   struct AccessorInstanceDescriptor {
     RegisterPath name;
@@ -77,14 +78,16 @@ namespace ChimeraTK {
    public:
     virtual ~AsyncAccessorManager() = default;
 
-    /** Request a new subscription. This function internally creates the correct asynchronous accessor and a matching AsyncVariable.
-     *  A weak pointer to the AsyncNDRegisterAccessor is registered in the AsyncVariable, and a shared pointer is returned to the calling code.
+    /** Request a new subscription. This function internally creates the correct asynchronous accessor and a matching
+     * AsyncVariable. A weak pointer to the AsyncNDRegisterAccessor is registered in the AsyncVariable, and a shared
+     * pointer is returned to the calling code.
      */
     template<typename UserType>
     boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> subscribe(boost::shared_ptr<DeviceBackend> backend,
         RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    /** This function must only be called from the destructor of the AsyncNDRegisterAccessor which is created in the subscribe function!
+    /** This function must only be called from the destructor of the AsyncNDRegisterAccessor which is created in the
+     * subscribe function!
      */
     void unsubscribe(TransferElementID id);
 
@@ -115,23 +118,26 @@ namespace ChimeraTK {
         std::unique_ptr<AsyncVariable>(
             boost::shared_ptr<DeviceBackend>, AccessorInstanceDescriptor const&, bool isActive));
 
-    // This mutex protects the _asyncVariables container and all its contents, and the _isActive flag. You must not touch those variables
-    // without holding the mutex. It serves two purposes:
-    // 1. Variables can be added or removed from the container at any time. It is not safe to handle an element without holding the lock.
+    // This mutex protects the _asyncVariables container and all its contents, and the _isActive flag. You must not
+    // touch those variables without holding the mutex. It serves two purposes:
+    // 1. Variables can be added or removed from the container at any time. It is not safe to handle an element without
+    // holding the lock.
     // 2. The elements in the container are not thread-safe as well. We use the same lock as it is needed for 1. anyway.
     std::recursive_mutex _variablesMutex;
     std::map<TransferElementID, std::unique_ptr<AsyncVariable>> _asyncVariables; ///< protected by _variablesMutex
     bool _isActive{false};                                                       ///< protected by _variablesMutex
   };
 
-  /** AsyncVariableImpl contains a weak pointer to an AsyncNDRegisterAccessor<UserType> and a send buffer NDRegisterAccessor<UserType>::Buffer.
-   *  This class provides implementation for those functions of the AsyncVariable which touch the AsyncNDRegisterAccessor.
-   *  It does implement the functions which provide the information needed to create an
-   *  AsyncNDRegisterAccessor, like getNumberOfChannels(). These are backend specific and need a dedicated implementation per backend.
+  /** AsyncVariableImpl contains a weak pointer to an AsyncNDRegisterAccessor<UserType> and a send buffer
+   * NDRegisterAccessor<UserType>::Buffer. This class provides implementation for those functions of the AsyncVariable
+   * which touch the AsyncNDRegisterAccessor. It does implement the functions which provide the information needed to
+   * create an AsyncNDRegisterAccessor, like getNumberOfChannels(). These are backend specific and need a dedicated
+   * implementation per backend.
    *
-   *  The AsyncVariableManager cannot hold a shared pointer of the AsyncNDRegisterAccessor because then you could never get rid of a created accessor,
-   *  which means the manager would just keep growing in memory if accessors are dynamically created and removed.
-   *  Hence a weak pointer is used, and this class provides all the functions that access this weak pointer and to all the locking and nullptr checking.
+   *  The AsyncVariableManager cannot hold a shared pointer of the AsyncNDRegisterAccessor because then you could never
+   * get rid of a created accessor, which means the manager would just keep growing in memory if accessors are
+   * dynamically created and removed. Hence a weak pointer is used, and this class provides all the functions that
+   * access this weak pointer and to all the locking and nullptr checking.
    */
   template<typename UserType>
   struct AsyncVariableImpl : public AsyncVariable {
@@ -181,10 +187,9 @@ namespace ChimeraTK {
   template<typename UserType>
   AsyncVariableImpl<UserType>::AsyncVariableImpl(size_t nChannels, size_t nElements)
   : _sendBuffer(nChannels, nElements) {
-    // _isActive is false. You have to activate it after creation when necessary. Reason: The AsyncNDRegisterAccessor is not set,
-    // and the send buffer needs to
-    // be filled before so we can send the initial value. As the latter is backend specific it cannot happen here, because
-    // this code is executed first.
+    // _isActive is false. You have to activate it after creation when necessary. Reason: The AsyncNDRegisterAccessor is
+    // not set, and the send buffer needs to be filled before so we can send the initial value. As the latter is backend
+    // specific it cannot happen here, because this code is executed first.
   }
 
   //*********************************************************************************************************************/
@@ -218,15 +223,18 @@ namespace ChimeraTK {
         CALL_VIRTUAL_FUNCTION_TEMPLATE(createAsyncVariable, UserType, backend, descriptor, _isActive);
 
     auto asyncVariable = dynamic_cast<AsyncVariableImpl<UserType>*>(untypedAsyncVariable.get());
-    // we take all the information we need for the async accessor from AsyncVariable because we cannot use the catalogue here
+    // we take all the information we need for the async accessor from AsyncVariable because we cannot use the catalogue
+    // here
     auto newSubscriber = boost::make_shared<AsyncNDRegisterAccessor<UserType>>(backend, shared_from_this(), name,
         asyncVariable->getNumberOfChannels(), asyncVariable->getNumberOfSamples(), flags, asyncVariable->getUnit(),
         asyncVariable->getDescription());
-    // Set the exception backend here. It might be that the accessor is already activated during subscription, and the backend should be set at that point
+    // Set the exception backend here. It might be that the accessor is already activated during subscription, and the
+    // backend should be set at that point
     newSubscriber->setExceptionBackend(backend);
 
     if(asyncVariable->isWriteable()) {
-      // for writeable variables we add another synchronous accessors (which knows how to access the data) to the asyncAccessor (which is generic)
+      // for writeable variables we add another synchronous accessors (which knows how to access the data) to the
+      // asyncAccessor (which is generic)
       auto synchronousFlags = flags;
       synchronousFlags.remove(AccessMode::wait_for_new_data);
 

@@ -21,7 +21,7 @@ namespace ChimeraTK {
       _nDigits = 4;              // -127 .. 128
     }
     else if(type == DataType::uint8) { // 8 bit unsigned
-      _nDigits = 3;               // 0..256
+      _nDigits = 3;                    // 0..256
     }
     else if(type == DataType::int16) { // 16 bit signed
       _nDigits = 6;                    // -32000 .. 32000 (approx)
@@ -67,7 +67,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool DataDescriptor::operator!=(const DataDescriptor& other) const { return !operator==(other); }
+  bool DataDescriptor::operator!=(const DataDescriptor& other) const {
+    return !operator==(other);
+  }
 
   /********************************************************************************************************************/
 

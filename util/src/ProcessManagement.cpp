@@ -1,9 +1,11 @@
 // Utilities to manage Linux processes
 
 #include "ProcessManagement.h"
+
+#include <sys/types.h>
+
 #include <signal.h>
 #include <string>
-#include <sys/types.h>
 #include <unistd.h>
 
 bool processExists(unsigned pid) {

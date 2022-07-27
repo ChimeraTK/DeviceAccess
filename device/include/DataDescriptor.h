@@ -2,15 +2,16 @@
 #define DATADESCRIPTOR_H
 
 #include "SupportedUserTypes.h"
+
 #include <cassert>
 
 namespace ChimeraTK {
 
   /** Class describing the actual payload data format of a register in an
-     * abstract manner. It gives information about the underlying data type
-     * without fully describing it, to prevent a loss of abstraction on the
-     *  application level. The returned information always refers to the data type
-     * and thus is completely independent of the current value of the register. */
+   * abstract manner. It gives information about the underlying data type
+   * without fully describing it, to prevent a loss of abstraction on the
+   *  application level. The returned information always refers to the data type
+   * and thus is completely independent of the current value of the register. */
   class DataDescriptor {
    public:
     /** Enum for the fundamental data types. This is only used inside the
@@ -22,41 +23,40 @@ namespace ChimeraTK {
     FundamentalType fundamentalType() const { return _fundamentalType; }
 
     /** Return whether the data is signed or not. May only be called for numeric
-       * data types. */
+     * data types. */
     bool isSigned() const {
       assert(_fundamentalType == FundamentalType::numeric);
       return _isSigned;
     }
 
-
     /** Return whether the data is integral or not (e.g. int vs. float). May
-       * only be called for numeric data types. */
+     * only be called for numeric data types. */
     bool isIntegral() const {
       assert(_fundamentalType == FundamentalType::numeric);
       return _isIntegral;
     }
 
     /** Return the approximate maximum number of digits (of base 10) needed to
-       * represent the value (including a decimal dot, if not an integral data
-       * type, and the sign). May only be called for numeric data types.
-       *
-       *  This number shall only be used for displaying purposes, e.g. to decide
-       * how much space for displaying the register value should be reserved.
-       * Beware that for some data types this might become a really large number
-       * (e.g. 300), which indicates that you need to choose a different
-       * representation than just a plain decimal number. */
+     * represent the value (including a decimal dot, if not an integral data
+     * type, and the sign). May only be called for numeric data types.
+     *
+     *  This number shall only be used for displaying purposes, e.g. to decide
+     * how much space for displaying the register value should be reserved.
+     * Beware that for some data types this might become a really large number
+     * (e.g. 300), which indicates that you need to choose a different
+     * representation than just a plain decimal number. */
     size_t nDigits() const {
       assert(_fundamentalType == FundamentalType::numeric);
       return _nDigits;
     }
     /** Approximate maximum number of digits after decimal dot (of base 10)
-       * needed to represent the value (excluding the decimal dot itself). May
-       * only be called for non-integral numeric data types.
-       *
-       *  Just like in case of nDigits(), this number should only be used for
-       * displaying purposes. There is no guarantee that the full precision of the
-       * number can be displayed with the given number of digits. Again beware
-       * that this number might be rather large (e.g. 300). */
+     * needed to represent the value (excluding the decimal dot itself). May
+     * only be called for non-integral numeric data types.
+     *
+     *  Just like in case of nDigits(), this number should only be used for
+     * displaying purposes. There is no guarantee that the full precision of the
+     * number can be displayed with the given number of digits. Again beware
+     * that this number might be rather large (e.g. 300). */
     size_t nFractionalDigits() const {
       assert(_fundamentalType == FundamentalType::numeric && !_isIntegral);
       return _nFractionalDigits;
@@ -90,34 +90,33 @@ namespace ChimeraTK {
     DataType rawDataType() const { return _rawDataType; }
 
     /** Get the data type on the transport layer. This is always a 1D array of
-       * the specific data type. This raw transfer might contain data for more
-       * than one register.
-       *
-       *  Examples:
-       *  \li The multiplexed data of a 2D array
-       *  \li A text string containing data for multiple scalars which are mapped
-       * to different registers \li The byte sequence of a "struct" with data for
-       * multiple registers of different data types
-       *
-       *  Notice: Currently all implementations return 'none'. From the interface
-       * there is no way to access the transport layer data (yet). The function is
-       * put here for conceputal completeness.
-       */
+     * the specific data type. This raw transfer might contain data for more
+     * than one register.
+     *
+     *  Examples:
+     *  \li The multiplexed data of a 2D array
+     *  \li A text string containing data for multiple scalars which are mapped
+     * to different registers \li The byte sequence of a "struct" with data for
+     * multiple registers of different data types
+     *
+     *  Notice: Currently all implementations return 'none'. From the interface
+     * there is no way to access the transport layer data (yet). The function is
+     * put here for conceputal completeness.
+     */
     DataType transportLayerDataType() const { return _transportLayerDataType; }
 
     /** Default constructor sets fundamental type to "undefined" */
-    DataDescriptor():_fundamentalType(FundamentalType::undefined) {}
+    DataDescriptor() : _fundamentalType(FundamentalType::undefined) {}
 
     /** Constructor setting all members. */
-    DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_ = false, bool isSigned_ = false, size_t nDigits_ = 0,
-        size_t nFractionalDigits_ = 0, DataType rawDataType_ = DataType::none,
-        DataType transportLayerDataType_ = DataType::none):
-    _fundamentalType(fundamentalType_), _rawDataType(rawDataType_), _transportLayerDataType(transportLayerDataType_),
-    _isIntegral(isIntegral_), _isSigned(isSigned_), _nDigits(nDigits_), _nFractionalDigits(nFractionalDigits_) {}
-
+    DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_ = false, bool isSigned_ = false,
+        size_t nDigits_ = 0, size_t nFractionalDigits_ = 0, DataType rawDataType_ = DataType::none,
+        DataType transportLayerDataType_ = DataType::none)
+    : _fundamentalType(fundamentalType_), _rawDataType(rawDataType_), _transportLayerDataType(transportLayerDataType_),
+      _isIntegral(isIntegral_), _isSigned(isSigned_), _nDigits(nDigits_), _nFractionalDigits(nFractionalDigits_) {}
 
     /** Construct from DataType object - the DataDescriptor will then describe the passed DataType (with no raw
-       *  type). */
+     *  type). */
     explicit DataDescriptor(DataType type);
 
     bool operator==(const DataDescriptor& other) const;
@@ -140,13 +139,13 @@ namespace ChimeraTK {
     bool _isSigned;
 
     /** Numeric types only: approximate maximum number of digits (of base 10)
-       * needed to represent the value (including a decimal dot, if not an
-       * integral data type) */
+     * needed to represent the value (including a decimal dot, if not an
+     * integral data type) */
     size_t _nDigits;
 
     /** Non-integer numeric types only: Approximate maximum number of digits
-       * after decimal dot (of base 10) needed to represent the value (excluding
-       * the decimal dot itself) */
+     * after decimal dot (of base 10) needed to represent the value (excluding
+     * the decimal dot itself) */
     size_t _nFractionalDigits;
   };
 

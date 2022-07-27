@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
-
 #include "DeviceFile.h"
 #include "XdmaIntfAbstract.h"
+
+#include <string>
 
 namespace ChimeraTK {
 

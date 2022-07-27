@@ -1,4 +1,5 @@
 #include "NDRegisterAccessor.h"
+
 #include "CopyRegisterDecorator.h"
 
 namespace ChimeraTK {

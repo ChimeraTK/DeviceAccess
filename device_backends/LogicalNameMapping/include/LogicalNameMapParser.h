@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <map>
-
 #include "BackendRegisterCatalogue.h"
+#include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
 #include "LNMVariable.h"
 #include "RegisterPath.h"
 
-#include "LNMAccessorPlugin.h"
+#include <boost/shared_ptr.hpp>
+
+#include <map>
 
 // forward declaration
 namespace xmlpp {
@@ -36,7 +36,7 @@ namespace ChimeraTK {
 
     /** parse the given XML file */
     BackendRegisterCatalogue<LNMBackendRegisterInfo> parseFile(const std::string& fileName);
-    //BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
+    // BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
 
    protected:
     /** called inside parseFile() to parse an XML element and its sub-elements
@@ -63,8 +63,8 @@ namespace ChimeraTK {
     RegisterPath currentModule;
 
     /** actual register info map (register name to target information) */
-    //BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
-    //LNMRegisterCatalogue _catalogue;
+    // BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue;
+    // LNMRegisterCatalogue _catalogue;
 
     /** parameter map */
     std::map<std::string, std::string> _parameters;

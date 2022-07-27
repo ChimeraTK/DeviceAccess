@@ -6,6 +6,7 @@
  */
 
 #include "LogicalNameMappingBackend.h"
+
 #include "LNMBackendBitAccessor.h"
 #include "LNMBackendChannelAccessor.h"
 #include "LNMBackendVariableAccessor.h"
@@ -131,8 +132,8 @@ namespace ChimeraTK {
     // obtain register info
     auto info = _catalogue_mutable.getBackendRegister(registerPathName);
 
-    // Check that the requested requested accessor fits into the register as described by the info. It is not enough to let
-    // the target do the check. It might be a sub-register of a much larger one and for the target it is fine.
+    // Check that the requested requested accessor fits into the register as described by the info. It is not enough to
+    // let the target do the check. It might be a sub-register of a much larger one and for the target it is fine.
     if(info.length != 0) {
       // If info->length is 0 we let the target device do the checking. Nothing we can decide here.
       if(numberOfWords == 0) numberOfWords = info.length;
@@ -364,7 +365,7 @@ namespace ChimeraTK {
     std::unordered_set<std::string> ret;
     for(auto it = _catalogue_mutable.begin(); it != _catalogue_mutable.end(); ++it) {
       auto info = it->deviceName;
-      std::string dev = info; //infodeviceName;
+      std::string dev = info; // infodeviceName;
       if(dev != "this" && dev != "") ret.insert(dev);
     }
     return ret;

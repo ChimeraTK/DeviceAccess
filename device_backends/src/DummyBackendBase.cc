@@ -9,10 +9,14 @@ namespace ChimeraTK {
 
   DummyBackendBase::~DummyBackendBase() {}
 
-  size_t DummyBackendBase::minimumTransferAlignment([[maybe_unused]] uint64_t bar) const { return 4; }
+  size_t DummyBackendBase::minimumTransferAlignment([[maybe_unused]] uint64_t bar) const {
+    return 4;
+  }
 
   /// All bars are valid in dummies.
-  bool DummyBackendBase::barIndexValid([[maybe_unused]] uint64_t bar) { return true; }
+  bool DummyBackendBase::barIndexValid([[maybe_unused]] uint64_t bar) {
+    return true;
+  }
 
   std::map<uint64_t, size_t> DummyBackendBase::getBarSizesInBytesFromRegisterMapping() const {
     std::map<uint64_t, size_t> barSizesInBytes;
@@ -32,4 +36,4 @@ namespace ChimeraTK {
     }
   }
 
-} //namespace ChimeraTK
+} // namespace ChimeraTK

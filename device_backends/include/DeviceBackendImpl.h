@@ -27,7 +27,6 @@ namespace ChimeraTK {
     MetadataCatalogue getMetadataCatalogue() const override { return MetadataCatalogue(); }
 
    protected:
-
     /** flag if device is opened */
     std::atomic<bool> _opened{false};
   };

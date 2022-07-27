@@ -55,6 +55,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::ostream& operator<<(std::ostream& os, const RegisterPath& me) { return os << std::string(me); }
+  std::ostream& operator<<(std::ostream& os, const RegisterPath& me) {
+    return os << std::string(me);
+  }
 
 } /* namespace ChimeraTK */

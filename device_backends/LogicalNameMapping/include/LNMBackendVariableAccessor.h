@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
 #include "FixedPointConverter.h"
 #include "LogicalNameMappingBackend.h"
 #include "NDRegisterAccessor.h"
+
+#include <algorithm>
 
 namespace ChimeraTK {
 
@@ -58,7 +58,7 @@ namespace ChimeraTK {
     /// register information. We have a shared pointer to the original RegisterInfo inside the map, since we need to
     /// modify the value in it (in case of a writeable variable register)
     LNMBackendRegisterInfo _info;
-    //RegisterInfo _info;
+    // RegisterInfo _info;
     /// Word offset when reading
     size_t _wordOffsetInRegister;
 
@@ -96,7 +96,7 @@ namespace ChimeraTK {
 
     // obtain the register info
     _info = _dev->_catalogue_mutable.getBackendRegister(_registerPathName);
-    //boost::static_pointer_cast<BackendRegisterCatalogue<LNMBackendRegisterInfo>>(_dev->getRegisterCatalogue().getRegister(_registerPathName));
+    // boost::static_pointer_cast<BackendRegisterCatalogue<LNMBackendRegisterInfo>>(_dev->getRegisterCatalogue().getRegister(_registerPathName));
 
     // check for unknown flags
     if(_info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
@@ -119,8 +119,9 @@ namespace ChimeraTK {
     // check for incorrect usage of this accessor
     if(_info.targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
         _info.targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
-      throw ChimeraTK::logic_error(
-          "LNMBackendVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
+      throw ChimeraTK::logic_error("LNMBackendVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE
+                                                                                                // (impossible to
+                                                                                                // test...)
     }
 
     // if wait_for_new_data is specified, make subscription

@@ -1,15 +1,16 @@
-#include <algorithm>
-#include <boost/lambda/lambda.hpp>
-#include <sstream>
-#include <regex>
-
-#include "BackendFactory.h"
 #include "DummyBackend.h"
+#include "BackendFactory.h"
+#include "DummyRegisterAccessor.h"
 #include "Exception.h"
 #include "MapFileParser.h"
-#include "parserUtilities.h"
-#include "DummyRegisterAccessor.h"
 #include "NumericAddressedInterruptDispatcher.h"
+#include "parserUtilities.h"
+
+#include <boost/lambda/lambda.hpp>
+
+#include <algorithm>
+#include <regex>
+#include <sstream>
 
 namespace ChimeraTK {
 

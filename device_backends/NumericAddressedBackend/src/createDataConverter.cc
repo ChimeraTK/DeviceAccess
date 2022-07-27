@@ -1,4 +1,5 @@
 #include "createDataConverter.h"
+
 #include "NumericAddressedRegisterCatalogue.h"
 
 namespace ChimeraTK::detail {

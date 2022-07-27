@@ -1,14 +1,14 @@
 #pragma once
 
-#include "NumericAddressedRegisterCatalogue.h"
 #include "Exception.h"
 #include "MetadataCatalogue.h"
+#include "NumericAddressedRegisterCatalogue.h"
 
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
-#include <string>
 #include <list>
+#include <string>
 
 namespace ChimeraTK {
 
@@ -50,7 +50,7 @@ namespace ChimeraTK {
       uint32_t interruptNumber{0};
     };
 
-    /** 
+    /**
      * Split the string at the last dot. The part up to the last dot is the first
      * returned argument, the part after the last dot is the second. Hence, the
      * first part can contain dots itself, the second part cannot. If there is no
@@ -84,7 +84,7 @@ namespace ChimeraTK {
      */
     void handle2DNewStyle(const ParsedLine& pl);
 
-    /** 
+    /**
      * Checks whether the register name does not contain the special prefixes marking multiplexed registers and
      * sequences etc.
      */
@@ -116,7 +116,7 @@ namespace ChimeraTK {
      * Creates the two RegisterInfos that belong to a 2D multiplexed area, with a prefix according to the old or
      * new syntax
      */
-    void make2DRegisterInfos(const ParsedLine &pl, std::list<ParsedLine>& channelLines, const std::string& prefix);
+    void make2DRegisterInfos(const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix);
 
     NumericAddressedRegisterCatalogue pmap;
     MetadataCatalogue metadataCatalogue;

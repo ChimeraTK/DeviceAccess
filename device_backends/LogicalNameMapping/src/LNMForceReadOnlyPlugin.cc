@@ -1,9 +1,9 @@
-#include <boost/make_shared.hpp>
-
-#include "LNMBackendRegisterInfo.h"
 #include "LNMAccessorPlugin.h"
+#include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
+
+#include <boost/make_shared.hpp>
 
 namespace ChimeraTK { namespace LNMBackend {
 

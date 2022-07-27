@@ -25,13 +25,13 @@ namespace ChimeraTK {
      */
     enum class Access { READ_ONLY, WRITE_ONLY, READ_WRITE, INTERRUPT };
 
-    /** 
+    /**
      *  Enum descibing the data interpretation:
      *  \li Fixed point (includes integer = 0 fractional bits)
      *  \li IEEE754 floating point
      *  \li ASCII ascii characters
      *  \li VOID no data content, just trigger events (push type) FIXME: Currently implicit by 0 bits width
-     *  
+     *
      *  Note: The values need to be in "ascending" order of the information the type can hold. In 2D registers with
      *  different types in the channels, the type with the biggest value here will "win".
      */
@@ -52,8 +52,8 @@ namespace ChimeraTK {
       [[nodiscard]] DataType getRawType() const; /**< Return raw type matching the given width */
     };
 
-    /** 
-     * Constructor to set all data members for scalar/1D registers. They all have default values, so this also acts as 
+    /**
+     * Constructor to set all data members for scalar/1D registers. They all have default values, so this also acts as
      * default constructor.
      */
     explicit NumericAddressedRegisterInfo(RegisterPath const& pathName_ = {}, uint32_t nElements_ = 0,
@@ -146,7 +146,7 @@ namespace ChimeraTK {
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
    protected:
-    /** 
+    /**
      *  Map of interrupts. Key is an interrupt controller number and value is a set of interrupts numbers assigned to
      *  the given interrupt controller.
      */

@@ -1,27 +1,27 @@
 #ifndef MTCA4U_SHARED_DUMMY_BACKEND_H
 #define MTCA4U_SHARED_DUMMY_BACKEND_H
 
-#include <list>
-#include <map>
-#include <mutex>
-#include <set>
-#include <utility>
-#include <vector>
+#include "DummyBackendBase.h"
+#include "Exception.h"
+#include "NumericAddressedRegisterCatalogue.h"
+#include "ProcessManagement.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/move/unique_ptr.hpp>
 #include <boost/unordered_set.hpp>
 
-#include "Exception.h"
-#include "DummyBackendBase.h"
-#include "ProcessManagement.h"
-#include "NumericAddressedRegisterCatalogue.h"
+#include <list>
+#include <map>
+#include <mutex>
+#include <set>
+#include <utility>
+#include <vector>
 
 // Define shared-memory compatible vector type and corresponding allocator
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>

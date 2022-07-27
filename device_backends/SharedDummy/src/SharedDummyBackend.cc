@@ -1,18 +1,18 @@
-#include <algorithm>
-#include <functional>
-#include <sstream>
-#include <regex>
-#include <cstring>
+#include "SharedDummyBackend.h"
+#include "BackendFactory.h"
+#include "Exception.h"
+#include "MapFileParser.h"
+#include "NumericAddressedInterruptDispatcher.h"
+#include "parserUtilities.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
 
-#include "BackendFactory.h"
-#include "Exception.h"
-#include "MapFileParser.h"
-#include "SharedDummyBackend.h"
-#include "parserUtilities.h"
-#include "NumericAddressedInterruptDispatcher.h"
+#include <algorithm>
+#include <cstring>
+#include <functional>
+#include <regex>
+#include <sstream>
 
 namespace ChimeraTK {
 
@@ -57,7 +57,9 @@ namespace ChimeraTK {
     _hasActiveException = false;
   }
 
-  void SharedDummyBackend::closeImpl() { _opened = false; }
+  void SharedDummyBackend::closeImpl() {
+    _opened = false;
+  }
 
   void SharedDummyBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     if(!_opened) {
@@ -333,7 +335,7 @@ namespace ChimeraTK {
       for(auto& entry : interruptEntries) {
         if(!entry.used) {
           entry.used = true;
-          //entry.semId = semId;
+          // entry.semId = semId;
           entry._controllerId = ii._controllerId;
           entry._intNumber = ii._intNumber;
           entry._counter = 1;

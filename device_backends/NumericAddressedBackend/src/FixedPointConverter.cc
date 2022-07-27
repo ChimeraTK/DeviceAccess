@@ -1,4 +1,5 @@
 #include "FixedPointConverter.h"
+
 #include "Exception.h"
 
 namespace ChimeraTK {

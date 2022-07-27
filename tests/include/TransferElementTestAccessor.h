@@ -195,15 +195,15 @@ namespace ChimeraTK {
     bool _throwRuntimeErrInPre{false};
     bool _throwRuntimeErrInPreconditions{false}; // throw in isReadable/isWriteable/isReadOnly
     bool _throwNumericCast{false};               // in doPreWrite() or doPreRead() depending on operation
-    VersionNumber _setPostReadVersion{nullptr}; // if nullptr, a new version will be generated
-    UserType _setPostReadData{UserType()};      // data to be copied into the user buffer in postRead
+    VersionNumber _setPostReadVersion{nullptr};  // if nullptr, a new version will be generated
+    UserType _setPostReadData{UserType()};       // data to be copied into the user buffer in postRead
 
     // lists, counters etc. used for the TransferGroup tests
     std::list<TransferElementID> _listReplacementElements; // list of all arguments of replaceTransferElement()
-    std::vector<boost::shared_ptr<TransferElementTestAccessor<UserType>>>
-        _internalElements; // returned by getInternalElements()
-    std::vector<boost::shared_ptr<TransferElement>>
-        _hardwareAccessingElements; // returned by getHardwareAccessingElements()
+    std::vector<boost::shared_ptr<TransferElementTestAccessor<UserType>>> _internalElements; // returned by
+                                                                                             // getInternalElements()
+    std::vector<boost::shared_ptr<TransferElement>> _hardwareAccessingElements;              // returned by
+                                                                                // getHardwareAccessingElements()
     std::set<TransferElementID> _listMayReplaceElements; // mayReplaceOther() returns true if ID is found in this set
 
     // reset all counters and revert command flags to defaults

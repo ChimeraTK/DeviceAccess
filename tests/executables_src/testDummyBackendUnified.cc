@@ -7,12 +7,12 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "Device.h"
-#include "TransferGroup.h"
 #include "BackendFactory.h"
+#include "Device.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
+#include "TransferGroup.h"
 #include "UnifiedBackendTest.h"
 
 namespace ChimeraTK {
@@ -64,7 +64,7 @@ struct Interrupt_dummy {
     return {{1}};
   }
 
-  void setRemoteValue() { }
+  void setRemoteValue() {}
 
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;

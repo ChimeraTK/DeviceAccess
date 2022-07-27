@@ -3,20 +3,20 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <algorithm>
-#include <atomic>
-#include <future>
-#include <thread>
-#include <chrono>
-
-#include <boost/thread.hpp>
-
 #include "Device.h"
 #include "DeviceAccessVersion.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "ReadAnyGroup.h"
+
+#include <boost/thread.hpp>
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <future>
+#include <thread>
 
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;

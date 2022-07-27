@@ -1,12 +1,13 @@
 #ifndef CHIMERATK_IEEE754_SINGLE_CONVERTER_H
 #define CHIMERATK_IEEE754_SINGLE_CONVERTER_H
 
-#include <float.h> // for float limits
-#include <boost/numeric/conversion/cast.hpp>
-#include <memory.h>
-
 #include "Exception.h"
 #include "SupportedUserTypes.h"
+
+#include <boost/numeric/conversion/cast.hpp>
+
+#include <float.h> // for float limits
+#include <memory.h>
 
 namespace ChimeraTK {
 

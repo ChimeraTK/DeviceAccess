@@ -3,14 +3,14 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <boost/make_shared.hpp>
-#include <cstdio>
-
 #include "BackendFactory.h"
+#include "DeviceAccessVersion.h"
 #include "DummyBackend.h"
 #include "Exception.h"
 
-#include "DeviceAccessVersion.h"
+#include <boost/make_shared.hpp>
+
+#include <cstdio>
 namespace ChimeraTK {
   using namespace ChimeraTK;
 }
@@ -22,11 +22,8 @@ using namespace ChimeraTK;
 struct NewBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
 
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string /*host*/,
-      std::string instance,
-      std::list<std::string>
-          parameters,
-      std::string /*mapFileName*/) {
+  static boost::shared_ptr<DeviceBackend> createInstance(
+      std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/) {
     return returnInstance<NewBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
   }
 

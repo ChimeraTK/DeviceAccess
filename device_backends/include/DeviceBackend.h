@@ -3,8 +3,8 @@
 #include "AccessMode.h"
 #include "Exception.h"
 #include "ForwardDeclarations.h"
-#include "RegisterCatalogue.h"
 #include "MetadataCatalogue.h"
+#include "RegisterCatalogue.h"
 #include "VirtualFunctionTemplate.h"
 
 #include <boost/enable_shared_from_this.hpp>
@@ -46,12 +46,12 @@ namespace ChimeraTK {
      */
     virtual bool isFunctional() const = 0;
 
-    /** 
+    /**
      *  Return the register catalogue with detailed information on all registers.
      */
     virtual RegisterCatalogue getRegisterCatalogue() const = 0;
 
-    /** 
+    /**
      *  Return the device metadata catalogue
      */
     virtual MetadataCatalogue getMetadataCatalogue() const = 0;
@@ -72,8 +72,9 @@ namespace ChimeraTK {
     virtual std::string readDeviceInfo() = 0;
 
     /** Set the backend into an exception state.
-     *  All backends must remember this, turn off asyncronous reads and all accessors will throw a ChimeraTK::runtime_error on read and write operations,
-     *  saying that there is a "previous, unrecovered fault", until open() has been called successfully.
+     *  All backends must remember this, turn off asyncronous reads and all accessors will throw a
+     * ChimeraTK::runtime_error on read and write operations, saying that there is a "previous, unrecovered fault",
+     * until open() has been called successfully.
      */
     virtual void setException() = 0;
 
@@ -82,11 +83,10 @@ namespace ChimeraTK {
      *  If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no
      *  effect. If it is called when no deactivated transfer element exists, this call also has no effect. When
      *  Device::activateAsyncRead() returns, it is not guaranteed that all initial values have been received already.
-     * 
+     *
      *  For more details, see \ref transferElement_B_8_5 "Technical specification: TransferElement B.8.5".
      */
     virtual void activateAsyncRead() noexcept {}
-
   };
 
   /********************************************************************************************************************/

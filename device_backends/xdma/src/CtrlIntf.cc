@@ -1,13 +1,13 @@
 #include "CtrlIntf.h"
 
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sstream>
-#include <iostream>
-#include <cstring>
-
 #include "DeviceFile.h"
 #include "Exception.h"
+#include <sys/mman.h>
+
+#include <cstring>
+#include <fcntl.h>
+#include <iostream>
+#include <sstream>
 
 namespace ChimeraTK {
 
@@ -29,9 +29,13 @@ namespace ChimeraTK {
     throw ChimeraTK::runtime_error(err_msg.str());
   }
 
-  CtrlIntf::~CtrlIntf() { ::munmap(_mem, _mmapSize); }
+  CtrlIntf::~CtrlIntf() {
+    ::munmap(_mem, _mmapSize);
+  }
 
-  volatile int32_t* CtrlIntf::_reg_ptr(uintptr_t offs) const { return static_cast<volatile int32_t*>(_mem) + offs / 4; }
+  volatile int32_t* CtrlIntf::_reg_ptr(uintptr_t offs) const {
+    return static_cast<volatile int32_t*>(_mem) + offs / 4;
+  }
 
   void CtrlIntf::_check_range(const std::string access_type, uintptr_t address, size_t nBytes) const {
     if((address + nBytes) <= _mmapSize) {

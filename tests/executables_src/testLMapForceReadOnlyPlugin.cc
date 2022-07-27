@@ -4,10 +4,10 @@
 using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
-#include "DeviceAccessVersion.h"
-#include "DummyBackend.h"
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
+#include "DeviceAccessVersion.h"
+#include "DummyBackend.h"
 
 using namespace ChimeraTK;
 

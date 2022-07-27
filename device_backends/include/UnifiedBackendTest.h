@@ -1,16 +1,16 @@
 #pragma once
 
-#include <string>
-#include <functional>
-#include <list>
-#include <numeric>
-#include <thread>
+#include "Device.h"
+#include "DeviceBackendImpl.h"
 
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "Device.h"
-#include "DeviceBackendImpl.h"
+#include <functional>
+#include <list>
+#include <numeric>
+#include <string>
+#include <thread>
 
 // disable shadow warning, boost::mpl::for_each is triggering this warning on Ubuntu 16.04
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -30,11 +30,12 @@ namespace ChimeraTK {
    *  Descriptor for the test capabilities for each register. This allows a schema evolution of the test. New tests
    *  which require a new backend-specific function in the test in the register descriptor will be enabled through
    *  a corresponding Capability flag.
-   * 
+   *
    *  Construct object like this:
-   * 
-   *  static constexpr auto capabilities = TestCapabilities<>().enableForceDataLossWrite().disableAsyncReadInconsistency();
-   * 
+   *
+   *  static constexpr auto capabilities =
+   * TestCapabilities<>().enableForceDataLossWrite().disableAsyncReadInconsistency();
+   *
    *  Use any number of enable/disable functions.
    */
   template<TestCapability _syncRead = TestCapability::enabled,
@@ -196,30 +197,29 @@ namespace ChimeraTK {
    *  Class to test any backend for correct behaviour. Instantiate this class and call all (!) preparatory functions to
    *  provide the tests with the backend-specific test actions etc. Finally call runTests() to execute all tests.
    *  Internally the BOOST unit test framework is used, so this shall be called inside a normal unit test.
-   * 
+   *
    *  Failing to call all preparatory functions will result in an error. This allows a safe test schema evolution - if
    *  more backend specific actions for enabling and disabling test conditions are needed for the tests and the backend
    *  test has not yet been updated, tests will fail.
-   * 
-   *  Actions are usually specified as list of pairs of functors. The pair's first element is always the action to enable
-   *  the the test condition, the second is the action to disable it. By providing multiple entries in the lists it is
-   *  possible to test several code paths the backend has to end up in the intended test condition.
-   *  For example in case of forceRuntimeErrorOnRead(): runtime_errors in a read can be caused by a timeout in the
-   *  communication channel, or by a bad reply of the device. Two list entries would be provided in this case, one to make
-   *  read operations run into timeouts, and one to make the (dummy) device reply with garbage.
-   *  If only one singe code path exists to get to the test condition, it is perfectly fine to have only a single entry
-   *  in the list.
-   * 
+   *
+   *  Actions are usually specified as list of pairs of functors. The pair's first element is always the action to
+   * enable the the test condition, the second is the action to disable it. By providing multiple entries in the lists
+   * it is possible to test several code paths the backend has to end up in the intended test condition. For example in
+   * case of forceRuntimeErrorOnRead(): runtime_errors in a read can be caused by a timeout in the communication
+   * channel, or by a bad reply of the device. Two list entries would be provided in this case, one to make read
+   * operations run into timeouts, and one to make the (dummy) device reply with garbage. If only one singe code path
+   * exists to get to the test condition, it is perfectly fine to have only a single entry in the list.
+   *
    *  In the same way as for the actions, names of registers etc. are provided as lists, so all test can be repeated for
    *  different registers, if required for full coverage.
-   * 
+   *
    *  Instantiate with default template argument, then call addRegister() to add any number of registers, i.e.:
    *
    *    auto ubt = UnifiedBackendTest<>.addRegister<RegisterA>().addRegister<RegisterB>().addRegister<RegisterC>()
    *    ubt.runTest("myCDD");
-   * 
+   *
    *  See addRegister() for more details.
-   * 
+   *
    *  Note: This is work in progress. Tests are by far not yet complete. Interface changes of the test class are also
    *  likely.
    */
@@ -229,9 +229,9 @@ namespace ChimeraTK {
     /**
      *  Add a register to be used by the test. This function takes a register descriptor in form of a struct type as
      *  template argument and returns a new UnifiedBackendTest object.
-     * 
+     *
      *  The register descriptor must be of the following form:
-     * 
+     *
      *  struct MyRegisterDescriptor {
      *    std::string path() {return "/path/of/register";}
      *    bool isWriteable() {return true;}
@@ -240,7 +240,7 @@ namespace ChimeraTK {
      *    size_t nChannels() {return 1;}
      *    size_t nElementsPerChannel() {return 5;}
      *    size_t nRuntimeErrorCases() {return 1;}                                 // see setForceRuntimeError()
-     * 
+     *
      *    /// Number of values to test in read and write tests. Put in how many calls to generateValue() are necessary
      *    /// to cover all corner cases to be tested. Should be at least 2 even if no corner cases are to be tested.
      *    /// Optional, defaults to 2.
@@ -248,7 +248,7 @@ namespace ChimeraTK {
      *
      *    typedef int32_t minimumUserType;
      *    typedef minimumUserType rawUserType;  // only used if AccessMode::raw is supprted, can be omitted otherwise
-     * 
+     *
      *    /// Generate value which can be represented by the register. Make sure it's different from the
      *    /// previous one and that it's not all zero to ensure that the test is sensitive.
      *    /// Template argument 'Type 'can be UserType or RawType if raw is supported. If the 'raw' flag  is
@@ -259,13 +259,12 @@ namespace ChimeraTK {
      *    std::vector<std::vector<Type>> generateValue(bool raw = false);
      *
      *    /// Obtain the current value of the register. The value can be raw or converted to
-     *    /// UserType (see generateValue()).  In case the accessor does not support AccessMode::raw, the 'raw' argument can be omitted.
-     *    template<typename Type>
-     *    std::vector<std::vector<Type>> getRemoteValue(bool raw = false);
+     *    /// UserType (see generateValue()).  In case the accessor does not support AccessMode::raw, the 'raw' argument
+     * can be omitted. template<typename Type> std::vector<std::vector<Type>> getRemoteValue(bool raw = false);
      *
      *    /// Set remote value to a value generated in the same way as in generateValue().
      *    void setRemoteValue();
-     * 
+     *
      *    /// Force runtime errors when reading or writing (at least) this register. Whether other registers are also
      *    /// affected by this is not important for the test (i.e. blocking the entire communication is ok).
      *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
@@ -274,7 +273,7 @@ namespace ChimeraTK {
      *    /// enabled and disabled separately. It is guaranteed that never two cases are enabled at the same time. If
      *    /// nRuntimeErrorCases() == 0, this function will never be called.
      *    void setForceRuntimeError(bool enable, size_t case);
-     * 
+     *
      *    /// Describe which test capabilities are provided by the register descriptor. Enable capabilities for which
      *    /// the corresponding functions are provided by this register descriptor. Disable capabilities which are
      *    /// intentionally not provided to avoid a warning.
@@ -282,37 +281,37 @@ namespace ChimeraTK {
      *
      *    /// Used by setForceDataLossWrite(). Can be omitted if Capability forceDataLossWrite = disabled.
      *    size_t writeQueueLength() {return std::numeric_limits<size_t>::max();}
-     * 
+     *
      *    /// Force data loss during write operations. It is expected that data loss occurs exactly writeQueueLength
      *    /// write operations after calling this function with enable=true.
      *    /// Can be omitted if Capability forceDataLossWrite = disabled.
      *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
      *    /// enable = false.
      *    void setForceDataLossWrite(bool enable);
-     * 
-     *    /// Do whatever necessary that data last received via a push-type subscription is inconsistent with the actual 
+     *
+     *    /// Do whatever necessary that data last received via a push-type subscription is inconsistent with the actual
      *    /// value (as read by a synchronous read). This can e.g. be achieved by changing the value without publishing
      *    /// the update to the subscribers.
      *    /// Can be omitted if Capability asyncReadInconsistency = disabled. This should be done only if such
      *    /// inconsistencies are already prevented by the protocol.
      *    void forceAsyncReadInconsistency();
-     * 
+     *
      *    /// Do whatever necessary that the register changes into a read-only register.
      *    /// Can be omitted if TestCapability switchReadOnly = disabled.
      *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
      *    /// enable = false.
      *    void switchReadOnly(bool enable);
-     * 
+     *
      *    /// Do whatever necessary that the register changes into a write-only register.
      *    /// Can be omitted if TestCapability switchWriteOnly = disabled.
      *    /// It is guaranteed that this function is always called in pairs with first enable = true and then
      *    /// enable = false.
      *    void switchWriteOnly(bool enable);
      *  };
-     * 
+     *
      *  Note: Instances of the register descriptors are created and discarded arbitrarily. If it is necessary to store
      *  any data (e.g. seeds for generating values), use static member variables.
-     * 
+     *
      *  Properties of the register are implemented as functions instead of data members to make it easier to override
      *  values when using a common base class for multiple descriptors to avoid code duplication (without triggering a
      *  shadowing warning).
@@ -335,7 +334,7 @@ namespace ChimeraTK {
     /**
      *  Execute all tests. Call this function within a BOOST_AUTO_TEST_CASE after calling all preparatory functions
      *  below. The tests are executed for the backend identified by the given CDD.
-     * 
+     *
      *  A second CDD should be specified, if it is possible to reach the same registers through a different backend.
      */
     void runTests(const std::string& cdd, const std::string& cdd2 = "");
@@ -602,10 +601,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
-  /* 
+  /*
    * Implementations below this point.
-   * 
-   * This is made header-only to avoid the need to link against BOOST unit test libraries for the DeviceAccess 
+   *
+   * This is made header-only to avoid the need to link against BOOST unit test libraries for the DeviceAccess
    * runtime library, or to introduce another library shipped with DeviceAccess just for this class.
    */
   /********************************************************************************************************************/
@@ -634,8 +633,12 @@ namespace ChimeraTK {
 } // namespace ChimeraTK
 
 namespace std {
-  std::string to_string(const std::string& v) { return v; }
-  std::string to_string(const char*& v) { return {v}; }
+  std::string to_string(const std::string& v) {
+    return v;
+  }
+  std::string to_string(const char*& v) {
+    return {v};
+  }
 } // namespace std
 
 namespace ChimeraTK {
@@ -1062,7 +1065,7 @@ namespace ChimeraTK {
   /**
    *  Test write() does not destroy application buffer
    *  * \anchor UnifiedTest_TransferElement_B_3_2_1_2 \ref transferElement_B_3_2_1_2 "B.3.2.1.2"
-   * 
+   *
    * (Exception case is covered by B.6.4)
    */
   template<typename VECTOR_OF_REGISTERS_T>
@@ -1358,7 +1361,7 @@ namespace ChimeraTK {
         x.setForceRuntimeError(false, i);
         this->recoverDevice(d);
         d.activateAsyncRead();
-        reg.read(); //initial value
+        reg.read(); // initial value
         x.setForceRuntimeError(true, i);
 
         // alter the application buffer to make sure it is not changed under exception
@@ -1531,7 +1534,7 @@ namespace ChimeraTK {
   /**
    *  Test async read fills _readQueue
    *  * \anchor UnifiedTest_TransferElement_B_8_2 \ref transferElement_B_8_2 "B.8.2"
-   * 
+   *
    *  Note: we do not care about read() vs. readNonBlocking() in this test, since that part of the implementation is in
    *  the base class and hence tested in testTransferElement.
    */
@@ -1618,10 +1621,10 @@ namespace ChimeraTK {
   /**
    *  Test _readQueue overrun
    *  * \anchor UnifiedTest_TransferElement_B_8_2_1 \ref transferElement_B_8_2_1 "B.8.2.1"
-   * 
+   *
    *  FIXME: This test is not really complete. It tests whether the latest value survives. It does not test though which
-   *  other values are surviving. For this the test needs to know the length of the implementation specific data transport
-   *  queue, which is currently not known to it (the length of the _readQueue continuation is always 1).
+   *  other values are surviving. For this the test needs to know the length of the implementation specific data
+   * transport queue, which is currently not known to it (the length of the _readQueue continuation is always 1).
    */
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_2_1() {
@@ -2620,7 +2623,7 @@ namespace ChimeraTK {
   /**
    *  Test consistent data gets same VersionNumber
    *  * \anchor UnifiedTest_TransferElement_B_11_2_2 \ref transferElement_B_11_2_2 "B.11.2.2"
-   * 
+   *
    * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    * !!!!  TODO FIXME This test is not complete yet  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2657,7 +2660,7 @@ namespace ChimeraTK {
 
       // Version must be identical to the version of the first accessor
       // Initial values are not necessarily consistent, so this check is skipped.
-      //BOOST_CHECK_EQUAL(reg2.getVersionNumber(), reg.getVersionNumber());
+      // BOOST_CHECK_EQUAL(reg2.getVersionNumber(), reg.getVersionNumber());
 
       // Change value, must be seen by both accessors, again same version expected
       x.setRemoteValue();
@@ -3121,7 +3124,7 @@ namespace ChimeraTK {
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
         reg.read(); // initial value
-        
+
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
@@ -3350,7 +3353,8 @@ namespace ChimeraTK {
             CHECK_EQUALITY(reg, expectedRawValue);
 
             auto expectedCookedValue = x.template getRemoteValue<UserType>();
-            // fill into a vector<vector> and use CHECK_EQUALITY_VECTOR. This stops at the first mismatch, prints a good error message, checks for all elements 0 etc.
+            // fill into a vector<vector> and use CHECK_EQUALITY_VECTOR. This stops at the first mismatch, prints a good
+            // error message, checks for all elements 0 etc.
             std::vector<std::vector<UserType>> readCookedValue;
             for(size_t channel = 0; channel < reg.getNChannels(); ++channel) {
               std::vector<UserType> readCookedChannel;
@@ -3489,9 +3493,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   /**
    *  Test small getter functions of accessors
-   * 
-   *  This tests if small getter functions of accessors work as expected, and it verifies that the implementation complies
-   *  for to the following TransferElement specifications:
+   *
+   *  This tests if small getter functions of accessors work as expected, and it verifies that the implementation
+   * complies for to the following TransferElement specifications:
    *  * \anchor UnifiedTest_TransferElement_B_15_2 \ref transferElement_B_15_2 "B.15.2"
    */
 
@@ -3499,7 +3503,7 @@ namespace ChimeraTK {
 
   /**
    *  Test catalogue-accessor consistency
-   * 
+   *
    *  This tests if the catalogue information matches the actual accessor.
    */
 
@@ -3507,7 +3511,7 @@ namespace ChimeraTK {
 
   /**
    *  Test logic_errors
-   * 
+   *
    *  This tests if logic_errors are thrown in the right place, and it verifies that the implementation complies
    *  for to the following TransferElement specifications:
    *  * \anchor UnifiedTest_TransferElement_C_5_2 \ref transferElement_C_5_2 "C.5.2"

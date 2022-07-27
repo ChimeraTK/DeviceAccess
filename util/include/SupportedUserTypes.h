@@ -9,12 +9,13 @@
 #ifndef CHIMERA_TK_SUPPORTED_USER_TYPES_H
 #define CHIMERA_TK_SUPPORTED_USER_TYPES_H
 
-#include <algorithm>
-#include <iterator>
-#include <sstream>
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>
 #include <boost/numeric/conversion/cast.hpp>
+
+#include <algorithm>
+#include <iterator>
+#include <sstream>
 
 namespace ChimeraTK {
 
@@ -79,7 +80,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline std::istream& operator>>(std::istream& is, __attribute__((unused)) Void& value) { return is; }
+  inline std::istream& operator>>(std::istream& is, __attribute__((unused)) Void& value) {
+    return is;
+  }
 
   /********************************************************************************************************************/
 
@@ -624,7 +627,7 @@ namespace ChimeraTK {
      \endcode
      */
     inline operator TheType&() { return _value; }
-    inline operator TheType const &() const { return _value; }
+    inline operator TheType const&() const { return _value; }
 
     /** Return whether the raw data type is an integer.
      *  False is also returned for non-numerical types and 'none'.

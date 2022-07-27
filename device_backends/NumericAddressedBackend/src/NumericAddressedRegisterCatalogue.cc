@@ -1,12 +1,12 @@
+#include "NumericAddressedRegisterCatalogue.h"
+#include "Exception.h"
+#include "MapFileParser.h"
+#include "NumericAddress.h"
+#include "predicates.h"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
-
-#include "Exception.h"
-#include "MapFileParser.h"
-#include "NumericAddressedRegisterCatalogue.h"
-#include "predicates.h"
-#include "NumericAddress.h"
 
 namespace ChimeraTK {
 
@@ -189,7 +189,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool NumericAddressedRegisterInfo::ChannelInfo::operator!=(const ChannelInfo& rhs) const { return !operator==(rhs); }
+  bool NumericAddressedRegisterInfo::ChannelInfo::operator!=(const ChannelInfo& rhs) const {
+    return !operator==(rhs);
+  }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/

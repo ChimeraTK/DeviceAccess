@@ -1,9 +1,9 @@
-#include <boost/make_shared.hpp>
-
-#include "LNMBackendRegisterInfo.h"
-#include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessor.h"
 #include "DataDescriptor.h"
+#include "LNMAccessorPlugin.h"
+#include "LNMBackendRegisterInfo.h"
+#include "NDRegisterAccessor.h"
+
+#include <boost/make_shared.hpp>
 
 namespace ChimeraTK { namespace LNMBackend {
   TypeHintModifierPlugin::TypeHintModifierPlugin(

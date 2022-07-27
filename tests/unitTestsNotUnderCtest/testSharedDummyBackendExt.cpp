@@ -1,15 +1,15 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE SharedDummyBackendTest
-#include <boost/test/unit_test.hpp>
-
 #include "Device.h"
 #include "ProcessManagement.h"
-#include "Utilities.h"
 #include "sharedDummyHelpers.h"
+#include "Utilities.h"
 
-#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/test/unit_test.hpp>
+
+#include <algorithm>
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
@@ -167,7 +167,6 @@ namespace {
     }
   }
 
-
   /**
    * This test case implements a second application accessing the shared memory
    * for testing the ".DUMMY_WRITEABLE" feature.
@@ -175,12 +174,12 @@ namespace {
    * This is called from the complementary automatic test case.
    */
   BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
-
     setDMapFilePath("shareddummyTest.dmap");
     Device dev;
     dev.open("SHDMEMDEV");
 
-    ScalarRegisterAccessor<int> roRegisterOne_dw{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_1.DUMMY_WRITEABLE")};
+    ScalarRegisterAccessor<int> roRegisterOne_dw{
+        dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_1.DUMMY_WRITEABLE")};
     ScalarRegisterAccessor<int> roRegisterTwo{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_2")};
 
     BOOST_CHECK(!roRegisterOne_dw.isReadOnly());

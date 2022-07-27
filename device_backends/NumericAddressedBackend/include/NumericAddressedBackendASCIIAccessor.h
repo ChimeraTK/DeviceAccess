@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "NDRegisterAccessor.h"
 #include "ForwardDeclarations.h"
+#include "NDRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 
 #include <ChimeraTK/cppext/finally.hpp>

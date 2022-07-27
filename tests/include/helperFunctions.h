@@ -16,5 +16,5 @@ void populateDummyDeviceInfo(ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo, s
 
 std::string appendNumberToName(std::string name, int cardNumber);
 
-bool compareDeviceInfos(const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1,
-    const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo2);
+bool compareDeviceInfos(
+    const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1, const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo2);
