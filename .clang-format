@@ -53,7 +53,7 @@ PenaltyBreakString: '10000'
 PenaltyExcessCharacter: '700'
 PenaltyReturnTypeOnItsOwnLine: '500'
 PointerAlignment: Left
-ReflowComments: 'false'
+ReflowComments: 'true'
 SortIncludes: 'false'
 SortUsingDeclarations: 'false'
 SpaceAfterCStyleCast: 'false'
