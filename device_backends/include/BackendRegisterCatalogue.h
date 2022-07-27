@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RegisterCatalogue.h"
+
 #include <boost/make_shared.hpp>
 
 namespace ChimeraTK {
@@ -31,9 +32,9 @@ namespace ChimeraTK {
     BackendRegisterCatalogueBase(const BackendRegisterCatalogueBase& other) = delete;
     BackendRegisterCatalogueBase& operator=(const BackendRegisterCatalogueBase& other) = delete;
 
-    /** 
+    /**
      *  Get register information for a given full path name.
-     *  
+     *
      *  Throws ChimeraTK::logic_error if register does not exist in the catalogue.
      */
     [[nodiscard]] virtual RegisterInfo getRegister(const RegisterPath& registerPathName) const = 0;
@@ -59,7 +60,7 @@ namespace ChimeraTK {
   /**
    * Interface for backends to the register catalogue. In addition to the functionality offered by the RegisterCatalogue
    * class, the content of the catalogue can be modified through this interface.
-   * 
+   *
    * Backend implementations should instantiate this class with their backend-specific implementation of the
    * RegisterInfoImpl class.
    */
@@ -156,13 +157,13 @@ namespace ChimeraTK {
    * Implementation of the catalogue const iterator which is templated to the actual BackendRegisterInfo implementation
    * provided by the backend. Backends may use different implelementations of the iterator in case hooks are required
    * in the iterator functions (e.g. to implement lazy catalogue filling).
-   * 
+   *
    * Note: If a backend implements lazy catalogue filling, it can get away with hooks only inside the
    * BackendRegisterInfo implementations, as long as the list of register names is determined beforehand. Backends which
    * also lazy-fill the list of names should still put the filling of the register properties (besides the name) into
    * the BackendRegisterInfo implementation, since applications may obtain that directly via
    * RegisterCatalogue::getRegister() by the name.
-   * 
+   *
    * Implementation note: The reason for using a fully virtual iterator is not primarily to allow planting hooks into
    * the iterator. It is necessary since the map to iterate holds the backend-specific BackendRegisterInfo type, hence
    * it is not possible to hand out a non-virtual iterator to code which is not backend-specific. An alternative
@@ -305,8 +306,8 @@ namespace ChimeraTK {
   std::unique_ptr<BackendRegisterCatalogueBase> BackendRegisterCatalogue<BackendRegisterInfo>::clone() const {
     // FIXME: Change BackendRegisterCatalogue to CRTP, i.e. it has the DERRIVED class as template parameter.
     // Like this the correct catalogue type is already created here and inherriting backends can call this clone,
-    // then cast to the actual type and fill the rest of it's properties. Would get rid of the "fillFromThis()" workaround and
-    // safe clone() implementations in case no data members are added.
+    // then cast to the actual type and fill the rest of it's properties. Would get rid of the "fillFromThis()"
+    // workaround and safe clone() implementations in case no data members are added.
 
     // Create a new instance of a BackendRegisterCatalogue with the correct type.
     // Inheriting backends will create the derrived type here.

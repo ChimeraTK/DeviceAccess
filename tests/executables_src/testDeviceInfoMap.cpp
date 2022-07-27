@@ -1,7 +1,6 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
 #include "boost_dynamic_init_test.h"
-
 #include "DeviceInfoMap.h"
 #include "Exception.h"
 #include "helperFunctions.h"

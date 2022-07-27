@@ -145,15 +145,21 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::isReadOnly() const { return false; }
+  bool SubdeviceRegisterAccessor::isReadOnly() const {
+    return false;
+  }
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::isReadable() const { return false; }
+  bool SubdeviceRegisterAccessor::isReadable() const {
+    return false;
+  }
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::isWriteable() const { return true; }
+  bool SubdeviceRegisterAccessor::isWriteable() const {
+    return true;
+  }
 
   /*********************************************************************************************************************/
 

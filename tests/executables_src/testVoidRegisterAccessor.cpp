@@ -34,8 +34,8 @@ void testAsyncRO(RegisterPath name, unsigned int interruptController, unsigned i
   dummy->triggerInterrupt(interruptController, interruptNumber);
   BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
 
-  // check that the implementations for readNonBlocking() and readLatest() delegate to the right function (the return value still contains information)
-  // Trigger twice, then evaluate
+  // check that the implementations for readNonBlocking() and readLatest() delegate to the right function (the return
+  // value still contains information) Trigger twice, then evaluate
   dummy->triggerInterrupt(interruptController, interruptNumber);
   dummy->triggerInterrupt(interruptController, interruptNumber);
   BOOST_CHECK(asyncAccessor.readNonBlocking());
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(TestAsyncRW) {
   auto writeableAsyncAccessor =
       d.getVoidRegisterAccessor("MODULE0/INTERRUPT_TYPE/DUMMY_WRITEABLE"); //, {AccessMode::wait_for_new_data});
   BOOST_CHECK(!writeableAsyncAccessor.isReadOnly());
-  //BOOST_CHECK(writeableAsyncAccessor.isReadable());
+  // BOOST_CHECK(writeableAsyncAccessor.isReadable());
   BOOST_CHECK(writeableAsyncAccessor.isWriteable());
 
   auto writeableIntAccessor = d.getScalarRegisterAccessor<int>("MODULE0/INTERRUPT_TYPE/DUMMY_WRITEABLE");

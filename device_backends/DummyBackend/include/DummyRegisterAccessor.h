@@ -175,8 +175,8 @@ namespace ChimeraTK {
 
     const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
 
-    /** Get a lock to safely modify the buffer in a multi-treaded environment. You have to release it as soon as possible because it will block all other
-     *  functionality of the Dummy and all application threads which use it.
+    /** Get a lock to safely modify the buffer in a multi-treaded environment. You have to release it as soon as
+     * possible because it will block all other functionality of the Dummy and all application threads which use it.
      */
     std::unique_lock<std::mutex> getBufferLock() { return std::unique_lock<std::mutex>(_dev->mutex); }
 
@@ -346,8 +346,8 @@ namespace ChimeraTK {
     /// return number of elements
     unsigned int getNumberOfElements() { return registerInfo.nElements; }
 
-    /** Get a lock to safely modify the buffer. You have to release it as soon as possible because it will block all other
-     *  functionality of the Dummy. This is a really low low level debugging interface!
+    /** Get a lock to safely modify the buffer. You have to release it as soon as possible because it will block all
+     * other functionality of the Dummy. This is a really low low level debugging interface!
      */
     std::unique_lock<std::mutex> getBufferLock() { return std::unique_lock<std::mutex>(_backend->mutex); }
 

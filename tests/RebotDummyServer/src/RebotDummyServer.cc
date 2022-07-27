@@ -1,8 +1,11 @@
 
 #include "RebotDummyServer.h"
+
 #include "DummyProtocol1.h" // the latest version includes all predecessors in the include
+
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
+
 #include <iostream>
 #include <stdexcept>
 
@@ -27,7 +30,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void RebotDummySession::start() { doRead(); }
+  void RebotDummySession::start() {
+    doRead();
+  }
 
   void RebotDummySession::doRead() {
     auto self(shared_from_this());
@@ -148,7 +153,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void RebotDummySession::sendSingleWord(int32_t response) { _dataBuffer.push_back(response); }
+  void RebotDummySession::sendSingleWord(int32_t response) {
+    _dataBuffer.push_back(response);
+  }
 
   /********************************************************************************************************************/
 
@@ -195,8 +202,12 @@ namespace ChimeraTK {
     _io.run();
   }
 
-  void RebotDummyServer::stop() { _io.stop(); }
+  void RebotDummyServer::stop() {
+    _io.stop();
+  }
 
-  bool RebotDummyServer::is_running() { return not _io.stopped(); }
+  bool RebotDummyServer::is_running() {
+    return not _io.stopped();
+  }
 
 } /* namespace ChimeraTK */

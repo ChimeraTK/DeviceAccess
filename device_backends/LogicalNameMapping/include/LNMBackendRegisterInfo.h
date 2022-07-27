@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include <mutex>
-
-#include <boost/shared_ptr.hpp>
-
+#include "BackendRegisterCatalogue.h"
+#include "BackendRegisterInfoBase.h"
 #include "ForwardDeclarations.h"
 #include "RegisterInfo.h"
 #include "TransferElement.h"
-#include "BackendRegisterCatalogue.h"
-#include "BackendRegisterInfoBase.h"
+
+#include <boost/shared_ptr.hpp>
+
+#include <mutex>
 
 namespace ChimeraTK {
 

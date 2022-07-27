@@ -18,12 +18,12 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <boost/make_shared.hpp>
-
+#include "DeviceBackendImpl.h"
 #include "NDRegisterAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
-#include "DeviceBackendImpl.h"
 #include "TransferElementTestAccessor.h"
+
+#include <boost/make_shared.hpp>
 
 using namespace ChimeraTK;
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(test_B_3_1_3_2) {
 
 /**
  *  Test the convenience function readLatest().
- * 
+ *
  *  This tests the TransferElement specifications:
  *  * \anchor testTransferElement_B_3_1_4 \ref transferElement_B_3_1_4 "B.3.1.4"
  */
@@ -1026,7 +1026,7 @@ BOOST_AUTO_TEST_CASE(B_8_2_2) {
 /**
  *  Test exceptions on _readQueue in readTransfer()/readTransferNonBlocking()
  *   * \anchor testTransferElement_B_8_3 \ref transferElement_B_8_3 "B.8.3"
-  */
+ */
 BOOST_AUTO_TEST_CASE(B_8_3) {
   TransferElementTestAccessor<int32_t> accessor({AccessMode::wait_for_new_data});
 

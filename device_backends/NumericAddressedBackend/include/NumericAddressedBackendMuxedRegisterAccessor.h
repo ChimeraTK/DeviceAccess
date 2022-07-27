@@ -1,14 +1,15 @@
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <sstream>
-
-#include "Exception.h"
 #include "createDataConverter.h"
+#include "Exception.h"
 #include "MapFileParser.h"
+#include "NDRegisterAccessor.h"
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedRegisterCatalogue.h"
-#include "NDRegisterAccessor.h"
+
+#include <boost/shared_ptr.hpp>
+
+#include <sstream>
 
 namespace ChimeraTK {
 

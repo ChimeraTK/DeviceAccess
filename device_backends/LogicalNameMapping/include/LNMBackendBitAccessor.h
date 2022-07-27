@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include <algorithm>
-
-#include <ChimeraTK/cppext/finally.hpp>
-
 #include "Device.h"
 #include "FixedPointConverter.h"
 #include "LogicalNameMappingBackend.h"
 #include "NDRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
+
+#include <ChimeraTK/cppext/finally.hpp>
+
+#include <algorithm>
 
 namespace ChimeraTK {
 
@@ -40,8 +40,8 @@ namespace ChimeraTK {
 
       // check for incorrect usage of this accessor
       if(info.targetType != LNMBackendRegisterInfo::TargetType::BIT) {
-        throw ChimeraTK::logic_error(
-            "LNMBackendBitAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
+        throw ChimeraTK::logic_error("LNMBackendBitAccessor used for wrong register type."); // LCOV_EXCL_LINE
+                                                                                             // (impossible to test...)
       }
       if(wordOffsetInRegister != 0) {
         throw ChimeraTK::logic_error("LNMBackendBitAccessors cannot have a word offset.");
@@ -64,8 +64,8 @@ namespace ChimeraTK {
       {
         std::unique_lock<std::mutex> l{_dev->sharedAccessorMap_mutex};
         auto& map = boost::fusion::at_key<uint64_t>(_dev->sharedAccessorMap.table);
-        // we need an identifier of the device in the key, in case the logical name mapping accesses more than one device
-        // with same set of register names
+        // we need an identifier of the device in the key, in case the logical name mapping accesses more than one
+        // device with same set of register names
         LogicalNameMappingBackend::AccessorKey key(targetDevice.get(), RegisterPath(info.registerName));
         auto it = map.find(key);
         // Obtain accessor if not found in the map or if weak pointer has expired
@@ -178,7 +178,8 @@ namespace ChimeraTK {
     RegisterPath _registerPathName;
 
     /// temporary version number passed to the target accessor in write transfers
-    /// The VersionNumber needs to be decoupled from target accessor, because the target accessor is used by multiple bit accessors!
+    /// The VersionNumber needs to be decoupled from target accessor, because the target accessor is used by multiple
+    /// bit accessors!
     VersionNumber _versionNumberTemp{nullptr};
 
     /// backend device
@@ -220,4 +221,3 @@ namespace ChimeraTK {
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LNMBackendBitAccessor);
 
 } // namespace ChimeraTK
-

@@ -1,6 +1,3 @@
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-
 #include "SubdeviceBackend.h"
 
 #include "BackendFactory.h"
@@ -10,6 +7,9 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "SubdeviceRegisterAccessor.h"
 #include "TransferElement.h"
+
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 using namespace std::string_literals;
 
@@ -189,11 +189,15 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  RegisterCatalogue SubdeviceBackend::getRegisterCatalogue() const { return RegisterCatalogue(_registerMap.clone()); }
+  RegisterCatalogue SubdeviceBackend::getRegisterCatalogue() const {
+    return RegisterCatalogue(_registerMap.clone());
+  }
 
   /********************************************************************************************************************/
 
-  MetadataCatalogue SubdeviceBackend::getMetadataCatalogue() const { return _metadataCatalogue; }
+  MetadataCatalogue SubdeviceBackend::getMetadataCatalogue() const {
+    return _metadataCatalogue;
+  }
 
   /********************************************************************************************************************/
 

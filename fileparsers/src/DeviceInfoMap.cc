@@ -1,14 +1,17 @@
-#include <algorithm>
-
 #include "DeviceInfoMap.h"
+
 #include "Exception.h"
 #include "predicates.h"
+
+#include <algorithm>
 
 namespace ChimeraTK {
 
   DeviceInfoMap::DeviceInfoMap(const std::string& fileName) : _dmapFileName(fileName) {}
 
-  size_t DeviceInfoMap::getSize() { return _deviceInfoElements.size(); }
+  size_t DeviceInfoMap::getSize() {
+    return _deviceInfoElements.size();
+  }
 
   std::ostream& operator<<(std::ostream& os, const DeviceInfoMap& deviceInfoMap) {
     size_t size;
@@ -22,7 +25,9 @@ namespace ChimeraTK {
     return os;
   }
 
-  void DeviceInfoMap::insert(const DeviceInfo& elem) { _deviceInfoElements.push_back(elem); }
+  void DeviceInfoMap::insert(const DeviceInfo& elem) {
+    _deviceInfoElements.push_back(elem);
+  }
 
   void DeviceInfoMap::getDeviceInfo(const std::string& deviceName, DeviceInfo& value) {
     std::vector<DeviceInfo>::iterator iter;
@@ -111,9 +116,13 @@ namespace ChimeraTK {
     return os;
   }
 
-  void DeviceInfoMap::ErrorList::clear() { _errors.clear(); }
+  void DeviceInfoMap::ErrorList::clear() {
+    _errors.clear();
+  }
 
-  void DeviceInfoMap::ErrorList::insert(const ErrorElem& elem) { _errors.push_back(elem); }
+  void DeviceInfoMap::ErrorList::insert(const ErrorElem& elem) {
+    _errors.push_back(elem);
+  }
 
   std::ostream& operator<<(std::ostream& os, const DeviceInfoMap::ErrorList& me) {
     std::list<DeviceInfoMap::ErrorList::ErrorElem>::const_iterator iter;
@@ -123,12 +132,20 @@ namespace ChimeraTK {
     return os;
   }
 
-  DeviceInfoMap::iterator DeviceInfoMap::begin() { return _deviceInfoElements.begin(); }
+  DeviceInfoMap::iterator DeviceInfoMap::begin() {
+    return _deviceInfoElements.begin();
+  }
 
-  DeviceInfoMap::iterator DeviceInfoMap::end() { return _deviceInfoElements.end(); }
+  DeviceInfoMap::iterator DeviceInfoMap::end() {
+    return _deviceInfoElements.end();
+  }
 
-  void DeviceInfoMap::addPluginLibrary(std::string soFile) { _pluginLibraries.push_back(soFile); }
+  void DeviceInfoMap::addPluginLibrary(std::string soFile) {
+    _pluginLibraries.push_back(soFile);
+  }
 
-  std::vector<std::string> DeviceInfoMap::getPluginLibraries() { return _pluginLibraries; }
+  std::vector<std::string> DeviceInfoMap::getPluginLibraries() {
+    return _pluginLibraries;
+  }
 
 } // namespace ChimeraTK

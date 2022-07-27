@@ -1,8 +1,8 @@
 #pragma once
 
-#include "VirtualFunctionTemplate.h"
 #include "LogicalNameMappingBackend.h"
 #include "ReadAnyGroup.h"
+#include "VirtualFunctionTemplate.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -165,8 +165,9 @@ namespace ChimeraTK { namespace LNMBackend {
     boost::thread _pushParameterWriteThread;             // only used if _hasPushParameter == true
     boost::barrier _waitUntilParameterThreadLaunched{2}; // sync point for parameter thread and accessor thread
     ReadAnyGroup _pushParameterReadGroup;                // only used if _hasPushParameter == true
-    std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>>
-        _pushParameterAccessorMap;                 // only used if _hasPushParameter == true
+    std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> _pushParameterAccessorMap; // only used if
+                                                                                                    // _hasPushParameter
+                                                                                                    // == true
     boost::shared_ptr<MathPluginFormulaHelper> _h; // only used if _hasPushParameter == true
     std::vector<double> _lastWrittenValue;         // only used if _hasPushParameter == true
     // The _writeMutex has two functions:

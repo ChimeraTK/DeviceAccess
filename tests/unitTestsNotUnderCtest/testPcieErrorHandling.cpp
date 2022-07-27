@@ -3,8 +3,6 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <cstring>
-
 #include "BackendFactory.h"
 #include "Device.h"
 #include "DeviceBackend.h"
@@ -12,6 +10,8 @@ using namespace boost::unit_test_framework;
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "PcieBackend.h"
+
+#include <cstring>
 
 namespace ChimeraTK {
   using namespace ChimeraTK;

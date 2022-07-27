@@ -6,12 +6,14 @@
  */
 
 #include "TransferGroup.h"
+
 #include "CopyRegisterDecorator.h"
 #include "Exception.h"
 #include "NDRegisterAccessorAbstractor.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
+
 #include <iostream>
 
 namespace ChimeraTK {
@@ -113,8 +115,8 @@ namespace ChimeraTK {
     // In practice this will not happen because either all elements will have an ExceptionHandlingDecorator, or none.
 
     if(_nRuntimeErrors != 0) {
-      assert(firstDetectedRuntimeError !=
-          nullptr); // postRead must only rethrow, so there must be a detected runtime_error
+      assert(firstDetectedRuntimeError != nullptr); // postRead must only rethrow, so there must be a detected
+                                                    // runtime_error
       _cachedReadableWriteableIsValid = false;
       std::rethrow_exception(firstDetectedRuntimeError);
     }
@@ -159,8 +161,9 @@ namespace ChimeraTK {
     for(auto& elem : _highLevelElements) {
       // check for exceptions on any of the element's low level elements
       for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
-        // In case there are multiple exceptions we take the last one, but this does not matter. They are all ChimeraTK::runtime_errors and
-        // the first detected runtime error, which is re-thrown, has already been determined by previously.
+        // In case there are multiple exceptions we take the last one, but this does not matter. They are all
+        // ChimeraTK::runtime_errors and the first detected runtime error, which is re-thrown, has already been
+        // determined by previously.
         if(lowLevelElem->_activeException) {
           // copy the runtime error from low level element into the high level element so it is processed in  post-read
           elem->_activeException = lowLevelElem->_activeException;
@@ -184,7 +187,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool TransferGroup::isReadOnly() { return isReadable() && !isWriteable(); }
+  bool TransferGroup::isReadOnly() {
+    return isReadable() && !isWriteable();
+  }
 
   /*********************************************************************************************************************/
 

@@ -1,4 +1,5 @@
 #include "RegisterCatalogue.h"
+
 #include "BackendRegisterCatalogue.h"
 
 namespace ChimeraTK {
@@ -48,7 +49,9 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  size_t RegisterCatalogue::getNumberOfRegisters() const { return _impl->getNumberOfRegisters(); }
+  size_t RegisterCatalogue::getNumberOfRegisters() const {
+    return _impl->getNumberOfRegisters();
+  }
 
   /*******************************************************************************************************************/
 
@@ -99,11 +102,15 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  const BackendRegisterInfoBase& RegisterCatalogue::const_iterator::operator*() { return *(_impl->get()); }
+  const BackendRegisterInfoBase& RegisterCatalogue::const_iterator::operator*() {
+    return *(_impl->get());
+  }
 
   /*******************************************************************************************************************/
 
-  const BackendRegisterInfoBase* RegisterCatalogue::const_iterator::operator->() { return _impl->get(); }
+  const BackendRegisterInfoBase* RegisterCatalogue::const_iterator::operator->() {
+    return _impl->get();
+  }
 
   /*******************************************************************************************************************/
 
@@ -119,7 +126,9 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  const BackendRegisterCatalogueBase& RegisterCatalogue::getImpl() const { return *_impl; }
+  const BackendRegisterCatalogueBase& RegisterCatalogue::getImpl() const {
+    return *_impl;
+  }
 
   /**********************************************************************************************************************/
 } /* namespace ChimeraTK */

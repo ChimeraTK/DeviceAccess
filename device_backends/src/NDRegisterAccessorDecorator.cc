@@ -6,6 +6,7 @@
  */
 
 #include "NDRegisterAccessorDecorator.h"
+
 #include "CopyRegisterDecorator.h"
 #include "SupportedUserTypes.h"
 

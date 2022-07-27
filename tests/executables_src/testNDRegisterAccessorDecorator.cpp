@@ -7,11 +7,11 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <boost/make_shared.hpp>
-
+#include "DeviceBackendImpl.h"
 #include "NDRegisterAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
-#include "DeviceBackendImpl.h"
+
+#include <boost/make_shared.hpp>
 
 using namespace ChimeraTK;
 
@@ -124,13 +124,13 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     return _previousDataLost;
   }
 
-  /** 
+  /**
    * This doPostRead() implementation checks partially the TransferElement specification B.4.
-   * 
+   *
    * \anchor testTransferElement_B_6_1_read It also tests specifically the
    * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for read operations,
-   * \anchor testTransferElement_B_6_3_read \ref transferElement_B_6_3 "TransferElement specification B.6.3" for read operations,
-   * and \ref transferElement_B_7_4 "TransferElement specification B.7.4"
+   * \anchor testTransferElement_B_6_3_read \ref transferElement_B_6_3 "TransferElement specification B.6.3" for read
+   * operations, and \ref transferElement_B_7_4 "TransferElement specification B.7.4"
    */
   void doPostRead(TransferType type, bool updateDataBuffer) override {
     // doPreRead and doPortRead must always be called in pairs.
@@ -166,12 +166,13 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
   }
 
-  /** 
+  /**
    * This doPostWrite() implementation checks partially the TransferElement specification B.4.
-   * 
+   *
    * \anchor testTransferElement_B_6_1_write It also tests specifically the
    * \ref transferElement_B_6_1 "TransferElement specification B.6.1" for write operations.
-   * \anchor testTransferElement_B_6_3_write \ref transferElement_B_6_3 "TransferElement specification B.6.3" for write operations.
+   * \anchor testTransferElement_B_6_3_write \ref transferElement_B_6_3 "TransferElement specification B.6.3" for write
+   * operations.
    */
   void doPostWrite(TransferType type, VersionNumber versionNumber) override {
     BOOST_CHECK(_preRead_counter == 0);
@@ -184,7 +185,8 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
       /* Here B.6.1 is tested for write operations */
       BOOST_CHECK(_writeTransfer_counter == 0);
     }
-    // Exceptions must be passed on to the level which is throwing it (B.6.3 This actually tests the NDRegisterAccessorDecorator)
+    // Exceptions must be passed on to the level which is throwing it (B.6.3 This actually tests the
+    // NDRegisterAccessorDecorator)
     if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwRuntimeErrInTransfer ||
         _throwThreadInterruptedInTransfer || _throwNumericCast) {
       BOOST_CHECK(this->_activeException != nullptr);
@@ -216,9 +218,9 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
   bool _readable{true};
 
   TransferType _transferType;
-  bool _hasNewData; // hasNewData as seen in postRead() (set there)
-  bool _previousDataLost{
-      false}; // this value will be returned by write and writeDestructively. Not changed by the accessor.
+  bool _hasNewData;              // hasNewData as seen in postRead() (set there)
+  bool _previousDataLost{false}; // this value will be returned by write and writeDestructively. Not changed by the
+                                 // accessor.
   VersionNumber _newVersion{nullptr};
 
   size_t _preRead_counter{0};
@@ -277,8 +279,9 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
 /**
  *  This test that the NDRegisterAccessorDecorator base class complies to the following specification:
  *  * \anchor testTransferElement_B_6_3 \ref transferElement_B_6_3 "TransferElement specification B.6.3" through the
- *    tests in \ref testTransferElement_B_6_3_write "doPostWrite()" and \ref testTransferElement_B_6_3_write "doPostRead()"
- * 
+ *    tests in \ref testTransferElement_B_6_3_write "doPostWrite()" and \ref testTransferElement_B_6_3_write
+ * "doPostRead()"
+ *
  *  FIXME: The test is done on a very high level and tests many other things as well, which are already tested else
  *         where.
  */

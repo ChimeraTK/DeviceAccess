@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include "SubdeviceBackend.h"
-
 #include "Device.h"
 #include "NDRegisterAccessor.h"
+#include "SubdeviceBackend.h"
 
 #include <algorithm>
 

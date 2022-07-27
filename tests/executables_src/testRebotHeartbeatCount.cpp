@@ -13,6 +13,7 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "RebotDummyServer.h"
 #include "testableRebotSleep_testingImpl.h"
+
 #include <boost/bind/bind.hpp>
 #include <boost/thread.hpp>
 
@@ -91,7 +92,7 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   BOOST_CHECK(d.isFunctional() == false);
   BOOST_CHECK(d.isOpened() == false);
 
-  //test, if device is not functinal after stopping server
+  // test, if device is not functinal after stopping server
   d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
   BOOST_CHECK(d.isFunctional() == true);
   rebotServer.stop();

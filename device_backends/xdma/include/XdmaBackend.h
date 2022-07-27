@@ -1,16 +1,15 @@
 #pragma once
 
-#include <atomic>
-#include <optional>
-#include <vector>
-
-#include <boost/core/noncopyable.hpp>
-
 #include "CtrlIntf.h"
 #include "DmaIntf.h"
 #include "EventFile.h"
-
 #include "NumericAddressedBackend.h"
+
+#include <boost/core/noncopyable.hpp>
+
+#include <atomic>
+#include <optional>
+#include <vector>
 
 namespace ChimeraTK {
 

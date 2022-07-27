@@ -8,23 +8,22 @@
 #ifndef CHIMERA_TK_TRANSFER_ELEMENT_ABSTRACTOR_H
 #define CHIMERA_TK_TRANSFER_ELEMENT_ABSTRACTOR_H
 
+#include "Exception.h"
+#include "TransferElement.h"
+#include "TransferElementID.h"
+#include "VersionNumber.h"
+
+#include <boost/bind/bind.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/future.hpp>
+
 #include <functional>
 #include <list>
 #include <string>
 #include <typeinfo>
 #include <vector>
-
-#include <boost/bind/bind.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
-
-#include <boost/thread.hpp>
-#include <boost/thread/future.hpp>
-
-#include "Exception.h"
-#include "TransferElement.h"
-#include "TransferElementID.h"
-#include "VersionNumber.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;

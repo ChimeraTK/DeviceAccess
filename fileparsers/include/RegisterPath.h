@@ -8,10 +8,10 @@
 #ifndef CHIMERA_TK_REGISTER_PATH_H
 #define CHIMERA_TK_REGISTER_PATH_H
 
+#include "Exception.h"
+
 #include <string>
 #include <vector>
-
-#include "Exception.h"
 
 namespace ChimeraTK {
 

@@ -8,9 +8,9 @@
 #ifndef CHIMERA_TK_TRANSFER_GROUP_H
 #define CHIMERA_TK_TRANSFER_GROUP_H
 
-#include <set>
-
 #include "TransferElementAbstractor.h"
+
+#include <set>
 
 namespace ChimeraTK {
 

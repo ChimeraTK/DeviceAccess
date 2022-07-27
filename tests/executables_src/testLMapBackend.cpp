@@ -6,10 +6,10 @@ using namespace boost::unit_test_framework;
 
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
-#include "TransferGroup.h"
-#include "ExceptionDummyBackend.h"
-#include "UnifiedBackendTest.h"
 #include "DummyRegisterAccessor.h"
+#include "ExceptionDummyBackend.h"
+#include "TransferGroup.h"
+#include "UnifiedBackendTest.h"
 
 using namespace ChimeraTK;
 
@@ -94,10 +94,10 @@ BOOST_AUTO_TEST_CASE(testCatalogue) {
   BOOST_CHECK(info.getNumberOfChannels() == 1);
   BOOST_CHECK(info.getNumberOfDimensions() == 0);
 
-  //std::unordered_set<std::string> targetDevices = lmap.getTargetDevices();
-  //BOOST_CHECK(targetDevices.size() == 2);
-  //BOOST_CHECK(targetDevices.count("PCIE2") == 1);
-  //BOOST_CHECK(targetDevices.count("PCIE3") == 1);
+  // std::unordered_set<std::string> targetDevices = lmap.getTargetDevices();
+  // BOOST_CHECK(targetDevices.size() == 2);
+  // BOOST_CHECK(targetDevices.count("PCIE2") == 1);
+  // BOOST_CHECK(targetDevices.count("PCIE3") == 1);
 
   device.close();
 }
@@ -118,8 +118,8 @@ BOOST_AUTO_TEST_CASE(testReadWriteConstant) {
   // test with buffering register accessor
   auto acc = device.getOneDRegisterAccessor<int32_t>("Constant");
   BOOST_CHECK(acc.getNElements() == 1);
-  BOOST_CHECK(acc[0] ==
-      0); // values are only available after the first read, otherwise there is the value after construction (= int32_t() aka. 0)
+  BOOST_CHECK(acc[0] == 0); // values are only available after the first read, otherwise there is the value after
+                            // construction (= int32_t() aka. 0)
   acc.read();
   BOOST_CHECK(acc[0] == 42);
   BOOST_CHECK_THROW(acc.write(), ChimeraTK::logic_error);

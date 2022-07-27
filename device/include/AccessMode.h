@@ -8,16 +8,16 @@
 #ifndef CHIMERA_TK_ACCESS_MODE_H
 #define CHIMERA_TK_ACCESS_MODE_H
 
+#include "Exception.h"
+
 #include <map>
 #include <set>
 #include <sstream>
 #include <vector>
 
-#include "Exception.h"
-
 namespace ChimeraTK {
 
-  /** 
+  /**
    * Enum type with access mode flags for register accessors.
    *
    * Developers note: when adding new flags, also add the flag in the map of the AccessModeFlags with a string
@@ -25,7 +25,7 @@ namespace ChimeraTK {
    */
   enum class AccessMode {
 
-    /** 
+    /**
      * Raw access: disable any possible conversion from the original hardware data type into the given UserType.
      * Obtaining the accessor with a UserType unequal to the actual raw data type will fail and throw a DeviceException
      * with the id EX_WRONG_PARAMETER.
@@ -35,7 +35,7 @@ namespace ChimeraTK {
      */
     raw,
 
-    /** 
+    /**
      * Make any read blocking until new data has arrived since the last read. This flag may not be suppoerted by all
      * registers (and backends), in which case a DeviceException with the id NOT_IMPLEMENTED will be thrown.
      */
@@ -44,7 +44,7 @@ namespace ChimeraTK {
     /* IMPORTANT: When extending this class with new flags, don't forget to update AccessModeFlags::getStringMap()! */
   };
 
-  /** 
+  /**
    * Set of AccessMode flags with additional functionality for an easier handling.
    *
    * The set holds flags which are enabled for an accessor. The method has() can be used to check wheater a flag is set.
@@ -69,7 +69,7 @@ namespace ChimeraTK {
     bool empty() const { return (_flags == std::set<AccessMode>()); }
 
     /** Check of any flag which is not in the given set "knownFlags" is set. If an
-      * unknown flag has been found, a ChimeraTK::logic_error is raised. */
+     * unknown flag has been found, a ChimeraTK::logic_error is raised. */
     void checkForUnknownFlags(const std::set<AccessMode>& knownFlags) const {
       for(auto flag : _flags) {
         if(knownFlags.count(flag) == 0) {
@@ -79,14 +79,14 @@ namespace ChimeraTK {
     }
 
     /** Check whether two sets of acces mode flags are the same.
-       */
+     */
     bool operator==(const AccessModeFlags& other) const {
       // fortunately the std::set already has a comparison operator which does exacty what we want
       return _flags == other._flags;
     }
 
     /** "Less than" operator, e.g. for use as key in std::map
-       */
+     */
     bool operator<(const AccessModeFlags& other) const {
       // fortunately the std::set already has a comparison operator which does exacty what we want
       return _flags < other._flags;

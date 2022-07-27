@@ -7,14 +7,14 @@
 
 #pragma once
 
-#include <mutex>
-#include <utility>
-
+#include "BackendRegisterCatalogue.h"
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
-#include "BackendRegisterCatalogue.h"
 #include "LNMVariable.h"
 #include <unordered_set>
+
+#include <mutex>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -70,7 +70,7 @@ namespace ChimeraTK {
     /** We need to make the catalogue mutable, since we fill it within
      * getRegisterCatalogue() */
     mutable BackendRegisterCatalogue<LNMBackendRegisterInfo> _catalogue_mutable;
-    //mutable LNMRegisterCatalogue _catalogue_mutable;
+    // mutable LNMRegisterCatalogue _catalogue_mutable;
     /** Flag whether the catalogue has already been filled with extra information
      * from the target backends */
     mutable bool catalogueCompleted{false};
@@ -92,8 +92,8 @@ namespace ChimeraTK {
     /// a mutex to be locked when sharedAccessorMap (the container) is changed
     std::mutex sharedAccessorMap_mutex;
 
-    /** Map of variables and constants. This map contains the mpl tables with the actual values and a mutex for each of them.
-     *  It has to be mutable as the parse function must be const.
+    /** Map of variables and constants. This map contains the mpl tables with the actual values and a mutex for each of
+     * them. It has to be mutable as the parse function must be const.
      */
     mutable std::map<std::string /*name*/, LNMVariable> _variables;
 
@@ -120,8 +120,8 @@ namespace ChimeraTK {
     std::unordered_set<std::string> getTargetDevices() const;
 
    private:
-    // A version number created when opening the backend. All variables will report this version number until they are changed for the first time
-    // after opening the device.
+    // A version number created when opening the backend. All variables will report this version number until they are
+    // changed for the first time after opening the device.
     std::atomic<ChimeraTK::VersionNumber> _versionOnOpen{ChimeraTK::VersionNumber{nullptr}};
 
    public:

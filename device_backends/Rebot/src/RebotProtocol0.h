@@ -1,15 +1,16 @@
 #ifndef CHIMERATK_REBOT_PROTOCOL_0
 #define CHIMERATK_REBOT_PROTOCOL_0
 
-#include <boost/shared_ptr.hpp>
-#include <vector>
-
 #include "RebotProtocolImplementor.h"
 
+#include <boost/shared_ptr.hpp>
+
+#include <vector>
+
 namespace ChimeraTK {
-namespace Rebot {
-  class Connection;
-}
+  namespace Rebot {
+    class Connection;
+  }
 
   struct RebotProtocol0 : RebotProtocolImplementor {
     explicit RebotProtocol0(boost::shared_ptr<Rebot::Connection>& tcpCommunicator);

@@ -23,8 +23,8 @@ ExampleBackend::~ExampleBackend() {
   close();
 }
 
-boost::shared_ptr<ChimeraTK::DeviceBackend> ExampleBackend::createInstance(std::string /*address*/,
-    std::map<std::string, std::string> /*parameters*/) {
+boost::shared_ptr<ChimeraTK::DeviceBackend> ExampleBackend::createInstance(
+    std::string /*address*/, std::map<std::string, std::string> /*parameters*/) {
   return boost::shared_ptr<ChimeraTK::DeviceBackend>(new ExampleBackend);
 }
 

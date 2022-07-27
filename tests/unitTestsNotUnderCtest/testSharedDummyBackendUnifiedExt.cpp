@@ -1,15 +1,15 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE SharedDummyBackendUnifiedTest
-#include <boost/test/unit_test.hpp>
-
-#include "sharedDummyHelpers.h"
 #include "Device.h"
 #include "ProcessManagement.h"
+#include "sharedDummyHelpers.h"
 #include "Utilities.h"
 
-#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/test/unit_test.hpp>
+
+#include <algorithm>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -47,7 +47,7 @@ namespace {
 
   /**
    * This test case implements a second application accessing the shared memory
-   * which mirrors the values to another region. 
+   * which mirrors the values to another region.
    * Mirroring happens on request and the direction needs to be specified.
    * The test runs until either stopped by a request via shm or interrupted by a signal.
    */
@@ -82,9 +82,7 @@ namespace {
       ScalarRegisterAccessor<int> mirrorRequestUpdated_Interrupt{
           dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_0")};
 
-      ScalarRegisterAccessor<int> dataInterrupt{
-          dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_1")};
-
+      ScalarRegisterAccessor<int> dataInterrupt{dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_1")};
 
       do {
         // poll Busy until it is set to true, indicating a new request

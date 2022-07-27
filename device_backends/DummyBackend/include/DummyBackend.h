@@ -1,16 +1,16 @@
 #ifndef CHIMERA_TK_DUMMY_BACKEND_H
 #define CHIMERA_TK_DUMMY_BACKEND_H
 
+#include "DummyBackendBase.h"
+#include "Exception.h"
+
+#include <boost/function.hpp>
+
 #include <list>
 #include <map>
 #include <mutex>
 #include <set>
 #include <vector>
-
-#include <boost/function.hpp>
-
-#include "Exception.h"
-#include "DummyBackendBase.h"
 
 namespace ChimeraTK {
 
@@ -68,7 +68,7 @@ namespace ChimeraTK {
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
-    /** Get a raw accessor to the underlying memory with the convenience of using 
+    /** Get a raw accessor to the underlying memory with the convenience of using
      *  register names. This accessor had nothing to do with regular, TransferElement based
      *  accessors and serves as second, independent implementation for debugging.
      *

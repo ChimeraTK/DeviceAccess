@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <map>
-
 #include "RegisterInfo.h"
 #include "RegisterPath.h"
+
+#include <boost/shared_ptr.hpp>
+
+#include <map>
 
 namespace ChimeraTK {
 
@@ -32,9 +33,9 @@ namespace ChimeraTK {
 
     ~RegisterCatalogue();
 
-    /** 
+    /**
      *  Get register information for a given full path name.
-     *  
+     *
      *  Throws ChimeraTK::logic_error if register does not exist in the catalogue.
      */
     [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const;

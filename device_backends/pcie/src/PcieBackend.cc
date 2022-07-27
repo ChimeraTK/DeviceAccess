@@ -4,18 +4,18 @@
 #include "llrfdrv_io_compat.h"
 #include "pciedev_io.h"
 #include "pcieuni_io_compat.h"
+#include <sys/ioctl.h>
+
+#include <boost/bind/bind.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
-#include <fcntl.h>
-
-#include <boost/bind/bind.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace ChimeraTK {
 
@@ -23,7 +23,9 @@ namespace ChimeraTK {
   : NumericAddressedBackend(mapFileName), _deviceID(0), _ioctlPhysicalSlot(0), _ioctlDriverVersion(0), _ioctlDMA(0),
     _deviceNodeName(deviceNodeName) {}
 
-  PcieBackend::~PcieBackend() { close(); }
+  PcieBackend::~PcieBackend() {
+    close();
+  }
 
   void PcieBackend::open() {
 #ifdef _DEBUG

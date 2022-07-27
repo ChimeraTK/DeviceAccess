@@ -30,6 +30,6 @@ namespace ChimeraTK { namespace Rebot {
   static const unsigned int DEFAULT_SERVER_PORT = 5001;
   static const int32_t DEFAULT_CONNECTION_TIMEOUT = 10000; // 10 seconds
 
-}} // namespace ChimeraTK::rebot
+}} // namespace ChimeraTK::Rebot
 
 #endif // CHIMERAT_REBOT_PROTOCOL_DEFINITIONS

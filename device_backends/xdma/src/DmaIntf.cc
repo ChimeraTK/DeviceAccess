@@ -1,9 +1,9 @@
 #include "DmaIntf.h"
 
-#include <fcntl.h>
-
 #include "DeviceFile.h"
 #include "Exception.h"
+
+#include <fcntl.h>
 
 namespace ChimeraTK {
 

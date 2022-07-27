@@ -20,8 +20,8 @@ BOOST_AUTO_TEST_CASE(testLargeBarNumber) {
 
   // this is a smoke test that reading and writing works with a large BAR map file
   auto intAccessor = d.getScalarRegisterAccessor<int32_t>("LARGE_BAR/NUMBER");
-  //intAccessor.read();
+  // intAccessor.read();
 
-  //intAccessor = 42;
-  //intAccessor.write();
+  // intAccessor = 42;
+  // intAccessor.write();
 }

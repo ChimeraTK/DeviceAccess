@@ -1,12 +1,11 @@
 #include "DeviceFile.h"
 
-#include <iostream>
-#include <utility>
+#include "Exception.h"
 
 #include <cstring>
 #include <fcntl.h>
-
-#include "Exception.h"
+#include <iostream>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -36,8 +35,12 @@ namespace ChimeraTK {
     return msg + _path + ": " + ::strerror_r(errno, tmp, sizeof(tmp));
   }
 
-  DeviceFile::operator int() const { return _fd; }
+  DeviceFile::operator int() const {
+    return _fd;
+  }
 
-  std::string DeviceFile::name() const { return _path; }
+  std::string DeviceFile::name() const {
+    return _path;
+  }
 
 } // namespace ChimeraTK

@@ -1,9 +1,10 @@
-#include <string>
-#include <utility>
-#include <iostream>
+#include <sys/file.h>
+
 #include <boost/interprocess/managed_shared_memory.hpp>
 
-#include <sys/file.h>
+#include <iostream>
+#include <string>
+#include <utility>
 
 enum class MirrorRequestType : int { from = 1, to, stop };
 

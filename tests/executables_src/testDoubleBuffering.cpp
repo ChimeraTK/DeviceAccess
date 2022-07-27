@@ -4,11 +4,11 @@
 using namespace boost::unit_test_framework;
 
 #include "Device.h"
-#include "ExceptionDummyBackend.h"
-#include "UnifiedBackendTest.h"
-#include "DummyRegisterAccessor.h"
 #include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
+#include "ExceptionDummyBackend.h"
 #include "LogicalNameMappingBackend.h"
+#include "UnifiedBackendTest.h"
 
 using namespace ChimeraTK;
 

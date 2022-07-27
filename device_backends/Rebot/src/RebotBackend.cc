@@ -1,9 +1,12 @@
 #include "RebotBackend.h"
-#include "RebotProtocolDefinitions.h"
-#include "RebotProtocol1.h"
+
 #include "Connection.h"
+#include "RebotProtocol1.h"
+#include "RebotProtocolDefinitions.h"
 #include "testableRebotSleep.h"
+
 #include <boost/bind/bind.hpp>
+
 #include <sstream>
 
 namespace ChimeraTK {
@@ -82,7 +85,9 @@ namespace ChimeraTK {
     _heartbeatThread.join();
   }
 
-  bool RebotBackend::isFunctional() const { return (_connection->isOpen() && !_hasActiveException); }
+  bool RebotBackend::isFunctional() const {
+    return (_connection->isOpen() && !_hasActiveException);
+  }
 
   void RebotBackend::open() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
@@ -159,8 +164,9 @@ namespace ChimeraTK {
         // only send a heartbeat if the connection was inactive for half of the
         // timeout period
 
-        //We can only calculate this while holding the lock (because we need _lastSendTime), but we have to use
-        //it when not holding the lock because we are calling sleep. Hence we have to store the next wakekup time in a variable.
+        // We can only calculate this while holding the lock (because we need _lastSendTime), but we have to use
+        // it when not holding the lock because we are calling sleep. Hence we have to store the next wakekup time in a
+        // variable.
         boost::chrono::steady_clock::time_point wakeupTime;
 
         { // scope of the lock guard. We must hold it to safely access _lastSendTime, which we need in the if statement
@@ -181,7 +187,7 @@ namespace ChimeraTK {
           }
           // Sleep for half of the connection timeout (plus 1 ms)
           wakeupTime = _lastSendTime + boost::chrono::milliseconds(_connectionTimeout / 2 + 1);
-        } //scope of the lock guard
+        } // scope of the lock guard
 
         // sleep without holding the lock.
         testable_rebot_sleep::sleep_until(wakeupTime);

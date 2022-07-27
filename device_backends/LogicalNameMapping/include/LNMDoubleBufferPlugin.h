@@ -1,12 +1,10 @@
 #pragma once
 
 #include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessorDecorator.h"
 #include "LNMBackendRegisterInfo.h"
 #include "LogicalNameMappingBackend.h"
+#include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
-#include "LNMAccessorPlugin.h"
-#include "LNMBackendRegisterInfo.h"
 
 #include <string>
 

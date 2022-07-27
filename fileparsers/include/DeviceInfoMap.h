@@ -8,6 +8,7 @@
 #define CHIMERA_TK_DEVICE_INFO_MAP_H
 
 #include <boost/shared_ptr.hpp>
+
 #include <iostream>
 #include <list>
 #include <stdint.h>

@@ -3,15 +3,16 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "Device.h"
 #include "DataConsistencyGroup.h"
+#include "Device.h"
 #include "NDRegisterAccessor.h"
 
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(DataConsistencyGroupTestSuite)
 
-// notice: you cannot read from this accessor. It will block forever because there is nobody to write into the _readQueue.
+// notice: you cannot read from this accessor. It will block forever because there is nobody to write into the
+// _readQueue.
 template<typename UserType>
 class Accessor : public NDRegisterAccessor<UserType> {
  public:
@@ -31,7 +32,7 @@ class Accessor : public NDRegisterAccessor<UserType> {
 
   void doPostRead(TransferType, bool /*hasNewData*/) override {}
 
-  //AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
+  // AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
   bool isReadOnly() const override { return false; }
   bool isReadable() const override { return true; }
   bool isWriteable() const override { return true; }
@@ -52,8 +53,8 @@ BOOST_AUTO_TEST_CASE(testDataConsistencyGroup) {
 
   DataConsistencyGroup dcgroup({acc_1, acc_2});
 
-  //until now all versions are {nullptr}
-  // prepare the version numbers in the dcgroup by writing (which set new version numbers)
+  // until now all versions are {nullptr}
+  //  prepare the version numbers in the dcgroup by writing (which set new version numbers)
   acc_1->write();
   acc_2->write();
 
@@ -113,13 +114,14 @@ BOOST_AUTO_TEST_CASE(testMoreDataConsistencyGroup) {
   BOOST_CHECK(dcgroup.update(acc_3->getId()) == true);
   BOOST_CHECK(dcgroup.update(acc_1->getId()) == true);
 
-  // push an accessor that does not belong to DataConsistencyGroup, should be ignored, although it hat the same version number
+  // push an accessor that does not belong to DataConsistencyGroup, should be ignored, although it hat the same version
+  // number
   boost::shared_ptr<Accessor<int>> acc_5 = boost::make_shared<Accessor<int>>();
   acc_5->write(v);
   BOOST_CHECK(dcgroup.update(acc_5->getId()) == false);
 }
 
-//The same TransferElement shall be allowed to be part of multiple DataConsistencyGroups at the same time.
+// The same TransferElement shall be allowed to be part of multiple DataConsistencyGroups at the same time.
 BOOST_AUTO_TEST_CASE(testMultipleDataConsistencyGroup) {
   boost::shared_ptr<Accessor<int>> acc_1 = boost::make_shared<Accessor<int>>();
   boost::shared_ptr<Accessor<int>> acc_2 = boost::make_shared<Accessor<int>>();
@@ -135,11 +137,11 @@ BOOST_AUTO_TEST_CASE(testMultipleDataConsistencyGroup) {
   BOOST_CHECK(dcgroup_1.update(acc_1->getId()) == false);
   BOOST_CHECK(dcgroup_1.update(acc_2->getId()) == false);
   BOOST_CHECK(dcgroup_1.update(acc_3->getId()) == true);
-  BOOST_CHECK(dcgroup_1.update(acc_4->getId()) == false); //ignored
+  BOOST_CHECK(dcgroup_1.update(acc_4->getId()) == false); // ignored
   BOOST_CHECK(dcgroup_2.update(acc_1->getId()) == false);
   BOOST_CHECK(dcgroup_2.update(acc_3->getId()) == false);
   BOOST_CHECK(dcgroup_2.update(acc_4->getId()) == true);
-  BOOST_CHECK(dcgroup_2.update(acc_2->getId()) == false); //ignored
+  BOOST_CHECK(dcgroup_2.update(acc_2->getId()) == false); // ignored
 }
 
 BOOST_AUTO_TEST_CASE(testVersionNumberChange) {

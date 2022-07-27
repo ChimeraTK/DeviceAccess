@@ -1,17 +1,17 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE SharedDummyBackendTest
-#include <boost/test/unit_test.hpp>
-
-#include "Device.h"
-#include "SharedDummyBackend.h"
 #include "BackendFactory.h"
+#include "Device.h"
 #include "ProcessManagement.h"
-#include "Utilities.h"
+#include "SharedDummyBackend.h"
 #include "sharedDummyHelpers.h"
+#include "Utilities.h"
 
-#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/test/unit_test.hpp>
+
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <string>

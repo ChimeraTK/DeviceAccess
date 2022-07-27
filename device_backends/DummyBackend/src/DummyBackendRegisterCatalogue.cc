@@ -1,4 +1,5 @@
 #include "DummyBackendRegisterCatalogue.h"
+
 #include <regex>
 
 namespace ChimeraTK {

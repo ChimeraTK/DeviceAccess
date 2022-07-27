@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "Device.h"
 #include "LogicalNameMappingBackend.h"
 #include "NDRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
+
+#include <algorithm>
 
 namespace ChimeraTK {
 

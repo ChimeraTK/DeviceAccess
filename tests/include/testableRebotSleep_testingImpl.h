@@ -4,9 +4,10 @@
 
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
+
 #include <atomic>
-#include <mutex>
 #include <iostream>
+#include <mutex>
 
 typedef boost::chrono::steady_clock::time_point TimePoint;
 
@@ -139,8 +140,8 @@ namespace ChimeraTK {
       }
     }
 
-    // The client always starts without the lock because it starts a new thread and is only interacting with sleep_until().
-    // So we have to wait in the test until the is waiting in sleep_until, then get the lock.
+    // The client always starts without the lock because it starts a new thread and is only interacting with
+    // sleep_until(). So we have to wait in the test until the is waiting in sleep_until, then get the lock.
     void waitForClientTestableMode() {
       boost::this_thread::yield();
       while(!RebotSleepSynchroniser::_clientHasReachedTestableMode) {
@@ -148,8 +149,8 @@ namespace ChimeraTK {
       }
       RebotSleepSynchroniser::_lock.lock();
       RebotSleepSynchroniser::_clientMayGetLock = true; // client may get the lock the next time the tests releases it.
-      RebotSleepSynchroniser::_testHasReachedTestableMode =
-          true; // make sure this function is called first by an assertion in advance_until.
+      RebotSleepSynchroniser::_testHasReachedTestableMode = true; // make sure this function is called first by an
+                                                                  // assertion in advance_until.
       std::cout << "test locked initially , mayget is true" << std::endl;
     }
 

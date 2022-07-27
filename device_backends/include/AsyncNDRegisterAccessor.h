@@ -1,9 +1,10 @@
 #pragma once
 
-#include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
-#include <ChimeraTK/cppext/future_queue.hpp>
+#include "NDRegisterAccessor.h"
+
 #include <ChimeraTK/cppext/finally.hpp>
+#include <ChimeraTK/cppext/future_queue.hpp>
 
 namespace ChimeraTK {
 
@@ -54,7 +55,7 @@ namespace ChimeraTK {
     }
 
     /** Activate the accessor and send the initial value.
-    */
+     */
     void activate(typename NDRegisterAccessor<UserType>::Buffer& initialValue) {
       //_hasException = false;
       _isActive = true;
@@ -117,7 +118,8 @@ namespace ChimeraTK {
       _writeAccessor->postWrite(type, versionNumber);
     }
 
-    // Don't ask my why in template code the [[maybe_unused]] must be here, but gives a warning when put to the implementation.
+    // Don't ask my why in template code the [[maybe_unused]] must be here, but gives a warning when put to the
+    // implementation.
     void doPostRead([[maybe_unused]] TransferType type, bool updateDataBuffer) override;
 
     bool isReadOnly() const override {

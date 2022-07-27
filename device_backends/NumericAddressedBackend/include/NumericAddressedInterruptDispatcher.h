@@ -1,20 +1,21 @@
 #pragma once
 
+#include "AsyncAccessorManager.h"
 #include "AsyncNDRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
-#include "AsyncAccessorManager.h"
 #include "TransferGroup.h"
+
 #include <mutex>
 
 namespace ChimeraTK {
   /** Typeless base class. The implementations will have a list of all asynchronous
-  *  accessors and one synchronous accessor.
-  */
+   *  accessors and one synchronous accessor.
+   */
   struct NumericAddressedAsyncVariable {
     virtual ~NumericAddressedAsyncVariable() = default;
 
     /** Fill the user buffer from the sync accessor, and replace the version number with the given version.
-    */
+     */
     virtual void fillSendBuffer(VersionNumber const& version) = 0;
   };
 
@@ -28,8 +29,8 @@ namespace ChimeraTK {
    */
   class NumericAddressedInterruptDispatcher : public AsyncAccessorManager {
    public:
-    /** Trigger all NumericAddressedAsyncVariables that are stored in this dispatcher. Creates a new VersionNumber and sends
-     *  all data with this version.
+    /** Trigger all NumericAddressedAsyncVariables that are stored in this dispatcher. Creates a new VersionNumber and
+     * sends all data with this version.
      */
     VersionNumber trigger();
 
@@ -39,7 +40,7 @@ namespace ChimeraTK {
     std::unique_ptr<AsyncVariable> createAsyncVariable(
         boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive);
 
-    //bool prepareActivate(VersionNumber const& v) override;
+    // bool prepareActivate(VersionNumber const& v) override;
     VersionNumber activate() override;
 
    protected:

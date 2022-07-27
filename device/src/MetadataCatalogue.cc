@@ -1,4 +1,5 @@
 #include "MetadataCatalogue.h"
+
 #include "Exception.h"
 
 namespace ChimeraTK {
@@ -16,27 +17,39 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  size_t MetadataCatalogue::getNumberOfMetadata() const { return metadata.size(); }
+  size_t MetadataCatalogue::getNumberOfMetadata() const {
+    return metadata.size();
+  }
 
   /*******************************************************************************************************************/
 
-  void MetadataCatalogue::addMetadata(const std::string& key, const std::string& value) { metadata[key] = value; }
+  void MetadataCatalogue::addMetadata(const std::string& key, const std::string& value) {
+    metadata[key] = value;
+  }
 
   /*******************************************************************************************************************/
 
-  MetadataCatalogue::iterator MetadataCatalogue::begin() { return metadata.begin(); }
+  MetadataCatalogue::iterator MetadataCatalogue::begin() {
+    return metadata.begin();
+  }
 
   /*******************************************************************************************************************/
 
-  MetadataCatalogue::const_iterator MetadataCatalogue::cbegin() const { return metadata.cbegin(); }
+  MetadataCatalogue::const_iterator MetadataCatalogue::cbegin() const {
+    return metadata.cbegin();
+  }
 
   /*******************************************************************************************************************/
 
-  MetadataCatalogue::iterator MetadataCatalogue::end() { return metadata.end(); }
+  MetadataCatalogue::iterator MetadataCatalogue::end() {
+    return metadata.end();
+  }
 
   /*******************************************************************************************************************/
 
-  MetadataCatalogue::const_iterator MetadataCatalogue::cend() const { return metadata.cend(); }
+  MetadataCatalogue::const_iterator MetadataCatalogue::cend() const {
+    return metadata.cend();
+  }
 
   /*******************************************************************************************************************/
 

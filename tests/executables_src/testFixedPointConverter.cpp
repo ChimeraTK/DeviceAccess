@@ -33,9 +33,9 @@ using namespace boost::unit_test_framework;
   checkToFixedPoint(converter, -5.75, -6);
 
 #include "Exception.h"
-#include <sstream>
-
 #include "FixedPointConverter.h"
+
+#include <sstream>
 namespace ChimeraTK {
   using namespace ChimeraTK;
 }
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(testInt32) {
   checkToCooked(converter, 0x55555555, std::string("1431655765"));
   checkToRaw(converter, std::string("1431655765"), 0x55555555);
 
-  //Boolean check
+  // Boolean check
   checkToCooked(converter, 0x55555555, Boolean(true));
 }
 

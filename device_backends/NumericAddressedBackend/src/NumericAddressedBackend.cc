@@ -6,13 +6,14 @@
  */
 
 #include "NumericAddressedBackend.h"
+
+#include "AsyncNDRegisterAccessor.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
+#include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
-#include "NumericAddressedBackendASCIIAccessor.h"
-#include "AsyncNDRegisterAccessor.h"
 #include "NumericAddressedInterruptDispatcher.h"
 
 namespace ChimeraTK {
@@ -29,7 +30,8 @@ namespace ChimeraTK {
 
       // create all the interrupt dispatchers that are described in the map file
       for(auto& interruptController : _registerMap.getListOfInterrupts()) {
-        // interruptController is a pair<int, set<int>>, containing the controller number and a set of associated interrupts
+        // interruptController is a pair<int, set<int>>, containing the controller number and a set of associated
+        // interrupts
         for(auto interruptNumber : interruptController.second) {
           _interruptDispatchersNonConst[{interruptController.first, interruptNumber}] =
               boost::make_shared<NumericAddressedInterruptDispatcher>();
@@ -100,7 +102,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   // Default range of valid BARs
-  bool NumericAddressedBackend::barIndexValid(uint64_t bar) { return bar <= 5 || bar == 13; }
+  bool NumericAddressedBackend::barIndexValid(uint64_t bar) {
+    return bar <= 5 || bar == 13;
+  }
 
   /********************************************************************************************************************/
 
@@ -121,7 +125,8 @@ namespace ChimeraTK {
       auto newSubscriber = interruptDispatcher->subscribe<UserType>(
           boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
           wordOffsetInRegister, flags);
-      // The new subscriber might already be activated. Hence the exception backend is already set by the interrupt dispatcher.
+      // The new subscriber might already be activated. Hence the exception backend is already set by the interrupt
+      // dispatcher.
       startInterruptHandlingThread(registerInfo.interruptCtrlNumber, registerInfo.interruptNumber);
       return newSubscriber;
     }
@@ -251,7 +256,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  MetadataCatalogue NumericAddressedBackend::getMetadataCatalogue() const { return _metadataCatalogue; }
+  MetadataCatalogue NumericAddressedBackend::getMetadataCatalogue() const {
+    return _metadataCatalogue;
+  }
 
   /********************************************************************************************************************/
 

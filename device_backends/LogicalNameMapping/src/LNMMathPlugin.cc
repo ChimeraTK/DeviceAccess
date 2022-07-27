@@ -1,14 +1,15 @@
+#include "BackendFactory.h"
+#include "LNMAccessorPlugin.h"
+#include "LNMBackendRegisterInfo.h"
+#include "NDRegisterAccessorDecorator.h"
+#include "ReadAnyGroup.h"
+#include "TransferElement.h"
+
+#include <ChimeraTK/cppext/finally.hpp>
+
 #include <boost/make_shared.hpp>
 
 #include <exprtk.hpp>
-#include <ChimeraTK/cppext/finally.hpp>
-
-#include "LNMBackendRegisterInfo.h"
-#include "LNMAccessorPlugin.h"
-#include "NDRegisterAccessorDecorator.h"
-#include "TransferElement.h"
-#include "ReadAnyGroup.h"
-#include "BackendFactory.h"
 
 namespace ChimeraTK { namespace LNMBackend {
 
@@ -353,7 +354,8 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
 
-    // The readLatest might throw an exception. In this case preWrite() is never delegated and we must not call the target's portWrite().
+    // The readLatest might throw an exception. In this case preWrite() is never delegated and we must not call the
+    // target's portWrite().
     _skipWriteDelegation = true;
 
     // update parameters
@@ -375,11 +377,11 @@ namespace ChimeraTK { namespace LNMBackend {
       _p->_mainValueWrittenAfterOpen = true; // We have stored the value for the parameters thread,
                                              // even if it's not written yet because not all parameters are there.
 
-      // Note: There is a potential race condition that the parameter thread has not processed a parameter yet but the poll
-      // registers here have already seen it and could in principle run. However, this would lead to inconsistent behaviour
-      // because sometimes writing all parameters and then the accessor itself exactly once after opening would lead to
-      // two writes, because eventually the thread will also write.
-      // So there are two reasons we must wait for the flag from the thread
+      // Note: There is a potential race condition that the parameter thread has not processed a parameter yet but the
+      // poll registers here have already seen it and could in principle run. However, this would lead to inconsistent
+      // behaviour because sometimes writing all parameters and then the accessor itself exactly once after opening
+      // would lead to two writes, because eventually the thread will also write. So there are two reasons we must wait
+      // for the flag from the thread
       // 1. Ensure a consistent number of write operations
       // 2. We cannot determine the correct version number from the poll-type accessors anyway because they always get
       //    a fresh version number. (We could use read_latest on push-type, but this would be less efficient,

@@ -1,6 +1,7 @@
 #pragma once
-#include <ChimeraTK/MapFileParser.h>
 #include <mtca4u/MapException.h>
+
+#include <ChimeraTK/MapFileParser.h>
 
 #warning You are using the deprecated namespace 'mtca4u'. Please change to namespace 'ChimeraTK'.
 

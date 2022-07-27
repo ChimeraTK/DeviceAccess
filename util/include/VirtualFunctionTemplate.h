@@ -23,14 +23,14 @@
 #  error* in standard Makefiles: CPPFLAGS += $(shell ChimeraTK-DeviceAccess-config --cppflags)
 #endif
 
+#include "SupportedUserTypes.h"
+
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/for_each.hpp>
 
 #include <tuple>
-
-#include "SupportedUserTypes.h"
 
 /** Define a virtual function template with the given function name and
  * signature in the base class. The signature must contain the typename template

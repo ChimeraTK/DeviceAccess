@@ -1,6 +1,8 @@
 
 #include "DummyProtocol1.h"
+
 #include "RebotDummyServer.h"
+
 #include <boost/asio.hpp>
 
 namespace ChimeraTK {
@@ -8,7 +10,9 @@ namespace ChimeraTK {
   DummyProtocol1::DummyProtocol1(RebotDummySession& parent)
   : DummyProtocol0(parent), _nextAddressInWords(0), _nWordsLeft(0) {}
 
-  void DummyProtocol1::multiWordRead(std::vector<uint32_t>& buffer) { _parent.readRegisterAndSendData(buffer); }
+  void DummyProtocol1::multiWordRead(std::vector<uint32_t>& buffer) {
+    _parent.readRegisterAndSendData(buffer);
+  }
 
   void DummyProtocol1::hello(std::vector<uint32_t>& /*buffer*/) {
     // currently there is no check that the buffer is correct

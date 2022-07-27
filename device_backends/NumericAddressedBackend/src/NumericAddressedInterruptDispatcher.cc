@@ -23,7 +23,8 @@ namespace ChimeraTK {
       }
     }
     catch(ChimeraTK::runtime_error&) {
-      // Nothing to do. Backend's set exception has already been called by the accessor in the transfer group that raised it.
+      // Nothing to do. Backend's set exception has already been called by the accessor in the transfer group that
+      // raised it.
     }
 
     return ver;
@@ -45,7 +46,8 @@ namespace ChimeraTK {
       _isActive = true;
     }
     catch(ChimeraTK::runtime_error&) {
-      // Nothing to do. Backend's set exception has already been called by the accessor in the transfer group that raised it.
+      // Nothing to do. Backend's set exception has already been called by the accessor in the transfer group that
+      // raised it.
     }
 
     return ver;

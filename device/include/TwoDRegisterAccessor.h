@@ -8,9 +8,9 @@
 #ifndef CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H
 #define CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H
 
-#include <boost/smart_ptr.hpp>
-
 #include "NDRegisterAccessorAbstractor.h"
+
+#include <boost/smart_ptr.hpp>
 
 namespace ChimeraTK {
 
@@ -74,9 +74,9 @@ namespace ChimeraTK {
     }
 
     /** DEPRECATED DO NOT USE
-         *
-         *  \deprecated
-         *  This function is deprecated. Use getNChannels() instead! */
+     *
+     *  \deprecated
+     *  This function is deprecated. Use getNChannels() instead! */
     [[deprecated("Use getNChannels() instead!")]] size_t getNumberOfChannels() const {
       return get()->getNumberOfChannels();
     }

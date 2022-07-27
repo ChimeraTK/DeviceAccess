@@ -6,11 +6,11 @@ using namespace boost::unit_test_framework;
 
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
-#include "TransferGroup.h"
-#include "ExceptionDummyBackend.h"
-#include "UnifiedBackendTest.h"
 #include "DummyRegisterAccessor.h"
+#include "ExceptionDummyBackend.h"
 #include "LogicalNameMappingBackend.h"
+#include "TransferGroup.h"
+#include "UnifiedBackendTest.h"
 
 using namespace ChimeraTK;
 
@@ -36,7 +36,8 @@ struct RegisterDescriptorBase {
                                            .disableSwitchWriteOnly()
                                            .disableTestWriteNeverLosesData()
                                            .enableTestRawTransfer();
-  // Note: I set enableTestRawTransfer to enabled here and disable it where necessary, so new registers will be tested by default.
+  // Note: I set enableTestRawTransfer to enabled here and disable it where necessary, so new registers will be tested
+  // by default.
 
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
@@ -149,8 +150,8 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
         v.push_back(derived->template convertRawToCooked<T, Traw>(e));
       }
       else {
-        v.push_back(static_cast<T>(
-            e)); // you can only use raw if user type and raw type are the same, so the static cast is a no-op
+        v.push_back(static_cast<T>(e)); // you can only use raw if user type and raw type are the same, so the static
+                                        // cast is a no-op
       }
     }
     return {v};
@@ -158,7 +159,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   void setRemoteValue() {
     auto v = generateValue<typename Derived::rawUserType>(true)[0];
-    { //scope for the buffer lock
+    { // scope for the buffer lock
       auto bufferLock = derived->acc.getBufferLock();
       for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
         derived->acc[i + derived->myOffset()] = v[i];
@@ -326,7 +327,8 @@ struct RegSingleWord : ScalarRegisterDescriptorBase<RegSingleWord> {
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
 };
 
-/// Test passing through scalar accessors - use another target. We use the one with the push accessors (target 3 in lmap file)
+/// Test passing through scalar accessors - use another target. We use the one with the push accessors (target 3 in lmap
+/// file)
 struct RegSingleWordB : ScalarRegisterDescriptorBase<RegSingleWordB> {
   std::string path() { return "/SingleWord"; }
 
@@ -543,7 +545,7 @@ struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
-  //Mutliply plugin does not support access mode raw
+  // Mutliply plugin does not support access mode raw
   static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
@@ -551,7 +553,8 @@ struct RegSingleWordScaled : ScalarRegisterDescriptorBase<Derived> {
 
 struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
   bool isWriteable() { return false; }
-  // turn off the catalogue check. It reports that the register is writeable, which is correct. Writing is just turned off for the test.
+  // turn off the catalogue check. It reports that the register is writeable, which is correct. Writing is just turned
+  // off for the test.
   static constexpr auto capabilities = RegSingleWordScaled<RegSingleWordScaled_R>::capabilities.disableTestCatalogue();
 
   template<typename T, typename Traw>
@@ -562,7 +565,8 @@ struct RegSingleWordScaled_R : RegSingleWordScaled<RegSingleWordScaled_R> {
 
 struct RegSingleWordScaled_W : RegSingleWordScaled<RegSingleWordScaled_W> {
   bool isReadable() { return false; }
-  // turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned off for the test.
+  // turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned
+  // off for the test.
   static constexpr auto capabilities = RegSingleWordScaled<RegSingleWordScaled_W>::capabilities.disableTestCatalogue();
 
   // the scale plugin applies the same factor in both directions, so we have to inverse it for write tests
@@ -598,7 +602,7 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
 
   typedef double minimumUserType;
   typedef minimumUserType rawUserType;
-  //Mutliply plugin does not support access mode raw
+  // Mutliply plugin does not support access mode raw
   static constexpr auto capabilities =
       ScalarRegisterDescriptorBase<RegSingleWordScaledTwice_push>::capabilities.disableTestRawTransfer();
   ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
@@ -609,8 +613,9 @@ struct RegSingleWordScaledTwice_push : ScalarRegisterDescriptorBase<RegSingleWor
 struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
   std::string path() { return "/FullArea_Scaled"; }
   bool isWriteable() { return false; }
-  //Mutliply plugin does not support access mode raw
-  // turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned off for the test.
+  // Mutliply plugin does not support access mode raw
+  //  turn off the catalogue check. It reports that the register is readable, which is correct. Reading is just turned
+  //  off for the test.
   static constexpr auto capabilities =
       OneDRegisterDescriptorBase<RegFullAreaScaled>::capabilities.disableTestRawTransfer().disableTestCatalogue();
 
@@ -624,7 +629,7 @@ struct RegFullAreaScaled : OneDRegisterDescriptorBase<RegFullAreaScaled> {
 
   typedef double minimumUserType;
   typedef int32_t rawUserType;
-  //Mutliply plugin does not support access mode raw. Capabilities already turned off above.
+  // Mutliply plugin does not support access mode raw. Capabilities already turned off above.
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC.AREA_DMAABLE"};
 };
@@ -661,7 +666,7 @@ struct RegWordFirmwareWithMath : ScalarRegisterDescriptorBase<Derived> {
 
   typedef double minimumUserType;
   typedef uint32_t rawUserType;
-  //Math plugin does not support access mode raw
+  // Math plugin does not support access mode raw
   static constexpr auto capabilities = ScalarRegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   DummyRegisterAccessor<rawUserType> acc{exceptionDummyPush.get(), "", "/BOARD.WORD_FIRMWARE"};
@@ -686,7 +691,7 @@ struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareW
   T convertRawToCooked(Traw value) {
     return value + 2.345;
   }
-  //Mutliply plugin does not support access mode raw
+  // Mutliply plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
 };
 
@@ -717,7 +722,7 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
 
   typedef double minimumUserType;
   typedef minimumUserType rawUserType;
-  //Mutliply plugin does not support access mode raw
+  // Mutliply plugin does not support access mode raw
   static constexpr auto capabilities =
       ScalarRegisterDescriptorBase<RegWordFirmwareAsParameterInMath>::capabilities.disableTestRawTransfer();
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
@@ -765,7 +770,8 @@ struct RegVariableAsPushParameterInMathBase : ScalarRegisterDescriptorBase<Deriv
   DummyRegisterAccessor<rawUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
-// template type UserType and RawType have to be double for the math plugin, so we make that explicit in this helper function
+// template type UserType and RawType have to be double for the math plugin, so we make that explicit in this helper
+// function
 struct RawToCookedProvider_Var1 {
   static double convertRawToCooked_impl(double value, boost::shared_ptr<LogicalNameMappingBackend>& lmapBackend) {
     auto variable2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
@@ -822,15 +828,15 @@ struct RegVariableAsPushParameterInMath_not_written
 
     // Hack:
     // getRemoteValue is used by the generateValue implementation in raw mode to access the device. We still need that.
-    // As the register with math pluin does not have a raw value, the unified test will always see the tricked version with
-    // the data it expects.
+    // As the register with math pluin does not have a raw value, the unified test will always see the tricked version
+    // with the data it expects.
     if(getRaw) {
       return remoteRawValue;
     }
 
     auto convertedValue = this->derived->template convertRawToCooked<double, double>(registerValueBeforeWrite);
-    assert(convertedValue !=
-        lastGeneratedValue); // test that the unified test does not accidentally pass because something in generateValue went wrong.
+    assert(convertedValue != lastGeneratedValue); // test that the unified test does not accidentally pass because
+                                                  // something in generateValue went wrong.
     if(remoteRawValue[0][0] == registerValueBeforeWrite) {
       // test successful. Return what is expected
       return {{lastGeneratedValue}};
@@ -1043,7 +1049,7 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
   typedef ChimeraTK::Boolean minimumUserType;
   typedef minimumUserType rawUserType;
 
-  //Mutliply plugin does not support access mode raw
+  // Mutliply plugin does not support access mode raw
   static constexpr auto capabilities =
       ScalarRegisterDescriptorBase<RegMonostableTrigger>::capabilities.disableTestRawTransfer();
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }

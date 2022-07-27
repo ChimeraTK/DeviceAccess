@@ -5,10 +5,9 @@ using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
 #include "Device.h"
-#include "RebotBackend.h"
-
 #include "DMapFileParser.h"
 #include "NumericAddress.h"
+#include "RebotBackend.h"
 #include "Utilities.h"
 
 namespace ChimeraTK {

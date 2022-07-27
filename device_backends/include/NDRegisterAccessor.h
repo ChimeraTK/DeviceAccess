@@ -8,13 +8,13 @@
 #ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_H
 #define CHIMERA_TK_N_D_REGISTER_ACCESSOR_H
 
-#include <boost/make_shared.hpp>
-#include <boost/container/static_vector.hpp>
-
 #include "Exception.h"
 #include "ForwardDeclarations.h"
 #include "TransferElement.h"
 #include "VirtualFunctionTemplate.h"
+
+#include <boost/container/static_vector.hpp>
+#include <boost/make_shared.hpp>
 
 namespace ChimeraTK {
 
@@ -127,7 +127,7 @@ namespace ChimeraTK {
      *  Implementation note: The buffer must be created with the right number of
      * elements in the constructor! */
     std::vector<std::vector<UserType>> buffer_2D;
-    //boost::container::vector<boost::container::vector<UserType>> buffer_2D;
+    // boost::container::vector<boost::container::vector<UserType>> buffer_2D;
 
     /// the compatibility layers need access to the buffer_2D
     friend class MultiplexedDataAccessor<UserType>;

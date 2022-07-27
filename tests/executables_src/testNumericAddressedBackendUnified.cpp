@@ -5,12 +5,12 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "Device.h"
-#include "TransferGroup.h"
 #include "BackendFactory.h"
+#include "Device.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
+#include "TransferGroup.h"
 #include "UnifiedBackendTest.h"
 
 namespace ChimeraTK {
@@ -118,9 +118,7 @@ struct Integers_signed32_async {
     if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
   }
 
-  void forceAsyncReadInconsistency() {
-    acc = generateValue<minimumUserType>()[0][0];
-  }
+  void forceAsyncReadInconsistency() { acc = generateValue<minimumUserType>()[0][0]; }
 
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummy->throwExceptionRead = enable;
@@ -259,7 +257,8 @@ struct ShortRaw_base {
 
   void setRemoteValue() {
     set(get() + derived->rawIncrement);
-    /* std::cout << "setRemoteValue " << derived->path() << " " << float(get()) << " -> " << getRemoteValue<float>()[0][0]
+    /* std::cout << "setRemoteValue " << derived->path() << " " << float(get()) << " -> " <<
+       getRemoteValue<float>()[0][0]
               << std::endl; */
   }
 
@@ -588,7 +587,7 @@ struct MuxedFloat {
   size_t nElementsPerChannel() { return 8; }
   size_t nRuntimeErrorCases() { return 1; }
   typedef float minimumUserType;
-  //typedef int32_t rawUserType;
+  // typedef int32_t rawUserType;
 
   static constexpr auto capabilities = TestCapabilities<>()
                                            .disableForceDataLossWrite()
@@ -655,7 +654,8 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   ChimeraTK::UnifiedBackendTest<>()
       .addRegister<Integers_signed32>()
       .addRegister<Integers_signed32_async>()
-      /* .addRegister<Integers_signed32_async_rw>()  // disabled for now as .DUMMY_WRITABLE no longer supports wait_for_new_data */
+      /* .addRegister<Integers_signed32_async_rw>()  // disabled for now as .DUMMY_WRITABLE no longer supports
+         wait_for_new_data */
       .addRegister<ShortRaw_signed16>()
       .addRegister<ShortRaw_unsigned16>()
       .addRegister<ShortRaw_fixedPoint16_8u>()

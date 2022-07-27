@@ -8,8 +8,8 @@
 #ifndef CHIMERA_TK_TRANSFER_ELEMENT_ID_H
 #define CHIMERA_TK_TRANSFER_ELEMENT_ID_H
 
-#include <ostream>
 #include <atomic>
+#include <ostream>
 
 namespace ChimeraTK {
 

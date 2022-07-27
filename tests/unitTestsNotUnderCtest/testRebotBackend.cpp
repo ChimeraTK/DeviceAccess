@@ -3,12 +3,11 @@
  ******************************************************************************/
 
 #include "BackendFactory.h"
-#include "Device.h"
-#include "RebotBackend.h"
 #include "boost_dynamic_init_test.h"
-
+#include "Device.h"
 #include "DMapFileParser.h"
 #include "NumericAddress.h"
+#include "RebotBackend.h"
 #include "Utilities.h"
 
 namespace ChimeraTK {

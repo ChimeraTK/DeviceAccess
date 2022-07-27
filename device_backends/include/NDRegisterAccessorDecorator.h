@@ -8,11 +8,11 @@
 #ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
 #define CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
 
-#include <boost/make_shared.hpp>
+#include "NDRegisterAccessor.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
-#include "NDRegisterAccessor.h"
+#include <boost/make_shared.hpp>
 
 namespace ChimeraTK {
 

@@ -5,14 +5,14 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "Device.h"
-#include "TransferGroup.h"
+#include "accessPrivateData.h"
 #include "BackendFactory.h"
+#include "Device.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
+#include "TransferGroup.h"
 #include "UnifiedBackendTest.h"
-#include "accessPrivateData.h"
 
 namespace ChimeraTK {
   using namespace ChimeraTK;
@@ -271,13 +271,13 @@ BOOST_AUTO_TEST_CASE(testRawWithTransferGroup) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testConverterTypes) {
-  //After the introduction of the IEEE754 floating point converter we have to test
-  //that all possible converters (two at the moment) are created when they should,
-  //and that raw and coocked accessors are working for all of them.
+  // After the introduction of the IEEE754 floating point converter we have to test
+  // that all possible converters (two at the moment) are created when they should,
+  // and that raw and coocked accessors are working for all of them.
 
-  //As we cannot rely on any NumericAddressedRegisterAccessor at the moment we use the
-  //DummyRegisterRawAccessor to monitor what is going on in the target memory space on
-  //the device
+  // As we cannot rely on any NumericAddressedRegisterAccessor at the moment we use the
+  // DummyRegisterRawAccessor to monitor what is going on in the target memory space on
+  // the device
   auto deviceDescriptor = "(dummy?map=goodMapFile.map)";
 
   auto dummyBackend =
@@ -339,7 +339,8 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   }
 
   // IEEE754 converter, raw and coocked accessors
-  // FLOAT_TEST.ARRAY is IEEE754. We use the 1 D version in constrast to FixedPoint where we use scalar (just because we can)
+  // FLOAT_TEST.ARRAY is IEEE754. We use the 1 D version in constrast to FixedPoint where we use scalar (just because we
+  // can)
   auto floatTestDummy = dummyBackend->getRawAccessor("FLOAT_TEST", "ARRAY");
 
   float testValue = 1.1;

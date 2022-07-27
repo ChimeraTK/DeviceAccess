@@ -1,16 +1,16 @@
 #define BOOST_TEST_MODULE testDummyBackend
 
-#include <boost/bind/bind.hpp>
-#include <boost/function.hpp>
-#include <boost/lambda/lambda.hpp>
-
-#include "Device.h"
 #include "BackendFactory.h"
+#include "Device.h"
 #include "DummyBackend.h"
 #include "Exception.h"
 #include "parserUtilities.h"
 
-//FIXME Remove
+#include <boost/bind/bind.hpp>
+#include <boost/function.hpp>
+#include <boost/lambda/lambda.hpp>
+
+// FIXME Remove
 #include <regex>
 
 #define BOOST_NO_EXCEPTIONS
@@ -36,11 +36,11 @@ using namespace ChimeraTK;
 
 static BackendFactory& FactoryInstance = BackendFactory::getInstance();
 
-/** 
+/**
  *  The TestableDummybackend is derived from
  *  DummyBackend to get access to the protected members.
  *  This is done by declaring DummybackendTest as a friend.
- *  
+ *
  *  FIXME get away from testing implementation details!
  */
 class TestableDummyBackend : public DummyBackend {
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnlyRegister) {
   BOOST_CHECK(dummyCatalogue.hasRegister(READ_ONLY_REGISTER_STRING + DUMMY_WRITEABLE_SUFFIX));
   auto info = dummyCatalogue.getRegister(READ_ONLY_REGISTER_STRING + DUMMY_WRITEABLE_SUFFIX);
   // FIXME: This test is currently failing.
-  //BOOST_CHECK_EQUAL(info.getRegisterName(), READ_ONLY_REGISTER_STRING + DUMMY_WRITEABLE_SUFFIX);
+  // BOOST_CHECK_EQUAL(info.getRegisterName(), READ_ONLY_REGISTER_STRING + DUMMY_WRITEABLE_SUFFIX);
   BOOST_CHECK(info.isWriteable());
 
   // Read-only register and the DUMMY_WRITEABLE companion
@@ -555,7 +555,7 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
 
   // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL
-  //BOOST_CHECK(dummyBackend->_registerMapping);
+  // BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());
   // it must always be possible to re-open a backend
   dummyBackend->open();

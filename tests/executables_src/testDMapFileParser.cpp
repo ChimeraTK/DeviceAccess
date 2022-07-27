@@ -1,12 +1,11 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
 #include "boost_dynamic_init_test.h"
-
 #include "DMapFileParser.h"
 #include "Exception.h"
-#include "Utilities.h"
 #include "helperFunctions.h"
 #include "parserUtilities.h"
+#include "Utilities.h"
 
 namespace ChimeraTK {
   using namespace ChimeraTK;

@@ -5,13 +5,14 @@
  *      Author: Martin Hierholzer
  */
 
-#include <libxml++/libxml++.h>
-#include <stdexcept>
+#include "LogicalNameMapParser.h"
 
 #include "DeviceBackend.h"
 #include "Exception.h"
 #include "LNMBackendRegisterInfo.h"
-#include "LogicalNameMapParser.h"
+#include <libxml++/libxml++.h>
+
+#include <stdexcept>
 
 namespace ChimeraTK {
 
@@ -47,9 +48,9 @@ namespace ChimeraTK {
             parsingError(child, "Reference to constant '" + regName + "' could not be resolved.");
           }
           auto reg = catalogue.getBackendRegister(regName);
-          //auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
-          //assert(reg_casted != nullptr); // this is our own catalogue
-          // fetch the value of the target constant
+          // auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
+          // assert(reg_casted != nullptr); // this is our own catalogue
+          //  fetch the value of the target constant
           if(reg.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
             if(reg.plugins.size() > 0) {
               parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");

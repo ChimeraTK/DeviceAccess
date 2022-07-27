@@ -11,7 +11,8 @@ namespace ChimeraTK {
    *
    * Pseudo-accessor for the hidden DUMMY_INTERRUPT_X_Y register that can be used to trigger
    * the interrupt Y on interrupt controller X. This will do nothing but call DummyBackendBase::triggerInterrupt()
-   * when written to. For backwards compatibility it can also be read from, but there is only a constant value available.
+   * when written to. For backwards compatibility it can also be read from, but there is only a constant value
+   * available.
    */
   template<typename UserType>
   class DummyInterruptTriggerAccessor : public NDRegisterAccessor<UserType> {

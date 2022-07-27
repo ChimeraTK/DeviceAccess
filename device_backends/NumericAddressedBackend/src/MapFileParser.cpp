@@ -1,12 +1,14 @@
+#include "MapFileParser.h"
+
+#include "Exception.h"
+#include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the MULTIPLEXED_SEQUENCE_PREFIX constant
+
+#include <boost/algorithm/string.hpp>
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <boost/algorithm/string.hpp>
-
-#include "Exception.h"
-#include "MapFileParser.h"
-#include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the MULTIPLEXED_SEQUENCE_PREFIX constant
 
 namespace ChimeraTK {
 
@@ -182,7 +184,7 @@ namespace ChimeraTK {
     }
     line.erase(line.begin(), line.begin() + metadata_name.length()); // remove name from the string
     line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }),
-        line.end()); //remove whitespaces from rest of the string (before and after the value)
+        line.end()); // remove whitespaces from rest of the string (before and after the value)
     metadata_value = line;
     metadataCatalogue.addMetadata(metadata_name, metadata_value);
     is.clear();
@@ -286,8 +288,7 @@ namespace ChimeraTK {
     auto [module, name] = splitStringAtLastDot(pathName);
     return !boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX) &&
         !boost::algorithm::starts_with(name, SEQUENCE_PREFIX) &&
-        !boost::algorithm::starts_with(name, MEM_MULTIPLEXED_PREFIX) &&
-        !is2DNewStyle(module);
+        !boost::algorithm::starts_with(name, MEM_MULTIPLEXED_PREFIX) && !is2DNewStyle(module);
   }
 
   /********************************************************************************************************************/
@@ -350,7 +351,8 @@ namespace ChimeraTK {
     make2DRegisterInfos(pl, channelLines, MEM_MULTIPLEXED_PREFIX);
   }
 
-  void MapFileParser::make2DRegisterInfos(const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix) {
+  void MapFileParser::make2DRegisterInfos(
+      const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix) {
     if(channelLines.empty()) {
       throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
     }
@@ -362,7 +364,7 @@ namespace ChimeraTK {
       channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{uint32_t(channel.address - pl.address) * 8,
           channel.type, channel.width, channel.nFractionalBits, channel.signedFlag});
       bytesPerBlock += channel.nBytes;
-      if (channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4) {
+      if(channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4) {
         throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
       }
     }

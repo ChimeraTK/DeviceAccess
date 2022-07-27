@@ -1,6 +1,15 @@
 #ifndef CHIMERA_TK_FIXED_POINT_CONVERTER_H
 #define CHIMERA_TK_FIXED_POINT_CONVERTER_H
 
+#include "Exception.h"
+#include "SupportedUserTypes.h"
+#include <type_traits>
+
+#include <boost/fusion/algorithm.hpp>
+#include <boost/fusion/container.hpp>
+#include <boost/fusion/sequence.hpp>
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -9,15 +18,6 @@
 #include <stdexcept>
 #include <stdint.h>
 #include <string>
-#include <type_traits>
-
-#include <boost/fusion/algorithm.hpp>
-#include <boost/fusion/container.hpp>
-#include <boost/fusion/sequence.hpp>
-#include <boost/numeric/conversion/cast.hpp>
-
-#include "Exception.h"
-#include "SupportedUserTypes.h"
 
 namespace ChimeraTK {
 

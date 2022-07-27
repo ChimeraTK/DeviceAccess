@@ -3,6 +3,7 @@
 
 #include "DeviceInfoMap.h"
 #include "Exception.h"
+
 #include <stdint.h>
 #include <string>
 

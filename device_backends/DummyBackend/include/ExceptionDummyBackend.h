@@ -85,7 +85,8 @@ namespace ChimeraTK {
     bool isFunctional() const override {
       // thereHaveBeenExceptions is different from _hasActiceException
       // * thereHaveBeenExceptions is set when this class originally raised an exception
-      // * _hasActiveException is raised externally via setException. This can happen if a transfer element from another backend,
+      // * _hasActiveException is raised externally via setException. This can happen if a transfer element from another
+      // backend,
       //   which is in the same logical name mapping backend than this class, has seen an exception.
       return (_opened && !throwExceptionOpen && !thereHaveBeenExceptions && !_hasActiveException);
     }
@@ -130,7 +131,8 @@ namespace ChimeraTK {
       }
 
       // create entry in _writeOrderMap and _writeCounterMap if necessary
-      if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE" && (pathComponents[0].find("DUMMY_INTERRUPT_") != 0)) {
+      if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE" &&
+          (pathComponents[0].find("DUMMY_INTERRUPT_") != 0)) {
         auto info = getRegisterInfo(path);
         auto adrPair = std::make_pair(info.bar, info.address);
         if(_writeOrderMap.find(adrPair) == _writeOrderMap.end()) {

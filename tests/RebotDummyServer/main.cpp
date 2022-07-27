@@ -1,19 +1,18 @@
 
+#include "argumentParser.h"
+#include "RebotDummyServer.h"
+
 #include <iostream>
 
-#include "RebotDummyServer.h"
-#include "argumentParser.h"
-
 int main(int, char** argv) {
-
   unsigned int portNumber = getPortNumber(argv);
   std::string mapFileLocation = getMapFileLocation(argv);
   unsigned int protocolVersion = getProtocolVersion(argv);
 
   ChimeraTK::RebotDummyServer testServer(portNumber, mapFileLocation, protocolVersion);
   boost::asio::signal_set signals(testServer.service(), SIGINT, SIGTERM);
-  signals.async_wait([&testServer](const boost::system::error_code& error, int /* signal */){
-    if (not error) {
+  signals.async_wait([&testServer](const boost::system::error_code& error, int /* signal */) {
+    if(not error) {
       testServer.stop();
     }
   });

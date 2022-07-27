@@ -1,12 +1,13 @@
+#include "DMapFileParser.h"
+
+#include "Exception.h"
+#include "parserUtilities.h"
+#include "Utilities.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
-#include "DMapFileParser.h"
-#include "Exception.h"
-#include "Utilities.h"
-#include "parserUtilities.h"
 
 namespace utilities = ChimeraTK::parserUtilities;
 

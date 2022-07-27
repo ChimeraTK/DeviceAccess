@@ -1,19 +1,19 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#include "BackendFactory.h"
 #include "boost_dynamic_init_test.h"
+#include "BufferingRegisterAccessor.h"
+#include "Device.h"
 
-#include <algorithm>
 #include <boost/bind/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
-#include <math.h>
 
-#include "BackendFactory.h"
-#include "BufferingRegisterAccessor.h"
-#include "Device.h"
+#include <algorithm>
+#include <math.h>
 
 namespace ChimeraTK {
   using namespace ChimeraTK;
@@ -130,8 +130,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
   }
   ic = 0;
   for(BufferingRegisterAccessor<int>::const_reverse_iterator it = const_intRegister.rbegin();
-      it != const_intRegister.rend();
-      ++it) {
+      it != const_intRegister.rend(); ++it) {
     BOOST_CHECK(*it == 1234 * (3 - ic));
     ic++;
   }
