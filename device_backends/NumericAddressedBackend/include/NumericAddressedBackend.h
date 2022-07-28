@@ -41,16 +41,20 @@ namespace ChimeraTK {
      * Deprecated read function using 32bit address for backwards compatibility. Old backends which have not yet
      * been updated to the new 64 bit address interface will implement this. Please implement the read() function
      * with the 64 bit address signature instead!
+     *
+     * Note: deprecated with warning since 2022-07-28 remove after end of 2023.
      */
-    virtual void read([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address, [[maybe_unused]] int32_t* data,
-        [[maybe_unused]] size_t sizeInBytes);
+    [[deprecated]] virtual void read([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
+        [[maybe_unused]] int32_t* data, [[maybe_unused]] size_t sizeInBytes);
 
     /**
      * Deprecated write function using 32bit address for backwards compatibility. Old backends which have not yet
      * been updated to the new 64 bit address interface will implement this. Please implement the write() function
      * with the 64 bit address signature instead!
+     *
+     * Note: deprecated with warning since 2022-07-28, remove after end of 2023.
      */
-    virtual void write([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
+    [[deprecated]] virtual void write([[maybe_unused]] uint8_t bar, [[maybe_unused]] uint32_t address,
         [[maybe_unused]] int32_t const* data, [[maybe_unused]] size_t sizeInBytes);
 
     /**

@@ -6,7 +6,6 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "BufferingRegisterAccessor.h"
 #include "Device.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
@@ -391,7 +390,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
 
   // reading via iterator
   index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+  for(auto it = acc.begin(); it != acc.end(); ++it) {
     BOOST_CHECK(*it == -876543210 + 42 * index);
     ++index;
   }
@@ -399,8 +398,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
 
   // reading via const_iterator
   index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end();
-      ++it) {
+  for(auto it = acc_const.begin(); it != acc_const.end(); ++it) {
     BOOST_CHECK(*it == -876543210 + 42 * index);
     ++index;
   }
@@ -408,7 +406,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
 
   // reading via reverse_iterator
   index = 1024;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+  for(auto it = acc.rbegin(); it != acc.rend(); ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }
@@ -416,8 +414,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
 
   // reading via const_reverse_iterator
   index = 1024;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin();
-      it != acc_const.rend(); ++it) {
+  for(auto it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }
@@ -464,7 +461,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
 
   // reading via iterator
   index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+  for(auto it = acc.begin(); it != acc.end(); ++it) {
     BOOST_CHECK(*it == -876543210 + 42 * index);
     ++index;
   }
@@ -472,8 +469,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
 
   // reading via const_iterator
   index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end();
-      ++it) {
+  for(auto it = acc_const.begin(); it != acc_const.end(); ++it) {
     BOOST_CHECK(*it == -876543210 + 42 * index);
     ++index;
   }
@@ -481,7 +477,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
 
   // reading via reverse_iterator
   index = 20;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+  for(auto it = acc.rbegin(); it != acc.rend(); ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }
@@ -489,8 +485,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
 
   // reading via const_reverse_iterator
   index = 20;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin();
-      it != acc_const.rend(); ++it) {
+  for(auto it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }
@@ -561,7 +556,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForChannel) {
 
   // read via iterators
   unsigned int idx = 0;
-  for(BufferingRegisterAccessor<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
+  for(auto it = acc3.begin(); it != acc3.end(); ++it) {
     BOOST_CHECK(*it == (signed)(3000 + idx));
     ++idx;
   }
@@ -570,7 +565,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForChannel) {
   // read via const iterators
   const ChimeraTK::OneDRegisterAccessor<int32_t>& acc3_const = acc3;
   idx = 0;
-  for(BufferingRegisterAccessor<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
+  for(auto it = acc3_const.begin(); it != acc3_const.end(); ++it) {
     BOOST_CHECK(*it == (signed)(3000 + idx));
     ++idx;
   }
@@ -578,7 +573,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForChannel) {
 
   // read via reverse iterators
   idx = nSamples;
-  for(BufferingRegisterAccessor<int>::reverse_iterator it = acc3.rbegin(); it != acc3.rend(); ++it) {
+  for(auto it = acc3.rbegin(); it != acc3.rend(); ++it) {
     --idx;
     BOOST_CHECK(*it == (signed)(3000 + idx));
   }
@@ -586,7 +581,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForChannel) {
 
   // read via reverse const iterators
   idx = nSamples;
-  for(BufferingRegisterAccessor<int>::const_reverse_iterator it = acc3_const.rbegin(); it != acc3_const.rend(); ++it) {
+  for(auto it = acc3_const.rbegin(); it != acc3_const.rend(); ++it) {
     --idx;
     BOOST_CHECK(*it == (signed)(3000 + idx));
   }

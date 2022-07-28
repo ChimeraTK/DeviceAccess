@@ -4,7 +4,6 @@
 
 #include "AccessMode.h"
 #include "BackendFactory.h"
-#include "BufferingRegisterAccessor.h"
 #include "DeviceBackend.h"
 #include "Exception.h"
 #include "ForwardDeclarations.h"
@@ -16,9 +15,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
-
-// Note: for backwards compatibility there is RegisterAccessor.h and
-// MultiplexedDataAccessor.h included at the end of this file.
 
 namespace ChimeraTK {
 
@@ -261,245 +257,6 @@ namespace ChimeraTK {
     void write(const RegisterPath& registerPathName, const std::vector<UserType>& vector,
         size_t wordOffsetInRegister = 0, const AccessModeFlags& flags = AccessModeFlags({}));
 
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  <b>Inefficient convenience function</b> to read a multi-word register
-     * without obtaining an accessor. This version accepts a boolean flag to
-     * enable raw access instead of the AccessModeFlags list. It is deprecated and
-     * should not be used in new code. Use the new version with the
-     * AccessModeFlags instead.
-     *
-     *  @todo Add printed runtime warning. Deprecated since version 0.12 */
-    template<typename UserType>
-    [[deprecated("Use new signature instead!")]] std::vector<UserType> read(const RegisterPath& registerPathName,
-        size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  <b>Inefficient convenience function</b> to write a single-word register
-     * without obtaining an accessor. This version accepts a boolean flag to
-     * enable raw access instead of the AccessModeFlags list. It is deprecated and
-     * should not be used in new code. Use the new version with the
-     * AccessModeFlags instead.
-     *
-     *  @todo Add printed runtime warning. Deprecated since version 0.12 */
-    template<typename UserType>
-    [[deprecated("Use new signature instead!")]] void write(
-        const RegisterPath& registerPathName, UserType value, bool enforceRawAccess);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  <b>Inefficient convenience function</b> to write a multi-word register
-     * without obtaining an accessor. This version accepts a boolean flag to
-     * enable raw access instead of the AccessModeFlags list. It is deprecated and
-     * should not be used in new code. Use the new version with the
-     * AccessModeFlags instead.
-     *
-     *  @todo Add printed runtime warning. Deprecated since version 0.12 */
-    template<typename UserType>
-    [[deprecated("Use new signature instead!")]] void write(const RegisterPath& registerPathName,
-        std::vector<UserType>& vector, size_t wordOffsetInRegister, bool enforceRawAccess);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  Get a ScalarRegisterObject object for the given register.
-     *  This version accepts a boolean flag to enable raw access instead of the
-     * AccessModeFlags list. It is deprecated and should not be used in new code.
-     * Use the new version with the AccessModeFlags instead.
-     *
-     *  @todo Add printed runtime warning. Deprecated since version 0.12 */
-
-    template<typename UserType>
-    [[deprecated("Use new signature instead!")]] ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(
-        const RegisterPath& registerPathName, size_t wordOffsetInRegister, bool enforceRawAccess) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  Get a OneDRegisterAccessor object for the given register.
-     *  This version accepts a boolean flag to enable raw access instead of the
-     * AccessModeFlags list. It is deprecated and should not be used in new code.
-     * Use the new version with the AccessModeFlags instead.
-     *
-     *  @todo Add printed runtime warning. Deprecated since version 0.12 */
-    template<typename UserType>
-    [[deprecated("Use new signature instead!")]] OneDRegisterAccessor<UserType> getOneDRegisterAccessor(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister,
-        bool enforceRawAccess) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    template<typename UserType>
-    [[deprecated("Use getScalarRegisterAccessor or getOneDRegisterAccessor "
-                 "instead!")]] BufferingRegisterAccessor<UserType>
-        getBufferingRegisterAccessor(const RegisterPath& registerPathName, size_t numberOfWords = 0,
-            size_t wordOffsetInRegister = 0, bool enforceRawAccess = false) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use read() instead!")]] virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.8
-     */
-    [[deprecated("Use read() instead!")]] virtual void readArea(
-        uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void writeArea(
-        uint32_t regOffset, int32_t const* data, size_t size, uint8_t bar);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void readReg(
-        const std::string& regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use read() instead!")]] virtual void readReg(const std::string& regName, const std::string& regModule,
-        int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void writeReg(
-        const std::string& regName, int32_t const* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use Device::write() instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void writeReg(const std::string& regName,
-        const std::string& regModule, int32_t const* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Open by alias name instead.
-     *  @todo Change warning into runtime error after release of version 0.9
-     */
-    [[deprecated("Open by alias or device identifier string instead!")]] virtual void open(
-        boost::shared_ptr<DeviceBackend> deviceBackend);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use
-     * Device::getBufferingRegisterAccessor(RegisterPath(module)/registerName)
-     *  instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    template<typename UserType>
-    [[deprecated("Use getOneDRegisterAccessor() "
-                 "instead!")]] BufferingRegisterAccessor<UserType>
-        getBufferingRegisterAccessor(const std::string& module, const std::string& registerName) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use
-     * Device::getTwoDRegisterAccessor(RegisterPath(module)/registerName) instead.
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    template<typename UserType>
-    [[deprecated("Use new signature instead!")]] TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
-        const std::string& module, const std::string& registerName) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use readArea() instead!
-     *  @todo Change warning into runtime error after release of version 0.9
-     */
-    [[deprecated("Use read() instead!")]] virtual void readDMA(
-        uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use writeArea() instead!
-     *  @todo Change warning into runtime error after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void writeDMA(
-        uint32_t regOffset, int32_t const* data, size_t size, uint8_t bar);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use readArea() instead!
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use read() instead!")]] virtual void readDMA(
-        const std::string& regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use readArea() instead!
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use read() instead!")]] virtual void readDMA(const std::string& regName, const std::string& regModule,
-        int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use writeArea() instead!
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void writeDMA(
-        const std::string& regName, int32_t const* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-
-    /** \brief <b>DEPRECATED</b>
-     *
-     *  \deprecated
-     *  This function is deprecated. Use writeArea() instead!
-     *  @todo Add printed runtime warning after release of version 0.9
-     */
-    [[deprecated("Use write() instead!")]] virtual void writeDMA(const std::string& regName,
-        const std::string& regModule, int32_t const* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-
    protected:
     boost::shared_ptr<DeviceBackend> _deviceBackendPointer;
 
@@ -519,40 +276,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(
-      const RegisterPath& registerPathName, size_t wordOffsetInRegister, bool enforceRawAccess) const {
-    if(!enforceRawAccess) {
-      return getScalarRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister);
-    }
-    else {
-      return getScalarRegisterAccessor<UserType>(
-          registerPathName, wordOffsetInRegister, AccessModeFlags({AccessMode::raw}));
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
   OneDRegisterAccessor<UserType> Device::getOneDRegisterAccessor(const RegisterPath& registerPathName,
       size_t numberOfWords, size_t wordOffsetInRegister, const AccessModeFlags& flags) const {
     checkPointersAreNotNull();
     return OneDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
         registerPathName, numberOfWords, wordOffsetInRegister, flags));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  OneDRegisterAccessor<UserType> Device::getOneDRegisterAccessor(const RegisterPath& registerPathName,
-      size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
-    if(!enforceRawAccess) {
-      return OneDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
-          registerPathName, numberOfWords, wordOffsetInRegister, {}));
-    }
-    else {
-      return OneDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
-          registerPathName, numberOfWords, wordOffsetInRegister, {AccessMode::raw}));
-    }
   }
 
   /********************************************************************************************************************/
@@ -611,63 +339,4 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
-  std::vector<UserType> Device::read(const RegisterPath& registerPathName, size_t numberOfWords,
-      size_t wordOffsetInRegister, bool enforceRawAccess) const {
-    return read<UserType>(registerPathName, numberOfWords, wordOffsetInRegister,
-        (enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({})));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  void Device::write(const RegisterPath& registerPathName, UserType value, bool enforceRawAccess) {
-    write(registerPathName, value, (enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({})));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  void Device::write(const RegisterPath& registerPathName, std::vector<UserType>& vector, size_t wordOffsetInRegister,
-      bool enforceRawAccess) {
-    write(registerPathName, vector, wordOffsetInRegister,
-        (enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({})));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(const RegisterPath& registerPathName,
-      size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
-    checkPointersAreNotNull();
-    return BufferingRegisterAccessor<UserType>(
-        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister,
-            (enforceRawAccess ? AccessModeFlags{AccessMode::raw} : AccessModeFlags{})));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
-      const std::string& module, const std::string& registerName) const {
-    return getBufferingRegisterAccessor<UserType>(RegisterPath(module) / registerName);
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
-      const std::string& module, const std::string& registerName) const {
-    checkPointersAreNotNull();
-    return TwoDRegisterAccessor<UserType>(
-        _deviceBackendPointer->getRegisterAccessor<UserType>(RegisterPath(module) / registerName, 0, 0, false));
-  }
-
 } // namespace ChimeraTK
-
-//
-// Include the register accessor header for backwards compatibility, as it used
-// to be part of the Device class. This include must be at the end of this file
-// as it uses the Device class.
-//
-#include "RegisterAccessor.h"

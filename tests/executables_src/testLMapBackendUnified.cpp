@@ -6,7 +6,6 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "BufferingRegisterAccessor.h"
 #include "Device.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"

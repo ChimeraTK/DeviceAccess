@@ -19,11 +19,6 @@ namespace ChimeraTK {
    * longer be used. Instead, read() and write() of the TransferGroup should be
    * called.
    *
-   *  Grouping accessors can only work with accessors that internally buffer the
-   * transferred data. Therefore the deprecated RegisterAccessor is not supported,
-   * as its read() and write() functions always directly read from/write to the
-   * hardware.
-   *
    *  Important note: If accessors pointing to the same values are added to the
    * TransferGroup, the behaviour will be when writing. Depending on the backend
    * and on the exact scenario, the accessors might appear like a copy sharing the

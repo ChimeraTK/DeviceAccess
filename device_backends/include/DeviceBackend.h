@@ -34,7 +34,7 @@ namespace ChimeraTK {
     /** Return whether a device has been opened or not. */
     virtual bool isOpen() = 0;
 
-    /** Deprecated. Do not use. */
+    /** Deprecated since 2022-03-03. Do not use. */
     [[deprecated]] virtual bool isConnected() = 0;
 
     /** Return wether a device is working as intended, usually this means it is opened

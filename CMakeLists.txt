@@ -128,12 +128,3 @@ endforeach( toolScripts )
 
 # Install the example source code.
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc)
-
-# Install the compatibility header files
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/mtca4u_compatibility_headers/ DESTINATION include/mtca4u)
-
-# Compatibility with the old project name mtca4u-deviceaccess
-configure_file(${PROJECT_SOURCE_DIR}/cmake/Findmtca4u-deviceaccess.cmake.in "${PROJECT_BINARY_DIR}/Findmtca4u-deviceaccess.cmake" @ONLY)
-install(FILES "${PROJECT_BINARY_DIR}/Findmtca4u-deviceaccess.cmake"
-        DESTINATION share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules
-        COMPONENT dev)

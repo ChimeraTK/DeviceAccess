@@ -3,7 +3,6 @@
 
 #include "NumericAddressedBackend.h"
 
-#include "AsyncNDRegisterAccessor.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
@@ -86,13 +85,19 @@ namespace ChimeraTK {
 
   /* Call 32-bit address implementation by default, for backends that don't implement 64-bit */
   void NumericAddressedBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     read(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
+#pragma GCC diagnostic pop
   }
 
   /********************************************************************************************************************/
 
   void NumericAddressedBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     write(static_cast<uint8_t>(bar), static_cast<uint32_t>(address), data, sizeInBytes);
+#pragma GCC diagnostic pop
   }
 
   /********************************************************************************************************************/
