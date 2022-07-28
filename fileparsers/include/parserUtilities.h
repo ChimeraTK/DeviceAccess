@@ -1,5 +1,6 @@
-#ifndef CHIMERA_TK_PARSER_UTILITIES_H
-#define CHIMERA_TK_PARSER_UTILITIES_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <string>
 
@@ -73,5 +74,3 @@ namespace ChimeraTK {
     std::string concatenatePaths(const std::string& path1, const std::string& path2);
   } // namespace parserUtilities
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_PARSER_UTILITIES_H */

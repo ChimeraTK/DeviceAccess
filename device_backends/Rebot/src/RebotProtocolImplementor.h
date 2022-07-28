@@ -1,5 +1,6 @@
-#ifndef CHIMERATK_REBOT_PROTOCOL_IMPLEMENTOR
-#define CHIMERATK_REBOT_PROTOCOL_IMPLEMENTOR
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -18,5 +19,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif // CHIMERATK_REBOT_PROTOCOL_IMPLEMENTOR

@@ -1,12 +1,6 @@
-/*
- * Utilities.h
- *
- *  Created on: Aug 3, 2015
- *      Author: nshehzad
- */
-
-#ifndef CHIMERA_TK_UTILITES_H
-#define CHIMERA_TK_UTILITES_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "DeviceInfoMap.h"
 #include "Exception.h"
@@ -99,5 +93,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERA_TK_UTILITES_H */

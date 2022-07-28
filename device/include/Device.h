@@ -1,9 +1,6 @@
-/*
- * Device.h
- */
-
-#ifndef CHIMERA_TK_DEVICE_H
-#  define CHIMERA_TK_DEVICE_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "AccessMode.h"
 #include "BackendFactory.h"
@@ -667,8 +664,6 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_DEVICE_H */
 
 //
 // Include the register accessor header for backwards compatibility, as it used

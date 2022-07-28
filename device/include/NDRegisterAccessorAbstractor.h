@@ -1,12 +1,6 @@
-/*
- * NDRegisterAccessorAbstractor.h
- *
- *  Created on: Mar 23, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
-#define CHIMERA_TK_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "CopyRegisterDecorator.h"
 #include "ForwardDeclarations.h"
@@ -63,5 +57,3 @@ namespace ChimeraTK {
   // This could avoid optimisation of the inline code.
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_BRIDGE_H */

@@ -1,5 +1,6 @@
-#ifndef CHIMERA_TK_DUMMY_BACKEND_H
-#define CHIMERA_TK_DUMMY_BACKEND_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "DummyBackendBase.h"
 #include "Exception.h"
@@ -138,5 +139,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif // CHIMERA_TK_DUMMY_BACKEND_H

@@ -1,11 +1,6 @@
-/**
-
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
- *      @brief          Provides storage object for devices descriptions
- */
-#ifndef CHIMERA_TK_DEVICE_INFO_MAP_H
-#define CHIMERA_TK_DEVICE_INFO_MAP_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <boost/shared_ptr.hpp>
 
@@ -231,5 +226,3 @@ namespace ChimeraTK {
   typedef boost::shared_ptr<DeviceInfoMap> DeviceInfoMapPointer;
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_DEVICE_INFO_MAP_H */

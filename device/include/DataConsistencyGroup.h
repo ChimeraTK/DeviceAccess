@@ -1,12 +1,6 @@
-/*
- * DataConsistencyGroup.h
- *
- * Created on: Mar 15, 2019
- *     Author: Jan Timm
- */
-
-#ifndef CHIMERATK_DATAC_ONSISTENCY_GROUP_H
-#define CHIMERATK_DATAC_ONSISTENCY_GROUP_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "TransferElementAbstractor.h"
 #include "VersionNumber.h"
@@ -137,4 +131,3 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
-#endif

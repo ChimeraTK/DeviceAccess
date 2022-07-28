@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE LMapForceReadOnlyPluginTest
 #include <boost/test/unit_test.hpp>

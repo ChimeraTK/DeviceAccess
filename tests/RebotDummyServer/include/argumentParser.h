@@ -1,10 +1,9 @@
-#ifndef SOURCE_DIRECTORY__TESTS_REBOTDUMMYSERVER_ARGUMENTPARSER_H_
-#define SOURCE_DIRECTORY__TESTS_REBOTDUMMYSERVER_ARGUMENTPARSER_H_
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <string>
 
 unsigned int getPortNumber(char**);
 std::string getMapFileLocation(char**);
 unsigned int getProtocolVersion(char**);
-
-#endif /* SOURCE_DIRECTORY__TESTS_REBOTDUMMYSERVER_ARGUMENTPARSER_H_ */

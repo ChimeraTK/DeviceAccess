@@ -1,11 +1,6 @@
-/*
- * This file only contains the ioctl constants of the llrfdrv_io.h file,
- * thus the 'compat'(ibility) in  the file name. The other constants are taken
- * from pciedev_io.h.
- */
-
-#ifndef LLRFDRV_IO_COMPAT_H
-#define LLRFDRV_IO_COMPAT_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 /*
  * Put an extern "C" declaration when compiling with C++. Like this the structs
@@ -28,5 +23,3 @@ extern "C" {
 #ifdef __cplusplus
 } /* closing the extern "C" { */
 #endif
-
-#endif /* LLRFDRV_IO_COMPAT_H */

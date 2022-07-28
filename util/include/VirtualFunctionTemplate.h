@@ -1,13 +1,6 @@
-/*
- * VirtualFunctionTemplate.h - Set of macros to approximate templated virtual
- * functions
- *
- *  Created on: Feb 15, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H
-#define CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 /* We need special compiler flags for boost fusion.
  * Make sure they are set before the functions are included.
@@ -95,5 +88,3 @@
 /** Compatibility, do not use. */
 #define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(className, functionName, numberOfArguments)                     \
   class UslessVTableFillerClass##functionName {}
-
-#endif /* CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H */

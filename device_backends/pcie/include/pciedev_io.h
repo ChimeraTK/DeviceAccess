@@ -1,5 +1,6 @@
-#ifndef _PCIEDEV_IO_H
-#define _PCIEDEV_IO_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
 #include <linux/types.h>
@@ -75,5 +76,3 @@ typedef struct device_ioctrl_time device_ioctrl_time;
 #define PCIEDOOCS_IOC_MAXNR 63
 #define PCIEDOOCS_IOC_DMA_MINNR 70
 #define PCIEDOOCS_IOC_DMA_MAXNR 74
-
-#endif

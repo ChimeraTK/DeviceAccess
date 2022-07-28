@@ -1,5 +1,6 @@
-#ifndef CHIMERATK_IEEE754_SINGLE_CONVERTER_H
-#define CHIMERATK_IEEE754_SINGLE_CONVERTER_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Exception.h"
 #include "SupportedUserTypes.h"
@@ -136,5 +137,3 @@ namespace ChimeraTK {
   uint32_t IEEE754_SingleConverter::toRaw(std::string cookedValue) const;
 
 } // namespace ChimeraTK
-
-#endif // CHIMERATK_IEEE754_SINGLE_CONVERTER_H

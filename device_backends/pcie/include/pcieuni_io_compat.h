@@ -1,5 +1,6 @@
-#ifndef _PCIEUNI_IO_COMPAT_H
-#define _PCIEUNI_IO_COMPAT_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 /** Information about the offsets of the bars in the address space of the
  * character device.
@@ -28,5 +29,3 @@ typedef struct _pcieuni_ioctl_bar_sizes {
 #define PCIEUNI_IOC_MAXNR 63
 #define PCIEUNI_IOC_DMA_MINNR 70
 #define PCIEUNI_IOC_DMA_MAXNR 74
-
-#endif /* _PCIEUNI_IO_COMPAT_H */

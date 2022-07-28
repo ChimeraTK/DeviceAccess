@@ -1,12 +1,6 @@
-/*
- * TransferElement.h
- *
- *  Created on: Feb 11, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_TRANSFER_ELEMENT_H
-#define CHIMERA_TK_TRANSFER_ELEMENT_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "AccessMode.h"
 #include "DeviceBackend.h"
@@ -903,4 +897,3 @@ namespace std {
     }
   };
 } // namespace std
-#endif /* CHIMERA_TK_TRANSFER_ELEMENT_H */

@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include "LNMAccessorPlugin.h"
-#include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessorDecorator.h"
+
 #include <boost/make_shared.hpp>
 
 #include <thread>

@@ -1,6 +1,6 @@
-#include "MapFileParser.h"
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "Exception.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the MULTIPLEXED_SEQUENCE_PREFIX constant
 
 #include <boost/algorithm/string.hpp>

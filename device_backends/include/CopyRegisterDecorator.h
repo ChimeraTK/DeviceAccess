@@ -1,12 +1,6 @@
-/*
- * CopyRegisterDecorator.h
- *
- *  Created on: Dec 12 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_COPY_REGISTER_DECORATOR_H
-#define CHIMERATK_COPY_REGISTER_DECORATOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
@@ -56,5 +50,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERATK_COPY_REGISTER_DECORATOR_H */

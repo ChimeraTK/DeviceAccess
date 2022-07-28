@@ -1,13 +1,6 @@
-/*
- * SupportedUserTypes.h - Define boost::fusion::maps of the user data types
- * supported by the CHIMERA_TK library.
- *
- *  Created on: Feb 29, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_SUPPORTED_USER_TYPES_H
-#define CHIMERA_TK_SUPPORTED_USER_TYPES_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>
@@ -999,5 +992,3 @@ namespace ChimeraTK {
   }
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERA_TK_SUPPORTED_USER_TYPES_H */

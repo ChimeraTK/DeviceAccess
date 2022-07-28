@@ -1,5 +1,6 @@
-#ifndef CHIMERA_TK_DMAP_FILE_PARSER_H
-#define CHIMERA_TK_DMAP_FILE_PARSER_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "DeviceInfoMap.h"
 #include "Exception.h"
@@ -55,5 +56,3 @@ namespace ChimeraTK {
   } // namespace detail
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_DMAP_FILE_PARSER_H */

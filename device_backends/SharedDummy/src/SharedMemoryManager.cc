@@ -1,12 +1,5 @@
-/*
- * SharedMemoryManager.cc
- *
- * Implementation of nested SharedMemoryManager class
- * of SharedDummyBackend
- *
- *  Created on: Jun 4, 2018
- *      Author: ckampm
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "SharedDummyBackend.h"
 

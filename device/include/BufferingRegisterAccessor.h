@@ -1,12 +1,6 @@
-/*
- * BufferingRegisterAccessor.h
- *
- *  Created on: Sep 28, 2015
- *      Author: Martin Hierholzer <martin.hierholzer@desy.de>
- */
-
-#ifndef CHIMERA_TK_BUFFERING_REGISTER_ACCESSOR_H
-#define CHIMERA_TK_BUFFERING_REGISTER_ACCESSOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Exception.h"
 #include "NDRegisterAccessorAbstractor.h"
@@ -206,5 +200,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_BUFFERING_REGISTER_ACCESSOR_H */

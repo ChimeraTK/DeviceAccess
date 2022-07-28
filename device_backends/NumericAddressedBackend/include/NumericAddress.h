@@ -1,12 +1,6 @@
-/*
- * NumericAddress.h
- *
- *  Created on: Mar 22, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_NUMERIC_ADDRESS_H
-#define CHIMERA_TK_NUMERIC_ADDRESS_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "RegisterPath.h"
 
@@ -23,5 +17,3 @@ namespace ChimeraTK { namespace numeric_address {
    */
   static const RegisterPath BAR("#");
 }} // namespace ChimeraTK::numeric_address
-
-#endif /* CHIMERA_TK_NUMERIC_ADDRESS_H */

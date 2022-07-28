@@ -1,5 +1,6 @@
-#ifndef BOOST_DYNAMIC_INIT_TEST
-#define BOOST_DYNAMIC_INIT_TEST
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 /* Hack to use dynamic linking with a hand-written init_unit_test() function.
  * 1. Define BOOST_TEST_DYN_LINK and declare init_unit_test().
@@ -13,5 +14,3 @@ bool init_unit_test();
 #include <boost/test/unit_test_suite.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-
-#endif // BOOST_DYNAMIC_INIT_TEST
