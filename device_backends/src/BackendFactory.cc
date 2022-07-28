@@ -216,22 +216,19 @@ namespace ChimeraTK {
       }
     }
 
-    // Check if descriptor string is a SDM
+    // Check for deprecated SDM or device node
+    // Note: Deprecation message was added 2022-07-28. Remove functionality past end of 2023.
     Sdm sdm;
     if(Utilities::isSdm(deviceInfo.uri)) {
       sdm = Utilities::parseSdm(deviceInfo.uri);
+      std::cout << "Using the SDM descriptor is deprecated. Please change to CDD (ChimeraTK device descriptor)."
+                << std::endl;
     }
     else {
-      // fixme: the programme flow should not use exceptions here. It is a
-      // supported condition that the old device syntax is used.
-
-      // parseDeviceString currently does not throw
       sdm = Utilities::parseDeviceString(deviceInfo.uri);
-      // todo: enable the deprecated warning. As long as most servers are still
-      // using MtcaMappedDevice DMap files have to stay with device node, but
-      // QtHardMon would print the message, which causes confusion. std::cout<<"#
-      // Using the device node in a dmap file is deprecated. Please change to sdm
-      // if applicable."<<std::endl;
+      std::cout
+          << "Using the device node in a dmap file is deprecated. Please change to CDD (ChimeraTK device descriptor)."
+          << std::endl;
     }
 #ifdef _DEBUG
     std::cout << "sdm._Host:" << sdm._Host << std::endl;

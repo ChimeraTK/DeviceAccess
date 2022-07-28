@@ -4,16 +4,9 @@
 #include "Device.h"
 
 #include "DeviceBackend.h"
-#include "MapFileParser.h"
-#include "RegisterAccessor.h"
-#include "Utilities.h"
 
 #include <cmath>
 #include <string.h>
-
-// for compatibility only:
-#include "NumericAddress.h"
-using ChimeraTK::numeric_address::BAR;
 
 namespace ChimeraTK {
 
@@ -46,180 +39,6 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-#if 0
-  boost::shared_ptr<RegisterAccessor> Device::getRegisterAccessor(
-      const std::string& regName, const std::string& module) const {
-    checkPointersAreNotNull();
-    return boost::shared_ptr<RegisterAccessor>(
-        new RegisterAccessor(_deviceBackendPointer, RegisterPath(module) / regName));
-  }
-#endif
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
-  /********************************************************************************************************************/
-
-  void Device::readReg(const std::string& regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) const {
-    readReg(regName, std::string(), data, dataSize, addRegOffset);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::readReg(const std::string& regName, const std::string& regModule, int32_t* data, size_t dataSize,
-      uint32_t addRegOffset) const {
-    if(dataSize % sizeof(int32_t) != 0) {
-      throw ChimeraTK::logic_error("Wrong data size - must be dividable by 4");
-    }
-    if(addRegOffset % sizeof(int32_t) != 0) {
-      throw ChimeraTK::logic_error("Wrong additional register offset - must be dividable by 4");
-    }
-    auto vec = read<int32_t>(
-        RegisterPath(regModule) / regName, dataSize / sizeof(int32_t), addRegOffset / sizeof(int32_t), true);
-    memcpy(data, vec.data(), vec.size() * sizeof(int32_t));
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::writeReg(const std::string& regName, int32_t const* data, size_t dataSize, uint32_t addRegOffset) {
-    writeReg(regName, std::string(), data, dataSize, addRegOffset);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::writeReg(const std::string& regName, const std::string& regModule, int32_t const* data, size_t dataSize,
-      uint32_t addRegOffset) {
-    if(dataSize == 0) dataSize = sizeof(int32_t);
-    if(dataSize % sizeof(int32_t) != 0) {
-      throw ChimeraTK::logic_error("Wrong data size: - must be dividable by 4");
-    }
-    if(addRegOffset % sizeof(int32_t) != 0) {
-      throw ChimeraTK::logic_error("Wrong additional register offset - must be dividable by 4");
-    }
-    std::vector<int32_t> vec(dataSize / sizeof(int32_t));
-    memcpy(vec.data(), data, dataSize);
-    write(RegisterPath(regModule) / regName, vec, addRegOffset / sizeof(int32_t), true);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::readDMA(const std::string& regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) const {
-    readDMA(regName, std::string(), data, dataSize, addRegOffset);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::readDMA(const std::string& regName, const std::string& regModule, int32_t* data, size_t dataSize,
-      uint32_t addRegOffset) const {
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Usage of deprecated function Device::readDMA() detected.    "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Use register accessors or Device::read() instead!           "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    readReg(regName, regModule, data, dataSize, addRegOffset);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::writeDMA(const std::string& regName, int32_t const* data, size_t dataSize, uint32_t addRegOffset) {
-    writeDMA(regName, std::string(), data, dataSize, addRegOffset);
-  } // LCOV_EXCL_LINE
-
-  /********************************************************************************************************************/
-
-  void Device::writeDMA(const std::string& regName, const std::string& regModule, int32_t const* data, size_t dataSize,
-      uint32_t addRegOffset) {
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Usage of deprecated function Device::writeDMA() detected.   "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Use register accessors or Device::write() instead!          "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    writeReg(regName, regModule, data, dataSize, addRegOffset);
-  } // LCOV_EXCL_LINE
-
-  /********************************************************************************************************************/
-
-  void Device::close() {
-    checkPointersAreNotNull();
-    _deviceBackendPointer->close();
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::readReg(uint32_t regOffset, int32_t* data, uint8_t bar) const {
-    readReg(BAR / bar / regOffset * sizeof(int32_t), data, sizeof(int32_t), 0);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
-    writeReg(BAR / bar / regOffset * sizeof(int32_t), &data, sizeof(int32_t), 0);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const {
-    readReg(BAR / bar / regOffset * size, data, size, 0);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::writeArea(uint32_t regOffset, int32_t const* data, size_t size, uint8_t bar) {
-    writeReg(BAR / bar / regOffset * size, data, size, 0);
-  }
-
-  /********************************************************************************************************************/
-
-  void Device::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const {
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Usage of deprecated function Device::readDMA() detected.    "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Use register accessors or Device::read() instead!           "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl;               // LCOV_EXCL_LINE
-    readArea(regOffset, data, size, bar); // LCOV_EXCL_LINE
-  }                                       // LCOV_EXCL_LINE
-
-  /********************************************************************************************************************/
-
-  void Device::writeDMA(uint32_t regOffset, int32_t const* data, size_t size, uint8_t bar) {
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Usage of deprecated function Device::writeDMA() detected.   "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Use register accessors or Device::write() instead!          "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl;                // LCOV_EXCL_LINE
-    writeArea(regOffset, data, size, bar); // LCOV_EXCL_LINE
-  }                                        // LCOV_EXCL_LINE
-#pragma GCC diagnostic pop
-
-  /********************************************************************************************************************/
 
   std::string Device::readDeviceInfo() const {
     checkPointersAreNotNull();
@@ -236,36 +55,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend) {
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Usage of deprecated function detected.                      "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Signature:                                                  "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Device::open(boost::shared_ptr<DeviceBackend>)              "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "**                                                             "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "** Use open() by alias name instead!                           "
-                 "                                **"
-              << std::endl; // LCOV_EXCL_LINE
-    std::cerr << "***************************************************************"
-                 "**********************************"
-              << std::endl; // LCOV_EXCL_LINE
-    _deviceBackendPointer = deviceBackend;
-    if(!_deviceBackendPointer->isOpen()) {
-      _deviceBackendPointer->open();
-    }
-  }
-
-  /********************************************************************************************************************/
-
   void Device::open() {
     checkPointersAreNotNull();
     _deviceBackendPointer->open();
@@ -277,6 +66,13 @@ namespace ChimeraTK {
     BackendFactory& factoryInstance = BackendFactory::getInstance();
     _deviceBackendPointer = factoryInstance.createBackend(aliasName);
     _deviceBackendPointer->open();
+  }
+
+  /********************************************************************************************************************/
+
+  void Device::close() {
+    checkPointersAreNotNull();
+    _deviceBackendPointer->close();
   }
 
   /********************************************************************************************************************/

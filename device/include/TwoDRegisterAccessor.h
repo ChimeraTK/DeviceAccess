@@ -59,29 +59,6 @@ namespace ChimeraTK {
     void setAsCooked(unsigned int channel, unsigned int sample, COOKED_TYPE value) {
       return get()->template setAsCooked<COOKED_TYPE>(channel, sample, value);
     }
-    /** DEPRECATED DO NOT USE
-     *
-     *  \deprecated
-     *  This function is deprecated. Use getNChannels() instead! */
-    [[deprecated("Use getNChannels() instead!")]] size_t getNumberOfDataSequences() const {
-      return get()->getNumberOfChannels();
-    }
-
-    /** DEPRECATED DO NOT USE
-     *
-     *  \deprecated
-     *  This function is deprecated. Use getNChannels() instead! */
-    [[deprecated("Use getNChannels() instead!")]] size_t getNumberOfChannels() const {
-      return get()->getNumberOfChannels();
-    }
-
-    /** DEPRECATED DO NOT USE
-     *
-     *  \deprecated
-     *  This function is deprecated. Use getNElementsPerChannel() instead! */
-    [[deprecated("Use getNElementsPerChannel() instead!")]] size_t getNumberOfSamples() const {
-      return get()->getNumberOfSamples();
-    }
 
     friend class TransferGroup;
 

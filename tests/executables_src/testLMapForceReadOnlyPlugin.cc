@@ -7,7 +7,6 @@
 using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
-#include "BufferingRegisterAccessor.h"
 #include "Device.h"
 #include "DeviceAccessVersion.h"
 #include "DummyBackend.h"
