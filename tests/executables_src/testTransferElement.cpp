@@ -1,15 +1,18 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /********************************************************************************************************************/
-/* 
+/*
  *  Tests for the TransferElement base class.
- * 
+ *
  *  IMPORTANT: READ BEFORE MODIFYING!
- * 
+ *
  *  These tests test whether the implementation of the TransferElement base class (and maybe potentially at some point
  *  the NDRegisterAccessor base class) behave according to the specification. The purpose of these tests is NOT to
  *  verify that the specifications are correct or complete. These tests are intentionally low-level and test exactly
  *  point-by-point the (low-level) behaviour described in the specification. It intentionally does NOT test whether the
  *  high-level ideas behind the specification works. This is outside the scope of this test, adding it here would
- *  prevent an exact identification of the tested parts of the specification. 
+ *  prevent an exact identification of the tested parts of the specification.
  */
 /********************************************************************************************************************/
 

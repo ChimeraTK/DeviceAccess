@@ -1,9 +1,5 @@
-/*
- * RegisterPath.cc
- *
- *  Created on: Mar 1, 2016
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "RegisterPath.h"
 

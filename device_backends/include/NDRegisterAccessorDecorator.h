@@ -1,12 +1,6 @@
-/*
- * NDRegisterAccessorDecorator.h
- *
- *  Created on: Nov 23 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
-#define CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "NDRegisterAccessor.h"
 
@@ -219,5 +213,3 @@ void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTr
   }
   _target->setExceptionBackend(this->_exceptionBackend);
 }
-
-#endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H */

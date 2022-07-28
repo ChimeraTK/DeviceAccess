@@ -1,12 +1,6 @@
-/*
- * OneDRegisterAccessor.h
- *
- *  Created on: Mar 23, 2016
- *      Author: Martin Hierholzer <martin.hierholzer@desy.de>
- */
-
-#ifndef CHIMERA_TK_ONE_D_REGISTER_ACCESSOR_H
-#define CHIMERA_TK_ONE_D_REGISTER_ACCESSOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "NDRegisterAccessorAbstractor.h"
 
@@ -146,5 +140,3 @@ namespace ChimeraTK {
   // This could avoid optimisation of the inline code.
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_ONE_D_REGISTER_ACCESSOR_H */

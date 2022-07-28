@@ -1,12 +1,6 @@
-/*
- * TransferElementID.h
- *
- *  Created on: Dec 18, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_TRANSFER_ELEMENT_ID_H
-#define CHIMERA_TK_TRANSFER_ELEMENT_ID_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <atomic>
 #include <ostream>
@@ -73,5 +67,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif // CHIMERA_TK_TRANSFER_ELEMENT_ID_H

@@ -1,12 +1,6 @@
-/*
- * TwoDRegisterAccessor.h
- *
- *  Created on: Feb 3, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H
-#define CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "NDRegisterAccessorAbstractor.h"
 
@@ -98,5 +92,3 @@ namespace ChimeraTK {
   // This could avoid optimisation of the inline code.
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H */

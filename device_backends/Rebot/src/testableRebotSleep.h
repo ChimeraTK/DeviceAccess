@@ -1,5 +1,6 @@
-#ifndef TESTABLE_REBOT_SLEEP_H
-#define TESTABLE_REBOT_SLEEP_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
@@ -14,5 +15,3 @@ namespace ChimeraTK { namespace testable_rebot_sleep {
    */
   void sleep_until(boost::chrono::steady_clock::time_point t);
 }} // namespace ChimeraTK::testable_rebot_sleep
-
-#endif // TESTABLE_REBOT_SLEEP_H

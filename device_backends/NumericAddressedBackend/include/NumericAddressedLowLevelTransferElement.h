@@ -1,12 +1,6 @@
-/*
- * NumericAddressedLowLevelTransferElement.h
- *
- *  Created on: Aug 8, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H
-#define CHIMERA_TK_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "NumericAddressedBackend.h"
 #include "TransferElement.h"
@@ -208,5 +202,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H */

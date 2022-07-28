@@ -1,10 +1,5 @@
-/*
- * LNMBackendBufferingChannelAccessor.h
- *
- *  Created on: Feb 15, 2016
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
 #include "Device.h"

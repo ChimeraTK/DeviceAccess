@@ -1,5 +1,6 @@
-#ifndef DUMMY_PROTOCOL_0_H
-#define DUMMY_PROTOCOL_0_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "DummyProtocolImplementor.h"
 
@@ -25,5 +26,3 @@ namespace ChimeraTK {
   };
 
 } //  namespace ChimeraTK
-
-#endif // DUMMY_PROTOCOL_0_H

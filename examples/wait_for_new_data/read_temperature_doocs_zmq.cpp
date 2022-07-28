@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*  Unfortunately the DeviceAccess base package does not have a demo push type accessor we can use.
  *  That's why this code uses the Doocs backend. Use it together with example2 from ApplicationCore.
  *  You have to activate the zmq sending in the ApplicationCore example2 by using the configuration files

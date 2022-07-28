@@ -1,12 +1,6 @@
-/*
- * ExperimentalFeatures.h - Flag to enabled experimental features
- *
- *  Created on: Feb 3, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_EXPERIMENTAL_FEATURES_H
-#define CHIMERATK_EXPERIMENTAL_FEATURES_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <atomic>
 #include <iostream>
@@ -76,5 +70,3 @@ namespace ChimeraTK {
     static Reminder reminder;
   };
 } // namespace ChimeraTK
-
-#endif /* CHIMERATK_EXPERIMENTAL_FEATURES_H */

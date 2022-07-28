@@ -1,5 +1,6 @@
-#ifndef CHIMERAT_REBOT_PROTOCOL_DEFINITIONS
-#define CHIMERAT_REBOT_PROTOCOL_DEFINITIONS
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <cstdint>
 
@@ -31,5 +32,3 @@ namespace ChimeraTK { namespace Rebot {
   static const int32_t DEFAULT_CONNECTION_TIMEOUT = 10000; // 10 seconds
 
 }} // namespace ChimeraTK::Rebot
-
-#endif // CHIMERAT_REBOT_PROTOCOL_DEFINITIONS

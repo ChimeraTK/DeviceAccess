@@ -1,9 +1,5 @@
-/*
- * NDRegisterAccessorDecorator.cc
- *
- *  Created on: Dec 12 2017
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "NDRegisterAccessorDecorator.h"
 

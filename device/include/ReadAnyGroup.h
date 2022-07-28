@@ -1,12 +1,6 @@
-/*
- * ReadAny.h
- *
- *  Created on: Dec 19, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_READ_ANY_H
-#define CHIMERATK_READ_ANY_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
@@ -617,5 +611,3 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */
-
-#endif // CHIMERATK_READ_ANY_H

@@ -1,12 +1,6 @@
-/*
- * ExampleBackend.h
- *
- *  Created on: Jul 31, 2015
- *      Author: nshehzad
- */
-
-#ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
-#define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/DeviceAccessVersion.h>
@@ -64,4 +58,3 @@ class ExampleBackend : public ChimeraTK::DeviceBackendImpl {
   static BackendRegisterer backendRegisterer;
 };
 // LCOV_EXCL_STOP
-#endif /* SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_ */

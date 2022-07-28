@@ -1,5 +1,6 @@
-#ifndef CHIMERA_TK_BACKEND_FACTORY_H
-#define CHIMERA_TK_BACKEND_FACTORY_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #ifdef _DEBUG
 #  include <iostream>
@@ -142,5 +143,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERA_TK_BACKEND_FACTORY_H */

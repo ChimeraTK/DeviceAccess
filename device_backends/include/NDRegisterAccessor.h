@@ -1,12 +1,6 @@
-/*
- * NDRegisterAccessor.h - N-dimensional register accessor
- *
- *  Created on: Mar 21, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_H
-#define CHIMERA_TK_N_D_REGISTER_ACCESSOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Exception.h"
 #include "ForwardDeclarations.h"
@@ -165,5 +159,3 @@ namespace ChimeraTK {
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NDRegisterAccessor);
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_H */

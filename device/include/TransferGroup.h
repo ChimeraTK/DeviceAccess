@@ -1,12 +1,6 @@
-/*
- * TransferGroup.h
- *
- *  Created on: Feb 11, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_TRANSFER_GROUP_H
-#define CHIMERA_TK_TRANSFER_GROUP_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "TransferElementAbstractor.h"
 
@@ -111,5 +105,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERA_TK_TRANSFER_GROUP_H */

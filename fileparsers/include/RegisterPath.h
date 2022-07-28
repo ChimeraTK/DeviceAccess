@@ -1,12 +1,6 @@
-/*
- * RegisterPath.h
- *
- *  Created on: Mar 1, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERA_TK_REGISTER_PATH_H
-#define CHIMERA_TK_REGISTER_PATH_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Exception.h"
 
@@ -256,5 +250,3 @@ namespace ChimeraTK {
   std::ostream& operator<<(std::ostream& os, const RegisterPath& me);
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERA_TK_REGISTER_PATH_H */

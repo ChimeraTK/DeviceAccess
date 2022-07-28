@@ -1,12 +1,6 @@
-/*
- * accessPrivateData.h
- *
- *  Created on: Mar 23, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef SOURCE_DIRECTORY__TESTS_INCLUDE_ACCESSPRIVATEDATA_H_
-#define SOURCE_DIRECTORY__TESTS_INCLUDE_ACCESSPRIVATEDATA_H_
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 // Helper classes to access private data of another class, which can be useful
 // for whitebox tests This code was taken from:
@@ -75,5 +69,3 @@ namespace accessPrivateData {
   */
 
 } // namespace accessPrivateData
-
-#endif /* SOURCE_DIRECTORY__TESTS_INCLUDE_ACCESSPRIVATEDATA_H_ */

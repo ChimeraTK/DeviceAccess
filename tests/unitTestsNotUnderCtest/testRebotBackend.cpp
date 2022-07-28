@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /******************************************************************************
  * Keep this file in a way that the tests also run with real hardware.
  ******************************************************************************/
