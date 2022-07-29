@@ -30,7 +30,7 @@ namespace ChimeraTK {
       _nDigits = 6;                    // -32000 .. 32000 (approx)
     }
     else if(type == DataType::uint16) { // 16 bit unsigned
-      _nDigits = 6;                     // 0 .. 65000 (approx)
+      _nDigits = 5;                     // 0 .. 65000 (approx)
     }
     else if(type == DataType::int32) { // 32 bit signed
       _nDigits = 11;                   // -2e9 .. 2e9 (approx)
@@ -38,7 +38,7 @@ namespace ChimeraTK {
     else if(type == DataType::uint32) { // 32 bit unsigned
       _nDigits = 10;                    // 0 .. 4e9 (approx)
     }
-    else if(type == DataType::int64) { // 64 bit signed
+    else if(type == DataType::int64) { // 64 bit signed // NOLINT(bugprone-branch-clone)
       _nDigits = 20;                   // -9e18 .. 9e18 (approx)
     }
     else if(type == DataType::uint64) { // 64 bit unsigned
