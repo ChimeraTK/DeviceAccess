@@ -113,6 +113,8 @@ include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
 include(cmake/enable_doxygen_documentation.cmake)
 
+include(cmake/enable_code_style_check.cmake)
+
 # Keep the testing section at the end. It will include boost test, which will modify the Boost_LIBRARIES variable.
 # We don't want to link client applications to the boost testing library. This might give trouble.
 option(BUILD_TESTS "Build test programs" ON)
