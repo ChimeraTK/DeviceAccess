@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "CopyRegisterDecorator.h"
 #include "Device.h"
 #include "FixedPointConverter.h"
 #include "LogicalNameMappingBackend.h"

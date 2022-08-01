@@ -19,13 +19,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  Device::~Device() {
-    // Do NOT close the Backend here. Another device might be using the same
-    // backend.
-  }
-
-  /********************************************************************************************************************/
-
   RegisterCatalogue Device::getRegisterCatalogue() const {
     checkPointersAreNotNull();
     return _deviceBackendPointer->getRegisterCatalogue();
@@ -111,6 +104,12 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, const AccessModeFlags& flags) const {
     checkPointersAreNotNull();
     return VoidRegisterAccessor(_deviceBackendPointer->getRegisterAccessor<Void>(registerPathName, 0, 0, flags));
+  }
+
+  /********************************************************************************************************************/
+
+  boost::shared_ptr<DeviceBackend> Device::getBackend() {
+    return _deviceBackendPointer;
   }
 
   /********************************************************************************************************************/

@@ -60,7 +60,7 @@ int main() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     begin = std::chrono::system_clock::now();
     try {
-      d.read<int>(read_register);
+      [[maybe_unused]] auto x = d.read<int>(read_register);
     }
     catch(ChimeraTK::runtime_error& e) {
       end = std::chrono::system_clock::now();

@@ -7,10 +7,15 @@
 #include <unordered_set>
 
 namespace ChimeraTK {
-  /** Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
-   *  algorithm which matches the VersionNumber. This group does not read on its own. It should work together with a
-   *  ReadAnyGroup. You should wait for changed variable and transfer it to this group by calling
-   *  ChimeraTK::DataConsistencyGroup::update. If a consistent state is reached, this function returns true. */
+
+  /********************************************************************************************************************/
+
+  /**
+   * Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
+   * algorithm which matches the VersionNumber. This group does not read on its own. It should work together with a
+   * ReadAnyGroup. You should wait for changed variable and transfer it to this group by calling
+   * ChimeraTK::DataConsistencyGroup::update. If a consistent state is reached, this function returns true.
+   */
   class DataConsistencyGroup {
    public:
     /** Construct empty group. Elements can later be added using the add() function. */
@@ -30,7 +35,7 @@ namespace ChimeraTK {
 
     /** This function updates consistentElements, a set of TransferElementID. It returns true, if a consistent state is
      *  reached. It returns false if an TransferElementID was updated, that was not added to this Group. */
-    bool update(TransferElementID transferelementid);
+    bool update(const TransferElementID& transferelementid);
 
     /** Enum describing the matching mode of a DataConsistencyGroup. */
     enum class MatchingMode {
@@ -62,49 +67,14 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline DataConsistencyGroup::DataConsistencyGroup() {}
-
-  /********************************************************************************************************************/
-
-  inline DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list) {
-    for(auto& element : list) add(element);
-  }
-
-  /********************************************************************************************************************/
-
-  inline DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list) {
-    for(auto& element : list) add(element);
-  }
-
-  /********************************************************************************************************************/
-
   template<typename ITERATOR>
   DataConsistencyGroup::DataConsistencyGroup(ITERATOR first, ITERATOR last) {
-    for(ITERATOR it = first; it != last; ++it) add(*it);
-  }
-  /********************************************************************************************************************/
-
-  inline void DataConsistencyGroup::add(const TransferElementAbstractor& element) {
-    if(!element.isReadable()) {
-      throw ChimeraTK::logic_error(
-          "Cannot add non-readable accessor for register " + element.getName() + " to DataConsistencyGroup.");
-    }
-    if(!element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-      throw ChimeraTK::logic_error(
-          "Cannot add poll type accessor for register " + element.getName() + " to DataConsistencyGroup.");
-    }
-    push_elements[element.getId()] = element;
+    for(auto it = first; it != last; ++it) add(*it);
   }
 
   /********************************************************************************************************************/
 
-  inline void DataConsistencyGroup::add(boost::shared_ptr<TransferElement> element) {
-    add(TransferElementAbstractor(element));
-  }
-
-  /********************************************************************************************************************/
-
-  inline bool DataConsistencyGroup::update(TransferElementID transferElementID) {
+  inline bool DataConsistencyGroup::update(const TransferElementID& transferElementID) {
     // ignore transferElementID does not belong to DataConsistencyGroup
     if(push_elements.find(transferElementID) == push_elements.end()) {
       return false;
@@ -129,5 +99,7 @@ namespace ChimeraTK {
     }
     return false;
   }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

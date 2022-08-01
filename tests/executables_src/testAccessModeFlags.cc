@@ -5,6 +5,7 @@
 #define BOOST_TEST_MODULE AccessModeFlagsTest
 
 #include "AccessMode.h"
+#include "Exception.h"
 
 #include <boost/test/unit_test.hpp>
 

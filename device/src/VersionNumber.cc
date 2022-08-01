@@ -4,11 +4,24 @@
 #include "VersionNumber.h"
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
   std::atomic<uint64_t> VersionNumber::_lastGeneratedVersionNumber{0};
 
-  /** Stream operator passing the human readable representation to an ostream. */
+  /********************************************************************************************************************/
+
+  VersionNumber::operator std::string() const {
+    return std::string("v") + std::to_string(_value);
+  }
+
+  /********************************************************************************************************************/
+
   std::ostream& operator<<(std::ostream& stream, const VersionNumber& version) {
     stream << std::string(version);
     return stream;
   }
+
+  /********************************************************************************************************************/
+
 } /* namespace ChimeraTK */
