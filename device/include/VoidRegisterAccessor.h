@@ -16,6 +16,7 @@ namespace ChimeraTK {
   class VoidRegisterAccessor : public NDRegisterAccessorAbstractor<ChimeraTK::Void> {
    public:
     VoidRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<Void>> impl);
+    VoidRegisterAccessor() {}
     bool isReadOnly() const;
     bool isReadable() const;
     void read();
