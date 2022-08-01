@@ -6,6 +6,7 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include "CopyRegisterDecorator.h"
 #include "Device.h"
 #include "ExceptionDummyBackend.h"
 #include "NDRegisterAccessorDecorator.h"

@@ -2220,7 +2220,7 @@ namespace ChimeraTK {
         // Runtime error should be reported via setException()
         BOOST_CHECK(!erb->hasSeenException());
         try {
-          reg.isReadable();
+          [[maybe_unused]] auto result = reg.isReadable();
         }
         catch(...) {
           didThrow = true;
@@ -2262,7 +2262,7 @@ namespace ChimeraTK {
         // Runtime error should be reported via setException()
         BOOST_CHECK(!erb->hasSeenException());
         try {
-          reg.isWriteable();
+          [[maybe_unused]] auto result = reg.isWriteable();
         }
         catch(...) {
           didThrow = true;
@@ -2303,7 +2303,7 @@ namespace ChimeraTK {
         // Runtime error should be reported via setException()
         BOOST_CHECK(!erb->hasSeenException());
         try {
-          reg.isReadOnly();
+          [[maybe_unused]] auto result = reg.isReadOnly();
         }
         catch(...) {
           didThrow = true;
@@ -3199,7 +3199,7 @@ namespace ChimeraTK {
 
         // attempt to trigger runtime error (no obligation to throw...)
         try {
-          reg.isReadable();
+          [[maybe_unused]] auto result = reg.isReadable();
         }
         catch(...) {
           didThrow = true;
@@ -3243,7 +3243,7 @@ namespace ChimeraTK {
 
         // attempt to trigger runtime error (no obligation to throw...)
         try {
-          reg.isWriteable();
+          [[maybe_unused]] auto result = reg.isWriteable();
         }
         catch(...) {
           didThrow = true;
@@ -3286,7 +3286,7 @@ namespace ChimeraTK {
 
         // attempt to trigger runtime error (no obligation to throw...)
         try {
-          reg.isReadOnly();
+          [[maybe_unused]] auto result = reg.isReadOnly();
         }
         catch(...) {
           didThrow = true;

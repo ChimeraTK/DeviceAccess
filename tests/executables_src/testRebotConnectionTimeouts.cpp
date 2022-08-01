@@ -67,7 +67,7 @@ BOOST_FIXTURE_TEST_CASE(testReadTimeout, F) {
 
   rebotServer.stop();
   auto begin = std::chrono::system_clock::now();
-  { BOOST_CHECK_THROW(d.read<int>("BOARD.WORD_USER"), ChimeraTK::runtime_error); }
+  { BOOST_CHECK_THROW([[maybe_unused]] auto result = d.read<int>("BOARD.WORD_USER"), ChimeraTK::runtime_error); }
   auto end = std::chrono::system_clock::now();
 
   BOOST_CHECK(d.isFunctional() == false);

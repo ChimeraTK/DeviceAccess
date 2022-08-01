@@ -11,8 +11,6 @@ using namespace boost::unit_test_framework;
 #include "DeviceBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "Exception.h"
-#include "MapFileParser.h"
-#include "PcieBackend.h"
 
 #include <cstring>
 
@@ -70,8 +68,9 @@ BOOST_AUTO_TEST_CASE(testConvenienceReadWrite) {
   BOOST_CHECK(dataVector.size() == 1);
   BOOST_CHECK(dataVector[0] == -33333);
 
-  BOOST_CHECK_THROW(device.read<int32_t>("APP0/DOESNT_EXIST"), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(device.read<int32_t>("DOESNT_EXIST/AT_ALL", 1, 0), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW([[maybe_unused]] auto x = device.read<int32_t>("APP0/DOESNT_EXIST"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      [[maybe_unused]] auto x = device.read<int32_t>("DOESNT_EXIST/AT_ALL", 1, 0), ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(testDeviceCreation) {

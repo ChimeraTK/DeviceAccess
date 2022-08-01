@@ -5,8 +5,6 @@
 
 #include "CopyRegisterDecorator.h"
 #include "Exception.h"
-#include "NDRegisterAccessorAbstractor.h"
-#include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
 
@@ -16,11 +14,11 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void TransferGroup::runPostReads(
-      std::set<boost::shared_ptr<TransferElement>>& elements, std::exception_ptr firstDetectedRuntimeError) noexcept {
-    for(auto& elem : elements) {
+  void TransferGroup::runPostReads(const std::set<boost::shared_ptr<TransferElement>>& elements,
+      const std::exception_ptr& firstDetectedRuntimeError) noexcept {
+    for(const auto& elem : elements) {
       // check for exceptions on any of the element's low level elements
-      for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
+      for(const auto& lowLevelElem : elem->getHardwareAccessingElements()) {
         // In case there are multiple exceptions we take the last one, but this does not matter. They are all
         // ChimeraTK::runtime_errors and the first detected runtime error, which is re-thrown, has already been
         // determined by previously.
@@ -41,6 +39,8 @@ namespace ChimeraTK {
     }
   }
 
+  /*********************************************************************************************************************/
+
   void TransferGroup::read() {
     // reset exception flags
     for(auto& it : _lowLevelElementsAndExceptionFlags) {
@@ -48,7 +48,7 @@ namespace ChimeraTK {
     }
 
     // check pre-conditions so preRead() does not throw logic errors
-    for(auto& backend : _exceptionBackends) {
+    for(const auto& backend : _exceptionBackends) {
       if(backend && !backend->isOpen()) {
         throw ChimeraTK::logic_error("DeviceBackend " + backend->readDeviceInfo() + "is not opened!");
       }
@@ -59,14 +59,14 @@ namespace ChimeraTK {
 
     std::exception_ptr firstDetectedRuntimeError{nullptr};
 
-    for(auto& elem : _highLevelElements) {
+    for(const auto& elem : _highLevelElements) {
       elem->preReadAndHandleExceptions(TransferType::read);
       if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
         firstDetectedRuntimeError = elem->_activeException;
       }
     }
 
-    for(auto& elem : _copyDecorators) {
+    for(const auto& elem : _copyDecorators) {
       elem->preReadAndHandleExceptions(TransferType::read);
       if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
         firstDetectedRuntimeError = elem->_activeException;
@@ -75,8 +75,8 @@ namespace ChimeraTK {
 
     if(firstDetectedRuntimeError == nullptr) {
       // only execute the transfers if there has been no exception yet
-      for(auto& it : _lowLevelElementsAndExceptionFlags) {
-        auto& elem = it.first;
+      for(const auto& it : _lowLevelElementsAndExceptionFlags) {
+        const auto& elem = it.first;
         elem->handleTransferException([&] { elem->readTransfer(); });
         if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
           firstDetectedRuntimeError = elem->_activeException;
@@ -122,7 +122,7 @@ namespace ChimeraTK {
 
   void TransferGroup::write(VersionNumber versionNumber) {
     // check pre-conditions so preRead() does not throw logic errors
-    for(auto& backend : _exceptionBackends) {
+    for(const auto& backend : _exceptionBackends) {
       if(backend && !backend->isOpen()) {
         throw ChimeraTK::logic_error("DeviceBackend " + backend->readDeviceInfo() + "is not opened!");
       }
@@ -136,7 +136,7 @@ namespace ChimeraTK {
     }
 
     std::exception_ptr firstDetectedRuntimeError{nullptr};
-    for(auto& elem : _highLevelElements) {
+    for(const auto& elem : _highLevelElements) {
       elem->preWriteAndHandleExceptions(TransferType::write, versionNumber);
       if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
         firstDetectedRuntimeError = elem->_activeException;
@@ -144,8 +144,8 @@ namespace ChimeraTK {
     }
 
     if(firstDetectedRuntimeError == nullptr) {
-      for(auto& it : _lowLevelElementsAndExceptionFlags) {
-        auto& elem = it.first;
+      for(const auto& it : _lowLevelElementsAndExceptionFlags) {
+        const auto& elem = it.first;
         elem->handleTransferException([&] { elem->writeTransfer(versionNumber); });
         if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
           firstDetectedRuntimeError = elem->_activeException;
@@ -154,9 +154,9 @@ namespace ChimeraTK {
     }
 
     _nRuntimeErrors = 0;
-    for(auto& elem : _highLevelElements) {
+    for(const auto& elem : _highLevelElements) {
       // check for exceptions on any of the element's low level elements
-      for(auto& lowLevelElem : elem->getHardwareAccessingElements()) {
+      for(const auto& lowLevelElem : elem->getHardwareAccessingElements()) {
         // In case there are multiple exceptions we take the last one, but this does not matter. They are all
         // ChimeraTK::runtime_errors and the first detected runtime error, which is re-thrown, has already been
         // determined by previously.
@@ -229,16 +229,16 @@ namespace ChimeraTK {
     highLevelElementsWithNewAccessor.insert(accessor.getHighLevelImplElement());
 
     // try replacing all internal elements in all high-level elements
-    for(auto& hlElem1 : highLevelElementsWithNewAccessor) {
+    for(const auto& hlElem1 : highLevelElementsWithNewAccessor) {
       auto list = hlElem1->getInternalElements();
       list.push_front(hlElem1);
 
-      for(auto& replacement : list) {
+      for(const auto& replacement : list) {
         // try on the abstractor first, to make sure we replace at the highest
         // level if possible, but only if this isn't a temporary abstractor
         if(not isTemporary) accessor.replaceTransferElement(replacement);
         // try on all high-level elements already stored in the list
-        for(auto& hlElem : highLevelElementsWithNewAccessor) {
+        for(const auto& hlElem : highLevelElementsWithNewAccessor) {
           hlElem->replaceTransferElement(replacement); // note: this does nothing, if the replacement cannot
                                                        // be used by the hlElem!
         }
@@ -254,18 +254,19 @@ namespace ChimeraTK {
     // made some of them redundant since we are using a set to store the elements,
     // duplicates are intrinsically avoided.
     _lowLevelElementsAndExceptionFlags.clear();
-    for(auto& hlElem : _highLevelElements) {
-      for(auto& hwElem : hlElem->getHardwareAccessingElements())
+    for(const auto& hlElem : _highLevelElements) {
+      for(const auto& hwElem : hlElem->getHardwareAccessingElements()) {
         _lowLevelElementsAndExceptionFlags.insert({hwElem, false});
+      }
     }
 
     // update the list of CopyRegisterDecorators
     _copyDecorators.clear();
-    for(auto& hlElem : _highLevelElements) {
+    for(const auto& hlElem : _highLevelElements) {
       if(boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(hlElem) != nullptr) {
         _copyDecorators.insert(hlElem);
       }
-      for(auto& hwElem : hlElem->getInternalElements()) {
+      for(const auto& hwElem : hlElem->getInternalElements()) {
         if(boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(hwElem) != nullptr) {
           _copyDecorators.insert(hwElem);
         }
@@ -282,11 +283,11 @@ namespace ChimeraTK {
     /// just used in TransferGroup::addAccessor(const
     /// boost::shared_ptr<TransferElement> &accessor)
     struct TransferGroupTransferElementAbstractor : TransferElementAbstractor {
-      TransferGroupTransferElementAbstractor(boost::shared_ptr<TransferElement> impl)
-      : TransferElementAbstractor(impl) {}
+      explicit TransferGroupTransferElementAbstractor(boost::shared_ptr<TransferElement> impl)
+      : TransferElementAbstractor(std::move(impl)) {}
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        _impl->replaceTransferElement(newElement);
+        _impl->replaceTransferElement(std::move(newElement));
       }
     };
   } // namespace detail
@@ -310,7 +311,7 @@ namespace ChimeraTK {
   void TransferGroup::updateIsReadableWriteable() {
     _isReadable = true;
     _isWriteable = true;
-    for(auto& elem : _highLevelElements) {
+    for(const auto& elem : _highLevelElements) {
       if(!elem->isReadable()) _isReadable = false;
       if(!elem->isWriteable()) _isWriteable = false;
     }
@@ -321,7 +322,7 @@ namespace ChimeraTK {
 
   void TransferGroup::dump() {
     std::cout << "=== Accessors added to this group: " << std::endl;
-    for(auto& elem : _highLevelElements) {
+    for(const auto& elem : _highLevelElements) {
       std::cout << " - " << elem->getName() << std::endl;
     }
     std::cout << "=== Low-level transfer elements in this group: " << std::endl;
@@ -330,5 +331,7 @@ namespace ChimeraTK {
     }
     std::cout << "===" << std::endl;
   }
+
+  /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

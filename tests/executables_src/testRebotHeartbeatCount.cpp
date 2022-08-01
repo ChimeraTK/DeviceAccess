@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   }
 
   for(uint32_t i = 1; i < 5; ++i) {
-    d.read<int>("BOARD.WORD_USER");
+    [[maybe_unused]] auto result = d.read<int>("BOARD.WORD_USER");
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 2500 + 30000));
   }
 

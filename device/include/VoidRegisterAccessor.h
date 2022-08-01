@@ -6,17 +6,65 @@
 
 namespace ChimeraTK {
 
-  // We cannot use a typedef because the constructor of NDRegisterAccessorAbstractor is intentionally
-  // protected.
+  /********************************************************************************************************************/
+
+  /**
+   * Accessor class to read and write void-typed registers.
+   */
   class VoidRegisterAccessor : public NDRegisterAccessorAbstractor<ChimeraTK::Void> {
    public:
-    VoidRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<Void>> impl);
-    VoidRegisterAccessor() {}
-    bool isReadOnly() const;
-    bool isReadable() const;
+    /**
+     * Construct from pointer to implementation. Normally not called by the user, use Device::getVoidRegisterAccessor()
+     * instead.
+     */
+    explicit VoidRegisterAccessor(const boost::shared_ptr<NDRegisterAccessor<Void>>& impl);
+
+    /**
+     * Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
+     *
+     * @attention Accessors created with this constructors will be dysfunctional, calling any member function will throw
+     * an exception (by the boost::shared_ptr)!
+     */
+    VoidRegisterAccessor() = default;
+
+    [[nodiscard]] bool isReadOnly() const;
+
+    [[nodiscard]] bool isReadable() const;
+
     void read();
+
     bool readNonBlocking();
+
     bool readLatest();
   };
+
+  /********************************************************************************************************************/
+
+  inline void VoidRegisterAccessor::read() {
+    if(!_impl->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+      throw ChimeraTK::logic_error("A VoidRegisterAccessor without wait_for_new_data is not readable.");
+    }
+    _impl->read();
+  }
+
+  /********************************************************************************************************************/
+
+  inline bool VoidRegisterAccessor::readNonBlocking() {
+    if(!_impl->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+      throw ChimeraTK::logic_error("A VoidRegisterAccessor without wait_for_new_data is not readable.");
+    }
+    return _impl->readNonBlocking();
+  }
+
+  /********************************************************************************************************************/
+
+  inline bool VoidRegisterAccessor::readLatest() {
+    if(!_impl->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+      throw ChimeraTK::logic_error("A VoidRegisterAccessor without wait_for_new_data is not readable.");
+    }
+    return _impl->readLatest();
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

@@ -25,7 +25,8 @@ BOOST_AUTO_TEST_CASE(testExceptionsDummyDevice) {
   // test throwExceptionRead
   exceptionDummy->throwExceptionRead = true;
   BOOST_CHECK(device.isFunctional());
-  BOOST_CHECK_THROW(device.read<int32_t>("/Integers/signed32"), ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(
+      [[maybe_unused]] auto result = device.read<int32_t>("/Integers/signed32"), ChimeraTK::runtime_error);
   BOOST_CHECK(!device.isFunctional());
   BOOST_CHECK_NO_THROW(device.open("(ExceptionDummy:1?map=test3.map)"));
   BOOST_CHECK(device.isFunctional());

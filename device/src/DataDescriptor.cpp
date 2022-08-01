@@ -6,6 +6,13 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  DataDescriptor::DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_, bool isSigned_, size_t nDigits_,
+      size_t nFractionalDigits_, DataType rawDataType_, DataType transportLayerDataType_)
+  : _fundamentalType(fundamentalType_), _rawDataType(rawDataType_), _transportLayerDataType(transportLayerDataType_),
+    _isIntegral(isIntegral_), _isSigned(isSigned_), _nDigits(nDigits_), _nFractionalDigits(nFractionalDigits_) {}
+
+  /********************************************************************************************************************/
+
   DataDescriptor::DataDescriptor(DataType type) {
     if(type.isNumeric()) {
       _fundamentalType = FundamentalType::numeric;
@@ -62,6 +69,58 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  DataDescriptor::DataDescriptor()
+  : _fundamentalType(FundamentalType::undefined), _isIntegral(false), _isSigned(false), _nDigits(0),
+    _nFractionalDigits(0) {}
+
+  /********************************************************************************************************************/
+
+  DataDescriptor::FundamentalType DataDescriptor::fundamentalType() const {
+    return _fundamentalType;
+  }
+
+  /********************************************************************************************************************/
+
+  bool DataDescriptor::isSigned() const {
+    assert(_fundamentalType == FundamentalType::numeric);
+    return _isSigned;
+  }
+
+  /********************************************************************************************************************/
+
+  bool DataDescriptor::isIntegral() const {
+    assert(_fundamentalType == FundamentalType::numeric);
+    return _isIntegral;
+  }
+
+  /********************************************************************************************************************/
+
+  size_t DataDescriptor::nDigits() const {
+    assert(_fundamentalType == FundamentalType::numeric);
+    return _nDigits;
+  }
+
+  /********************************************************************************************************************/
+
+  size_t DataDescriptor::nFractionalDigits() const {
+    assert(_fundamentalType == FundamentalType::numeric && !_isIntegral);
+    return _nFractionalDigits;
+  }
+
+  /********************************************************************************************************************/
+
+  DataType DataDescriptor::rawDataType() const {
+    return _rawDataType;
+  }
+
+  /********************************************************************************************************************/
+
+  DataType DataDescriptor::transportLayerDataType() const {
+    return _transportLayerDataType;
+  }
+
+  /********************************************************************************************************************/
+
   bool DataDescriptor::operator==(const DataDescriptor& other) const {
     return _fundamentalType == other._fundamentalType && _rawDataType == other._rawDataType &&
         _transportLayerDataType == other._transportLayerDataType && _isIntegral == other._isIntegral &&
@@ -74,6 +133,7 @@ namespace ChimeraTK {
     return !operator==(other);
   }
 
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   std::ostream& operator<<(std::ostream& stream, const DataDescriptor::FundamentalType& fundamentalType) {

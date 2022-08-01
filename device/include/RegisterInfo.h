@@ -3,7 +3,6 @@
 #pragma once
 
 #include "BackendRegisterInfoBase.h"
-#include "ForwardDeclarations.h"
 
 #include <iostream>
 #include <memory>
