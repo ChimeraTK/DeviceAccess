@@ -17,7 +17,8 @@ namespace ChimeraTK {
      * Construct from pointer to implementation. Normally not called by the user, use Device::getVoidRegisterAccessor()
      * instead.
      */
-    explicit VoidRegisterAccessor(const boost::shared_ptr<NDRegisterAccessor<Void>>& impl);
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    VoidRegisterAccessor(const boost::shared_ptr<NDRegisterAccessor<Void>>& impl);
 
     /**
      * Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
