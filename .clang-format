@@ -1,3 +1,8 @@
+#
+# ChimeraTK clang-format definition.
+#
+# Use with clang-format-14. Please refer to https://apt.llvm.org/ for installation instructions on older Ubuntu versions.
+#
 ---
 BasedOnStyle: LLVM
 AccessModifierOffset: '-1'
