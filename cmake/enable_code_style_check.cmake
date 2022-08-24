@@ -18,5 +18,5 @@
 #######################################################################################################################
 
 enable_testing()
-add_test(NAME coding_style COMMAND ${CMAKE_SOURCE_DIR}/cmake/check-coding-style.sh
+add_test(NAME coding_style COMMAND ${CMAKE_SOURCE_DIR}/cmake/check-coding-style.sh ${CMAKE_BINARY_DIR}
                            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
