@@ -24,7 +24,7 @@ fi
 # check copyright/licence file header comment
 checkCopyrightComment() {
   SPDX_OK=1
-  if [[ "`head -n1 $1`" != '// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK'* ]]; then
+  if [[ "`head -n1 $1`" != '// SPDX-FileCopyrightText: '* ]]; then
     SPDX_OK=0
   fi
   if [[ "`head -n2 $1 | tail -n1`" != '// SPDX-License-Identifier: '* ]]; then
