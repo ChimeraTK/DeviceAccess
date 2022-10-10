@@ -27,7 +27,7 @@ namespace ChimeraTK {
     std::string value;
     for(auto& child : childList) {
       // check for plain text
-      const xmlpp::TextNode* textNode = dynamic_cast<xmlpp::TextNode*>(child);
+      const xmlpp::TextNode* textNode = dynamic_cast<const xmlpp::TextNode*>(child);
       if(textNode) {
         // put to stream buffer
         value += textNode->get_content();
@@ -37,7 +37,7 @@ namespace ChimeraTK {
       // check for reference
       if(child->get_name() == "ref") {
         auto childChildList = child->get_children();
-        const xmlpp::TextNode* refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        const xmlpp::TextNode* refNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
           if(!catalogue.hasRegister(regName)) {
@@ -72,7 +72,7 @@ namespace ChimeraTK {
       // check for parameter
       if(child->get_name() == "par") {
         auto childChildList = child->get_children();
-        const xmlpp::TextNode* parNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        const xmlpp::TextNode* parNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(parNameNode && childChildList.size() == 1) {
           std::string parName = parNameNode->get_content();
           if(_parameters.find(parName) == _parameters.end()) {
@@ -147,7 +147,7 @@ namespace ChimeraTK {
       }
 
       // check for plain text
-      const xmlpp::TextNode* textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
+      const xmlpp::TextNode* textNode = dynamic_cast<const xmlpp::TextNode*>(childList.front());
       if(textNode) {
         std::stringstream buf(textNode->get_content());
         buf >> valueVector[index];
@@ -157,7 +157,7 @@ namespace ChimeraTK {
       // check for reference
       if(childList.front()->get_name() == "ref") {
         auto childChildList = childList.front()->get_children();
-        const xmlpp::TextNode* refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        const xmlpp::TextNode* refNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
           if(!catalogue.hasRegister(regName)) {
@@ -189,7 +189,7 @@ namespace ChimeraTK {
 
       if(childList.front()->get_name() == "par") {
         auto childChildList = childList.front()->get_children();
-        const xmlpp::TextNode* parNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        const xmlpp::TextNode* parNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(parNameNode && childChildList.size() == 1) {
           std::string parName = parNameNode->get_content();
           if(_parameters.find(parName) == _parameters.end()) {
