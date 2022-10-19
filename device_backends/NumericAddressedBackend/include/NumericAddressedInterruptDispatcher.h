@@ -61,6 +61,8 @@ namespace ChimeraTK {
      */
     NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
 
+    // TODO check - why does base class AsyncVariableImpl care about having only weak ptr if we have shared_ptr here?
+    // explanation: this is syncAccessor, while weakPtr of AsyncVariableImpl is for async accessor
     boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
 
     unsigned int getNumberOfChannels() override { return syncAccessor->getNumberOfChannels(); }
@@ -79,6 +81,7 @@ namespace ChimeraTK {
       boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive) {
     auto synchronousFlags = descriptor.flags;
     synchronousFlags.remove(AccessMode::wait_for_new_data);
+    synchronousFlags.add(AccessMode::no_shared_backend_pointer);
     // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
     auto syncAccessor = backend->getRegisterAccessor<UserType>(
         descriptor.name, descriptor.numberOfWords, descriptor.wordOffsetInRegister, synchronousFlags);

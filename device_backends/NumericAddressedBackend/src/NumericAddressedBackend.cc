@@ -124,8 +124,7 @@ namespace ChimeraTK {
           _interruptDispatchers.at({registerInfo.interruptCtrlNumber, registerInfo.interruptNumber});
       assert(interruptDispatcher);
       auto newSubscriber = interruptDispatcher->subscribe<UserType>(
-          boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
-          wordOffsetInRegister, flags);
+          shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags);
       // The new subscriber might already be activated. Hence the exception backend is already set by the interrupt
       // dispatcher.
       startInterruptHandlingThread(registerInfo.interruptCtrlNumber, registerInfo.interruptNumber);
@@ -141,6 +140,14 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> NumericAddressedBackend::getSyncRegisterAccessor(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    // TODO check - which calls to shared_from_this can we replace by uncounted pointers?
+    // note, we would only want to do that when calling from InterruptDispatcher.
+    auto thisP = shared_from_this();
+    if(flags.has(AccessMode::no_shared_backend_pointer)) {
+      flags.remove(AccessMode::no_shared_backend_pointer);
+      thisP = boost::shared_ptr<NumericAddressedBackend>(this, [](NumericAddressedBackend*) {});
+    }
+
     boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
     // obtain register info
     auto registerInfo = getRegisterInfo(registerPathName);
@@ -152,24 +159,24 @@ namespace ChimeraTK {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>(
-                  shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+                  thisP, registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
         else {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>(
-                  shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+                  thisP, registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
       }
       else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
         if(flags.has(AccessMode::raw)) {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(
-                  shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+                  thisP, registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
         else {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
               new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>(
-                  shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+                  thisP, registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
       }
       else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {
@@ -178,7 +185,7 @@ namespace ChimeraTK {
         }
         else {
           accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendASCIIAccessor(
-              shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+              thisP, registerPathName, numberOfWords, wordOffsetInRegister, flags));
         }
       }
       else {
@@ -191,16 +198,16 @@ namespace ChimeraTK {
       if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
         accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
             new NumericAddressedBackendMuxedRegisterAccessor<UserType, IEEE754_SingleConverter>(
-                registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+                registerPathName, numberOfWords, wordOffsetInRegister, thisP));
       }
       else {
         accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
             new NumericAddressedBackendMuxedRegisterAccessor<UserType, FixedPointConverter>(
-                registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+                registerPathName, numberOfWords, wordOffsetInRegister, thisP));
       }
     }
 
-    accessor->setExceptionBackend(shared_from_this());
+    accessor->setExceptionBackend(thisP);
     return accessor;
   }
 

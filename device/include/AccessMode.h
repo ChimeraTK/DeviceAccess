@@ -33,7 +33,9 @@ namespace ChimeraTK {
      * Make any read blocking until new data has arrived since the last read. This flag may not be suppoerted by all
      * registers (and backends), in which case a DeviceException with the id NOT_IMPLEMENTED will be thrown.
      */
-    wait_for_new_data
+    wait_for_new_data,
+
+    no_shared_backend_pointer
 
     /* IMPORTANT: When extending this class with new flags, don't forget to update AccessModeFlags::getStringMap()! */
   };
