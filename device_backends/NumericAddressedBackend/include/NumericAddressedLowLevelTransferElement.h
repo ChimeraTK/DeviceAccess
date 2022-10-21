@@ -163,10 +163,10 @@ namespace ChimeraTK {
     boost::shared_ptr<NumericAddressedBackend> _dev;
 
     /** start address w.r.t. the PCIe bar */
-    size_t _bar;
+    uint64_t _bar;
 
     /** start address w.r.t. the PCIe bar */
-    size_t _startAddress;
+    uint64_t _startAddress;
 
     /** number of bytes to access */
     size_t _numberOfBytes;
