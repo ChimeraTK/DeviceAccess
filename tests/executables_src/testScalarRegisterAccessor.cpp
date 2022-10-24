@@ -135,6 +135,15 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
   accessor.write();
   BOOST_CHECK(dummy == 119);
 
+  // test readAndGet
+  accessor = 470;
+  accessor.write();
+  BOOST_CHECK(accessor.readAndGet() == 470);
+
+  // test setAndWrite
+  accessor.setAndWrite(4711);
+  BOOST_CHECK(dummy == 4711);
+
   device.close();
 }
 
