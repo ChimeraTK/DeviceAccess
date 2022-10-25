@@ -144,6 +144,24 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
   accessor.setAndWrite(4711);
   BOOST_CHECK(dummy == 4711);
 
+  // test writeIfDifferent
+  accessor = 501;
+  accessor.write();
+  VersionNumber vnBefore = accessor.getVersionNumber();
+  accessor.writeIfDifferent(501); // should not write
+  VersionNumber vnAfter = accessor.getVersionNumber();
+  BOOST_CHECK(vnAfter == vnBefore);
+  vnBefore = accessor.getVersionNumber();
+  accessor.writeIfDifferent(502); // should write
+  vnAfter = accessor.getVersionNumber();
+  BOOST_CHECK(vnAfter != vnBefore);
+  // test writeIfDifferent for newly created accessors:
+  ScalarRegisterAccessor<int> freshAccessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  vnBefore = freshAccessor.getVersionNumber();
+  freshAccessor.writeIfDifferent(0); // should write
+  vnAfter = freshAccessor.getVersionNumber();
+  BOOST_CHECK(vnAfter != vnBefore);
+
   device.close();
 }
 

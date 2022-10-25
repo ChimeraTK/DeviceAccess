@@ -104,8 +104,16 @@ namespace ChimeraTK {
      */
     void writeIfDifferent(UserType newValue, VersionNumber versionNumber = VersionNumber{nullptr});
 
+    /**
+     * Convenience function to set and write new value. The given version number
+     * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
+     * the write actually takes place.
+     */
     void setAndWrite(UserType newValue, VersionNumber versionNumber = VersionNumber{nullptr});
 
+    /**
+     * Convenience function to read and return a value of UserType.
+     */
     UserType readAndGet();
 
     friend class TransferGroup;
