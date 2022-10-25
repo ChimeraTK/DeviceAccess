@@ -16,6 +16,12 @@ namespace ChimeraTK { namespace LNMBackend {
     _info = catalogue.getBackendRegister(_info.name);
     // Change register info to read-only
     _info.writeable = false;
+    _info.supportedFlags.remove(AccessMode::raw);
+    auto& dd = _info.getDataDescriptor();
+    // also remove raw-type info from DataDescriptor
+    // TODO this does not work in general
+    // _info._dataDescriptor =
+    //    DataDescriptor(dd.fundamentalType(), dd.isIntegral(), dd.isSigned(), dd.nDigits(), dd.nFractionalDigits());
     catalogue.modifyRegister(_info);
   }
 
@@ -31,6 +37,22 @@ namespace ChimeraTK { namespace LNMBackend {
     return {};
   }
 
+  /*
+   *
+   * TODO double buffering - some points to discuss and test about this.
+   * it looks like the element number (1..3) of the registers
+   * WORD_DUB_BUF_ENA, WORD_DUB_BUF_CUR  of
+   * https://redmine.msktools.desy.de/projects/utca_firmware_framework/wiki/DAQ_-_Data_Acquisiton_Module
+   * are not supported (because we would need offset!=0).
+   * Is it important or should we rely on selection in logical name mapping to target right element?
+   *
+   * Also, tickets say something support for individual channels - but how would that differ from just going
+   * over all channels, like here?
+   * https://github.com/ChimeraTK/DeviceAccess/issues/30
+   *
+   * Also, raw accessMode needs to be supported and tested?
+   * What about wait_for_new_data, should we support that or not?
+   */
   template<typename UserType>
   DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,

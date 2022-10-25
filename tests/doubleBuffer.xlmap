@@ -4,9 +4,9 @@
     <targetDevice><par>target</par></targetDevice>
     <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
     <plugin name="doubleBuffer">      
-      <parameter name="enableDoubleBuffering">APP.1.WORD_DUB_BUF_ENA</parameter>
+      <parameter name="enableDoubleBuffering">APP/1/WORD_DUB_BUF_ENA</parameter>
       <parameter name="currentBufferNumber">APP/1/WORD_DUB_BUF_CURR</parameter>
-      <parameter name="secondBuffer">APP.0.DAQ0_BUF1</parameter>
+      <parameter name="secondBuffer">APP/0/DAQ0_BUF1</parameter>
     </plugin>
   </redirectedRegister>
 
