@@ -25,6 +25,33 @@ using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
+
+struct WriteCountingBackend : public DummyBackend {
+  using DummyBackend::DummyBackend;
+
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return returnInstance<WriteCountingBackend>(
+        parameters.at("map"), convertPathRelativeToDmapToAbs(parameters.at("map")));
+  }
+
+  size_t writeCount{0};
+
+  void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
+    ++writeCount;
+    DummyBackend::write(bar, address, data, sizeInBytes);
+  }
+
+  struct BackendRegisterer {
+    BackendRegisterer() {
+      ChimeraTK::BackendFactory::getInstance().registerBackendType(
+          "WriteCountingDummy", &WriteCountingBackend::createInstance, {"map"});
+    }
+  };
+};
+
+static WriteCountingBackend::BackendRegisterer gWriteCountingBackendRegisterer;
+
+/**********************************************************************************************************************/
 BOOST_AUTO_TEST_CASE(testCreation) {
   setDMapFilePath("dummies.dmap");
   std::cout << "testCreation" << std::endl;
@@ -143,24 +170,6 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
   // test setAndWrite
   accessor.setAndWrite(4711);
   BOOST_CHECK(dummy == 4711);
-
-  // test writeIfDifferent
-  accessor = 501;
-  accessor.write();
-  VersionNumber vnBefore = accessor.getVersionNumber();
-  accessor.writeIfDifferent(501); // should not write
-  VersionNumber vnAfter = accessor.getVersionNumber();
-  BOOST_CHECK(vnAfter == vnBefore);
-  vnBefore = accessor.getVersionNumber();
-  accessor.writeIfDifferent(502); // should write
-  vnAfter = accessor.getVersionNumber();
-  BOOST_CHECK(vnAfter != vnBefore);
-  // test writeIfDifferent for newly created accessors:
-  ScalarRegisterAccessor<int> freshAccessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
-  vnBefore = freshAccessor.getVersionNumber();
-  freshAccessor.writeIfDifferent(0); // should write
-  vnAfter = freshAccessor.getVersionNumber();
-  BOOST_CHECK(vnAfter != vnBefore);
 
   device.close();
 }
@@ -315,3 +324,48 @@ BOOST_AUTO_TEST_CASE(testUniqueID) {
 
   device.close();
 }
+
+BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
+  setDMapFilePath("dummies.dmap");
+  std::cout << "testRegisterAccessor" << std::endl;
+
+  Device device;
+  device.open("(WriteCountingDummy?map=goodMapFile.map)");
+  auto backend = boost::dynamic_pointer_cast<WriteCountingBackend>(
+      BackendFactory::getInstance().createBackend("(WriteCountingDummy?map=goodMapFile.map)"));
+  BOOST_CHECK(backend != NULL);
+
+  // obtain register accessor with integral type
+  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  BOOST_CHECK(accessor.isReadOnly() == false);
+  BOOST_CHECK(accessor.isReadable());
+  BOOST_CHECK(accessor.isWriteable());
+
+  // dummy register accessor for comparison
+  DummyRegisterAccessor<int> dummy(backend.get(), "APP0", "WORD_STATUS");
+
+  // Inital write and writeIfDifferent with same Value
+  accessor = 501;
+  accessor.write();
+  size_t counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(501); // should not write
+  size_t counterAfter = backend->writeCount;
+  BOOST_CHECK(counterBefore == counterAfter);
+
+  // writeIfDifferent with different Value
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(502); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterBefore != counterAfter);
+
+  // test writeIfDifferent for newly created accessor:
+  ScalarRegisterAccessor<int> freshAccessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  counterBefore = backend->writeCount;
+  freshAccessor.writeIfDifferent(0); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterBefore != counterAfter);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
