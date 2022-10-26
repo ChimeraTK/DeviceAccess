@@ -22,7 +22,9 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
 /**********************************************************************************************************************/
 
 /**
- * dummy backend used for testing the double buffering handshake
+ * dummy backend used for testing the double buffering handshake.
+ * a double-buffer read consists of (write ctrl, read buffernumber, read other buffer, write ctrl)
+ * The overwritten functions of this class refer to the inner protocol
  */
 struct DummyForDoubleBuffering : public ExceptionDummy {
   using ExceptionDummy::ExceptionDummy;
@@ -44,23 +46,33 @@ struct DummyForDoubleBuffering : public ExceptionDummy {
     // fw simulating side, this limitation should not matter here since we only interrupt
     // DummyForDoubleBuffering::read() and not it's base implementation
 
-    if(blockNextRead) {
-      barr.wait();
-      std::lock_guard lg(readerInterruptLock);
-      blockNextRead = false;
+    for(unsigned i = 0; i < 2; i++) {
+      if(blockNextRead[i]) {
+        blockedInRead[i].wait();
+        unblockRead[i].wait();
+        blockNextRead[i] = false;
+      }
     }
     // finalize reading by calling Exception backend read
     ChimeraTK::ExceptionDummy::read(bar, address, data, sizeInBytes);
   }
-  static thread_local bool blockNextRead;
-  boost::barrier barr{2};
-  std::mutex readerInterruptLock;
+  // use this to request that next read blocks.
+  // array index corresponds to that of barrier arrays, on pair of barriers per reader thread we control.
+  // We know that read is called only 2nd after
+  // write (for the buffer-switching enable ctrl register), so in this sense it requests blocking
+  // after only part of the double-buffer read operation is done
+  static thread_local bool blockNextRead[2];
+  // after request that read blocks, you must wait on this
+  std::array<boost::barrier, 2> blockedInRead{boost::barrier{2}, boost::barrier{2}};
+  // use this to unblock the read
+  std::array<boost::barrier, 2> unblockRead{boost::barrier{2}, boost::barrier{2}};
 };
-thread_local bool DummyForDoubleBuffering::blockNextRead = false;
+thread_local bool DummyForDoubleBuffering::blockNextRead[2] = {false, false};
 
 static DummyForDoubleBuffering::BackendRegisterer gDFDBRegisterer;
 
 static std::string rawDeviceCdd("(DummyForDoubleBuffering?map=doubleBuffer.map)");
+std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + rawDeviceCdd + ")";
 static auto backdoor =
     boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(rawDeviceCdd));
 
@@ -207,48 +219,99 @@ template<typename Register>
 uint32_t AreaType<Register>::_currentBufferNumber = 0;
 
 BOOST_AUTO_TEST_CASE(testUnified) {
-  std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + rawDeviceCdd + ")";
   ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyArea1>>().runTests(lmap);
 }
 
-BOOST_AUTO_TEST_CASE(testSlowReader) {
+struct DeviceFixture {
+  Device d;
+  boost::shared_ptr<NDRegisterAccessor<uint32_t>> doubleBufferingEnabled;
+  // we call the backend frontdoor when we modify the behavior of the thread which reads via double buffering mechanism
+  boost::shared_ptr<DummyForDoubleBuffering> frontdoor;
+  DeviceFixture() : d(lmap) {
+    // before any access, also via backdoor, must open
+    d.open();
+    frontdoor = boost::dynamic_pointer_cast<DummyForDoubleBuffering>(backdoor);
+    assert(frontdoor);
+    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>("APP/1/WORD_DUB_BUF_ENA", 0, 0, {});
+    doubleBufferingEnabled->accessData(0) = 1;
+    doubleBufferingEnabled->write();
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE(testSlowReader, DeviceFixture) {
   /*
    * Test race condition: slow reader, which blocks the Firmware from buffer switching.
-   * TODO discuss - could this test be done within unified test? I guess not.
    */
-  std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + rawDeviceCdd + ")";
-  Device d(lmap);
-  d.open();
-  // we call the backend frontdoor when we modify the behavior of the thread reading via double buffering mechanism
-  auto frontdoor = boost::dynamic_pointer_cast<DummyForDoubleBuffering>(backdoor);
-  assert(frontdoor);
-  auto doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>("APP/1/WORD_DUB_BUF_ENA", 0, 0, {});
-  doubleBufferingEnabled->accessData(0) = 1;
-  doubleBufferingEnabled->write();
-
-  // make double buffer operation block after write to ctrl register, at read of buffer number
-  std::unique_lock lockGuard(frontdoor->readerInterruptLock);
-
   auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
 
+  // make double buffer operation block after write to ctrl register, at read of buffer number
   std::thread s([&] {
     // this thread reads from double-buffered region
-    frontdoor->blockNextRead = true;
+    frontdoor->blockNextRead[0] = true;
     accessor.read();
   });
 
-  // wait that threas s is in blocked double-buffer read
-  frontdoor->barr.wait();
+  // wait that thread s is in blocked double-buffer read
+  frontdoor->blockedInRead[0].wait();
 
   // simplification: instead of writing fw simulation which would overwrite data now,
   // just check that buffer switching was disabled
   doubleBufferingEnabled->readLatest();
   BOOST_CHECK(!doubleBufferingEnabled->accessData(0));
 
-  lockGuard.unlock();
+  frontdoor->unblockRead[0].wait();
   s.join();
 
   // check that buffer switching enabled, by finalization of double-buffered read
+  doubleBufferingEnabled->readLatest();
+  BOOST_CHECK(doubleBufferingEnabled->accessData(0));
+}
+
+BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
+  /*
+   * A test which exposes the dangerous race condition of two readers
+   * - reader A deactivates buffer switching, starts reading buffer0
+   * - reader B (again) deactivates buffer switching, starts reading buffer0
+   * - reader A finished with reading, activates buffer switching already, which is too early
+   *   here the correct double buffering implementation would need to wait on reader B
+   * - firmware writes into buffer1 and when done, switches buffers
+   *     the writing may have started earlier (e.g. before reader A started reading), important here is
+   *     only buffer switch at end
+   * - firmware writes into buffer0 and corrupts data
+   * - reader B finishes reading, and gets corrupt data, enables buffer switching.
+   */
+
+  // wait on "reader B has started" and then wait on "reader A has finished" inside reader B
+  boost::barrier readerAfinished{2};
+  boost::barrier readerBfinished{2};
+
+  std::thread readerA([&] {
+    auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
+    // begin read
+    frontdoor->blockNextRead[0] = true;
+    accessor.read();
+    readerAfinished.wait();
+  });
+  std::thread readerB([&] {
+    auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
+    // wait that readerA is in blocked double-buffer read
+    frontdoor->blockedInRead[0].wait();
+    // begin read
+    frontdoor->blockNextRead[1] = true;
+    accessor.read();
+    readerBfinished.wait();
+  });
+  frontdoor->blockedInRead[1].wait(); // wait that reader B also in blocked read
+  frontdoor->unblockRead[0].wait();   // this is for reader A
+  readerAfinished.wait();
+
+  // check that after reader A returned, buffer switching is still disabled
+  doubleBufferingEnabled->readLatest();
+  BOOST_CHECK(!doubleBufferingEnabled->accessData(0));
+
+  frontdoor->unblockRead[1].wait(); // this is for reader B
+  // check that after reader B returned, buffer switching is enabled
+  readerBfinished.wait();
   doubleBufferingEnabled->readLatest();
   BOOST_CHECK(doubleBufferingEnabled->accessData(0));
 }
