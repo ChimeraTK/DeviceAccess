@@ -13,6 +13,8 @@ using namespace boost::unit_test_framework;
 #include "LogicalNameMappingBackend.h"
 #include "UnifiedBackendTest.h"
 
+#include <boost/thread/barrier.hpp>
+
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
@@ -42,19 +44,19 @@ struct DummyForDoubleBuffering : public ExceptionDummy {
     // fw simulating side, this limitation should not matter here since we only interrupt
     // DummyForDoubleBuffering::read() and not it's base implementation
 
-    if(useLock) {
-      iWasHere = true;
+    if(blockNextRead) {
+      barr.wait();
       std::lock_guard lg(readerInterruptLock);
+      blockNextRead = false;
     }
     // finalize reading by calling Exception backend read
     ChimeraTK::ExceptionDummy::read(bar, address, data, sizeInBytes);
   }
-  static thread_local bool useLock;
-  // TODO - replace with condition var or boost::barrier
-  std::atomic<bool> iWasHere;
+  static thread_local bool blockNextRead;
+  boost::barrier barr{2};
   std::mutex readerInterruptLock;
 };
-thread_local bool DummyForDoubleBuffering::useLock = false;
+thread_local bool DummyForDoubleBuffering::blockNextRead = false;
 
 static DummyForDoubleBuffering::BackendRegisterer gDFDBRegisterer;
 
@@ -73,7 +75,7 @@ struct AreaType : Register {
   ChimeraTK::AccessModeFlags supportedFlags() { return {/* TODO ChimeraTK::AccessMode::wait_for_new_data */}; }
   size_t nChannels() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
-  size_t nRuntimeErrorCases() { return 0; }
+  size_t nRuntimeErrorCases() { return 1; }
 
   static constexpr auto capabilities = TestCapabilities<>()
                                            .disableForceDataLossWrite()
@@ -179,7 +181,12 @@ struct AreaType : Register {
     }
   }
 
-  void setForceRuntimeError(bool /*enable*/, size_t) { assert(false); }
+  void setForceRuntimeError(bool enable, size_t caseNumber) {
+    if(caseNumber == 0) {
+      backdoor->throwExceptionRead = enable;
+      backdoor->throwExceptionOpen = enable;
+    }
+  }
 };
 
 /*********************************************************************************************************************/
@@ -209,32 +216,29 @@ BOOST_AUTO_TEST_CASE(testSlowReader) {
    * Test race condition: slow reader, which blocks the Firmware from buffer switching.
    * TODO discuss - could this test be done within unified test? I guess not.
    */
+  std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + rawDeviceCdd + ")";
+  Device d(lmap);
+  d.open();
   // we call the backend frontdoor when we modify the behavior of the thread reading via double buffering mechanism
   auto frontdoor = boost::dynamic_pointer_cast<DummyForDoubleBuffering>(backdoor);
   assert(frontdoor);
   auto doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>("APP/1/WORD_DUB_BUF_ENA", 0, 0, {});
   doubleBufferingEnabled->accessData(0) = 1;
   doubleBufferingEnabled->write();
-  std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + rawDeviceCdd + ")";
-  Device d(lmap);
-  d.open();
 
   // make double buffer operation block after write to ctrl register, at read of buffer number
-  frontdoor->iWasHere = false;
   std::unique_lock lockGuard(frontdoor->readerInterruptLock);
 
   auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
 
   std::thread s([&] {
     // this thread reads from double-buffered region
-    frontdoor->useLock = true;
+    frontdoor->blockNextRead = true;
     accessor.read();
   });
 
   // wait that threas s is in blocked double-buffer read
-  while(!frontdoor->iWasHere) {
-    usleep(10000);
-  }
+  frontdoor->barr.wait();
 
   // simplification: instead of writing fw simulation which would overwrite data now,
   // just check that buffer switching was disabled
