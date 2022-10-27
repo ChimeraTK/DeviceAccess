@@ -8,6 +8,8 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
 
+#include <boost/interprocess/managed_shared_memory.hpp>
+
 #include <string>
 
 namespace ChimeraTK { namespace LNMBackend {
@@ -58,5 +60,10 @@ namespace ChimeraTK { namespace LNMBackend {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
+    // number of currently active reader threads
+    // TODO - this must be replaced by an interprocess concept
+    // TODO fix - state must be shared accross accessors. what exactly should be counted?
+    volatile uint32_t* _readerCount;
+    boost::interprocess::managed_shared_memory _segment;
   };
 }} // namespace ChimeraTK::LNMBackend

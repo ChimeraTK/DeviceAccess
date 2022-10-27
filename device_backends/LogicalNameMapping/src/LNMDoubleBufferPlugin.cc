@@ -72,10 +72,24 @@ namespace ChimeraTK { namespace LNMBackend {
           "LogicalNameMappingBackend DoubleBufferPlugin: Missing parameter " + std::string("'") + key + "'.";
       throw ChimeraTK::logic_error(message);
     }
+    std::string instanceIdHash = "1";
+    std::string mapFileHash = "1"; // TODO this one would be useful
+    std::string userHash = "1";
+    std::string name = "ChimeraTK_doubleBufRegCounters_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
+    size_t requiredMem = 10000; // boost needs some extra mem
+    _segment =
+        boost::interprocess::managed_shared_memory(boost::interprocess::open_or_create, name.c_str(), requiredMem);
+    // TODO also include register path
+    //  construct and initialize with 0 if not existing
+    _readerCount = _segment.find_or_construct<uint32_t>("nameOfregisterTODO")(0);
+    // TODO cleanup
+    // TODO fix - somehow readerCount not initialized correctly!
+    assert(*_readerCount < 10);
   }
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
+    *_readerCount++;
     // acquire a lock in firmware (disable buffer swapping)
     _enableDoubleBufferReg->accessData(0) = 0;
     _enableDoubleBufferReg->write();
@@ -105,9 +119,13 @@ namespace ChimeraTK { namespace LNMBackend {
     else
       _secondBufferReg->postRead(type, hasNewData);
 
-    // release a lock in firmware (enable buffer swapping)
-    _enableDoubleBufferReg->accessData(0) = 1;
-    _enableDoubleBufferReg->write();
+    assert(*_readerCount > 0);
+    *_readerCount--;
+    if(*_readerCount == 0) {
+      // release a lock in firmware (enable buffer swapping)
+      _enableDoubleBufferReg->accessData(0) = 1;
+      _enableDoubleBufferReg->write();
+    }
     // set version and data validity of this object
     this->_versionNumber = {};
     if(_currentBuffer)
