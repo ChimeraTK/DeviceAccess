@@ -282,15 +282,12 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
    */
 
   // wait on "reader B has started" and then wait on "reader A has finished" inside reader B
-  boost::barrier readerAfinished{2};
-  boost::barrier readerBfinished{2};
 
   std::thread readerA([&] {
     auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
     // begin read
     frontdoor->blockNextRead[0] = true;
     accessor.read();
-    readerAfinished.wait();
   });
   std::thread readerB([&] {
     auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
@@ -299,11 +296,10 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
     // begin read
     frontdoor->blockNextRead[1] = true;
     accessor.read();
-    readerBfinished.wait();
   });
   frontdoor->blockedInRead[1].wait(); // wait that reader B also in blocked read
   frontdoor->unblockRead[0].wait();   // this is for reader A
-  readerAfinished.wait();
+  readerA.join();
 
   // check that after reader A returned, buffer switching is still disabled
   doubleBufferingEnabled->readLatest();
@@ -311,7 +307,7 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
 
   frontdoor->unblockRead[1].wait(); // this is for reader B
   // check that after reader B returned, buffer switching is enabled
-  readerBfinished.wait();
+  readerB.join();
   doubleBufferingEnabled->readLatest();
   BOOST_CHECK(doubleBufferingEnabled->accessData(0));
 }
