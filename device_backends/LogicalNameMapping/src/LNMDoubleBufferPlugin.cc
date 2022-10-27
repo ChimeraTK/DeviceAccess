@@ -18,11 +18,8 @@ namespace ChimeraTK { namespace LNMBackend {
     // Change register info to read-only
     _info.writeable = false;
     _info.supportedFlags.remove(AccessMode::raw);
-    auto& dd = _info.getDataDescriptor();
     // also remove raw-type info from DataDescriptor
-    // TODO this does not work in general
-    // _info._dataDescriptor =
-    //    DataDescriptor(dd.fundamentalType(), dd.isIntegral(), dd.isSigned(), dd.nDigits(), dd.nFractionalDigits());
+    _info._dataDescriptor.setRawDataType(DataType::none);
     catalogue.modifyRegister(_info);
   }
 
