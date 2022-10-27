@@ -9,6 +9,7 @@ namespace ChimeraTK { namespace LNMBackend {
   DoubleBufferPlugin::DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters)
   : AccessorPlugin(info), _parameters(std::move(parameters)) {
     _targetDeviceName = info.deviceName;
+    _readerCount = boost::make_shared<std::atomic<uint32_t>>(0);
   }
 
   void DoubleBufferPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
@@ -31,7 +32,7 @@ namespace ChimeraTK { namespace LNMBackend {
       boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
     if constexpr(std::is_same<UserType, TargetType>::value) {
       return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(
-          backend, target, _parameters, _targetDeviceName);
+          backend, target, _parameters, _targetDeviceName, _readerCount);
     }
     assert(false);
     return {};
@@ -56,8 +57,9 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
-      const std::map<std::string, std::string>& parameters, std::string targetDeviceName)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target) {
+      const std::map<std::string, std::string>& parameters, std::string targetDeviceName,
+      boost::shared_ptr<std::atomic<uint32_t>> readerCount)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target), _readerCount(readerCount) {
     std::string key; // store key searched in 'parameters' map in order to print later correctly exception message
     try {
       _enableDoubleBufferReg = backend->_devices[targetDeviceName]->getRegisterAccessor<uint32_t>(
@@ -72,24 +74,11 @@ namespace ChimeraTK { namespace LNMBackend {
           "LogicalNameMappingBackend DoubleBufferPlugin: Missing parameter " + std::string("'") + key + "'.";
       throw ChimeraTK::logic_error(message);
     }
-    std::string instanceIdHash = "1";
-    std::string mapFileHash = "1"; // TODO this one would be useful
-    std::string userHash = "1";
-    std::string name = "ChimeraTK_doubleBufRegCounters_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
-    size_t requiredMem = 10000; // boost needs some extra mem
-    _segment =
-        boost::interprocess::managed_shared_memory(boost::interprocess::open_or_create, name.c_str(), requiredMem);
-    // TODO also include register path
-    //  construct and initialize with 0 if not existing
-    _readerCount = _segment.find_or_construct<uint32_t>("nameOfregisterTODO")(0);
-    // TODO cleanup
-    // TODO fix - somehow readerCount not initialized correctly!
-    assert(*_readerCount < 10);
   }
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
-    *_readerCount++;
+    (*_readerCount)++;
     // acquire a lock in firmware (disable buffer swapping)
     _enableDoubleBufferReg->accessData(0) = 0;
     _enableDoubleBufferReg->write();
@@ -120,7 +109,7 @@ namespace ChimeraTK { namespace LNMBackend {
       _secondBufferReg->postRead(type, hasNewData);
 
     assert(*_readerCount > 0);
-    *_readerCount--;
+    (*_readerCount)--;
     if(*_readerCount == 0) {
       // release a lock in firmware (enable buffer swapping)
       _enableDoubleBufferReg->accessData(0) = 1;

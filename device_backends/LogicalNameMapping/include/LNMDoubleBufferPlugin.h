@@ -8,8 +8,6 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
 
-#include <boost/interprocess/managed_shared_memory.hpp>
-
 #include <string>
 
 namespace ChimeraTK { namespace LNMBackend {
@@ -26,6 +24,7 @@ namespace ChimeraTK { namespace LNMBackend {
    private:
     std::map<std::string, std::string> _parameters;
     std::string _targetDeviceName;
+    boost::shared_ptr<std::atomic<uint32_t>> _readerCount;
   };
 
   template<typename UserType>
@@ -36,7 +35,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     DoubleBufferAccessorDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters,
-        std::string _targetDeviceName);
+        std::string _targetDeviceName, boost::shared_ptr<std::atomic<uint32_t>> readerCount);
 
     void doPreRead(TransferType type) override;
 
@@ -61,9 +60,7 @@ namespace ChimeraTK { namespace LNMBackend {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
     // number of currently active reader threads
-    // TODO - this must be replaced by an interprocess concept
-    // TODO fix - state must be shared accross accessors. what exactly should be counted?
-    volatile uint32_t* _readerCount;
-    boost::interprocess::managed_shared_memory _segment;
+    boost::shared_ptr<std::atomic<uint32_t>> _readerCount;
   };
+
 }} // namespace ChimeraTK::LNMBackend
