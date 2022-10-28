@@ -10,4 +10,51 @@
     </plugin>
   </redirectedRegister>
 
+    <!-- example for accessing extracted channels via double buffering -->
+    <!-- also, check here that applying logical mapping to 3-element vector is working -->
+    <redirectedRegister name="enableDoubleBuffering">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>DAQ0.WORD_DUB_BUF_ENA</targetRegister>
+        <targetStartIndex>0</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>    
+    <redirectedRegister name="currentBufferNumber">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>DAQ0.WORD_DUB_BUF_CURR</targetRegister>
+        <targetStartIndex>0</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+    <redirectedRegister name="firstBuffer">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>APP0.DAQ0_BUF0</targetRegister>
+        <targetStartIndex>2</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+    <redirectedRegister name="secondBuffer">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>APP0.DAQ0_BUF1</targetRegister>
+        <targetStartIndex>2</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+    <redirectedChannel name="modulation">
+        <targetDevice>this</targetDevice>
+        <targetRegister>firstBuffer</targetRegister>
+        <targetChannel>2</targetChannel>
+        <plugin name="doubleBuffer">      
+          <parameter name="enableDoubleBuffering">/enableDoubleBuffering</parameter>
+          <parameter name="currentBufferNumber">/currentBufferNumber</parameter>
+          <parameter name="secondBuffer">/secondBuffer</parameter>
+        </plugin>
+    </redirectedChannel>
+    <redirectedChannel name="correction">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>APP0.DAQ0_BUF0</targetRegister>
+      <targetChannel>1</targetChannel>
+      <plugin name="doubleBuffer">      
+        <parameter name="enableDoubleBuffering">DAQ0.WORD_DUB_BUF_ENA</parameter>
+        <parameter name="currentBufferNumber">DAQ0.WORD_DUB_BUF_CURR</parameter>
+        <parameter name="secondBuffer">APP0.DAQ0_BUF1</parameter>
+        <parameter name="wordOffset">2</parameter>
+      </plugin>
+    </redirectedChannel> 
 </logicalNameMap>

@@ -312,6 +312,43 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
   BOOST_CHECK(doubleBufferingEnabled->accessData(0));
 }
 
+BOOST_FIXTURE_TEST_CASE(testExtractedChannels, DeviceFixture) {
+  /*
+   * test access to extracted channels of multiplexed 2D region
+   * this is an application of concurrent readers
+   */
+  auto writingBufferNum = backdoor->getRegisterAccessor<uint32_t>("DAQ0/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE", 0, 0, {});
+  auto buf0 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF0", 0, 0, {});
+  auto buf1 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF1", 0, 0, {});
+
+  size_t wordOffset = 2; // must match xlmap
+  writingBufferNum->accessData(wordOffset) = 1;
+  writingBufferNum->write();
+
+  // TODO - also make this a bit harder to pass. read array? loop?
+  float modulation = 4.2;
+  float correction = 10.1;
+  buf0->accessData(0, 0) = modulation;
+  buf1->accessData(0, 0) = 2 * modulation;
+  buf0->accessData(1, 0) = correction;
+  buf1->accessData(1, 0) = 2 * correction;
+  buf0->write();
+  buf1->write();
+
+  std::thread readerA([&] {
+    auto accessorA = d.getOneDRegisterAccessor<float>("/modulation");
+    accessorA.read();
+    BOOST_CHECK(accessorA[0] == modulation);
+  });
+  std::thread readerB([&] {
+    auto accessorB = d.getOneDRegisterAccessor<float>("/correction");
+    accessorB.read();
+    BOOST_CHECK(accessorB[0] == correction);
+  });
+  readerA.join();
+  readerB.join();
+}
+
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
