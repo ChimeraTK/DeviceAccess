@@ -15,31 +15,27 @@
     <redirectedRegister name="enableDoubleBuffering">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>DAQ0.WORD_DUB_BUF_ENA</targetRegister>
-        <targetStartIndex>0</targetStartIndex>
+        <targetStartIndex>2</targetStartIndex>
         <numberOfElements>1</numberOfElements>
     </redirectedRegister>    
     <redirectedRegister name="currentBufferNumber">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>DAQ0.WORD_DUB_BUF_CURR</targetRegister>
-        <targetStartIndex>0</targetStartIndex>
+        <targetStartIndex>2</targetStartIndex>
         <numberOfElements>1</numberOfElements>
     </redirectedRegister>
     <redirectedRegister name="firstBuffer">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>APP0.DAQ0_BUF0</targetRegister>
-        <targetStartIndex>2</targetStartIndex>
-        <numberOfElements>1</numberOfElements>
     </redirectedRegister>
     <redirectedRegister name="secondBuffer">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>APP0.DAQ0_BUF1</targetRegister>
-        <targetStartIndex>2</targetStartIndex>
-        <numberOfElements>1</numberOfElements>
     </redirectedRegister>
     <redirectedChannel name="modulation">
         <targetDevice>this</targetDevice>
         <targetRegister>firstBuffer</targetRegister>
-        <targetChannel>2</targetChannel>
+        <targetChannel>0</targetChannel>
         <plugin name="doubleBuffer">      
           <parameter name="enableDoubleBuffering">/enableDoubleBuffering</parameter>
           <parameter name="currentBufferNumber">/currentBufferNumber</parameter>

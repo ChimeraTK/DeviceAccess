@@ -334,10 +334,13 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels, DeviceFixture) {
   buf1->accessData(1, 0) = 2 * correction;
   buf0->write();
   buf1->write();
+  auto lmapWritingBufferNum = d.getOneDRegisterAccessor<uint32_t>("/currentBufferNumber");
+  lmapWritingBufferNum.readLatest();
+  BOOST_CHECK(lmapWritingBufferNum[0] == 1);
 
   std::thread readerA([&] {
     auto accessorA = d.getOneDRegisterAccessor<float>("/modulation");
-    accessorA.read();
+    accessorA.readLatest();
     BOOST_CHECK(accessorA[0] == modulation);
   });
   std::thread readerB([&] {
