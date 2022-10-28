@@ -312,20 +312,77 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
   BOOST_CHECK(doubleBufferingEnabled->accessData(0));
 }
 
-BOOST_FIXTURE_TEST_CASE(testExtractedChannels, DeviceFixture) {
+/**
+ *  DeviceFixture used for the 2D access tests
+ *  here no overwriting of ExceptionBackend
+ */
+struct DeviceFixture2D {
+  // TODO - switch back to normal dummy?
+  const std::string rawDeviceCdd = "(sharedMemoryDummy?map=doubleBuffer.map)";
+  const std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + this->rawDeviceCdd + ")";
+  Device d;
+  boost::shared_ptr<DeviceBackend> backdoor;
+  boost::shared_ptr<NDRegisterAccessor<uint32_t>> doubleBufferingEnabled, writingBufferNum;
+  boost::shared_ptr<NDRegisterAccessor<float>> buf0, buf1;
+  size_t wordOffset = 2; // must match xlmap
+
+  DeviceFixture2D() : d(this->lmap) {
+    // before any access, also via backdoor, must open
+    d.open();
+    backdoor = BackendFactory::getInstance().createBackend(this->rawDeviceCdd);
+    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>("DAQ0/WORD_DUB_BUF_ENA", 1, wordOffset, {});
+    doubleBufferingEnabled->accessData(0) = 1;
+    doubleBufferingEnabled->write();
+
+    writingBufferNum =
+        backdoor->getRegisterAccessor<uint32_t>("DAQ0/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE", 1, wordOffset, {});
+    buf0 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF0", 0, 0, {});
+    buf1 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF1", 0, 0, {});
+  }
+};
+
+// TODO - check whether . in register names causes problems
+BOOST_FIXTURE_TEST_CASE(testExtractedChannels1, DeviceFixture2D) {
+  /*
+   * simple test for access to extracted channels of multiplexed 2D region
+   * here focus is on deconstruction since we have a bug there
+   */
+  writingBufferNum->accessData(0) = 1;
+  writingBufferNum->write();
+
+  float modulation = 4.2;
+  buf0->accessData(0, 0) = modulation;
+  buf1->accessData(0, 0) = 2 * modulation;
+  buf0->write();
+  buf1->write();
+
+  boost::barrier waitForBufferSwap{2};
+  std::thread readerA([&] {
+    auto accessorA = d.getOneDRegisterAccessor<float>("/modulation1");
+    accessorA.readLatest();
+    BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
+    waitForBufferSwap.wait();
+    accessorA.readLatest();
+    BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
+  });
+
+  writingBufferNum->accessData(0) = 0;
+  writingBufferNum->write();
+  waitForBufferSwap.wait();
+
+  readerA.join();
+}
+
+BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
   /*
    * test access to extracted channels of multiplexed 2D region
    * this is an application of concurrent readers
+   * also test indirection via target=this
    */
-  auto writingBufferNum = backdoor->getRegisterAccessor<uint32_t>("DAQ0/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE", 0, 0, {});
-  auto buf0 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF0", 0, 0, {});
-  auto buf1 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF1", 0, 0, {});
 
-  size_t wordOffset = 2; // must match xlmap
-  writingBufferNum->accessData(wordOffset) = 1;
+  writingBufferNum->accessData(0) = 1;
   writingBufferNum->write();
 
-  // TODO - also make this a bit harder to pass. read array? loop?
   float modulation = 4.2;
   float correction = 10.1;
   buf0->accessData(0, 0) = modulation;
@@ -338,16 +395,28 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels, DeviceFixture) {
   lmapWritingBufferNum.readLatest();
   BOOST_CHECK(lmapWritingBufferNum[0] == 1);
 
+  boost::barrier waitForBufferSwap{3};
   std::thread readerA([&] {
-    auto accessorA = d.getOneDRegisterAccessor<float>("/modulation");
+    auto accessorA = d.getOneDRegisterAccessor<float>("/modulation2");
     accessorA.readLatest();
-    BOOST_CHECK(accessorA[0] == modulation);
+    BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
+    waitForBufferSwap.wait();
+    accessorA.readLatest();
+    BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
   });
   std::thread readerB([&] {
     auto accessorB = d.getOneDRegisterAccessor<float>("/correction");
     accessorB.read();
-    BOOST_CHECK(accessorB[0] == correction);
+    BOOST_CHECK_CLOSE(accessorB[0], correction, 1e-4);
+    waitForBufferSwap.wait();
+    accessorB.read();
+    BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
   });
+
+  writingBufferNum->accessData(0) = 0;
+  writingBufferNum->write();
+  waitForBufferSwap.wait();
+
   readerA.join();
   readerB.join();
 }

@@ -1,0 +1,4 @@
+# this map file is for dummy based tests
+
+RAW (sharedMemoryDummy?map=doubleBuffer.map)
+LNMP (logicalNameMap?map=doubleBuffer.xlmap&target=RAW)
