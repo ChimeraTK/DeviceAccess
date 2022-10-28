@@ -105,11 +105,10 @@ namespace ChimeraTK {
     void writeIfDifferent(UserType newValue, VersionNumber versionNumber = VersionNumber{nullptr});
 
     /**
-     * Convenience function to set and write new value. The given version number
-     * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
-     * the write actually takes place.
+     * Convenience function to set and write new value. The given version number.
+     *  If versionNumber == {}, a new version number is generated.
      */
-    void setAndWrite(UserType newValue, VersionNumber versionNumber = VersionNumber{nullptr});
+    void setAndWrite(UserType newValue, VersionNumber versionNumber = {});
 
     /**
      * Convenience function to read and return a value of UserType.
@@ -253,7 +252,6 @@ namespace ChimeraTK {
   template<typename UserType, typename TAG>
   void ScalarRegisterAccessor<UserType, TAG>::setAndWrite(UserType newValue, VersionNumber versionNumber) {
     operator=(newValue);
-    if(versionNumber == VersionNumber{nullptr}) versionNumber = {};
     this->write(versionNumber);
   }
 

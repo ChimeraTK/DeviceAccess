@@ -356,12 +356,28 @@ BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
   counterBefore = backend->writeCount;
   accessor.writeIfDifferent(502); // should write
   counterAfter = backend->writeCount;
-  BOOST_CHECK(counterBefore != counterAfter);
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // writeIfDifferent with same Value, but explizit version number
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(502, VersionNumber{}); // should not write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore);
+
+  // writeIfDifferent with different Value, and explicit version number
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(514, VersionNumber{}); // should not write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
 
   // test writeIfDifferent for newly created accessor:
   ScalarRegisterAccessor<int> freshAccessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
   counterBefore = backend->writeCount;
+  VersionNumber vn = freshAccessor.getVersionNumber();
+  BOOST_CHECK(vn == VersionNumber{nullptr});
   freshAccessor.writeIfDifferent(0); // should write
+  vn = freshAccessor.getVersionNumber();
+  BOOST_CHECK(vn != VersionNumber{nullptr});
   counterAfter = backend->writeCount;
   BOOST_CHECK(counterBefore != counterAfter);
 
