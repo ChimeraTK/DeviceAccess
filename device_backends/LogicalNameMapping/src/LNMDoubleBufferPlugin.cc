@@ -57,19 +57,56 @@ namespace ChimeraTK { namespace LNMBackend {
       const std::map<std::string, std::string>& parameters, std::string targetDeviceName,
       boost::shared_ptr<std::atomic<uint32_t>> readerCount)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target), _readerCount(readerCount) {
+    boost::shared_ptr<DeviceBackend> dev;
+    try {
+      if(targetDeviceName != "this") {
+        dev = backend->_devices.at(targetDeviceName);
+      }
+      else {
+        dev = backend;
+      }
+    }
+    catch(std::out_of_range& ex) {
+      std::string message = "LogicalNameMappingBackend DoubleBufferPlugin: unknown targetDevice " + std::string("'") +
+          targetDeviceName + "'.";
+      throw ChimeraTK::logic_error(message);
+    }
+
+    size_t wordOffset = 0;
+    bool wordOffsetGiven = false;
+    // parameter wordOffset is optional, defines the array index offset in the control & status registers
+    if(parameters.find("wordOffset") != parameters.end()) {
+      // obtain result as string an put into stream
+      std::stringstream stream;
+      stream << parameters.at("wordOffset");
+      stream >> wordOffset;
+      wordOffsetGiven = true;
+    }
+
     std::string key; // store key searched in 'parameters' map in order to print later correctly exception message
     try {
-      _enableDoubleBufferReg = backend->_devices[targetDeviceName]->getRegisterAccessor<uint32_t>(
-          parameters.at(key.assign("enableDoubleBuffering")), 0, 0, {});
-      _currentBufferNumberReg = backend->_devices[targetDeviceName]->getRegisterAccessor<uint32_t>(
-          parameters.at(key.assign("currentBufferNumber")), 0, 0, {});
-      _secondBufferReg = backend->_devices[targetDeviceName]->getRegisterAccessor<UserType>(
-          parameters.at(key.assign("secondBuffer")), 0, 0, {});
+      // TODO fix - length=1 here collides with check below
+      size_t getLen = wordOffsetGiven ? 1 : 0;
+      _enableDoubleBufferReg = dev->getRegisterAccessor<uint32_t>(
+          parameters.at(key.assign("enableDoubleBuffering")), getLen, wordOffset, {});
+      _currentBufferNumberReg =
+          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), getLen, wordOffset, {});
+      _secondBufferReg = dev->getRegisterAccessor<UserType>(parameters.at(key.assign("secondBuffer")), 0, 0, {});
     }
     catch(std::out_of_range& ex) {
       std::string message =
           "LogicalNameMappingBackend DoubleBufferPlugin: Missing parameter " + std::string("'") + key + "'.";
       throw ChimeraTK::logic_error(message);
+    }
+
+    // TODO this needs discussion
+    if(_enableDoubleBufferReg->getNumberOfSamples() != 1) {
+      throw ChimeraTK::logic_error("LogicalNameMappingBackend DoubleBufferPlugin: parameter 'enableDoubleBuffering' "
+                                   "must be register of length=1");
+    }
+    if(_currentBufferNumberReg->getNumberOfSamples() != 1) {
+      throw ChimeraTK::logic_error(
+          "LogicalNameMappingBackend DoubleBufferPlugin: parameter 'currentBufferNumber' must be register of length=1");
     }
   }
 
