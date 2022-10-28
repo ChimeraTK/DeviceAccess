@@ -73,40 +73,29 @@ namespace ChimeraTK { namespace LNMBackend {
     }
 
     size_t wordOffset = 0;
-    bool wordOffsetGiven = false;
     // parameter wordOffset is optional, defines the array index offset in the control & status registers
     if(parameters.find("wordOffset") != parameters.end()) {
-      // obtain result as string an put into stream
-      std::stringstream stream;
-      stream << parameters.at("wordOffset");
-      stream >> wordOffset;
-      wordOffsetGiven = true;
+      try {
+        wordOffset = std::stoul(parameters.at("wordOffset"));
+      }
+      catch(std::exception& e) {
+        throw ChimeraTK::logic_error(
+            "LogicalNameMappingBackend DoubleBufferPlugin: parameter 'wordOffset' must be integer");
+      }
     }
 
     std::string key; // store key searched in 'parameters' map in order to print later correctly exception message
     try {
-      // TODO fix - length=1 here collides with check below
-      size_t getLen = wordOffsetGiven ? 1 : 0;
-      _enableDoubleBufferReg = dev->getRegisterAccessor<uint32_t>(
-          parameters.at(key.assign("enableDoubleBuffering")), getLen, wordOffset, {});
+      _enableDoubleBufferReg =
+          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("enableDoubleBuffering")), 1, wordOffset, {});
       _currentBufferNumberReg =
-          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), getLen, wordOffset, {});
+          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, wordOffset, {});
       _secondBufferReg = dev->getRegisterAccessor<UserType>(parameters.at(key.assign("secondBuffer")), 0, 0, {});
     }
     catch(std::out_of_range& ex) {
       std::string message =
           "LogicalNameMappingBackend DoubleBufferPlugin: Missing parameter " + std::string("'") + key + "'.";
       throw ChimeraTK::logic_error(message);
-    }
-
-    // TODO this needs discussion
-    if(_enableDoubleBufferReg->getNumberOfSamples() != 1) {
-      throw ChimeraTK::logic_error("LogicalNameMappingBackend DoubleBufferPlugin: parameter 'enableDoubleBuffering' "
-                                   "must be register of length=1");
-    }
-    if(_currentBufferNumberReg->getNumberOfSamples() != 1) {
-      throw ChimeraTK::logic_error(
-          "LogicalNameMappingBackend DoubleBufferPlugin: parameter 'currentBufferNumber' must be register of length=1");
     }
   }
 
