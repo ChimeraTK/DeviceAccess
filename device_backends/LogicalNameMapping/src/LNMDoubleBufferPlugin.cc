@@ -10,7 +10,22 @@ namespace ChimeraTK { namespace LNMBackend {
   DoubleBufferPlugin::DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters)
   : AccessorPlugin(info), _parameters(std::move(parameters)) {
     _targetDeviceName = info.deviceName;
-    _readerCount = boost::make_shared<std::atomic<uint32_t>>(0);
+
+    // We need to share _readerCount state among instances of DoubleBufferPlugin, if they refer
+    // to the same register set.
+    static std::map<std::string, boost::shared_ptr<std::atomic<uint32_t>>> readerCountMap;
+    static std::mutex readerCountMapMutex;
+    std::string id;
+    try {
+      id = parameters.at("enableDoubleBuffering");
+    }
+    catch(std::out_of_range& ex) { // not relevant here since handled later anyway
+    }
+    std::lock_guard lg(readerCountMapMutex);
+    if(readerCountMap.find(id) == readerCountMap.end()) {
+      readerCountMap[id] = boost::make_shared<std::atomic<uint32_t>>(0);
+    }
+    _readerCount = readerCountMap[id];
   }
 
   void DoubleBufferPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
@@ -95,9 +110,12 @@ namespace ChimeraTK { namespace LNMBackend {
 
       // TODO fix - we should take over the offset/numWords of this logical register, also for second buffer
       // this doesn't work:
+      // DoubleBufferPlugin* plugin;
+      // plugin->_info;
       //      auto info = backend->_catalogue_mutable.getBackendRegister(_target->getName());
       //      size_t offset = size_t(info.firstIndex);
       //      size_t numWords = size_t(info.length);
+
       size_t offset = 0;
       size_t numWords = 0;
       // TODO fix bug - if we have TargetType=CHANNEL here, must also choose that for the accessor for second buffer
