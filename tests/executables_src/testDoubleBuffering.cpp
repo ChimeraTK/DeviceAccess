@@ -345,30 +345,33 @@ struct DeviceFixture2D {
 BOOST_FIXTURE_TEST_CASE(testExtractedChannels1, DeviceFixture2D) {
   /*
    * simple test for access to extracted channels of multiplexed 2D region
-   * here focus is on deconstruction since we have a bug there
    */
   writingBufferNum->accessData(0) = 1;
   writingBufferNum->write();
 
   float modulation = 4.2;
-  buf0->accessData(0, 0) = modulation;
-  buf1->accessData(0, 0) = 2 * modulation;
+  unsigned channel = 3; // must match with xlmap
+  buf0->accessData(channel, 0) = modulation;
+  buf1->accessData(channel, 0) = 2 * modulation;
   buf0->write();
   buf1->write();
 
-  boost::barrier waitForBufferSwap{2};
+  boost::barrier waitForBufferSwapStart{2}, waitForBufferSwapDone{2};
   std::thread readerA([&] {
     auto accessorA = d.getOneDRegisterAccessor<float>("/modulation1");
     accessorA.readLatest();
+    // since writingBufferNum = 1, we expect buf0 contents to be read
     BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
-    waitForBufferSwap.wait();
+    waitForBufferSwapStart.wait();
+    waitForBufferSwapDone.wait();
     accessorA.readLatest();
     BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
   });
 
+  waitForBufferSwapStart.wait();
   writingBufferNum->accessData(0) = 0;
   writingBufferNum->write();
-  waitForBufferSwap.wait();
+  waitForBufferSwapDone.wait();
 
   readerA.join();
 }
@@ -385,8 +388,8 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
 
   float modulation = 4.2;
   float correction = 10.1;
-  buf0->accessData(0, 0) = modulation;
-  buf1->accessData(0, 0) = 2 * modulation;
+  buf0->accessData(3, 0) = modulation;
+  buf1->accessData(3, 0) = 2 * modulation;
   buf0->accessData(1, 0) = correction;
   buf1->accessData(1, 0) = 2 * correction;
   buf0->write();
@@ -401,6 +404,7 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
     accessorA.readLatest();
     BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
     waitForBufferSwap.wait();
+    waitForBufferSwap.wait();
     accessorA.readLatest();
     BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
   });
@@ -409,10 +413,12 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
     accessorB.read();
     BOOST_CHECK_CLOSE(accessorB[0], correction, 1e-4);
     waitForBufferSwap.wait();
+    waitForBufferSwap.wait();
     accessorB.read();
     BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
   });
 
+  waitForBufferSwap.wait();
   writingBufferNum->accessData(0) = 0;
   writingBufferNum->write();
   waitForBufferSwap.wait();

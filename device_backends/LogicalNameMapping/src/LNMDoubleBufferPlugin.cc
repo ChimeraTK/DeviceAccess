@@ -4,6 +4,7 @@
 #include "LNMDoubleBufferPlugin.h"
 
 #include "BackendFactory.h"
+#include "LNMBackendChannelAccessor.h"
 
 namespace ChimeraTK { namespace LNMBackend {
   DoubleBufferPlugin::DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters)
@@ -90,12 +91,40 @@ namespace ChimeraTK { namespace LNMBackend {
           dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("enableDoubleBuffering")), 1, wordOffset, {});
       _currentBufferNumberReg =
           dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, wordOffset, {});
-      _secondBufferReg = dev->getRegisterAccessor<UserType>(parameters.at(key.assign("secondBuffer")), 0, 0, {});
+      std::string secondBufName = parameters.at(key.assign("secondBuffer"));
+
+      // TODO fix - we should take over the offset/numWords of this logical register, also for second buffer
+      // this doesn't work:
+      //      auto info = backend->_catalogue_mutable.getBackendRegister(_target->getName());
+      //      size_t offset = size_t(info.firstIndex);
+      //      size_t numWords = size_t(info.length);
+      size_t offset = 0;
+      size_t numWords = 0;
+      // TODO fix bug - if we have TargetType=CHANNEL here, must also choose that for the accessor for second buffer
+      // how
+      // info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL
+      auto targetIsChannel = boost::dynamic_pointer_cast<LNMBackendChannelAccessor<UserType>>(_target);
+      if(targetIsChannel) {
+        // special case: we support redirectChannel together with doubleBuffer plugin by defining that
+        // secondBuffer must be also a redirectChannel register defined in logical name map
+        _secondBufferReg = backend->getRegisterAccessor<UserType>(secondBufName, 0, 0, {});
+      }
+      else {
+        _secondBufferReg = dev->getRegisterAccessor<UserType>(secondBufName, numWords, offset, {});
+      }
     }
     catch(std::out_of_range& ex) {
       std::string message =
           "LogicalNameMappingBackend DoubleBufferPlugin: Missing parameter " + std::string("'") + key + "'.";
       throw ChimeraTK::logic_error(message);
+    }
+    if(_secondBufferReg->getNumberOfChannels() != _target->getNumberOfChannels()) {
+      throw ChimeraTK::logic_error("LogicalNameMappingBackend DoubleBufferPlugin: shapes of first and second buffer do "
+                                   "not match, different number of channels");
+    }
+    if(_secondBufferReg->getNumberOfSamples() != _target->getNumberOfSamples()) {
+      throw ChimeraTK::logic_error("LogicalNameMappingBackend DoubleBufferPlugin: shapes of first and second buffer do "
+                                   "not match, different number of samples");
     }
   }
 

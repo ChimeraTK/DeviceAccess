@@ -11,17 +11,27 @@
   </redirectedRegister>
 
     <!-- example for accessing extracted channels via double buffering -->
-    <!-- without indirection over target=this -->
+    <redirectedChannel name="modulation1buf1">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
+        <targetChannel>3</targetChannel>
+    </redirectedChannel>
     <redirectedChannel name="modulation1">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
-        <targetChannel>0</targetChannel>
+        <targetChannel>3</targetChannel>
         <plugin name="doubleBuffer">      
           <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
           <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
-          <parameter name="secondBuffer">/APP0/DAQ0_BUF1</parameter>
+          <!-- <parameter name="secondBuffer">/APP0/DAQ0_BUF1</parameter> -->
+          <parameter name="secondBuffer">modulation1buf1</parameter>
           <parameter name="wordOffset">2</parameter>
         </plugin>
+    </redirectedChannel>
+    <redirectedChannel name="correctionBuf1">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
+        <targetChannel>1</targetChannel>
     </redirectedChannel>
     <redirectedChannel name="correction">
       <targetDevice><par>target</par></targetDevice>
@@ -30,7 +40,8 @@
       <plugin name="doubleBuffer">      
         <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
         <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
-        <parameter name="secondBuffer">/APP0/DAQ0_BUF1</parameter>
+        <parameter name="secondBuffer">/correctionBuf1</parameter>
+        <!-- <parameter name="secondBuffer">/APP0/DAQ0_BUF1</parameter> -->
         <parameter name="wordOffset">2</parameter>
       </plugin>
     </redirectedChannel> 
@@ -46,23 +57,24 @@
         <targetStartIndex>2</targetStartIndex>
         <numberOfElements>1</numberOfElements>
     </redirectedRegister>
-    <redirectedRegister name="firstBuffer">
+    <redirectedChannel name="firstBuffer">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
-    </redirectedRegister>
-    <redirectedRegister name="secondBuffer">
+        <targetChannel>3</targetChannel>
+    </redirectedChannel>
+    <redirectedChannel name="secondBuffer">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
-    </redirectedRegister>
+        <targetChannel>3</targetChannel>
+    </redirectedChannel>
     <!-- with indirection via target=this -->
-    <redirectedChannel name="modulation2">
+    <redirectedRegister name="modulation2">
         <targetDevice>this</targetDevice>
         <targetRegister>firstBuffer</targetRegister>
-        <targetChannel>0</targetChannel>
         <plugin name="doubleBuffer">      
           <parameter name="enableDoubleBuffering">/enableDoubleBuffering</parameter>
           <parameter name="currentBufferNumber">/currentBufferNumber</parameter>
           <parameter name="secondBuffer">/secondBuffer</parameter>
         </plugin>
-    </redirectedChannel>
+    </redirectedRegister>
 </logicalNameMap>
