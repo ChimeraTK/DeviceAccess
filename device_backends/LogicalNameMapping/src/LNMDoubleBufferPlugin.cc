@@ -107,21 +107,10 @@ namespace ChimeraTK { namespace LNMBackend {
           dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, wordOffset, {});
       std::string secondBufName = parameters.at(key.assign("secondBuffer"));
 
-      // TODO fix - we should take over the offset/numWords of this logical register, also for second buffer
-      // this doesn't work:
-      // DoubleBufferPlugin* plugin;
-      // plugin->_info;
-      //      auto info = backend->_catalogue_mutable.getBackendRegister(_target->getName());
-      //      size_t offset = size_t(info.firstIndex);
-      //      size_t numWords = size_t(info.length);
-
-      size_t offset = 0;
-      size_t numWords = 0;
-      // TODO fix bug - if we have TargetType=CHANNEL here, must also choose that for the accessor for second buffer
-      // how
-      // info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL
-      auto targetIsChannel = boost::dynamic_pointer_cast<LNMBackendChannelAccessor<UserType>>(_target);
-      if(targetIsChannel) {
+      // take over the offset/numWords of this logical register, also for second buffer
+      size_t offset = size_t(_plugin._info.firstIndex);
+      size_t numWords = size_t(_plugin._info.length);
+      if(_plugin._info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
         // special case: we support redirectChannel together with doubleBuffer plugin by defining that
         // secondBuffer must be also a redirectChannel register defined in logical name map
         _secondBufferReg = backend->getRegisterAccessor<UserType>(secondBufName, 0, 0, {});
@@ -154,8 +143,8 @@ namespace ChimeraTK { namespace LNMBackend {
     // check which buffer is now in use by the firmware
     _currentBufferNumberReg->read();
     _currentBuffer = _currentBufferNumberReg->accessData(0);
-    // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use _secondBufferReg
-    // (buffer 1)
+    // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use
+    // _secondBufferReg (buffer 1)
     if(_currentBuffer)
       _target->preRead(type);
     else
@@ -202,5 +191,4 @@ namespace ChimeraTK { namespace LNMBackend {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_secondBufferReg->accessChannel(i));
     }
   }
-
 }} // namespace ChimeraTK::LNMBackend
