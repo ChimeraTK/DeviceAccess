@@ -12,6 +12,9 @@
 
 namespace ChimeraTK { namespace LNMBackend {
   class DoubleBufferPlugin : public AccessorPlugin<DoubleBufferPlugin> {
+    template<typename UserType>
+    friend class DoubleBufferAccessorDecorator;
+
    public:
     DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters);
 
@@ -24,6 +27,7 @@ namespace ChimeraTK { namespace LNMBackend {
    private:
     std::map<std::string, std::string> _parameters;
     std::string _targetDeviceName;
+    // number of currently active reader threads
     boost::shared_ptr<std::atomic<uint32_t>> _readerCount;
   };
 
@@ -34,8 +38,7 @@ namespace ChimeraTK { namespace LNMBackend {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
     DoubleBufferAccessorDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const std::map<std::string, std::string>& parameters,
-        std::string _targetDeviceName, boost::shared_ptr<std::atomic<uint32_t>> readerCount);
+        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const DoubleBufferPlugin& plugin);
 
     void doPreRead(TransferType type) override;
 
@@ -54,13 +57,12 @@ namespace ChimeraTK { namespace LNMBackend {
     }
 
    private:
+    const DoubleBufferPlugin& _plugin;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _secondBufferReg;
 
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
-    // number of currently active reader threads
-    boost::shared_ptr<std::atomic<uint32_t>> _readerCount;
   };
 
 }} // namespace ChimeraTK::LNMBackend

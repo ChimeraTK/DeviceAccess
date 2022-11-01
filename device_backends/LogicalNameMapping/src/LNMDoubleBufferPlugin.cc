@@ -12,7 +12,7 @@ namespace ChimeraTK { namespace LNMBackend {
     _targetDeviceName = info.deviceName;
 
     // We need to share _readerCount state among instances of DoubleBufferPlugin, if they refer
-    // to the same register set.
+    // to the same control register.
     static std::map<std::string, boost::shared_ptr<std::atomic<uint32_t>>> readerCountMap;
     static std::mutex readerCountMapMutex;
     std::string id;
@@ -44,8 +44,7 @@ namespace ChimeraTK { namespace LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend,
       boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
     if constexpr(std::is_same<UserType, TargetType>::value) {
-      return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(
-          backend, target, _parameters, _targetDeviceName, _readerCount);
+      return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(backend, target, *this);
     }
     assert(false);
     return {};
@@ -70,13 +69,13 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
-      const std::map<std::string, std::string>& parameters, std::string targetDeviceName,
-      boost::shared_ptr<std::atomic<uint32_t>> readerCount)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target), _readerCount(readerCount) {
+      const DoubleBufferPlugin& plugin)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target), _plugin(plugin) {
     boost::shared_ptr<DeviceBackend> dev;
+    auto& parameters = plugin._parameters;
     try {
-      if(targetDeviceName != "this") {
-        dev = backend->_devices.at(targetDeviceName);
+      if(plugin._targetDeviceName != "this") {
+        dev = backend->_devices.at(plugin._targetDeviceName);
       }
       else {
         dev = backend;
@@ -84,7 +83,7 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     catch(std::out_of_range& ex) {
       std::string message = "LogicalNameMappingBackend DoubleBufferPlugin: unknown targetDevice " + std::string("'") +
-          targetDeviceName + "'.";
+          plugin._targetDeviceName + "'.";
       throw ChimeraTK::logic_error(message);
     }
 
@@ -148,7 +147,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
-    (*_readerCount)++;
+    (*_plugin._readerCount)++;
     // acquire a lock in firmware (disable buffer swapping)
     _enableDoubleBufferReg->accessData(0) = 0;
     _enableDoubleBufferReg->write();
@@ -178,9 +177,9 @@ namespace ChimeraTK { namespace LNMBackend {
     else
       _secondBufferReg->postRead(type, hasNewData);
 
-    assert(*_readerCount > 0);
-    (*_readerCount)--;
-    if(*_readerCount == 0) {
+    assert(*_plugin._readerCount > 0);
+    (*_plugin._readerCount)--;
+    if(*_plugin._readerCount == 0) {
       // release a lock in firmware (enable buffer swapping)
       _enableDoubleBufferReg->accessData(0) = 1;
       _enableDoubleBufferReg->write();
