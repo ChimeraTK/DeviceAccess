@@ -108,8 +108,9 @@ namespace ChimeraTK { namespace LNMBackend {
       std::string secondBufName = parameters.at(key.assign("secondBuffer"));
 
       // take over the offset/numWords of this logical register, also for second buffer
-      size_t offset = size_t(_plugin._info.firstIndex);
-      size_t numWords = size_t(_plugin._info.length);
+      // TODO fix - we need to include also offset / length requested by user in getRegacc.
+      size_t offset = size_t(_plugin._info.firstIndex) + _plugin._wordOffsetInRegister;
+      size_t numWords = (_plugin._numberOfWords > 0) ? _plugin._numberOfWords : size_t(_plugin._info.length);
       if(_plugin._info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
         // special case: we support redirectChannel together with doubleBuffer plugin by defining that
         // secondBuffer must be also a redirectChannel register defined in logical name map

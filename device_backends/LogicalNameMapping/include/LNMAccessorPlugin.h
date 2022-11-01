@@ -109,6 +109,10 @@ namespace ChimeraTK { namespace LNMBackend {
 
     /** RegisterInfo describing the the target register for which this plugin instance should work. */
     LNMBackendRegisterInfo _info;
+
+    // TODO need cleaner place for this states
+    size_t _numberOfWords = 0;
+    size_t _wordOffsetInRegister = 0;
   };
 
   /********************************************************************************************************************/
@@ -306,6 +310,10 @@ namespace ChimeraTK { namespace LNMBackend {
       // obtain target accessor with desired type
       auto target = backend->getRegisterAccessor_impl<decltype(T)>(
           _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
+      // TODO save state somewhere:
+      // double buffering plugin is special, needs numberOfWords, wordOffsetInRegister
+      _numberOfWords = numberOfWords;
+      _wordOffsetInRegister = wordOffsetInRegister;
       decorated = static_cast<Derived*>(this)->template decorateAccessor<UserType>(backend, target);
     });
 
