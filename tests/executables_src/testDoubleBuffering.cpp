@@ -398,13 +398,13 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
   lmapWritingBufferNum.readLatest();
   BOOST_CHECK(lmapWritingBufferNum[0] == 1);
 
-  boost::barrier waitForBufferSwap{3};
+  boost::barrier waitForBufferSwapStart{3}, waitForBufferSwapDone{3};
   std::thread readerA([&] {
     auto accessorA = d.getOneDRegisterAccessor<float>("/modulation2");
     accessorA.readLatest();
     BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
-    waitForBufferSwap.wait();
-    waitForBufferSwap.wait();
+    waitForBufferSwapStart.wait();
+    waitForBufferSwapDone.wait();
     accessorA.readLatest();
     BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
   });
@@ -412,16 +412,16 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
     auto accessorB = d.getOneDRegisterAccessor<float>("/correction");
     accessorB.read();
     BOOST_CHECK_CLOSE(accessorB[0], correction, 1e-4);
-    waitForBufferSwap.wait();
-    waitForBufferSwap.wait();
+    waitForBufferSwapStart.wait();
+    waitForBufferSwapDone.wait();
     accessorB.read();
     BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
   });
 
-  waitForBufferSwap.wait();
+  waitForBufferSwapStart.wait();
   writingBufferNum->accessData(0) = 0;
   writingBufferNum->write();
-  waitForBufferSwap.wait();
+  waitForBufferSwapDone.wait();
 
   readerA.join();
   readerB.join();
