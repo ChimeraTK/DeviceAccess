@@ -141,7 +141,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MonostableTriggerPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) {
+      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
+      const UndecoratedParams&) {
     return MonostableTriggerPlugin_Helper<UserType, TargetType>::decorateAccessor(
         target, _milliseconds, _active, _inactive);
   }

@@ -41,10 +41,10 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> DoubleBufferPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>& backend,
-      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+      boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
+      const UndecoratedParams& accessorParams) const {
     if constexpr(std::is_same<UserType, TargetType>::value) {
-      return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(backend, target, *this);
+      return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(backend, target, *this, accessorParams);
     }
     assert(false);
     return {};
@@ -69,7 +69,7 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename UserType>
   DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
-      const DoubleBufferPlugin& plugin)
+      const DoubleBufferPlugin& plugin, const UndecoratedParams& accessorParams)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target), _plugin(plugin) {
     boost::shared_ptr<DeviceBackend> dev;
     auto& parameters = plugin._parameters;
@@ -109,8 +109,9 @@ namespace ChimeraTK { namespace LNMBackend {
 
       // take over the offset/numWords of this logical register, also for second buffer
       // TODO fix - we need to include also offset / length requested by user in getRegacc.
-      size_t offset = size_t(_plugin._info.firstIndex) + _plugin._wordOffsetInRegister;
-      size_t numWords = (_plugin._numberOfWords > 0) ? _plugin._numberOfWords : size_t(_plugin._info.length);
+      size_t offset = size_t(_plugin._info.firstIndex) + accessorParams._wordOffsetInRegister;
+      size_t numWords =
+          (accessorParams._numberOfWords > 0) ? accessorParams._numberOfWords : size_t(_plugin._info.length);
       if(_plugin._info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
         // special case: we support redirectChannel together with doubleBuffer plugin by defining that
         // secondBuffer must be also a redirectChannel register defined in logical name map

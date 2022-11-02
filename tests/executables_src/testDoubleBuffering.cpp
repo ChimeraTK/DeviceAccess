@@ -341,7 +341,6 @@ struct DeviceFixture2D {
   }
 };
 
-// TODO - check whether . in register names causes problems
 BOOST_FIXTURE_TEST_CASE(testExtractedChannels1, DeviceFixture2D) {
   /*
    * simple test for access to extracted channels of multiplexed 2D region

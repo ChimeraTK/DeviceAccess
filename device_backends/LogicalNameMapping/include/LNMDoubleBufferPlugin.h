@@ -22,7 +22,7 @@ namespace ChimeraTK { namespace LNMBackend {
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams) const;
 
    private:
     std::map<std::string, std::string> _parameters;
@@ -38,7 +38,8 @@ namespace ChimeraTK { namespace LNMBackend {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
     DoubleBufferAccessorDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const DoubleBufferPlugin& plugin);
+        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const DoubleBufferPlugin& plugin,
+        const UndecoratedParams& accessorParams);
 
     void doPreRead(TransferType type) override;
 
