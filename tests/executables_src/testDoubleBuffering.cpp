@@ -57,11 +57,11 @@ struct DummyForDoubleBuffering : public ExceptionDummy {
     ChimeraTK::ExceptionDummy::read(bar, address, data, sizeInBytes);
   }
   // use this to request that next read blocks.
-  // array index corresponds to that of barrier arrays, on pair of barriers per reader thread we control.
-  // We know that read is called only 2nd after
-  // write (for the buffer-switching enable ctrl register), so in this sense it requests blocking
-  // after only part of the double-buffer read operation is done
+  // array index corresponds to that of barrier arrays
+  // We know that read is called only 2nd after write (for the buffer-switching enable ctrl register),
+  // so in this sense it requests blocking after only part of the double-buffer read operation is done
   static thread_local bool blockNextRead[2];
+  // one pair of barriers per reader thread
   // after request that read blocks, you must wait on this
   std::array<boost::barrier, 2> blockedInRead{boost::barrier{2}, boost::barrier{2}};
   // use this to unblock the read
@@ -84,7 +84,7 @@ struct AreaType : Register {
 
   bool isWriteable() { return false; }
   bool isReadable() { return true; }
-  ChimeraTK::AccessModeFlags supportedFlags() { return {/* TODO ChimeraTK::AccessMode::wait_for_new_data */}; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {/* TODO later: ChimeraTK::AccessMode::wait_for_new_data */}; }
   size_t nChannels() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
@@ -317,8 +317,7 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
  *  here no overwriting of ExceptionBackend
  */
 struct DeviceFixture2D {
-  // TODO - switch back to normal dummy?
-  const std::string rawDeviceCdd = "(sharedMemoryDummy?map=doubleBuffer.map)";
+  const std::string rawDeviceCdd = "(dummy?map=doubleBuffer.map)";
   const std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + this->rawDeviceCdd + ")";
   Device d;
   boost::shared_ptr<DeviceBackend> backdoor;
@@ -348,7 +347,7 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels1, DeviceFixture2D) {
   writingBufferNum->accessData(0) = 1;
   writingBufferNum->write();
 
-  float modulation = 4.2;
+  float modulation = 4.2; // example data
   unsigned channel = 3; // must match with xlmap
   buf0->accessData(channel, 0) = modulation;
   buf1->accessData(channel, 0) = 2 * modulation;
@@ -379,14 +378,14 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
   /*
    * test access to extracted channels of multiplexed 2D region
    * this is an application of concurrent readers
-   * also test indirection via target=this
+   * also test indirection via target=this in xlmap
    */
 
   writingBufferNum->accessData(0) = 1;
   writingBufferNum->write();
 
-  float modulation = 4.2;
-  float correction = 10.1;
+  float modulation = 4.2;  // example data series 1
+  float correction = 10.1; // example data series 2
   buf0->accessData(3, 0) = modulation;
   buf1->accessData(3, 0) = 2 * modulation;
   buf0->accessData(1, 0) = correction;

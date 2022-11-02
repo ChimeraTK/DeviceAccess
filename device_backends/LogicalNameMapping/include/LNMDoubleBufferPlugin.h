@@ -58,6 +58,8 @@ namespace ChimeraTK { namespace LNMBackend {
     }
 
    private:
+    // we know that plugin exists at least as long as any register (of the catalogue) refers to it,
+    // so no shared_ptr required here
     const DoubleBufferPlugin& _plugin;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _secondBufferReg;
 

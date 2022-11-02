@@ -4,7 +4,6 @@
 #include "LNMDoubleBufferPlugin.h"
 
 #include "BackendFactory.h"
-#include "LNMBackendChannelAccessor.h"
 
 namespace ChimeraTK { namespace LNMBackend {
   DoubleBufferPlugin::DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters)
@@ -50,22 +49,6 @@ namespace ChimeraTK { namespace LNMBackend {
     return {};
   }
 
-  /*
-   *
-   * TODO double buffering - some points to discuss and test about this.
-   * it looks like the element number (1..3) of the registers
-   * WORD_DUB_BUF_ENA, WORD_DUB_BUF_CUR  of
-   * https://redmine.msktools.desy.de/projects/utca_firmware_framework/wiki/DAQ_-_Data_Acquisiton_Module
-   * are not supported (because we would need offset!=0).
-   * Is it important or should we rely on selection in logical name mapping to target right element?
-   *
-   * Also, tickets say something support for individual channels - but how would that differ from just going
-   * over all channels, like here?
-   * https://github.com/ChimeraTK/DeviceAccess/issues/30
-   *
-   * Also, raw accessMode needs to be supported and tested?
-   * What about wait_for_new_data, should we support that or not?
-   */
   template<typename UserType>
   DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
@@ -107,18 +90,23 @@ namespace ChimeraTK { namespace LNMBackend {
           dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, wordOffset, {});
       std::string secondBufName = parameters.at(key.assign("secondBuffer"));
 
-      // take over the offset/numWords of this logical register, also for second buffer
-      // TODO fix - we need to include also offset / length requested by user in getRegacc.
-      size_t offset = size_t(_plugin._info.firstIndex) + accessorParams._wordOffsetInRegister;
-      size_t numWords =
-          (accessorParams._numberOfWords > 0) ? accessorParams._numberOfWords : size_t(_plugin._info.length);
       if(_plugin._info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
         // special case: we support redirectChannel together with doubleBuffer plugin by defining that
         // secondBuffer must be also a redirectChannel register defined in logical name map
-        _secondBufferReg = backend->getRegisterAccessor<UserType>(secondBufName, 0, 0, {});
+        // we need to combine it with user-requested offset and lengths, of getRegisterAccessor()
+        size_t offset = accessorParams._wordOffsetInRegister;
+        size_t numWords = accessorParams._numberOfWords;
+        auto flags = accessorParams._flags;
+        _secondBufferReg = backend->getRegisterAccessor<UserType>(secondBufName, numWords, offset, flags);
       }
       else {
-        _secondBufferReg = dev->getRegisterAccessor<UserType>(secondBufName, numWords, offset, {});
+        // take over the offset/numWords of this logical register, also for second buffer
+        // we need to combine it with user-requested offset and lengths, of getRegisterAccessor()
+        size_t offset = size_t(_plugin._info.firstIndex) + accessorParams._wordOffsetInRegister;
+        size_t numWords =
+            (accessorParams._numberOfWords > 0) ? accessorParams._numberOfWords : size_t(_plugin._info.length);
+        auto flags = accessorParams._flags;
+        _secondBufferReg = dev->getRegisterAccessor<UserType>(secondBufName, numWords, offset, flags);
       }
     }
     catch(std::out_of_range& ex) {

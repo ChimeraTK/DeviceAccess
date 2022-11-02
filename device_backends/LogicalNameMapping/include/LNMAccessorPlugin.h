@@ -8,7 +8,7 @@
 
 namespace ChimeraTK { namespace LNMBackend {
 
-  /// Helper struct to hold extra parameters needed by some plugins for decorateAccessor
+  /** Helper struct to hold extra parameters needed by some plugins, used in decorateAccessor() */
   struct UndecoratedParams {
     UndecoratedParams(size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister), _flags(flags) {}
@@ -316,8 +316,7 @@ namespace ChimeraTK { namespace LNMBackend {
       // obtain target accessor with desired type
       auto target = backend->getRegisterAccessor_impl<decltype(T)>(
           _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
-      // TODO save state somewhere:
-      // double buffering plugin is special, needs numberOfWords, wordOffsetInRegister
+      // double buffering plugin needs numberOfWords, wordOffsetInRegister of already existing accessor
       UndecoratedParams accessorParams(numberOfWords, wordOffsetInRegister, flags);
       decorated = static_cast<Derived*>(this)->template decorateAccessor<UserType>(backend, target, accessorParams);
     });

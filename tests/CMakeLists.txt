@@ -100,7 +100,7 @@ MACRO( COPY_MAPPING_FILES )
     registerAccess.map floatRawTest.map test3.map unifiedTest.xlmap
     interruptMapFile.map interruptMapFileWithError1.map interruptMapFileWithError2.map interruptMapFileWithError3.map interruptMapFileWithError4.map
     goodMapFileWithComments.map
-    doubleBuffer.map doubleBuffer.xlmap doubleBuffer.dmap
+    doubleBuffer.map doubleBuffer.xlmap
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.
