@@ -212,4 +212,56 @@ catalogue. It does, however, <strong>NOT</strong> perform any type conversion on
 
 Parameters:
 - <code>type</code>: New type. The same type names as for \ref variables_and_constants are supported.
+
+\subsubsection double_buffering_plugin Double Buffering plugin for the Logical Name Mapper
+
+This plugin provides a way to read values form the double buffering
+scheme provided by the firmware. The double buffering mechanism is
+abstracted away behind a read only register. The plugin is enabled
+from the LogicalNameMapping xlmap file:
+
+\code{.xml}
+  <redirectedRegister name="bufferedValue">
+    <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+    <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
+    <plugin name="doubleBuffer">
+      <parameter name="secondBuffer"> APP.0.DAQ0_BUF1 </parameter>
+      <parameter name="controlRegister"> ADC.1.WORD_DUB_BUF_ENA </parameter>
+      <parameter name="statusRegister"> ADC.1.WORD_DUB_BUF_CURR </parameter>
+      <parameter name="wordOffset">0</parameter>
+    </plugin>
+  </redirectedRegister>
+\endcode
+
+This example creates the read only register, `bufferedValue`. Reading
+this register returns the value from the current active buffer,
+hiding away the buffer switching and handshaking tasks under the
+hood.
+
+The controlRegister and statusRegister hook into the corresponding
+firmware double buffering interface.
+The optional parameter <code>wordOffset</code> defines the offset used in the controlRegister and statusRegister.
+If not present, the value 0 is assumed.
+
+The plugin also supports redirected channels. However, in this case the meaning of <code>secondBuffer</code>
+is different - it must refer to a register on the level of the logical name map itself.
+Example:
+\code{.xml}
+   <redirectedChannel name="modulationBuf1">
+       <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+       <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
+       <targetChannel>3</targetChannel>
+   </redirectedChannel>
+   <redirectedChannel name="modulation">
+       <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+       <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
+       <targetChannel>3</targetChannel>
+       <plugin name="doubleBuffer">      
+         <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
+         <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
+         <parameter name="secondBuffer">modulationBuf1</parameter>
+       </plugin>
+   </redirectedChannel>
+\endcode
+
 */
