@@ -46,7 +46,16 @@ namespace ChimeraTK {
     VersionNumber activate() override;
 
    protected:
-    TransferGroup _transferGroup;
+    void usageCountChanged() override {
+      if(_usageCount == 0) {
+        // all asyncVariables have been unsubscribed - we can finally remove the TransferGroup
+        // This is important since it's elements still keep shared pointers to the backend, creating a shared-ptr loop
+        // replace it by a new TransferGroup just in case another async variable would be created later
+        _transferGroup.reset(new TransferGroup);
+      }
+    }
+    // unique_ptr because we want to delete it manually
+    std::unique_ptr<TransferGroup> _transferGroup{new TransferGroup};
   };
 
   /** Implementation of the NumericAddressedAsyncVariable for the concrete UserType.
@@ -92,7 +101,7 @@ namespace ChimeraTK {
       }
     }
 
-    _transferGroup.addAccessor(syncAccessor);
+    _transferGroup->addAccessor(syncAccessor);
     return std::make_unique<NumericAddressedAsyncVariableImpl<UserType>>(syncAccessor);
   }
 
