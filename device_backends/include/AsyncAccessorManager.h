@@ -234,8 +234,6 @@ namespace ChimeraTK {
     // backend should be set at that point
     newSubscriber->setExceptionBackend(backend);
 
-    // TODO - ticket for replacing this by assert(not writeable)?
-    assert(!asyncVariable->isWriteable());
     if(asyncVariable->isWriteable()) {
       // for writeable variables we add another synchronous accessors (which knows how to access the data) to the
       // asyncAccessor (which is generic)
