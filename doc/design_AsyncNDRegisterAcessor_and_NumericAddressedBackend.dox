@@ -2,6 +2,27 @@ namespace ChimeraTK {
 /**
 \page design_AsyncNDRegisterAccessor_NumericAddressed Design: AsyncNDRegisterAccessor
 
+
+\section conceptOverview Concept overview
+\image html "doc/NABackendAsyncConcept.png" "object diagram for AyncNDRegisterAccessor" width=1000
+
+- For each AsyncAccessor that user requests: an AsyncVariable is created interally, with 1:1 correspondence
+  AsyncAccessor ↔ AsyncVar
+- AsyncAccessor reads from AsyncVar and is handed out to user; AsyncVariable holds the send buffer which is used to
+  fill userBuffer of AsyncAccessor later
+- NumericAddressedAsyncVarImpl implements filling the send buffer from a syncAccessor to the requested register
+- NumericAddressedInterruptDispatcher is responsible for one interrupt number and collects related SyncAccessors
+  in a transferGroup for efficiency. It implements the actual trigger action (on interrupt), relying on NumericAddressedAsyncVarImpl::filledSendBuffer().
+- AsyncVarImpl holds only a weak pointer to the AsyncAccessor, since we want to be sensitive to the user discarding
+  the latter
+- NumericAddressedInterruptDispatcher, as a AsyncAccessorManager, owns and manages the AsyncVariables (in a map).
+- Actual copy operations are eliminated by usage of swap, i.e. only pointers are handed over between the buffer containers.
+- Exception handling: If any exception occurs during read/write, AsyncAccessorManager deactivates the AsyncVariables
+  and provides each of them the exception. When activated again, it makes sure new or initial values from the SyncAccessors are provided.
+- Deletion: once user releases shared pointer to AsyncNDRegAcc, its destructor calls AsyncAccessorManager::unsubscribe().
+  Since the syncAccessors in the TransferGroup keep a shared pointer to the NumericAddressBackend, unsubscribe() must also take care to clean up TransferGroup.
+
+
 \section  design_AsyncNDRegisterAccessor The AsyncNDRegisterAccessor and the AsyncAccessorManager
 
 The AsyncNDRegisterAccessor is a generic NDRegisterAccessor implementation for push-type data. It is used
