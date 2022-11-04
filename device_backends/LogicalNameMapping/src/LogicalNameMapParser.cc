@@ -100,15 +100,37 @@ namespace ChimeraTK {
   template<typename T>
   T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName,
       BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue, bool hasDefault, T defaultValue) {
-    // obtain result as string an put into stream
-    std::stringstream stream;
-    stream << getValueFromXmlSubnode<std::string>(
-        node, subnodeName, catalogue, hasDefault, std::to_string(defaultValue));
+    // obtain result as string
+    auto valAsString =
+        getValueFromXmlSubnode<std::string>(node, subnodeName, catalogue, hasDefault, std::to_string(defaultValue));
 
-    // interpret stream as value of type T and return it
-    T value;
-    stream >> value;
-    return value;
+    if constexpr(std::is_integral_v<T>) {
+      // special case of integers: handle prefix for hex or octal notation, like 0xff, 077
+      T value;
+      try {
+        // base=0 means auto detect base, depending on prefix
+        long long longVal = std::stoll(valAsString, nullptr, 0);
+        if(std::is_unsigned_v<T> && longVal < 0) {
+          throw std::out_of_range(std::string("negative!"));
+        }
+        value = longVal;
+      }
+      catch(std::exception& e) {
+        std::string msg =
+            "LogicalNameMapParser: string '" + valAsString + "' cannot be converted to integer (" + e.what() + ")";
+        throw ChimeraTK::logic_error(msg);
+      }
+      return value;
+    }
+    else {
+      // generic case: put into stream
+      std::stringstream stream;
+      stream << valAsString;
+      // interpret stream as value of type T and return it
+      T value;
+      stream >> value;
+      return value;
+    }
   }
 
   /********************************************************************************************************************/

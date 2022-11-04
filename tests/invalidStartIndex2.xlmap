@@ -1,0 +1,8 @@
+<logicalNameMap>
+    <redirectedRegister name="usingInvalidStartIndex2">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <targetStartIndex>-1</targetStartIndex>
+        <numberOfElements>-1</numberOfElements>
+    </redirectedRegister>
+</logicalNameMap>

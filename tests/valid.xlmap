@@ -13,6 +13,12 @@
         <targetStartIndex>10</targetStartIndex>
         <numberOfElements>20</numberOfElements>
     </redirectedRegister>
+    <redirectedRegister name="usingHexStartIndex">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <targetStartIndex>0x10</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
     <redirectedChannel name="Channel3">
         <targetDevice>PCIE3</targetDevice>
         <targetRegister>TEST.NODMA</targetRegister>
