@@ -46,8 +46,8 @@ namespace ChimeraTK {
     VersionNumber activate() override;
 
    protected:
-    void usageCountChanged() override {
-      if(_usageCount == 0) {
+    void asyncVariableMapChanged() override {
+      if(_asyncVariables.empty()) {
         // all asyncVariables have been unsubscribed - we can finally remove the TransferGroup
         // This is important since it's elements still keep shared pointers to the backend, creating a shared-ptr loop
         // replace it by a new TransferGroup just in case another async variable would be created later

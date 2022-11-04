@@ -128,10 +128,10 @@ namespace ChimeraTK {
     std::recursive_mutex _variablesMutex;
     std::map<TransferElementID, std::unique_ptr<AsyncVariable>> _asyncVariables; ///< protected by _variablesMutex
     bool _isActive{false};                                                       ///< protected by _variablesMutex
-    unsigned _usageCount = 0;                                                    // number of asyncVariables in map
 
     /// this virtual function lets derived classes react on subscribe / unsubscribe
-    virtual void usageCountChanged() {}
+    /// _variablesMutex locked during call
+    virtual void asyncVariableMapChanged() {}
   };
 
   /** AsyncVariableImpl contains a weak pointer to an AsyncNDRegisterAccessor<UserType> and a send buffer
@@ -222,7 +222,7 @@ namespace ChimeraTK {
   boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> AsyncAccessorManager::subscribe(
       boost::shared_ptr<DeviceBackend> backend, RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister,
       AccessModeFlags flags) {
-    std::unique_lock<std::recursive_mutex> variablesLock(_variablesMutex);
+    std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
 
     AccessorInstanceDescriptor descriptor(name, typeid(UserType), numberOfWords, wordOffsetInRegister, flags);
     auto untypedAsyncVariable =
@@ -255,9 +255,7 @@ namespace ChimeraTK {
       asyncVariable->activateAndSend();
     }
     _asyncVariables[newSubscriber->getId()] = std::move(untypedAsyncVariable);
-    _usageCount++;
-    variablesLock.unlock(); // unlock before call to overwritten method
-    usageCountChanged();
+    asyncVariableMapChanged();
     return newSubscriber;
   }
 
