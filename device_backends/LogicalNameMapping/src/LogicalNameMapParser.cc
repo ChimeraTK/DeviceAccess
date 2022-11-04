@@ -98,12 +98,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename T>
-  T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName,
-      BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue, bool hasDefault, T defaultValue) {
-    // obtain result as string
-    auto valAsString =
-        getValueFromXmlSubnode<std::string>(node, subnodeName, catalogue, hasDefault, std::to_string(defaultValue));
-
+  static T stringToValue(const std::string& valAsString) {
     if constexpr(std::is_integral_v<T>) {
       // special case of integers: handle prefix for hex or octal notation, like 0xff, 077
       T value;
@@ -112,6 +107,9 @@ namespace ChimeraTK {
         long long longVal = std::stoll(valAsString, nullptr, 0);
         if(std::is_unsigned_v<T> && longVal < 0) {
           throw std::out_of_range(std::string("negative!"));
+        }
+        if(longVal > (long long)std::numeric_limits<T>::max()) {
+          throw std::out_of_range(std::string("too large!"));
         }
         value = longVal;
       }
@@ -131,6 +129,16 @@ namespace ChimeraTK {
       stream >> value;
       return value;
     }
+  }
+
+  template<typename T>
+  T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node* node, const std::string& subnodeName,
+      BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue, bool hasDefault, T defaultValue) {
+    // obtain result as string
+    auto valAsString =
+        getValueFromXmlSubnode<std::string>(node, subnodeName, catalogue, hasDefault, std::to_string(defaultValue));
+
+    return stringToValue<T>(valAsString);
   }
 
   /********************************************************************************************************************/
@@ -171,8 +179,8 @@ namespace ChimeraTK {
       // check for plain text
       const xmlpp::TextNode* textNode = dynamic_cast<const xmlpp::TextNode*>(childList.front());
       if(textNode) {
-        std::stringstream buf(textNode->get_content());
-        buf >> valueVector[index];
+        std::string valAsString = textNode->get_content();
+        valueVector[index] = stringToValue<T>(valAsString);
         continue;
       }
 
@@ -197,7 +205,9 @@ namespace ChimeraTK {
             callForType(reg.valueType, [&](auto arg) {
               buf << boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue[0];
             });
-            buf >> valueVector[index];
+            std::string strVal;
+            buf >> strVal;
+            valueVector[index] = stringToValue<T>(strVal);
             continue;
           }
           else {
@@ -217,10 +227,7 @@ namespace ChimeraTK {
           if(_parameters.find(parName) == _parameters.end()) {
             parsingError(childList.front(), "Parameter '" + parName + "' could not be resolved.");
           }
-          // put to stream buffer
-          std::stringstream buf;
-          buf << _parameters[parName];
-          buf >> valueVector[index];
+          valueVector[index] = stringToValue<T>(_parameters[parName]);
           continue;
         }
         else {
