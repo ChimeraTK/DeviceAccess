@@ -46,6 +46,7 @@ BOOST_AUTO_TEST_CASE(testErrorInDmapFile) {
   testErrorInDmapFileSingle("invalid8.xlmap");
   testErrorInDmapFileSingle("invalidStartIndex1.xlmap");
   testErrorInDmapFileSingle("invalidStartIndex2.xlmap");
+  testErrorInDmapFileSingle("invalidDuplicateName.xlmap");
   std::cout << "*** End of invalid xlmap file test. ********************" << std::endl;
   std::cout << "********************************************************" << std::endl;
 }

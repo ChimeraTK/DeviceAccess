@@ -87,6 +87,7 @@ MACRO( COPY_MAPPING_FILES )
     testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
     invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap
     invalid8.xlmap invalidStartIndex1.xlmap invalidStartIndex2.xlmap
+    invalidDuplicateName.xlmap
     withParams.xlmap is_functional.xlmap logicalnamemap.dmap
     mathPlugin.xlmap mathPlugin-broken.xlmap monostableTriggerPlugin.xlmap forceReadOnlyPlugin.xlmap typeHintModifierPlugin.xlmap
     performanceTest.map run_performance_test.sh
