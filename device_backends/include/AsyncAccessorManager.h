@@ -128,6 +128,10 @@ namespace ChimeraTK {
     std::recursive_mutex _variablesMutex;
     std::map<TransferElementID, std::unique_ptr<AsyncVariable>> _asyncVariables; ///< protected by _variablesMutex
     bool _isActive{false};                                                       ///< protected by _variablesMutex
+
+    /// this virtual function lets derived classes react on subscribe / unsubscribe
+    /// _variablesMutex locked during call
+    virtual void asyncVariableMapChanged() {}
   };
 
   /** AsyncVariableImpl contains a weak pointer to an AsyncNDRegisterAccessor<UserType> and a send buffer
@@ -251,6 +255,7 @@ namespace ChimeraTK {
       asyncVariable->activateAndSend();
     }
     _asyncVariables[newSubscriber->getId()] = std::move(untypedAsyncVariable);
+    asyncVariableMapChanged();
     return newSubscriber;
   }
 

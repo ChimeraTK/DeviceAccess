@@ -10,6 +10,7 @@ namespace ChimeraTK {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
     // The destructor of the AsyncVariable implementation must do all necessary clean-up
     _asyncVariables.erase(id);
+    asyncVariableMapChanged();
   }
 
   //*********************************************************************************************************************/
