@@ -35,26 +35,17 @@ BOOST_AUTO_TEST_CASE(test) {
 BOOST_AUTO_TEST_CASE(test2) {
   // this xlmap was causing a logic_error although it should not.
   // See ticket https://redmine.msktools.desy.de/issues/9551
+  /* Reason for failure was:
+   * - proper register catalogue is only constructed in getRegisterCatalogue().
+   * - There plugins are processed in the end
+   * - but already before, register info from target register is copied as a basis for the new lmap regInfo
+   * - the wrong copy (not having included effects of target Register plugins) is never fixed
+   */
+
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=forceReadOnlyPlugin2.xlmap)");
 
   auto cat = device.getRegisterCatalogue();
-  /*
-   * I have following suspicion here:
-   * - forceReadonly plugin sets up proper catalogue with correct entries only in getRegisterCatalogue
-   *     by call to plugin->updateRegisterInfo(_catalogue_mutable);
-   * - however, math plugin uses catalogue already before.
-   *    where? in MathPlugin::updateRegisterInfo() called from MathPlugin::openhook()
-   *    but: openhook does call backend->getRegisterCatalogue!!
-   *    so ForceReadOnlyPlugin::updateRegisterInfo is actually called before MathPlugin::updateRegisterInfo,
-   *    only the wrong information (meaning A would be writeable ) has before (both calls of updateregisterInfo)
-   *    already propagated to the _info on the register B
-   *    This copying happens in LogicalNameMappingBackend::getRegisterCatalogue()
-   *    This shows that late-correcting of catalogue entries is really bad.
-   * - math plugin sets up proper catalogue already in openHook
-   * - doing the same for forceReadOnly plugin would solve the problem?
-   *   I guess so.
-   */
   auto infoA = cat.getRegister("Test/A");
   BOOST_CHECK(!infoA.isWriteable());
   BOOST_CHECK(infoA.isReadable());
