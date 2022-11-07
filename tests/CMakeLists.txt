@@ -89,7 +89,8 @@ MACRO( COPY_MAPPING_FILES )
     invalid8.xlmap invalidStartIndex1.xlmap invalidStartIndex2.xlmap
     invalidDuplicateName.xlmap
     withParams.xlmap is_functional.xlmap logicalnamemap.dmap
-    mathPlugin.xlmap mathPlugin-broken.xlmap monostableTriggerPlugin.xlmap forceReadOnlyPlugin.xlmap typeHintModifierPlugin.xlmap
+    mathPlugin.xlmap mathPlugin-broken.xlmap monostableTriggerPlugin.xlmap
+    forceReadOnlyPlugin.xlmap forceReadOnlyPlugin2.xlmap typeHintModifierPlugin.xlmap
     performanceTest.map run_performance_test.sh
     badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
     subdeviceTest.dmap Subdevice.map SubdeviceMuxedArea.map SubdeviceTarget.map

@@ -224,6 +224,9 @@ namespace ChimeraTK { namespace LNMBackend {
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target);
+    // TODO  check - maybe need openhook with similar contents to math-plugin:
+    // make sure backend catalogue is updated with target backend information
+    // backend->getRegisterCatalogue();
   };
 
   /** ForcePollingRead Plugin: Forces a register to not allow setting the AccessMode::wait_for_new_data flag. */
