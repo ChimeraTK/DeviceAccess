@@ -10,22 +10,44 @@
     </plugin>
   </redirectedRegister>
 
-    <!-- example for accessing extracted channels via double buffering -->
-    <redirectedChannel name="modulation1buf1">
+    <!-- example for accessing extracted channels via double buffering, config variant: double buffering on lowest level -->
+    <redirectedRegister name="DAQ2">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>/APP2/DAQ2_BUF0</targetRegister>
+        <plugin name="doubleBuffer">      
+          <parameter name="enableDoubleBuffering">/DAQ2/WORD_DUB_BUF_ENA</parameter>
+          <parameter name="currentBufferNumber">/DAQ2/WORD_DUB_BUF_CURR</parameter>
+          <parameter name="secondBuffer">/APP2/DAQ2_BUF1</parameter>
+          <!-- wordOffset usually corresponds the DAQ region number -->
+          <parameter name="wordOffset">2</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedChannel name="correctionA">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/DAQ2</targetRegister>
+      <targetChannel>1</targetChannel>
+    </redirectedChannel> 
+    <redirectedChannel name="modulationA">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/DAQ2</targetRegister>
+      <targetChannel>3</targetChannel>
+    </redirectedChannel> 
+    
+    <!-- example for accessing extracted channels via double buffering, config variant: double buffering on level of redirectChannel -->
+    <redirectedChannel name="modulationBuf1">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
         <targetChannel>3</targetChannel>
     </redirectedChannel>
-    <redirectedChannel name="modulation1">
+    <redirectedChannel name="modulationB">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
         <targetChannel>3</targetChannel>
         <plugin name="doubleBuffer">      
           <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
           <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
-          <!-- <parameter name="secondBuffer">/APP0/DAQ0_BUF1</parameter> -->
-          <parameter name="secondBuffer">modulation1buf1</parameter>
-          <parameter name="wordOffset">2</parameter>
+          <parameter name="secondBuffer">modulationBuf1</parameter>
+          <parameter name="wordOffset">0</parameter>
         </plugin>
     </redirectedChannel>
     <redirectedChannel name="correctionBuf1">
@@ -33,7 +55,7 @@
         <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
         <targetChannel>1</targetChannel>
     </redirectedChannel>
-    <redirectedChannel name="correction">
+    <redirectedChannel name="correctionB">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
       <targetChannel>1</targetChannel>
@@ -41,40 +63,60 @@
         <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
         <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
         <parameter name="secondBuffer">/correctionBuf1</parameter>
-        <!-- <parameter name="secondBuffer">/APP0/DAQ0_BUF1</parameter> -->
-        <parameter name="wordOffset">2</parameter>
+        <parameter name="wordOffset">0</parameter>
       </plugin>
     </redirectedChannel> 
+    
+    <!-- example for accessing extracted channels via double buffering, third config variant: double buffering applied to logical registers -->
     <redirectedRegister name="enableDoubleBuffering">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/DAQ0/WORD_DUB_BUF_ENA</targetRegister>
-        <targetStartIndex>2</targetStartIndex>
+        <targetStartIndex>0</targetStartIndex>
         <numberOfElements>1</numberOfElements>
     </redirectedRegister>    
     <redirectedRegister name="currentBufferNumber">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/DAQ0/WORD_DUB_BUF_CURR</targetRegister>
-        <targetStartIndex>2</targetStartIndex>
+        <targetStartIndex>0</targetStartIndex>
         <numberOfElements>1</numberOfElements>
     </redirectedRegister>
-    <redirectedChannel name="firstBuffer">
+    <redirectedChannel name="modFirstBuffer">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
         <targetChannel>3</targetChannel>
     </redirectedChannel>
-    <redirectedChannel name="secondBuffer">
+    <redirectedChannel name="modSecondBuffer">
         <targetDevice><par>target</par></targetDevice>
         <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
         <targetChannel>3</targetChannel>
     </redirectedChannel>
+    <redirectedChannel name="corrFirstBuffer">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
+        <targetChannel>1</targetChannel>
+    </redirectedChannel>
+    <redirectedChannel name="corrSecondBuffer">
+        <targetDevice><par>target</par></targetDevice>
+        <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
+        <targetChannel>1</targetChannel>
+    </redirectedChannel>
     <!-- with indirection via target=this -->
-    <redirectedRegister name="modulation2">
+    <redirectedRegister name="modulationC">
         <targetDevice>this</targetDevice>
-        <targetRegister>firstBuffer</targetRegister>
+        <targetRegister>modFirstBuffer</targetRegister>
         <plugin name="doubleBuffer">      
           <parameter name="enableDoubleBuffering">/enableDoubleBuffering</parameter>
           <parameter name="currentBufferNumber">/currentBufferNumber</parameter>
-          <parameter name="secondBuffer">/secondBuffer</parameter>
+          <parameter name="secondBuffer">/modSecondBuffer</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="correctionC">
+        <targetDevice>this</targetDevice>
+        <targetRegister>corrFirstBuffer</targetRegister>
+        <plugin name="doubleBuffer">      
+          <parameter name="enableDoubleBuffering">/enableDoubleBuffering</parameter>
+          <parameter name="currentBufferNumber">/currentBufferNumber</parameter>
+          <parameter name="secondBuffer">/corrSecondBuffer</parameter>
         </plugin>
     </redirectedRegister>
 </logicalNameMap>

@@ -316,6 +316,7 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
  *  DeviceFixture used for the 2D access tests
  *  here no overwriting of ExceptionBackend
  */
+template<class Derived>
 struct DeviceFixture2D {
   const std::string rawDeviceCdd = "(dummy?map=doubleBuffer.map)";
   const std::string lmap = "(logicalNameMap?map=doubleBuffer.xlmap&target=" + this->rawDeviceCdd + ")";
@@ -323,106 +324,164 @@ struct DeviceFixture2D {
   boost::shared_ptr<DeviceBackend> backdoor;
   boost::shared_ptr<NDRegisterAccessor<uint32_t>> doubleBufferingEnabled, writingBufferNum;
   boost::shared_ptr<NDRegisterAccessor<float>> buf0, buf1;
-  size_t wordOffset = 2; // must match xlmap
+  struct ConfigParams {
+    std::string enableDoubleBufferingReg, currentBufferNumberReg, firstBufferReg, secondBufferReg;
+    size_t wordOffset; // must match xlmap
+  };
 
   DeviceFixture2D() : d(this->lmap) {
+    ConfigParams c = static_cast<Derived*>(this)->getCf();
     // before any access, also via backdoor, must open
     d.open();
     backdoor = BackendFactory::getInstance().createBackend(this->rawDeviceCdd);
-    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>("DAQ0/WORD_DUB_BUF_ENA", 1, wordOffset, {});
+    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>(c.enableDoubleBufferingReg, 1, c.wordOffset, {});
     doubleBufferingEnabled->accessData(0) = 1;
     doubleBufferingEnabled->write();
 
-    writingBufferNum =
-        backdoor->getRegisterAccessor<uint32_t>("DAQ0/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE", 1, wordOffset, {});
-    buf0 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF0", 0, 0, {});
-    buf1 = backdoor->getRegisterAccessor<float>("APP0/DAQ0_BUF1", 0, 0, {});
+    writingBufferNum = backdoor->getRegisterAccessor<uint32_t>(c.currentBufferNumberReg, 1, c.wordOffset, {});
+    buf0 = backdoor->getRegisterAccessor<float>(c.firstBufferReg, 0, 0, {});
+    buf1 = backdoor->getRegisterAccessor<float>(c.secondBufferReg, 0, 0, {});
+  }
+
+  void simpleCheckExtractedChannels(std::string readerAReg) {
+    /*
+     * simple test for access to extracted channels of multiplexed 2D region
+     */
+    writingBufferNum->accessData(0) = 1;
+    writingBufferNum->write();
+
+    float modulation = 4.2; // example data
+    unsigned channel = 3;   // must match with xlmap
+    buf0->accessData(channel, 0) = modulation;
+    buf1->accessData(channel, 0) = 2 * modulation;
+    buf0->write();
+    buf1->write();
+
+    boost::barrier waitForBufferSwapStart{2}, waitForBufferSwapDone{2};
+    std::thread readerA([&] {
+      auto accessorA = d.getOneDRegisterAccessor<float>(readerAReg);
+      accessorA.readLatest();
+      // since writingBufferNum = 1, we expect buf0 contents to be read
+      BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
+      waitForBufferSwapStart.wait();
+      waitForBufferSwapDone.wait();
+      accessorA.readLatest();
+      BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
+    });
+
+    waitForBufferSwapStart.wait();
+    writingBufferNum->accessData(0) = 0;
+    writingBufferNum->write();
+    waitForBufferSwapDone.wait();
+
+    readerA.join();
+  }
+
+  void checkExtractedChannels(std::string readerAReg, std::string readerBReg) {
+    /*
+     * test access to extracted channels of multiplexed 2D region
+     * this is an application of concurrent readers
+     */
+
+    writingBufferNum->accessData(0) = 1;
+    writingBufferNum->write();
+
+    float modulation = 4.2;  // example data series 1
+    float correction = 10.1; // example data series 2
+    buf0->accessData(3, 0) = modulation;
+    buf1->accessData(3, 0) = 2 * modulation;
+    buf0->accessData(1, 0) = correction;
+    buf1->accessData(1, 0) = 2 * correction;
+    buf0->write();
+    buf1->write();
+
+    boost::barrier waitForBufferSwap{3};
+    std::thread readerA([&] {
+      auto accessorA = d.getOneDRegisterAccessor<float>(readerAReg);
+      accessorA.readLatest();
+      BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
+      waitForBufferSwap.wait();
+      waitForBufferSwap.wait();
+      accessorA.readLatest();
+      BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
+    });
+    std::thread readerB([&] {
+      auto accessorB = d.getOneDRegisterAccessor<float>(readerBReg);
+      accessorB.read();
+      BOOST_CHECK_CLOSE(accessorB[0], correction, 1e-4);
+      waitForBufferSwap.wait();
+      waitForBufferSwap.wait();
+      accessorB.read();
+      BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
+    });
+
+    waitForBufferSwap.wait();
+    writingBufferNum->accessData(0) = 0;
+    writingBufferNum->write();
+    waitForBufferSwap.wait();
+
+    readerA.join();
+    readerB.join();
+
+    // Check that also reading from a TransferGroup works
+    TransferGroup tg;
+    auto accessorA = d.getOneDRegisterAccessor<float>(readerAReg);
+    auto accessorB = d.getOneDRegisterAccessor<float>(readerBReg);
+    tg.addAccessor(accessorA);
+    tg.addAccessor(accessorB);
+    tg.read();
+    BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
+    BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
+    tg.read();
+    BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
+    BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
+    // swap back to first value set
+    writingBufferNum->accessData(0) = 1;
+    writingBufferNum->write();
+    tg.read();
+    BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
+    BOOST_CHECK_CLOSE(accessorB[0], correction, 1e-4);
   }
 };
 
-BOOST_FIXTURE_TEST_CASE(testExtractedChannels1, DeviceFixture2D) {
-  /*
-   * simple test for access to extracted channels of multiplexed 2D region
-   */
-  writingBufferNum->accessData(0) = 1;
-  writingBufferNum->write();
+struct DeviceFixture2D_DAQ0 : public DeviceFixture2D<DeviceFixture2D_DAQ0> {
+  ConfigParams getCf() {
+    ConfigParams c;
+    c.enableDoubleBufferingReg = "DAQ0/WORD_DUB_BUF_ENA";
+    c.currentBufferNumberReg = "DAQ0/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE";
+    c.firstBufferReg = "APP0/DAQ0_BUF0";
+    c.secondBufferReg = "APP0/DAQ0_BUF1";
+    c.wordOffset = 0;
+    return c;
+  }
+};
+struct DeviceFixture2D_DAQ2 : public DeviceFixture2D<DeviceFixture2D_DAQ2> {
+  ConfigParams getCf() {
+    ConfigParams c;
+    c.enableDoubleBufferingReg = "DAQ2/WORD_DUB_BUF_ENA";
+    c.currentBufferNumberReg = "DAQ2/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE";
+    c.firstBufferReg = "APP2/DAQ2_BUF0";
+    c.secondBufferReg = "APP2/DAQ2_BUF1";
+    c.wordOffset = 2;
+    return c;
+  }
+};
 
-  float modulation = 4.2; // example data
-  unsigned channel = 3; // must match with xlmap
-  buf0->accessData(channel, 0) = modulation;
-  buf1->accessData(channel, 0) = 2 * modulation;
-  buf0->write();
-  buf1->write();
-
-  boost::barrier waitForBufferSwapStart{2}, waitForBufferSwapDone{2};
-  std::thread readerA([&] {
-    auto accessorA = d.getOneDRegisterAccessor<float>("/modulation1");
-    accessorA.readLatest();
-    // since writingBufferNum = 1, we expect buf0 contents to be read
-    BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
-    waitForBufferSwapStart.wait();
-    waitForBufferSwapDone.wait();
-    accessorA.readLatest();
-    BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
-  });
-
-  waitForBufferSwapStart.wait();
-  writingBufferNum->accessData(0) = 0;
-  writingBufferNum->write();
-  waitForBufferSwapDone.wait();
-
-  readerA.join();
+BOOST_FIXTURE_TEST_CASE(testExtractedChannelsA, DeviceFixture2D_DAQ2) {
+  // config variant: double buffering on lowest level
+  simpleCheckExtractedChannels("modulationA");
+  checkExtractedChannels("modulationA", "correctionA");
 }
 
-BOOST_FIXTURE_TEST_CASE(testExtractedChannels2, DeviceFixture2D) {
-  /*
-   * test access to extracted channels of multiplexed 2D region
-   * this is an application of concurrent readers
-   * also test indirection via target=this in xlmap
-   */
-
-  writingBufferNum->accessData(0) = 1;
-  writingBufferNum->write();
-
-  float modulation = 4.2;  // example data series 1
-  float correction = 10.1; // example data series 2
-  buf0->accessData(3, 0) = modulation;
-  buf1->accessData(3, 0) = 2 * modulation;
-  buf0->accessData(1, 0) = correction;
-  buf1->accessData(1, 0) = 2 * correction;
-  buf0->write();
-  buf1->write();
-  auto lmapWritingBufferNum = d.getOneDRegisterAccessor<uint32_t>("/currentBufferNumber");
-  lmapWritingBufferNum.readLatest();
-  BOOST_CHECK(lmapWritingBufferNum[0] == 1);
-
-  boost::barrier waitForBufferSwap{3};
-  std::thread readerA([&] {
-    auto accessorA = d.getOneDRegisterAccessor<float>("/modulation2");
-    accessorA.readLatest();
-    BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
-    waitForBufferSwap.wait();
-    waitForBufferSwap.wait();
-    accessorA.readLatest();
-    BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
-  });
-  std::thread readerB([&] {
-    auto accessorB = d.getOneDRegisterAccessor<float>("/correction");
-    accessorB.read();
-    BOOST_CHECK_CLOSE(accessorB[0], correction, 1e-4);
-    waitForBufferSwap.wait();
-    waitForBufferSwap.wait();
-    accessorB.read();
-    BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
-  });
-
-  waitForBufferSwap.wait();
-  writingBufferNum->accessData(0) = 0;
-  writingBufferNum->write();
-  waitForBufferSwap.wait();
-
-  readerA.join();
-  readerB.join();
+BOOST_FIXTURE_TEST_CASE(testExtractedChannelsB, DeviceFixture2D_DAQ0) {
+  // config variant: double buffering on level of redirectChannel
+  simpleCheckExtractedChannels("modulationB");
+  checkExtractedChannels("modulationB", "correctionB");
+}
+BOOST_FIXTURE_TEST_CASE(testExtractedChannelsC, DeviceFixture2D_DAQ0) {
+  // config variant: double buffering applied to logical registers
+  simpleCheckExtractedChannels("modulationC");
+  checkExtractedChannels("modulationC", "correctionC");
 }
 
 /*********************************************************************************************************************/

@@ -22,3 +22,17 @@ APP0.SEQUENCE_DAQ0_BUF1_0                                             1      200
 APP0.SEQUENCE_DAQ0_BUF1_1                                             1      2000004            4     13     32      IEEE754 1   RO
 APP0.SEQUENCE_DAQ0_BUF1_2                                             1      2000008            4     13     32      IEEE754 1   RO
 APP0.SEQUENCE_DAQ0_BUF1_3                                             1      2000012            4     13     32      IEEE754 1   RO
+
+# exmaple for extracted channels via double buffering on lowest level (i.e. before extracting channels)
+DAQ2.WORD_DUB_BUF_ENA                                                 3        32900           12      1      1      0    0   RW
+DAQ2.WORD_DUB_BUF_CURR                                                3        32912           12      1      1      0    0   RO
+APP2.AREA_MULTIPLEXED_SEQUENCE_DAQ2_BUF0                         500000      4000000      2000000     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_0                                             1      4000000            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_1                                             1      4000004            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_2                                             1      4000008            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_3                                             1      4000012            4     13     32      IEEE754 1   RO
+APP2.AREA_MULTIPLEXED_SEQUENCE_DAQ2_BUF1                         500000      6000000      2000000     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_0                                             1      6000000            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_1                                             1      6000004            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_2                                             1      6000008            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_3                                             1      6000012            4     13     32      IEEE754 1   RO
