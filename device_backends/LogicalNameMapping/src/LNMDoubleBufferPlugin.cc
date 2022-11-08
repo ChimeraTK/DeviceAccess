@@ -8,6 +8,12 @@
 namespace ChimeraTK { namespace LNMBackend {
   DoubleBufferPlugin::DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters)
   : AccessorPlugin(info), _parameters(std::move(parameters)) {
+    if(info.targetType == LNMBackendRegisterInfo::CHANNEL) {
+      // we do not support redirectedChannel with doubleBuffer because it has no benefit and will cause
+      // trouble in interplay with TransferGroup
+      throw logic_error(
+          "doubleBuffer plugin not supported for redirectedChannel! use it with redirectedRegister instead");
+    }
     _targetDeviceName = info.deviceName;
 
     // We need to share _readerCount state among instances of DoubleBufferPlugin, if they refer
@@ -90,16 +96,6 @@ namespace ChimeraTK { namespace LNMBackend {
           dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, wordOffset, {});
       std::string secondBufName = parameters.at(key.assign("secondBuffer"));
 
-      if(_plugin._info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
-        // special case: we support redirectChannel together with doubleBuffer plugin by defining that
-        // secondBuffer must be also a redirectChannel register defined in logical name map
-        // we need to combine it with user-requested offset and lengths, of getRegisterAccessor()
-        size_t offset = accessorParams._wordOffsetInRegister;
-        size_t numWords = accessorParams._numberOfWords;
-        auto flags = accessorParams._flags;
-        _secondBufferReg = backend->getRegisterAccessor<UserType>(secondBufName, numWords, offset, flags);
-      }
-      else {
         // take over the offset/numWords of this logical register, also for second buffer
         // we need to combine it with user-requested offset and lengths, of getRegisterAccessor()
         size_t offset = size_t(_plugin._info.firstIndex) + accessorParams._wordOffsetInRegister;
@@ -107,7 +103,6 @@ namespace ChimeraTK { namespace LNMBackend {
             (accessorParams._numberOfWords > 0) ? accessorParams._numberOfWords : size_t(_plugin._info.length);
         auto flags = accessorParams._flags;
         _secondBufferReg = dev->getRegisterAccessor<UserType>(secondBufName, numWords, offset, flags);
-      }
     }
     catch(std::out_of_range& ex) {
       std::string message =

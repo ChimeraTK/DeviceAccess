@@ -31,41 +31,7 @@
       <targetDevice>this</targetDevice>
       <targetRegister>/DAQ2</targetRegister>
       <targetChannel>3</targetChannel>
-    </redirectedChannel> 
-    
-    <!-- example for accessing extracted channels via double buffering, config variant: double buffering on level of redirectChannel -->
-    <redirectedChannel name="modulationBuf1">
-        <targetDevice><par>target</par></targetDevice>
-        <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
-        <targetChannel>3</targetChannel>
     </redirectedChannel>
-    <redirectedChannel name="modulationB">
-        <targetDevice><par>target</par></targetDevice>
-        <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
-        <targetChannel>3</targetChannel>
-        <plugin name="doubleBuffer">      
-          <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
-          <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
-          <parameter name="secondBuffer">modulationBuf1</parameter>
-          <parameter name="wordOffset">0</parameter>
-        </plugin>
-    </redirectedChannel>
-    <redirectedChannel name="correctionBuf1">
-        <targetDevice><par>target</par></targetDevice>
-        <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
-        <targetChannel>1</targetChannel>
-    </redirectedChannel>
-    <redirectedChannel name="correctionB">
-      <targetDevice><par>target</par></targetDevice>
-      <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
-      <targetChannel>1</targetChannel>
-      <plugin name="doubleBuffer">      
-        <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
-        <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
-        <parameter name="secondBuffer">/correctionBuf1</parameter>
-        <parameter name="wordOffset">0</parameter>
-      </plugin>
-    </redirectedChannel> 
     
     <!-- example for accessing extracted channels via double buffering, third config variant: double buffering applied to logical registers -->
     <redirectedRegister name="enableDoubleBuffering">

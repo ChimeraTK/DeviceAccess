@@ -470,11 +470,6 @@ BOOST_FIXTURE_TEST_CASE(testExtractedChannelsA, DeviceFixture2D_DAQ2) {
   checkExtractedChannels("modulationA", "correctionA");
 }
 
-BOOST_FIXTURE_TEST_CASE(testExtractedChannelsB, DeviceFixture2D_DAQ0) {
-  // config variant: double buffering on level of redirectChannel
-  simpleCheckExtractedChannels("modulationB");
-  checkExtractedChannels("modulationB", "correctionB");
-}
 BOOST_FIXTURE_TEST_CASE(testExtractedChannelsC, DeviceFixture2D_DAQ0) {
   // config variant: double buffering applied to logical registers
   simpleCheckExtractedChannels("modulationC");

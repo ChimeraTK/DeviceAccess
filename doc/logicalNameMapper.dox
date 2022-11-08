@@ -243,25 +243,4 @@ firmware double buffering interface.
 The optional parameter <code>wordOffset</code> defines the offset used in the controlRegister and statusRegister.
 If not present, the value 0 is assumed.
 
-The plugin also supports redirected channels. However, in this case the meaning of <code>secondBuffer</code>
-is different - it must refer to a register on the level of the logical name map itself.
-Example:
-\code{.xml}
-   <redirectedChannel name="modulationBuf1">
-       <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
-       <targetRegister>/APP0/DAQ0_BUF1</targetRegister>
-       <targetChannel>3</targetChannel>
-   </redirectedChannel>
-   <redirectedChannel name="modulation">
-       <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
-       <targetRegister>/APP0/DAQ0_BUF0</targetRegister>
-       <targetChannel>3</targetChannel>
-       <plugin name="doubleBuffer">      
-         <parameter name="enableDoubleBuffering">/DAQ0/WORD_DUB_BUF_ENA</parameter>
-         <parameter name="currentBufferNumber">/DAQ0/WORD_DUB_BUF_CURR</parameter>
-         <parameter name="secondBuffer">modulationBuf1</parameter>
-       </plugin>
-   </redirectedChannel>
-\endcode
-
 */
