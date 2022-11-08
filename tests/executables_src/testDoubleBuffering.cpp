@@ -432,9 +432,6 @@ struct DeviceFixture2D {
     tg.read();
     BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
     BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
-    tg.read();
-    BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
-    BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
     // swap back to first value set
     writingBufferNum->accessData(0) = 1;
     writingBufferNum->write();
