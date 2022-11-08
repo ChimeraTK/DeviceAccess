@@ -57,7 +57,10 @@ namespace ChimeraTK { namespace LNMBackend {
       // do not throw here again
     }
 
+    // below functions are needed for TransferGroup to work
     virtual std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
+      // returning only this means the DoubleBufferAccessorDecorator will not be optimized when put into TransferGroup
+      // optimizing would break our handshake protocol, since it reorders transfers
       return {TransferElement::shared_from_this()};
     };
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
