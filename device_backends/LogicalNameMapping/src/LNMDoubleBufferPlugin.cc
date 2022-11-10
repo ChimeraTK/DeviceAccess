@@ -96,13 +96,13 @@ namespace ChimeraTK { namespace LNMBackend {
           dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, wordOffset, {});
       std::string secondBufName = parameters.at(key.assign("secondBuffer"));
 
-        // take over the offset/numWords of this logical register, also for second buffer
-        // we need to combine it with user-requested offset and lengths, of getRegisterAccessor()
-        size_t offset = size_t(_plugin._info.firstIndex) + accessorParams._wordOffsetInRegister;
-        size_t numWords =
-            (accessorParams._numberOfWords > 0) ? accessorParams._numberOfWords : size_t(_plugin._info.length);
-        auto flags = accessorParams._flags;
-        _secondBufferReg = dev->getRegisterAccessor<UserType>(secondBufName, numWords, offset, flags);
+      // take over the offset/numWords of this logical register, also for second buffer
+      // we need to combine it with user-requested offset and lengths, of getRegisterAccessor()
+      size_t offset = size_t(_plugin._info.firstIndex) + accessorParams._wordOffsetInRegister;
+      size_t numWords =
+          (accessorParams._numberOfWords > 0) ? accessorParams._numberOfWords : size_t(_plugin._info.length);
+      auto flags = accessorParams._flags;
+      _secondBufferReg = dev->getRegisterAccessor<UserType>(secondBufName, numWords, offset, flags);
     }
     catch(std::out_of_range& ex) {
       std::string message =
@@ -175,5 +175,25 @@ namespace ChimeraTK { namespace LNMBackend {
       for(size_t i = 0; i < _secondBufferReg->getNumberOfChannels(); ++i)
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_secondBufferReg->accessChannel(i));
     }
+  }
+
+  template<typename UserType>
+  std::vector<boost::shared_ptr<TransferElement>> DoubleBufferAccessorDecorator<
+      UserType>::getHardwareAccessingElements() {
+    // returning only this means the DoubleBufferAccessorDecorator will not be optimized when put into TransferGroup
+    // optimizing would break our handshake protocol, since it reorders transfers
+    return {TransferElement::shared_from_this()};
+  }
+
+  template<typename UserType>
+  bool DoubleBufferAccessorDecorator<UserType>::mayReplaceOther(
+      const boost::shared_ptr<const TransferElement>& other) const {
+    // we need this to support merging of accessors using the same double-buffered as target.
+    // If other is also double-buffered region belonging to the same plugin instance, allow the merge
+    auto otherDoubleBuffer = boost::dynamic_pointer_cast<DoubleBufferAccessorDecorator const>(other);
+    if(!otherDoubleBuffer) {
+      return false;
+    }
+    return &(otherDoubleBuffer->_plugin) == &_plugin;
   }
 }} // namespace ChimeraTK::LNMBackend

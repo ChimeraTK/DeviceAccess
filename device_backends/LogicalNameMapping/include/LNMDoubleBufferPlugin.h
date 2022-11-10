@@ -58,25 +58,14 @@ namespace ChimeraTK { namespace LNMBackend {
     }
 
     // below functions are needed for TransferGroup to work
-    virtual std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
-      // returning only this means the DoubleBufferAccessorDecorator will not be optimized when put into TransferGroup
-      // optimizing would break our handshake protocol, since it reorders transfers
-      return {TransferElement::shared_from_this()};
-    };
+    std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override;
+
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> /* newElement */) override {
       // do nothing, we do not support merging of DoubleBufferAccessorDecorators
     }
-    [[nodiscard]] virtual bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const {
-      // we need this to support merging of accessors using the same double-buffered as target.
-      // If other is also double-buffered region belonging to the same plugin instance, allow the merge
-      auto otherDoubleBuffer = boost::dynamic_pointer_cast<DoubleBufferAccessorDecorator const>(other);
-      if(!otherDoubleBuffer) {
-        return false;
-      }
-      return &(otherDoubleBuffer->_plugin) == &_plugin;
-    }
+    [[nodiscard]] virtual bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const;
 
    private:
     // we know that plugin exists at least as long as any register (of the catalogue) refers to it,
