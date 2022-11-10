@@ -133,9 +133,9 @@ APP.SEQUENCE_DAQ0_BUF0_5                                              1   214748
 APP.SEQUENCE_DAQ0_BUF0_6                                              1   2147483660            2     13     16    0    1   RW
 APP.SEQUENCE_DAQ0_BUF0_7                                              1   2147483662            2     13     16    0    1   RW
 APP.SEQUENCE_DAQ0_BUF0_8                                              1   2147483664            2     13     16    0    1   RW
-APP.SEQUENCE_DAQ0_BUF0_9                                              1   2147483666            2     13     16    0    1   RW
-APP.SEQUENCE_DAQ0_BUF0_10                                             1   2147483668            2     13     16    0    1   RW
-APP.SEQUENCE_DAQ0_BUF0_11                                             1   2147483670            2     13     16    0    1   RW
+APP.SEQUENCE_DAQ0_BUF0_9                                              1   2147483666            2     13     16    2    1   RW
+APP.SEQUENCE_DAQ0_BUF0_10                                             1   2147483668            2     13     16    2    1   RW
+APP.SEQUENCE_DAQ0_BUF0_11                                             1   2147483670            2     13     16    2    1   RW
 APP.SEQUENCE_DAQ0_BUF0_12                                             1   2147483672            2     13     16    0    1   RW
 APP.SEQUENCE_DAQ0_BUF0_13                                             1   2147483674            2     13     16    0    1   RW
 APP.SEQUENCE_DAQ0_BUF0_14                                             1   2147483676            2     13     16    0    1   RW

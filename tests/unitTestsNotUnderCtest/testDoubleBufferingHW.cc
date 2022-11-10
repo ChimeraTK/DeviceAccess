@@ -37,6 +37,7 @@ struct DeviceFixture_HW {
   // try several times (with random sleeps inbetween) to read signal from reg and return
   // the number of times signal was detected as corrupted
   unsigned checkDataCorruption(std::string reg, unsigned tries) {
+    unsigned short goodStep = 100;
     bool writeCorruptData = true;
     unsigned dataCorruptionCount = 0;
     auto accessorA = d.getOneDRegisterAccessor<int16_t>(reg);
@@ -48,8 +49,8 @@ struct DeviceFixture_HW {
       unsigned i = 0;
       int16_t previousVal = 0;
       for(int16_t val : accessorA) {
-        // val is allowed to increase by 100 or wrap-around
-        if(previousVal != 0 && val != (int16_t)(previousVal + 100)) {
+        // val is allowed to increase by goodStep or wrap-around
+        if(previousVal != 0 && val != (int16_t)(previousVal + goodStep)) {
           std::cout << "found data corruption at index " << i << ": step from " << previousVal << " to " << val
                     << " while DAQ fifoStatus=" << fifoStatus << std::endl;
           if(writeCorruptData) {
