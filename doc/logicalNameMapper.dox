@@ -243,4 +243,14 @@ firmware double buffering interface.
 The optional parameter <code>wordOffset</code> defines the offset used in the controlRegister and statusRegister.
 If not present, the value 0 is assumed.
 
+Notes and CAVEATS:
+- doubleBuffer plugin is not supported for *redirectedChannel*.
+  The reason we decided against it is that is would be difficult to optimize access to more than one channel.
+  Instead, apply the plugin to the whole 2D area with
+  redirectedRegister, and refer to the logical register in redirectedChannel by targetDevice=this.
+- Current implementation is safe for concurrent readers from the same process, i.e. the double buffering handshake with
+  the firmware begins when first reader starts reading and ends when last reader of the same double buffered region
+  finishes. Regions are identified on the basis of the controlRegister.
+  However, current implementation is not safe for concurrent readers from different processes.
+
 */
