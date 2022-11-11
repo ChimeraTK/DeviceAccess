@@ -87,6 +87,15 @@ namespace ChimeraTK { namespace LNMBackend {
             "LogicalNameMappingBackend DoubleBufferPlugin: parameter 'wordOffset' must be integer");
       }
     }
+    if(parameters.find("testUSleep") != parameters.end()) {
+      try {
+        _testUSleep = std::stoul(parameters.at("testUSleep"));
+      }
+      catch(std::exception& e) {
+        throw ChimeraTK::logic_error(
+            "LogicalNameMappingBackend DoubleBufferPlugin: parameter 'testUSleep' must be integer");
+      }
+    }
 
     std::string key; // store key searched in 'parameters' map in order to print later correctly exception message
     try {
@@ -125,6 +134,11 @@ namespace ChimeraTK { namespace LNMBackend {
     // acquire a lock in firmware (disable buffer swapping)
     _enableDoubleBufferReg->accessData(0) = 0;
     _enableDoubleBufferReg->write();
+    if(_testUSleep) {
+      // for testing, extra sleep
+      boost::this_thread::sleep_for(boost::chrono::microseconds{_testUSleep});
+    }
+
     // check which buffer is now in use by the firmware
     _currentBufferNumberReg->read();
     _currentBuffer = _currentBufferNumberReg->accessData(0);
@@ -154,6 +168,13 @@ namespace ChimeraTK { namespace LNMBackend {
     assert(*_plugin._readerCount > 0);
     (*_plugin._readerCount)--;
     if(*_plugin._readerCount == 0) {
+      if(_testUSleep) {
+        // for testing, check safety of handshake
+        _currentBufferNumberReg->read();
+        if(_currentBuffer != _currentBufferNumberReg->accessData(0)) {
+          std::cout << "WARNING: buffer switch happened while reading! Expect corrupted data." << std::endl;
+        }
+      }
       // release a lock in firmware (enable buffer swapping)
       _enableDoubleBufferReg->accessData(0) = 1;
       _enableDoubleBufferReg->write();

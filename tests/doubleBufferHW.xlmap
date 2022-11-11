@@ -29,6 +29,7 @@
           <parameter name="currentBufferNumber">/currentBufferNumber</parameter>
           <parameter name="secondBuffer">/buf1</parameter>
           <parameter name="wordOffset">0</parameter>
+          <parameter name="testUSleep">0</parameter>
         </plugin>
     </redirectedRegister>
     <redirectedRegister name="fifoStatus">

@@ -76,6 +76,7 @@ namespace ChimeraTK { namespace LNMBackend {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
+    uint32_t _testUSleep{0};
   };
 
 }} // namespace ChimeraTK::LNMBackend
