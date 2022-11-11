@@ -44,6 +44,9 @@ BOOST_AUTO_TEST_CASE(testErrorInDmapFile) {
   testErrorInDmapFileSingle("invalid6.xlmap");
   testErrorInDmapFileSingle("invalid7.xlmap");
   testErrorInDmapFileSingle("invalid8.xlmap");
+  testErrorInDmapFileSingle("invalidStartIndex1.xlmap");
+  testErrorInDmapFileSingle("invalidStartIndex2.xlmap");
+  testErrorInDmapFileSingle("invalidDuplicateName.xlmap");
   std::cout << "*** End of invalid xlmap file test. ********************" << std::endl;
   std::cout << "********************************************************" << std::endl;
 }
@@ -71,6 +74,11 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::REGISTER);
   BOOST_CHECK(info.deviceName == "PCIE2");
   BOOST_CHECK(info.registerName == "ADC.AREA_DMAABLE");
+
+  info = catalogue.getBackendRegister("usingHexStartIndex");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::REGISTER);
+  BOOST_CHECK(info.registerName == "ADC.AREA_DMAABLE");
+  BOOST_CHECK(info.firstIndex == 0x10);
 
   info = catalogue.getBackendRegister("Channel3");
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);

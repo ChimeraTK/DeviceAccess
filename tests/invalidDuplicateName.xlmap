@@ -1,0 +1,14 @@
+<logicalNameMap>
+    <redirectedRegister name="theRegisterName">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <targetStartIndex>0</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+    <redirectedRegister name="theRegisterName">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE2</targetRegister>
+        <targetStartIndex>0</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+</logicalNameMap>
