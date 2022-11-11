@@ -3,8 +3,8 @@
 #pragma once
 
 #include <cstddef>
-#include <iosfwd>
 #include <functional>
+#include <iosfwd>
 
 namespace ChimeraTK {
 

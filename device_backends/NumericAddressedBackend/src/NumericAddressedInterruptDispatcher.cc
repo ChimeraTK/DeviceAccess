@@ -16,7 +16,7 @@ namespace ChimeraTK {
     if(!_isActive) return ver;
 
     try {
-      _transferGroup.read();
+      _transferGroup->read();
 
       for(auto& var : _asyncVariables) {
         auto numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());
@@ -38,7 +38,7 @@ namespace ChimeraTK {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
     VersionNumber ver; // a common VersionNumber for this trigger. Must be generated under mutex
     try {
-      _transferGroup.read();
+      _transferGroup->read();
 
       for(auto& var : _asyncVariables) {
         auto numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());

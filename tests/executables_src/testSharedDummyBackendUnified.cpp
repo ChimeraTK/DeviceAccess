@@ -259,9 +259,7 @@ BOOST_AUTO_TEST_CASE(testVerifyMemoryDeleted) {
   std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
   // Check that memory is removed
-  BOOST_CHECK_MESSAGE(shm_exists(shmName),
-      "This test was expected to pass while https://redmine.msktools.desy.de/issues/9542 is not fixed. Please update "
-      "this test");
+  BOOST_CHECK(!shm_exists(shmName));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
