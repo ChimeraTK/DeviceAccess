@@ -54,8 +54,10 @@ target_link_libraries(testRebotConnectionTimeouts RebotDummyServerLib)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/unitTestsNotUnderCtest  executables)
 foreach( executablesrc ${executables})
   get_filename_component(exename ${executablesrc} NAME_WE)
-  add_executable(${exename} ${executablesrc})
-  target_link_libraries(${exename} ${PROJECT_NAME} ${Boost_LIBRARIES} ${PROJECT_NAME}_TEST_LIBRARY)
+  if (HAVE_PCIE_BACKEND OR NOT(exename STREQUAL "testPcieErrorHandling"))
+    add_executable(${exename} ${executablesrc})
+    target_link_libraries(${exename} ${PROJECT_NAME} ${Boost_LIBRARIES} ${PROJECT_NAME}_TEST_LIBRARY)
+  endif()
 endforeach(executablesrc)
 
 

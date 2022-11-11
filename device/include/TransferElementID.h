@@ -4,14 +4,7 @@
 
 #include <cstddef>
 #include <iosfwd>
-
-namespace std {
-  template<class Key>
-  struct hash;
-
-  template<class T>
-  struct less;
-} // namespace std
+#include <functional>
 
 namespace ChimeraTK {
 
