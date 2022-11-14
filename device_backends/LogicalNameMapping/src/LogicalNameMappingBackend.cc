@@ -212,6 +212,13 @@ namespace ChimeraTK {
       }
       else {
         target_info = _catalogue_mutable.getRegister(lnmInfo.registerName);
+        // target_info might also be affected by plugins. e.g. forceReadOnly plugin
+        // we need to process plugin list of target register before taking over anything
+        LNMBackendRegisterInfo& i = static_cast<LNMBackendRegisterInfo&>(target_info.getImpl());
+        for(auto& plugin : i.plugins) {
+          plugin->updateRegisterInfo(_catalogue_mutable);
+        }
+        target_info = _catalogue_mutable.getRegister(lnmInfo.registerName);
       }
 
       lnmInfo.supportedFlags = target_info.getSupportedAccessModes();
