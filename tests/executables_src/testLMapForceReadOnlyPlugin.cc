@@ -32,15 +32,9 @@ BOOST_AUTO_TEST_CASE(test) {
   BOOST_CHECK_NO_THROW(acc.read());
 }
 
-BOOST_AUTO_TEST_CASE(test2) {
+BOOST_AUTO_TEST_CASE(testWithMathPlugin) {
   // this xlmap was causing a logic_error although it should not.
   // See ticket https://redmine.msktools.desy.de/issues/9551
-  /* Reason for failure was:
-   * - proper register catalogue is only constructed in getRegisterCatalogue().
-   * - There plugins are processed in the end
-   * - but already before, register info from target register is copied as a basis for the new lmap regInfo
-   * - the wrong copy (not having included effects of target Register plugins) is never fixed
-   */
 
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=forceReadOnlyPlugin2.xlmap)");
