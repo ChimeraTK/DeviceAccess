@@ -339,18 +339,10 @@ namespace ChimeraTK {
     printf("[bt] Execution path:\n");
     for(i = 0; i < trace_size; ++i) {
       std::string msg(messages[i]);
-      size_t a = msg.find_first_of("(");
-      size_t b = msg.find_first_of("+");
-      std::string functionName = msg.substr(a + 1, b - a - 1);
-      int status;
-      char* demangledName = abi::__cxa_demangle(functionName.c_str(), nullptr, nullptr, &status);
-      if(status == 0) {
-        std::cout << "[bt] #" << i << " " << demangledName << std::endl;
-        free(demangledName);
-      }
-      else {
-        std::cout << "[bt] #" << i << " (demangling failed) " << functionName << std::endl;
-      }
+      size_t a = msg.find_first_of('(');
+      size_t b = msg.find_first_of('+');
+      std::string functionName = boost::core::demangle(msg.substr(a + 1, b - a - 1).c_str());
+      std::cout << "[bt] #" << i << " " << functionName << std::endl;
     }
   }
 
