@@ -25,10 +25,14 @@ namespace ChimeraTK { namespace LNMBackend {
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams) const;
 
    private:
+    struct ReaderCount {
+      uint32_t value = 0;
+      std::mutex mutex;
+    };
     std::map<std::string, std::string> _parameters;
     std::string _targetDeviceName;
     // number of currently active reader threads
-    boost::shared_ptr<std::atomic<uint32_t>> _readerCount;
+    boost::shared_ptr<ReaderCount> _readerCount;
   };
 
   template<typename UserType>

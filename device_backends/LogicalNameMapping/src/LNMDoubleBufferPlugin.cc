@@ -18,7 +18,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     // We need to share _readerCount state among instances of DoubleBufferPlugin, if they refer
     // to the same control register.
-    static std::map<std::string, boost::shared_ptr<std::atomic<uint32_t>>> readerCountMap;
+    static std::map<std::string, boost::shared_ptr<ReaderCount>> readerCountMap;
     static std::mutex readerCountMapMutex;
     std::string id;
     try {
@@ -28,7 +28,7 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     std::lock_guard lg(readerCountMapMutex);
     if(readerCountMap.find(id) == readerCountMap.end()) {
-      readerCountMap[id] = boost::make_shared<std::atomic<uint32_t>>(0);
+      readerCountMap[id] = boost::make_shared<ReaderCount>();
     }
     _readerCount = readerCountMap[id];
   }
@@ -130,7 +130,10 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
-    (*_plugin._readerCount)++;
+    {
+      std::lock_guard lg{_plugin._readerCount->mutex};
+      _plugin._readerCount->value++;
+    }
     // acquire a lock in firmware (disable buffer swapping)
     _enableDoubleBufferReg->accessData(0) = 0;
     _enableDoubleBufferReg->write();
@@ -165,19 +168,22 @@ namespace ChimeraTK { namespace LNMBackend {
     else
       _secondBufferReg->postRead(type, hasNewData);
 
-    assert(*_plugin._readerCount > 0);
-    (*_plugin._readerCount)--;
-    if(*_plugin._readerCount == 0) {
-      if(_testUSleep) {
-        // for testing, check safety of handshake
-        _currentBufferNumberReg->read();
-        if(_currentBuffer != _currentBufferNumberReg->accessData(0)) {
-          std::cout << "WARNING: buffer switch happened while reading! Expect corrupted data." << std::endl;
+    {
+      std::lock_guard lg{_plugin._readerCount->mutex};
+      assert(_plugin._readerCount->value > 0);
+      _plugin._readerCount->value--;
+      if(_plugin._readerCount->value == 0) {
+        if(_testUSleep) {
+          // for testing, check safety of handshake
+          _currentBufferNumberReg->read();
+          if(_currentBuffer != _currentBufferNumberReg->accessData(0)) {
+            std::cout << "WARNING: buffer switch happened while reading! Expect corrupted data." << std::endl;
+          }
         }
+        // release a lock in firmware (enable buffer swapping)
+        _enableDoubleBufferReg->accessData(0) = 1;
+        _enableDoubleBufferReg->write();
       }
-      // release a lock in firmware (enable buffer swapping)
-      _enableDoubleBufferReg->accessData(0) = 1;
-      _enableDoubleBufferReg->write();
     }
     // set version and data validity of this object
     this->_versionNumber = {};
