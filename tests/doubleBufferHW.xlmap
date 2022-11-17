@@ -1,0 +1,59 @@
+<logicalNameMap>
+
+    <!-- since target devices of dma and control registers are different, we need extra mapping here -->
+    <redirectedRegister name="enableDoubleBuffering">
+        <targetDevice>device_reg</targetDevice>
+        <targetRegister>DAQ.DOUBLE_BUF_ENA</targetRegister>
+        <targetStartIndex>0</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>    
+    <redirectedRegister name="currentBufferNumber">
+        <targetDevice>device_reg</targetDevice>
+        <targetRegister>DAQ.ACTIVE_BUF</targetRegister>
+        <targetStartIndex>0</targetStartIndex>
+        <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+    <redirectedRegister name="buf0">
+        <targetDevice>device_dma</targetDevice>
+        <targetRegister>APP.DAQ0_BUF0</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="buf1">
+        <targetDevice>device_dma</targetDevice>
+        <targetRegister>APP.DAQ0_BUF1</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="DAQ0">
+        <targetDevice>this</targetDevice>
+        <targetRegister>/buf0</targetRegister>
+        <plugin name="doubleBuffer">      
+          <parameter name="enableDoubleBuffering">/enableDoubleBuffering</parameter>
+          <parameter name="currentBufferNumber">/currentBufferNumber</parameter>
+          <parameter name="secondBuffer">/buf1</parameter>
+          <parameter name="daqNumber">0</parameter>
+          <parameter name="testUSleep">0</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="fifoStatus">
+        <targetDevice>device_reg</targetDevice>
+        <targetRegister>DAQ.FIFO_STATUS</targetRegister>
+    </redirectedRegister>
+    <redirectedChannel name="channel10">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/DAQ0</targetRegister>
+      <targetChannel>10</targetChannel>
+    </redirectedChannel> 
+    <redirectedChannel name="channel1">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/DAQ0</targetRegister>
+      <targetChannel>11</targetChannel>
+    </redirectedChannel>
+    <redirectedChannel name="channel10buf0">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/buf0</targetRegister>
+      <targetChannel>10</targetChannel>
+    </redirectedChannel> 
+    <redirectedChannel name="channel10buf1">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/buf1</targetRegister>
+      <targetChannel>10</targetChannel>
+    </redirectedChannel>
+</logicalNameMap>

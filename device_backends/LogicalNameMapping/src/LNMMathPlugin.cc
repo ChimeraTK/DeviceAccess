@@ -492,8 +492,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MathPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>& backend,
-      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) {
+      boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
+      const UndecoratedParams&) {
     return MathPlugin_Helper<UserType, TargetType>::decorateAccessor(backend, target, _parameters, this);
   }
 

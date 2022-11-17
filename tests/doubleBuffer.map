@@ -1,10 +1,38 @@
 # name                    number of elements       address          size           bar    width   fracbits  signed
 APP.0.THE_AREA            10                       1024             40             3      32      0         0
-APP.1.ADDRESS             1                        0                4              1      32      0         0
-APP.1.DATA                1                        4                4              1      32      0         0
-APP.1.STATUS              1                        8                4              1      32      0         0
-APP.1.WORD_DUB_BUF_ENA    1                        12               4              1      32      0         0
-APP.1.WORD_DUB_BUF_CURR   1                        24               4              1      32      0         0
-APP.1.WORD_DUB_BUF_PNUM   1                        28               4              1      32      0         0
+APP.0.ADDRESS             1                        0                4              1      32      0         0
+APP.0.DATA                1                        4                4              1      32      0         0
+APP.0.STATUS              1                        8                4              1      32      0         0
+APP.0.WORD_DUB_BUF_ENA    1                        12               4              1      32      0         0
+APP.0.WORD_DUB_BUF_CURR   1                        24               4              1      32      0         0
+APP.0.WORD_DUB_BUF_PNUM   1                        28               4              1      32      0         0
 APP.0.DAQ0_BUF0           10                       1024             20             3      32      0         0
 APP.0.DAQ0_BUF1           10                       1224             20             3      32      0         0
+
+# example for accessing extracted channels via double buffering
+DAQ0.WORD_DUB_BUF_ENA                                                 3        32832           12      1      1      0    0   RW
+DAQ0.WORD_DUB_BUF_CURR                                                3        32844           12      1      1      0    0   RO
+APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_BUF0                         500000            0      2000000     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF0_0                                             1            0            4     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF0_1                                             1            4            4     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF0_2                                             1            8            4     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF0_3                                             1           12            4     13     32      IEEE754 1   RO
+APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_BUF1                         500000      2000000      2000000     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF1_0                                             1      2000000            4     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF1_1                                             1      2000004            4     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF1_2                                             1      2000008            4     13     32      IEEE754 1   RO
+APP0.SEQUENCE_DAQ0_BUF1_3                                             1      2000012            4     13     32      IEEE754 1   RO
+
+# exmaple for extracted channels via double buffering on lowest level (i.e. before extracting channels)
+DAQ2.WORD_DUB_BUF_ENA                                                 3        32900           12      1      1      0    0   RW
+DAQ2.WORD_DUB_BUF_CURR                                                3        32912           12      1      1      0    0   RO
+APP2.AREA_MULTIPLEXED_SEQUENCE_DAQ2_BUF0                         500000      4000000      2000000     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_0                                             1      4000000            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_1                                             1      4000004            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_2                                             1      4000008            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF0_3                                             1      4000012            4     13     32      IEEE754 1   RO
+APP2.AREA_MULTIPLEXED_SEQUENCE_DAQ2_BUF1                         500000      6000000      2000000     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_0                                             1      6000000            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_1                                             1      6000004            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_2                                             1      6000008            4     13     32      IEEE754 1   RO
+APP2.SEQUENCE_DAQ2_BUF1_3                                             1      6000012            4     13     32      IEEE754 1   RO
