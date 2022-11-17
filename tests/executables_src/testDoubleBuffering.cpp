@@ -117,7 +117,7 @@ struct AreaType : Register {
     // We might have to open the backend to perform the operation. We have to remember
     // that we did so and close it again it we did. Some tests require the backend to be closed.
 
-    auto currentBufferNumber = backdoor->getRegisterAccessor<uint32_t>("APP.1.WORD_DUB_BUF_CURR", 0, 0, {});
+    auto currentBufferNumber = backdoor->getRegisterAccessor<uint32_t>("APP.0.WORD_DUB_BUF_CURR", 0, 0, {});
     auto buffer0 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
         "APP/0/DAQ0_BUF0", this->nElementsPerChannel(), 0, {});
     auto buffer1 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
@@ -156,7 +156,7 @@ struct AreaType : Register {
   }
 
   void setRemoteValue() {
-    auto currentBufferNumber = backdoor->getRegisterAccessor<uint32_t>("APP.1.WORD_DUB_BUF_CURR", 0, 0, {});
+    auto currentBufferNumber = backdoor->getRegisterAccessor<uint32_t>("APP.0.WORD_DUB_BUF_CURR", 0, 0, {});
     auto buffer0 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
         "APP/0/DAQ0_BUF0", this->nElementsPerChannel(), 0, {});
     auto buffer1 = backdoor->getRegisterAccessor<typename Register::minimumUserType>(
@@ -225,14 +225,14 @@ BOOST_AUTO_TEST_CASE(testUnified) {
 struct DeviceFixture {
   Device d;
   boost::shared_ptr<NDRegisterAccessor<uint32_t>> doubleBufferingEnabled;
-  // we call the backend frontdoor when we modify the behavior of the thread which reads via double buffering mechanism
-  boost::shared_ptr<DummyForDoubleBuffering> frontdoor;
+  // we call the backend doubleBufDummy when we modify the behavior of the thread which reads via double buffering mechanism
+  boost::shared_ptr<DummyForDoubleBuffering> doubleBufDummy;
   DeviceFixture() : d(lmap) {
     // before any access, also via backdoor, must open
     d.open();
-    frontdoor = boost::dynamic_pointer_cast<DummyForDoubleBuffering>(backdoor);
-    assert(frontdoor);
-    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>("APP/1/WORD_DUB_BUF_ENA", 0, 0, {});
+    doubleBufDummy = boost::dynamic_pointer_cast<DummyForDoubleBuffering>(backdoor);
+    assert(doubleBufDummy);
+    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>("APP/0/WORD_DUB_BUF_ENA", 0, 0, {});
     doubleBufferingEnabled->accessData(0) = 1;
     doubleBufferingEnabled->write();
   }
@@ -247,19 +247,19 @@ BOOST_FIXTURE_TEST_CASE(testSlowReader, DeviceFixture) {
   // make double buffer operation block after write to ctrl register, at read of buffer number
   std::thread s([&] {
     // this thread reads from double-buffered region
-    frontdoor->blockNextRead[0] = true;
+    doubleBufDummy->blockNextRead[0] = true;
     accessor.read();
   });
 
   // wait that thread s is in blocked double-buffer read
-  frontdoor->blockedInRead[0].wait();
+  doubleBufDummy->blockedInRead[0].wait();
 
   // simplification: instead of writing fw simulation which would overwrite data now,
   // just check that buffer switching was disabled
   doubleBufferingEnabled->readLatest();
   BOOST_CHECK(!doubleBufferingEnabled->accessData(0));
 
-  frontdoor->unblockRead[0].wait();
+  doubleBufDummy->unblockRead[0].wait();
   s.join();
 
   // check that buffer switching enabled, by finalization of double-buffered read
@@ -286,26 +286,26 @@ BOOST_FIXTURE_TEST_CASE(testConcurrentRead, DeviceFixture) {
   std::thread readerA([&] {
     auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
     // begin read
-    frontdoor->blockNextRead[0] = true;
+    doubleBufDummy->blockNextRead[0] = true;
     accessor.read();
   });
   std::thread readerB([&] {
     auto accessor = d.getOneDRegisterAccessor<uint32_t>("/doubleBuffer");
     // wait that readerA is in blocked double-buffer read
-    frontdoor->blockedInRead[0].wait();
+    doubleBufDummy->blockedInRead[0].wait();
     // begin read
-    frontdoor->blockNextRead[1] = true;
+    doubleBufDummy->blockNextRead[1] = true;
     accessor.read();
   });
-  frontdoor->blockedInRead[1].wait(); // wait that reader B also in blocked read
-  frontdoor->unblockRead[0].wait();   // this is for reader A
+  doubleBufDummy->blockedInRead[1].wait(); // wait that reader B also in blocked read
+  doubleBufDummy->unblockRead[0].wait();   // this is for reader A
   readerA.join();
 
   // check that after reader A returned, buffer switching is still disabled
   doubleBufferingEnabled->readLatest();
   BOOST_CHECK(!doubleBufferingEnabled->accessData(0));
 
-  frontdoor->unblockRead[1].wait(); // this is for reader B
+  doubleBufDummy->unblockRead[1].wait(); // this is for reader B
   // check that after reader B returned, buffer switching is enabled
   readerB.join();
   doubleBufferingEnabled->readLatest();
@@ -326,7 +326,7 @@ struct DeviceFixture2D {
   boost::shared_ptr<NDRegisterAccessor<float>> buf0, buf1;
   struct ConfigParams {
     std::string enableDoubleBufferingReg, currentBufferNumberReg, firstBufferReg, secondBufferReg;
-    size_t wordOffset; // must match xlmap
+    size_t daqNumber; // must match xlmap
   };
 
   DeviceFixture2D() : d(this->lmap) {
@@ -334,11 +334,11 @@ struct DeviceFixture2D {
     // before any access, also via backdoor, must open
     d.open();
     backdoor = BackendFactory::getInstance().createBackend(this->rawDeviceCdd);
-    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>(c.enableDoubleBufferingReg, 1, c.wordOffset, {});
+    doubleBufferingEnabled = backdoor->getRegisterAccessor<uint32_t>(c.enableDoubleBufferingReg, 1, c.daqNumber, {});
     doubleBufferingEnabled->accessData(0) = 1;
     doubleBufferingEnabled->write();
 
-    writingBufferNum = backdoor->getRegisterAccessor<uint32_t>(c.currentBufferNumberReg, 1, c.wordOffset, {});
+    writingBufferNum = backdoor->getRegisterAccessor<uint32_t>(c.currentBufferNumberReg, 1, c.daqNumber, {});
     buf0 = backdoor->getRegisterAccessor<float>(c.firstBufferReg, 0, 0, {});
     buf1 = backdoor->getRegisterAccessor<float>(c.secondBufferReg, 0, 0, {});
   }
@@ -448,7 +448,7 @@ struct DeviceFixture2D_DAQ0 : public DeviceFixture2D<DeviceFixture2D_DAQ0> {
     c.currentBufferNumberReg = "DAQ0/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE";
     c.firstBufferReg = "APP0/DAQ0_BUF0";
     c.secondBufferReg = "APP0/DAQ0_BUF1";
-    c.wordOffset = 0;
+    c.daqNumber = 0;
     return c;
   }
 };
@@ -459,7 +459,7 @@ struct DeviceFixture2D_DAQ2 : public DeviceFixture2D<DeviceFixture2D_DAQ2> {
     c.currentBufferNumberReg = "DAQ2/WORD_DUB_BUF_CURR/DUMMY_WRITEABLE";
     c.firstBufferReg = "APP2/DAQ2_BUF0";
     c.secondBufferReg = "APP2/DAQ2_BUF1";
-    c.wordOffset = 2;
+    c.daqNumber = 2;
     return c;
   }
 };

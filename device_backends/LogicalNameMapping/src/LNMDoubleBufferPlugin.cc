@@ -76,17 +76,18 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error(message);
     }
 
-    size_t wordOffset = 0;
-    // parameter wordOffset is optional, defines the array index offset in the control & status registers
-    if(parameters.find("wordOffset") != parameters.end()) {
+    size_t daqNumber = 0;
+    // parameter daqNumber is optional, defines the array index offset in the control & status registers
+    if(parameters.find("daqNumber") != parameters.end()) {
       try {
-        wordOffset = std::stoul(parameters.at("wordOffset"));
+        daqNumber = std::stoul(parameters.at("daqNumber"));
       }
       catch(std::exception& e) {
         throw ChimeraTK::logic_error(
-            "LogicalNameMappingBackend DoubleBufferPlugin: parameter 'wordOffset' must be integer");
+            "LogicalNameMappingBackend DoubleBufferPlugin: parameter 'daqNumber' must be integer");
       }
     }
+    // FIXME - remove testUSleep feature
     if(parameters.find("testUSleep") != parameters.end()) {
       try {
         _testUSleep = std::stoul(parameters.at("testUSleep"));
@@ -100,9 +101,9 @@ namespace ChimeraTK { namespace LNMBackend {
     std::string key; // store key searched in 'parameters' map in order to print later correctly exception message
     try {
       _enableDoubleBufferReg =
-          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("enableDoubleBuffering")), 1, wordOffset, {});
+          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("enableDoubleBuffering")), 1, daqNumber, {});
       _currentBufferNumberReg =
-          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, wordOffset, {});
+          dev->getRegisterAccessor<uint32_t>(parameters.at(key.assign("currentBufferNumber")), 1, daqNumber, {});
       std::string secondBufName = parameters.at(key.assign("secondBuffer"));
 
       // take over the offset/numWords of this logical register, also for second buffer
@@ -133,12 +134,14 @@ namespace ChimeraTK { namespace LNMBackend {
     {
       std::lock_guard lg{_plugin._readerCount->mutex};
       _plugin._readerCount->value++;
+
+      // acquire a lock in firmware (disable buffer swapping)
+      _enableDoubleBufferReg->accessData(0) = 0;
+      _enableDoubleBufferReg->write();
     }
-    // acquire a lock in firmware (disable buffer swapping)
-    _enableDoubleBufferReg->accessData(0) = 0;
-    _enableDoubleBufferReg->write();
     if(_testUSleep) {
       // for testing, extra sleep
+      // FIXME - remove testUSleep feature
       boost::this_thread::sleep_for(boost::chrono::microseconds{_testUSleep});
     }
 
@@ -175,6 +178,7 @@ namespace ChimeraTK { namespace LNMBackend {
       if(_plugin._readerCount->value == 0) {
         if(_testUSleep) {
           // for testing, check safety of handshake
+          // FIXME - remove testUSleep feature
           _currentBufferNumberReg->read();
           if(_currentBuffer != _currentBufferNumberReg->accessData(0)) {
             std::cout << "WARNING: buffer switch happened while reading! Expect corrupted data." << std::endl;

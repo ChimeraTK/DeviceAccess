@@ -14,7 +14,7 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
+BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendTestSuite)
 
 /**********************************************************************************************************************/
 
