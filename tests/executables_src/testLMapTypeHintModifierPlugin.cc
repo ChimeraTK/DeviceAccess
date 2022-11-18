@@ -51,4 +51,18 @@ BOOST_AUTO_TEST_CASE(test) {
 
 /********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testWithMathPlugin) {
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=typeHintModifierPlugin.xlmap)");
+
+  auto cat = device.getRegisterCatalogue();
+  auto info = cat.getRegister("testWithMathPlugin");
+  auto descriptor = info.getDataDescriptor();
+  BOOST_CHECK(descriptor.isIntegral());
+  BOOST_CHECK(!descriptor.isSigned());
+  BOOST_CHECK_EQUAL(descriptor.nDigits(), 5);
+}
+
+/********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

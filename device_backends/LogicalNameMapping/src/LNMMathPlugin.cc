@@ -80,9 +80,6 @@ namespace ChimeraTK { namespace LNMBackend {
     // check if this is the first call to openHook: perform tasks which could not be done in the constructor because
     // the backend is not yet available there.
     if(_backend._empty()) {
-      // make sure the register info is up to date
-      updateRegisterInfo(backend->_catalogue_mutable);
-
       // store backend as weak pointer for later use
       _backend = backend;
 
