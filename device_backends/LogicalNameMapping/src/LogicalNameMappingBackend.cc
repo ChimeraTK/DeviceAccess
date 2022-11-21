@@ -11,7 +11,7 @@
 namespace ChimeraTK {
 
   LogicalNameMappingBackend::LogicalNameMappingBackend(std::string lmapFileName)
-  : hasParsed(false), _lmapFileName(lmapFileName) {
+  : hasParsed(false), _lmapFileName(std::move(lmapFileName)) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
   }
 
@@ -22,12 +22,12 @@ namespace ChimeraTK {
     if(hasParsed) return;
     hasParsed = true;
 
-    // parse the map fle
+    // parse the map file
     LogicalNameMapParser parser = LogicalNameMapParser(_parameters, _variables);
     _catalogue_mutable = parser.parseFile(_lmapFileName);
 
     // create all devices referenced in the map
-    for(auto& devName : getTargetDevices()) {
+    for(const auto& devName : getTargetDevices()) {
       _devices[devName] = BackendFactory::getInstance().createBackend(devName);
     }
   }
@@ -39,8 +39,8 @@ namespace ChimeraTK {
     parse();
 
     // open all referenced devices (unconditionally, open() is also used for recovery)
-    for(auto device = _devices.begin(); device != _devices.end(); ++device) {
-      device->second->open();
+    for(const auto& device : _devices) {
+      device.second->open();
     }
 
     // flag as opened
@@ -73,8 +73,8 @@ namespace ChimeraTK {
     }
 
     // close all referenced devices
-    for(auto device = _devices.begin(); device != _devices.end(); ++device) {
-      if(device->second->isOpen()) device->second->close();
+    for(const auto& device : _devices) {
+      if(device.second->isOpen()) device.second->close();
     }
     // flag as closed
     _opened = false;
@@ -86,7 +86,7 @@ namespace ChimeraTK {
   boost::shared_ptr<DeviceBackend> LogicalNameMappingBackend::createInstance(
       std::string /*address*/, std::map<std::string, std::string> parameters) {
     if(parameters["map"].empty()) {
-      throw ChimeraTK::logic_error("Map file name not speficied.");
+      throw ChimeraTK::logic_error("Map file name not specified.");
     }
     auto ptr = boost::make_shared<LogicalNameMappingBackend>(parameters["map"]);
     parameters.erase(parameters.find("map"));
@@ -179,8 +179,8 @@ namespace ChimeraTK {
           shared_from_this(), registerPathName, actualLength, actualOffset, flags));
     }
     else {
-      throw ChimeraTK::logic_error("For this register type, a RegisterAccessor cannot be obtained (name "
-                                   "of logical register: " +
+      throw ChimeraTK::logic_error(
+          "For this register type, a RegisterAccessor cannot be obtained (name of logical register: " +
           registerPathName + ").");
     }
 
@@ -198,8 +198,9 @@ namespace ChimeraTK {
       auto targetType = lnmInfo.targetType;
       if(targetType != LNMBackendRegisterInfo::TargetType::REGISTER &&
           targetType != LNMBackendRegisterInfo::TargetType::CHANNEL &&
-          targetType != LNMBackendRegisterInfo::TargetType::BIT)
+          targetType != LNMBackendRegisterInfo::TargetType::BIT) {
         continue;
+      }
 
       std::string devName = lnmInfo.deviceName;
 
@@ -366,10 +367,8 @@ namespace ChimeraTK {
 
   std::unordered_set<std::string> LogicalNameMappingBackend::getTargetDevices() const {
     std::unordered_set<std::string> ret;
-    for(auto it = _catalogue_mutable.begin(); it != _catalogue_mutable.end(); ++it) {
-      auto info = it->deviceName;
-      std::string dev = info; // infodeviceName;
-      if(dev != "this" && dev != "") ret.insert(dev);
+    for(const auto& info : _catalogue_mutable) {
+      if(info.deviceName != "this" && info.deviceName != "") ret.insert(info.deviceName);
     }
     return ret;
   }
