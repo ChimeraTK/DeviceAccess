@@ -7,7 +7,7 @@
 
 #include <boost/make_shared.hpp>
 
-namespace ChimeraTK { namespace LNMBackend {
+namespace ChimeraTK::LNMBackend {
   TypeHintModifierPlugin::TypeHintModifierPlugin(
       LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin<TypeHintModifierPlugin>(info) {
@@ -50,4 +50,4 @@ namespace ChimeraTK { namespace LNMBackend {
 
     catalogue.modifyRegister(_info);
   }
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

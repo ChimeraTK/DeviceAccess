@@ -93,7 +93,7 @@ namespace ChimeraTK { namespace LNMBackend {
           }
         }
 
-        // perpare for updates via push-type parameters
+        // prepare for updates via push-type parameters
         if(_hasPushParameter) {
           // fill the _pushParameterReadGroup
           for(auto& parpair : _parameters) {

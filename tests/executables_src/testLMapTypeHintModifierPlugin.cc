@@ -18,6 +18,7 @@ BOOST_AUTO_TEST_SUITE(LMapForceReadOnlyPluginTestSuite)
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test) {
+  std::cout << "test" << std::endl;
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=typeHintModifierPlugin.xlmap)");
 
@@ -52,6 +53,7 @@ BOOST_AUTO_TEST_CASE(test) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testWithMathPlugin) {
+  std::cout << "testWithMathPlugin" << std::endl;
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=typeHintModifierPlugin.xlmap)");
 
