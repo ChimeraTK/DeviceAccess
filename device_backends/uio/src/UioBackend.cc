@@ -32,7 +32,8 @@ namespace ChimeraTK {
 
   void UioBackend::open() {
     if(_opened) {
-      throw ChimeraTK::logic_error("Device already has been opened");
+      if(isFunctional()) return;
+      ::close(_deviceID);
     }
 
     _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
@@ -41,6 +42,8 @@ namespace ChimeraTK {
     }
 
     UioMMap();
+
+    _hasActiveException = false;
     _opened = true;
   }
 
@@ -53,12 +56,21 @@ namespace ChimeraTK {
   }
 
   bool UioBackend::isFunctional() const {
-    return _opened;
+    if(!_opened) return false;
+    if(_hasActiveException) return false;
+
+    // Do something meaningfull here, like non-blocking read of module ID (0x00)
+    return true;
   }
 
-  void UioBackend::read(uint64_t /*bar*/, uint64_t address, int32_t* data, size_t sizeInBytes) {
-    if(_opened == false) {
-      throw ChimeraTK::logic_error("Device closed");
+  void UioBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
+    assert(_opened);
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    }
+
+    if(bar > 0) {
+      throw ChimeraTK::logic_error("Multiple memory regions are not supported");
     }
 
     // This is a temporary work around, because register nodes of current map file are addressed using absolute bus addresses.
@@ -72,9 +84,14 @@ namespace ChimeraTK {
     std::memcpy(data, targetAddress, sizeInBytes);
   }
 
-  void UioBackend::write(uint64_t /*bar*/, uint64_t address, int32_t const* data, size_t sizeInBytes) {
-    if(_opened == false) {
-      throw ChimeraTK::logic_error("Device closed");
+  void UioBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
+    assert(_opened);
+    if(_hasActiveException) {
+      throw ChimeraTK::runtime_error("previous, unrecovered fault");
+    }
+
+    if(bar > 0) {
+      throw ChimeraTK::logic_error("Multiple memory regions are not supported");
     }
 
     // This is a temporary work around, because register nodes of current map file are addressed using absolute bus addresses.
@@ -89,7 +106,8 @@ namespace ChimeraTK {
   }
 
   std::string UioBackend::readDeviceInfo() {
-    return std::string("UIO device backend");
+    if(!_opened) throw ChimeraTK::logic_error("Device not opened.");
+    return std::string("UIO device backend attached to " + _deviceNodeName);
   }
 
   uint64_t UioBackend::readUint64HexFromFile(std::string fileName) {
@@ -106,7 +124,7 @@ namespace ChimeraTK {
   void UioBackend::UioMMap() {
     if(MAP_FAILED == (_deviceUserBase = mmap(NULL, _deviceMemSize, PROT_READ | PROT_WRITE, MAP_SHARED, _deviceID, 0))) {
       ::close(_deviceID);
-      throw ChimeraTK::runtime_error("Cannot allocate Memory for UIO device '" + _deviceNodeName + "'");
+      throw ChimeraTK::runtime_error("Cannot allocate memory for UIO device '" + _deviceNodeName + "'");
     }
     return;
   }
