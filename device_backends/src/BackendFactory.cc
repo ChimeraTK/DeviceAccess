@@ -14,6 +14,9 @@
 #ifdef CHIMERATK_HAVE_XDMA_BACKEND
 #  include "XdmaBackend.h"
 #endif
+#ifdef CHIMERATK_HAVE_UIO_BACKEND
+#  include "UioBackend.h"
+#endif
 #include "DeviceAccessVersion.h"
 #include "DMapFileParser.h"
 #include "DummyBackend.h"
@@ -147,6 +150,9 @@ namespace ChimeraTK {
 #endif
 #ifdef CHIMERATK_HAVE_XDMA_BACKEND
     registerBackendType("xdma", &XdmaBackend::createInstance, {"map"});
+#endif
+#ifdef CHIMERATK_HAVE_UIO_BACKEND
+    registerBackendType("uio", &UioBackend::createInstance, {"map"});
 #endif
     registerBackendType("dummy", &DummyBackend::createInstance, {"map"});
     registerBackendType("rebot", &RebotBackend::createInstance, {"ip", "port", "map", "timeout"});
