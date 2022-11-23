@@ -3,22 +3,14 @@
 
 #include "UioBackend.h"
 
-#include <sys/mman.h>
-
-#include <fcntl.h>
-#include <fstream>
-
 namespace ChimeraTK {
 
-  UioBackend::UioBackend(std::string deviceName, std::string mapFileName)
-  : NumericAddressedBackend(mapFileName), _deviceID(0), _deviceUserBase(nullptr),
-    _deviceNodeName(std::string("/dev/" + deviceName)) {
-    _deviceKernelBase = (void*)readUint64HexFromFile("/sys/class/uio/" + deviceName + "/maps/map0/addr");
-    _deviceMemSize = readUint64HexFromFile("/sys/class/uio/" + deviceName + "/maps/map0/size");
+  UioBackend::UioBackend(std::string deviceName, std::string mapFileName) : NumericAddressedBackend(mapFileName) {
+    _uioDevice = boost::shared_ptr<UioDevice>(new UioDevice("/dev/" + deviceName));
   }
 
   UioBackend::~UioBackend() {
-    close();
+    _uioDevice->close();
   }
 
   boost::shared_ptr<DeviceBackend> UioBackend::createInstance(
@@ -33,15 +25,10 @@ namespace ChimeraTK {
   void UioBackend::open() {
     if(_opened) {
       if(isFunctional()) return;
-      ::close(_deviceID);
+      _uioDevice->close();
     }
 
-    _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
-    if(_deviceID < 0) {
-      throw ChimeraTK::runtime_error("Failed to open UIO device '" + _deviceNodeName + "'");
-    }
-
-    UioMMap();
+    _uioDevice->open();
 
     _hasActiveException = false;
     _opened = true;
@@ -49,8 +36,7 @@ namespace ChimeraTK {
 
   void UioBackend::closeImpl() {
     if(_opened) {
-      UioUnmap();
-      ::close(_deviceID);
+      _uioDevice->close();
     }
     _opened = false;
   }
@@ -69,19 +55,7 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
 
-    if(bar > 0) {
-      throw ChimeraTK::logic_error("Multiple memory regions are not supported");
-    }
-
-    // This is a temporary work around, because register nodes of current map file are addressed using absolute bus addresses.
-    address = address % reinterpret_cast<uint64_t>(_deviceKernelBase);
-
-    if(address + sizeInBytes > _deviceMemSize) {
-      throw ChimeraTK::logic_error("Read request exceed Device Memory Region");
-    }
-    void* targetAddress = static_cast<uint8_t*>(_deviceUserBase) + address;
-
-    std::memcpy(data, targetAddress, sizeInBytes);
+    _uioDevice->read(bar, address, data, sizeInBytes);
   }
 
   void UioBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
@@ -90,47 +64,12 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("previous, unrecovered fault");
     }
 
-    if(bar > 0) {
-      throw ChimeraTK::logic_error("Multiple memory regions are not supported");
-    }
-
-    // This is a temporary work around, because register nodes of current map file are addressed using absolute bus addresses.
-    address = address % reinterpret_cast<uint64_t>(_deviceKernelBase);
-
-    if(address + sizeInBytes > _deviceMemSize) {
-      throw ChimeraTK::logic_error("Read request exceed Device Memory Region");
-    }
-    void* targetAddress = static_cast<uint8_t*>(_deviceUserBase) + address;
-
-    std::memcpy(targetAddress, data, sizeInBytes);
+    _uioDevice->write(bar, address, data, sizeInBytes);
   }
 
   std::string UioBackend::readDeviceInfo() {
     if(!_opened) throw ChimeraTK::logic_error("Device not opened.");
-    return std::string("UIO device backend attached to " + _deviceNodeName);
-  }
-
-  uint64_t UioBackend::readUint64HexFromFile(std::string fileName) {
-    uint64_t value = 0;
-    std::ifstream inputFile(fileName);
-
-    if(inputFile.is_open()) {
-      inputFile >> std::hex >> value;
-      inputFile.close();
-    }
-    return value;
-  }
-
-  void UioBackend::UioMMap() {
-    if(MAP_FAILED == (_deviceUserBase = mmap(NULL, _deviceMemSize, PROT_READ | PROT_WRITE, MAP_SHARED, _deviceID, 0))) {
-      ::close(_deviceID);
-      throw ChimeraTK::runtime_error("Cannot allocate memory for UIO device '" + _deviceNodeName + "'");
-    }
-    return;
-  }
-
-  void UioBackend::UioUnmap() {
-    munmap(_deviceUserBase, _deviceMemSize);
+    return std::string("UIO device backend: Device path = " + _uioDevice->getDeviceFilePath());
   }
 
 } // namespace ChimeraTK

@@ -3,20 +3,13 @@
 #pragma once
 
 #include "NumericAddressedBackend.h"
+#include "UioDevice.h"
 
 namespace ChimeraTK {
 
   class UioBackend : public NumericAddressedBackend {
    private:
-    int _deviceID;
-    void* _deviceUserBase;
-    void* _deviceKernelBase;
-    size_t _deviceMemSize;
-    std::string _deviceNodeName;
-
-    // Refactor to separate class ??
-    void UioMMap();
-    void UioUnmap();
+    boost::shared_ptr<UioDevice> _uioDevice;
 
     /* data */
    public:
@@ -35,7 +28,6 @@ namespace ChimeraTK {
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
 
     std::string readDeviceInfo() override;
-    uint64_t readUint64HexFromFile(std::string fileName);
   };
 
 } // namespace ChimeraTK
