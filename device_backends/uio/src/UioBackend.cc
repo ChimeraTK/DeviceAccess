@@ -79,8 +79,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("UIO: Backend only uses interrupt number 0");
     }
 
-    boost::unique_lock<boost::mutex> lock(_interruptThreadMutex, boost::try_to_lock);
-    if(!lock.owns_lock()) {
+    if(_interruptThreadMutex.try_lock()) {
       boost::thread th(boost::bind(&UioBackend::waitForInterruptThread, this));
       th.detach();
     }
@@ -94,13 +93,17 @@ namespace ChimeraTK {
   void UioBackend::waitForInterruptThread() {
     boost::lock_guard<boost::mutex> lock(_interruptThreadMutex, boost::adopt_lock);
 
-    int numberOfInterrupts = _uioDevice->waitForInterrupt(-1);
-    _uioDevice->clearInterrupts();
+    std::cout << "Interrupt handler RUNNING!!!" << std::endl;
 
-    std::cout << "Received #" << numberOfInterrupts << " interrupts" << std::endl;
+    while(true) {
+      int numberOfInterrupts = _uioDevice->waitForInterrupt(-1);
+      _uioDevice->clearInterrupts();
 
-    for(int i = 0; i < numberOfInterrupts; i++) {
-      dispatchInterrupt(0, 0);
+      std::cout << "Received #" << numberOfInterrupts << " interrupts" << std::endl;
+
+      for(int i = 0; i < numberOfInterrupts; i++) {
+        dispatchInterrupt(0, 0);
+      }
     }
   }
 

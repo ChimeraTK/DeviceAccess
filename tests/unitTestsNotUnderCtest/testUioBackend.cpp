@@ -25,6 +25,7 @@ int main() {
    */
   ChimeraTK::Device myDevice("MOTCTRL");
   myDevice.open();
+  myDevice.activateAsyncRead();
 
   /*
    * Registers are defined by a path, which consists of a hierarchy of
@@ -32,8 +33,92 @@ int main() {
    * In this basic example we use a register which contains a single value
    * (a scalar).
    */
+
   ChimeraTK::ScalarRegisterAccessor<uint32_t> maximumAcceleration =
       myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_ACC");
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> maximumVelocity =
+      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_VEL");
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> baseVelocity =
+      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_BASE_VEL");
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> pulseWidth =
+      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_PULSE_WIDTH");
+
+  ChimeraTK::ScalarRegisterAccessor<int32_t> motorDestination =
+      myDevice.getScalarRegisterAccessor<int32_t>("MOTOR_CONTROL/MOTOR_DESTINATION");
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorStart =
+      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_START");
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition = myDevice.getScalarRegisterAccessor<uint32_t>(
+      "MOTOR_CONTROL/MOTOR_POSITION", 0, {ChimeraTK::AccessMode::wait_for_new_data});
+
+  //  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition =
+  //      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_POSITION");
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> resetMotorPosition =
+      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_POSITION_RESET");
+
+  /* Configure motor control logic*/
+  maximumAcceleration = 2000;
+  maximumAcceleration.write();
+
+  maximumVelocity = 2000;
+  maximumVelocity.write();
+
+  baseVelocity = 0;
+  baseVelocity.write();
+
+  pulseWidth = 200;
+  pulseWidth.write();
+
+  /* Read back configuration*/
+
+  maximumAcceleration.read();
+  maximumVelocity.read();
+  baseVelocity.read();
+  pulseWidth.read();
+
+  std::cout << "maximumAcceleration = " << maximumAcceleration << std::endl;
+  std::cout << "maximumVelocity     = " << maximumVelocity << std::endl;
+  std::cout << "baseVelocity        = " << baseVelocity << std::endl;
+  std::cout << "pulseWidth          = " << pulseWidth << std::endl;
+
+  /* Move motor*/
+
+  motorStart = 0;
+  motorStart.write();
+
+  resetMotorPosition = 1;
+  resetMotorPosition.write();
+
+  resetMotorPosition = 0;
+  resetMotorPosition.write();
+
+  motorDestination = 22000;
+  motorDestination.write();
+
+  motorDestination.read();
+  std::cout << "Target position is " << motorDestination << std::endl;
+
+  motorStart = 1;
+  motorStart.write();
+  motorStart = 0;
+  motorStart.write();
+
+  motorPosition.read();
+  std::cout << "Current motor position is " << motorPosition << std::endl;
+
+  motorPosition.read();
+  std::cout << "Current motor position is " << motorPosition << std::endl;
+
+  motorPosition.read();
+  std::cout << "Current motor position is " << motorPosition << std::endl;
+
+  motorPosition.read();
+  std::cout << "Current motor position is " << motorPosition << std::endl;
 
   /*
    * To get the value from the device call read.
