@@ -17,6 +17,8 @@ namespace ChimeraTK {
 
     void UioMMap();
     void UioUnmap();
+
+    void throwAndAttachErrorNumber(std::string message);
     uint64_t readUint64HexFromFile(std::string fileName);
 
    public:
@@ -28,6 +30,9 @@ namespace ChimeraTK {
 
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes);
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes);
+
+    int waitForInterrupt(int timeoutMs);
+    void clearInterrupts();
 
     std ::string getDeviceFilePath();
   };

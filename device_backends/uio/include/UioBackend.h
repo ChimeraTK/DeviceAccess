@@ -5,11 +5,16 @@
 #include "NumericAddressedBackend.h"
 #include "UioDevice.h"
 
+#include <boost/thread.hpp> //#include <thread>
+
 namespace ChimeraTK {
 
   class UioBackend : public NumericAddressedBackend {
    private:
     boost::shared_ptr<UioDevice> _uioDevice;
+
+    boost::mutex _interruptThreadMutex;
+    void waitForInterruptThread();
 
     /* data */
    public:
@@ -26,6 +31,7 @@ namespace ChimeraTK {
 
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
+    void startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) override;
 
     std::string readDeviceInfo() override;
   };
