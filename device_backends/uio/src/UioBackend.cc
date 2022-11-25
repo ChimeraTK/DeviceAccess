@@ -3,12 +3,10 @@
 
 #include "UioBackend.h"
 
-#include <iostream>
-
 namespace ChimeraTK {
 
   UioBackend::UioBackend(std::string deviceName, std::string mapFileName) : NumericAddressedBackend(mapFileName) {
-    _uioDevice = boost::shared_ptr<UioDevice>(new UioDevice("/dev/" + deviceName));
+    _uioDevice = std::shared_ptr<UioDevice>(new UioDevice("/dev/" + deviceName));
   }
 
   UioBackend::~UioBackend() {
@@ -83,7 +81,7 @@ namespace ChimeraTK {
     }
 
     if(_interruptThreadMutex.try_lock()) {
-      _interruptWaitingThread = boost::thread(&UioBackend::waitForInterruptThread, this);
+      _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptThread, this);
     }
   }
 
@@ -93,9 +91,8 @@ namespace ChimeraTK {
   }
 
   void UioBackend::waitForInterruptThread() {
-    boost::lock_guard<boost::mutex> lock(_interruptThreadMutex, boost::adopt_lock);
+    std::lock_guard<std::mutex> lock(_interruptThreadMutex, std::adopt_lock);
 
-    std::cout << "STARTED interrupt handler !!!" << std::endl;
     _uioDevice->clearInterrupts();
 
     while(!_stopInterruptLoop) {
@@ -104,15 +101,11 @@ namespace ChimeraTK {
       if(numberOfInterrupts > 0) {
         _uioDevice->clearInterrupts();
 
-        std::cout << "Received #" << numberOfInterrupts << " interrupts" << std::endl;
-
         for(uint32_t i = 0; i < numberOfInterrupts; i++) {
           dispatchInterrupt(0, 0);
         }
       }
     }
-
-    std::cout << "STOPPED interrupt handler !!!" << std::endl;
   }
 
 } // namespace ChimeraTK

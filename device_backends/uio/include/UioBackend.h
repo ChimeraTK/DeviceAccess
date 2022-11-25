@@ -5,16 +5,16 @@
 #include "NumericAddressedBackend.h"
 #include "UioDevice.h"
 
-#include <boost/thread.hpp> //#include <thread>
+#include <thread>
 
 namespace ChimeraTK {
 
   class UioBackend : public NumericAddressedBackend {
    private:
-    boost::shared_ptr<UioDevice> _uioDevice;
+    std::shared_ptr<UioDevice> _uioDevice;
 
-    boost::mutex _interruptThreadMutex;
-    boost::thread _interruptWaitingThread;
+    std::mutex _interruptThreadMutex;
+    std::thread _interruptWaitingThread;
     std::atomic<bool> _stopInterruptLoop{false}; // Used to shut down thread
     void waitForInterruptThread();
 
