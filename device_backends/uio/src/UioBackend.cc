@@ -12,7 +12,7 @@ namespace ChimeraTK {
   }
 
   UioBackend::~UioBackend() {
-    _uioDevice->close();
+    closeImpl();
   }
 
   boost::shared_ptr<DeviceBackend> UioBackend::createInstance(
@@ -20,7 +20,6 @@ namespace ChimeraTK {
     if(address.size() == 0) {
       throw ChimeraTK::logic_error("UIO: Device name not specified.");
     }
-
     return boost::shared_ptr<DeviceBackend>(new UioBackend(address, parameters["map"]));
   }
 
@@ -31,13 +30,17 @@ namespace ChimeraTK {
     }
 
     _uioDevice->open();
-
+    _stopInterruptLoop = false;
     _hasActiveException = false;
     _opened = true;
   }
 
   void UioBackend::closeImpl() {
     if(_opened) {
+      if(_interruptWaitingThread.joinable()) {
+        _stopInterruptLoop = true;
+        _interruptWaitingThread.join();
+      }
       _uioDevice->close();
     }
     _opened = false;
@@ -47,14 +50,14 @@ namespace ChimeraTK {
     if(!_opened) return false;
     if(_hasActiveException) return false;
 
-    // Do something meaningfull here, like non-blocking read of module ID (0x00)
+    // Do something meaningful here, like non-blocking read of module ID (0x00)
     return true;
   }
 
   void UioBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     assert(_opened);
     if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("UIO: Previous, unrecovered fault");
+      throw ChimeraTK::runtime_error("UIO: Previous, un-recovered fault");
     }
 
     _uioDevice->read(bar, address, data, sizeInBytes);
@@ -63,7 +66,7 @@ namespace ChimeraTK {
   void UioBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     assert(_opened);
     if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("UIO: Previous, unrecovered fault");
+      throw ChimeraTK::runtime_error("UIO: Previous, un-recovered fault");
     }
 
     _uioDevice->write(bar, address, data, sizeInBytes);
@@ -80,8 +83,7 @@ namespace ChimeraTK {
     }
 
     if(_interruptThreadMutex.try_lock()) {
-      boost::thread th(boost::bind(&UioBackend::waitForInterruptThread, this));
-      th.detach();
+      _interruptWaitingThread = boost::thread(&UioBackend::waitForInterruptThread, this);
     }
   }
 
@@ -93,18 +95,24 @@ namespace ChimeraTK {
   void UioBackend::waitForInterruptThread() {
     boost::lock_guard<boost::mutex> lock(_interruptThreadMutex, boost::adopt_lock);
 
-    std::cout << "Interrupt handler RUNNING!!!" << std::endl;
+    std::cout << "STARTED interrupt handler !!!" << std::endl;
+    _uioDevice->clearInterrupts();
 
-    while(true) {
-      int numberOfInterrupts = _uioDevice->waitForInterrupt(-1);
-      _uioDevice->clearInterrupts();
+    while(!_stopInterruptLoop) {
+      uint32_t numberOfInterrupts = _uioDevice->waitForInterrupt(100);
 
-      std::cout << "Received #" << numberOfInterrupts << " interrupts" << std::endl;
+      if(numberOfInterrupts > 0) {
+        _uioDevice->clearInterrupts();
 
-      for(int i = 0; i < numberOfInterrupts; i++) {
-        dispatchInterrupt(0, 0);
+        std::cout << "Received #" << numberOfInterrupts << " interrupts" << std::endl;
+
+        for(uint32_t i = 0; i < numberOfInterrupts; i++) {
+          dispatchInterrupt(0, 0);
+        }
       }
     }
+
+    std::cout << "STOPPED interrupt handler !!!" << std::endl;
   }
 
 } // namespace ChimeraTK

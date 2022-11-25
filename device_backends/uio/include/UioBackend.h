@@ -14,6 +14,8 @@ namespace ChimeraTK {
     boost::shared_ptr<UioDevice> _uioDevice;
 
     boost::mutex _interruptThreadMutex;
+    boost::thread _interruptWaitingThread;
+    std::atomic<bool> _stopInterruptLoop{false}; // Used to shut down thread
     void waitForInterruptThread();
 
     /* data */

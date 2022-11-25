@@ -98,6 +98,8 @@ MACRO( COPY_MAPPING_FILES )
     interruptMapFile.map interruptMapFileWithError1.map interruptMapFileWithError2.map interruptMapFileWithError3.map interruptMapFileWithError4.map
     goodMapFileWithComments.map
     doubleBuffer.map doubleBuffer.xlmap
+    uioDeviceTest.dmap
+    uioDevice.mapp
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.

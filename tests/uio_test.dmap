@@ -1,4 +1,0 @@
-#MOTCTRL      (uio:uio0?map=test_bsp_motctrl_zcu102_emu_0.0.0-32-gc5e8b809-fix_bitstream_with_yocto-mskpcx40458.desy.de_ch13.mapp)
-#MOTCTRL      (dummy:uio0?map=test_bsp_motctrl_zcu102_emu_0.0.0-32-gc5e8b809-fix_bitstream_with_yocto-mskpcx40458.desy.de_ch13.mapp)
-#MOTCTRL      (dummy:uio0?map=mapfile_ch0.mapp)
-MOTCTRL      (uio:uio0?map=mapfile_ch0.mapp)

@@ -7,6 +7,34 @@
 #include <iostream>
 
 /*
+class MotorControl {
+ private:
+  ChimeraTK::Device _motor;
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> _maximumAcceleration;
+
+ public:
+  MotorControl(std::string mapFile, std::string device);
+  ~MotorControl();
+};
+
+MotorControl::MotorControl(std::string mapFile, std::string device) {
+  ChimeraTK::setDMapFilePath(mapFile);
+
+  _motor = ChimeraTK::Device(device);
+  _motor.open();
+  _motor.activateAsyncRead();
+
+  _maximumAcceleration = _motor.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_ACC");
+}
+
+MotorControl::~MotorControl() {
+  _motor.close();
+}
+
+*/
+
+/*
  * All information needed to access the device is
  * the device alias and the register names
  * (plus a .dmap file)
@@ -17,7 +45,7 @@ int main() {
    * Before you use a device you have to tell DeviceAccess
    * which dmap file to use.
    */
-  ChimeraTK::setDMapFilePath("uio_test.dmap");
+  ChimeraTK::setDMapFilePath("uioDeviceTest.dmap");
 
   /*
    * Create a device. Make sure a device alias is present
@@ -93,54 +121,32 @@ int main() {
 
   resetMotorPosition = 1;
   resetMotorPosition.write();
-
   resetMotorPosition = 0;
   resetMotorPosition.write();
 
-  motorDestination = 22000;
+  motorDestination = 0;
   motorDestination.write();
 
-  motorDestination.read();
-  std::cout << "Target position is " << motorDestination << std::endl;
-
-  motorStart = 1;
-  motorStart.write();
-  motorStart = 0;
-  motorStart.write();
-
   motorPosition.read();
-  std::cout << "Current motor position is " << motorPosition << std::endl;
+  std::cout << "Motor at position " << motorPosition << std::endl;
 
-  motorPosition.read();
-  std::cout << "Current motor position is " << motorPosition << std::endl;
+  for(size_t i = 0; i < 10; i++) {
+    // Set new target position
+    motorDestination += 5000;
+    motorDestination.write();
+    std::cout << std::endl << "Target position is " << motorDestination << std::endl;
 
-  motorPosition.read();
-  std::cout << "Current motor position is " << motorPosition << std::endl;
+    // Start motor movement
+    motorStart = 1;
+    motorStart.write();
+    motorStart = 0;
+    motorStart.write();
 
-  motorPosition.read();
-  std::cout << "Current motor position is " << motorPosition << std::endl;
+    // Wait until motor reached position
+    motorPosition.read();
+    std::cout << "Motor at position " << motorPosition << std::endl;
+  }
 
-  /*
-   * To get the value from the device call read.
-   */
-  maximumAcceleration.read();
-
-  /*
-   * Now you can treat the accessor as if it was a regular float variable.
-   */
-  std::cout << "Current motor maximum acceleration is " << maximumAcceleration << std::endl;
-  maximumAcceleration += 1000;
-  std::cout << "Motor maximum acceleration changed to " << maximumAcceleration << std::endl;
-
-  /*
-   * After you are done manipulating the accessor write it to the hardware.
-   */
-  maximumAcceleration.write();
-
-  /*
-   * It is good style to close the device when you are done, although
-   * this would happen automatically once the device goes out of scope.
-   */
   myDevice.close();
 
   return 0;
