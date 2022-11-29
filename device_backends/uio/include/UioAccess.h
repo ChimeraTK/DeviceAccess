@@ -7,7 +7,8 @@
 #include <string>
 
 namespace ChimeraTK {
-  class UioDevice {
+  /// @brief Implements a generic userspace interface for UIO devices.
+  class UioAccess {
    private:
     boost::filesystem::path _deviceFilePath;
     int _deviceFileDescriptor = 0;
@@ -40,8 +41,8 @@ namespace ChimeraTK {
     uint64_t readUint64HexFromFile(std::string fileName);
 
    public:
-    UioDevice(std::string deviceFilePath);
-    ~UioDevice();
+    UioAccess(std::string deviceFilePath);
+    ~UioAccess();
 
     /// @brief Opens UIO device for read and write operations and interrupt handling.
     void open();

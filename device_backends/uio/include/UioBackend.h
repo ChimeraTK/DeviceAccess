@@ -3,7 +3,7 @@
 #pragma once
 
 #include "NumericAddressedBackend.h"
-#include "UioDevice.h"
+#include "UioAccess.h"
 
 #include <thread>
 
@@ -11,7 +11,7 @@ namespace ChimeraTK {
 
   class UioBackend : public NumericAddressedBackend {
    private:
-    std::shared_ptr<UioDevice> _uioDevice;
+    std::shared_ptr<UioAccess> _uioAccess;
 
     std::mutex _interruptThreadMutex;
     std::thread _interruptWaitingThread;

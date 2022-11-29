@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-/*
+/* // Example class for how to encapsulate device access
 class MotorControl {
  private:
   ChimeraTK::Device _motor;
@@ -18,20 +18,18 @@ class MotorControl {
   ~MotorControl();
 };
 
-MotorControl::MotorControl(std::string mapFile, std::string device) {
+MotorControl::MotorControl(std::string mapFile, std::string device) : _motor(device) {
   ChimeraTK::setDMapFilePath(mapFile);
 
-  _motor = ChimeraTK::Device(device);
   _motor.open();
   _motor.activateAsyncRead();
 
-  _maximumAcceleration = _motor.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_ACC");
+  _maximumAcceleration.replace(_motor.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_ACC"));
 }
 
 MotorControl::~MotorControl() {
   _motor.close();
 }
-
 */
 
 /*
@@ -52,7 +50,15 @@ int main() {
    * in the dmap file.
    */
   ChimeraTK::Device myDevice("MOTCTRL");
+
   myDevice.open();
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition = myDevice.getScalarRegisterAccessor<uint32_t>(
+      "MOTOR_CONTROL/MOTOR_POSITION", 0, {ChimeraTK::AccessMode::wait_for_new_data});
+
+  myDevice.close();
+  myDevice.open();
+
   myDevice.activateAsyncRead();
 
   /*
@@ -80,8 +86,8 @@ int main() {
   ChimeraTK::ScalarRegisterAccessor<uint32_t> motorStart =
       myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_START");
 
-  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition = myDevice.getScalarRegisterAccessor<uint32_t>(
-      "MOTOR_CONTROL/MOTOR_POSITION", 0, {ChimeraTK::AccessMode::wait_for_new_data});
+  //  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition = myDevice.getScalarRegisterAccessor<uint32_t>(
+  //      "MOTOR_CONTROL/MOTOR_POSITION", 0, {ChimeraTK::AccessMode::wait_for_new_data});
 
   //  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition =
   //      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_POSITION");

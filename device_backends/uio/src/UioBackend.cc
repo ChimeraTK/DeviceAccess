@@ -6,11 +6,16 @@
 namespace ChimeraTK {
 
   UioBackend::UioBackend(std::string deviceName, std::string mapFileName) : NumericAddressedBackend(mapFileName) {
-    _uioDevice = std::shared_ptr<UioDevice>(new UioDevice("/dev/" + deviceName));
+    _uioAccess = std::shared_ptr<UioAccess>(new UioAccess("/dev/" + deviceName));
   }
 
   UioBackend::~UioBackend() {
     closeImpl();
+
+    if(_interruptWaitingThread.joinable()) {
+      _stopInterruptLoop = true;
+      _interruptWaitingThread.join();
+    }
   }
 
   boost::shared_ptr<DeviceBackend> UioBackend::createInstance(
@@ -23,23 +28,20 @@ namespace ChimeraTK {
 
   void UioBackend::open() {
     if(_opened) {
-      if(isFunctional()) return;
-      _uioDevice->close();
+      if(isFunctional()) {
+        return;
+      }
+      close();
     }
 
-    _uioDevice->open();
-    _stopInterruptLoop = false;
+    _uioAccess->open();
     _hasActiveException = false;
     _opened = true;
   }
 
   void UioBackend::closeImpl() {
     if(_opened) {
-      if(_interruptWaitingThread.joinable()) {
-        _stopInterruptLoop = true;
-        _interruptWaitingThread.join();
-      }
-      _uioDevice->close();
+      _uioAccess->close();
     }
     _opened = false;
   }
@@ -48,7 +50,6 @@ namespace ChimeraTK {
     if(!_opened) return false;
     if(_hasActiveException) return false;
 
-    // Do something meaningful here, like non-blocking read of module ID (0x00)
     return true;
   }
 
@@ -58,7 +59,7 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("UIO: Previous, un-recovered fault");
     }
 
-    _uioDevice->read(bar, address, data, sizeInBytes);
+    _uioAccess->read(bar, address, data, sizeInBytes);
   }
 
   void UioBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
@@ -67,12 +68,10 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("UIO: Previous, un-recovered fault");
     }
 
-    _uioDevice->write(bar, address, data, sizeInBytes);
+    _uioAccess->write(bar, address, data, sizeInBytes);
   }
 
   void UioBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) {
-    if(!_opened) throw ChimeraTK::logic_error("UIO: Device not opened.");
-
     if(interruptControllerNumber != 0) {
       throw ChimeraTK::logic_error("UIO: Backend only uses interrupt controller 0");
     }
@@ -86,20 +85,30 @@ namespace ChimeraTK {
   }
 
   std::string UioBackend::readDeviceInfo() {
-    if(!_opened) throw ChimeraTK::logic_error("UIO: Device not opened.");
-    return std::string("UIO device backend: Device path = " + _uioDevice->getDeviceFilePath());
+    std::string result = std::string("UIO backend: Device path = " + _uioAccess->getDeviceFilePath());
+    if(!isOpen()) {
+      result += " (device closed)";
+    }
+
+    return result;
   }
 
   void UioBackend::waitForInterruptThread() {
     std::lock_guard<std::mutex> lock(_interruptThreadMutex, std::adopt_lock);
 
-    _uioDevice->clearInterrupts();
+    _uioAccess->clearInterrupts();
 
     while(!_stopInterruptLoop) {
-      uint32_t numberOfInterrupts = _uioDevice->waitForInterrupt(100);
+      uint32_t numberOfInterrupts = _uioAccess->waitForInterrupt(100);
 
       if(numberOfInterrupts > 0) {
-        _uioDevice->clearInterrupts();
+        _uioAccess->clearInterrupts();
+
+        if(_hasActiveException) {
+          // Don't dispatch interrupt in case of exceptions
+          return;
+        }
+
 
         for(uint32_t i = 0; i < numberOfInterrupts; i++) {
           dispatchInterrupt(0, 0);
