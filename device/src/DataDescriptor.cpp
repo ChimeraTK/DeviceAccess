@@ -113,6 +113,10 @@ namespace ChimeraTK {
     return _rawDataType;
   }
 
+  void DataDescriptor::setRawDataType(const DataType& d) {
+    _rawDataType = d;
+  }
+
   /********************************************************************************************************************/
 
   DataType DataDescriptor::transportLayerDataType() const {

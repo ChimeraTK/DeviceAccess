@@ -86,8 +86,11 @@ MACRO( COPY_MAPPING_FILES )
     muxedDataAcessor.map newMuxedDummies.dmap
     testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
     invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap
-    invalid8.xlmap withParams.xlmap is_functional.xlmap logicalnamemap.dmap
-    mathPlugin.xlmap mathPlugin-broken.xlmap monostableTriggerPlugin.xlmap forceReadOnlyPlugin.xlmap typeHintModifierPlugin.xlmap
+    invalid8.xlmap invalidStartIndex1.xlmap invalidStartIndex2.xlmap
+    invalidDuplicateName.xlmap
+    withParams.xlmap is_functional.xlmap logicalnamemap.dmap
+    mathPlugin.xlmap mathPlugin-broken.xlmap monostableTriggerPlugin.xlmap
+    forceReadOnlyPlugin.xlmap forceReadOnlyPlugin2.xlmap typeHintModifierPlugin.xlmap
     performanceTest.map run_performance_test.sh
     badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
     subdeviceTest.dmap Subdevice.map SubdeviceMuxedArea.map SubdeviceTarget.map
@@ -100,6 +103,7 @@ MACRO( COPY_MAPPING_FILES )
     doubleBuffer.map doubleBuffer.xlmap
     uioDeviceTest.dmap
     uioDevice.mapp
+    doubleBufferHW.xlmap doubleBufferHW.map doubleBufferHW.dmap
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.

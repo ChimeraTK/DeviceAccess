@@ -90,6 +90,12 @@ namespace ChimeraTK {
     [[nodiscard]] DataType rawDataType() const;
 
     /**
+     * Set the raw data type. This is useful e.g. when a decorated register should no longer allow
+     * raw access, in which case you should set DataType::none
+     */
+    void setRawDataType(const DataType& d);
+
+    /**
      * Get the data type on the transport layer. This is always a 1D array of the specific data type. This raw transfer
      * might contain data for more than one register.
      *

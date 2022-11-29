@@ -212,4 +212,45 @@ catalogue. It does, however, <strong>NOT</strong> perform any type conversion on
 
 Parameters:
 - <code>type</code>: New type. The same type names as for \ref variables_and_constants are supported.
+
+\subsubsection double_buffering_plugin Double Buffering plugin for the Logical Name Mapper
+
+This plugin provides a way to read values form the double buffering
+scheme provided by the firmware. The double buffering mechanism is
+abstracted away behind a read only register. The plugin is enabled
+from the LogicalNameMapping xlmap file:
+
+\code{.xml}
+  <redirectedRegister name="bufferedValue">
+    <targetDevice>(dummy?map=DoubleBuffer.map)</targetDevice>
+    <targetRegister>APP.0.DAQ0_BUF0</targetRegister>
+    <plugin name="doubleBuffer">
+      <parameter name="secondBuffer"> APP.0.DAQ0_BUF1 </parameter>
+      <parameter name="controlRegister"> ADC.1.WORD_DUB_BUF_ENA </parameter>
+      <parameter name="statusRegister"> ADC.1.WORD_DUB_BUF_CURR </parameter>
+      <parameter name="daqNumber">0</parameter>
+    </plugin>
+  </redirectedRegister>
+\endcode
+
+This example creates the read only register, `bufferedValue`. Reading
+this register returns the value from the current active buffer,
+hiding away the buffer switching and handshaking tasks under the
+hood.
+
+The controlRegister and statusRegister hook into the corresponding
+firmware double buffering interface.
+The optional parameter <code>daqNumber</code> defines the offset used in the controlRegister and statusRegister.
+If not present, the value 0 is assumed.
+
+Notes and CAVEATS:
+- doubleBuffer plugin is not supported for *redirectedChannel*.
+  The reason we decided against it is that is would be difficult to optimize access to more than one channel.
+  Instead, apply the plugin to the whole 2D area with
+  redirectedRegister, and refer to the logical register in redirectedChannel by targetDevice=this.
+- Current implementation is safe for concurrent readers from the same process, i.e. the double buffering handshake with
+  the firmware begins when first reader starts reading and ends when last reader of the same double buffered region
+  finishes. Regions are identified on the basis of the controlRegister.
+  However, current implementation is not safe for concurrent readers from different processes.
+
 */

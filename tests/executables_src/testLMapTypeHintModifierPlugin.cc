@@ -18,6 +18,7 @@ BOOST_AUTO_TEST_SUITE(LMapForceReadOnlyPluginTestSuite)
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(test) {
+  std::cout << "test" << std::endl;
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=typeHintModifierPlugin.xlmap)");
 
@@ -47,6 +48,21 @@ BOOST_AUTO_TEST_CASE(test) {
   BOOST_CHECK(descriptor.isSigned());
   BOOST_CHECK_EQUAL(descriptor.nFractionalDigits(), 325);
   BOOST_CHECK_EQUAL(descriptor.nDigits(), 328);
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testWithMathPlugin) {
+  std::cout << "testWithMathPlugin" << std::endl;
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=typeHintModifierPlugin.xlmap)");
+
+  auto cat = device.getRegisterCatalogue();
+  auto info = cat.getRegister("testWithMathPlugin");
+  auto descriptor = info.getDataDescriptor();
+  BOOST_CHECK(descriptor.isIntegral());
+  BOOST_CHECK(!descriptor.isSigned());
+  BOOST_CHECK_EQUAL(descriptor.nDigits(), 5);
 }
 
 /********************************************************************************************************************/

@@ -1,0 +1,13 @@
+# uncomment for shm dummy testing
+device_reg (sharedMemoryDummy:A?map=doubleBufferHW.map)
+device_dma (sharedMemoryDummy:A?map=doubleBufferHW.map)
+
+# uncomment for hw testing
+#device_reg (xdma:xdma/slot3?map=doubleBufferHW.map)
+#device_dma (xdma:xdma/slot3?map=doubleBufferHW.map)
+
+# original content from CG's main.py -> temp.dmap
+#device_reg (xdma:xdma/slot3?map=./include/example_dwc8vm1.mapp)
+#device_dma (xdma:xdma/slot3?map=./include/example_dma.mapp)
+
+logicalDev (logicalNameMap?map=doubleBufferHW.xlmap)
