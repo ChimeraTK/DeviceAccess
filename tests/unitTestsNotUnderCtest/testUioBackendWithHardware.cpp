@@ -6,31 +6,10 @@
 
 #include <iostream>
 
-/* // Example class for how to encapsulate device access
-class MotorControl {
- private:
-  ChimeraTK::Device _motor;
-
-  ChimeraTK::ScalarRegisterAccessor<uint32_t> _maximumAcceleration;
-
- public:
-  MotorControl(std::string mapFile, std::string device);
-  ~MotorControl();
-};
-
-MotorControl::MotorControl(std::string mapFile, std::string device) : _motor(device) {
-  ChimeraTK::setDMapFilePath(mapFile);
-
-  _motor.open();
-  _motor.activateAsyncRead();
-
-  _maximumAcceleration.replace(_motor.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_ACC"));
-}
-
-MotorControl::~MotorControl() {
-  _motor.close();
-}
-*/
+/*
+ * This test code needs to be executed on a Xilinx ZCU102 evaluation board, using the hardware project
+ *  files from git@gitlab.msktools.desy.de:fpgafw/projects/test/test_bsp_motctrl.git (Commit ID: 5e8b8094)
+ */
 
 /*
  * All information needed to access the device is
@@ -86,12 +65,6 @@ int main() {
   ChimeraTK::ScalarRegisterAccessor<uint32_t> motorStart =
       myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_START");
 
-  //  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition = myDevice.getScalarRegisterAccessor<uint32_t>(
-  //      "MOTOR_CONTROL/MOTOR_POSITION", 0, {ChimeraTK::AccessMode::wait_for_new_data});
-
-  //  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorPosition =
-  //      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_POSITION");
-
   ChimeraTK::ScalarRegisterAccessor<uint32_t> resetMotorPosition =
       myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_POSITION_RESET");
 
@@ -109,7 +82,6 @@ int main() {
   pulseWidth.write();
 
   /* Read back configuration*/
-
   maximumAcceleration.read();
   maximumVelocity.read();
   baseVelocity.read();
@@ -121,7 +93,6 @@ int main() {
   std::cout << "pulseWidth          = " << pulseWidth << std::endl;
 
   /* Move motor*/
-
   motorStart = 0;
   motorStart.write();
 
