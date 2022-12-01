@@ -8,7 +8,7 @@
 
 /*
  * This test code needs to be executed on a Xilinx ZCU102 evaluation board, using the hardware project
- *  files from git@gitlab.msktools.desy.de:fpgafw/projects/test/test_bsp_motctrl.git (Commit ID: 5e8b8094)
+ *  files from git@gitlab.msktools.desy.de:fpgafw/projects/test/test_bsp_motctrl.git (Tag: 0.1.0, Commit ID: a6160e40)
  */
 
 /*
