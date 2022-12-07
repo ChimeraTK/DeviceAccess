@@ -11,7 +11,6 @@
 #include <limits>
 #include <poll.h>
 
-
 namespace ChimeraTK {
 
   UioAccess::UioAccess(std::string deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {
