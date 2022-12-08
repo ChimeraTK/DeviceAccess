@@ -22,7 +22,7 @@ int main() {
    * Before you use a device you have to tell DeviceAccess
    * which dmap file to use.
    */
-  ChimeraTK::setDMapFilePath("uioDeviceTest.dmap");
+  ChimeraTK::setDMapFilePath("uioBackendTest.dmap");
 
   /*
    * Create a device. Make sure a device alias is present
