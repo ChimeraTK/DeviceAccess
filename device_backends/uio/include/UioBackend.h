@@ -13,9 +13,10 @@ namespace ChimeraTK {
    private:
     std::shared_ptr<UioAccess> _uioAccess;
 
-    std::mutex _interruptThreadMutex;
+    std::mutex _launchThreadMutex;
     std::thread _interruptWaitingThread;
     std::atomic<bool> _stopInterruptLoop{false}; // Used to shut down thread
+
     void waitForInterruptThread();
 
     /* data */
@@ -30,6 +31,8 @@ namespace ChimeraTK {
     void closeImpl() override;
 
     bool isFunctional() const override;
+
+    bool barIndexValid(uint64_t bar) override;
 
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;

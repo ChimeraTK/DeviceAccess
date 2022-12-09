@@ -53,6 +53,12 @@ namespace ChimeraTK {
     return true;
   }
 
+  bool UioBackend::barIndexValid(uint64_t bar) {
+    if(bar != 0) return false;
+
+    return true;
+  }
+
   void UioBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     assert(_opened);
     if(_hasActiveException) {
@@ -79,7 +85,8 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("UIO: Backend only uses interrupt number 0");
     }
 
-    if(_interruptThreadMutex.try_lock()) {
+    if(_launchThreadMutex.try_lock()) {
+      // Mutex was found to be unlocked, thread can be started.
       _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptThread, this);
     }
   }
@@ -94,8 +101,6 @@ namespace ChimeraTK {
   }
 
   void UioBackend::waitForInterruptThread() {
-    std::lock_guard<std::mutex> lock(_interruptThreadMutex, std::adopt_lock);
-
     _uioAccess->clearInterrupts();
 
     while(!_stopInterruptLoop) {
@@ -105,8 +110,8 @@ namespace ChimeraTK {
         _uioAccess->clearInterrupts();
 
         if(_hasActiveException) {
-          // Don't dispatch interrupt in case of exceptions
-          return;
+          // Don't dispatch interrupts in case of exceptions
+          continue;
         }
 
         for(uint32_t i = 0; i < numberOfInterrupts; i++) {
