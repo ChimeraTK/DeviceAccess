@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#define EXPECTED_MOTOR_ID 268435504
+
 /*
  * This test code needs to be executed on a Xilinx ZCU102 evaluation board, using the hardware project
  *  files from git@gitlab.msktools.desy.de:fpgafw/projects/test/test_bsp_motctrl.git (Tag: 0.1.0, Commit ID: a6160e40)
@@ -47,7 +49,13 @@ int main() {
    * (a scalar).
    */
 
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> motorControlId =
+      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/ID");
+
   ChimeraTK::ScalarRegisterAccessor<uint32_t> maximumAcceleration =
+      myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_ACC");
+
+  ChimeraTK::ScalarRegisterAccessor<uint32_t> maximumAccelerationReadBack =
       myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_MAX_ACC");
 
   ChimeraTK::ScalarRegisterAccessor<uint32_t> maximumVelocity =
@@ -68,6 +76,14 @@ int main() {
   ChimeraTK::ScalarRegisterAccessor<uint32_t> resetMotorPosition =
       myDevice.getScalarRegisterAccessor<uint32_t>("MOTOR_CONTROL/MOTOR_POSITION_RESET");
 
+  /* Check read access*/
+  motorControlId.read();
+  if(motorControlId != EXPECTED_MOTOR_ID) {
+    std::cerr << "Read check failed: Module ID is expected to be 0x" << std::hex << EXPECTED_MOTOR_ID
+              << ", but it is 0x" << (uint32_t)motorControlId << "!" << std::endl;
+    exit(-1);
+  }
+
   /* Configure motor control logic*/
   maximumAcceleration = 2000;
   maximumAcceleration.write();
@@ -80,6 +96,14 @@ int main() {
 
   pulseWidth = 200;
   pulseWidth.write();
+
+  /* Check write access*/
+  maximumAccelerationReadBack.read();
+  if(maximumAcceleration != maximumAccelerationReadBack) {
+    std::cerr << "Write check failed: Maximum acceleration is expected to be " << maximumAcceleration << ", but it is "
+              << maximumAccelerationReadBack << "!" << std::endl;
+    exit(-1);
+  }
 
   /* Read back configuration*/
   maximumAcceleration.read();
