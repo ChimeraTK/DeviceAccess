@@ -86,8 +86,9 @@ namespace ChimeraTK {
     }
 
     if(_launchThreadMutex.try_lock()) {
-      // Mutex was found to be unlocked, thread can be started.
-      _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptThread, this);
+      /* Mutex was found to be unlocked: Mutex is now locked so that handling thread will
+          be execute once and run until the destructor is called. */
+      _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptLoop, this);
     }
   }
 
@@ -100,11 +101,19 @@ namespace ChimeraTK {
     return result;
   }
 
-  void UioBackend::waitForInterruptThread() {
+  void UioBackend::waitForInterruptLoop() {
+    uint32_t numberOfInterrupts;
+
     _uioAccess->clearInterrupts();
 
     while(!_stopInterruptLoop) {
-      uint32_t numberOfInterrupts = _uioAccess->waitForInterrupt(100);
+      try {
+        numberOfInterrupts = _uioAccess->waitForInterrupt(100);
+      }
+      catch(ChimeraTK::runtime_error& ex) {
+        setException();
+        continue;
+      }
 
       if(numberOfInterrupts > 0) {
         _uioAccess->clearInterrupts();

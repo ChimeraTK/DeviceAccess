@@ -17,7 +17,7 @@ namespace ChimeraTK {
     std::thread _interruptWaitingThread;
     std::atomic<bool> _stopInterruptLoop{false}; // Used to shut down thread
 
-    void waitForInterruptThread();
+    void waitForInterruptLoop();
 
     /* data */
    public:
