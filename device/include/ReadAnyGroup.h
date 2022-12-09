@@ -350,6 +350,12 @@ namespace ChimeraTK {
     try {
       _owner->push_elements[index].getHighLevelImplElement()->_readQueue.pop_wait();
     }
+    catch(ChimeraTK::runtime_error&) {
+      _owner->push_elements[index].getHighLevelImplElement()->_activeException = std::current_exception();
+    }
+    catch(boost::thread_interrupted&) {
+      _owner->push_elements[index].getHighLevelImplElement()->_activeException = std::current_exception();
+    }
     catch(detail::DiscardValueException&) {
       // we must not call postRead() in this case, hence we do not call preRead()
       _owner->_lastOperationIndex = std::numeric_limits<size_t>::max() - 1;
