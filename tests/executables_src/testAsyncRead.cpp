@@ -24,6 +24,7 @@ using namespace boost::unit_test_framework;
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
 
+std::string cdd = {"sdm://./AsyncTestDummy"};
 static std::set<std::string> sdmList = {"sdm://./AsyncTestDummy"};
 
 /**********************************************************************************************************************/
@@ -68,6 +69,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
     void doPostRead(TransferType, bool hasNewData) override {
       if constexpr(!std::is_same<UserType, Void>::value) { // Will not be used for Void-Type
+        ++nPostReadCalled;
         if(!hasNewData) return;
         buffer_2D[0][0] = _backend->registers.at(getName());
         this->_versionNumber = {};
@@ -82,6 +84,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
       return {this->shared_from_this()};
     }
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
+
+    size_t nPostReadCalled{0};
 
    protected:
     AsyncTestDummy* _backend;
@@ -657,3 +661,100 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
     device.close();
   }
 }
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReadAnyException) {
+  std::cout << "testReadAnyException" << std::endl;
+
+  Device device;
+  device.open(cdd);
+  auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(cdd));
+  BOOST_CHECK(backend != nullptr);
+
+  // obtain register accessor with integral type
+  auto a1 = device.getScalarRegisterAccessor<uint8_t>("a1", 0, {AccessMode::wait_for_new_data});
+  auto a2 = device.getScalarRegisterAccessor<int32_t>("a2", 0, {AccessMode::wait_for_new_data});
+  auto a3 = device.getScalarRegisterAccessor<int32_t>("a3", 0, {AccessMode::wait_for_new_data});
+  auto a4 = device.getScalarRegisterAccessor<int32_t>("a4", 0, {AccessMode::wait_for_new_data});
+  auto a1_casted = boost::dynamic_pointer_cast<AsyncTestDummy::Accessor<uint8_t>>(a1.getHighLevelImplElement());
+  assert(a1_casted);
+
+  // initialise the buffers of the accessors
+  a1 = 1;
+  a2 = 2;
+  a3 = 3;
+  a4 = 4;
+
+  // initialise the dummy registers
+  backend->registers["/a1"] = 42;
+  backend->registers["/a2"] = 123;
+  backend->registers["/a3"] = 120;
+  backend->registers["/a4"] = 345;
+
+  // Create ReadAnyGroup
+  ReadAnyGroup group;
+  group.add(a1);
+  group.add(a2);
+  group.add(a3);
+  group.add(a4);
+  group.finalise();
+
+  // ChimeraTK::runtime_error
+  {
+    auto nPostReadCalledReference = a1_casted->nPostReadCalled;
+
+    // launch the readAny in a background thread
+    bool exceptionFound{false};
+    std::thread thread([&group, &exceptionFound] {
+      try {
+        group.readAny();
+      }
+      catch(ChimeraTK::runtime_error&) {
+        exceptionFound = true;
+      }
+    });
+
+    // put exception to queue
+    try {
+      throw ChimeraTK::runtime_error("Test exception");
+    }
+    catch(...) {
+      backend->notificationQueue["/a1"].push_exception(std::current_exception()); // trigger transfer
+    }
+    thread.join();
+    BOOST_TEST(exceptionFound == true);
+    BOOST_TEST(a1_casted->nPostReadCalled == nPostReadCalledReference + 1);
+  }
+
+  // boost::thread_interrupted
+  {
+    auto nPostReadCalledReference = a1_casted->nPostReadCalled;
+
+    // launch the readAny in a background thread
+    bool exceptionFound{false};
+    std::thread thread([&group, &exceptionFound] {
+      try {
+        group.readAny();
+      }
+      catch(boost::thread_interrupted&) {
+        exceptionFound = true;
+      }
+    });
+
+    // put exception to queue
+    try {
+      throw boost::thread_interrupted();
+    }
+    catch(...) {
+      backend->notificationQueue["/a1"].push_exception(std::current_exception()); // trigger transfer
+    }
+    thread.join();
+    BOOST_TEST(exceptionFound == true);
+    BOOST_TEST(a1_casted->nPostReadCalled == nPostReadCalledReference + 1);
+  }
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
