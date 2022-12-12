@@ -5,23 +5,20 @@
 #include "DeviceAccessVersion.h"
 #include "DummyBackend.h"
 
-namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 
 struct AnotherWorkingBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
 
   static boost::shared_ptr<DeviceBackend> createInstance(
-      std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/) {
-    return returnInstance<AnotherWorkingBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
+      std::string instance, std::map<std::string, std::string> parameters) {
+    return returnInstance<AnotherWorkingBackend>(instance, convertPathRelativeToDmapToAbs(parameters["map"]));
   }
 
   struct BackendRegisterer {
     BackendRegisterer() {
       ChimeraTK::BackendFactory::getInstance().registerBackendType(
-          "another", "", &AnotherWorkingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+          "another", &AnotherWorkingBackend::createInstance, {"map"}, CHIMERATK_DEVICEACCESS_VERSION);
     }
   };
 };
