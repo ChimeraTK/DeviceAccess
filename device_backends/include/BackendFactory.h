@@ -2,10 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#ifdef _DEBUG
-#  include <iostream>
-#endif
-
 #include "DeviceAccessVersion.h"
 #include "DeviceInfoMap.h"
 #include "ForwardDeclarations.h"
