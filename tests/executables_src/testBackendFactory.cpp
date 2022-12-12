@@ -26,8 +26,8 @@ struct NewBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
 
   static boost::shared_ptr<DeviceBackend> createInstance(
-      std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/) {
-    return returnInstance<NewBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
+      std::string instance, std::map<std::string, std::string> parameters) {
+    return returnInstance<NewBackend>(instance, convertPathRelativeToDmapToAbs(parameters["map"]));
   }
 
   // no registerer, we do it manually
@@ -78,13 +78,13 @@ BOOST_AUTO_TEST_CASE(testPluginMechanism) {
   // be instantiated because otherwise we would end up in uncatchable exceptions
   // while loading a dmap file with a broken backend.
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().registerBackendType(
-      "newBackend", "", &NewBackend::createInstance, "00.18"));
+      "newBackendWrongVersion", &NewBackend::createInstance, {"map"}, "00.18"));
 
-  BOOST_CHECK_THROW(
-      BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("sdm://./newBackendWrongVersion=goodMapFile.map"),
+      ChimeraTK::logic_error);
 
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().registerBackendType(
-      "newBackend", "", &NewBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION));
+      "newBackend", &NewBackend::createInstance, {"map"}, CHIMERATK_DEVICEACCESS_VERSION));
 
   BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));
 

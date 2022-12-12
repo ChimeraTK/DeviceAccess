@@ -62,7 +62,7 @@ namespace ChimeraTK {
      * only. Please use only the new form which allows to pass key-equal-value
      * pairs for the parameters. DO NOT call this function in addition to the
      *  new signature! */
-    void registerBackendType(std::string interface, std::string protocol,
+    [[deprecated]] void registerBackendType(std::string interface, std::string protocol,
         boost::shared_ptr<DeviceBackend> (*creatorFunction)(
             std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName),
         std::string version);

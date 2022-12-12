@@ -2,12 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "BackendFactory.h"
-#include "DeviceAccessVersion.h"
 #include "DummyBackend.h"
 
-namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 #define WRONG_VERSION "00.18"
 
@@ -16,8 +12,8 @@ using namespace ChimeraTK;
 struct WrongVersionBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
   static boost::shared_ptr<DeviceBackend> createInstance(
-      std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/) {
-    return returnInstance<WrongVersionBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
+      std::string instance, std::map<std::string, std::string> parameters) {
+    return returnInstance<WrongVersionBackend>(instance, convertPathRelativeToDmapToAbs(parameters.at("map")));
   }
 
   // LCOV_EXCL_STOP The registerern and the version functions have to be called
@@ -25,7 +21,7 @@ struct WrongVersionBackend : public DummyBackend {
   struct BackendRegisterer {
     BackendRegisterer() {
       ChimeraTK::BackendFactory::getInstance().registerBackendType(
-          "wrongVersionBackendCompat", "", &WrongVersionBackend::createInstance, WRONG_VERSION);
+          "wrongVersionBackendCompat", &WrongVersionBackend::createInstance, {"map"}, WRONG_VERSION);
     }
   };
 };
