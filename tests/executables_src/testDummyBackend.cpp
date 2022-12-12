@@ -139,9 +139,9 @@ BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
   BOOST_CHECK(dataContent == 47);
 
   // the size as index is invalid, allowed range is 0..size-1 included.
-  BOOST_CHECK_THROW(dummyBackend->read(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &dataContent, 4),
+  BOOST_CHECK_THROW(dummyBackend->read(bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)), &dataContent, 4),
       ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(dummyBackend->write(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &dataContent, 4),
+  BOOST_CHECK_THROW(dummyBackend->write(bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)), &dataContent, 4),
       ChimeraTK::logic_error);
 }
 
@@ -182,10 +182,10 @@ BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
   // tests for exceptions
   // 1. base address too large
   BOOST_CHECK_THROW(
-      dummyBackend->read(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &(dataContent[0]), sizeInBytes),
+      dummyBackend->read(bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)), &(dataContent[0]), sizeInBytes),
       ChimeraTK::logic_error);
   BOOST_CHECK_THROW(dummyBackend->write(
-                        bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &(dataContent[0]), sizeInBytes),
+                        bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)), &(dataContent[0]), sizeInBytes),
       ChimeraTK::logic_error);
   // 2. size too large (works because the target register is not at offfset 0)
   // resize the data vector for this test
