@@ -25,6 +25,33 @@ using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
+
+struct WriteCountingBackend : public DummyBackend {
+  using DummyBackend::DummyBackend;
+
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return returnInstance<WriteCountingBackend>(
+        parameters.at("map"), convertPathRelativeToDmapToAbs(parameters.at("map")));
+  }
+
+  size_t writeCount{0};
+
+  void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
+    ++writeCount;
+    DummyBackend::write(bar, address, data, sizeInBytes);
+  }
+
+  struct BackendRegisterer {
+    BackendRegisterer() {
+      ChimeraTK::BackendFactory::getInstance().registerBackendType(
+          "WriteCountingDummy", &WriteCountingBackend::createInstance, {"map"});
+    }
+  };
+};
+
+static WriteCountingBackend::BackendRegisterer gWriteCountingBackendRegisterer;
+
+/**********************************************************************************************************************/
 BOOST_AUTO_TEST_CASE(testCreation) {
   setDMapFilePath("dummies.dmap");
   std::cout << "testCreation" << std::endl;
@@ -134,6 +161,26 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
   BOOST_CHECK(dummy == 43);
   accessor.write();
   BOOST_CHECK(dummy == 119);
+
+  // test readAndGet
+  dummy = 470;
+  BOOST_CHECK(accessor.readAndGet() == 470);
+
+  // test setAndWrite
+  accessor.setAndWrite(4711);
+  BOOST_CHECK(dummy == 4711);
+
+  // test correct version number handling
+  VersionNumber someVersionNumber = VersionNumber();
+  accessor.setAndWrite(815, someVersionNumber);
+  BOOST_CHECK(accessor.getVersionNumber() == someVersionNumber);
+
+  // test correct version number handling with default values
+  VersionNumber before = VersionNumber();
+  accessor.setAndWrite(77);
+  VersionNumber after = VersionNumber();
+  BOOST_CHECK(accessor.getVersionNumber() > before);
+  BOOST_CHECK(accessor.getVersionNumber() < after);
 
   device.close();
 }
@@ -288,3 +335,64 @@ BOOST_AUTO_TEST_CASE(testUniqueID) {
 
   device.close();
 }
+
+BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
+  setDMapFilePath("dummies.dmap");
+  std::cout << "testRegisterAccessor" << std::endl;
+
+  Device device;
+  device.open("(WriteCountingDummy?map=goodMapFile.map)");
+  auto backend = boost::dynamic_pointer_cast<WriteCountingBackend>(
+      BackendFactory::getInstance().createBackend("(WriteCountingDummy?map=goodMapFile.map)"));
+  BOOST_CHECK(backend != NULL);
+
+  // obtain register accessor with integral type
+  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  BOOST_CHECK(accessor.isReadOnly() == false);
+  BOOST_CHECK(accessor.isReadable());
+  BOOST_CHECK(accessor.isWriteable());
+
+  // dummy register accessor for comparison
+  DummyRegisterAccessor<int> dummy(backend.get(), "APP0", "WORD_STATUS");
+
+  // Inital write and writeIfDifferent with same Value
+  accessor = 501;
+  accessor.write();
+  size_t counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(501); // should not write
+  size_t counterAfter = backend->writeCount;
+  BOOST_CHECK(counterBefore == counterAfter);
+
+  // writeIfDifferent with different Value
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(502); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // writeIfDifferent with same Value, but explizit version number
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(502, VersionNumber{}); // should not write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore);
+
+  // writeIfDifferent with different Value, and explicit version number
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(514, VersionNumber{}); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // test writeIfDifferent for newly created accessor:
+  ScalarRegisterAccessor<int> freshAccessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  counterBefore = backend->writeCount;
+  VersionNumber vn = freshAccessor.getVersionNumber();
+  BOOST_CHECK(vn == VersionNumber{nullptr});
+  freshAccessor.writeIfDifferent(0); // should write
+  vn = freshAccessor.getVersionNumber();
+  BOOST_CHECK(vn != VersionNumber{nullptr});
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterBefore != counterAfter);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/

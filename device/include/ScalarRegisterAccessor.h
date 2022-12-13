@@ -104,6 +104,17 @@ namespace ChimeraTK {
      */
     void writeIfDifferent(UserType newValue, VersionNumber versionNumber = VersionNumber{nullptr});
 
+    /**
+     * Convenience function to set and write new value. The given version number.
+     *  If versionNumber == {}, a new version number is generated.
+     */
+    void setAndWrite(UserType newValue, VersionNumber versionNumber = {});
+
+    /**
+     * Convenience function to read and return a value of UserType.
+     */
+    UserType readAndGet();
+
     friend class TransferGroup;
 
     using NDRegisterAccessorAbstractor<UserType>::get;
@@ -237,6 +248,22 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
+
+  template<typename UserType, typename TAG>
+  void ScalarRegisterAccessor<UserType, TAG>::setAndWrite(UserType newValue, VersionNumber versionNumber) {
+    operator=(newValue);
+    this->write(versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TAG>
+  UserType ScalarRegisterAccessor<UserType, TAG>::readAndGet() {
+    this->read();
+    return get()->accessData(0, 0);
+  }
+
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   inline ScalarRegisterAccessor<std::string>::ScalarRegisterAccessor(
@@ -269,7 +296,6 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-
   // Do not declare the template for all user types as extern here.
   // This could avoid optimisation of the inline code.
 
