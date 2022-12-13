@@ -163,13 +163,24 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
   BOOST_CHECK(dummy == 119);
 
   // test readAndGet
-  accessor = 470;
-  accessor.write();
+  dummy = 470;
   BOOST_CHECK(accessor.readAndGet() == 470);
 
   // test setAndWrite
   accessor.setAndWrite(4711);
   BOOST_CHECK(dummy == 4711);
+
+  // test correct version number handling
+  VersionNumber someVersionNumber = VersionNumber();
+  accessor.setAndWrite(815, someVersionNumber);
+  BOOST_CHECK(accessor.getVersionNumber() == someVersionNumber);
+
+  // test correct version number handling with default values
+  VersionNumber before = VersionNumber();
+  accessor.setAndWrite(77);
+  VersionNumber after = VersionNumber();
+  BOOST_CHECK(accessor.getVersionNumber() > before);
+  BOOST_CHECK(accessor.getVersionNumber() < after);
 
   device.close();
 }
@@ -366,7 +377,7 @@ BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
 
   // writeIfDifferent with different Value, and explicit version number
   counterBefore = backend->writeCount;
-  accessor.writeIfDifferent(514, VersionNumber{}); // should not write
+  accessor.writeIfDifferent(514, VersionNumber{}); // should write
   counterAfter = backend->writeCount;
   BOOST_CHECK(counterAfter == counterBefore + 1);
 
