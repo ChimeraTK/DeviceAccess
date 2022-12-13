@@ -80,9 +80,6 @@ namespace ChimeraTK { namespace LNMBackend {
     // check if this is the first call to openHook: perform tasks which could not be done in the constructor because
     // the backend is not yet available there.
     if(_backend._empty()) {
-      // make sure the register info is up to date
-      updateRegisterInfo(backend->_catalogue_mutable);
-
       // store backend as weak pointer for later use
       _backend = backend;
 
@@ -96,7 +93,7 @@ namespace ChimeraTK { namespace LNMBackend {
           }
         }
 
-        // perpare for updates via push-type parameters
+        // prepare for updates via push-type parameters
         if(_hasPushParameter) {
           // fill the _pushParameterReadGroup
           for(auto& parpair : _parameters) {
@@ -492,8 +489,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MathPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>& backend,
-      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) {
+      boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
+      const UndecoratedParams&) {
     return MathPlugin_Helper<UserType, TargetType>::decorateAccessor(backend, target, _parameters, this);
   }
 

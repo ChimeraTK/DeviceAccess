@@ -1,0 +1,21 @@
+<logicalNameMap>
+
+  <module name="Test">
+
+    <variable name="A">
+      <type>float64</type>
+      <value>0</value>
+      <plugin name="forceReadOnly"/>
+    </variable>
+
+    <redirectedRegister name="B">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/Test/A</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">x*2</parameter>
+      </plugin>
+    </redirectedRegister>
+
+  </module>
+
+</logicalNameMap>

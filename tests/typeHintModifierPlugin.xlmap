@@ -32,4 +32,15 @@
     </plugin>
   </redirectedRegister>
 
+  <redirectedRegister name="testWithMathPlugin">
+    <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
+    <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+    <plugin name="math">
+        <parameter name="formula">x*2.5</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+        <parameter name="type">uint16</parameter>
+    </plugin>
+  </redirectedRegister>
+
 </logicalNameMap>

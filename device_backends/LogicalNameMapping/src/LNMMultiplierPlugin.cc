@@ -98,7 +98,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MultiplierPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) {
+      boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
+      const UndecoratedParams&) {
     return MultiplierPlugin_Helper<UserType, TargetType>::decorateAccessor(target, _factor);
   }
 }} // namespace ChimeraTK::LNMBackend
