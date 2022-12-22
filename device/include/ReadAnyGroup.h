@@ -4,8 +4,11 @@
 
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
+#include <initializer_list>
 
 #include <ChimeraTK/cppext/future_queue.hpp>
+
+#include <functional>
 
 namespace ChimeraTK {
 
@@ -121,7 +124,7 @@ namespace ChimeraTK {
     /**
      * Construct finalised group with the given elements. The group will behave like finalise() had already been called.
      */
-    ReadAnyGroup(std::initializer_list<TransferElementAbstractor> list);
+    ReadAnyGroup(std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list);
 
     /**
      * Construct finalised group with the given elements. The group will behave like finalise() had already been called.
@@ -412,7 +415,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline ReadAnyGroup::ReadAnyGroup(std::initializer_list<TransferElementAbstractor> list) {
+  inline ReadAnyGroup::ReadAnyGroup(std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list) {
     for(const auto& element : list) add(element);
     finalise();
   }
