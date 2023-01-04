@@ -8,6 +8,7 @@
 
 #include <cerrno>
 #include <fcntl.h>
+#include <fstream>
 #include <limits>
 #include <poll.h>
 
