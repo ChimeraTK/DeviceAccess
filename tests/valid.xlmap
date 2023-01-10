@@ -93,6 +93,42 @@
         <value index="2">3333</value>
         <numberOfElements>5</numberOfElements>
     </constant>
+    <variable name="var_int8">
+        <type>int8</type>
+        <value>-128</value>
+    </variable>
+    <variable name="var_uint8">
+        <type>uint8</type>
+        <value>255</value>
+    </variable>
+    <variable name="var_int16">
+        <type>int16</type>
+        <value>-32768</value>
+    </variable>
+    <variable name="var_uint16">
+        <type>uint16</type>
+        <value>65535</value>
+    </variable>
+    <variable name="var_int32">
+        <type>int32</type>
+        <value>-1</value>
+    </variable>
+    <variable name="var_uint32">
+        <type>uint32</type>
+        <value>0xfffffffe</value>
+    </variable>
+    <variable name="var_int64">
+        <type>int64</type>
+        <value>-1</value>
+    </variable>
+    <variable name="var_uint64">
+        <type>uint64</type>
+        <value>0</value>
+    </variable>
+    <variable name="var_string">
+        <type>string</type>
+        <value>stringValue</value>
+    </variable>
     <variable name="ArrayVariable">
         <type>integer</type>
         <value index="0">11</value>

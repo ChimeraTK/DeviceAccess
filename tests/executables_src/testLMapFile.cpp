@@ -141,6 +141,44 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(info.deviceName == "this");
   BOOST_CHECK(info.registerName == "/MyModule/SomeSubmodule/Variable");
   BOOST_CHECK(info.bit == 3);
+
+  info = catalogue.getBackendRegister("/var_int8");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::int8);
+  BOOST_CHECK(boost::fusion::at_key<int8_t>(variables.at(info.name).valueTable.table).latestValue[0] == -128);
+  info = catalogue.getBackendRegister("/var_uint8");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::uint8);
+  BOOST_CHECK(boost::fusion::at_key<uint8_t>(variables.at(info.name).valueTable.table).latestValue[0] == 255);
+  info = catalogue.getBackendRegister("/var_int16");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::int16);
+  BOOST_CHECK(boost::fusion::at_key<int16_t>(variables.at(info.name).valueTable.table).latestValue[0] == -32768);
+  info = catalogue.getBackendRegister("/var_uint16");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::uint16);
+  BOOST_CHECK(boost::fusion::at_key<uint16_t>(variables.at(info.name).valueTable.table).latestValue[0] == 65535);
+  info = catalogue.getBackendRegister("/var_int32");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::int32);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(variables.at(info.name).valueTable.table).latestValue[0] == -1);
+  info = catalogue.getBackendRegister("/var_uint32");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::uint32);
+  BOOST_CHECK(boost::fusion::at_key<uint32_t>(variables.at(info.name).valueTable.table).latestValue[0] == 0xfffffffe);
+  info = catalogue.getBackendRegister("/var_int64");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::int64);
+  BOOST_CHECK(boost::fusion::at_key<int64_t>(variables.at(info.name).valueTable.table).latestValue[0] == -1);
+  info = catalogue.getBackendRegister("/var_uint64");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::uint64);
+  BOOST_CHECK(boost::fusion::at_key<uint64_t>(variables.at(info.name).valueTable.table).latestValue[0] == 0);
+  info = catalogue.getBackendRegister("/var_string");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::string);
+  BOOST_CHECK(
+      boost::fusion::at_key<std::string>(variables.at(info.name).valueTable.table).latestValue[0] == "stringValue");
 }
 
 /********************************************************************************************************************/
