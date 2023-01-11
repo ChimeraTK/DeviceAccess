@@ -3,7 +3,7 @@ Project(ChimeraTK-DeviceAccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
 set(${PROJECT_NAME}_MINOR_VERSION 07)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 include(cmake/set_version_numbers.cmake)
 
 # C++ compiler flags needed to compile this project and against this project
