@@ -105,8 +105,15 @@ namespace ChimeraTK {
       try {
         // base=0 means auto detect base, depending on prefix
         int64_t longVal = std::stoll(valAsString, nullptr, 0);
-        if(std::is_unsigned_v<T> && longVal < 0) {
-          throw std::out_of_range(std::string("negative!"));
+        if(std::is_unsigned_v<T>) {
+          if(longVal < 0) {
+            throw std::out_of_range(std::string("negative!"));
+          }
+        }
+        else {
+          if(longVal < (int64_t)std::numeric_limits<T>::min()) {
+            throw std::out_of_range(std::string("too small!"));
+          }
         }
         // we need to exclude upper range check for uint64 since max val does not fit into longVal
         if(!std::is_same_v<T, uint64_t> && longVal > (int64_t)std::numeric_limits<T>::max()) {
