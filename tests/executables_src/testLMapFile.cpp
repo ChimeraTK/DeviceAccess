@@ -174,6 +174,16 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
   BOOST_CHECK(info.valueType == ChimeraTK::DataType::uint64);
   BOOST_CHECK(boost::fusion::at_key<uint64_t>(variables.at(info.name).valueTable.table).latestValue[0] == 0);
+  info = catalogue.getBackendRegister("/var_float32");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::float32);
+  BOOST_CHECK_CLOSE(
+      boost::fusion::at_key<float>(variables.at(info.name).valueTable.table).latestValue[0], -1.2345e10, 1e-5);
+  info = catalogue.getBackendRegister("/var_float64");
+  BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info.valueType == ChimeraTK::DataType::float64);
+  BOOST_CHECK_CLOSE(
+      boost::fusion::at_key<double>(variables.at(info.name).valueTable.table).latestValue[0], -1.23456789e20, 1e-10);
   info = catalogue.getBackendRegister("/var_string");
   BOOST_CHECK(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
   BOOST_CHECK(info.valueType == ChimeraTK::DataType::string);

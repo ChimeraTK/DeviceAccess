@@ -125,6 +125,14 @@
         <type>uint64</type>
         <value>0</value>
     </variable>
+    <variable name="var_float32">
+        <type>float32</type>
+        <value>-1.2345e10</value>
+    </variable>
+    <variable name="var_float64">
+        <type>float64</type>
+        <value>-1.23456789e20</value>
+    </variable>
     <variable name="var_string">
         <type>string</type>
         <value>stringValue</value>
