@@ -4,6 +4,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include <atomic>
 #include <string>
 
 namespace ChimeraTK {
