@@ -132,4 +132,13 @@
     </plugin>
   </redirectedRegister>
 
+  <redirectedRegister name="FormulaWithCdata">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleScalar</targetRegister>
+    <plugin name="forceReadOnly"/>
+    <plugin name="math">
+      <parameter name="formula"><![CDATA[if ((42 > 24) & (24 < 42)) 24; else 42; ]]></parameter>
+    </plugin>
+  </redirectedRegister>
+
 </logicalNameMap>

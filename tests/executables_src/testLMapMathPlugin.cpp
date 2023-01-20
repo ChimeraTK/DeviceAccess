@@ -179,4 +179,18 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
 /********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testCDATAFormula) {
+  // missing parameter "formula"
+  ChimeraTK::Device device;
+
+  // open device with map file which parses
+  device.open("(logicalNameMap?map=mathPlugin.xlmap)");
+
+  auto acc = device.getScalarRegisterAccessor<double>("FormulaWithCdata");
+  acc.read();
+  BOOST_TEST(int(acc) == 24);
+}
+
+/********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
