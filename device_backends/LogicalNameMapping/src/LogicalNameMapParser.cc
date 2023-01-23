@@ -26,6 +26,13 @@ namespace ChimeraTK {
 
     std::string value;
     for(auto& child : childList) {
+      // Check for CDATA node
+      const xmlpp::CdataNode* cdataNode = dynamic_cast<const xmlpp::CdataNode*>(child);
+      if(cdataNode) {
+        value += cdataNode->get_content();
+        continue;
+      }
+
       // check for plain text
       const xmlpp::TextNode* textNode = dynamic_cast<const xmlpp::TextNode*>(child);
       if(textNode) {
@@ -89,7 +96,7 @@ namespace ChimeraTK {
 
       // neither found: throw error
       parsingError(node,
-          "Node '" + subnodeName + "' should contain only text, references or parameters. Instead child '" +
+          "Node '" + subnodeName + "' should contain only text, CDATA sections, references or parameters. Instead child '" +
               child->get_name() + "' was found.");
     }
     return value;
