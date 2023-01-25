@@ -43,7 +43,7 @@ namespace ChimeraTK { namespace LNMBackend {
      *
      *  If the plugin needs data that depends on the target and which is only available after opening (e.g. whether the
      *  register is writeable), the plugin has to call updateRegisterInfo in the openHook() and can then
-     *  modify internal vadiables in the updateRegisterInfo function.
+     *  modify internal variables in the updateRegisterInfo function.
      *
      *  Note: in principle it is fine to do nothing in this function, if no catalogue change is required. This function
      *  intentionally has no empty default implementation, because it might otherwise easy to overlook that the register
@@ -52,7 +52,7 @@ namespace ChimeraTK { namespace LNMBackend {
     virtual void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) = 0;
 
     /**
-     *  Hook called when the backend is openend, at the end of the open() function after all backend work has been done
+     *  Hook called when the backend is opened, at the end of the open() function after all backend work has been done
      *  already.
      */
     virtual void openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) { std::ignore = backend; }
