@@ -23,31 +23,81 @@
 #
 #######################################################################################################################
 
-cmake --build . --target clean-gcda
-cmake --build . --target test
-lcov --capture --directory . --output-file coverage_all.info --ignore-errors gcov
+TESTFILES=`find -name CTestTestfile.cmake`
+if [ -z "${TESTFILES}" ]; then
+  echo "No tests found. Not generating any coverage report."
+  exit 0
+fi
 
-#lcov capture also includes external stuff like glibc, boost etc.
-#only extract the reports for this project
-lcov --extract coverage_all.info "@CMAKE_SOURCE_DIR@*" -o coverage_only_source_tree.info
-
-#Some parts of the source code might be excluded. Set EXCLUDE_FROM_COVERAGE to contain 
-# a list of directories to be excluded from the coverage report.
-# Don't worry if this is empty. It just means there is nothing to exclude (the normal case).
-for exclude_dir in @EXCLUDE_FROM_COVERAGE@; do 
-    echo lcov --remove coverage_only_source_tree.info "@CMAKE_SOURCE_DIR@/${exclude_dir}*" -o tmp.info
-    lcov --remove coverage_only_source_tree.info "@CMAKE_SOURCE_DIR@/${exclude_dir}*" -o tmp.info
-    mv tmp.info coverage_only_source_tree.info
+#
+# Check whether Python tests are present
+#
+N_PYTHON=0
+for f in $TESTFILES; do
+  N_PYTHON=$(( N_PYTHON + `grep -E '^add_test\([^ ]* "/usr/bin/python3?" ' $f | wc -l` ))
 done
 
-#Some projects install the library and its headers for testing in the build directory
-#and compile tests and examples against it. This leads to double
-#counting and untested lines in the coverage report. That's why we
-#exclude the build directory from the coverage report (needed if the
-#build directory is in the source tree).
-#Attention: If you make an 'in sorce build' the coverage report will
-#be empty!
-lcov --remove coverage_only_source_tree.info "@PROJECT_BINARY_DIR@/*" -o coverage.info
+#
+# Preparations for C++ coverage report
+#
+cmake --build . --target clean-gcda
 
-#finally generate the html page
-genhtml coverage.info --output-directory coverage_html
+#
+# Preparations for Python coverage report
+#
+if (( N_PYTHON > 0 )); then
+  cp CTestTestfile.cmake CTestTestfile-backup.cmake
+  sed -E 's_"/usr/bin/python(3)?"_"/usr/bin/python\1-coverage" "run" "-a"_' -i CTestTestfile.cmake
+  python3-coverage erase
+fi
+
+#
+# Execute tests and record coverage data
+#
+cmake --build . --target test
+
+#
+# Check if C++ report has been generated
+#
+N_GCDA=`find -name *.gcda | wc -l`
+
+#
+# Generate C++ coverage report, if files have been found
+#
+if (( N_GCDA > 0 )); then
+  lcov --capture --directory . --output-file coverage_all.info --ignore-errors gcov
+
+  # lcov capture also includes external stuff like glibc, boost etc.
+  # only extract the reports for this project
+  lcov --extract coverage_all.info "@CMAKE_SOURCE_DIR@*" -o coverage_only_source_tree.info
+
+  # Some parts of the source code might be excluded. Set EXCLUDE_FROM_COVERAGE to contain 
+  # a list of directories to be excluded from the coverage report.
+  # Don't worry if this is empty. It just means there is nothing to exclude (the normal case).
+  for exclude_dir in @EXCLUDE_FROM_COVERAGE@; do 
+      echo lcov --remove coverage_only_source_tree.info "@CMAKE_SOURCE_DIR@/${exclude_dir}*" -o tmp.info
+      lcov --remove coverage_only_source_tree.info "@CMAKE_SOURCE_DIR@/${exclude_dir}*" -o tmp.info
+      mv tmp.info coverage_only_source_tree.info
+  done
+
+  # Some projects install the library and its headers for testing in the build directory
+  # and compile tests and examples against it. This leads to double
+  # counting and untested lines in the coverage report. That's why we
+  # exclude the build directory from the coverage report (needed if the
+  # build directory is in the source tree).
+  # Attention: If you make an 'in sorce build' the coverage report will
+  # be empty!
+  lcov --remove coverage_only_source_tree.info "@PROJECT_BINARY_DIR@/*" -o coverage.info
+
+  # finally generate the html page
+  genhtml coverage.info --output-directory coverage_html
+fi
+
+#
+# Generate Python coverage report
+#
+if (( N_PYTHON > 0 )); then
+  python3-coverage html --omit='/usr/lib/*' -d coverage_python_html
+  python3-coverage xml --omit='/usr/lib/*' -o coverage_python.xml
+  mv CTestTestfile-backup.cmake CTestTestfile.cmake
+fi
