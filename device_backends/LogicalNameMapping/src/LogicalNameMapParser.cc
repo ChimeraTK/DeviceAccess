@@ -96,7 +96,8 @@ namespace ChimeraTK {
 
       // neither found: throw error
       parsingError(node,
-          "Node '" + subnodeName + "' should contain only text, CDATA sections, references or parameters. Instead child '" +
+          "Node '" + subnodeName +
+              "' should contain only text, CDATA sections, references or parameters. Instead child '" +
               child->get_name() + "' was found.");
     }
     return value;
