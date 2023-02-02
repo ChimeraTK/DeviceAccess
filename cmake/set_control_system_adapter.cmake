@@ -41,9 +41,15 @@ ELSEIF(ADAPTER STREQUAL "EPICSIOC")
   add_dependency(ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter REQUIRED)
   set(Adapter_LINK_FLAGS ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LINK_FLAGS})
   set(Adapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LIBRARIES})
+ELSEIF(ADAPTER STREQUAL "EPICS7IOC")
+  message("Building against the EPICS ver. 7.0 IOC ControlSystemAdater")
+  add_dependency(ChimeraTK-ControlSystemAdapter-EPICS7-IOC-Adapter REQUIRED)
+  set(Adapter_LINK_FLAGS ${ChimeraTK-ControlSystemAdapter-EPICS7-IOC-Adapter_LINK_FLAGS})
+  set(Adapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-EPICS7-IOC-Adapter_LIBRARIES})
 ELSE()
   message(FATAL_ERROR "Please select your ControlSystemAdapter to use by passing to the cmake command line:\n"
                       "   -DADAPTER=DOOCS to build a DOOCS server\n"
                       "   -DADAPTER=OPCUA to build an OPC UA server\n"
-                      "   -DADAPTER=EPICSIOC to build an EPICS IOC")
+                      "   -DADAPTER=EPICSIOC to build an EPICS ver. 3.16 IOC\n"
+                      "   -DADAPTER=EPICS7IOC to build an EPICS ver. 7.0 IOC")
 ENDIF()
