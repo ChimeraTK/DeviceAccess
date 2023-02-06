@@ -80,7 +80,7 @@ namespace ChimeraTK {
     TransferElement& operator=(TransferElement&& other) = delete;
 
     /** Abstract base classes need a virtual destructor. */
-    virtual ~TransferElement();
+    virtual ~TransferElement() = default;
 
     /** A typedef for more compact syntax */
     typedef boost::shared_ptr<TransferElement> SharedPtr;
