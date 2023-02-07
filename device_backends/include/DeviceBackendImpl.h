@@ -26,7 +26,7 @@ namespace ChimeraTK {
       std::terminate();
     }
 
-    MetadataCatalogue getMetadataCatalogue() const override { return MetadataCatalogue(); }
+    MetadataCatalogue getMetadataCatalogue() const override { return {}; }
 
    protected:
     /** flag if device is opened */

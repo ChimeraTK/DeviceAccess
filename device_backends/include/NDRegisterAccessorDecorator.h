@@ -150,11 +150,11 @@ namespace ChimeraTK {
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
 
-    bool isReadOnly() const override { return _target->isReadOnly(); }
+    [[nodiscard]] bool isReadOnly() const override { return _target->isReadOnly(); }
 
-    bool isReadable() const override { return _target->isReadable(); }
+    [[nodiscard]] bool isReadable() const override { return _target->isReadable(); }
 
-    bool isWriteable() const override { return _target->isWriteable(); }
+    [[nodiscard]] bool isWriteable() const override { return _target->isWriteable(); }
 
     std::vector<boost::shared_ptr<ChimeraTK::TransferElement>> getHardwareAccessingElements() override {
       return _target->getHardwareAccessingElements();

@@ -26,10 +26,6 @@
 
 namespace ChimeraTK {
   class PersistentDataStorage;
-}
-
-namespace ChimeraTK {
-
   class TransferGroup;
 
   /**
@@ -70,8 +66,7 @@ namespace ChimeraTK {
     /** Creates a transfer element with the specified name. */
     TransferElement(std::string const& name, AccessModeFlags accessModeFlags,
         std::string const& unit = std::string(unitNotSet), std::string const& description = std::string())
-    : _name(name), _unit(unit), _description(description), _isInTransferGroup(false),
-      _accessModeFlags(accessModeFlags) {}
+    : _name(name), _unit(unit), _description(description), _accessModeFlags(accessModeFlags) {}
 
     /** Copying and moving is not allowed */
     TransferElement(const TransferElement& other) = delete;
@@ -831,7 +826,7 @@ namespace ChimeraTK {
 
     /** Flag whether this TransferElement has been added to a TransferGroup or not
      */
-    bool _isInTransferGroup;
+    bool _isInTransferGroup{false};
 
     /** The access mode flags for this transfer element.*/
     AccessModeFlags _accessModeFlags;

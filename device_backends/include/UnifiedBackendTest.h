@@ -50,7 +50,7 @@ namespace ChimeraTK {
       TestCapability _testRawTransfer = TestCapability::unspecified,
       TestCapability _testCatalogue = TestCapability::enabled>
   struct TestCapabilities {
-    constexpr TestCapabilities() {}
+    constexpr TestCapabilities() = default;
 
     /// Allows to prevent the test from executing any synchronous read tests.
     /// This should be used only when testing TransferElements which do not support reads without
@@ -442,7 +442,7 @@ namespace ChimeraTK {
     /// Special DeviceBackend used for testing the exception reporting to the backend
     struct ExceptionReportingBackend : DeviceBackendImpl {
       ExceptionReportingBackend(const boost::shared_ptr<DeviceBackend>& target) : _target(target) {}
-      ~ExceptionReportingBackend() override {}
+      ~ExceptionReportingBackend() override = default;
 
       void setException() override {
         _hasSeenException = true;
@@ -570,7 +570,7 @@ namespace ChimeraTK {
     // Proxy for getting nValuesToTest() if defined, and otherwise use the default
     template<typename T>
     class has_nValuesToTest {
-      typedef char one;
+      using one = char;
       struct two {
         char x[2];
       };
@@ -667,7 +667,7 @@ namespace ChimeraTK {
         }                                                                                                              \
         if(!compareHelper(                                                                                             \
                accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {     \
-          if(fail.size() == 0) {                                                                                       \
+          if(fail.empty()) {                                                                                           \
             fail = "Accessor content differs from expected value. First difference at index [" +                       \
                 std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                           \
                 "]: " + std::to_string(accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                                 \
@@ -676,7 +676,7 @@ namespace ChimeraTK {
         }                                                                                                              \
       }                                                                                                                \
     }                                                                                                                  \
-    if(fail != "") {                                                                                                   \
+    if(!fail.empty()) {                                                                                                \
       BOOST_ERROR(fail);                                                                                               \
     }                                                                                                                  \
     if(CHECK_EQUALITY_warnExpectedZero && !std::is_same<CHECK_EQUALITY_UserType, ChimeraTK::Boolean>::value) {         \
@@ -826,7 +826,7 @@ namespace ChimeraTK {
     cdd = backend;
     cdd2 = backend2;
     std::cout << "=== UnifiedBackendTest for " << cdd;
-    if(cdd2 != "") std::cout << " and " << cdd2;
+    if(!cdd2.empty()) std::cout << " and " << cdd2;
     std::cout << std::endl;
 
     size_t nSyncReadRegisters = 0;
@@ -958,7 +958,6 @@ namespace ChimeraTK {
           BOOST_ERROR("Device did not recover within 60 seconds after forced ChimeraTK::runtime_error.");
         }
       }
-      continue;
     }
   }
 

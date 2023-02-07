@@ -133,9 +133,9 @@ namespace ChimeraTK {
      * function. */
     BackendFactory();
 
-    BackendFactory(BackendFactory const&);  /**< To avoid making copies */
-    BackendFactory(BackendFactory const&&); /**< To avoid making copies */
-    void operator=(BackendFactory const&);  /**< To avoid assignment */
+    BackendFactory(BackendFactory const&);           /**< To avoid making copies */
+    BackendFactory(BackendFactory const&&) noexcept; /**< To avoid making copies */
+    void operator=(BackendFactory const&);           /**< To avoid assignment */
   };
 
 } // namespace ChimeraTK

@@ -41,9 +41,9 @@ namespace ChimeraTK {
       }
     }
 
-    bool isReadOnly() const override { return true; }
+    [[nodiscard]] bool isReadOnly() const override { return true; }
 
-    bool isWriteable() const override { return false; }
+    [[nodiscard]] bool isWriteable() const override { return false; }
 
     using ChimeraTK::NDRegisterAccessorDecorator<T>::_target;
     using ChimeraTK::NDRegisterAccessorDecorator<T>::buffer_2D;

@@ -88,12 +88,12 @@ namespace ChimeraTK {
         for(auto& channel : value) channel.resize(nElements);
       }
 
-      Buffer() {}
+      Buffer() = default;
 
-      Buffer(Buffer&& other)
+      Buffer(Buffer&& other) noexcept
       : value(std::move(other.value)), versionNumber(other.versionNumber), dataValidity(other.dataValidity) {}
 
-      Buffer& operator=(Buffer&& other) {
+      Buffer& operator=(Buffer&& other) noexcept {
         value = std::move(other.value);
         versionNumber = other.versionNumber;
         dataValidity = other.dataValidity;
