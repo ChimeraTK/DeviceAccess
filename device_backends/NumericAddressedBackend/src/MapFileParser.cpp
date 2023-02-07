@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "MapFileParser.h"
+
 #include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the MULTIPLEXED_SEQUENCE_PREFIX constant
 
 #include <boost/algorithm/string.hpp>
@@ -313,7 +315,7 @@ namespace ChimeraTK {
   RegisterPath MapFileParser::makeSequenceName(const RegisterPath& pathName, size_t index) {
     auto [module, name] = splitStringAtLastDot(pathName);
     assert(boost::algorithm::starts_with(name, MULTIPLEXED_SEQUENCE_PREFIX));
-    name = name.substr(MULTIPLEXED_SEQUENCE_PREFIX.size()); // strip prefix
+    name = name.substr(strlen(MULTIPLEXED_SEQUENCE_PREFIX)); // strip prefix
     auto r = RegisterPath(module) / (SEQUENCE_PREFIX + name + "_" + std::to_string(index));
     r.setAltSeparator(".");
     return r;

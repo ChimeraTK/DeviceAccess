@@ -12,6 +12,8 @@ using namespace boost::unit_test_framework;
 
 #include <boost/thread/barrier.hpp>
 
+#include <fstream>
+
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendTestSuite)

@@ -4,7 +4,6 @@
 
 #include "createDataConverter.h"
 #include "Exception.h"
-#include "MapFileParser.h"
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedRegisterCatalogue.h"
@@ -15,10 +14,10 @@
 
 namespace ChimeraTK {
 
-  static const std::string MULTIPLEXED_SEQUENCE_PREFIX = "AREA_MULTIPLEXED_SEQUENCE_";
-  static const std::string SEQUENCE_PREFIX = "SEQUENCE_";
+  constexpr auto MULTIPLEXED_SEQUENCE_PREFIX = "AREA_MULTIPLEXED_SEQUENCE_";
+  constexpr auto SEQUENCE_PREFIX = "SEQUENCE_";
 
-  static const std::string MEM_MULTIPLEXED_PREFIX = "MEM_MULTIPLEXED_";
+  constexpr auto MEM_MULTIPLEXED_PREFIX = "MEM_MULTIPLEXED_";
 
   /********************************************************************************************************************/
 
@@ -27,7 +26,8 @@ namespace ChimeraTK {
     /** Iteration on a raw buffer with a given pitch (increment from one element to the next) in bytes */
     template<typename DATA_TYPE>
     struct pitched_iterator : std::iterator<std::random_access_iterator_tag, DATA_TYPE> {
-      pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<uint8_t*>(begin)), _pitch(pitch) {}
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<std::byte*>(begin)), _pitch(pitch) {}
 
       template<typename OTHER_DATA_TYPE>
       explicit pitched_iterator(pitched_iterator<OTHER_DATA_TYPE>& other) : _ptr(other._ptr), _pitch(other._pitch) {}
@@ -45,10 +45,11 @@ namespace ChimeraTK {
       bool operator==(pitched_iterator other) const { return _ptr == other._ptr; }
       bool operator!=(pitched_iterator other) const { return !(*this == other); }
       size_t operator-(pitched_iterator other) const { return _ptr - other._ptr; }
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       DATA_TYPE& operator*() const { return *reinterpret_cast<DATA_TYPE*>(_ptr); }
 
      private:
-      uint8_t* _ptr;
+      std::byte* _ptr;
       const size_t _pitch;
 
       template<typename OTHER_DATA_TYPE>
