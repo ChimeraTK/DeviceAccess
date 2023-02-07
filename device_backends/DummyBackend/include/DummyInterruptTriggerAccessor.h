@@ -5,6 +5,8 @@
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedBackend.h"
 
+#include <utility>
+
 namespace ChimeraTK {
   /**
    * @brief The DummyInterruptTriggerAccessor class
@@ -20,7 +22,8 @@ namespace ChimeraTK {
     DummyInterruptTriggerAccessor(boost::shared_ptr<DeviceBackend> backend,
         std::function<VersionNumber(void)> interruptTrigger, const RegisterPath& registerPathName,
         size_t numberOfElements = 1, size_t elementsOffset = 0, const AccessModeFlags& flags = {})
-    : NDRegisterAccessor<UserType>(registerPathName, {}), _backend(backend), _interruptTrigger(interruptTrigger) {
+    : NDRegisterAccessor<UserType>(registerPathName, {}), _backend(std::move(backend)),
+      _interruptTrigger(std::move(interruptTrigger)) {
       if(numberOfElements > 1) {
         throw ChimeraTK::logic_error("DUMMY_INTERRUPT accessor register can have at most one element");
       }
@@ -71,9 +74,9 @@ namespace ChimeraTK {
       }
     }
 
-    bool isReadOnly() const override { return false; }
-    bool isReadable() const override { return true; }
-    bool isWriteable() const override { return true; }
+    [[nodiscard]] bool isReadOnly() const override { return false; }
+    [[nodiscard]] bool isReadable() const override { return true; }
+    [[nodiscard]] bool isWriteable() const override { return true; }
 
    protected:
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {

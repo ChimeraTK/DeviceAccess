@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "BackendFactory.h"
-#include "DeviceAccessVersion.h"
 #include "DummyBackend.h"
 #include "NDRegisterAccessorDecorator.h"
+
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -22,7 +22,7 @@ namespace ChimeraTK {
 
   class ExceptionDummy : public ChimeraTK::DummyBackend {
    public:
-    ExceptionDummy(std::string mapFileName) : DummyBackend(mapFileName) {
+    explicit ExceptionDummy(std::string const& mapFileName) : DummyBackend(mapFileName) {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     }
 
@@ -31,7 +31,8 @@ namespace ChimeraTK {
     std::atomic<bool> throwExceptionWrite{false};
     std::atomic<bool> thereHaveBeenExceptions{false};
 
-    static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    static boost::shared_ptr<DeviceBackend> createInstance(
+        [[maybe_unused]] std::string, std::map<std::string, std::string> parameters) {
       return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
     }
 
@@ -215,19 +216,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  ExceptionDummy::BackendRegisterer ExceptionDummy::backendRegisterer;
-
-  /********************************************************************************************************************/
-
-  ExceptionDummy::BackendRegisterer::BackendRegisterer() {
-    std::cout << "ExceptionDummy::BackendRegisterer: registering backend type ExceptionDummy" << std::endl;
-    ChimeraTK::BackendFactory::getInstance().registerBackendType("ExceptionDummy", &ExceptionDummy::createInstance);
-  }
-
-  /********************************************************************************************************************/
-
   struct ExceptionDummyPushDecoratorBase {
-    virtual ~ExceptionDummyPushDecoratorBase() {}
+    virtual ~ExceptionDummyPushDecoratorBase() = default;
     virtual void trigger() = 0;
     bool _isActive{false};
     bool _hasException{false};
@@ -238,8 +228,8 @@ namespace ChimeraTK {
   template<typename UserType>
   struct ExceptionDummyPushDecorator : NDRegisterAccessorDecorator<UserType>, ExceptionDummyPushDecoratorBase {
     ExceptionDummyPushDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target,
-        const boost::shared_ptr<ExceptionDummy>& backend)
-    : NDRegisterAccessorDecorator<UserType>(target), _backend(backend) {
+        boost::shared_ptr<ExceptionDummy> backend)
+    : NDRegisterAccessorDecorator<UserType>(target), _backend(std::move(backend)) {
       assert(_target->isReadable());
 
       this->_accessModeFlags = _target->getAccessModeFlags();
@@ -255,12 +245,16 @@ namespace ChimeraTK {
 
     ~ExceptionDummyPushDecorator() override {
       std::unique_lock<std::mutex> lk(_backend->_pushDecoratorsMutex);
-      auto& list = _backend->_pushDecorators.at(_path);
-      for(auto it = list.begin(); it != list.end(); ++it) {
-        if(it->lock().get() == nullptr) { // weak_ptr is already not lockable any more
-          _backend->_pushDecorators.at(_path).erase(it);
-          return;
+      try {
+        auto& list = _backend->_pushDecorators.at(_path);
+        for(auto it = list.begin(); it != list.end(); ++it) {
+          if(it->lock().get() == nullptr) { // weak_ptr is already not lockable any more
+            _backend->_pushDecorators.at(_path).erase(it);
+            return;
+          }
         }
+      }
+      catch([[maybe_unused]] std::out_of_range& e) {
       }
       std::cout << "~ExceptionDummyPushDecorator(): Could not unlist instance!" << std::endl;
       assert(false);
@@ -270,14 +264,17 @@ namespace ChimeraTK {
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
       // do not set it for the target, since we read from the target in trigger(), but that is the wrong place to
-      // call setException().
+      // call setException(). So we don't call it on our base class NDRegisterAccessorDecorator but on the
+      // TransferElement itself.
+      // Turn off the linter warning. This is intentional.
+      // NOLINTNEXTLINE(bugprone-parent-virtual-call)
       TransferElement::setExceptionBackend(exceptionBackend);
     }
 
     struct Buffer {
       std::vector<std::vector<UserType>> _data;
       VersionNumber _version;
-      DataValidity _validity;
+      DataValidity _validity = {DataValidity::faulty};
     };
     Buffer _current;
 
@@ -293,6 +290,7 @@ namespace ChimeraTK {
         b._validity = _target->dataValidity();
         _myReadQueue.push_overwrite(b);
       }
+      // fixme: clang tidy says something else is escaping, don't know what
       catch(ChimeraTK::runtime_error&) {
         _isActive = false;
         if(!_hasException) _myReadQueue.push_overwrite_exception(std::current_exception());
@@ -331,15 +329,15 @@ namespace ChimeraTK {
 
   // non-template base class for UserType-agnostic insertion into std::map
   struct ExceptionDummyPollDecoratorBase {
-    virtual ~ExceptionDummyPollDecoratorBase() {}
+    virtual ~ExceptionDummyPollDecoratorBase() = default;
   };
 
   /// A decorator that returns invalid data for polled variables
   template<typename UserType>
   struct ExceptionDummyPollDecorator : NDRegisterAccessorDecorator<UserType>, ExceptionDummyPollDecoratorBase {
     ExceptionDummyPollDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target,
-        const boost::shared_ptr<ExceptionDummy>& backend)
-    : NDRegisterAccessorDecorator<UserType>(target), _backend(backend) {
+        boost::shared_ptr<ExceptionDummy> backend)
+    : NDRegisterAccessorDecorator<UserType>(target), _backend(std::move(backend)) {
       assert(_target->isReadable());
 
       _path = _target->getName();
@@ -359,89 +357,6 @@ namespace ChimeraTK {
     using TransferElement::_versionNumber;
     using TransferElement::_dataValidity;
   };
-
-  /********************************************************************************************************************/
-
-  /// Function to trigger sending values for push-type variables
-  void ExceptionDummy::triggerPush(RegisterPath path, VersionNumber v) {
-    path.setAltSeparator(".");
-    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
-    _pushVersions[path] = v;
-    for(auto& acc_weak : _pushDecorators[path]) {
-      auto acc = acc_weak.lock();
-      if(!acc->_isActive) continue;
-      lk.unlock(); // next line might call setException()...
-      acc->trigger();
-      lk.lock();
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  void ExceptionDummy::activateAsyncRead() noexcept {
-    DummyBackend::activateAsyncRead();
-
-    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
-    for(auto& pair : _pushDecorators) {
-      _pushVersions[pair.first] = {};
-      for(auto& acc_weak : pair.second) {
-        auto acc = acc_weak.lock();
-        if(acc->_isActive) continue;
-        lk.unlock();    // next line might call setException()...
-        acc->trigger(); // initial value
-        lk.lock();
-        acc->_isActive = true;
-        acc->_hasException = false;
-      }
-    }
-    _activateNewPushAccessors = true;
-  }
-
-  /********************************************************************************************************************/
-
-  void ExceptionDummy::setException() {
-    DummyBackend::setException();
-
-    // deactivate async transfers
-    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
-    for(auto& pair : _pushDecorators) {
-      _pushVersions[pair.first] = {};
-      for(auto& acc_weak : pair.second) {
-        auto acc = acc_weak.lock();
-        if(!acc->_isActive) continue;
-        acc->_isActive = false;
-        if(acc->_hasException) continue;
-        acc->_hasException = true;
-        lk.unlock(); // next line might call setException()...
-        acc->trigger();
-        lk.lock();
-      }
-    }
-    _activateNewPushAccessors = false;
-  }
-
-  /********************************************************************************************************************/
-
-  size_t ExceptionDummy::getWriteOrder(const RegisterPath& path) {
-    auto info = getRegisterInfo(path);
-    auto adrPair = std::make_pair(info.bar, info.address);
-    return _writeOrderMap.at(adrPair);
-  }
-
-  /********************************************************************************************************************/
-
-  size_t ExceptionDummy::getWriteCount(const RegisterPath& path) {
-    auto info = getRegisterInfo(path);
-    auto adrPair = std::make_pair(info.bar, info.address);
-    return _writeCounterMap.at(adrPair);
-  }
-
-  /********************************************************************************************************************/
-
-  bool ExceptionDummy::asyncReadActivated() {
-    std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
-    return _activateNewPushAccessors;
-  }
 
   /********************************************************************************************************************/
 } // namespace ChimeraTK

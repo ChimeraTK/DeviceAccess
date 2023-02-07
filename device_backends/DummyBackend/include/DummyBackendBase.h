@@ -24,7 +24,7 @@
     std::cout << errorMessage.str() << std::endl;                                                                      \
     throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
   }                                                                                                                    \
-  while(false)
+  //  while(false)
 
 namespace ChimeraTK {
   /**
@@ -82,7 +82,7 @@ namespace ChimeraTK {
       if(registerPathName.startsWith("DUMMY_INTERRUPT_")) {
         int controller, interrupt;
 
-        auto dummyCatalogue = dynamic_cast<DummyBackendRegisterCatalogue*>(_registerMapPointer.get());
+        auto* dummyCatalogue = dynamic_cast<DummyBackendRegisterCatalogue*>(_registerMapPointer.get());
         assert(dummyCatalogue);
         std::tie(controller, interrupt) = dummyCatalogue->extractControllerInterrupt(registerPathName);
 

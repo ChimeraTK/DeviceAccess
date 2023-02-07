@@ -24,10 +24,11 @@ namespace ChimeraTK {
 
       /// Implicit type conversion to user type T.
       /// This covers already a lot of operations like arithmetic and comparison
+      // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
       inline operator T() const { return fpcptr->template scalarToCooked<T>(*buffer); }
 
       /// assignment operator
-      inline DummyRegisterElement<T> operator=(T rhs) {
+      inline DummyRegisterElement<T>& operator=(T rhs) {
         int32_t raw = fpcptr->toRaw(rhs);
         memcpy(buffer, &raw, nbytes);
         return *this;
@@ -61,7 +62,7 @@ namespace ChimeraTK {
 
      protected:
       /// constructor when used as a base class in DummyRegister
-      DummyRegisterElement() : fpcptr(NULL), nbytes(0), buffer(NULL) {}
+      DummyRegisterElement() : fpcptr(nullptr), nbytes(0), buffer(nullptr) {}
 
       /// fixed point converter to be used for this element
       FixedPointConverter* fpcptr;
@@ -84,9 +85,17 @@ namespace ChimeraTK {
 
       /// Get or set register content by [] operator.
       inline DummyRegisterElement<T> operator[](unsigned int sample) {
-        char* basePtr = reinterpret_cast<char*>(buffer);
-        return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<int32_t*>(basePtr + pitch * sample));
+        // todo: Probably ranges are the correct tool in cpp22. In cpp17 this is not available yet. We turn off the
+        // warning not to use reinterpret_cast for the time being
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        auto* basePtr = reinterpret_cast<std::byte*>(buffer);
+        auto* startAddress = basePtr + static_cast<size_t>(pitch) * sample;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<int32_t*>(startAddress));
       }
+
+      /// remove assignment operator since it will be confusing */
+      void operator=(const DummyRegisterSequence& rightHandSide) const = delete;
 
      protected:
       /// fixed point converter to be used for this sequence
@@ -100,10 +109,6 @@ namespace ChimeraTK {
 
       /// reference to the raw buffer (first word of the sequence)
       int32_t* buffer;
-
-     private:
-      /** prevent copying by operator=, since it will be confusing */
-      void operator=(const DummyRegisterSequence& rightHandSide) const;
     };
   } // namespace proxies
 
@@ -130,7 +135,7 @@ namespace ChimeraTK {
     /// DummyBackend implementation. dev must be the pointer to the DummyBackend
     /// to be accessed. A raw pointer is needed, as used inside the DummyBackend
     /// itself. module and name denominate the register entry in the map file.
-    DummyRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
+    DummyRegisterAccessor(DummyBackend* dev, std::string const& module, std::string const& name)
     : _dev(dev), _path(module + "/" + name), fpc(module + "/" + name) {
       registerInfo = _dev->_registerMap.getBackendRegister(_path);
       fpc = FixedPointConverter(module + "/" + name, registerInfo.channels.front().width,
@@ -143,6 +148,9 @@ namespace ChimeraTK {
     // declare that we want the default copy constructor. Needed because we have a custom = operator
     DummyRegisterAccessor(const DummyRegisterAccessor&) = default;
 
+    /// remove assignment operator since it will be confusing */
+    void operator=(const DummyRegisterAccessor& rightHandSide) const = delete;
+
     /// Get or set register content by [] operator.
     inline proxies::DummyRegisterElement<T> operator[](unsigned int index) { return getProxy(index); }
 
@@ -153,10 +161,10 @@ namespace ChimeraTK {
     using proxies::DummyRegisterElement<T>::operator=;
 
     /// Return the backend
-    DummyBackend& getBackend() const { return *_dev; }
+    [[nodiscard]] DummyBackend& getBackend() const { return *_dev; }
 
     /// Return the register path
-    const RegisterPath& getRegisterPath() const { return _path; }
+    [[nodiscard]] const RegisterPath& getRegisterPath() const { return _path; }
 
     /// Set callback function which is called when the register is written to (through the normal Device interface)
     void setWriteCallback(const std::function<void()>& writeCallback) {
@@ -196,10 +204,6 @@ namespace ChimeraTK {
     inline proxies::DummyRegisterElement<T> getProxy(int index) {
       return proxies::DummyRegisterElement<T>(&fpc, sizeof(int32_t), getElement(index));
     }
-
-   private:
-    /** prevent copying by operator=, since it will be confusing */
-    void operator=(const DummyRegisterAccessor& rightHandSide) const;
   };
 
   /*********************************************************************************************************************/
@@ -222,8 +226,8 @@ namespace ChimeraTK {
     /// itself. module and name denominate the register entry in the map file.
     /// Note: The string "AREA_MULTIPLEXED_SEQUENCE_" will be prepended to the
     /// name when searching for the register.
-    DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
-    : _dev(dev), _path(module + "/" + name), pitch(0) {
+    DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string const& module, std::string const& name)
+    : _dev(dev), _path(module + "/" + name) {
       registerInfo = _dev->_registerMap.getBackendRegister(module + "." + name);
 
       // create fixed point converters for each channel
@@ -246,6 +250,9 @@ namespace ChimeraTK {
       pitch = registerInfo.elementPitchBits / 8;
     }
 
+    /// remove assignment operator since it will be confusing
+    void operator=(const DummyMultiplexedRegisterAccessor& rightHandSide) const = delete;
+
     // declare that we want the default copy constructor. Needed because we have a custom = operator
     DummyMultiplexedRegisterAccessor(const DummyMultiplexedRegisterAccessor&) = default;
 
@@ -261,18 +268,22 @@ namespace ChimeraTK {
     /// first index is the faster counting index. Example: myMuxRegister[3][987]
     /// will give you the 988th sample of the 4th channel.
     inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence) {
-      int8_t* basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.bar].data());
-      int32_t* seq = reinterpret_cast<int32_t*>(basePtr + offsets[sequence]);
+      // todo: Probably ranges are the correct tool in cpp22. In cpp17 this is not available yet. We turn off the
+      // warning not to use reinterpret_cast for the time being
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      auto* basePtr = reinterpret_cast<std::byte*>(_dev->_barContents[registerInfo.bar].data());
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      auto* seq = reinterpret_cast<int32_t*>(basePtr + offsets[sequence]);
       return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
     }
 
     /// Return the backend
-    DummyBackend& getBackend() const { return *_dev; }
+    [[nodiscard]] DummyBackend& getBackend() const { return *_dev; }
 
     /// Return the register path
-    const RegisterPath& getRegisterPath() const { return _path; }
+    [[nodiscard]] const RegisterPath& getRegisterPath() const { return _path; }
 
-    const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
+    [[nodiscard]] const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
 
    protected:
     /// pointer to VirtualDevice
@@ -294,14 +305,10 @@ namespace ChimeraTK {
     std::vector<uint32_t> nbytes;
 
     /// pitch in bytes (distance between samples of the same sequence)
-    int pitch;
+    int pitch = {0};
 
     /// number of elements per sequence
     unsigned int nElements;
-
-   private:
-    /** prevent copying by operator=, since it will be confusing */
-    void operator=(const DummyMultiplexedRegisterAccessor& rightHandSide) const;
   };
 
   /** Accessor for raw 32 bit integer access to the underlying memory space.
@@ -318,18 +325,28 @@ namespace ChimeraTK {
    public:
     /// Implicit type conversion to int32_t.
     /// This basically covers all operators for single integers.
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     operator int32_t&() { return *buffer; }
 
-    DummyRegisterRawAccessor(boost::shared_ptr<DeviceBackend> backend, std::string module, std::string name)
+    DummyRegisterRawAccessor(
+        boost::shared_ptr<DeviceBackend> const& backend, std::string const& module, std::string const& name)
     : _backend(boost::dynamic_pointer_cast<DummyBackend>(backend)) {
       assert(_backend);
       registerInfo = _backend->_registerMap.getBackendRegister(module + "." + name);
       buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t)]);
     }
+
     // declare that we want the default copy constructor. Needed because we have a custom = operator
+    // The default copy/move constructor is fine. It will copy the raw pointer to the buffer,
+    // together with the shared pointer which holds the corresponding backend with the
+    // memory. So it is a consistent copy because the shared pointer is pointing to the
+    // same backend instance.
     DummyRegisterRawAccessor(const DummyRegisterRawAccessor&) = default;
 
-    DummyRegisterRawAccessor operator=(int32_t rhs) {
+    /// remove assignment operator since it will be confusing
+    void operator=(const DummyRegisterRawAccessor& rightHandSide) const = delete;
+
+    DummyRegisterRawAccessor& operator=(int32_t rhs) {
       buffer[0] = rhs;
       return *this;
     }
@@ -338,7 +355,7 @@ namespace ChimeraTK {
     int32_t& operator[](unsigned int index) { return buffer[index]; }
 
     /// return number of elements
-    unsigned int getNumberOfElements() { return registerInfo.nElements; }
+    [[nodiscard]] unsigned int getNumberOfElements() const { return registerInfo.nElements; }
 
     /** Get a lock to safely modify the buffer. You have to release it as soon as possible because it will block all
      * other functionality of the Dummy. This is a really low low level debugging interface!
@@ -354,15 +371,6 @@ namespace ChimeraTK {
 
     /// raw buffer of this accessor
     int32_t* buffer;
-
-   private:
-    /** prevent copying by operator=, since it will be confusing */
-    void operator=(const DummyRegisterRawAccessor& rightHandSide) const;
-
-    // The default copy/move constructor is fine. It will copy the raw pointer to the buffer,
-    // together with the shared pointer which holds the corresponding backend with the
-    // memory. So it is a consistent copy because the shared pointer is pointing to the
-    // same backend instance.
   };
 
 } // namespace ChimeraTK
