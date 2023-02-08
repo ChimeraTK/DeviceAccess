@@ -18,6 +18,7 @@
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 find_package(ConfigGenerator 02.00 REQUIRED)
+list(APPEND CMAKE_MODULE_PATH ${ConfigGenerator_DIR}/shared)
 
 set(DESTDIR share/ConfigGenerator-${PROJECT_NAME}-${${PROJECT_NAME}_MAJOR_VERSION}-${${PROJECT_NAME}_MINOR_VERSION})
 
