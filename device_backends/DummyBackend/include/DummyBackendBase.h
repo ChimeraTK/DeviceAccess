@@ -36,7 +36,7 @@ namespace ChimeraTK {
 
     explicit DummyBackendBase(std::string const& mapFileName);
 
-    ~DummyBackendBase() override;
+    ~DummyBackendBase() override = default;
 
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override;
 

@@ -96,7 +96,7 @@ namespace ChimeraTK {
 
     /** Send an exception to all accessors. This automatically de-activates them.
      */
-    void sendException(std::exception_ptr e);
+    void sendException(const std::exception_ptr& e);
 
     /** Activate all accessors and send the initial value. Generates a new version number which is used for
      *  all initial values and  which can be read out with getLastVersion().

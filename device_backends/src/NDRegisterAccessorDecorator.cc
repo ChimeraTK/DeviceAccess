@@ -6,7 +6,7 @@
 #include "CopyRegisterDecorator.h"
 #include "SupportedUserTypes.h"
 
-namespace ChimeraTK { namespace detail {
+namespace ChimeraTK::detail {
 
   template<typename T>
   boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> createCopyDecorator(
@@ -14,7 +14,7 @@ namespace ChimeraTK { namespace detail {
     return boost::make_shared<CopyRegisterDecorator<T>>(target);
   }
 
-}} // namespace ChimeraTK::detail
+} // namespace ChimeraTK::detail
 
 namespace {
 

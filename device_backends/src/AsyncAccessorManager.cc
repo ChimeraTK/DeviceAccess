@@ -14,7 +14,7 @@ namespace ChimeraTK {
   }
 
   //*********************************************************************************************************************/
-  void AsyncAccessorManager::sendException(std::exception_ptr e) {
+  void AsyncAccessorManager::sendException(const std::exception_ptr& e) {
     std::lock_guard<std::recursive_mutex> variablesLock(_variablesMutex);
     _isActive = false;
     for(auto& var : _asyncVariables) {

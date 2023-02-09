@@ -23,7 +23,7 @@ namespace ChimeraTK {
   class DeviceBackend : public boost::enable_shared_from_this<DeviceBackend> {
    public:
     /** Every virtual class needs a virtual desctructor. */
-    virtual ~DeviceBackend();
+    virtual ~DeviceBackend() = default;
 
     /** Open the device */
     virtual void open() = 0;
@@ -37,8 +37,8 @@ namespace ChimeraTK {
     /** Deprecated since 2022-03-03. Do not use. */
     [[deprecated]] virtual bool isConnected() = 0;
 
-    /** Return wether a device is working as intended, usually this means it is opened
-     *  and does not have any errors. The default implementeation in DeviceBackendImpl reports
+    /** Return whether a device is working as intended, usually this means it is opened
+     *  and does not have any errors. The default implementation in DeviceBackendImpl reports
      *  (_opened && !_hasErrors). Backends can overload it to implement a more sophisticated error reporting. The
      *  implementation might involve a communication attempt with the device.
      *

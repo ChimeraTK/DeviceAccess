@@ -10,8 +10,6 @@ namespace ChimeraTK {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
   }
 
-  DummyBackendBase::~DummyBackendBase() {}
-
   size_t DummyBackendBase::minimumTransferAlignment([[maybe_unused]] uint64_t bar) const {
     return 4;
   }
