@@ -119,7 +119,7 @@ namespace ChimeraTK {
   template<typename UserType, typename TargetUserType = UserType>
   class NDRegisterAccessorDecorator : public detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType> {
    public:
-    NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
+    explicit NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
     : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
           target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
       _target = target;

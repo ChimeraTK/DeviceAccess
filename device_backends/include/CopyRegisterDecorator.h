@@ -23,7 +23,7 @@ namespace ChimeraTK {
    * NDRegisterAccessorDecorator<T>. */
   template<typename T>
   struct CopyRegisterDecorator : ChimeraTK::NDRegisterAccessorDecorator<T>, CopyRegisterDecoratorTrait {
-    CopyRegisterDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>& target)
+    explicit CopyRegisterDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>& target)
     : ChimeraTK::NDRegisterAccessorDecorator<T>(target) {
       if(!target->isReadable()) {
         throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Target accessor is not readable.");
