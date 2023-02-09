@@ -52,20 +52,20 @@ namespace ChimeraTK {
      * automatically the case if the argument is omitted, so it should never be
      *  specified.
      */
-    void registerBackendType(std::string backendType,
+    void registerBackendType(const std::string& backendType,
         boost::shared_ptr<DeviceBackend> (*creatorFunction)(
             std::string address, std::map<std::string, std::string> parameters),
-        std::vector<std::string> sdmParameterNames = {},
-        std::string deviceAccessVersion = CHIMERATK_DEVICEACCESS_VERSION);
+        const std::vector<std::string>& sdmParameterNames = {},
+        const std::string& deviceAccessVersion = CHIMERATK_DEVICEACCESS_VERSION);
 
     /** Old signature of BackendFactory::registerBackendType(), for compatibility
      * only. Please use only the new form which allows to pass key-equal-value
      * pairs for the parameters. DO NOT call this function in addition to the
      *  new signature! */
-    [[deprecated]] void registerBackendType(std::string interface, std::string protocol,
+    [[deprecated]] void registerBackendType(const std::string& interface, const std::string& protocol,
         boost::shared_ptr<DeviceBackend> (*creatorFunction)(
             std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName),
-        std::string version);
+        const std::string& version);
 
     /** Create a new backend and return the instance as a shared pointer.
      *  The input argument can either be an alias name from a dmap file, or

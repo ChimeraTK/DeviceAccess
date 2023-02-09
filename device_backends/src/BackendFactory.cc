@@ -3,7 +3,6 @@
 
 #include "BackendFactory.h"
 
-#include "MapFileParser.h"
 #include "RebotBackend.h"
 #include "Utilities.h"
 
@@ -17,6 +16,9 @@
 #ifdef CHIMERATK_HAVE_UIO_BACKEND
 #  include "UioBackend.h"
 #endif
+// Clang tidy reports a false positive. It seems to be case-sensitive although it should not be.
+// clang-format is fixing this correctly.
+// NOLINTNEXTLINE(llvm-include-order)
 #include "DeviceAccessVersion.h"
 #include "DMapFileParser.h"
 #include "DummyBackend.h"
@@ -29,6 +31,7 @@
 #include <boost/function.hpp>
 
 #include <dlfcn.h>
+#include <utility>
 
 #ifdef _DEBUG
 #  include <iostream>
@@ -38,10 +41,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void BackendFactory::registerBackendType(std::string backendType,
+  void BackendFactory::registerBackendType(const std::string& backendType,
       boost::shared_ptr<DeviceBackend> (*creatorFunction)(
           std::string address, std::map<std::string, std::string> parameters),
-      std::vector<std::string> sdmParameterNames, std::string version) {
+      const std::vector<std::string>& sdmParameterNames, const std::string& version) {
 #ifdef _DEBUG
     std::cout << "adding:" << backendType << std::endl << std::flush;
 #endif
@@ -93,16 +96,16 @@ namespace ChimeraTK {
           std::cout << "Please only specify the map file name in the parameter list!" << std::endl;
         }
       }
-      return creatorFunction(instance, pars);
+      return creatorFunction(std::move(instance), pars);
     };
   }
 
   /********************************************************************************************************************/
 
-  void BackendFactory::registerBackendType(std::string interface, std::string protocol,
+  void BackendFactory::registerBackendType(const std::string& interface, const std::string& protocol,
       boost::shared_ptr<DeviceBackend> (*creatorFunction)(
           std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName),
-      std::string version) {
+      const std::string& version) {
 #ifdef _DEBUG
     std::cout << "adding:" << interface << std::endl << std::flush;
 #endif
@@ -297,7 +300,7 @@ namespace ChimeraTK {
 
     auto dmap = DMapFileParser().parse(_dMapFile);
 
-    for(auto lib : dmap->getPluginLibraries()) {
+    for(const auto& lib : dmap->getPluginLibraries()) {
       try {
         loadPluginLibrary(lib);
       }
