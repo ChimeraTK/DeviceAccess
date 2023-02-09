@@ -141,7 +141,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void BackendFactory::setDMapFilePath(std::string dMapFilePath) {
-    _dMapFile = dMapFilePath;
+    _dMapFile = std::move(dMapFilePath);
     loadAllPluginsFromDMapFile();
   }
   /********************************************************************************************************************/
@@ -179,7 +179,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasOrUri) {
+  boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(const std::string& aliasOrUri) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     if(Utilities::isDeviceDescriptor(aliasOrUri) || Utilities::isSdm(aliasOrUri)) {
@@ -253,12 +253,12 @@ namespace ChimeraTK {
       std::cout << *it << std::endl;
     }
 #endif
-    for(auto iter = creatorMap_compat.begin(); iter != creatorMap_compat.end(); ++iter) {
+    for(auto& iter : creatorMap_compat) {
 #ifdef _DEBUG
       std::cout << "Pair:" << iter->first.first << "+" << iter->first.second << std::endl;
 #endif
-      if((iter->first.first == sdm._Interface)) {
-        auto backend = (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
+      if((iter.first.first == sdm._Interface)) {
+        auto backend = (iter.second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
         boost::weak_ptr<DeviceBackend> weakBackend = backend;
         _existingBackends[deviceInfo.uri] = weakBackend;
         // return the shared pointer, not the weak pointer
@@ -267,12 +267,12 @@ namespace ChimeraTK {
     }
 
     throw ChimeraTK::logic_error("Unregistered device: Interface = " + sdm._Interface + " Protocol = " + sdm._Protocol);
-    return boost::shared_ptr<DeviceBackend>(); // won't execute
+    return {}; // won't execute
   }
 
   /********************************************************************************************************************/
 
-  void BackendFactory::loadPluginLibrary(std::string soFile) {
+  void BackendFactory::loadPluginLibrary(const std::string& soFile) {
     // reset flag to check if the registerBackedType() function was called
     called_registerBackendType = false;
 

@@ -71,14 +71,14 @@ namespace ChimeraTK {
      *  The input argument can either be an alias name from a dmap file, or
      *  an sdm::/ URI.
      */
-    boost::shared_ptr<DeviceBackend> createBackend(std::string aliasOrUri);
+    boost::shared_ptr<DeviceBackend> createBackend(const std::string& aliasOrUri);
 
     /**Static function to get an instance of factory */
     static BackendFactory& getInstance();
 
     /**Load a shared library (.so file) with a Backend at run time.
      */
-    void loadPluginLibrary(std::string soFile);
+    void loadPluginLibrary(const std::string& soFile);
 
    protected:
     std::string _dMapFile; ///< The dmap file set at run time
