@@ -654,7 +654,9 @@ namespace ChimeraTK {
 
   // As the function only works with the correct objects and it is unlikely that expressions are used as input
   // parameters, we  turn off the linter warning about parentheses around the macro arguments. The parentheses would
-  // make the code harder to read. NOLINTBEGIN(bugprone-macro-parentheses)
+  // make the code harder to read.
+
+  // NOLINTBEGIN(bugprone-macro-parentheses)
 #define CHECK_EQUALITY(accessor, expectedValue)                                                                        \
   {                                                                                                                    \
     typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
@@ -810,7 +812,7 @@ namespace ChimeraTK {
     }                                                                                                                  \
   }                                                                                                                    \
   (void)(0)
-  // NOLINTBEGIN(bugprone-macro-parentheses)
+  // NOLINTEND(bugprone-macro-parentheses)
 
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
@@ -1153,6 +1155,10 @@ namespace ChimeraTK {
 
 /********************************************************************************************************************/
 
+// Turn off the warning about parameter parentheses. They probably are even wrong for template arguments,
+// and clutter the readability for variable names.
+// NOLINTBEGIN(bugprone-macro-parentheses)
+
 /// Helper macros for test_B_4_2_4
 #define ALTER_AND_STORE_APPLICATION_BUFFER(UserType, accessor)                                                         \
   std::vector<std::vector<UserType>> STORE_APPLICATION_BUFFER_data;                                                    \
@@ -1171,6 +1177,8 @@ namespace ChimeraTK {
   CHECK_EQUALITY(accessor, STORE_APPLICATION_BUFFER_data);                                                             \
   BOOST_CHECK(STORE_APPLICATION_BUFFER_version == accessor.getVersionNumber());                                        \
   BOOST_CHECK(STORE_APPLICATION_BUFFER_validity == accessor.dataValidity())
+
+  // NOLINTEND(bugprone-macro-parentheses)
 
   /**
    *  Test transfer implementations do not change the application buffer
