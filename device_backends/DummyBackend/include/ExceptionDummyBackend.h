@@ -32,6 +32,8 @@ namespace ChimeraTK {
     std::atomic<bool> thereHaveBeenExceptions{false};
 
     static boost::shared_ptr<DeviceBackend> createInstance(
+        // FIXME #11279 Implement API breaking changes from linter warnings
+        // NOLINTNEXTLINE(performance-unnecessary-value-param)
         [[maybe_unused]] std::string, std::map<std::string, std::string> parameters) {
       return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
     }
@@ -249,12 +251,17 @@ namespace ChimeraTK {
         auto& list = _backend->_pushDecorators.at(_path);
         for(auto it = list.begin(); it != list.end(); ++it) {
           if(it->lock().get() == nullptr) { // weak_ptr is already not lockable any more
-            _backend->_pushDecorators.at(_path).erase(it);
+            list.erase(it);
             return;
           }
         }
       }
-      catch([[maybe_unused]] std::out_of_range& e) {
+      catch(std::exception& e) {
+        // The exception that could show up here is coming from >_pushDecorators.at().
+        // It might be std::out_of_range if the _path is not in, or an exception from the string comparison inside of
+        // std::map::at(). Both should not be possible be due to the code logic. The code will run into an assertion in
+        // debug mode. Let's hope the what() string gives us valuable information.
+        std::cout << "~ExceptionDummyPushDecorator(): Unexpected  exception: " << e.what() << std::endl;
       }
       std::cout << "~ExceptionDummyPushDecorator(): Could not unlist instance!" << std::endl;
       assert(false);

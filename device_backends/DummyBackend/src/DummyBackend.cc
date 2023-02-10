@@ -163,6 +163,8 @@ namespace ChimeraTK {
   }
 
   boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
       std::string address, std::map<std::string, std::string> parameters) {
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("No map file name given.");
