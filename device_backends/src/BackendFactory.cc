@@ -63,20 +63,28 @@ namespace ChimeraTK {
       std::stringstream errorMessage;
       errorMessage << "Backend plugin '" << backendType << "' compiled with wrong DeviceAccess version " << version
                    << ". Please recompile with version " << CHIMERATK_DEVICEACCESS_VERSION;
-      creatorMap_compat[make_pair(backendType, "")] =
-          boost::bind(BackendFactory::failedRegistrationThrowerFunction, boost::placeholders::_1,
-              boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4, errorMessage.str());
       std::string errorMessageString = errorMessage.str();
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTBEGIN(performance-unnecessary-value-param)
+      creatorMap_compat[make_pair(backendType, "")] = [errorMessageString](std::string host, std::string instance,
+                                                          std::list<std::string> parameters, std::string mapFileName) {
+        return BackendFactory::failedRegistrationThrowerFunction(
+            host, instance, parameters, mapFileName, errorMessageString);
+      };
       creatorMap[backendType] = [errorMessageString](std::string,
                                     std::map<std::string, std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
+        // NOLINTEND(performance-unnecessary-value-param)
         throw ChimeraTK::logic_error(errorMessageString);
       };
       return;
     }
     creatorMap[backendType] = creatorFunction;
+    // FIXME #11279 Implement API breaking changes from linter warnings
+    // NOLINTBEGIN(performance-unnecessary-value-param)
     creatorMap_compat[make_pair(backendType, "")] = [creatorFunction, sdmParameterNames](std::string,
                                                         std::string instance, std::list<std::string> parameters,
                                                         std::string mapFileName) {
+      // NOLINTEND(performance-unnecessary-value-param)
       std::map<std::string, std::string> pars;
       size_t i = 0;
       for(auto& p : parameters) {
@@ -119,19 +127,28 @@ namespace ChimeraTK {
       std::stringstream errorMessage;
       errorMessage << "Backend plugin '" << interface << "' compiled with wrong DeviceAccess version " << version
                    << ". Please recompile with version " << CHIMERATK_DEVICEACCESS_VERSION;
-      creatorMap_compat[make_pair(interface, protocol)] =
-          boost::bind(BackendFactory::failedRegistrationThrowerFunction, boost::placeholders::_1,
-              boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4, errorMessage.str());
       std::string errorMessageString = errorMessage.str();
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTBEGIN(performance-unnecessary-value-param)
+      creatorMap_compat[make_pair(interface, protocol)] = [errorMessageString](std::string host, std::string instance,
+                                                              std::list<std::string> parameters,
+                                                              std::string mapFileName) {
+        return BackendFactory::failedRegistrationThrowerFunction(
+            host, instance, parameters, mapFileName, errorMessageString);
+      };
       creatorMap[interface] = [errorMessageString](std::string,
                                   std::map<std::string, std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
+        // NOLINTEND(performance-unnecessary-value-param)
         throw ChimeraTK::logic_error(errorMessageString);
       };
       return;
     }
     creatorMap_compat[make_pair(interface, protocol)] = creatorFunction;
+    // FIXME #11279 Implement API breaking changes from linter warnings
+    // NOLINTBEGIN(performance-unnecessary-value-param)
     creatorMap[interface] = [interface](std::string,
                                 std::map<std::string, std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
+      // NOLINTEND(performance-unnecessary-value-param)
       throw ChimeraTK::logic_error("The backend type '" + interface +
           "' does not yet support ChimeraTK device "
           "descriptors! Please update the backend!");
@@ -317,9 +334,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  // FIXME #11279 Implement API breaking changes from linter warnings
+  // NOLINTBEGIN(performance-unnecessary-value-param)
   boost::shared_ptr<DeviceBackend> BackendFactory::failedRegistrationThrowerFunction(std::string /*host*/,
       std::string /*instance*/, std::list<std::string> /*parameters*/, std::string /*mapFileName*/,
       std::string exception_what) {
+    // NOLINTEND(performance-unnecessary-value-param)
     throw ChimeraTK::logic_error(exception_what);
   }
 } // namespace ChimeraTK
