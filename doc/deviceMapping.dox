@@ -28,6 +28,8 @@ any more, they have been superseeded by the ChimeraTK device descriptor. If you 
 old format, consider updating it to the new format. Support for the old formats will eventually be deprecated and
 removed.
 
+The DOOCS backend is not build into the DeviceAccess core library. It needs to be linked at compile time or loaded dynamically (see instructions on \ref plugin_mechanism).
+
 \section The CimeraTK device descriptor
 The CimeraTK device descriptor (CDD) specifies the type of the device, the address of the device and additional parameters
 needed. The basic form of a CDD looks like this:
