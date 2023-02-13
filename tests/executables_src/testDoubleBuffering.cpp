@@ -396,23 +396,27 @@ struct DeviceFixture2D {
     buf1->write();
 
     boost::barrier waitForBufferSwap{3};
+
+    // since BOOST.Test is not thread-safe, need to buffer check results in main thread
+    bool readerA_ok1, readerA_ok2, readerB_ok1, readerB_ok2;
+
     std::thread readerA([&] {
       auto accessorA = d.getOneDRegisterAccessor<float>(readerAReg);
       accessorA.readLatest();
-      BOOST_CHECK_CLOSE(accessorA[0], modulation, 1e-4);
+      readerA_ok1 = abs(accessorA[0] - modulation) < 1e-4;
       waitForBufferSwap.wait();
       waitForBufferSwap.wait();
       accessorA.readLatest();
-      BOOST_CHECK_CLOSE(accessorA[0], 2 * modulation, 1e-4);
+      readerA_ok2 = abs(accessorA[0] - 2 * modulation) < 1e-4;
     });
     std::thread readerB([&] {
       auto accessorB = d.getOneDRegisterAccessor<float>(readerBReg);
       accessorB.read();
-      BOOST_CHECK_CLOSE(accessorB[0], correction, 1e-4);
+      readerB_ok1 = abs(accessorB[0] - correction) < 1e-4;
       waitForBufferSwap.wait();
       waitForBufferSwap.wait();
       accessorB.read();
-      BOOST_CHECK_CLOSE(accessorB[0], 2 * correction, 1e-4);
+      readerB_ok2 = abs(accessorB[0] - 2 * correction) < 1e-4;
     });
 
     waitForBufferSwap.wait();
@@ -422,6 +426,10 @@ struct DeviceFixture2D {
 
     readerA.join();
     readerB.join();
+    BOOST_CHECK(readerA_ok1);
+    BOOST_CHECK(readerA_ok2);
+    BOOST_CHECK(readerB_ok1);
+    BOOST_CHECK(readerB_ok2);
 
     // Check that also reading from a TransferGroup works
     TransferGroup tg;
