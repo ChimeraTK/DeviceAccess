@@ -6,12 +6,14 @@
 #include "ReadAnyGroup.h"
 #include "VirtualFunctionTemplate.h"
 
-namespace ChimeraTK { namespace LNMBackend {
+#include <utility>
+
+namespace ChimeraTK::LNMBackend {
 
   /** Helper struct to hold extra parameters needed by some plugins, used in decorateAccessor() */
   struct UndecoratedParams {
     UndecoratedParams(size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister), _flags(flags) {}
+    : _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister), _flags(std::move(flags)) {}
     size_t _numberOfWords;
     size_t _wordOffsetInRegister;
     AccessModeFlags _flags;
@@ -21,7 +23,7 @@ namespace ChimeraTK { namespace LNMBackend {
    *  plugins, the class AccessorPlugin should be implemented, not this one. */
   class AccessorPluginBase {
    public:
-    virtual ~AccessorPluginBase() {}
+    virtual ~AccessorPluginBase() = default;
 
     /** Called by the backend when obtaining a register accessor. */
     template<typename UserType>
@@ -55,7 +57,7 @@ namespace ChimeraTK { namespace LNMBackend {
      *  Hook called when the backend is opened, at the end of the open() function after all backend work has been done
      *  already.
      */
-    virtual void openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) { std::ignore = backend; }
+    virtual void openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) { std::ignore = backend; }
 
     /**
      *  Hook called when the backend is closed, at the beginning of the close() function when the device is still open.
@@ -82,11 +84,11 @@ namespace ChimeraTK { namespace LNMBackend {
     /** The constructor of the plugin should also accept a second argument:
      *   const std::map<std::string, std::string>& parameters
      *  Since the parameters are not used in the base class, they do not need to be passed on. */
-    AccessorPlugin(LNMBackendRegisterInfo info);
+    explicit AccessorPlugin(const LNMBackendRegisterInfo& info);
 
    private:
     // we make our destructor private and add Derived as a friend to enforce the correct CRTP
-    virtual ~AccessorPlugin() {}
+    ~AccessorPlugin() override = default;
     friend Derived;
 
    public:
@@ -162,7 +164,7 @@ namespace ChimeraTK { namespace LNMBackend {
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
 
-    void openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) override;
+    void openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) override;
     void closeHook() override;
     void exceptionHook() override;
 
@@ -264,7 +266,7 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   template<typename Derived>
-  AccessorPlugin<Derived>::AccessorPlugin(LNMBackendRegisterInfo info) : _info(info) {
+  AccessorPlugin<Derived>::AccessorPlugin(const LNMBackendRegisterInfo& info) : _info(info) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl);
   }
 
@@ -325,4 +327,4 @@ namespace ChimeraTK { namespace LNMBackend {
     return decorated;
   }
 
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

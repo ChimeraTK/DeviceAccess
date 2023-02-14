@@ -74,7 +74,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MathPlugin::openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) {
+  void MathPlugin::openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) {
     // make sure backend catalogue is updated with target backend information
     backend->getRegisterCatalogue();
 
