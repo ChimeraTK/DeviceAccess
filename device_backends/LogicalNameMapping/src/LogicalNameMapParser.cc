@@ -17,7 +17,7 @@ namespace ChimeraTK {
       const std::string& subnodeName, BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue,
       bool hasDefault, std::string defaultValue) {
     auto list = node->find(subnodeName);
-    if(list.size() < 1 && hasDefault) return defaultValue;
+    if(list.empty() && hasDefault) return defaultValue;
     if(list.size() != 1) {
       parsingError(node,
           "Expected exactly one subnode of the type '" + subnodeName + "' below node '" + node->get_name() + "'.");
@@ -27,14 +27,14 @@ namespace ChimeraTK {
     std::string value;
     for(auto& child : childList) {
       // Check for CDATA node
-      const xmlpp::CdataNode* cdataNode = dynamic_cast<const xmlpp::CdataNode*>(child);
+      const auto* cdataNode = dynamic_cast<const xmlpp::CdataNode*>(child);
       if(cdataNode) {
         value += cdataNode->get_content();
         continue;
       }
 
       // check for plain text
-      const xmlpp::TextNode* textNode = dynamic_cast<const xmlpp::TextNode*>(child);
+      const auto* textNode = dynamic_cast<const xmlpp::TextNode*>(child);
       if(textNode) {
         // put to stream buffer
         value += textNode->get_content();
@@ -44,7 +44,7 @@ namespace ChimeraTK {
       // check for reference
       if(child->get_name() == "ref") {
         auto childChildList = child->get_children();
-        const xmlpp::TextNode* refNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
+        const auto* refNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
           if(!catalogue.hasRegister(regName)) {
@@ -55,7 +55,7 @@ namespace ChimeraTK {
           // assert(reg_casted != nullptr); // this is our own catalogue
           //  fetch the value of the target constant
           if(reg.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
-            if(reg.plugins.size() > 0) {
+            if(!reg.plugins.empty()) {
               parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");
             }
             // put to stream buffer
@@ -67,9 +67,7 @@ namespace ChimeraTK {
             });
             continue;
           }
-          else {
-            parsingError(child, "Reference to '" + regName + "' does not refer to a constant.");
-          }
+          parsingError(child, "Reference to '" + regName + "' does not refer to a constant.");
         }
         else {
           parsingError(child, "The <ref> node must contain only text.");
@@ -79,7 +77,7 @@ namespace ChimeraTK {
       // check for parameter
       if(child->get_name() == "par") {
         auto childChildList = child->get_children();
-        const xmlpp::TextNode* parNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
+        const auto* parNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(parNameNode && childChildList.size() == 1) {
           std::string parName = parNameNode->get_content();
           if(_parameters.find(parName) == _parameters.end()) {
@@ -89,9 +87,7 @@ namespace ChimeraTK {
           value += _parameters[parName];
           continue;
         }
-        else {
-          parsingError(child, "The <par> node must contain only text.");
-        }
+        parsingError(child, "The <par> node must contain only text.");
       }
 
       // neither found: throw error
@@ -163,7 +159,7 @@ namespace ChimeraTK {
   std::vector<T> LogicalNameMapParser::getValueVectorFromXmlSubnode(const xmlpp::Node* node,
       const std::string& subnodeName, BackendRegisterCatalogue<LNMBackendRegisterInfo> const& catalogue) {
     auto list = node->find(subnodeName);
-    if(list.size() < 1) {
+    if(list.empty()) {
       parsingError(node,
           "Expected at least one subnode of the type '" + subnodeName + "' below node '" + node->get_name() + "'.");
     }
@@ -171,11 +167,11 @@ namespace ChimeraTK {
     std::vector<T> valueVector;
 
     for(auto& child : list) {
-      const xmlpp::Element* childElement = dynamic_cast<const xmlpp::Element*>(child);
+      const auto* childElement = dynamic_cast<const xmlpp::Element*>(child);
       if(!childElement) continue; // ignore comments etc.
 
       // obtain index and resize valueVector if necessary
-      auto indexAttr = childElement->get_attribute("index");
+      auto* indexAttr = childElement->get_attribute("index");
       size_t index = 0;
       if(indexAttr) {
         index = std::stoi(indexAttr->get_value());
@@ -193,7 +189,7 @@ namespace ChimeraTK {
       }
 
       // check for plain text
-      const xmlpp::TextNode* textNode = dynamic_cast<const xmlpp::TextNode*>(childList.front());
+      const auto* textNode = dynamic_cast<const xmlpp::TextNode*>(childList.front());
       if(textNode) {
         std::string valAsString = textNode->get_content();
         valueVector[index] = stringToValue<T>(valAsString);
@@ -203,7 +199,7 @@ namespace ChimeraTK {
       // check for reference
       if(childList.front()->get_name() == "ref") {
         auto childChildList = childList.front()->get_children();
-        const xmlpp::TextNode* refNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
+        const auto* refNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
           if(!catalogue.hasRegister(regName)) {
@@ -212,7 +208,7 @@ namespace ChimeraTK {
           auto reg = catalogue.getBackendRegister(regName);
           // fetch the value of the target constant
           if(reg.targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
-            if(reg.plugins.size() > 0) {
+            if(!reg.plugins.empty()) {
               parsingError(childList.front(), "'" + regName + "' uses plugins which is not supported for <ref>");
             }
             // convert via string
@@ -226,9 +222,7 @@ namespace ChimeraTK {
             valueVector[index] = stringToValue<T>(strVal);
             continue;
           }
-          else {
-            parsingError(childList.front(), "Reference to '" + regName + "' does not refer to a constant.");
-          }
+          parsingError(childList.front(), "Reference to '" + regName + "' does not refer to a constant.");
         }
         else {
           parsingError(childList.front(), "The <ref> node must contain only text.");
@@ -237,7 +231,7 @@ namespace ChimeraTK {
 
       if(childList.front()->get_name() == "par") {
         auto childChildList = childList.front()->get_children();
-        const xmlpp::TextNode* parNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
+        const auto* parNameNode = dynamic_cast<const xmlpp::TextNode*>(childChildList.front());
         if(parNameNode && childChildList.size() == 1) {
           std::string parName = parNameNode->get_content();
           if(_parameters.find(parName) == _parameters.end()) {
@@ -246,9 +240,7 @@ namespace ChimeraTK {
           valueVector[index] = stringToValue<T>(_parameters[parName]);
           continue;
         }
-        else {
-          parsingError(childList.front(), "The <par> node must contain only text.");
-        }
+        parsingError(childList.front(), "The <par> node must contain only text.");
       }
 
       // neither found: throw error
@@ -277,7 +269,7 @@ namespace ChimeraTK {
     }
 
     // get root element
-    const auto root = parser.get_document()->get_root_node();
+    auto* const root = parser.get_document()->get_root_node();
     if(root->get_name() != "logicalNameMap") {
       parsingError(root, "Expected 'logicalNameMap' tag instead of: " + root->get_name());
     }
@@ -285,7 +277,7 @@ namespace ChimeraTK {
     // parsing loop
     for(const auto& child : root->get_children()) {
       // cast into element, ignore if not an element (e.g. comment)
-      const xmlpp::Element* element = dynamic_cast<const xmlpp::Element*>(child);
+      const auto* element = dynamic_cast<const xmlpp::Element*>(child);
       if(!element) continue;
 
       // parse the element
@@ -295,12 +287,12 @@ namespace ChimeraTK {
     return catalogue;
   }
 
-  void LogicalNameMapParser::parseElement(RegisterPath currentPath, const xmlpp::Element* element,
+  void LogicalNameMapParser::parseElement(const RegisterPath& currentPath, const xmlpp::Element* element,
       BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
     // module tag found: look for registers and sub-modules in module
     if(element->get_name() == "module") {
       // obtain name of the module
-      auto nameAttr = element->get_attribute("name");
+      auto* nameAttr = element->get_attribute("name");
       if(!nameAttr) {
         parsingError(element, "Missing name attribute of 'module' tag.");
       }
@@ -309,7 +301,7 @@ namespace ChimeraTK {
       // iterate over childs in module
       for(const auto& child : element->get_children()) {
         // cast into element, ignore if not an element (e.g. comment)
-        const xmlpp::Element* childElement = dynamic_cast<const xmlpp::Element*>(child);
+        const auto* childElement = dynamic_cast<const xmlpp::Element*>(child);
         if(!childElement) continue;
 
         // parse the element
@@ -323,7 +315,7 @@ namespace ChimeraTK {
       std::string type = element->get_name();
 
       // obtain name of logical register
-      auto nameAttr = element->get_attribute("name");
+      auto* nameAttr = element->get_attribute("name");
       if(!nameAttr) {
         parsingError(element, "Missing name attribute of '" + type + "' tag.");
       }
@@ -400,12 +392,12 @@ namespace ChimeraTK {
       // iterate over childs of the register to find plugins
       for(const auto& child : element->get_children()) {
         // cast into element, ignore if not an element (e.g. comment)
-        const xmlpp::Element* childElement = dynamic_cast<const xmlpp::Element*>(child);
+        const auto* childElement = dynamic_cast<const xmlpp::Element*>(child);
         if(!childElement) continue;
         if(childElement->get_name() != "plugin") continue; // look only for plugins
 
         // get name of plugin
-        auto pluginNameAttr = childElement->get_attribute("name");
+        auto* pluginNameAttr = childElement->get_attribute("name");
         if(!pluginNameAttr) {
           parsingError(childElement, "Missing name attribute of 'plugin' tag.");
         }
@@ -415,14 +407,14 @@ namespace ChimeraTK {
         std::map<std::string, std::string> parameters;
         for(const auto& paramchild : childElement->get_children()) {
           // cast into element, ignore if not an element (e.g. comment)
-          const xmlpp::Element* paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
+          const auto* paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
           if(!paramElement) continue;
           if(paramElement->get_name() != "parameter") {
             parsingError(paramElement, "Unexpected element '" + paramElement->get_name() + "' inside plugin tag.");
           }
 
           // get name of parameter
-          auto parameterNameAttr = paramElement->get_attribute("name");
+          auto* parameterNameAttr = paramElement->get_attribute("name");
           if(!pluginNameAttr) {
             parsingError(paramElement, "Missing name attribute of 'parameter' tag.");
           }

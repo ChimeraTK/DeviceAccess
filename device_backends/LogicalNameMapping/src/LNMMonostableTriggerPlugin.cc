@@ -8,7 +8,7 @@
 
 #include <thread>
 
-namespace ChimeraTK { namespace LNMBackend {
+namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
@@ -66,7 +66,7 @@ namespace ChimeraTK { namespace LNMBackend {
       }
     }
 
-    bool isReadable() const override { return false; }
+    [[nodiscard]] bool isReadable() const override { return false; }
 
     void doPreRead(TransferType) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MonostableTriggerPluginPlugin: Reading is not allowed.");
@@ -146,4 +146,4 @@ namespace ChimeraTK { namespace LNMBackend {
     return MonostableTriggerPlugin_Helper<UserType, TargetType>::decorateAccessor(
         target, _milliseconds, _active, _inactive);
   }
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

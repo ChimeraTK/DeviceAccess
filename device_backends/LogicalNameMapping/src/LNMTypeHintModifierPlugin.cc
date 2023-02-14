@@ -9,7 +9,7 @@
 
 namespace ChimeraTK::LNMBackend {
   TypeHintModifierPlugin::TypeHintModifierPlugin(
-      LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
+      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin<TypeHintModifierPlugin>(info) {
     try {
       std::string typeName = parameters.at("type");

@@ -83,8 +83,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  // FIXME #11279 Implement API breaking changes from linter warnings
+  // NOLINTBEGIN(performance-unnecessary-value-param)
   boost::shared_ptr<DeviceBackend> LogicalNameMappingBackend::createInstance(
       std::string /*address*/, std::map<std::string, std::string> parameters) {
+    // NOLINTEND(performance-unnecessary-value-param)
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("Map file name not specified.");
     }
@@ -215,7 +218,7 @@ namespace ChimeraTK {
         target_info = _catalogue_mutable.getRegister(lnmInfo.registerName);
         // target_info might also be affected by plugins. e.g. forceReadOnly plugin
         // we need to process plugin list of target register before taking over anything
-        LNMBackendRegisterInfo& i = static_cast<LNMBackendRegisterInfo&>(target_info.getImpl());
+        auto& i = static_cast<LNMBackendRegisterInfo&>(target_info.getImpl());
         for(auto& plugin : i.plugins) {
           plugin->updateRegisterInfo(_catalogue_mutable);
         }
@@ -368,7 +371,7 @@ namespace ChimeraTK {
   std::unordered_set<std::string> LogicalNameMappingBackend::getTargetDevices() const {
     std::unordered_set<std::string> ret;
     for(const auto& info : _catalogue_mutable) {
-      if(info.deviceName != "this" && info.deviceName != "") ret.insert(info.deviceName);
+      if(info.deviceName != "this" && !info.deviceName.empty()) ret.insert(info.deviceName);
     }
     return ret;
   }

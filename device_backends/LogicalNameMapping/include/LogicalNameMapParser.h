@@ -36,7 +36,7 @@ namespace ChimeraTK {
    protected:
     /** called inside parseFile() to parse an XML element and its sub-elements
      * recursively */
-    void parseElement(RegisterPath currentPath, const xmlpp::Element* element,
+    void parseElement(const RegisterPath& currentPath, const xmlpp::Element* element,
         BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue);
 
     /** throw a parsing error with more information */

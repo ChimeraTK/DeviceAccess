@@ -5,8 +5,9 @@
 
 #include "BackendFactory.h"
 
-namespace ChimeraTK { namespace LNMBackend {
-  DoubleBufferPlugin::DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters)
+namespace ChimeraTK::LNMBackend {
+  DoubleBufferPlugin::DoubleBufferPlugin(
+      const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters)
   : AccessorPlugin(info), _parameters(std::move(parameters)) {
     if(info.targetType == LNMBackendRegisterInfo::CHANNEL) {
       // we do not support redirectedChannel with doubleBuffer because it has no benefit and will cause
@@ -22,7 +23,7 @@ namespace ChimeraTK { namespace LNMBackend {
     static std::mutex readerCountMapMutex;
     std::string id;
     try {
-      id = parameters.at("enableDoubleBuffering");
+      id = _parameters.at("enableDoubleBuffering");
     }
     catch(std::out_of_range& ex) { // not relevant here since handled later anyway
     }
@@ -61,7 +62,7 @@ namespace ChimeraTK { namespace LNMBackend {
       const DoubleBufferPlugin& plugin, const UndecoratedParams& accessorParams)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target), _plugin(plugin) {
     boost::shared_ptr<DeviceBackend> dev;
-    auto& parameters = plugin._parameters;
+    const auto& parameters = plugin._parameters;
     try {
       if(plugin._targetDeviceName != "this") {
         dev = backend->_devices.at(plugin._targetDeviceName);
@@ -150,26 +151,32 @@ namespace ChimeraTK { namespace LNMBackend {
     _currentBuffer = _currentBufferNumberReg->accessData(0);
     // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use
     // _secondBufferReg (buffer 1)
-    if(_currentBuffer)
+    if(_currentBuffer) {
       _target->preRead(type);
-    else
+    }
+    else {
       _secondBufferReg->preRead(type);
+    }
   }
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doReadTransferSynchronously() {
-    if(_currentBuffer)
+    if(_currentBuffer) {
       _target->readTransfer();
-    else
+    }
+    else {
       _secondBufferReg->readTransfer();
+    }
   }
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    if(_currentBuffer)
+    if(_currentBuffer) {
       _target->postRead(type, hasNewData);
-    else
+    }
+    else {
       _secondBufferReg->postRead(type, hasNewData);
+    }
 
     {
       std::lock_guard lg{_plugin._readerCount->mutex};
@@ -191,20 +198,24 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     // set version and data validity of this object
     this->_versionNumber = {};
-    if(_currentBuffer)
+    if(_currentBuffer) {
       this->_dataValidity = _target->dataValidity();
-    else
+    }
+    else {
       this->_dataValidity = _secondBufferReg->dataValidity();
+    }
 
     if(!hasNewData) return;
 
     if(_currentBuffer) {
-      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i)
+      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_target->accessChannel(i));
+      }
     }
     else {
-      for(size_t i = 0; i < _secondBufferReg->getNumberOfChannels(); ++i)
+      for(size_t i = 0; i < _secondBufferReg->getNumberOfChannels(); ++i) {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_secondBufferReg->accessChannel(i));
+      }
     }
   }
 
@@ -227,4 +238,4 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     return &(otherDoubleBuffer->_plugin) == &_plugin;
   }
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

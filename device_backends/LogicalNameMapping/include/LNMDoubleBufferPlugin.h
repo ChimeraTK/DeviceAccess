@@ -16,7 +16,7 @@ namespace ChimeraTK::LNMBackend {
     friend class DoubleBufferAccessorDecorator;
 
    public:
-    DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters);
+    DoubleBufferPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
 
     void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
     template<typename UserType, typename TargetType>

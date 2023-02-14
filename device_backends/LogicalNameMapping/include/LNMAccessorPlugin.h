@@ -135,7 +135,7 @@ namespace ChimeraTK::LNMBackend {
   /** Multiplier Plugin: Multiply register's data with a constant factor */
   class MultiplierPlugin : public AccessorPlugin<MultiplierPlugin> {
    public:
-    MultiplierPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters);
+    MultiplierPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
     void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
     DataType getTargetDataType(DataType) const override { return DataType::float64; }
@@ -154,7 +154,7 @@ namespace ChimeraTK::LNMBackend {
   /** Math Plugin: Apply mathematical formula to register's data. The formula is parsed by the exprtk library. */
   class MathPlugin : public AccessorPlugin<MathPlugin> {
    public:
-    MathPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters);
+    MathPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
 
     void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
     DataType getTargetDataType(DataType) const override { return DataType::float64; }
@@ -227,7 +227,7 @@ namespace ChimeraTK::LNMBackend {
   /** ForceReadOnly Plugin: Forces a register to be read only. */
   class ForceReadOnlyPlugin : public AccessorPlugin<ForceReadOnlyPlugin> {
    public:
-    ForceReadOnlyPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters);
+    ForceReadOnlyPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
     void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
 
@@ -240,7 +240,7 @@ namespace ChimeraTK::LNMBackend {
   /** ForcePollingRead Plugin: Forces a register to not allow setting the AccessMode::wait_for_new_data flag. */
   class ForcePollingReadPlugin : public AccessorPlugin<ForcePollingReadPlugin> {
    public:
-    ForcePollingReadPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters);
+    ForcePollingReadPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
     void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
 
@@ -253,7 +253,7 @@ namespace ChimeraTK::LNMBackend {
   /** TypeHintModifier Plugin: Change the catalog type of the mapped register. No actual type conversion takes place */
   class TypeHintModifierPlugin : public AccessorPlugin<TypeHintModifierPlugin> {
    public:
-    TypeHintModifierPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters);
+    TypeHintModifierPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
     void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
 
