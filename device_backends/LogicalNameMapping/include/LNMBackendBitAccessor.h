@@ -20,10 +20,10 @@ namespace ChimeraTK {
   template<typename UserType>
   class LNMBackendBitAccessor : public NDRegisterAccessor<UserType> {
    public:
-    LNMBackendBitAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
+    LNMBackendBitAccessor(const boost::shared_ptr<DeviceBackend>& dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
-      _fixedPointConverter(registerPathName, 32, 0, 1) {
+      _fixedPointConverter(registerPathName, 32, 0, true) {
       // check for unknown flags
       flags.checkForUnknownFlags({AccessMode::raw});
       // check for illegal parameter combinations
@@ -81,7 +81,7 @@ namespace ChimeraTK {
       NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
       NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(false);
       // set the bit mask
-      _bitMask = 1 << info.bit;
+      _bitMask = size_t(1) << info.bit;
     }
 
     void doReadTransferSynchronously() override {
@@ -133,7 +133,7 @@ namespace ChimeraTK {
       _accessor->postWrite(type, _versionNumberTemp);
     }
 
-    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<const LNMBackendBitAccessor<UserType>>(other);
       if(!rhsCasted) return false;
       if(_registerPathName != rhsCasted->_registerPathName) return false;
@@ -141,17 +141,17 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool isReadOnly() const override {
+    [[nodiscard]] bool isReadOnly() const override {
       std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       return _accessor->isReadOnly();
     }
 
-    bool isReadable() const override {
+    [[nodiscard]] bool isReadable() const override {
       std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       return _accessor->isReadable();
     }
 
-    bool isWriteable() const override {
+    [[nodiscard]] bool isWriteable() const override {
       std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       return _accessor->isWriteable();
     }

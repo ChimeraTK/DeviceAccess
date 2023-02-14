@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "BackendRegisterCatalogue.h"
-#include "BackendRegisterInfoBase.h"
-#include "ForwardDeclarations.h"
-#include "RegisterInfo.h"
+// #include "BackendRegisterCatalogue.h"
+// #include "BackendRegisterInfoBase.h"
+// #include "ForwardDeclarations.h"
+// #include "RegisterInfo.h"
 #include "TransferElement.h"
 
 #include <boost/shared_ptr.hpp>
@@ -22,12 +22,12 @@ namespace ChimeraTK {
     template<typename T>
     struct ValueTable {
       std::vector<T> latestValue;
-      DataValidity latestValidity;
-      VersionNumber latestVersion;
+      DataValidity latestValidity{DataValidity::ok};
+      VersionNumber latestVersion{nullptr};
       struct QueuedValue {
         std::vector<T> value;
-        DataValidity validity;
-        VersionNumber version;
+        DataValidity validity{DataValidity::ok};
+        VersionNumber version{nullptr};
       };
       std::map<TransferElementID, cppext::future_queue<QueuedValue>> subscriptions;
     };

@@ -16,7 +16,7 @@ namespace ChimeraTK {
   template<typename UserType>
   class LNMBackendVariableAccessor : public NDRegisterAccessor<UserType> {
    public:
-    LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
+    LNMBackendVariableAccessor(const boost::shared_ptr<DeviceBackend>& dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     ~LNMBackendVariableAccessor() override;
@@ -27,13 +27,13 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override;
 
-    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override;
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override;
 
-    bool isReadOnly() const override;
+    [[nodiscard]] bool isReadOnly() const override;
 
-    bool isReadable() const override;
+    [[nodiscard]] bool isReadable() const override;
 
-    bool isWriteable() const override;
+    [[nodiscard]] bool isWriteable() const override;
 
     void doPreRead(TransferType) override;
 
@@ -80,7 +80,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  LNMBackendVariableAccessor<UserType>::LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev,
+  LNMBackendVariableAccessor<UserType>::LNMBackendVariableAccessor(const boost::shared_ptr<DeviceBackend>& dev,
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
   : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
     _wordOffsetInRegister(wordOffsetInRegister), _flags(flags) {

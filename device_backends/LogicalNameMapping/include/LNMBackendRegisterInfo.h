@@ -16,7 +16,7 @@ namespace ChimeraTK {
 
   namespace LNMBackend {
     class AccessorPluginBase;
-  }
+  } // namespace LNMBackend
 
   /** RegisterInfo structure for the LogicalNameMappingBackend */
   class LNMBackendRegisterInfo : public BackendRegisterInfoBase {
@@ -24,30 +24,30 @@ namespace ChimeraTK {
     /** Potential target types */
     enum TargetType { INVALID, REGISTER, CHANNEL, BIT, CONSTANT, VARIABLE };
 
-    /** constuctor: initialise values */
-    LNMBackendRegisterInfo() : targetType(TargetType::INVALID), supportedFlags({}) {}
+    /** constructor: initialise values */
+    LNMBackendRegisterInfo() = default;
     LNMBackendRegisterInfo(const LNMBackendRegisterInfo&) = default;
     LNMBackendRegisterInfo& operator=(const LNMBackendRegisterInfo& other) = default;
 
-    RegisterPath getRegisterName() const override { return name; }
+    [[nodiscard]] RegisterPath getRegisterName() const override { return name; }
 
-    unsigned int getNumberOfElements() const override { return length; }
+    [[nodiscard]] unsigned int getNumberOfElements() const override { return length; }
 
-    unsigned int getNumberOfChannels() const override { return nChannels; }
+    [[nodiscard]] unsigned int getNumberOfChannels() const override { return nChannels; }
 
-    const DataDescriptor& getDataDescriptor() const override { return _dataDescriptor; }
+    [[nodiscard]] const DataDescriptor& getDataDescriptor() const override { return _dataDescriptor; }
 
-    bool isReadable() const override { return readable; }
+    [[nodiscard]] bool isReadable() const override { return readable; }
 
-    bool isWriteable() const override { return writeable; }
+    [[nodiscard]] bool isWriteable() const override { return writeable; }
 
-    AccessModeFlags getSupportedAccessModes() const override { return supportedFlags; }
+    [[nodiscard]] AccessModeFlags getSupportedAccessModes() const override { return supportedFlags; }
 
     /** Name of the registrer */
     RegisterPath name;
 
     /** Type of the target */
-    TargetType targetType;
+    TargetType targetType{TargetType::INVALID};
 
     /** The target device alias */
     std::string deviceName;
@@ -56,19 +56,19 @@ namespace ChimeraTK {
     std::string registerName;
 
     /** The first index in the range */
-    unsigned int firstIndex;
+    unsigned int firstIndex{};
 
     /** The length of the range (i.e. number of indices) */
-    unsigned int length;
+    unsigned int length{};
 
     /** The channel of the target 2D register (if TargetType::CHANNEL) */
-    unsigned int channel;
+    unsigned int channel{};
 
     /** The bit of the target register (if TargetType::BIT) */
-    unsigned int bit;
+    unsigned int bit{};
 
     /** The number of channels of the logical register */
-    unsigned int nChannels;
+    unsigned int nChannels{};
 
     /** Data type of CONSTANT or VARIABLE type. */
     DataType valueType;
@@ -96,11 +96,11 @@ namespace ChimeraTK {
 
     /** Flag if the register is readable. Might be derived from the target
      * register */
-    bool readable;
+    bool readable{};
 
     /** Flag if the register is writeable. Might be derived from the target
      * register */
-    bool writeable;
+    bool writeable{};
 
     /** Supported AccessMode flags. Might be derived from the target register */
     AccessModeFlags supportedFlags;
