@@ -6,6 +6,7 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include "Exception.h"
 #include "IEEE754_SingleConverter.h"
 using namespace ChimeraTK;
 
