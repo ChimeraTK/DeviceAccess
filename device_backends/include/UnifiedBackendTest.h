@@ -1800,6 +1800,7 @@ namespace ChimeraTK {
 
   /**
    *  Test no async transfers until activateAsyncRead().
+   *  FIXME: This test is broken (see redmine ticket #11311)
    *  * \anchor UnifiedTest_TransferElement_B_8_5 \ref transferElement_B_8_5 "B.8.5"
    */
   template<typename VECTOR_OF_REGISTERS_T>
