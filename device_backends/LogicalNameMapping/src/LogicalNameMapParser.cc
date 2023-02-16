@@ -27,6 +27,11 @@ namespace ChimeraTK {
     std::string value;
     for(auto& child : childList) {
       // Check for CDATA node
+      if(!child) {
+        parsingError(child, "Got nullptr from parser library.");
+      }
+
+      // Check for CDATA node
       const auto* cdataNode = dynamic_cast<const xmlpp::CdataNode*>(child);
       if(cdataNode) {
         value += cdataNode->get_content();
