@@ -11,6 +11,7 @@
 #include <boost/bind/bind.hpp>
 
 #include <sstream>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -23,15 +24,13 @@ namespace ChimeraTK {
     if(serverVersion == 0) {
       return std::make_unique<RebotProtocol0>(c);
     }
-    else if(serverVersion == 1) {
+    if(serverVersion == 1) {
       return std::make_unique<RebotProtocol1>(c);
     }
-    else {
-      c->close();
-      std::stringstream errorMessage;
-      errorMessage << "Server protocol version " << serverVersion << " not supported!";
-      throw ChimeraTK::runtime_error(errorMessage.str());
-    }
+    c->close();
+    std::stringstream errorMessage;
+    errorMessage << "Server protocol version " << serverVersion << " not supported!";
+    throw ChimeraTK::runtime_error(errorMessage.str());
   }
 
   uint32_t getProtocolVersion(boost::shared_ptr<Rebot::Connection>& c) {
@@ -68,16 +67,20 @@ namespace ChimeraTK {
 
   RebotBackend::RebotBackend(
       std::string boardAddr, std::string port, std::string mapFileName, uint32_t connectionTimeout_sec)
-  : NumericAddressedBackend(mapFileName), _boardAddr(boardAddr), _port(port),
+  : NumericAddressedBackend(std::move(mapFileName)), _boardAddr(std::move(boardAddr)), _port(std::move(port)),
     _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
     _connection(boost::make_shared<Rebot::Connection>(_boardAddr, _port, connectionTimeout_sec)),
-    _protocolImplementor(), _lastSendTime(testable_rebot_sleep::now()),
-    _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),
-    _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex)) {}
+    _lastSendTime(testable_rebot_sleep::now()), _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),
+    _heartbeatThread([&]() { heartbeatLoop(_threadInformerMutex); }) {}
 
   RebotBackend::~RebotBackend() {
     { // extra scope for the lock guard
-      std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+      try {
+        std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+      }
+      catch(std::system_error&) {
+        std::terminate();
+      }
 
       // make sure the thread does not access any hardware when it gets the lock
       _threadInformerMutex->quitThread = true;
@@ -137,15 +140,18 @@ namespace ChimeraTK {
 
     _opened = false;
     _connection->close();
-    _protocolImplementor.reset(0);
+    _protocolImplementor.reset(nullptr);
   }
 
+  // FIXME #11279 Implement API breaking changes from linter warnings
+  // NOLINTBEGIN(performance-unnecessary-value-param)
   boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
       std::string /*address*/, std::map<std::string, std::string> parameters) {
-    if(parameters["ip"].size() == 0) {
+    // NOLINTEND(performance-unnecessary-value-param)
+    if(parameters["ip"].empty()) {
       throw ChimeraTK::logic_error("TMCB IP address not found in the parameter list");
     }
-    if(parameters["port"].size() == 0) {
+    if(parameters["port"].empty()) {
       throw ChimeraTK::logic_error("TMCB port number not found in the parameter list");
     }
 
@@ -161,7 +167,7 @@ namespace ChimeraTK {
     return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber, mapFileName, timeout));
   }
 
-  void RebotBackend::heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex) {
+  void RebotBackend::heartbeatLoop(const boost::shared_ptr<ThreadInformerMutex>& threadInformerMutex) {
     while(true) {
       try {
         // only send a heartbeat if the connection was inactive for half of the

@@ -80,7 +80,7 @@ namespace ChimeraTK {
     transferVectorToDataPtr(readData, dataLocation);
   }
 
-  void RebotProtocol0::sendRebotReadRequest(const uint32_t wordAddress, const uint32_t wordsToRead) {
+  void RebotProtocol0::sendRebotReadRequest(const uint32_t wordAddress, const uint32_t wordsToRead) const {
     unsigned int datasendSize = 3 * sizeof(int);
     std::vector<char> datasend(datasendSize);
     std::vector<uint32_t> packet(3);
@@ -90,7 +90,7 @@ namespace ChimeraTK {
     _tcpCommunicator->write(packet);
   }
 
-  void RebotProtocol0::transferVectorToDataPtr(std::vector<uint32_t> source, int32_t* destination) {
+  void RebotProtocol0::transferVectorToDataPtr(const std::vector<uint32_t>& source, int32_t* destination) {
     // FIXME: just use memcopy
     for(auto& i : source) {
       *destination = i;

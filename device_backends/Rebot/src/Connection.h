@@ -20,7 +20,7 @@ namespace ChimeraTK { namespace Rebot {
    public:
     /// Gets an IP address and port of the device but does not open the
     /// connection
-    Connection(const std::string& address, const std::string& port, uint32_t connectionTimeout_sec);
+    Connection(std::string address, std::string port, uint32_t connectionTimeout_sec);
 
     /// Opens a connection to the device.
     void open();
