@@ -355,14 +355,12 @@ namespace ChimeraTK {
               vtEntry.latestVersion = v; // store in case an accessor is created after calling activateAsyncRead
             }
             for(auto& sub : vtEntry.subscriptions) {
-              std::cout << "dummy content" << std::endl;
               try {
                 sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, vtEntry.latestVersion});
               }
               catch(std::system_error& e) {
-                std::cerr << "Caught system error: " << e.what() << std::endl;
-                // FIXME: what to do with it?
-                assert(false);
+                std::cerr << "Caught system error in activateAsyncRead(): " << e.what() << std::endl;
+                std::terminate();
               }
             }
           });
