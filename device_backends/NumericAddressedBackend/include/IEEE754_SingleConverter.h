@@ -75,7 +75,7 @@ namespace ChimeraTK {
     template<typename CookedType>
     uint32_t toRaw(CookedType cookedValue) const;
 
-    explicit IEEE754_SingleConverter(std::string = "") {}
+    explicit IEEE754_SingleConverter(const std::string& = "") {}
 
     // all IEEE754_SingleConverters are the same
     bool operator!=(const IEEE754_SingleConverter& /*other*/) const { return false; }
