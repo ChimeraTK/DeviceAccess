@@ -4,7 +4,7 @@
 
 #include "RegisterPath.h"
 
-namespace ChimeraTK { namespace numeric_address {
+namespace ChimeraTK::numeric_address {
 
   /** The numeric_address::BAR constant can be used to directly access registers
    * by numeric addresses, instead of using register names (e.g. when no map file
@@ -16,4 +16,4 @@ namespace ChimeraTK { namespace numeric_address {
    * arbitrary length of <lengthInBytes>
    */
   static const RegisterPath BAR("#");
-}} // namespace ChimeraTK::numeric_address
+} // namespace ChimeraTK::numeric_address

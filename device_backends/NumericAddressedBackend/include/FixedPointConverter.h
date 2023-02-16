@@ -13,11 +13,11 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
-#include <stdint.h>
 #include <string>
 
 namespace ChimeraTK {
@@ -40,7 +40,7 @@ namespace ChimeraTK {
      *    number of the respective number of bits
      *    (i.e. in signed 6 bit, 0 fractional bits 0x3F is -1)
      */
-    FixedPointConverter(
+    explicit FixedPointConverter(
         std::string variableName, unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
 
     /** Conversion function from type T to fixed point.
@@ -90,13 +90,13 @@ namespace ChimeraTK {
     }
 
     /** Read back the number of bits the converter is using. */
-    unsigned int getNBits() { return _nBits; }
+    unsigned int getNBits() const { return _nBits; }
 
     /** Read back the fractional bits the converter is using. */
-    int getFractionalBits() { return _fractionalBits; }
+    int getFractionalBits() const { return _fractionalBits; }
 
     /** Read back wether the conversion is using signed values. */
-    bool isSigned() { return _isSigned; }
+    bool isSigned() const { return _isSigned; }
 
     /** Reconfigure the fixed point converter with new type information */
     void reconfigure(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
@@ -151,7 +151,7 @@ namespace ChimeraTK {
     /// helper class to initialise coefficients etc. for all possible UserTypes
     class initCoefficients {
      public:
-      initCoefficients(FixedPointConverter* fpc) : _fpc(fpc) {}
+      explicit initCoefficients(FixedPointConverter* fpc) : _fpc(fpc) {}
 
       template<typename Pair>
       void operator()(Pair) const {
@@ -214,7 +214,7 @@ namespace ChimeraTK {
     struct Round {
       static S nearbyint(S s) { return round(s); }
 
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
     /** helper function to test if UserTyped value is negative without triggering a
@@ -225,6 +225,8 @@ namespace ChimeraTK {
     bool isNegativeUserType(UserType value) const;
 
     // helper function: force unused leading bits to 0 for positive or 1 for negative numbers
+    // NOLINTBEGIN(hicpp-signed-bitwise)
+    // Turn off the linter warning. Yes, we are fiddling with the bit interpretation here, that's the whole point.
     void padUnusedBits(int32_t& rawValue) const {
       if(!(rawValue & _signBitMask)) {
         rawValue &= _usedBitsMask;
@@ -233,10 +235,14 @@ namespace ChimeraTK {
         rawValue |= _unusedBitsMask;
       }
     }
+    // NOLINTEND(hicpp-signed-bitwise)
   };
 
   /**********************************************************************************************************************/
 
+  // FIXME: replace reinterpret_cast with bit_cast once C++20 is available for us.
+  // Until then, turn off the linter warning about reinterpret_cast
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
   template<typename UserType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
   void FixedPointConverter::vectorToCooked_impl<UserType, RAW_ITERATOR, COOKED_ITERATOR>::impl(
       const FixedPointConverter& fpc, const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end,
@@ -320,6 +326,7 @@ namespace ChimeraTK {
       }
     }
   }
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 
   /**********************************************************************************************************************/
 

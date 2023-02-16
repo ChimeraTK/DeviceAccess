@@ -21,7 +21,7 @@ namespace ChimeraTK {
         std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer =
             std::make_unique<NumericAddressedRegisterCatalogue>());
 
-    ~NumericAddressedBackend() override {}
+    ~NumericAddressedBackend() override = default;
 
     /**
      * Read function to be implemented by backends.

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -44,8 +45,8 @@ namespace ChimeraTK {
       Access dataAccess_, uint32_t interruptCtrlNumber_, uint32_t interruptNumber_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(elementPitchBits_), bar(bar_), address(address_),
     registerAccess(dataAccess_), interruptCtrlNumber(interruptCtrlNumber_), interruptNumber(interruptNumber_),
-    channels(channelInfo_) {
-    assert(channels.size() >= 1);
+    channels(std::move(channelInfo_)) {
+    assert(!channels.empty());
 
     // make sure . and / is treated as similar as possible
     pathName.setAltSeparator(".");
@@ -127,8 +128,8 @@ namespace ChimeraTK {
       if(width > 1) { // numeric type
 
         if(nFractionalBits > 0) {
-          size_t nDigits =
-              std::ceil(std::log10(std::pow(2, width))) + (signedFlag ? 1 : 0) + (nFractionalBits != 0 ? 1 : 0);
+          auto nDigits = static_cast<size_t>(
+              std::ceil(std::log10(std::pow(2, width))) + (signedFlag ? 1 : 0) + (nFractionalBits != 0 ? 1 : 0));
           size_t nFractionalDigits = std::ceil(std::log10(std::pow(2, nFractionalBits)));
 
           dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::numeric, // fundamentalType
@@ -137,7 +138,8 @@ namespace ChimeraTK {
               nDigits, nFractionalDigits, rawDataInfo);
         }
         else {
-          size_t nDigits = std::ceil(std::log10(std::pow(2, width + nFractionalBits))) + (signedFlag ? 1 : 0);
+          auto nDigits =
+              static_cast<size_t>(std::ceil(std::log10(std::pow(2, width + nFractionalBits))) + (signedFlag ? 1 : 0));
 
           dataDescriptor = DataDescriptor(DataDescriptor::FundamentalType::numeric, // fundamentalType
               true,                                                                 // isIntegral
