@@ -347,10 +347,8 @@ namespace ChimeraTK {
       bool isNegative = isNegativeUserType(cookedValue);
       if(isNegative && !_isSigned) return _minRawValue;
       if(isNegative) {
-        cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be
+        cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be used as UserType might be double
       }
-                                          // used as UserType might be double
-
       // cast into raw type
       auto rawValue = static_cast<uint32_t>(cookedValue);
 
