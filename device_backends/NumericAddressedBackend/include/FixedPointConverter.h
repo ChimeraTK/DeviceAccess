@@ -326,7 +326,7 @@ namespace ChimeraTK {
       }
     }
   }
-  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
   /**********************************************************************************************************************/
 
