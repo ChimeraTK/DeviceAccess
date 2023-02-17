@@ -38,7 +38,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   NumericAddressedRegisterInfo NumericAddressedBackend::getRegisterInfo(const RegisterPath& registerPathName) {
-    if(!registerPathName.startsWith(numeric_address::BAR)) {
+    if(!registerPathName.startsWith(numeric_address::BAR())) {
       return _registerMap.getBackendRegister(registerPathName);
     }
     /// FIXME move into catalogue implementation, then make return type a const reference!

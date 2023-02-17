@@ -205,7 +205,7 @@ namespace ChimeraTK {
     auto path = registerPathName;
     path.setAltSeparator(".");
 
-    if(path.startsWith(numeric_address::BAR)) {
+    if(path.startsWith(numeric_address::BAR())) {
       // special treatment for numeric addresses
       auto components = path.getComponents();
       if(components.size() != 3) {
@@ -233,7 +233,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   [[nodiscard]] bool NumericAddressedRegisterCatalogue::hasRegister(const RegisterPath& registerPathName) const {
-    if(registerPathName.startsWith(numeric_address::BAR)) {
+    if(registerPathName.startsWith(numeric_address::BAR())) {
       /// TODO check whether given address is correct
       return true;
     }

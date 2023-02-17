@@ -74,21 +74,23 @@ namespace ChimeraTK {
     _heartbeatThread([&]() { heartbeatLoop(_threadInformerMutex); }) {}
 
   RebotBackend::~RebotBackend() {
-    { // extra scope for the lock guard
-      try {
+    try {
+      { // extra scope for the lock guard
         std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
-      }
-      catch(std::system_error&) {
-        std::terminate();
-      }
+        // make sure the thread does not access any hardware when it gets the lock
+        _threadInformerMutex->quitThread = true;
 
-      // make sure the thread does not access any hardware when it gets the lock
-      _threadInformerMutex->quitThread = true;
-
-    } // end of the lock guard scope. We have to release the lock before waiting
-    // for the thread to join
-    _heartbeatThread.interrupt();
-    _heartbeatThread.join();
+      } // end of the lock guard scope. We have to release the lock before waiting
+      // for the thread to join
+      _heartbeatThread.interrupt();
+      _heartbeatThread.join();
+    }
+    catch(std::system_error&) {
+      std::terminate();
+    }
+    catch(boost::thread_interrupted&) {
+      std::terminate();
+    }
   }
 
   bool RebotBackend::isFunctional() const {
