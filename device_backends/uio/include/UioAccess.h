@@ -42,7 +42,7 @@ namespace ChimeraTK {
     uint64_t readUint64HexFromFile(std::string fileName);
 
    public:
-    UioAccess(std::string deviceFilePath);
+    explicit UioAccess(const std::string& deviceFilePath);
     ~UioAccess();
 
     /// @brief Opens UIO device for read and write operations and interrupt handling.

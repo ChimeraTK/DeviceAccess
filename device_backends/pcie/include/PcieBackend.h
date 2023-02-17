@@ -56,7 +56,7 @@ namespace ChimeraTK {
     /** constructor called through createInstance to create device object */
 
    public:
-    explicit PcieBackend(std::string deviceNodeName, std::string mapFileName = "");
+    explicit PcieBackend(std::string deviceNodeName, const std::string& mapFileName = "");
     ~PcieBackend() override;
 
     void open() override;

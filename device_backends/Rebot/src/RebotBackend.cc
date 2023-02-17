@@ -66,8 +66,8 @@ namespace ChimeraTK {
   }
 
   RebotBackend::RebotBackend(
-      std::string boardAddr, std::string port, std::string mapFileName, uint32_t connectionTimeout_sec)
-  : NumericAddressedBackend(std::move(mapFileName)), _boardAddr(std::move(boardAddr)), _port(std::move(port)),
+      std::string boardAddr, std::string port, const std::string& mapFileName, uint32_t connectionTimeout_sec)
+  : NumericAddressedBackend(mapFileName), _boardAddr(std::move(boardAddr)), _port(std::move(port)),
     _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
     _connection(boost::make_shared<Rebot::Connection>(_boardAddr, _port, connectionTimeout_sec)),
     _lastSendTime(testable_rebot_sleep::now()), _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),

@@ -123,13 +123,13 @@ namespace ChimeraTK {
     /// is faster than division in the floating point unit.
     double _inverseFractionalBitsCoefficient;
 
-    uint32_t _signBitMask{};        ///< The bit which represents the sign
-    uint32_t _usedBitsMask{};       ///< The bits which are used
-    uint32_t _unusedBitsMask{};     ///< The bits which are not used
-    uint32_t _bitShiftMask{};       ///< Mask with N most significant bits set, where N is
-                                    ///< the number of factional bits
-    uint32_t _bitShiftMaskSigned{}; ///< Mask with N most significant bits set, where N
-                                    ///< is the number of factional bits + 1 if signed
+    int32_t _signBitMask{};        ///< The bit which represents the sign
+    int32_t _usedBitsMask{};       ///< The bits which are used
+    int32_t _unusedBitsMask{};     ///< The bits which are not used
+    int32_t _bitShiftMask{};       ///< Mask with N most significant bits set, where N is
+                                   ///< the number of factional bits
+    int32_t _bitShiftMaskSigned{}; ///< Mask with N most significant bits set, where N
+                                   ///< is the number of factional bits + 1 if signed
 
     int32_t _maxRawValue{}; ///< The maximum possible fixed point value
     int32_t _minRawValue{}; ///< The minimum possible fixed point value
@@ -372,7 +372,7 @@ namespace ChimeraTK {
     // cases (e.g. number of fractional bits >= number of bits in total).
     // Positive overflow cannot happen due to the rangecheck above (the negative
     // branch has one more possible value).
-    uint32_t raw;
+    int32_t raw;
     try {
       if(_isSigned) {
         typedef boost::numeric::converter<int32_t, double, boost::numeric::conversion_traits<int32_t, double>,
@@ -384,7 +384,7 @@ namespace ChimeraTK {
         typedef boost::numeric::converter<uint32_t, double, boost::numeric::conversion_traits<uint32_t, double>,
             boost::numeric::def_overflow_handler, Round<double>>
             converter_unsigned;
-        raw = converter_unsigned::convert(d_cooked);
+        raw = static_cast<int32_t>(converter_unsigned::convert(d_cooked));
       }
     }
     catch(boost::numeric::negative_overflow& e) {
@@ -392,6 +392,7 @@ namespace ChimeraTK {
     }
 
     // apply bit mask
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return raw & _usedBitsMask;
   }
 

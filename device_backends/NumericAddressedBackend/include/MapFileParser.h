@@ -90,13 +90,13 @@ namespace ChimeraTK {
      * Checks whether the register name does not contain the special prefixes marking multiplexed registers and
      * sequences etc.
      */
-    bool isScalarOr1D(const RegisterPath& pathName);
+    static bool isScalarOr1D(const RegisterPath& pathName);
 
     /**
      * Checks whether the register name contains the prefix for a multiplexed register (but not for the individual
      * sequences, so only the "main" entry matches).
      */
-    bool is2D(const RegisterPath& pathName);
+    static bool is2D(const RegisterPath& pathName);
 
     /**
      * Checks whether the register name contains the prefix for a multiplexed register (but not for the individual
@@ -107,12 +107,12 @@ namespace ChimeraTK {
     /**
      * Generate sequence name from main entry for multiplexed registers
      */
-    RegisterPath makeSequenceName(const RegisterPath& pathName, size_t index);
+    static RegisterPath makeSequenceName(const RegisterPath& pathName, size_t index);
 
     /**
      * Generate 2D register name from main entry for multiplexed registers
      */
-    RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
+    static RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
 
     /**
      * Creates the two RegisterInfos that belong to a 2D multiplexed area, with a prefix according to the old or

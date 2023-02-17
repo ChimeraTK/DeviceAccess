@@ -56,7 +56,7 @@ namespace ChimeraTK {
     unsigned int _connectionTimeout;
 
    public:
-    RebotBackend(std::string boardAddr, std::string port, std::string mapFileName = "",
+    RebotBackend(std::string boardAddr, std::string port, const std::string& mapFileName = "",
         uint32_t connectionTimeout_sec = DEFAULT_CONNECTION_TIMEOUT_sec);
     ~RebotBackend() override;
     /// The function opens the connection to the device

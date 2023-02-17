@@ -23,9 +23,9 @@
 
 namespace ChimeraTK {
 
-  PcieBackend::PcieBackend(std::string deviceNodeName, std::string mapFileName)
-  : NumericAddressedBackend(std::move(mapFileName)), _deviceID(0), _ioctlPhysicalSlot(0), _ioctlDriverVersion(0),
-    _ioctlDMA(0), _deviceNodeName(std::move(deviceNodeName)) {}
+  PcieBackend::PcieBackend(std::string deviceNodeName, const std::string& mapFileName)
+  : NumericAddressedBackend(mapFileName), _deviceID(0), _ioctlPhysicalSlot(0), _ioctlDriverVersion(0), _ioctlDMA(0),
+    _deviceNodeName(std::move(deviceNodeName)) {}
 
   PcieBackend::~PcieBackend() {
     close();
