@@ -8,6 +8,10 @@
 #include <signal.h>
 #include <string>
 #include <unistd.h>
+#include <errno.h>
+#include <iostream>
+#include <cstring>
+#include <pwd.h>
 
 bool processExists(unsigned pid) {
   return !kill((pid_t)pid, 0);
@@ -18,9 +22,17 @@ unsigned getOwnPID(void) {
 }
 
 std::string getUserName(void) {
-  auto* login = getlogin();
-  if(login == nullptr) {
-    return "**unknown*user*name**";
+  errno = 0;
+  auto *pwent = getpwuid(geteuid());
+  auto savedErr = errno;
+
+  if (pwent == nullptr) {
+    // pwent == nullptr and errno == 0 is a valid scenario - There was no error, but the system also
+    // could not find the corresponding user name.
+    if(savedErr != 0) {
+        std::cout << "Failed to lookup user name, expect issues: " << strerror(savedErr) << std::endl;
+    }
+    return std::string{"**unknown*user*name**"};
   }
-  return std::string(login);
+  return std::string{pwent->pw_name};
 }
