@@ -31,7 +31,7 @@ namespace ChimeraTK {
 
     //  protected:
     boost::shared_ptr<Rebot::Connection> _tcpCommunicator;
-    void fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords, int32_t* dataLocation);
+    void fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords, int32_t* dataLocation) const;
     void sendRebotReadRequest(const uint32_t wordAddress, const uint32_t wordsToRead) const;
     static void transferVectorToDataPtr(const std::vector<uint32_t>& source, int32_t* destination);
   };
