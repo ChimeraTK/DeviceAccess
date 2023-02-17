@@ -5,13 +5,15 @@
 
 #include "Exception.h"
 
+#include <utility>
+
 namespace ChimeraTK {
 
   const int FixedPointConverter::zero = 0;
 
   FixedPointConverter::FixedPointConverter(
       std::string variableName, unsigned int nBits, int fractionalBits, bool isSignedFlag)
-  : _variableName(variableName), _nBits(nBits), _fractionalBits(fractionalBits), _isSigned(isSignedFlag),
+  : _variableName(std::move(variableName)), _nBits(nBits), _fractionalBits(fractionalBits), _isSigned(isSignedFlag),
     _fractionalBitsCoefficient(pow(2., -fractionalBits)), _inverseFractionalBitsCoefficient(pow(2., fractionalBits)) {
     reconfigure(nBits, fractionalBits, isSignedFlag);
   }
@@ -81,10 +83,8 @@ namespace ChimeraTK {
       if(_isSigned) {
         return toRaw(std::stoi(cookedValue));
       }
-      else {
-        return toRaw(static_cast<uint32_t>(std::stoul(cookedValue))); // on some compilers, long might be a
-                                                                      // different type than int...
-      }
+      return toRaw(static_cast<uint32_t>(std::stoul(cookedValue))); // on some compilers, long might be a
+                                                                    // different type than int...
     }
     else {
       return toRaw(std::stod(cookedValue));
@@ -96,9 +96,7 @@ namespace ChimeraTK {
     if((bool)cookedValue) { // use integer conversion
       return 1.0;
     }
-    else {
-      return 0.0;
-    }
+    return 0.0;
   }
 
   template<>

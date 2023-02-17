@@ -19,7 +19,7 @@ namespace ChimeraTK {
       _transferGroup->read();
 
       for(auto& var : _asyncVariables) {
-        auto numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());
+        auto* numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());
         assert(numericAddressAsyncVariable);
         numericAddressAsyncVariable->fillSendBuffer(ver);
         var.second->send(); // send function from  the AsyncVariable base class
@@ -41,7 +41,7 @@ namespace ChimeraTK {
       _transferGroup->read();
 
       for(auto& var : _asyncVariables) {
-        auto numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());
+        auto* numericAddressAsyncVariable = dynamic_cast<NumericAddressedAsyncVariable*>(var.second.get());
         assert(numericAddressAsyncVariable);
         numericAddressAsyncVariable->fillSendBuffer(ver);
         var.second->activateAndSend(); // function from  the AsyncVariable base class

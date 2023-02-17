@@ -7,6 +7,7 @@
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "TransferGroup.h"
 
+#include <memory>
 #include <mutex>
 
 namespace ChimeraTK {
@@ -51,7 +52,7 @@ namespace ChimeraTK {
         // all asyncVariables have been unsubscribed - we can finally remove the TransferGroup
         // This is important since it's elements still keep shared pointers to the backend, creating a shared-ptr loop
         // replace it by a new TransferGroup just in case another async variable would be created later
-        _transferGroup.reset(new TransferGroup);
+        _transferGroup = std::make_unique<TransferGroup>();
       }
     }
     // unique_ptr because we want to delete it manually
@@ -68,7 +69,7 @@ namespace ChimeraTK {
      *  whether the variable is active. If the variable is active all new subscribers will automatically
      *  be activated and immediately get their initial value.
      */
-    NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
+    explicit NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
 
     boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
 

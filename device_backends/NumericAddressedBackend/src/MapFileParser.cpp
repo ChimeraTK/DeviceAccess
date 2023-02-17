@@ -65,7 +65,7 @@ namespace ChimeraTK {
         auto registerInfo = NumericAddressedRegisterInfo(pl.pathName, pl.nElements, pl.address, pl.nBytes, pl.bar,
             pl.width, pl.nFractionalBits, pl.signedFlag, pl.registerAccess, pl.type, pl.interruptCtrlNumber,
             pl.interruptNumber);
-        pmap.addRegister(std::move(registerInfo));
+        pmap.addRegister(registerInfo);
       }
       else if(is2D(pl.pathName)) {
         handle2D(pl);

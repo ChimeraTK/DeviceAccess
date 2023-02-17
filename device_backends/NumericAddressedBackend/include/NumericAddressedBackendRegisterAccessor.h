@@ -27,8 +27,8 @@ namespace ChimeraTK {
   template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor : public NDRegisterAccessor<UserType> {
    public:
-    NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
+    NumericAddressedBackendRegisterAccessor(const boost::shared_ptr<DeviceBackend>& dev,
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : NDRegisterAccessor<UserType>(registerPathName, flags), _dataConverter(registerPathName),
       _dev(boost::dynamic_pointer_cast<NumericAddressedBackend>(dev)) {
       // check for unknown flags
@@ -90,8 +90,8 @@ namespace ChimeraTK {
 
       // create low-level transfer element handling the actual data transfer to the hardware with raw data
       assert(_registerInfo.elementPitchBits % 8 == 0);
-      _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev, _registerInfo.bar, _registerInfo.address,
-          _registerInfo.nElements * _registerInfo.elementPitchBits / 8));
+      _rawAccessor = boost::make_shared<NumericAddressedLowLevelTransferElement>(
+          _dev, _registerInfo.bar, _registerInfo.address, _registerInfo.nElements * _registerInfo.elementPitchBits / 8);
 
       // allocated the buffers
       NDRegisterAccessor<UserType>::buffer_2D.resize(1);
@@ -140,7 +140,7 @@ namespace ChimeraTK {
       }
       else {
         // optimised variant for raw transfers (unless type is a string)
-        auto itsrc = _rawAccessor->begin(_registerInfo.address);
+        auto* itsrc = _rawAccessor->begin(_registerInfo.address);
         auto itdst = buffer_2D[0].begin();
         memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(int32_t));
       }
@@ -175,7 +175,7 @@ namespace ChimeraTK {
       }
       else {
         // optimised variant for raw transfers (unless type is a string)
-        auto itdst = _rawAccessor->begin(_registerInfo.address);
+        auto* itdst = _rawAccessor->begin(_registerInfo.address);
         auto itsrc = buffer_2D[0].begin();
         memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(UserType));
       }
@@ -194,7 +194,7 @@ namespace ChimeraTK {
       _rawAccessor->postWrite(type, versionNumber);
     }
 
-    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<
           const NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>>(other);
       if(!rhsCasted) return false;
@@ -204,11 +204,11 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool isReadOnly() const override { return isReadable() && !isWriteable(); }
+    [[nodiscard]] bool isReadOnly() const override { return isReadable() && !isWriteable(); }
 
-    bool isReadable() const override { return _registerInfo.isReadable(); }
+    [[nodiscard]] bool isReadable() const override { return _registerInfo.isReadable(); }
 
-    bool isWriteable() const override { return _registerInfo.isWriteable(); }
+    [[nodiscard]] bool isWriteable() const override { return _registerInfo.isWriteable(); }
 
     template<typename COOKED_TYPE>
     COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample);

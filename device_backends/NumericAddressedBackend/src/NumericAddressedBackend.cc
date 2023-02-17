@@ -16,15 +16,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   NumericAddressedBackend::NumericAddressedBackend(
-      std::string mapFileName, std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer)
+      const std::string& mapFileName, std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer)
   : _registerMapPointer(std::move(registerMapPointer)), _registerMap(*_registerMapPointer) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
-    if(mapFileName != "") {
+    if(!mapFileName.empty()) {
       MapFileParser parser;
       std::tie(_registerMap, _metadataCatalogue) = parser.parse(mapFileName);
 
       // create all the interrupt dispatchers that are described in the map file
-      for(auto& interruptController : _registerMap.getListOfInterrupts()) {
+      for(const auto& interruptController : _registerMap.getListOfInterrupts()) {
         // interruptController is a pair<int, set<int>>, containing the controller number and a set of associated
         // interrupts
         for(auto interruptNumber : interruptController.second) {
@@ -41,29 +41,27 @@ namespace ChimeraTK {
     if(!registerPathName.startsWith(numeric_address::BAR)) {
       return _registerMap.getBackendRegister(registerPathName);
     }
-    else {
-      /// FIXME move into catalogue implementation, then make return type a const reference!
+    /// FIXME move into catalogue implementation, then make return type a const reference!
 
-      auto components = registerPathName.getComponents();
-      if(components.size() != 3) {
-        throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
-      }
-      auto bar = std::stoi(components[1]);
-      size_t pos = components[2].find_first_of("*");
-      auto address = std::stoi(components[2].substr(0, pos));
-      size_t nBytes;
-      if(pos != std::string::npos) {
-        nBytes = std::stoi(components[2].substr(pos + 1));
-      }
-      else {
-        nBytes = sizeof(int32_t);
-      }
-      auto nElements = nBytes / sizeof(int32_t);
-      if(nBytes == 0 || nBytes % sizeof(int32_t) != 0) {
-        throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
-      }
-      return NumericAddressedRegisterInfo(registerPathName, nElements, address, nBytes, bar);
+    auto components = registerPathName.getComponents();
+    if(components.size() != 3) {
+      throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
     }
+    auto bar = std::stoi(components[1]);
+    size_t pos = components[2].find_first_of("*");
+    auto address = std::stoi(components[2].substr(0, pos));
+    size_t nBytes;
+    if(pos != std::string::npos) {
+      nBytes = std::stoi(components[2].substr(pos + 1));
+    }
+    else {
+      nBytes = sizeof(int32_t);
+    }
+    auto nElements = nBytes / sizeof(int32_t);
+    if(nBytes == 0 || nBytes % sizeof(int32_t) != 0) {
+      throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
+    }
+    return NumericAddressedRegisterInfo(registerPathName, nElements, address, nBytes, bar);
   }
 
   /********************************************************************************************************************/
