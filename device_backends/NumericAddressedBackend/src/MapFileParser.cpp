@@ -90,7 +90,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   std::pair<NumericAddressedRegisterInfo::Type, int> MapFileParser::getTypeAndNFractionalBits(
-      std::string bitInterpretation, unsigned int width) {
+      const std::string& bitInterpretation, unsigned int width) {
     if(width == 0) return {NumericAddressedRegisterInfo::Type::VOID, 0};
     if(bitInterpretation == "IEEE754") return {NumericAddressedRegisterInfo::Type::IEEE754, 0};
     if(bitInterpretation == "ASCII") return {NumericAddressedRegisterInfo::Type::ASCII, 0};
@@ -118,7 +118,7 @@ namespace ChimeraTK {
     unsigned int interruptNumber = 0;
     accessTypeStr.erase(pos, strToFind.length());
 
-    auto delimiterPos = accessTypeStr.find(":");
+    auto delimiterPos = accessTypeStr.find(':');
     if(delimiterPos != std::string::npos) {
       std::string interruptCtrlNumberStr = accessTypeStr.substr(0, delimiterPos);
       std::string interrupNumberStr = accessTypeStr.substr(delimiterPos + 1);
@@ -140,9 +140,10 @@ namespace ChimeraTK {
             interrupNumberStr + "', caught exception: " + e.what());
       }
     }
-    else
+    else {
       throw ChimeraTK::logic_error(
           std::string("Map file error in accessString: Delimiter ':' not found in INTERRPUT description "));
+    }
 
     return {true, {interruptCtrlNumber, interruptNumber}};
   }
@@ -155,15 +156,17 @@ namespace ChimeraTK {
     //
     // if type is VOID, access mode cannot me read only
     if(registerType == NumericAddressedRegisterInfo::Type::VOID &&
-        registerAccessMode == NumericAddressedRegisterInfo::Access::READ_ONLY)
+        registerAccessMode == NumericAddressedRegisterInfo::Access::READ_ONLY) {
       throw ChimeraTK::logic_error(std::string("Map file error. Register Type is VOID and access mode is READ only. "));
+    }
     //
     // if register type is VOID and push-type. then all fields must be '0'
     if(registerType == NumericAddressedRegisterInfo::Type::VOID &&
         registerAccessMode == NumericAddressedRegisterInfo::Access::INTERRUPT) {
-      if(width || nElements || address || nBytes || bar || nFractionalBits || signedFlag)
+      if(width || nElements || address || nBytes || bar || nFractionalBits || signedFlag) {
         throw ChimeraTK::logic_error(
             std::string("Map file error. Register Type is VOID (width field set to 0). All other fields must be '0'."));
+      }
     }
   }
 
@@ -194,7 +197,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  MapFileParser::ParsedLine MapFileParser::parseLine(std::string line) {
+  MapFileParser::ParsedLine MapFileParser::parseLine(const std::string& line) {
     ParsedLine pl;
 
     std::istringstream is;
@@ -272,9 +275,10 @@ namespace ChimeraTK {
         else if(accessString == "WO") {
           pl.registerAccess = NumericAddressedRegisterInfo::Access::WRITE_ONLY;
         }
-        else
+        else {
           throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " +
               std::to_string(line_nr) + ": invalid data access");
+        }
       }
     }
 
@@ -342,9 +346,10 @@ namespace ChimeraTK {
     for(auto& [key, value] : parsedLinesMap) {
       if(key.startsWith(pl.pathName) and pl.pathName.length() < key.length()) {
         // First sanity check, address must not be smaller than start address
-        if(value.address < pl.address)
+        if(value.address < pl.address) {
           throw ChimeraTK::logic_error(
               "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
+        }
         channelLines.push_back(value);
       }
     }
@@ -411,9 +416,10 @@ namespace ChimeraTK {
     while(true) {
       auto it = parsedLinesMap.find(makeSequenceName(pl.pathName, channelLines.size()));
       if(it == parsedLinesMap.end()) break;
-      if(it->second.address < pl.address)
+      if(it->second.address < pl.address) {
         throw ChimeraTK::logic_error(
             "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
+      }
       channelLines.push_back(it->second);
     }
 

@@ -86,9 +86,7 @@ namespace ChimeraTK {
       return toRaw(static_cast<uint32_t>(std::stoul(cookedValue))); // on some compilers, long might be a
                                                                     // different type than int...
     }
-    else {
-      return toRaw(std::stod(cookedValue));
-    }
+    return toRaw(std::stod(cookedValue));
   }
 
   template<>

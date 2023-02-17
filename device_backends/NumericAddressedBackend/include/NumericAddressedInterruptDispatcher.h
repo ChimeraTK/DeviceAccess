@@ -41,7 +41,7 @@ namespace ChimeraTK {
 
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(
-        boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive);
+        const boost::shared_ptr<DeviceBackend>& backend, AccessorInstanceDescriptor const& descriptor, bool isActive);
 
     // bool prepareActivate(VersionNumber const& v) override;
     VersionNumber activate() override;
@@ -86,7 +86,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   std::unique_ptr<AsyncVariable> NumericAddressedInterruptDispatcher::createAsyncVariable(
-      boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive) {
+      const boost::shared_ptr<DeviceBackend>& backend, AccessorInstanceDescriptor const& descriptor, bool isActive) {
     auto synchronousFlags = descriptor.flags;
     synchronousFlags.remove(AccessMode::wait_for_new_data);
     // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.

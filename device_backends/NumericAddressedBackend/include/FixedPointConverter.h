@@ -123,16 +123,16 @@ namespace ChimeraTK {
     /// is faster than division in the floating point unit.
     double _inverseFractionalBitsCoefficient;
 
-    int32_t _signBitMask;        ///< The bit which represents the sign
-    int32_t _usedBitsMask;       ///< The bits which are used
-    int32_t _unusedBitsMask;     ///< The bits which are not used
-    int32_t _bitShiftMask;       ///< Mask with N most significant bits set, where N is
-                                 ///< the number of factional bits
-    int32_t _bitShiftMaskSigned; ///< Mask with N most significant bits set, where N
-                                 ///< is the number of factional bits + 1 if signed
+    uint32_t _signBitMask{};        ///< The bit which represents the sign
+    uint32_t _usedBitsMask{};       ///< The bits which are used
+    uint32_t _unusedBitsMask{};     ///< The bits which are not used
+    uint32_t _bitShiftMask{};       ///< Mask with N most significant bits set, where N is
+                                    ///< the number of factional bits
+    uint32_t _bitShiftMaskSigned{}; ///< Mask with N most significant bits set, where N
+                                    ///< is the number of factional bits + 1 if signed
 
-    int32_t _maxRawValue; ///< The maximum possible fixed point value
-    int32_t _minRawValue; ///< The minimum possible fixed point value
+    int32_t _maxRawValue{}; ///< The maximum possible fixed point value
+    int32_t _minRawValue{}; ///< The minimum possible fixed point value
 
     /// maximum cooked values (depending on user type)
     userTypeMap _maxCookedValues;
@@ -226,6 +226,7 @@ namespace ChimeraTK {
 
     // helper function: force unused leading bits to 0 for positive or 1 for negative numbers
     // NOLINTBEGIN(hicpp-signed-bitwise)
+    // NOLINTBEGIN(bugprone-narrowing-conversions)
     // Turn off the linter warning. Yes, we are fiddling with the bit interpretation here, that's the whole point.
     void padUnusedBits(int32_t& rawValue) const {
       if(!(rawValue & _signBitMask)) {
@@ -235,6 +236,7 @@ namespace ChimeraTK {
         rawValue |= _unusedBitsMask;
       }
     }
+    // NOLINTEND(bugprone-narrowing-conversions)
     // NOLINTEND(hicpp-signed-bitwise)
   };
 
@@ -276,14 +278,14 @@ namespace ChimeraTK {
         break;
       }
       case 7: { // _fpc->_nBits == 16 && _fpc->_fractionalBits < 0  && _fpc->_fractionalBits > -16 && !_fpc->_isSigned
-        const uint32_t f = fpc._fractionalBitsCoefficient;
+        const auto f = static_cast<uint32_t>(fpc._fractionalBitsCoefficient);
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
           return numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&rawValue)));
         });
         break;
       }
       case 8: { //  _fpc->_nBits == 16 && _fpc->_fractionalBits < 0 && _fpc->_fractionalBits > -16 && _fpc->_isSigned
-        const int32_t f = fpc._fractionalBitsCoefficient;
+        const auto f = static_cast<int32_t>(fpc._fractionalBitsCoefficient);
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
           return numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&rawValue)));
         });
@@ -358,7 +360,7 @@ namespace ChimeraTK {
       }
 
       // return with bit mask applied
-      return rawValue & _usedBitsMask;
+      return rawValue & static_cast<uint32_t>(_usedBitsMask);
     }
     // convert into double and scale by fractional bit coefficient
     double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);

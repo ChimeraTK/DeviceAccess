@@ -48,7 +48,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("Illegal numeric address: '" + (registerPathName) + "'");
     }
     auto bar = std::stoi(components[1]);
-    size_t pos = components[2].find_first_of("*");
+    size_t pos = components[2].find_first_of('*');
     auto address = std::stoi(components[2].substr(0, pos));
     size_t nBytes;
     if(pos != std::string::npos) {
@@ -129,9 +129,7 @@ namespace ChimeraTK {
       startInterruptHandlingThread(registerInfo.interruptCtrlNumber, registerInfo.interruptNumber);
       return newSubscriber;
     }
-    else {
-      return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
-    }
+    return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
   }
 
   /********************************************************************************************************************/
@@ -205,7 +203,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void NumericAddressedBackend::activateAsyncRead() noexcept {
-    for(auto& it : _interruptDispatchers) {
+    for(const auto& it : _interruptDispatchers) {
       it.second->activate();
     }
   }
@@ -218,7 +216,7 @@ namespace ChimeraTK {
       throw ChimeraTK::runtime_error("NumericAddressedBackend is in exception state.");
     }
     catch(...) {
-      for(auto& it : _interruptDispatchers) {
+      for(const auto& it : _interruptDispatchers) {
         it.second->sendException(std::current_exception());
       }
     }
