@@ -54,8 +54,9 @@
   template<typename T>                                                                                                 \
   class functionName##_functionSignature : public boost::function<__VA_ARGS__> {                                       \
    public:                                                                                                             \
-    boost::function<__VA_ARGS__>& operator=(const boost::function<__VA_ARGS__>& rhs) {                                 \
-      return boost::function<__VA_ARGS__>::operator=(rhs);                                                             \
+    functionName##_functionSignature& operator=(const boost::function<__VA_ARGS__>& rhs) {                             \
+      boost::function<__VA_ARGS__>::operator=(rhs);                                                                    \
+      return *this;                                                                                                    \
     }                                                                                                                  \
   };                                                                                                                   \
   TemplateUserTypeMap<functionName##_functionSignature> functionName##_vtable

@@ -3,6 +3,8 @@
 
 #include "SubdeviceRegisterAccessor.h"
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
@@ -11,8 +13,9 @@ namespace ChimeraTK {
       const std::string& registerPathName, boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
       boost::shared_ptr<NDRegisterAccessor<int32_t>> accData, boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
       size_t byteOffset, size_t numberOfWords)
-  : NDRegisterAccessor<int32_t>(registerPathName, {AccessMode::raw}), _backend(backend), _accAddress(accAddress),
-    _accDataArea(accData), _accStatus(accStatus), _startAddress(byteOffset), _numberOfWords(numberOfWords) {
+  : NDRegisterAccessor<int32_t>(registerPathName, {AccessMode::raw}), _backend(std::move(backend)),
+    _accAddress(std::move(accAddress)), _accDataArea(std::move(accData)), _accStatus(std::move(accStatus)),
+    _startAddress(byteOffset), _numberOfWords(numberOfWords) {
     NDRegisterAccessor<int32_t>::buffer_2D.resize(1);
     NDRegisterAccessor<int32_t>::buffer_2D[0].resize(numberOfWords);
     _buffer.resize(numberOfWords);

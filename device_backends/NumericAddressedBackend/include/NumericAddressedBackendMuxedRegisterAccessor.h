@@ -171,9 +171,12 @@ namespace ChimeraTK {
     }
 
     // allocate the raw io buffer. Make it one element larger to make sure we can access the last byte via int32_t*
-    _ioBuffer.resize(_registerInfo.elementPitchBits / 8 * _registerInfo.nElements / sizeof(int32_t) + 1);
+    _ioBuffer.resize(
+        static_cast<size_t>(_registerInfo.elementPitchBits) / 8 * _registerInfo.nElements / sizeof(int32_t) + 1);
 
     // compute pitched iterators for accessing the channels
+    // Silence the linter: Yes, we are doing a reinterpet cast. There is nothing we can do about it when we're
+    // bit-fiddling NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpretcast)
     auto* ioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(auto& c : _registerInfo.channels) {
       assert(c.bitOffset % 8 == 0);

@@ -90,13 +90,13 @@ namespace ChimeraTK {
     }
 
     /** Read back the number of bits the converter is using. */
-    unsigned int getNBits() const { return _nBits; }
+    [[nodiscard]] unsigned int getNBits() const { return _nBits; }
 
     /** Read back the fractional bits the converter is using. */
-    int getFractionalBits() const { return _fractionalBits; }
+    [[nodiscard]] int getFractionalBits() const { return _fractionalBits; }
 
     /** Read back wether the conversion is using signed values. */
-    bool isSigned() const { return _isSigned; }
+    [[nodiscard]] bool isSigned() const { return _isSigned; }
 
     /** Reconfigure the fixed point converter with new type information */
     void reconfigure(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
@@ -346,12 +346,13 @@ namespace ChimeraTK {
       // extract the sign and leave the positive number
       bool isNegative = isNegativeUserType(cookedValue);
       if(isNegative && !_isSigned) return _minRawValue;
-      if(isNegative)
+      if(isNegative) {
         cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be
+      }
                                           // used as UserType might be double
 
       // cast into raw type
-      uint32_t rawValue = static_cast<uint32_t>(cookedValue);
+      auto rawValue = static_cast<uint32_t>(cookedValue);
 
       // handle sign
       if(_isSigned && isNegative) {
@@ -361,47 +362,44 @@ namespace ChimeraTK {
       // return with bit mask applied
       return rawValue & _usedBitsMask;
     }
-    else {
-      // convert into double and scale by fractional bit coefficient
-      double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);
+    // convert into double and scale by fractional bit coefficient
+    double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);
 
-      // Convert into either signed or uinsigned int32_t, depending on _isSigned,
-      // so the conversion handls the sign correctly. Store always in a uint32_t,
-      // since this is our raw type. The conversion will properly round, when
-      // needed. Negative overflow exceptions need to be cought for some corner
-      // cases (e.g. number of fractional bits >= number of bits in total).
-      // Positive overflow cannot happen due to the rangecheck above (the negative
-      // branch has one more possible value).
-      uint32_t raw;
-      try {
-        if(_isSigned) {
-          typedef boost::numeric::converter<int32_t, double, boost::numeric::conversion_traits<int32_t, double>,
-              boost::numeric::def_overflow_handler, Round<double>>
-              converter_signed;
-          raw = converter_signed::convert(d_cooked);
-        }
-        else {
-          typedef boost::numeric::converter<uint32_t, double, boost::numeric::conversion_traits<uint32_t, double>,
-              boost::numeric::def_overflow_handler, Round<double>>
-              converter_unsigned;
-          raw = converter_unsigned::convert(d_cooked);
-        }
+    // Convert into either signed or uinsigned int32_t, depending on _isSigned,
+    // so the conversion handls the sign correctly. Store always in a uint32_t,
+    // since this is our raw type. The conversion will properly round, when
+    // needed. Negative overflow exceptions need to be cought for some corner
+    // cases (e.g. number of fractional bits >= number of bits in total).
+    // Positive overflow cannot happen due to the rangecheck above (the negative
+    // branch has one more possible value).
+    uint32_t raw;
+    try {
+      if(_isSigned) {
+        typedef boost::numeric::converter<int32_t, double, boost::numeric::conversion_traits<int32_t, double>,
+            boost::numeric::def_overflow_handler, Round<double>>
+            converter_signed;
+        raw = converter_signed::convert(d_cooked);
       }
-      catch(boost::numeric::negative_overflow& e) {
-        raw = _minRawValue;
+      else {
+        typedef boost::numeric::converter<uint32_t, double, boost::numeric::conversion_traits<uint32_t, double>,
+            boost::numeric::def_overflow_handler, Round<double>>
+            converter_unsigned;
+        raw = converter_unsigned::convert(d_cooked);
       }
-
-      // apply bit mask
-      return raw & _usedBitsMask;
     }
+    catch(boost::numeric::negative_overflow& e) {
+      raw = _minRawValue;
+    }
+
+    // apply bit mask
+    return raw & _usedBitsMask;
   }
 
   /**********************************************************************************************************************/
 
   template<typename UserType, typename std::enable_if<std::is_signed<UserType>{}, int>::type>
   bool FixedPointConverter::isNegativeUserType(UserType value) const {
-    if(value < 0) return true;
-    return false;
+    return static_cast<bool>(value < 0);
   }
 
   template<typename UserType, typename std::enable_if<!std::is_signed<UserType>{}, int>::type>
@@ -446,12 +444,12 @@ namespace ChimeraTK {
 
   /**********************************************************************************************************************/
   template<>
-  uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const;
+  [[nodiscard]] uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const;
 
   template<>
-  uint32_t FixedPointConverter::toRaw<Boolean>(Boolean cookedValue) const;
+  [[nodiscard]] uint32_t FixedPointConverter::toRaw<Boolean>(Boolean cookedValue) const;
 
   template<>
-  uint32_t FixedPointConverter::toRaw<Void>(__attribute__((unused)) Void cookedValue) const;
+  [[nodiscard]] uint32_t FixedPointConverter::toRaw<Void>(__attribute__((unused)) Void cookedValue) const;
 
 } // namespace ChimeraTK
