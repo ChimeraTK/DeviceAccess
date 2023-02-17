@@ -7,8 +7,6 @@
 using namespace boost::unit_test_framework;
 
 #include "Device.h"
-#include "DummyBackend.h"
-#include "LogicalNameMappingBackend.h"
 
 #include <boost/thread/barrier.hpp>
 
