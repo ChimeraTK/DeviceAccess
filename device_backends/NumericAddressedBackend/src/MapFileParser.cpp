@@ -187,7 +187,9 @@ namespace ChimeraTK {
     if(!is) {
       throw ChimeraTK::logic_error("Parsing error in map file '" + file_name + "' on line " + std::to_string(line_nr));
     }
-    line.erase(line.begin(), line.begin() + metadata_name.length()); // remove name from the string
+    // remove name from the string
+    line.erase(line.begin(), line.begin() + static_cast<std::string::difference_type>(metadata_name.length()));
+
     line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }),
         line.end()); // remove whitespaces from rest of the string (before and after the value)
     metadata_value = line;
@@ -394,7 +396,7 @@ namespace ChimeraTK {
     }
 
     // compute number of blocks (= samples per channel)
-    auto nBlocks = std::floor(pl.nBytes / bytesPerBlock);
+    auto nBlocks = static_cast<uint32_t>(std::floor(pl.nBytes / bytesPerBlock));
     auto name2D = make2DName(pl.pathName, prefix);
     auto registerInfo = NumericAddressedRegisterInfo(name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels,
         pl.registerAccess, pl.interruptCtrlNumber, pl.interruptNumber);

@@ -63,7 +63,7 @@ namespace ChimeraTK {
    */
   template<typename UserType>
   struct NumericAddressedAsyncVariableImpl : public AsyncVariableImpl<UserType>, public NumericAddressedAsyncVariable {
-    void fillSendBuffer(VersionNumber const& version) override;
+    void fillSendBuffer(VersionNumber const& version) final;
 
     /** The constructor takes an already created synchronous accessor and a flag
      *  whether the variable is active. If the variable is active all new subscribers will automatically
@@ -120,7 +120,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_)
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
     syncAccessor(syncAccessor_) {
-    fillSendBuffer({});
+    NumericAddressedAsyncVariableImpl<UserType>::fillSendBuffer({});
   }
 
 } // namespace ChimeraTK
