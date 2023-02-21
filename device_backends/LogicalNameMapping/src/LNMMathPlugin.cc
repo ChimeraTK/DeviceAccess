@@ -22,6 +22,7 @@ namespace ChimeraTK { namespace LNMBackend {
     std::string varName;
     exprtk::expression<double> expression;
     exprtk::symbol_table<double> symbols;
+    exprtk::rtl::vecops::package<double> vecOpsPkg;
     std::unique_ptr<exprtk::vector_view<double>> valueView;
     std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
 
@@ -505,6 +506,9 @@ namespace ChimeraTK { namespace LNMBackend {
 
     // add basic constants like pi
     symbols.add_constants();
+
+    // Add vector manipulation functions
+    symbols.add_package(vecOpsPkg);
 
     // Create vector view for the value and add it to the symbol table. We need to use a vector view instead of adding
     // the buffer directly as a vector, since our buffers might be swapped and hence the address of the data can
