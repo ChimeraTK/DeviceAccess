@@ -46,7 +46,7 @@ namespace ChimeraTK {
    */
   class SharedDummyBackend : public DummyBackendBase {
    public:
-    SharedDummyBackend(std::string instanceId, std::string mapFileName);
+    SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName);
     ~SharedDummyBackend() override;
 
     void open() override;
@@ -291,7 +291,7 @@ namespace ChimeraTK {
       SemId _semId;
       ShmForSems* _semShm;
       ShmForSems::Sem* _sem = nullptr;
-      boost::thread* _thr;
+      boost::thread _thr;
       std::atomic_bool _started{false};
       std::atomic_bool _stop{false};
     };

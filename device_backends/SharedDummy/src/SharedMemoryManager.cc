@@ -50,7 +50,7 @@ namespace ChimeraTK {
   SharedDummyBackend::SharedMemoryManager::~SharedMemoryManager() {
     // stop and delete dispatcher thread first since it uses shm and mutex
     intDispatcherIf.reset();
-    int pidSetSize;
+    size_t pidSetSize;
     {
       // lock guard with the interprocess mutex
       std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
@@ -58,7 +58,7 @@ namespace ChimeraTK {
       // Clean up
       checkPidSetConsistency();
 
-      int32_t ownPid = static_cast<int32_t>(getOwnPID());
+      auto ownPid = static_cast<int32_t>(getOwnPID());
       for(auto it = pidSet->begin(); it != pidSet->end();) {
         if(*it == ownPid) {
           it = pidSet->erase(it);
@@ -110,33 +110,30 @@ namespace ChimeraTK {
       }
     }
 
-    if(pidSetSizeBeforeCleanup != 0 && pidSet->size() == 0) {
-      return true;
-    }
-    return false;
+    return pidSetSizeBeforeCleanup != 0 && pidSet->empty();
   }
 
   void SharedDummyBackend::SharedMemoryManager::reInitMemory() {
     std::vector<std::string> nameList = listNamedElements();
 
-    for(auto item = nameList.begin(); item != nameList.end(); ++item) {
-      if(item->compare(SHARED_MEMORY_REQUIRED_VERSION_NAME) == 0) {
-        segment.destroy<unsigned>(item->c_str());
+    for(auto& item : nameList) {
+      if(item == SHARED_MEMORY_REQUIRED_VERSION_NAME) {
+        segment.destroy<unsigned>(item.c_str());
       }
       // reset the BAR vectors in shm.
       // Note, InterruptDispatcherInterface uses unique_instance mechanism so it is not affected here
-      else if(item->compare(SHARED_MEMORY_PID_SET_NAME) != 0) {
-        segment.destroy<SharedMemoryVector>(item->c_str());
+      else if(item != SHARED_MEMORY_PID_SET_NAME) {
+        segment.destroy<SharedMemoryVector>(item.c_str());
       }
     }
     InterruptDispatcherInterface::cleanupShm(segment);
   }
 
   std::vector<std::string> SharedDummyBackend::SharedMemoryManager::listNamedElements() {
-    std::vector<std::string> list;
+    std::vector<std::string> list(segment.get_size());
 
     for(auto seg = segment.named_begin(); seg != segment.named_end(); ++seg) {
-      list.push_back(seg->name());
+      list.emplace_back(seg->name());
     }
     return list;
   }
