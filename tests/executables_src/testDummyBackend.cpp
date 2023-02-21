@@ -17,7 +17,7 @@
 #include <regex>
 
 #define BOOST_NO_EXCEPTIONS
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 #undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
