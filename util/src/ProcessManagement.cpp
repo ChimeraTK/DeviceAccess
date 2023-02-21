@@ -32,7 +32,7 @@ std::string getUserName(void) {
     if(savedErr != 0) {
         std::cout << "Failed to lookup user name, expect issues: " << strerror(savedErr) << std::endl;
     }
-    return std::string{"**unknown*user*name**"};
+    return {"**unknown*user*name**"};
   }
-  return std::string{pwent->pw_name};
+  return {pwent->pw_name};
 }
