@@ -5,6 +5,8 @@
 #include "DeviceInfoMap.h"
 #include "NumericAddressedRegisterCatalogue.h"
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /**
@@ -15,12 +17,9 @@ namespace ChimeraTK {
     std::string _name;
 
    public:
-    findDevByName_pred(const std::string& name) : _name(name) {}
+    explicit findDevByName_pred(std::string name) : _name(std::move(name)) {}
 
-    bool operator()(const DeviceInfoMap::DeviceInfo& elem) {
-      if(elem.deviceName == _name) return true;
-      return false;
-    }
+    bool operator()(const DeviceInfoMap::DeviceInfo& elem) { return elem.deviceName == _name; }
   };
 
   /**

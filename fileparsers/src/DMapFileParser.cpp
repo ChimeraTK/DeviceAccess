@@ -4,7 +4,7 @@
 #include "DMapFileParser.h"
 
 #include "parserUtilities.h"
-#include "Utilities.h"
+// #include "Utilities.h"
 
 #include <algorithm>
 #include <fstream>
@@ -31,7 +31,7 @@ namespace ChimeraTK {
     while(std::getline(file, line)) {
       line_nr++;
       line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c) { return !isspace(c); }));
-      if(!line.size()) {
+      if(line.empty()) {
         continue;
       }
       if(line[0] == '#') {
@@ -53,7 +53,7 @@ namespace ChimeraTK {
   }
 
   void DMapFileParser::parseForLoadLib(
-      std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap) {
+      const std::string& file_name, const std::string& line, uint32_t line_nr, const DeviceInfoMapPointer& dmap) {
     // we expect at leat two tokens: the key and the value
     std::istringstream s;
     std::string key, value;
@@ -68,7 +68,7 @@ namespace ChimeraTK {
   }
 
   void DMapFileParser::parseRegularLine(
-      std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap) {
+      const std::string& file_name, const std::string& line, uint32_t line_nr, const DeviceInfoMapPointer& dmap) {
     std::istringstream inStream;
     DeviceInfoMap::DeviceInfo deviceInfo;
 
@@ -101,7 +101,7 @@ namespace ChimeraTK {
     }
   }
 
-  std::string DMapFileParser::absPathOfDMapContent(std::string dmapContent, std::string dmapFileName) {
+  std::string DMapFileParser::absPathOfDMapContent(const std::string& dmapContent, const std::string& dmapFileName) {
     // first determine the absolute path to the dmap file
     std::string absPathToDMapFile = utilities::convertToAbsolutePath(dmapFileName);
     // then extract the directory
@@ -111,7 +111,7 @@ namespace ChimeraTK {
     return utilities::concatenatePaths(absPathToDmapDirectory, dmapContent);
   }
 
-  void DMapFileParser::raiseException(std::string file_name, std::string line, uint32_t line_nr) {
+  void DMapFileParser::raiseException(const std::string& file_name, const std::string& line, uint32_t line_nr) {
     std::stringstream errorMessage;
     errorMessage << "Error in dmap file: \"" << file_name << "\" in line (" << line_nr << ") \"" << line << "\"";
     throw ChimeraTK::logic_error(errorMessage.str());

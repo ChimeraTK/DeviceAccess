@@ -39,7 +39,7 @@ namespace ChimeraTK {
 
     /** obtain path with alternative separator character instead of "/". The
      * leading separator will be omitted */
-    std::string getWithAltSeparator() const {
+    [[nodiscard]] std::string getWithAltSeparator() const {
       if(separator_alt.length() == 0) return path.substr(1);
       std::size_t pos;
       std::string path_alt = path.substr(1);
@@ -129,10 +129,10 @@ namespace ChimeraTK {
     bool operator!=(const char* rightHandSide) const { return operator!=(RegisterPath(rightHandSide)); }
 
     /** return the length of the path (including leading slash) */
-    size_t length() const { return path.length(); }
+    [[nodiscard]] size_t length() const { return path.length(); }
 
     /** check if the register path starts with the given path */
-    bool startsWith(const RegisterPath& compare) const {
+    [[nodiscard]] bool startsWith(const RegisterPath& compare) const {
       std::string sepalt = getCommonAltSeparator(compare);
       std::string pathConverted(getWithOtherSeparatorReplaced(sepalt));
       std::string otherPathConverted(compare.getWithOtherSeparatorReplaced(sepalt));
@@ -140,7 +140,7 @@ namespace ChimeraTK {
     }
 
     /** check if the register path ends with the given path component(s) */
-    bool endsWith(const RegisterPath& compare) const {
+    [[nodiscard]] bool endsWith(const RegisterPath& compare) const {
       std::string sepalt = getCommonAltSeparator(compare);
       std::string pathConverted(getWithOtherSeparatorReplaced(sepalt));
       std::string otherPathConverted(compare.getWithOtherSeparatorReplaced(sepalt));
@@ -149,7 +149,7 @@ namespace ChimeraTK {
     }
 
     /** split path into components */
-    std::vector<std::string> getComponents() const {
+    [[nodiscard]] std::vector<std::string> getComponents() const {
       std::vector<std::string> components;
       if(path.length() <= 1) return components;
       size_t pos = 0;
@@ -188,7 +188,7 @@ namespace ChimeraTK {
     /** Search for duplicate separators (e.g. "//") and remove one of them. Also
      * removes a trailing separator, if present. The second optional argument
      * allows to search for other separators instead of the default. */
-    std::string removeExtraSeparators(std::string string, std::string sep = separator) const {
+    [[nodiscard]] static std::string removeExtraSeparators(std::string string, const std::string& sep = separator) {
       std::size_t pos;
       while((pos = string.find(std::string(sep) + sep)) != std::string::npos) {
         string.erase(pos, 1);
@@ -199,7 +199,7 @@ namespace ChimeraTK {
 
     /** Return the path after replacing the given otherSeparator with the standard
      * separator "/". */
-    std::string getWithOtherSeparatorReplaced(const std::string& otherSeparator) const {
+    [[nodiscard]] std::string getWithOtherSeparatorReplaced(const std::string& otherSeparator) const {
       // no replacement needed, of other separator is empty
       if(otherSeparator.length() == 0) return path;
       // replace all occurrences of otherSeparator with separator
@@ -215,7 +215,7 @@ namespace ChimeraTK {
 
     /** return common alternative separator for this RegisterPath and the
      * specified other RegisterPath objects. */
-    std::string getCommonAltSeparator(const RegisterPath& otherPath) const {
+    [[nodiscard]] std::string getCommonAltSeparator(const RegisterPath& otherPath) const {
       std::string sepalt = separator_alt;
       if(otherPath.separator_alt.length() > 0) {
         if(sepalt.length() == 0) {

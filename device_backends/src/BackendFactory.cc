@@ -340,6 +340,6 @@ namespace ChimeraTK {
       std::string /*instance*/, std::list<std::string> /*parameters*/, std::string /*mapFileName*/,
       std::string exception_what) {
     // NOLINTEND(performance-unnecessary-value-param)
-    throw ChimeraTK::logic_error(exception_what);
+    throw ChimeraTK::logic_error(std::move(exception_what));
   }
 } // namespace ChimeraTK

@@ -21,14 +21,14 @@ namespace ChimeraTK {
      *  Constructor. The passed message is returned by a call to what() and should
      * describe what exactly went wront.
      */
-    runtime_error(const std::string& message) noexcept;
+    explicit runtime_error(std::string message) noexcept;
 
     /**
      *  Return the message describing what exactly went wrong. The returned
      * message is only descriptive and only meant for display. Program logic must
      * never be based on the content of this string.
      */
-    const char* what() const noexcept override;
+    [[nodiscard]] const char* what() const noexcept override;
 
    private:
     std::string _message;
@@ -54,14 +54,14 @@ namespace ChimeraTK {
      *  Constructor. The passed message is returned by a call to what() and should
      * describe what exactly went wront.
      */
-    logic_error(const std::string& message) noexcept;
+    explicit logic_error(std::string message) noexcept;
 
     /**
      *  Return the message describing what exactly went wrong. The returned
      * message is only descriptive and only meant for display. Program logic must
      * never be based on the content of this string.
      */
-    const char* what() const noexcept override;
+    [[nodiscard]] const char* what() const noexcept override;
 
    private:
     std::string _message;
