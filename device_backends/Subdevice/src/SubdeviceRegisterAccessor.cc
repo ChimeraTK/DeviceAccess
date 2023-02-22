@@ -48,7 +48,7 @@ namespace ChimeraTK {
       for(size_t adr = _startAddress; adr < _startAddress + nTransfers; ++adr) {
         // write address register (if applicable)
         if(_backend->type != SubdeviceBackend::Type::areaHandshake) {
-          _accAddress->accessData(0) = adr;
+          _accAddress->accessData(0) = static_cast<int32_t>(adr);
           _accAddress->write();
           usleep(_backend->addressToDataDelay);
         }

@@ -118,7 +118,7 @@ namespace ChimeraTK {
 
     /// Check consistency of the passed sizes and offsets against the information in the map file
     /// Will adjust numberOfWords to the default value if 0
-    void verifyRegisterAccessorSize(const NumericAddressedRegisterInfo& info, size_t& numberOfWords,
+    static void verifyRegisterAccessorSize(const NumericAddressedRegisterInfo& info, size_t& numberOfWords,
         size_t wordOffsetInRegister, bool enforceAlignment);
 
     template<typename UserType>
@@ -134,7 +134,8 @@ namespace ChimeraTK {
     /// getRegisterAccessor implemenation for threeRegisters types
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_synchronized(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister,
+        const AccessModeFlags& flags);
 
     /// obtain the target backend if not yet done
     void obtainTargetBackend();
