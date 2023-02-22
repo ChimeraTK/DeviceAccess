@@ -13,6 +13,7 @@ build
 .vscode
 CMakeLists.txt.user
 *.code-workspace
+.cache
 #files ending with ~ are emacs backups
 *~
 #files ending with .swp might show up when using vi
