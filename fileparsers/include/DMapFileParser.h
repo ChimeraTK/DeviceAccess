@@ -30,7 +30,7 @@ namespace ChimeraTK {
      * @param file_name name of DMAP file
      * @return pointer to dmapFile object
      */
-    DeviceInfoMapPointer parse(const std::string& file_name);
+    static DeviceInfoMapPointer parse(const std::string& file_name);
 
    protected:
     // @todo FIXME passing the arguments C-style is super ugly

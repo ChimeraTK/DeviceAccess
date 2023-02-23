@@ -38,13 +38,12 @@ namespace ChimeraTK {
    *  This structure holds the information of an SDM.
    */
   struct Sdm {
-    double _SdmVersion;
-    std::string _Host;
-    std::string _Interface;
-    std::string _Instance;
-    std::string _Protocol;
-    std::list<std::string> _Parameters;
-    Sdm() : _SdmVersion(0.1) {}
+    double sdmVersion{0.1};
+    std::string host;
+    std::string interface;
+    std::string instance;
+    std::string protocol;
+    std::list<std::string> parameters;
   };
 
   namespace Utilities {

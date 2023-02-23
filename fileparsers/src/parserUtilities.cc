@@ -3,11 +3,12 @@
 
 #include "parserUtilities.h"
 
+#include <cstdlib>
+#include <filesystem>
 #include <stdexcept>
-#include <stdlib.h>
 #include <unistd.h>
 
-namespace ChimeraTK { namespace parserUtilities {
+namespace ChimeraTK::parserUtilities {
 
   /*
    * Adds a '/' to the end of the input string path, only if path does not end in
@@ -16,14 +17,7 @@ namespace ChimeraTK { namespace parserUtilities {
   static std::string appendForwardSlash(const std::string& path);
 
   std::string getCurrentWorkingDirectory() {
-    char* currentWorkingDir = getcwd(nullptr, 0);
-    if(currentWorkingDir == nullptr) {
-      throw std::runtime_error("Could not get the current working directory");
-    }
-    std::string returnValue(currentWorkingDir);
-    free(currentWorkingDir);
-    // append '/' to the end if not present and return
-    return appendForwardSlash(returnValue);
+    return appendForwardSlash(std::filesystem::current_path());
   }
 
   std::string convertToAbsolutePath(const std::string& relativePath) {
@@ -46,11 +40,9 @@ namespace ChimeraTK { namespace parserUtilities {
                              // meaning working directory has the file in it.
       return "./";
     }
-    else {
-      return path.substr(0, pos + 1); // substring till the last '/'. The '/'
-                                      // character is included in the return
-                                      // string
-    }
+    return path.substr(0, pos + 1); // substring till the last '/'. The '/'
+                                    // character is included in the return
+                                    // string
   }
 
   std::string extractFileName(const std::string& path) {
@@ -59,7 +51,7 @@ namespace ChimeraTK { namespace parserUtilities {
     size_t pos = path.find_last_of('/');
     bool isPathJustFileName = (pos == std::string::npos); // no '/' in the string
 
-    if(isPathJustFileName == false) {
+    if(!isPathJustFileName) {
       extractedName = path.substr(pos + 1, std::string::npos); // get the substring after the
                                                                // last '/' in the path
     }
@@ -70,9 +62,8 @@ namespace ChimeraTK { namespace parserUtilities {
     if(path.back() == '/') { // path ends with '/'
       return path;
     }
-    else { // add '/' to path
-      return path + "/";
-    }
+    // add '/' to path
+    return path + "/";
   }
 
-}} // namespace ChimeraTK::parserUtilities
+} // namespace ChimeraTK::parserUtilities

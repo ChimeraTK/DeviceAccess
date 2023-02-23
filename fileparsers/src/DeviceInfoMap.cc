@@ -45,7 +45,7 @@ namespace ChimeraTK {
   DeviceInfoMap::DeviceInfo::DeviceInfo() : dmapFileLineNumber(0) {}
 
   std::pair<std::string, std::string> DeviceInfoMap::DeviceInfo::getDeviceFileAndMapFileName() const {
-    return std::pair<std::string, std::string>(uri, mapFileName);
+    return {uri, mapFileName};
   }
 
   std::ostream& operator<<(std::ostream& os, const DeviceInfoMap::DeviceInfo& deviceInfo) {

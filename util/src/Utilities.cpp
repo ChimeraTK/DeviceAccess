@@ -195,7 +195,7 @@ namespace ChimeraTK {
     std::size_t found = sdmString.find_first_of("/", pos);
     std::string subUri;
     if(found != std::string::npos) {
-      sdmInfo._Host = sdmString.substr(pos, found - pos); // Get the Host
+      sdmInfo.host = sdmString.substr(pos, found - pos); // Get the Host
     }
     else {
       throw ChimeraTK::logic_error("Invalid sdm.");
@@ -220,13 +220,13 @@ namespace ChimeraTK {
     int numOfTokens = tokens.size();
     if(numOfTokens < 1) return sdmInfo;
     int counter = 0;
-    sdmInfo._Interface = tokens[counter]; // Get the Interface
+    sdmInfo.interface = tokens[counter]; // Get the Interface
     counter++;
     if(counter < numOfTokens) {
       // Get the Instance
       found = sdmString.find_first_of(":", pos);
       if(found != std::string::npos) {
-        sdmInfo._Instance = tokens[counter];
+        sdmInfo.instance = tokens[counter];
         counter++;
       }
     }
@@ -234,7 +234,7 @@ namespace ChimeraTK {
       // Get the Protocol
       found = sdmString.find_first_of(";", pos);
       if(found != std::string::npos) {
-        sdmInfo._Protocol = tokens[counter];
+        sdmInfo.protocol = tokens[counter];
         counter++;
       }
     }
@@ -245,7 +245,7 @@ namespace ChimeraTK {
         std::string parameters = tokens[counter];
         std::vector<std::string> paramterTokens;
         boost::split(paramterTokens, parameters, boost::is_any_of(","));
-        for(uint i = 0; i < paramterTokens.size(); i++) sdmInfo._Parameters.push_back(paramterTokens[i]);
+        for(uint i = 0; i < paramterTokens.size(); i++) sdmInfo.parameters.push_back(paramterTokens[i]);
       }
     }
 
@@ -257,23 +257,23 @@ namespace ChimeraTK {
   Sdm Utilities::parseDeviceString(std::string deviceString) {
     Sdm sdmInfo;
     if(deviceString.substr(0, 5) == "/dev/") {
-      sdmInfo._Interface = "pci";
+      sdmInfo.interface = "pci";
       if(deviceString.length() > 5) {
-        sdmInfo._Instance = deviceString.substr(5);
+        sdmInfo.instance = deviceString.substr(5);
       }
     }
     else if((boost::ends_with(deviceString, ".map")) || (boost::ends_with(deviceString, ".mapp"))) {
-      sdmInfo._Interface = "dummy";
-      sdmInfo._Instance = deviceString;
+      sdmInfo.interface = "dummy";
+      sdmInfo.instance = deviceString;
       /*another change in interface requires now instance
                 to be ignored and old expect old Instance parameter
                 as firt item of the Parameters list*/
-      sdmInfo._Parameters.push_back(sdmInfo._Instance);
+      sdmInfo.parameters.push_back(sdmInfo.instance);
     }
     else
       return sdmInfo;
-    sdmInfo._Host = ".";
-    sdmInfo._Protocol = "";
+    sdmInfo.host = ".";
+    sdmInfo.protocol = "";
     return sdmInfo;
   }
 

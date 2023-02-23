@@ -274,8 +274,8 @@ namespace ChimeraTK {
 #ifdef _DEBUG
       std::cout << "Pair:" << iter->first.first << "+" << iter->first.second << std::endl;
 #endif
-      if((iter.first.first == sdm._Interface)) {
-        auto backend = (iter.second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
+      if((iter.first.first == sdm.interface)) {
+        auto backend = (iter.second)(sdm.host, sdm.instance, sdm.parameters, deviceInfo.mapFileName);
         boost::weak_ptr<DeviceBackend> weakBackend = backend;
         _existingBackends[deviceInfo.uri] = weakBackend;
         // return the shared pointer, not the weak pointer
@@ -283,7 +283,7 @@ namespace ChimeraTK {
       }
     }
 
-    throw ChimeraTK::logic_error("Unregistered device: Interface = " + sdm._Interface + " Protocol = " + sdm._Protocol);
+    throw ChimeraTK::logic_error("Unregistered device: Interface = " + sdm.interface + " Protocol = " + sdm.protocol);
     return {}; // won't execute
   }
 
@@ -315,7 +315,7 @@ namespace ChimeraTK {
       return;
     }
 
-    auto dmap = DMapFileParser().parse(_dMapFile);
+    auto dmap = DMapFileParser::parse(_dMapFile);
 
     for(const auto& lib : dmap->getPluginLibraries()) {
       try {

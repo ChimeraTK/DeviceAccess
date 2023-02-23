@@ -170,19 +170,19 @@ namespace ChimeraTK {
     template<class S>
     struct Round {
       static S nearbyint(S s) { return std::round(s); }
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
     template<>
     struct Round<Boolean> {
       static Boolean nearbyint(Boolean s) { return s; }
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
     template<>
     struct Round<Void> {
       static Void nearbyint(__attribute__((unused)) Void s) { return s; }
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
   } // namespace detail
@@ -356,29 +356,27 @@ namespace ChimeraTK {
   template<typename UserTypeParameter>
   inline Void detail::userTypeToUserType_impl<Void, UserTypeParameter>::impl(
       __attribute__((unused)) UserTypeParameter value) {
-    return Void();
+    return {};
   }
 
   /********************************************************************************************************************/
 
   /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
    *  dependence of the UserType. */
-  typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
+  using userTypeMap = boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
       boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
       boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>,
       boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>,
       boost::fusion::pair<double, double>, boost::fusion::pair<std::string, std::string>,
-      boost::fusion::pair<Boolean, Boolean>, boost::fusion::pair<Void, Void>>
-      userTypeMap;
+      boost::fusion::pair<Boolean, Boolean>, boost::fusion::pair<Void, Void>>;
 
   /** Just like userTypeMap, only without the ChimeraTK::Void type. */
-  typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
-      boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
-      boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>,
-      boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>,
-      boost::fusion::pair<double, double>, boost::fusion::pair<std::string, std::string>,
-      boost::fusion::pair<Boolean, Boolean>>
-      userTypeMapNoVoid;
+  using userTypeMapNoVoid = boost::fusion::map<boost::fusion::pair<int8_t, int8_t>,
+      boost::fusion::pair<uint8_t, uint8_t>, boost::fusion::pair<int16_t, int16_t>,
+      boost::fusion::pair<uint16_t, uint16_t>, boost::fusion::pair<int32_t, int32_t>,
+      boost::fusion::pair<uint32_t, uint32_t>, boost::fusion::pair<int64_t, int64_t>,
+      boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>, boost::fusion::pair<double, double>,
+      boost::fusion::pair<std::string, std::string>, boost::fusion::pair<Boolean, Boolean>>;
 
   /** Map of UserType to a value of a single type (same for evey user type) */
   template<typename TargetType>

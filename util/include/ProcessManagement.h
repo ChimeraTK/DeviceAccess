@@ -6,5 +6,5 @@
 #include <string>
 
 bool processExists(unsigned pid);
-unsigned getOwnPID(void);
-std::string getUserName(void);
+unsigned getOwnPID();
+std::string getUserName();
