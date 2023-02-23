@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+// This is C code from the kernel driver. Turn off the C++ linter warnings
+// NOLINTBEGIN
+
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
 #include <linux/types.h>
 
@@ -76,3 +79,5 @@ typedef struct device_ioctrl_time device_ioctrl_time;
 #define PCIEDOOCS_IOC_MAXNR 63
 #define PCIEDOOCS_IOC_DMA_MINNR 70
 #define PCIEDOOCS_IOC_DMA_MAXNR 74
+
+// NOLINTEND

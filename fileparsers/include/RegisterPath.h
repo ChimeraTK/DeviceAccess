@@ -16,15 +16,21 @@ namespace ChimeraTK {
   class RegisterPath {
    public:
     RegisterPath() : path(separator) {}
+    // Yes, we want implicit construction. Turn off the linter.
+    // NOLINTNEXTLINE(hicpp-explicit-conversions, google-explicit-constructor)
     RegisterPath(const std::string& _path) : path(std::string(separator + _path)) { removeExtraSeparators(); }
     RegisterPath(const RegisterPath& _path) : path(_path.path), separator_alt(_path.separator_alt) {
       removeExtraSeparators();
     }
     // we can use the default assignment operator but have to declare this because we have an explicit copy constructor
     RegisterPath& operator=(const RegisterPath& _path) = default;
+    // Yes, we want implicit construction. Turn off the linter.
+    // NOLINTNEXTLINE(hicpp-explicit-conversions, google-explicit-constructor)
     RegisterPath(const char* _path) : path(std::string(separator) + _path) { removeExtraSeparators(); }
 
     /** type conversion operators into std::string */
+    // This is an implicit conversion operator. Turn off the linter warning to make it explicit.
+    // NOLINTNEXTLINE(hicpp-explicit-conversions, google-explicit-constructor)
     operator std::string() const { return getWithOtherSeparatorReplaced(separator_alt); }
 
     /** set alternative separator. */

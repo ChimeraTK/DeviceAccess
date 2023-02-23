@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+// This is C code from the kernel driver. Turn off the C++ linter warnings
+// NOLINTBEGIN
+
+#include <sys/types.h>
+
 /** Information about the offsets of the bars in the address space of the
  * character device.
  */
@@ -29,3 +34,5 @@ typedef struct _pcieuni_ioctl_bar_sizes {
 #define PCIEUNI_IOC_MAXNR 63
 #define PCIEUNI_IOC_DMA_MINNR 70
 #define PCIEUNI_IOC_DMA_MAXNR 74
+
+// NOLINTEND

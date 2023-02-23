@@ -62,7 +62,7 @@ namespace ChimeraTK {
 
     /** Parse an old-style device string (either path to device node or map file
      * name for dummies) */
-    Sdm parseDeviceString(std::string deviceEntry);
+    Sdm parseDeviceString(const std::string& deviceString);
 
     /** Check wehter the given string seems to be an SDM. There is no guarantee
      * that the SDM is well-formed, the finction just looks for the signatore of
@@ -75,7 +75,7 @@ namespace ChimeraTK {
 
     /// Search for an alias in a given DMap file and return the DeviceInfo entry.
     /// If the alias is not found, the DeviceInfo will have empty strings.
-    DeviceInfoMap::DeviceInfo aliasLookUp(std::string aliasName, std::string dmapFilePath);
+    DeviceInfoMap::DeviceInfo aliasLookUp(const std::string& aliasName, const std::string& dmapFilePath);
 
     /// Returns the list of device aliases from the DMap file set using
     /// @ref BackendFactory::setDMapFilePath

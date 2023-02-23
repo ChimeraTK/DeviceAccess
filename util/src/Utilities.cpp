@@ -11,6 +11,7 @@
 
 #include <cxxabi.h>
 #include <execinfo.h>
+#include <utility>
 #include <vector>
 
 namespace ChimeraTK {
@@ -217,9 +218,9 @@ namespace ChimeraTK {
     }
     std::vector<std::string> tokens;
     boost::split(tokens, subUri, boost::is_any_of(":;="));
-    int numOfTokens = tokens.size();
+    size_t numOfTokens = tokens.size();
     if(numOfTokens < 1) return sdmInfo;
-    int counter = 0;
+    size_t counter = 0;
     sdmInfo.interface = tokens[counter]; // Get the Interface
     counter++;
     if(counter < numOfTokens) {
@@ -256,7 +257,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  Sdm Utilities::parseDeviceString(std::string deviceString) {
+  Sdm Utilities::parseDeviceString(const std::string& deviceString) {
     Sdm sdmInfo;
     if(deviceString.substr(0, 5) == "/dev/") {
       sdmInfo.interface = "pci";
@@ -272,8 +273,9 @@ namespace ChimeraTK {
                 as firt item of the Parameters list*/
       sdmInfo.parameters.push_back(sdmInfo.instance);
     }
-    else
+    else {
       return sdmInfo;
+}
     sdmInfo.host = ".";
     sdmInfo.protocol = "";
     return sdmInfo;
@@ -281,10 +283,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath) {
-    DMapFileParser fileParser;
+  DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(const std::string& aliasName, const std::string& dmapFilePath) {
     DeviceInfoMap::DeviceInfo deviceInfo;
-    auto deviceInfoPointer = fileParser.parse(dmapFilePath);
+    auto deviceInfoPointer = ChimeraTK::DMapFileParser::parse(dmapFilePath);
     deviceInfoPointer->getDeviceInfo(aliasName, deviceInfo);
     return deviceInfo;
   }
@@ -297,10 +298,8 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("Dmap file not set");
     }
 
-    DMapFileParser fileParser;
-
     try {
-      auto deviceInfoMap = fileParser.parse(dmapFileName);
+      auto deviceInfoMap = ChimeraTK::DMapFileParser::parse(dmapFileName);
 
       std::vector<std::string> listOfDeviceAliases;
       listOfDeviceAliases.reserve(deviceInfoMap->getSize());
@@ -313,7 +312,7 @@ namespace ChimeraTK {
     }
     catch(ChimeraTK::runtime_error& e) {
       std::cout << e.what() << std::endl;
-      return std::vector<std::string>(); // empty list in case of failure
+      return {}; // empty list in case of failure
     }
   }
 
@@ -326,7 +325,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void setDMapFilePath(std::string dmapFilePath) {
-    BackendFactory::getInstance().setDMapFilePath(dmapFilePath);
+    BackendFactory::getInstance().setDMapFilePath(std::move(dmapFilePath));
   }
 
   /********************************************************************************************************************/

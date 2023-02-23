@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iterator>
 #include <sstream>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -20,10 +21,13 @@ namespace ChimeraTK {
   class Boolean {
    public:
     Boolean() : m_value() {}
+    // We want implicit construction and conversion. Turn off the linter warnings.
+    // NOLINTBEGIN(hicpp-explicit-conversions, google-explicit-constructor)
     Boolean(bool value) : m_value(value) {}
 
     operator const bool&() const { return m_value; }
     operator bool&() { return m_value; }
+    // NOLINTEND(hicpp-explicit-conversions, google-explicit-constructor)
     // TODO: test user types to numeric etc
 
    private:
@@ -164,7 +168,7 @@ namespace ChimeraTK {
 
     template<>
     struct userTypeToUserType_impl<Void, std::string> {
-      static Void impl(__attribute__((unused)) std::string value) { return Void(); }
+      static Void impl(__attribute__((unused)) const std::string& value) { return {}; }
     };
 
     template<class S>
@@ -621,13 +625,16 @@ namespace ChimeraTK {
      myDataType = DataType::int32;
      \endcode
      */
+    // Yes, this intentionally is an implicit conversion operator. Turn off the linter warning.
+    // NOLINTBEGIN(google-explicit-constructor, hicpp-explicit-conversions)
     inline operator TheType&() { return _value; }
     inline operator TheType const&() const { return _value; }
+    // NOLINTEND(google-explicit-constructor, hicpp-explicit-conversions)
 
     /** Return whether the raw data type is an integer.
      *  False is also returned for non-numerical types and 'none'.
      */
-    inline bool isIntegral() const {
+    [[nodiscard]] inline bool isIntegral() const {
       switch(_value) {
         case int8:
         case uint8:
@@ -648,7 +655,7 @@ namespace ChimeraTK {
      *  floating point types (currently only signed implementations).
      *  False otherwise (also for non-numerical types and 'none').
      */
-    inline bool isSigned() const {
+    [[nodiscard]] inline bool isSigned() const {
       switch(_value) {
         case int8:
         case int16:
@@ -665,7 +672,7 @@ namespace ChimeraTK {
     /** Returns whether the data type is numeric.
      *  Type 'none' returns false.
      */
-    inline bool isNumeric() const {
+    [[nodiscard]] inline bool isNumeric() const {
       // I inverted the logic to minimise the amout of code. If you add
       // non-numeric types this has to be adapted.
       switch(_value) {
@@ -680,9 +687,13 @@ namespace ChimeraTK {
 
     /** The constructor can get the type as an argument. It defaults to 'none'.
      */
+    // We want implicit construction from the TheType enum.
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     inline DataType(TheType const& value = none) : _value(value) {}
 
     /** Construct DataType from std::type_info. If the type is not known, 'none' is returned. */
+    // We want implicit construction from the type_info
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     inline DataType(const std::type_info& info) {
       if(info == typeid(int8_t)) {
         _value = int8;
@@ -729,7 +740,7 @@ namespace ChimeraTK {
     }
 
     /** Construct DataType from std::string. */
-    inline DataType(const std::string& typeName) {
+    inline explicit DataType(const std::string& typeName) {
       if(typeName == "int8") {
         _value = int8;
       }
@@ -775,7 +786,7 @@ namespace ChimeraTK {
     }
 
     /** Return string representation of the data type */
-    inline std::string getAsString() const {
+    [[nodiscard]] inline std::string getAsString() const {
       switch(_value) {
         case int8:
           return "int8";
@@ -817,7 +828,7 @@ namespace ChimeraTK {
     template<typename X>
     class for_each_callable {
      public:
-      for_each_callable(const X& fn) : fn_(fn) {}
+      explicit for_each_callable(const X& fn) : fn_(fn) {}
 
       template<typename ARG_TYPE>
       void operator()(ARG_TYPE& argument) const {
@@ -880,8 +891,8 @@ namespace ChimeraTK {
     if(!done) {
       class myBadCast : public std::bad_cast {
        public:
-        myBadCast(const std::string& desc) : _desc(desc) {}
-        const char* what() const noexcept override { return _desc.c_str(); }
+        explicit myBadCast(std::string desc) : _desc(std::move(desc)) {}
+        [[nodiscard]] const char* what() const noexcept override { return _desc.c_str(); }
 
        private:
         std::string _desc;
@@ -898,6 +909,9 @@ namespace ChimeraTK {
   template<typename LAMBDATYPE>
   void callForType(const DataType& type, LAMBDATYPE lambda) {
     switch(DataType::TheType(type)) {
+      // The linter thinks the branches are identical. They are not, they have a different type, which is the whole
+      // point of this exercise.
+      // NOLINTBEGIN(bugprone-branch-clone)
       case DataType::int8: {
         lambda(int8_t());
       } break;
@@ -937,11 +951,12 @@ namespace ChimeraTK {
       case DataType::Void: {
         lambda(Void());
       } break;
+      // NOLINTEND(bugprone-branch-clone)
       case DataType::none:
         class myBadCast : public std::bad_cast {
          public:
-          myBadCast(const std::string& desc) : _desc(desc) {}
-          const char* what() const noexcept override { return _desc.c_str(); }
+          explicit myBadCast(std::string desc) : _desc(std::move(desc)) {}
+          [[nodiscard]] const char* what() const noexcept override { return _desc.c_str(); }
 
          private:
           std::string _desc;
@@ -968,6 +983,9 @@ namespace ChimeraTK {
   template<typename LAMBDATYPE>
   void callForRawType(const DataType& type, LAMBDATYPE lambda) {
     switch(DataType::TheType(type)) {
+      // The linter thinks the branches are identical. They are not, they have a different type, which is the whole
+      // point of this exercise.
+      // NOLINTBEGIN(bugprone-branch-clone)
       case DataType::Void: {
         // do nothing:
       } break;
@@ -980,11 +998,12 @@ namespace ChimeraTK {
       case DataType::int32: {
         lambda(int32_t());
       } break;
+      // NOLINTEND(bugprone-branch-clone)
       default:
         class myBadCast : public std::bad_cast {
          public:
-          myBadCast(const std::string& desc) : _desc(desc) {}
-          const char* what() const noexcept override { return _desc.c_str(); }
+          explicit myBadCast(std::string desc) : _desc(std::move(desc)) {}
+          [[nodiscard]] const char* what() const noexcept override { return _desc.c_str(); }
 
          private:
           std::string _desc;
