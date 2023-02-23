@@ -81,8 +81,10 @@ namespace ChimeraTK {
 
   bool Device::isFunctional() const {
     if(static_cast<bool>(_deviceBackendPointer) != false) {
+      std::cout<<"Device::isFunctional():"<< _deviceBackendPointer->isFunctional()<<std::endl;
       return _deviceBackendPointer->isFunctional();
     }
+    std::cout<<"Device::isFunctional(): no backend is assigned: the device is not opened"<<std::endl;
     return false; // no backend is assigned: the device is not opened
   }
 
@@ -95,6 +97,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void Device::setException() {
+    std::cout<<"Device::setException()"<<std::endl;
     _deviceBackendPointer->setException();
   }
 

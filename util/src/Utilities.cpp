@@ -330,11 +330,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void Utilities::printStackTrace() {
-    void* trace[16];
+    void* trace[32];
     char** messages;
     int i, trace_size = 0;
 
-    trace_size = backtrace(trace, 16);
+    trace_size = backtrace(trace, 32);
     messages = backtrace_symbols(trace, trace_size);
     printf("[bt] Execution path:\n");
     for(i = 0; i < trace_size; ++i) {

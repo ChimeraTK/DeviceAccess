@@ -1,3 +1,0 @@
-# name                    number_of_elements  address  size  bar  width  fracbits  signed   read_mode
-pushable  1 0 4 0 32 0 0 INTERRUPT0:0 
-pushcontent  1 0 4 0 32 0 0 RW
