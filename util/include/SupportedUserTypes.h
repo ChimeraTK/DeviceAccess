@@ -452,6 +452,9 @@ namespace ChimeraTK {
       boost::fusion::pair<uint64_t, T>, boost::fusion::pair<float, T>, boost::fusion::pair<double, T>,
       boost::fusion::pair<std::string, T>, boost::fusion::pair<Boolean, T>>;
 
+// Turn off the linter warning. It is wrong in this case. Putting parentheses would break the C++ syntax, the code does
+// not compile
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                       \
   extern template class TemplateClass<int8_t>;                                                                         \
   extern template class TemplateClass<uint8_t>;                                                                        \
@@ -509,6 +512,7 @@ namespace ChimeraTK {
   template class TemplateClass<double>;                                                                                \
   template class TemplateClass<std::string>;                                                                           \
   template class TemplateClass<ChimeraTK::Boolean> // the last semicolon is added by the user
+// NOLINTEND(bugprone-macro-parentheses)
 
 /** Macro to declare a template class with multiple template parameters for all
  *  supported user types. The variadic arguments are the additional template

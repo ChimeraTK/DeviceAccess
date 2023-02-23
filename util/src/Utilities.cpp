@@ -24,7 +24,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool Utilities::isSdm(std::string theString) {
+  bool Utilities::isSdm(const std::string& theString) {
     size_t signatureLen = 6;
     if(theString.length() < signatureLen) return false;
     if(theString.substr(0, 6) != "sdm://") return false;
@@ -123,7 +123,7 @@ namespace ChimeraTK {
           // parameter token complete (for one key-value pair)
           boost::trim(token);
           if(token.length() > 0) { // ignore empty parameter
-            auto equalSign = token.find_first_of("=");
+            auto equalSign = token.find_first_of('=');
             if(equalSign == std::string::npos) {
               throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (parameters must be "
                                            "specified as key=value pairs): " +
@@ -185,14 +185,14 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  Sdm Utilities::parseSdm(std::string sdmString) {
+  Sdm Utilities::parseSdm(const std::string& sdmString) {
     Sdm sdmInfo;
     size_t signatureLen = 6;
     if(sdmString.length() < signatureLen) throw ChimeraTK::logic_error("Invalid sdm.");
     if(sdmString.substr(0, 6) != "sdm://") throw ChimeraTK::logic_error("Invalid sdm.");
     int pos = 6;
 
-    std::size_t found = sdmString.find_first_of("/", pos);
+    std::size_t found = sdmString.find_first_of('/', pos);
     std::string subUri;
     if(found != std::string::npos) {
       sdmInfo.host = sdmString.substr(pos, found - pos); // Get the Host
@@ -224,7 +224,7 @@ namespace ChimeraTK {
     counter++;
     if(counter < numOfTokens) {
       // Get the Instance
-      found = sdmString.find_first_of(":", pos);
+      found = sdmString.find_first_of(':', pos);
       if(found != std::string::npos) {
         sdmInfo.instance = tokens[counter];
         counter++;
@@ -232,7 +232,7 @@ namespace ChimeraTK {
     }
     if(counter < numOfTokens) {
       // Get the Protocol
-      found = sdmString.find_first_of(";", pos);
+      found = sdmString.find_first_of(';', pos);
       if(found != std::string::npos) {
         sdmInfo.protocol = tokens[counter];
         counter++;
@@ -240,12 +240,14 @@ namespace ChimeraTK {
     }
     if(counter < numOfTokens) {
       // Get the Parameters
-      found = sdmString.find_first_of("=", pos);
+      found = sdmString.find_first_of('=', pos);
       if(found != std::string::npos) {
         std::string parameters = tokens[counter];
         std::vector<std::string> paramterTokens;
         boost::split(paramterTokens, parameters, boost::is_any_of(","));
-        for(uint i = 0; i < paramterTokens.size(); i++) sdmInfo.parameters.push_back(paramterTokens[i]);
+        for(auto& paramterToken : paramterTokens) {
+          sdmInfo.parameters.push_back(paramterToken);
+        }
       }
     }
 

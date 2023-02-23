@@ -58,7 +58,7 @@ namespace ChimeraTK {
     bool isDeviceDescriptor(std::string theString);
 
     /** Parse an SDM URI and return the device information in the Sdm struct. */
-    Sdm parseSdm(std::string sdmString);
+    Sdm parseSdm(const std::string& sdmString);
 
     /** Parse an old-style device string (either path to device node or map file
      * name for dummies) */
@@ -67,7 +67,7 @@ namespace ChimeraTK {
     /** Check wehter the given string seems to be an SDM. There is no guarantee
      * that the SDM is well-formed, the finction just looks for the signatore of
      * an SDM. */
-    bool isSdm(std::string theString);
+    bool isSdm(const std::string& theString);
 
     /** Check if the given string only contains alphanumeric characters */
 
