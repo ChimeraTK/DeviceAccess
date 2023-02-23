@@ -1,0 +1,20 @@
+<logicalNameMap>
+  <redirectedRegister name="SimplePushRead">
+    <targetDevice>ExcepDummy</targetDevice>
+      <targetRegister>pushcontent</targetRegister>
+      <plugin name="forceReadOnly"/>
+      <plugin name="math">
+        <parameter name="formula">x/7 + 13</parameter>
+      </plugin>
+    </redirectedRegister>
+
+  <redirectedRegister name="SimpleWrite">
+    <targetDevice>ExcepDummy</targetDevice>
+      <targetRegister>pushcontent</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">x/7 + 13</parameter>
+      </plugin>
+  </redirectedRegister>
+
+</logicalNameMap>
+  
