@@ -5,7 +5,7 @@
 
 // the io constants and struct for the driver
 #include "llrfdrv_io_compat.h"
-#include "pciedev_io.h"
+#include "pciedev_io_compat.h"
 #include "pcieuni_io_compat.h"
 #include <sys/ioctl.h>
 
