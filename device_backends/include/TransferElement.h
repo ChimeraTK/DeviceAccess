@@ -475,11 +475,8 @@ namespace ChimeraTK {
     void postRead(TransferType type, bool updateDataBuffer) {
       // only delegate to doPostRead() the first time postRead() is called in a row.
       if(readTransactionInProgress) {
-        //std::cout<<"TransferElement::postRead:readTransactionInProgress "<<readTransactionInProgress<<std::endl;
         readTransactionInProgress = false;
         doPostRead(type, updateDataBuffer);
-        //std::cout<<"TransferElement::postRead:done "<<std::endl;
-
       }
 
       // Throw on each call of postRead(). All high-level elements for a shared low-level transfer element must see the
@@ -487,7 +484,6 @@ namespace ChimeraTK {
       // only have one exception at a time). In case other code is added here later which needs to be executed after
       // doPostRead() always, a try-catch block may be necessary.
       if(_activeException) {
-        std::cout<<"TransferElement::postRead rethorwing because exception is active:"<<std::endl;
         // don't clear the active connection. This is done in preRead().
         std::rethrow_exception(_activeException);
       }
