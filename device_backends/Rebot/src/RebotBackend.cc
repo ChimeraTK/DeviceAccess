@@ -81,15 +81,13 @@ namespace ChimeraTK {
         _threadInformerMutex->quitThread = true;
 
       } // end of the lock guard scope. We have to release the lock before waiting
+
       // for the thread to join
-      _heartbeatThread.interrupt();
-      _heartbeatThread.join();
+        _heartbeatThread.interrupt();
+        _heartbeatThread.join();
     }
-    catch(std::system_error&) {
-      std::terminate();
-    }
-    catch(boost::thread_interrupted&) {
-      std::terminate();
+    catch(boost::system::system_error&) {
+        std::terminate();
     }
   }
 
