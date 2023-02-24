@@ -15,6 +15,9 @@ include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 include(cmake/enable_code_coverage_report.cmake)
 
+include(cmake/CheckFileOffsetBits.cmake)
+CHECK_FILE_OFFSET_BITS()
+
 # use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
 # build. The 'make doc' target will still exist
 if(SUPPRESS_AUTO_DOC_BUILD)
