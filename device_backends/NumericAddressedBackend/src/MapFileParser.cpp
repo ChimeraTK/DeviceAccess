@@ -334,17 +334,12 @@ namespace ChimeraTK {
 
   void MapFileParser::handle2DNewStyle(const ParsedLine& pl) {
     // search for sequence entries matching the given register, create ChannelInfos from them
-    
-    std::cout<<"value.handle2DNewStyle:"<<std::endl;
-
 
     // Find all channels associated with the area
     std::list<ParsedLine> channelLines;
     for(auto& [key, value] : parsedLinesMap) {
       if(key.startsWith(pl.pathName) and pl.pathName.length() < key.length()) {
         // First sanity check, address must not be smaller than start address
-        std::cout<<"value.address:"<<value.address<<"::pl.address:"<<pl.address<<std::endl;
-
         if(value.address < pl.address)
           throw ChimeraTK::logic_error(
               "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
@@ -414,9 +409,7 @@ namespace ChimeraTK {
     while(true) {
       auto it = parsedLinesMap.find(makeSequenceName(pl.pathName, channelLines.size()));
       if(it == parsedLinesMap.end()) break;
-       std::cout<<"it->second.address:"<<it->second.address<<"::pl.address:"<<pl.address<<std::endl;
       if(it->second.address < pl.address)
-     
         throw ChimeraTK::logic_error(
             "Start address of channel smaller than 2D register start address ('" + pl.pathName + "').");
       channelLines.push_back(it->second);
