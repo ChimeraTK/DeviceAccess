@@ -281,7 +281,7 @@ namespace ChimeraTK {
       ~InterruptDispatcherThread();
 
       void run();
-      void stop();
+      void stop() noexcept;
       /// called for each interrupt event. Implements actual dispatching
       void handleInterrupt(int interruptControllerNumber, int interruptNumber);
 

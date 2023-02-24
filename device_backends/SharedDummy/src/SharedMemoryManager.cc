@@ -51,7 +51,11 @@ namespace ChimeraTK {
     // stop and delete dispatcher thread first since it uses shm and mutex
     intDispatcherIf.reset();
     size_t pidSetSize;
-    {
+    try {
+      // The scope of the try-block is the scope of the lock_guard, which can throw when locking.
+      // The try-block cannot be smaller because if this (although not everything
+      // below is throwing).
+
       // lock guard with the interprocess mutex
       std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
 
@@ -69,8 +73,13 @@ namespace ChimeraTK {
       }
       pidSetSize = pidSet->size();
     }
-    // If size of pidSet is 0 (i.e, the instance belongs to the last accessing
-    // process), destroy shared memory and the interprocess mutex
+    catch(boost::interprocess::interprocess_exception&) {
+      // interprocess_exception is only thrown if something seriously went wrong.
+      // In this case we don't want anyone to catch it but terminate.
+      std::terminate();
+    }
+    //  If size of pidSet is 0 (i.e, the instance belongs to the last accessing
+    //  process), destroy shared memory and the interprocess mutex
     if(pidSetSize == 0) {
       boost::interprocess::shared_memory_object::remove(name.c_str());
       boost::interprocess::named_mutex::remove(name.c_str());

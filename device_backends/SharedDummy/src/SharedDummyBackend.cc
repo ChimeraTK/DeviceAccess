@@ -163,8 +163,19 @@ namespace ChimeraTK {
   SharedDummyBackend::InterruptDispatcherInterface::~InterruptDispatcherInterface() {
     // stop thread and remove semaphore on destruction
     _dispatcherThread.reset(); // stops and deletes thread which uses semaphore
-    std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
-    _semBuf->removeSem(_semId);
+    try {
+      // The scope of the try-block is the scope of the lock_guard, which can throw when locking.
+      // The try-block cannot be smaller because if this (although not everything
+      // below might be throwing).
+
+      std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
+      _semBuf->removeSem(_semId);
+    }
+    catch(boost::interprocess::interprocess_exception&) {
+      // interprocess_exception is only thrown if something seriously went wrong.
+      // In this case we don't want anyone to catch it but terminate.
+      std::terminate();
+    }
   }
 
   void SharedDummyBackend::InterruptDispatcherInterface::cleanupShm(boost::interprocess::managed_shared_memory& shm) {
@@ -202,8 +213,19 @@ namespace ChimeraTK {
   }
 
   SharedDummyBackend::InterruptDispatcherThread::~InterruptDispatcherThread() {
+    //    try {
     stop();
-    _thr.join();
+    //    }
+    //    catch(...) {
+    //      std::terminate();
+    //    }
+    try {
+      _thr.join();
+    }
+
+    catch(boost::system::system_error&) {
+      std::terminate();
+    }
   }
 
   void SharedDummyBackend::InterruptDispatcherThread::run() {
@@ -263,11 +285,36 @@ namespace ChimeraTK {
     }
   }
 
-  void SharedDummyBackend::InterruptDispatcherThread::stop() {
+  void SharedDummyBackend::InterruptDispatcherThread::stop() noexcept {
     _stop = true;
     // we must wait until the semaphore is registered
-    while(!_started) boost::this_thread::sleep_for(boost::chrono::milliseconds{10});
-    _sem->post();
+    try {
+      while(!_started) {
+        boost::this_thread::sleep_for(boost::chrono::milliseconds{10});
+      }
+    }
+    catch(const boost::thread_interrupted&) {
+      // Simply suppress the thread_interrupted here. This function is only called
+      // within a destructor, which anyway would have terminated the program when it sees the exception.
+      // There are two possible scenarios what can happen now.
+      // 1. _started is set and the destruction can continue normally.
+      // 2. _started is not set yet an we don't know if the semaphore is in the correct state.
+      //    Again there are two possibilities:
+      //    2a_ The semaphore was set correctly and the destructor continues normally.
+      //    2b_ sem->post() throws and terminate() is called (which otherwise would have been called from the escaping
+      //    thread_interrupted
+    }
+    catch(const boost::system::system_error&) {
+      // if something went really wrong we terminate here
+      std::terminate();
+    }
+
+    try {
+      _sem->post();
+    }
+    catch(const boost::interprocess::interprocess_exception&) {
+      std::terminate();
+    }
   }
 
   void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(
