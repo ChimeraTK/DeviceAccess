@@ -3,25 +3,33 @@
 
 \section writing_dummies Writing Dummies: Extending the DummyBackend
 
-Extending the DummyBackend might be usefull for writing simple automated tests. For more complicated tests, in particular those needing to simulate physical behaviour, it is recommended to use the VirtualLab library.
+Extending the DummyBackend might be useful for writing simple automated tests. For more complicated tests, in particular those needing to simulate physical behaviour, it is recommended to use the VirtualLab library.
 
 \section plugin_mechanism The Plugin Mechanism
 
-Custom backends are provided as shared libraries. There is a plugin mechanism which allows
-to load the backend at run time. Like this you can for instance load all kinds of
-backends in QtHardMon, although it has not been linked against it.
+Custom backends are provided as shared libraries. There is a plugin mechanism which registers the backend with the backend factory
+when the library is loaded, no matter whether it has been linked at compile time or is dynamically loaded at run time.
+The latter allows load all kinds of backends in generic applications QtHardMon or the DeviceAccess python bindings, although they have not explicitly been linked against those backends at compile time.
 
-\subsection loading_backends Loading custom backends
+\subsection linking_backends Linking custom backends at compile time (recommended)
 
-Custom backends should be loaded in the dmap file using the \c \@LOADLIB keyword, followed by the full path to the .so file with the backend.
+As backends have to be compiled against the same DeviceAccess version as the application it is used in, it is recommended to link them in at compile time if it is already known that it will be needed.
+An application that is designed to read data from a particular DOOCS server for instance should be directly linked with the DOOCS backend.
+
+\subsection loading_backends Loading custom backends at run time
+
+Custom backends are loaded via the dmap file using the \c \@LOADLIB keyword, followed by the full path to the .so file with the backend. Use the symlink that ends on \c .so, not the ones with a version number.
 
 \verbatim
-@LOAD_LIB /path/to/your/build_directory/lib/libCustomBackend.so
+@LOAD_LIB /path/to/your/lib/libCustomBackend.so
 
 MY_CUSTOM_DEVICE (CUSTOM?map=my_device.map)
 \endverbatim
 
 Example dmap file from the custom backend registration example (see examples/custom_backend_registration in your build directory).
+
+To ensure binary compatibility of the loaded backed, the application and the backend must compiled against the same version of DeviceAccess. This cannot be done by the DeviceAccess library as it is only
+one component. There is a scheme how to create Debian packages in a way that all dynamically used backends are updated if the the using application is updated, and vice versa (see \ref backend_packaging_scheme). It should be applicable to other package managers as well (untested).
 
 \subsection writing_backends Writing your own backed
 
@@ -31,10 +39,46 @@ The backend has to fulfil a few requirements for the plugin mechanism to work.
 \li The backend has to be registered with the factory. This should automatically happen
   when the library is loaded.
 \li The library should be loadable at run time, not only at link time. This requires
-  to check that the backend has been compiled with the the correct DeviceAcces version.
+  to check that the backend has been compiled with the the correct DeviceAccess version.
 
 The CustomBackend example shows how to implement those three steps of the plugin mechanism.
 \include CustomBackend.cc
+
+\subsection backend_packaging_scheme Debian packaging scheme for external backends
+
+In the ChimeraTK Debian packaging scheme, the libraries themselves contain the build number as part of the minor version number (e.g. /usr/lib/libChimeraTK-DeviceAccess.so.03.07focal1.01)
+and the package name itself contains the major and minor version number (e.g. libchimeratk-deviceaccess03-07-focal1). This allows to have several binary incompatible version of the same library
+to be installed at the same time, and each executable to unambiguously link against the correct version.
+
+To get a consistent set of libraries at compile time, the -dev packages do not have a version number itself, but depend on the current versions of the dependencies. For instance, the package
+`libchimeratk-device-access-dev` in version 03.07focal1.01 depends on `libchimeratk-cppext-dev (>= 01.04focal1), libchimeratk-cppext-dev (<< 01.04focal2)`. Like this, all -dev packages are consistently
+upgraded to a new version if one of them is upgraded, while the linker is searching for the .so-file without version number, which is a symlink to the versioned file.
+The Debian packaging scripts (https://github.com/ChimeraTK/DebianPackagingScripts) ensure that all packages are re-build if a dependency changes.
+
+If the generic applications QtHardMon and DeviceAccess python bindings as well as the loadable backend packages would depend on lib-chimeratk-deviceaccess-dev, this would guarantee that
+/usr/lib/libMyCustomBackend.so could always be loaded at run time, without having to know the exact version number. The drawback of this solution is to always install the headers and the whole chain of build
+tools on the target machines, which is not wanted.
+
+The mechanism to resolve this is based on two extra packages:
+
+\li libchimeratk-deviceaccess (without version number in the package name) is an empty meta package which acts as a reference anchor for the generic applications and the backends.
+\li libchimeratk-deviceaccess-mycustombackend (without version number in the package name)
+
+The symlink /usr/lib/libMyCustomBackend.so has been moved out of the -dev package into the new package libchimeratk-deviceaccess-mycustombackend, and the -dev package depends on that new package.
+This custom backend package without version and the generic application depends on the correct version of libchimeratk-deviceaccess. If now either a backend or a generic application is upgraded on the
+target host, this will upgrade the required version of libchimeratk-deviceaccess as its dependency, which in turn will upgrade all packages that depend on it, i.e. all other generic applications and backends.
+
+\subsubsection  backend_packaging_usage Usage in the packaging scripts
+
+\li Instead of having a \c dev and a \c lib package, loadable backends specify the two packages \c dev-noheader-dynload and \c lib in the \c Has-packages section of the DebiianBuildVersions CONFIG file.
+\code
+Has-packages: dev-noheader-dynload lib
+\endcode
+\li Generic executables that want to use dynamic backend loading define \c Use-dynload in the CONFIG file for the particular package (typically for the \c bin package) 
+\code
+Has-packages: bin
+Use-dynload: bin
+\endcode
 
 Next topic: \ref dmap
 

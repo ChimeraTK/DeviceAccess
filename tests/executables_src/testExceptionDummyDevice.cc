@@ -7,7 +7,7 @@
 #include "Device.h"
 #include "ExceptionDummyBackend.h"
 
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
