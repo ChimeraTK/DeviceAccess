@@ -351,7 +351,9 @@ namespace ChimeraTK { namespace LNMBackend {
     // update version number and validity from target
     this->_versionNumber = _target->getVersionNumber();
     this->_dataValidity = _target->dataValidity();
-    if (paramDataValidity == ChimeraTK::DataValidity::faulty) this->_dataValidity = ChimeraTK::DataValidity::faulty;
+    if (paramDataValidity == ChimeraTK::DataValidity::faulty){
+      this->_dataValidity = ChimeraTK::DataValidity::faulty;
+    }
   }
 
   /********************************************************************************************************************/
