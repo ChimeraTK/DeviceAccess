@@ -340,8 +340,8 @@ namespace ChimeraTK { namespace LNMBackend {
     auto paramDataValidity = ChimeraTK::DataValidity::ok;
     for(auto& p : h.params) {
       p.first->readLatest();
-      if (p.first->dataValidity() == ChimeraTK::DataValidity::faulty){
-        //probably compiler optimize it automatically and assign it only once.
+      if(p.first->dataValidity() == ChimeraTK::DataValidity::faulty) {
+        // probably compiler optimize it automatically and assign it only once.
         paramDataValidity = ChimeraTK::DataValidity::faulty;
       }
     }
@@ -352,7 +352,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // update version number and validity from target
     this->_versionNumber = _target->getVersionNumber();
     this->_dataValidity = _target->dataValidity();
-    if (paramDataValidity == ChimeraTK::DataValidity::faulty){
+    if(paramDataValidity == ChimeraTK::DataValidity::faulty) {
       this->_dataValidity = ChimeraTK::DataValidity::faulty;
     }
   }
@@ -372,9 +372,9 @@ namespace ChimeraTK { namespace LNMBackend {
     // update parameters
     for(auto& p : h.params) {
       p.first->readLatest();
-      //check the DataValidity of parameter.
-      if (p.first->dataValidity() == ChimeraTK::DataValidity::faulty){
-        //probably compiler optimize it automatically and assign it only once.
+      // check the DataValidity of parameter.
+      if(p.first->dataValidity() == ChimeraTK::DataValidity::faulty) {
+        // probably compiler optimize it automatically and assign it only once.
         paramDataValidity = ChimeraTK::DataValidity::faulty;
       }
     }
@@ -417,10 +417,10 @@ namespace ChimeraTK { namespace LNMBackend {
     h.computeResult(_target->accessChannel(0), _target->accessChannel(0));
 
     // pass validity to target and delegate preWrite
-    if (paramDataValidity == ChimeraTK::DataValidity::ok && this->_dataValidity == ChimeraTK::DataValidity::ok) {
-       _target->setDataValidity(ChimeraTK::DataValidity::ok);
-     }
-    else{
+    if(paramDataValidity == ChimeraTK::DataValidity::ok && this->_dataValidity == ChimeraTK::DataValidity::ok) {
+      _target->setDataValidity(ChimeraTK::DataValidity::ok);
+    }
+    else {
       _target->setDataValidity(ChimeraTK::DataValidity::faulty);
     }
     _target->preWrite(type, versionNumber);
