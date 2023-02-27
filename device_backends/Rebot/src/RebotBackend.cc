@@ -83,11 +83,11 @@ namespace ChimeraTK {
       } // end of the lock guard scope. We have to release the lock before waiting
 
       // for the thread to join
-        _heartbeatThread.interrupt();
-        _heartbeatThread.join();
+      _heartbeatThread.interrupt();
+      _heartbeatThread.join();
     }
     catch(boost::system::system_error&) {
-        std::terminate();
+      std::terminate();
     }
   }
 

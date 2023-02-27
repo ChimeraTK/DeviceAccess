@@ -275,7 +275,7 @@ namespace ChimeraTK {
     }
     else {
       return sdmInfo;
-}
+    }
     sdmInfo.host = ".";
     sdmInfo.protocol = "";
     return sdmInfo;
