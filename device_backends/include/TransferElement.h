@@ -68,7 +68,7 @@ namespace ChimeraTK {
     TransferElement(std::string name, AccessModeFlags accessModeFlags, std::string unit = std::string(unitNotSet),
         std::string description = std::string())
     : _name(std::move(name)), _unit(std::move(unit)), _description(std::move(description)),
-      _accessModeFlags(std::move(std::move(accessModeFlags))) {}
+      _accessModeFlags(std::move(accessModeFlags)) {}
 
     /** Copying and moving is not allowed */
     TransferElement(const TransferElement& other) = delete;
