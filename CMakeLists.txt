@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0.2)
+cmake_minimum_required (VERSION 3.16)
 Project(ChimeraTK-DeviceAccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
@@ -12,6 +12,7 @@ include(cmake/set_version_numbers.cmake)
 set(${PROJECT_NAME}_CXX_FLAGS "${${PROJECT_NAME}_CXX_FLAGS} -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30 -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR")
 
 include(cmake/set_default_build_to_release.cmake)
+# modifies ${PROJECT_NAME}_CXX_FLAGS
 include(cmake/set_default_flags.cmake)
 include(cmake/enable_code_coverage_report.cmake)
 
@@ -27,17 +28,18 @@ else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-# add dependencies
+# add dependencies. use add_dependency only where imported targets not yet existing.
 include(cmake/add_dependency.cmake)
-add_dependency(Boost COMPONENTS thread system chrono filesystem REQUIRED)
-add_dependency(ChimeraTK-cppext REQUIRED 01.04)
+FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
+FIND_PACKAGE(ChimeraTK-cppext REQUIRED 01.04)
+message("ChimeraTK-cppext_FOUND: ${ChimeraTK-cppext_FOUND}")
+# TODO - debug problem with cppext found not set, due to components check.
 add_dependency(exprtk REQUIRED 01.00)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
-PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
-PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
-include_directories(SYSTEM ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
+PKG_CHECK_MODULES(LibXML++ REQUIRED IMPORTED_TARGET ${LIBXML++_VERSION})
+PKG_CHECK_MODULES(glib REQUIRED IMPORTED_TARGET glib-2.0)
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
@@ -45,9 +47,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(HAVE_PCIE_BACKEND 1)
   set(HAVE_XDMA_BACKEND 1)
   set(HAVE_UIO_BACKEND 1)
-  add_definitions(-DCHIMERATK_HAVE_PCIE_BACKEND)
-  add_definitions(-DCHIMERATK_HAVE_XDMA_BACKEND)
-  add_definitions(-DCHIMERATK_HAVE_UIO_BACKEND)
+  # these options are not exported
+  add_compile_definitions(CHIMERATK_HAVE_PCIE_BACKEND)
+  add_compile_definitions(CHIMERATK_HAVE_XDMA_BACKEND)
+  add_compile_definitions(CHIMERATK_HAVE_UIO_BACKEND)
 else()
   set(HAVE_PCIE_BACKEND 0)
   set(HAVE_XDMA_BACKEND 0)
@@ -93,19 +96,26 @@ endif()
 
 # add the library
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} )
+# we need the compile options as array to tell cmake they should be exported
+include(cmake/format_options.cmake)
+formatOptionsAsArray(projectCxxFlags ${${PROJECT_NAME}_CXX_FLAGS})
+target_compile_options(${PROJECT_NAME} PUBLIC ${projectCxxFlags})
+# exported includes are all under ${CMAKE_INSTALL_PREFIX}/include
+target_include_directories(${PROJECT_NAME} PUBLIC  "$<INSTALL_INTERFACE:include>")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
-link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES}
-                                      ${glib_LIBRARIES} ${RT_LIBRARIES} Threads::Threads ${ChimeraTK-cppext_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE ${CMAKE_DL_LIBS} PkgConfig::LibXML++ PkgConfig::glib
+    PUBLIC ${Boost_LIBRARIES} ${RT_LIBRARIES} Threads::Threads ChimeraTK::ChimeraTK-cppext)
 
 # Install the library and the executables
 install( TARGETS ${PROJECT_NAME}
+         EXPORT EXPORT ${PROJECT_NAME}Targets
          RUNTIME DESTINATION bin
          LIBRARY DESTINATION lib
          ARCHIVE DESTINATION lib )
 
 # Generate configuration files for dependencies
+# this section is for compatibility only, no longer required when consuming project uses imported target
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS} ${ChimeraTK-cppext_INCLUDE_DIRS}")
 set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES} ${ChimeraTK-cppext_LIBRARIES} ${RT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS} ${ChimeraTK-cppext_LIBRARY_DIRS}")
@@ -113,12 +123,15 @@ set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DI
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
 else()
+  # TODO - will need special treatment. Seems it's just required on the consuming side.
   set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
 endif()
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
 
 list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem")
 
+# we support our cmake EXPORTS as imported targets
+set(PROVIDES_EXPORTED_TARGETS 1)
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
 include(cmake/enable_doxygen_documentation.cmake)
