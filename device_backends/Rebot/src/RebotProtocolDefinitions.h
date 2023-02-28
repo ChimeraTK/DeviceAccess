@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace ChimeraTK { namespace Rebot {
+namespace ChimeraTK::Rebot {
 
   static const int READ_BLOCK_SIZE = 361;
   static const int32_t HELLO_TOKEN = 0x00000004;
@@ -31,4 +31,4 @@ namespace ChimeraTK { namespace Rebot {
   static const unsigned int DEFAULT_SERVER_PORT = 5001;
   static const int32_t DEFAULT_CONNECTION_TIMEOUT = 10000; // 10 seconds
 
-}} // namespace ChimeraTK::Rebot
+} // namespace ChimeraTK::Rebot

@@ -14,11 +14,6 @@
 namespace ip = boost::asio::ip;
 
 namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
-
-namespace ChimeraTK {
-  using namespace ChimeraTK;
 
   extern std::atomic<bool> stop_rebot_server;
 

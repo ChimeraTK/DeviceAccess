@@ -13,7 +13,7 @@
 #include <thread>
 #include <vector>
 
-namespace ChimeraTK { namespace Rebot {
+namespace ChimeraTK::Rebot {
 
   /// Handles the communication over TCP protocol with RebotDevice-based devices
   class Connection {
@@ -48,4 +48,4 @@ namespace ChimeraTK { namespace Rebot {
     void disconnectionTimerStart();
     void disconnectionTimerCancel(const boost::system::error_code& ec);
   };
-}} // namespace ChimeraTK::Rebot
+} // namespace ChimeraTK::Rebot
