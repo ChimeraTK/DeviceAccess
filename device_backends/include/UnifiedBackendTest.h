@@ -791,7 +791,7 @@ namespace ChimeraTK {
           }                                                                                                            \
           if(!compareHelper(CHECK_EQUALITY_value[CHECK_EQUALITY_i][CHECK_EQUALITY_k],                                  \
                  expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {                                                 \
-            if(!fail.empty()) {                                                                                        \
+            if(fail.empty()) {                                                                                         \
               fail = "Data content differs from expected value. First difference at index [" +                         \
                   std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
                   "]: " + std::to_string(CHECK_EQUALITY_value[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                   \
