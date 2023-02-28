@@ -2,10 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-// #include "BackendRegisterCatalogue.h"
-// #include "BackendRegisterInfoBase.h"
-// #include "ForwardDeclarations.h"
-// #include "RegisterInfo.h"
 #include "TransferElement.h"
 
 #include <boost/shared_ptr.hpp>

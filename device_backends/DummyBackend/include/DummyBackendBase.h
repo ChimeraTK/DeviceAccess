@@ -23,8 +23,7 @@
                  << "Caught out_of_range exception: " << outOfRangeException.what();                                   \
     std::cout << errorMessage.str() << std::endl;                                                                      \
     throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
-  }                                                                                                                    \
-  //  while(false)
+  }
 
 namespace ChimeraTK {
   /**

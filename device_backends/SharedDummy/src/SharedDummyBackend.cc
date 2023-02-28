@@ -213,12 +213,7 @@ namespace ChimeraTK {
   }
 
   SharedDummyBackend::InterruptDispatcherThread::~InterruptDispatcherThread() {
-    //    try {
     stop();
-    //    }
-    //    catch(...) {
-    //      std::terminate();
-    //    }
     try {
       _thr.join();
     }

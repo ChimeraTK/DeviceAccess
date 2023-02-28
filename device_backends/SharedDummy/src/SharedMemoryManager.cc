@@ -53,7 +53,7 @@ namespace ChimeraTK {
     size_t pidSetSize;
     try {
       // The scope of the try-block is the scope of the lock_guard, which can throw when locking.
-      // The try-block cannot be smaller because if this (although not everything
+      // The try-block cannot be smaller because of this (although not everything
       // below is throwing).
 
       // lock guard with the interprocess mutex
