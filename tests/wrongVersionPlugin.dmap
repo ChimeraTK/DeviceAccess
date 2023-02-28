@@ -5,6 +5,6 @@
 # Absolute .so file name
 @LOAD_LIB ../libWrongVersionBackend.so
 
-MY_DUMMY sdm://./dummy=goodMapFile.map goodMapFile.map
-WRONG_VERSION sdm://./wrongVersionBackend=goodMapFile.map goodMapFile.map
+MY_DUMMY (dummy?map=goodMapFile.map)
+WRONG_VERSION (wrongVersionBackend?map=goodMapFile.map)
 

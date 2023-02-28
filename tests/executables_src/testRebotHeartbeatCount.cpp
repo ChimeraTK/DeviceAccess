@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   boost::thread serverThread(boost::bind(&RebotDummyServer::start, boost::ref(rebotServer)));
 
   Device d;
-  d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+  d.open("(rebot?ip=localhost&port=5001&map=mtcadummy_rebot.map)");
   auto session = rebotServer.session();
 
   BOOST_CHECK(d.isFunctional() == true);
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   BOOST_CHECK(d.isOpened() == false);
 
   // test, if device is not functinal after stopping server
-  d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+  d.open("(rebot?ip=localhost&port=5001&map=mtcadummy_rebot.map)");
   BOOST_CHECK(d.isFunctional() == true);
   rebotServer.stop();
   testable_rebot_sleep::advance_until(boost::chrono::milliseconds(62505 + 2500));

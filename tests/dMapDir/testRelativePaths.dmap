@@ -1,9 +1,10 @@
-PCIE0     sdm://./pci:pcieunidummys6; ../mtcadummy_withoutModules.map
-PCIE1     sdm://./pci:pcieunidummys6; ./mapFile.map
-PCIE2     sdm://./pci:mtcadummys0; mapFile.map
+PCIE0     (pci:pcieunidummys6?map=../mtcadummy_withoutModules.map)
+PCIE1     (pci:mtcadummys0?map=./mapFile)
+PCIE2     (pci:mtcadummys0?map=mapFile.map)
 
-DUMMYD0   sdm://./dummy=../mtcadummy_withoutModules.map ../mtcadummy_withoutModules.map
-DUMMYD1   sdm://./dummy=mapFile.map mapFile.map
+DUMMYD0   (dummy?map=../mtcadummy_withoutModules.map)
+DUMMYD0   (dummy?map=../mtcadummy_withoutModules.map)
+DUMMYD1   (dummy?map=mapFile.map)
 
-example0   sdm://./exx:examp=bus,1  ../mtcadummy_withoutModules.map
-example1   sdm://./exx:examp=bus,1  ./mapFile.map
+example0  (exx:examp?parameter=bus,parameter2=1?map=../mtcadummy_withoutModules.map)
+example1  (exx:examp?parameter=bus,parameter2=1?map=./mapFile.map)

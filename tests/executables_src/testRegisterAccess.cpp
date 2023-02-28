@@ -14,7 +14,7 @@ BOOST_AUTO_TEST_SUITE(RegisterAccessSpecifierTestSuite)
 
 BOOST_AUTO_TEST_CASE(testRegisterAccess) {
   Device dev;
-  dev.open("sdm://./pci:pcieunidummys6=registerAccess.map");
+  dev.open("(pci:pcieunidummys6?map=registerAccess.map)");
   BOOST_CHECK(dev.isOpened());
 
   // Check RO

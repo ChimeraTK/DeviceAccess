@@ -4,8 +4,8 @@
 # .so file name relative to dmap file, while dmap file is not in the working directory.
 # Absolute .so file name
 @LOAD_LIB ../libWorkingBackend.so
-@LOAD_LIB ${PROJECT_BINARY_DIR}/tests/libAnotherWorkingBackend.so		
+@LOAD_LIB ${PROJECT_BINARY_DIR}/tests/libAnotherWorkingBackend.so
 
-WORKING sdm://./working=goodMapFile.map sdm://./working=goodMapFile.map
-ANOTHER sdm://./another=goodMapFile.map sdm://./working=goodMapFile.map
+WORKING (working?map=goodMapFile.map)
+ANOTHER (another?map=goodMapFile.map)
 

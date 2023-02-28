@@ -499,17 +499,17 @@ void PcieBackendTest::testCreateBackend() {
   // creation because we have to bypass the dmap file parser which at the time
   // of writing this requires a map file as third column
   Device secondDevice;
-  secondDevice.open("sdm://./pci:pcieunidummys6=mtcadummy.map");
+  secondDevice.open("(pci:pcieunidummys6?map=mtcadummy.map)");
   BOOST_CHECK(secondDevice.read<double>("BOARD/WORD_USER") == 48);
 
   Device secondDevice2;
   // try opening same device again.
-  secondDevice2.open("sdm://./pci:pcieunidummys6=mtcadummy.map");
+  secondDevice2.open("(pci:pcieunidummys6?map=mtcadummy.map)");
   BOOST_CHECK(secondDevice2.read<double>("BOARD/WORD_USER") == 48);
 
   // 3. We don't have a map file, so we have to use numerical addressing
   Device thirdDevice;
-  thirdDevice.open("sdm://./pci:pcieunidummys6");
+  thirdDevice.open("(pci:pcieunidummys6)");
   BOOST_CHECK(thirdDevice.read<int32_t>(BAR / 0 / 0xC) == 48 << 3); // The user register is on bar 0, address 0xC.
                                                                     // We have no fixed point data conversion but 3
                                                                     // fractional bits.
