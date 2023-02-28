@@ -31,10 +31,8 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 # add dependencies. use add_dependency only where imported targets not yet existing.
 include(cmake/add_dependency.cmake)
 FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
-FIND_PACKAGE(ChimeraTK-cppext REQUIRED 01.04)
-message("ChimeraTK-cppext_FOUND: ${ChimeraTK-cppext_FOUND}")
-# TODO - debug problem with cppext found not set, due to components check.
-add_dependency(exprtk REQUIRED 01.00)
+FIND_PACKAGE(ChimeraTK-cppext 01.04 REQUIRED)
+add_dependency(exprtk 01.00 REQUIRED)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
