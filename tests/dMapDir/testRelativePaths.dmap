@@ -6,5 +6,3 @@ DUMMYD0   (dummy?map=../mtcadummy_withoutModules.map)
 DUMMYD0   (dummy?map=../mtcadummy_withoutModules.map)
 DUMMYD1   (dummy?map=mapFile.map)
 
-example0  (exx:examp?parameter=bus,parameter2=1?map=../mtcadummy_withoutModules.map)
-example1  (exx:examp?parameter=bus,parameter2=1?map=./mapFile.map)
