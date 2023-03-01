@@ -83,7 +83,7 @@ namespace ChimeraTK {
         /**
          * @brief  Defines available types of detected problems
          */
-        using DMAP_FILE_ERR = enum {
+        enum DMAP_FILE_ERR {
           NONUNIQUE_DEVICE_NAME /**< Names of two devices are the same - treated
                                    as critical error */
         };
@@ -95,7 +95,7 @@ namespace ChimeraTK {
          * number of reported problems only to critical errors or wants to report
          * all detected problems (errors and warnings)
          */
-        using TYPE = enum {
+        enum TYPE {
           ERROR,  /**< Critical error was detected */
           WARNING /**< Non-critical error was detected */
         };
