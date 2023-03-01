@@ -59,8 +59,6 @@ BOOST_FIXTURE_TEST_CASE(testReadTimeout, F) {
   Device d("(rebot?ip=localhost&port=" + std::to_string(rebotServer.port()) + "&map=mtcadummy_rebot.map&timeout=" +
       std::to_string(timeout_sec)+")");
 
-  //Device d("rebot?ip=localhost&port=5001&map=mtcadummy_rebot.map");
-
   BOOST_CHECK(d.isFunctional() == false);
 
   d.open();

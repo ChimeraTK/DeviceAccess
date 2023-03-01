@@ -102,7 +102,6 @@ DeviceInfo RebotTestClass::getDeviceDetailsFromDMap(const std::string& cardAlias
 }
 
 RebotServerDetails RebotTestClass::extractServerDetailsFromUri(std::string& uri) {
-  std::cout<<uri<<std::endl;
   ChimeraTK::DeviceDescriptor parsedSDM = ChimeraTK::Utilities::parseDeviceDesciptor(uri);
   std::map<std::string, std::string>& serverParameters = parsedSDM.parameters;
   std::string ip = serverParameters["ip"];

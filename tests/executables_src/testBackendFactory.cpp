@@ -109,7 +109,6 @@ BOOST_AUTO_TEST_CASE(testPluginMechanism) {
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(ibWrongVersionBackendCompat?map=goodMapFile.map)"),
       ChimeraTK::logic_error);
 
-  //BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(unregisteredBackend)"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(unregisteredBackend)"), ChimeraTK::logic_error);
 }
 
