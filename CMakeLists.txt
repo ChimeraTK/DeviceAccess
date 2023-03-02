@@ -99,21 +99,22 @@ include(cmake/format_options.cmake)
 formatOptionsAsArray(projectCxxFlags ${${PROJECT_NAME}_CXX_FLAGS})
 target_compile_options(${PROJECT_NAME} PUBLIC ${projectCxxFlags})
 # exported includes are all under ${CMAKE_INSTALL_PREFIX}/include
-target_include_directories(${PROJECT_NAME} PUBLIC  "$<INSTALL_INTERFACE:include>")
+target_include_directories(${PROJECT_NAME} INTERFACE "$<INSTALL_INTERFACE:include>")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 target_link_libraries(${PROJECT_NAME}
     PRIVATE ${CMAKE_DL_LIBS} PkgConfig::LibXML++ PkgConfig::glib
-    PUBLIC ${Boost_LIBRARIES} ${RT_LIBRARIES} Threads::Threads ChimeraTK::ChimeraTK-cppext)
+    PRIVATE Threads::Threads
+    # we set this public because of Backend libs using shm_open (e.g. test code)
+    PUBLIC ${RT_LIBRARIES}
+    PUBLIC ${Boost_LIBRARIES} 
+    # cppext is public because anything using DeviceAccess also needs to find cppext headers
+    PUBLIC ChimeraTK::ChimeraTK-cppext)
 
-# Install the library and the executables
-install( TARGETS ${PROJECT_NAME}
-         EXPORT EXPORT ${PROJECT_NAME}Targets
-         RUNTIME DESTINATION bin
-         LIBRARY DESTINATION lib
-         ARCHIVE DESTINATION lib )
+# do not remove runtime paths of the library when installing (helps for unsually located implicit dependencies)
+set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Generate configuration files for dependencies
-# this section is for compatibility only, no longer required when consuming project uses imported target
+# (this section is for compatibility only, no longer required when consuming project uses imported target)
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS} ${ChimeraTK-cppext_INCLUDE_DIRS}")
 set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES} ${ChimeraTK-cppext_LIBRARIES} ${RT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS} ${ChimeraTK-cppext_LIBRARY_DIRS}")
@@ -121,12 +122,30 @@ set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DI
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
 else()
-  # TODO - will need special treatment. Seems it's just required on the consuming side.
   set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
 endif()
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
+# (end of compatibility section)
 
+# add interface link options, for EXPORT
+# TODO - discuss relevance of --enable-new-dtags
+# why is it only on the client side (it's not used for compilation of this project)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+else()
+  set(ifLinkFlagsS "-Wl,--enable-new-dtags")
+endif()
+target_link_options(${PROJECT_NAME} INTERFACE ${ifLinkFlags})
+
+# we need the public dependencies so create_cmake_config_files can find them as implicit dependencies
 list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem")
+list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "ChimeraTK-cppext")
+
+# Install the library and the executables
+install( TARGETS ${PROJECT_NAME}
+         EXPORT ${PROJECT_NAME}Targets
+         RUNTIME DESTINATION bin
+         LIBRARY DESTINATION lib
+         ARCHIVE DESTINATION lib )
 
 # we support our cmake EXPORTS as imported targets
 set(PROVIDES_EXPORTED_TARGETS 1)
