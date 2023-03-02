@@ -81,53 +81,51 @@ BOOST_AUTO_TEST_CASE(testReadSyncWithParameters) {
   arrayPar.read();
   BOOST_CHECK(arrayPar.dataValidity() == ChimeraTK::DataValidity::ok);
 
-
-  //set a parameter to faulty.
+  // set a parameter to faulty.
   scalarPar.setDataValidity(ChimeraTK::DataValidity::faulty);
   scalarPar.write();
 
-  //should become faulty
+  // should become faulty
   accMathRead.read();
   BOOST_CHECK(accMathRead.dataValidity() == ChimeraTK::DataValidity::faulty);
 
-  //It's readonly so no change is expected in target.
+  // It's readonly so no change is expected in target.
   accTarget.read();
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  //other parameters should be ok.
+  // other parameters should be ok.
   arrayPar.read();
   BOOST_CHECK(arrayPar.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  //set a parameter to ok.
+  // set a parameter to ok.
   scalarPar.setDataValidity(ChimeraTK::DataValidity::ok);
   scalarPar.write();
 
-  //should be ok now.
+  // should be ok now.
   accMathRead.read();
   BOOST_CHECK(accMathRead.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  //set target to faulty.
+  // set target to faulty.
   accTarget.setDataValidity(ChimeraTK::DataValidity::faulty);
   accTarget.write();
 
-  //parameter should be ok.
+  // parameter should be ok.
   scalarPar.read();
   scalarPar.setDataValidity(ChimeraTK::DataValidity::ok);
   arrayPar.read();
   BOOST_CHECK(arrayPar.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  //It should become faulty
+  // It should become faulty
   accMathRead.read();
   BOOST_CHECK(accMathRead.dataValidity() == ChimeraTK::DataValidity::faulty);
 
-  //set target to ok.
+  // set target to ok.
   accTarget.setDataValidity(ChimeraTK::DataValidity::ok);
   accTarget.write();
 
-  //All should be ok now.
+  // All should be ok now.
   accMathRead.read();
   BOOST_CHECK(accMathRead.dataValidity() == ChimeraTK::DataValidity::ok);
-
 }
 
 /********************************************************************************************************************/
@@ -151,47 +149,47 @@ BOOST_AUTO_TEST_CASE(testWriteWithParameters) {
   accMathWrite.setDataValidity(ChimeraTK::DataValidity::faulty);
   accMathWrite.write();
 
-  //target should become faulty.
+  // target should become faulty.
   accTarget.read();
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::faulty);
 
-  //parameters should be ok.
+  // parameters should be ok.
   scalarPar.read();
   BOOST_CHECK(scalarPar.dataValidity() == ChimeraTK::DataValidity::ok);
   arrayPar.read();
   BOOST_CHECK(arrayPar.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  //set it back to ok
+  // set it back to ok
   accMathWrite.setDataValidity(ChimeraTK::DataValidity::ok);
   accMathWrite.write();
 
-  //should be ok.
+  // should be ok.
   accTarget.read();
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  //set parameter to faulty
+  // set parameter to faulty
   scalarPar.setDataValidity(ChimeraTK::DataValidity::faulty);
   scalarPar.write();
 
-  //other parameter should be ok
+  // other parameter should be ok
   arrayPar.read();
   BOOST_CHECK(arrayPar.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  //update
+  // update
   accMathWrite.write();
 
-  //target should become faulty.
+  // target should become faulty.
   accTarget.read();
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::faulty);
 
-  //set parameter to ok
+  // set parameter to ok
   scalarPar.setDataValidity(ChimeraTK::DataValidity::ok);
   scalarPar.write();
 
-  //update
+  // update
   accMathWrite.write();
 
-  //target should be ok now.
+  // target should be ok now.
   accTarget.read();
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
 }
