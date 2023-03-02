@@ -1,5 +1,5 @@
 PCIE0     (pci:pcieunidummys6?map=../mtcadummy_withoutModules.map)
-PCIE1     (pci:mtcadummys0?map=./mapFile)
+PCIE1     (pci:pcieunidummys6?map=./mapFile.map)
 PCIE2     (pci:mtcadummys0?map=mapFile.map)
 
 DUMMYD0   (dummy?map=../mtcadummy_withoutModules.map)
