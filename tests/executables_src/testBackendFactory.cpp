@@ -102,8 +102,8 @@ BOOST_AUTO_TEST_CASE(testPluginMechanism) {
       ChimeraTK::logic_error);
 
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWrongVersionBackend.so"));
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(wrongVersionBackend?map=goodMapFile.map)"),
-      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      BackendFactory::getInstance().createBackend("(wrongVersionBackend?map=goodMapFile.map)"), ChimeraTK::logic_error);
 
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWrongVersionBackendCompat.so"));
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(ibWrongVersionBackendCompat?map=goodMapFile.map)"),
