@@ -18,6 +18,7 @@ if which clang-format-14 > /dev/null; then
     echo "Code formatting incorrect!"
   fi
 else
+  echo 77 > "${ERRFILE}"
   echo "WARNING: clang-format-14 not found, code formatting not checked!"
 fi
 
