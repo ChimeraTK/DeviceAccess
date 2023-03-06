@@ -59,13 +59,13 @@ BOOST_AUTO_TEST_CASE(testFactoryForRebotDeviceCreation) {
   // creation because we have to bypass the dmap file parser which at the time
   // of writing this requires a map file as third column
   ChimeraTK::Device secondDevice;
-  secondDevice.open("sdm://./rebot=localhost," + port + ",mtcadummy_rebot.map");
+  secondDevice.open("(rebot?ip=localhost&port=" + port + "&map=mtcadummy_rebot.map)");
   BOOST_CHECK(secondDevice.read<double>("BOARD/WORD_USER") == 48);
   secondDevice.close();
 
   // 3. We don't have a map file, so we have to use numerical addressing
   ChimeraTK::Device thirdDevice;
-  thirdDevice.open("sdm://./rebot=localhost," + port);
+  thirdDevice.open("(rebot?ip=localhost&port=" + port + ")");
   BOOST_CHECK(thirdDevice.read<int32_t>(ChimeraTK::numeric_address::BAR() / 0 / 0xC) == 48 << 3); // The user register
                                                                                                   // is on bar 0,
                                                                                                   // address 0xC. We

@@ -2,5 +2,5 @@
 @LOAD_LIBlibmylib.so
 
 #keep one card so the parser does not consider the file empty
-card1 /dev/dev1 goodMapFile_withoutModules.map
+card1 (pci:/dev/dev1?map=goodMapFile_withoutModules.map)
 

@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(testCreation) {
 
 BOOST_AUTO_TEST_CASE(testReadWrite) {
   Device device;
-  device.open("sdm://./dummy=goodMapFile.map");
+  device.open("(dummy?map=goodMapFile.map)");
 
   auto accessor = device.getScalarRegisterAccessor<int>("MODULE0/WORD_USER1");
 
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(testReadWrite) {
 
 BOOST_AUTO_TEST_CASE(testReadOnly) {
   Device device;
-  device.open("sdm://./dummy=goodMapFile.map");
+  device.open("(dummy?map=goodMapFile.map)");
 
   auto accToReadOnly = device.getScalarRegisterAccessor<int>("MODULE1/WORD_USER3");
 
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(testReadOnly) {
 
 BOOST_AUTO_TEST_CASE(testRawWrite) {
   Device device;
-  device.open("sdm://./dummy=goodMapFile.map");
+  device.open("(dummy?map=goodMapFile.map)");
 
   auto accessor1 = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 0, {AccessMode::raw});
   for(auto& value : accessor1) {
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(testRawWrite) {
 
 BOOST_AUTO_TEST_CASE(testRawWithTransferGroup) {
   Device device;
-  device.open("sdm://./dummy=goodMapFile.map");
+  device.open("(dummy?map=goodMapFile.map)");
 
   // the whole register
   auto a1 = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 2, 0, {AccessMode::raw});
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(registerCatalogueCreation) {
-  Device d("sdm://./dummy=goodMapFile.map");
+  Device d("(dummy?map=goodMapFile.map)");
   auto catalogue = d.getRegisterCatalogue();
   BOOST_CHECK_NO_THROW((void)catalogue.getRegister("MODULE0/WORD_USER1"));
 

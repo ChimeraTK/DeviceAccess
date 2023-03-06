@@ -29,7 +29,7 @@ for PROTOCO_VERSION in 0 1; do
     echo "Using server port $PORT"
     echo "Using dmap file $DMAP"
 
-    sed -e "s|,5001|,$PORT|g" dummies.dmap > "$DMAP"
+    sed -e "s|=5001|=$PORT|g" dummies.dmap > "$DMAP"
 
     # run the test now; mskrebot uses ip address of the server in the dmap file
     ./testRebotBackend mskrebot "$DMAP" "$PORT"
@@ -59,6 +59,5 @@ for PROTOCO_VERSION in 0 1; do
     sleep .1
 
 done
-
 
 exit $TEST_RESULT
