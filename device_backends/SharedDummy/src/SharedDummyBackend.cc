@@ -165,8 +165,8 @@ namespace ChimeraTK {
     _dispatcherThread.reset(); // stops and deletes thread which uses semaphore
     try {
       // The scope of the try-block is the scope of the lock_guard, which can throw when locking.
-      // The try-block cannot be smaller because if this (although not everything
-      // below might be throwing).
+      // All the lines in the try-block have to be executed under the lock, although not everything
+      // might be throwing.
 
       std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
       _semBuf->removeSem(_semId);
