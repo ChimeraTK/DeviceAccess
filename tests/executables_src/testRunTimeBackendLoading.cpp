@@ -21,9 +21,9 @@ BOOST_AUTO_TEST_CASE(testBackendLoading) {
   // check that we can load backends always known to the factory,
   // but we cannot load the one coming from the plugin to exclude that we
   // accidentally already linkes the so file we want to load
-  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("sdm://./dummy=goodMapFile.map"));
+  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("(dummy?map=goodMapFile.map)"));
   BOOST_CHECK_THROW(
-      BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map"), ChimeraTK::logic_error);
+      BackendFactory::getInstance().createBackend("(working?map=goodMapFile.map"), ChimeraTK::logic_error);
 
   BackendFactory::getInstance().setDMapFilePath("runtimeLoading/wrongVersionPlugin.dmap");
   // although a plugin with a wrong version was in the dmap file, the other

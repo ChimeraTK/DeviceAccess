@@ -80,13 +80,13 @@ BOOST_AUTO_TEST_CASE(testPluginMechanism) {
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().registerBackendType(
       "newBackendWrongVersion", &NewBackend::createInstance, {"map"}, "00.18"));
 
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("sdm://./newBackendWrongVersion=goodMapFile.map"),
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(newBackendWrongVersion?map=goodMapFile.map)"),
       ChimeraTK::logic_error);
 
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().registerBackendType(
       "newBackend", &NewBackend::createInstance, {"map"}, CHIMERATK_DEVICEACCESS_VERSION));
 
-  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));
+  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("(newBackend?map=goodMapFile.map)"));
 
   BOOST_CHECK_THROW(
       ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("notExisting.so"), ChimeraTK::logic_error);
@@ -94,23 +94,22 @@ BOOST_AUTO_TEST_CASE(testPluginMechanism) {
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWorkingBackend.so"));
   // check that the backend really is registered
   BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("(working?map=goodMapFile.map)"));
-  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map"));
+  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("(working?map=goodMapFile.map)"));
 
   BOOST_CHECK_THROW(
       ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("libNotRegisteringPlugin.so"), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("sdm://./notRegisteringPlugin=goodMapFile.map"),
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(notRegisteringPlugin?map=goodMapFile.map)"),
       ChimeraTK::logic_error);
 
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWrongVersionBackend.so"));
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("sdm://./wrongVersionBackend=goodMapFile.map"),
-      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      BackendFactory::getInstance().createBackend("(wrongVersionBackend?map=goodMapFile.map)"), ChimeraTK::logic_error);
 
   BOOST_CHECK_NO_THROW(ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWrongVersionBackendCompat.so"));
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("sdm://./libWrongVersionBackendCompat=goodMapFile.map"),
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(ibWrongVersionBackendCompat?map=goodMapFile.map)"),
       ChimeraTK::logic_error);
 
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("(unregisteredBackend)"), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("sdm://./unregisteredBackend"), ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(testCreateFromUri) {
@@ -118,7 +117,7 @@ BOOST_AUTO_TEST_CASE(testCreateFromUri) {
   BackendFactory::getInstance().setDMapFilePath("");
 
   boost::shared_ptr<DeviceBackend> testPtr;
-  testPtr = BackendFactory::getInstance().createBackend("sdm://./dummy=mtcadummy.map"); // get some dummy
+  testPtr = BackendFactory::getInstance().createBackend("(dummy?map=mtcadummy.map)"); // get some dummy
   // just check that something has been created. That it's the correct thing is
   // another test.
   BOOST_CHECK(testPtr);
