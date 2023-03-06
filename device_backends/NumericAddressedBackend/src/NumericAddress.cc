@@ -5,7 +5,8 @@
 namespace ChimeraTK::numeric_address {
 
   RegisterPath BAR() {
-    return {"#"};
+    static const RegisterPath bar{"#"};
+    return bar;
   }
 
 } // namespace ChimeraTK::numeric_address
