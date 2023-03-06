@@ -50,15 +50,19 @@ namespace ChimeraTK {
   SharedDummyBackend::SharedMemoryManager::~SharedMemoryManager() {
     // stop and delete dispatcher thread first since it uses shm and mutex
     intDispatcherIf.reset();
-    int pidSetSize;
-    {
+    size_t pidSetSize;
+    try {
+      // The scope of the try-block is the scope of the lock_guard, which can throw when locking.
+      // All the lines in the try-block have to be executed under the lock, although not everything
+      // might be throwing.
+
       // lock guard with the interprocess mutex
       std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
 
       // Clean up
       checkPidSetConsistency();
 
-      int32_t ownPid = static_cast<int32_t>(getOwnPID());
+      auto ownPid = static_cast<int32_t>(getOwnPID());
       for(auto it = pidSet->begin(); it != pidSet->end();) {
         if(*it == ownPid) {
           it = pidSet->erase(it);
@@ -69,8 +73,13 @@ namespace ChimeraTK {
       }
       pidSetSize = pidSet->size();
     }
-    // If size of pidSet is 0 (i.e, the instance belongs to the last accessing
-    // process), destroy shared memory and the interprocess mutex
+    catch(boost::interprocess::interprocess_exception&) {
+      // interprocess_exception is only thrown if something seriously went wrong.
+      // In this case we don't want anyone to catch it but terminate.
+      std::terminate();
+    }
+    //  If size of pidSet is 0 (i.e, the instance belongs to the last accessing
+    //  process), destroy shared memory and the interprocess mutex
     if(pidSetSize == 0) {
       boost::interprocess::shared_memory_object::remove(name.c_str());
       boost::interprocess::named_mutex::remove(name.c_str());
@@ -110,33 +119,30 @@ namespace ChimeraTK {
       }
     }
 
-    if(pidSetSizeBeforeCleanup != 0 && pidSet->size() == 0) {
-      return true;
-    }
-    return false;
+    return pidSetSizeBeforeCleanup != 0 && pidSet->empty();
   }
 
   void SharedDummyBackend::SharedMemoryManager::reInitMemory() {
     std::vector<std::string> nameList = listNamedElements();
 
-    for(auto item = nameList.begin(); item != nameList.end(); ++item) {
-      if(item->compare(SHARED_MEMORY_REQUIRED_VERSION_NAME) == 0) {
-        segment.destroy<unsigned>(item->c_str());
+    for(auto& item : nameList) {
+      if(item == SHARED_MEMORY_REQUIRED_VERSION_NAME) {
+        segment.destroy<unsigned>(item.c_str());
       }
       // reset the BAR vectors in shm.
       // Note, InterruptDispatcherInterface uses unique_instance mechanism so it is not affected here
-      else if(item->compare(SHARED_MEMORY_PID_SET_NAME) != 0) {
-        segment.destroy<SharedMemoryVector>(item->c_str());
+      else if(item != SHARED_MEMORY_PID_SET_NAME) {
+        segment.destroy<SharedMemoryVector>(item.c_str());
       }
     }
     InterruptDispatcherInterface::cleanupShm(segment);
   }
 
   std::vector<std::string> SharedDummyBackend::SharedMemoryManager::listNamedElements() {
-    std::vector<std::string> list;
+    std::vector<std::string> list(segment.get_size());
 
     for(auto seg = segment.named_begin(); seg != segment.named_end(); ++seg) {
-      list.push_back(seg->name());
+      list.emplace_back(seg->name());
     }
     return list;
   }

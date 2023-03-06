@@ -100,7 +100,9 @@ namespace ChimeraTK {
       const size_t nCharsPerElement = _registerInfo.elementPitchBits / 8;
       std::string temp;
       temp.reserve(nCharsPerElement);
-      auto* itsrc = (char*)_rawAccessor->begin(_registerInfo.address);
+      // Turn off linter warning. Yes, we are re-interpreting a byte stream as text.
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      auto* itsrc = reinterpret_cast<char*>(_rawAccessor->begin(_registerInfo.address));
       for(size_t el = 0; el < _registerInfo.nElements; ++el) {
         auto len = strnlen(itsrc, nCharsPerElement);
         temp.resize(len);
@@ -123,7 +125,9 @@ namespace ChimeraTK {
       _rawAccessor->preWrite(type, versionNumber);
 
       const size_t nCharsPerElement = _registerInfo.elementPitchBits / 8;
-      auto* itdst = (char*)_rawAccessor->begin(_registerInfo.address);
+      // Turn off linter warning. Yes, we are re-interpreting a byte stream as text.
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      auto* itdst = reinterpret_cast<char*>(_rawAccessor->begin(_registerInfo.address));
       for(size_t el = 0; el < _registerInfo.nElements; ++el) {
         std::memset(itdst, 0, nCharsPerElement);
         std::strncpy(itdst, buffer_2D[0][el].data(), nCharsPerElement);

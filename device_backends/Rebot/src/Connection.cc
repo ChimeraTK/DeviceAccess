@@ -5,19 +5,21 @@
 
 #include "Exception.h"
 
-namespace ChimeraTK { namespace Rebot {
+#include <utility>
+
+namespace ChimeraTK::Rebot {
 
   using Error = boost::system::error_code;
 
-  Connection::Connection(const std::string& address, const std::string& port, uint32_t connectionTimeout_sec)
-  : address_(address), port_(port), ioService_(), s_(ioService_), disconnectTimer_(ioService_),
+  Connection::Connection(std::string address, std::string port, uint32_t connectionTimeout_sec)
+  : address_(std::move(address)), port_(std::move(port)), s_(ioService_), disconnectTimer_(ioService_),
     connectionTimeout_(boost::posix_time::seconds(connectionTimeout_sec)) {}
 
   void Connection::open() {
     disconnectionTimerStart();
     boost::asio::ip::tcp::resolver r(ioService_);
-    boost::asio::async_connect(s_, r.resolve({address_.c_str(), port_.c_str()}),
-        [=](const Error ec, auto) { this->disconnectionTimerCancel(ec); });
+    boost::asio::async_connect(
+        s_, r.resolve({address_, port_}), [=](const Error ec, auto) { this->disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();
@@ -72,4 +74,4 @@ namespace ChimeraTK { namespace Rebot {
     }
   }
 
-}} // namespace ChimeraTK::Rebot
+} // namespace ChimeraTK::Rebot

@@ -313,13 +313,13 @@ namespace ChimeraTK {
 
     // Create a new instance of a BackendRegisterCatalogue with the correct type.
     // Inheriting backends will create the derrived type here.
-    auto* c = new BackendRegisterCatalogue<BackendRegisterInfo>();
+    std::unique_ptr<BackendRegisterCatalogueBase> c = std::make_unique<BackendRegisterCatalogue<BackendRegisterInfo>>();
     // Fill the contents of the BackendRegisterCatalogue base class into the target c. This is accessing the
     // private variables and ensures consistency.
-    fillFromThis(c);
+    fillFromThis(dynamic_cast<BackendRegisterCatalogue<BackendRegisterInfo>*>(c.get()));
     // Derrived backends will copy/clone their additional data members here, before
-    // returning a unique_ptr of the new catalogue which from now on takes the ownership.
-    return std::unique_ptr<BackendRegisterCatalogueBase>(c);
+    // returning the unique_ptr. The compiler will return it via copy elision.
+    return c;
   }
 
   /********************************************************************************************************************/
@@ -425,8 +425,7 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   std::unique_ptr<const_RegisterCatalogueImplIterator> const_BackendRegisterCatalogueImplIterator<
       BackendRegisterInfo>::clone() const {
-    auto* p = new const_BackendRegisterCatalogueImplIterator(*this);
-    return std::unique_ptr<const_RegisterCatalogueImplIterator>(p);
+    return {std::make_unique<const_BackendRegisterCatalogueImplIterator>(*this)};
   }
 
   /********************************************************************************************************************/

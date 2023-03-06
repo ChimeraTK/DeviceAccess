@@ -22,7 +22,7 @@ namespace ChimeraTK {
     /* data */
    public:
     UioBackend(std::string deviceName, std::string mapFileName);
-    ~UioBackend();
+    ~UioBackend() override;
 
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);

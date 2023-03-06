@@ -59,20 +59,20 @@ namespace ChimeraTK {
      * dot, the first part is empty and the full string is returned as second (the
      * part up to the first dot is considered as prefix).
      */
-    std::pair<RegisterPath, std::string> splitStringAtLastDot(RegisterPath moduleDotName);
+    static std::pair<RegisterPath, std::string> splitStringAtLastDot(RegisterPath moduleDotName);
 
-    std::pair<NumericAddressedRegisterInfo::Type, int> getTypeAndNFractionalBits(
-        std::string bitInterpretation, uint32_t width);
+    static std::pair<NumericAddressedRegisterInfo::Type, int> getTypeAndNFractionalBits(
+        const std::string& bitInterpretation, uint32_t width);
 
-    std::pair<bool, std::pair<unsigned int, unsigned int>> getInterruptData(std::string accessType);
+    static std::pair<bool, std::pair<unsigned int, unsigned int>> getInterruptData(std::string accessType);
 
-    void checkFileConsitencyAndThrowIfError(NumericAddressedRegisterInfo::Access registerAccessMode,
+    static void checkFileConsitencyAndThrowIfError(NumericAddressedRegisterInfo::Access registerAccessMode,
         NumericAddressedRegisterInfo::Type registerType, uint32_t nElements, uint64_t address, uint32_t nBytes,
         uint64_t bar, uint32_t width, int32_t nFractionalBits, bool signedFlag);
 
     void parseMetaData(std::string line);
 
-    ParsedLine parseLine(std::string line);
+    ParsedLine parseLine(const std::string& line);
 
     /**
      * On detection of a AREA_MULTIPLEXED_SEQUENCE line, collects the associated paresed lines and creates the
@@ -90,29 +90,29 @@ namespace ChimeraTK {
      * Checks whether the register name does not contain the special prefixes marking multiplexed registers and
      * sequences etc.
      */
-    bool isScalarOr1D(const RegisterPath& pathName);
+    static bool isScalarOr1D(const RegisterPath& pathName);
 
     /**
      * Checks whether the register name contains the prefix for a multiplexed register (but not for the individual
      * sequences, so only the "main" entry matches).
      */
-    bool is2D(const RegisterPath& pathName);
+    static bool is2D(const RegisterPath& pathName);
 
     /**
      * Checks whether the register name contains the prefix for a multiplexed register (but not for the individual
      * sequences, so only the "main" entry matches).
      */
-    bool is2DNewStyle(RegisterPath pathName);
+    static bool is2DNewStyle(RegisterPath pathName);
 
     /**
      * Generate sequence name from main entry for multiplexed registers
      */
-    RegisterPath makeSequenceName(const RegisterPath& pathName, size_t index);
+    static RegisterPath makeSequenceName(const RegisterPath& pathName, size_t index);
 
     /**
      * Generate 2D register name from main entry for multiplexed registers
      */
-    RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
+    static RegisterPath make2DName(const RegisterPath& pathName, const std::string& prefix);
 
     /**
      * Creates the two RegisterInfos that belong to a 2D multiplexed area, with a prefix according to the old or

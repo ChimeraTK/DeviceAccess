@@ -17,11 +17,11 @@ namespace ChimeraTK {
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
    public:
-    explicit NumericAddressedBackend(std::string mapFileName = "",
+    explicit NumericAddressedBackend(const std::string& mapFileName = "",
         std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer =
             std::make_unique<NumericAddressedRegisterCatalogue>());
 
-    ~NumericAddressedBackend() override {}
+    ~NumericAddressedBackend() override = default;
 
     /**
      * Read function to be implemented by backends.

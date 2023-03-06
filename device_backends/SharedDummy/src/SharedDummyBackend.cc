@@ -20,7 +20,7 @@
 
 namespace ChimeraTK {
 
-  SharedDummyBackend::SharedDummyBackend(std::string instanceId, std::string mapFileName)
+  SharedDummyBackend::SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName)
   : DummyBackendBase(mapFileName), _mapFile(mapFileName), _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
     sharedMemoryManager(*this, instanceId, mapFileName) {
     setupBarContents();
@@ -34,15 +34,14 @@ namespace ChimeraTK {
 
   // Construct a segment for each bar and set required size
   void SharedDummyBackend::setupBarContents() {
-    for(std::map<uint64_t, size_t>::const_iterator barSizeInBytesIter = _barSizesInBytes.begin();
-        barSizeInBytesIter != _barSizesInBytes.end(); ++barSizeInBytesIter) {
-      std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(barSizeInBytesIter->first);
+    for(auto& _barSizesInByte : _barSizesInBytes) {
+      std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(_barSizesInByte.first);
 
-      size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1) / sizeof(int32_t);
+      size_t barSizeInWords = (_barSizesInByte.second + sizeof(int32_t) - 1) / sizeof(int32_t);
 
       try {
         std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
-        _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
+        _barContents[_barSizesInByte.first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
       }
       catch(boost::interprocess::bad_alloc&) {
         // Clean up
@@ -106,7 +105,7 @@ namespace ChimeraTK {
 
   size_t SharedDummyBackend::getTotalRegisterSizeInBytes() const {
     size_t totalRegSize = 0;
-    for(auto& pair : _barSizesInBytes) {
+    for(const auto& pair : _barSizesInBytes) {
       totalRegSize += pair.second;
     }
     return totalRegSize;
@@ -121,7 +120,7 @@ namespace ChimeraTK {
   boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(
       std::string address, std::map<std::string, std::string> parameters) {
     std::string mapFileName = parameters["map"];
-    if(mapFileName == "") {
+    if(mapFileName.empty()) {
       throw ChimeraTK::logic_error("No map file name given.");
     }
 
@@ -148,7 +147,7 @@ namespace ChimeraTK {
 
     // Since VersionNumber consistency is defined only per process, we generate a new one here
     // and also in the triggered process
-    return VersionNumber();
+    return {};
   }
 
   SharedDummyBackend::InterruptDispatcherInterface::InterruptDispatcherInterface(SharedDummyBackend& backend,
@@ -164,8 +163,19 @@ namespace ChimeraTK {
   SharedDummyBackend::InterruptDispatcherInterface::~InterruptDispatcherInterface() {
     // stop thread and remove semaphore on destruction
     _dispatcherThread.reset(); // stops and deletes thread which uses semaphore
-    std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
-    _semBuf->removeSem(_semId);
+    try {
+      // The scope of the try-block is the scope of the lock_guard, which can throw when locking.
+      // All the lines in the try-block have to be executed under the lock, although not everything
+      // might be throwing.
+
+      std::lock_guard<boost::interprocess::named_mutex> lock(_shmMutex);
+      _semBuf->removeSem(_semId);
+    }
+    catch(boost::interprocess::interprocess_exception&) {
+      // interprocess_exception is only thrown if something seriously went wrong.
+      // In this case we don't want anyone to catch it but terminate.
+      std::terminate();
+    }
   }
 
   void SharedDummyBackend::InterruptDispatcherInterface::cleanupShm(boost::interprocess::managed_shared_memory& shm) {
@@ -186,7 +196,7 @@ namespace ChimeraTK {
       semList = _semBuf->findSems(InterruptInfo(controllerId, intNumber), true);
     }
     // trigger the interrupts
-    for(auto sem : semList) {
+    for(auto* sem : semList) {
 #ifdef _DEBUG
       std::cout << " InterruptDispatcherInterface::triggerInterrupt: post sem for interrupt: " << intNumber
                 << std::endl;
@@ -199,13 +209,18 @@ namespace ChimeraTK {
   SharedDummyBackend::InterruptDispatcherThread::InterruptDispatcherThread(
       InterruptDispatcherInterface* dispatcherInterf)
   : _dispatcherInterf(dispatcherInterf), _semId(dispatcherInterf->_semId), _semShm(dispatcherInterf->_semBuf) {
-    _thr = new boost::thread(&InterruptDispatcherThread::run, this);
+    _thr = boost::thread(&InterruptDispatcherThread::run, this);
   }
 
   SharedDummyBackend::InterruptDispatcherThread::~InterruptDispatcherThread() {
     stop();
-    _thr->join();
-    delete _thr;
+    try {
+      _thr.join();
+    }
+
+    catch(boost::system::system_error&) {
+      std::terminate();
+    }
   }
 
   void SharedDummyBackend::InterruptDispatcherThread::run() {
@@ -265,11 +280,36 @@ namespace ChimeraTK {
     }
   }
 
-  void SharedDummyBackend::InterruptDispatcherThread::stop() {
+  void SharedDummyBackend::InterruptDispatcherThread::stop() noexcept {
     _stop = true;
     // we must wait until the semaphore is registered
-    while(!_started) boost::this_thread::sleep_for(boost::chrono::milliseconds{10});
-    _sem->post();
+    try {
+      while(!_started) {
+        boost::this_thread::sleep_for(boost::chrono::milliseconds{10});
+      }
+    }
+    catch(const boost::thread_interrupted&) {
+      // Simply suppress the thread_interrupted here. This function is only called
+      // within a destructor, which anyway would have terminated the program when it sees the exception.
+      // There are two possible scenarios what can happen now.
+      // 1. _started is set and the destruction can continue normally.
+      // 2. _started is not set yet an we don't know if the semaphore is in the correct state.
+      //    Again there are two possibilities:
+      //    2a_ The semaphore was set correctly and the destructor continues normally.
+      //    2b_ sem->post() throws and terminate() is called (which otherwise would have been called from the escaping
+      //    thread_interrupted
+    }
+    catch(const boost::system::system_error&) {
+      // if something went really wrong we terminate here
+      std::terminate();
+    }
+
+    try {
+      _sem->post();
+    }
+    catch(const boost::interprocess::interprocess_exception&) {
+      std::terminate();
+    }
   }
 
   void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(
@@ -287,8 +327,9 @@ namespace ChimeraTK {
   SharedDummyBackend::ShmForSems::Sem* SharedDummyBackend::ShmForSems::addSem(SemId semId) {
     // look up whether semaphore for id already exists and return error
     for(auto& entry : semEntries) {
-      if(entry.used && entry.semId == semId)
+      if(entry.used && entry.semId == semId) {
         throw logic_error("error: semId already exists - check assumption about identifiers!");
+      }
     }
 
     for(auto& entry : semEntries) {
@@ -319,8 +360,9 @@ namespace ChimeraTK {
   void SharedDummyBackend::ShmForSems::cleanup(PidSet* pidSet) {
     for(auto& entry : semEntries) {
       if(entry.used) {
-        if(std::find(std::begin(*pidSet), std::end(*pidSet), (int32_t)entry.semId) == std::end(*pidSet))
+        if(std::find(std::begin(*pidSet), std::end(*pidSet), (int32_t)entry.semId) == std::end(*pidSet)) {
           entry.used = false;
+        }
       }
     }
   }
@@ -375,9 +417,10 @@ namespace ChimeraTK {
     }
     i = 0;
     for(auto& entry : interruptEntries) {
-      if(entry.used)
+      if(entry.used) {
         std::cout << "interrupt : " << entry._controllerId << "," << entry._intNumber << " count = " << entry._counter
                   << std::endl;
+      }
       i++;
     }
 

@@ -83,8 +83,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  // FIXME #11279 Implement API breaking changes from linter warnings
+  // NOLINTBEGIN(performance-unnecessary-value-param)
   boost::shared_ptr<DeviceBackend> LogicalNameMappingBackend::createInstance(
       std::string /*address*/, std::map<std::string, std::string> parameters) {
+    // NOLINTEND(performance-unnecessary-value-param)
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("Map file name not specified.");
     }
@@ -215,7 +218,7 @@ namespace ChimeraTK {
         target_info = _catalogue_mutable.getRegister(lnmInfo.registerName);
         // target_info might also be affected by plugins. e.g. forceReadOnly plugin
         // we need to process plugin list of target register before taking over anything
-        LNMBackendRegisterInfo& i = static_cast<LNMBackendRegisterInfo&>(target_info.getImpl());
+        auto& i = dynamic_cast<LNMBackendRegisterInfo&>(target_info.getImpl());
         for(auto& plugin : i.plugins) {
           plugin->updateRegisterInfo(_catalogue_mutable);
         }
@@ -283,12 +286,7 @@ namespace ChimeraTK {
     if(_hasException) {
       return false;
     }
-    for(auto& e : _devices) {
-      if(not e.second->isFunctional()) {
-        return false;
-      }
-    }
-    return true;
+    return std::all_of(_devices.begin(), _devices.end(), [](auto e) { return e.second->isFunctional(); });
   }
 
   /********************************************************************************************************************/
@@ -349,16 +347,30 @@ namespace ChimeraTK {
       auto& info = dynamic_cast<LNMBackendRegisterInfo&>(r);
       if(info.targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
         auto& lnmVariable = _variables[info.name];
-        callForType(info.valueType, [&](auto arg) {
-          auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
-          // override version number if last write to variable was before reopening the device
-          if(vtEntry.latestVersion < v) {
-            vtEntry.latestVersion = v; // store in case an accessor is created after calling activateAsyncRead
-          }
-          for(auto& sub : vtEntry.subscriptions) {
-            sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, vtEntry.latestVersion});
-          }
-        });
+        try {
+          callForType(info.valueType, [&](auto arg) {
+            auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
+            // override version number if last write to variable was before reopening the device
+            if(vtEntry.latestVersion < v) {
+              vtEntry.latestVersion = v; // store in case an accessor is created after calling activateAsyncRead
+            }
+            for(auto& sub : vtEntry.subscriptions) {
+              try {
+                sub.second.push_overwrite({vtEntry.latestValue, vtEntry.latestValidity, vtEntry.latestVersion});
+              }
+              catch(std::system_error& e) {
+                std::cerr << "Caught system error in activateAsyncRead(): " << e.what() << std::endl;
+                std::terminate();
+              }
+            }
+          });
+        }
+        catch(std::bad_cast& e) {
+          // bad_cast is thrown by callForType if the type is not known. This should not happen at this point any more
+          // because we are iterating a list that has already been processed before.
+          std::ignore = e;
+          assert(false);
+        }
       }
     }
   }
@@ -368,7 +380,7 @@ namespace ChimeraTK {
   std::unordered_set<std::string> LogicalNameMappingBackend::getTargetDevices() const {
     std::unordered_set<std::string> ret;
     for(const auto& info : _catalogue_mutable) {
-      if(info.deviceName != "this" && info.deviceName != "") ret.insert(info.deviceName);
+      if(info.deviceName != "this" && !info.deviceName.empty()) ret.insert(info.deviceName);
     }
     return ret;
   }

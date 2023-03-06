@@ -7,6 +7,7 @@
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "TransferGroup.h"
 
+#include <memory>
 #include <mutex>
 
 namespace ChimeraTK {
@@ -40,7 +41,7 @@ namespace ChimeraTK {
 
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(
-        boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive);
+        const boost::shared_ptr<DeviceBackend>& backend, AccessorInstanceDescriptor const& descriptor, bool isActive);
 
     // bool prepareActivate(VersionNumber const& v) override;
     VersionNumber activate() override;
@@ -51,7 +52,7 @@ namespace ChimeraTK {
         // all asyncVariables have been unsubscribed - we can finally remove the TransferGroup
         // This is important since it's elements still keep shared pointers to the backend, creating a shared-ptr loop
         // replace it by a new TransferGroup just in case another async variable would be created later
-        _transferGroup.reset(new TransferGroup);
+        _transferGroup = std::make_unique<TransferGroup>();
       }
     }
     // unique_ptr because we want to delete it manually
@@ -62,13 +63,13 @@ namespace ChimeraTK {
    */
   template<typename UserType>
   struct NumericAddressedAsyncVariableImpl : public AsyncVariableImpl<UserType>, public NumericAddressedAsyncVariable {
-    void fillSendBuffer(VersionNumber const& version) override;
+    void fillSendBuffer(VersionNumber const& version) final;
 
     /** The constructor takes an already created synchronous accessor and a flag
      *  whether the variable is active. If the variable is active all new subscribers will automatically
      *  be activated and immediately get their initial value.
      */
-    NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
+    explicit NumericAddressedAsyncVariableImpl(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_);
 
     boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
 
@@ -85,7 +86,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   std::unique_ptr<AsyncVariable> NumericAddressedInterruptDispatcher::createAsyncVariable(
-      boost::shared_ptr<DeviceBackend> backend, AccessorInstanceDescriptor const& descriptor, bool isActive) {
+      const boost::shared_ptr<DeviceBackend>& backend, AccessorInstanceDescriptor const& descriptor, bool isActive) {
     auto synchronousFlags = descriptor.flags;
     synchronousFlags.remove(AccessMode::wait_for_new_data);
     // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
@@ -119,7 +120,7 @@ namespace ChimeraTK {
       boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_)
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
     syncAccessor(syncAccessor_) {
-    fillSendBuffer({});
+    NumericAddressedAsyncVariableImpl<UserType>::fillSendBuffer({});
   }
 
 } // namespace ChimeraTK

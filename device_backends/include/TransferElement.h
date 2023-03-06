@@ -22,14 +22,11 @@
 #include <list>
 #include <string>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
 namespace ChimeraTK {
   class PersistentDataStorage;
-}
-
-namespace ChimeraTK {
-
   class TransferGroup;
 
   /**
@@ -68,10 +65,10 @@ namespace ChimeraTK {
   class TransferElement : public boost::enable_shared_from_this<TransferElement> {
    public:
     /** Creates a transfer element with the specified name. */
-    TransferElement(std::string const& name, AccessModeFlags accessModeFlags,
-        std::string const& unit = std::string(unitNotSet), std::string const& description = std::string())
-    : _name(name), _unit(unit), _description(description), _isInTransferGroup(false),
-      _accessModeFlags(accessModeFlags) {}
+    TransferElement(std::string name, AccessModeFlags accessModeFlags, std::string unit = std::string(unitNotSet),
+        std::string description = std::string())
+    : _name(std::move(name)), _unit(std::move(unit)), _description(std::move(description)),
+      _accessModeFlags(std::move(accessModeFlags)) {}
 
     /** Copying and moving is not allowed */
     TransferElement(const TransferElement& other) = delete;
@@ -80,10 +77,10 @@ namespace ChimeraTK {
     TransferElement& operator=(TransferElement&& other) = delete;
 
     /** Abstract base classes need a virtual destructor. */
-    virtual ~TransferElement();
+    virtual ~TransferElement() = default;
 
     /** A typedef for more compact syntax */
-    typedef boost::shared_ptr<TransferElement> SharedPtr;
+    using SharedPtr = boost::shared_ptr<TransferElement>;
 
     /** Returns the name that identifies the process variable. */
     const std::string& getName() const { return _name; }
@@ -162,12 +159,7 @@ namespace ChimeraTK {
         // If we reach this point the exception has been suppressed. We have to calculate a
         // new return value because the dataBuffer has not changed, but the meta data
         // could have, in which case we have to return true.
-        if((previousVersionNumber != _versionNumber) || (previousDataValidity != _dataValidity)) {
-          retVal = true;
-        }
-        else {
-          retVal = false;
-        }
+        retVal = (previousVersionNumber != _versionNumber) || (previousDataValidity != _dataValidity);
       }
       else {
         // call postRead with updateDataBuffer as returned by readTransferNonBlocking
@@ -190,12 +182,10 @@ namespace ChimeraTK {
         }
         return updateDataBuffer;
       }
-      else {
-        // Without wait_for_new_data readNonBlocking always returns true, and the while loop above would never end.
-        // Hence we just call the (synchronous) read and return true;
-        read();
-        return true;
-      }
+      // Without wait_for_new_data readNonBlocking always returns true, and the while loop above would never end.
+      // Hence we just call the (synchronous) read and return true;
+      read();
+      return true;
     }
 
     /** Write the data to device. The return value is true, old data was lost on
@@ -293,7 +283,7 @@ namespace ChimeraTK {
      * be overridden in this case.
      */
     virtual void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) {
-      _exceptionBackend = exceptionBackend;
+      _exceptionBackend = std::move(exceptionBackend);
     }
 
     /** Return the exception backend. Needed by decorators to set their _exceptionBackend to the target's.
@@ -317,7 +307,7 @@ namespace ChimeraTK {
      *  Helper for exception handling in the transfer functions, to avoid code duplication.
      */
     template<typename Callable>
-    void handleTransferException(Callable function) noexcept {
+    void handleTransferException(Callable function) {
       try {
         function();
       }
@@ -329,7 +319,6 @@ namespace ChimeraTK {
       }
     }
 
-   private:
     // helper function that just gets rid of the DiscardValueException and otherwise does a pop_wait on the _readQueue.
     // It does not deal with other exceptions. This is done in handleTransferException.
     void readTransferAsyncWaitingImpl() {
@@ -403,10 +392,8 @@ namespace ChimeraTK {
       if(_accessModeFlags.has(AccessMode::wait_for_new_data)) {
         return readTransferAsyncNonWaitingImpl();
       }
-      else {
-        doReadTransferSynchronously();
-        return true;
-      }
+      doReadTransferSynchronously();
+      return true;
     }
 
    private:
@@ -729,9 +716,9 @@ namespace ChimeraTK {
      * are then replaced with the new element. If no underlying element matches
      * the new element, this function has no effect.
      */
-    virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-      (void)newElement; // prevent warning
-    }
+    // FIXME #11279 Implement API breaking changes from linter warnings
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    virtual void replaceTransferElement([[maybe_unused]] boost::shared_ptr<TransferElement> newElement) {}
 
     /** Create a CopyRegisterDecorator of the right type decorating this
      * TransferElement. This is used by
@@ -753,6 +740,8 @@ namespace ChimeraTK {
      * not support persistent data storage (e.g. read-only variables or device
      * registers) @todo TODO does this make sense?
      */
+    // FIXME #11279 Implement API breaking changes from linter warnings
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {}
 
     /**
@@ -800,7 +789,9 @@ namespace ChimeraTK {
             "TransferElement::interrupt() called on '" + _name + "' but AccessMode::wait_for_new_data is not set.");
       }
       try {
-        throw boost::thread_interrupted();
+        // We cannot do anything against the boost exception not being derived from the base exception, but have to use
+        // it to interrupt the boost thread. Hence it is ok to suppress the linter warning here.
+        throw boost::thread_interrupted(); // NOLINT(hicpp-exception-baseclass)
       }
       catch(...) {
         dataTransportQueue.push_overwrite_exception(std::current_exception());
@@ -831,7 +822,7 @@ namespace ChimeraTK {
 
     /** Flag whether this TransferElement has been added to a TransferGroup or not
      */
-    bool _isInTransferGroup;
+    bool _isInTransferGroup{false};
 
     /** The access mode flags for this transfer element.*/
     AccessModeFlags _accessModeFlags;
@@ -887,11 +878,6 @@ namespace std {
   /** Comparison for putting TransferElementID e.g. into an std::map */
   template<>
   struct less<ChimeraTK::TransferElementID> {
-    // these typedefs are mandatory before C++17, even though they seem to be
-    // unused by gcc
-    typedef bool result_type;
-    typedef ChimeraTK::TransferElementID first_argument_type;
-    typedef ChimeraTK::TransferElementID second_argument_type;
     bool operator()(const ChimeraTK::TransferElementID& a, const ChimeraTK::TransferElementID& b) const {
       return a._id < b._id;
     }

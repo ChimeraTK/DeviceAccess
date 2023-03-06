@@ -3,7 +3,7 @@
 
 #include "testableRebotSleep.h"
 
-namespace ChimeraTK { namespace testable_rebot_sleep {
+namespace ChimeraTK::testable_rebot_sleep {
   boost::chrono::steady_clock::time_point now() {
     return boost::chrono::steady_clock::now();
   }
@@ -16,4 +16,4 @@ namespace ChimeraTK { namespace testable_rebot_sleep {
   void sleep_until(boost::chrono::steady_clock::time_point t) {
     boost::this_thread::sleep_until(t);
   }
-}} // namespace ChimeraTK::testable_rebot_sleep
+} // namespace ChimeraTK::testable_rebot_sleep

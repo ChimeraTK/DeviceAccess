@@ -4,9 +4,9 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <cstdint>
 #include <iostream>
 #include <list>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -39,7 +39,7 @@ namespace ChimeraTK {
       std::string dmapFileName;    /**< name of the DMAP file*/
       uint32_t dmapFileLineNumber; /**< line number in DMAP file storing listed
                                       above information*/
-     public:
+
       /**
        * Default class constructor
        */
@@ -54,13 +54,13 @@ namespace ChimeraTK {
        * file name (name of the device in the /dev directory). The latter is the
        * .first argument of the pair.
        */
-      std::pair<std::string, std::string> getDeviceFileAndMapFileName() const;
+      [[nodiscard]] std::pair<std::string, std::string> getDeviceFileAndMapFileName() const;
 
       friend std::ostream& operator<<(std::ostream& os, const DeviceInfo& deviceInfo);
     };
 
-    typedef std::vector<DeviceInfo>::iterator iterator;
-    typedef std::vector<DeviceInfo>::const_iterator const_iterator;
+    using iterator = std::vector<DeviceInfo>::iterator;
+    using const_iterator = std::vector<DeviceInfo>::const_iterator;
     /**
      * @brief  Stores information about errors and warnings
      *
@@ -83,10 +83,10 @@ namespace ChimeraTK {
         /**
          * @brief  Defines available types of detected problems
          */
-        typedef enum {
+        enum DMAP_FILE_ERR {
           NONUNIQUE_DEVICE_NAME /**< Names of two devices are the same - treated
                                    as critical error */
-        } DMAP_FILE_ERR;
+        };
 
         /**
          * @brief  Defines available classes of detected problems
@@ -95,10 +95,10 @@ namespace ChimeraTK {
          * number of reported problems only to critical errors or wants to report
          * all detected problems (errors and warnings)
          */
-        typedef enum {
+        enum TYPE {
           ERROR,  /**< Critical error was detected */
           WARNING /**< Non-critical error was detected */
-        } TYPE;
+        };
         DeviceInfoMap::DeviceInfo _errorDevice1; /**< Detailed information about first device that
                                                     generate error or warning */
         DeviceInfoMap::DeviceInfo _errorDevice2; /**< Detailed information about second device that
@@ -106,7 +106,6 @@ namespace ChimeraTK {
         DMAP_FILE_ERR _errorType;                /**< Type of detected problem */
         TYPE _type;                              /**< Class of detected problem - ERROR or WARNING*/
 
-       public:
         /**
          * Creates obiect that describe one detected error or warning
          *
@@ -125,7 +124,6 @@ namespace ChimeraTK {
       std::list<ErrorElem> _errors; /**< Lists of errors or warnings detected
                                        during MAP file correctness checking*/
 
-     public:
       friend std::ostream& operator<<(std::ostream& os, const ErrorList& me);
 
      private:
@@ -179,7 +177,7 @@ namespace ChimeraTK {
      *
      */
     iterator begin();
-    const_iterator begin() const;
+    [[nodiscard]] const_iterator begin() const;
     /**
      * @brief Return iterator to element after last one in DMAP file
      *
@@ -187,7 +185,7 @@ namespace ChimeraTK {
      *
      */
     iterator end();
-    const_iterator end() const;
+    [[nodiscard]] const_iterator end() const;
 
     /** You can define shared libraries with Backend plugins in the DMAP file.
      */
@@ -195,7 +193,7 @@ namespace ChimeraTK {
 
     /** Add the name of a library to the list.
      */
-    void addPluginLibrary(std::string soFile);
+    void addPluginLibrary(const std::string& soFile);
 
    protected:
     std::vector<DeviceInfo> _deviceInfoElements; /**< vector storing parsed contents of DMAP file*/
@@ -211,7 +209,7 @@ namespace ChimeraTK {
      *
      * @param fileName name of DMAP file
      */
-    DeviceInfoMap(const std::string& fileName);
+    explicit DeviceInfoMap(std::string fileName);
     /**
      * @brief Insert new element read from DMAP file
      * @param elem element describing detailes of one device taken from DMAP file
@@ -223,6 +221,6 @@ namespace ChimeraTK {
    * Introduce specialisation of shared_pointer template for pointers to
    * RegisterInfoMap object as a DeviceInfoMapPointer
    */
-  typedef boost::shared_ptr<DeviceInfoMap> DeviceInfoMapPointer;
+  using DeviceInfoMapPointer = boost::shared_ptr<DeviceInfoMap>;
 
 } // namespace ChimeraTK

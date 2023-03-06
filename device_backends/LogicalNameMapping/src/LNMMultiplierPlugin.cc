@@ -8,11 +8,12 @@
 
 #include <boost/make_shared.hpp>
 
-namespace ChimeraTK { namespace LNMBackend {
+namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  MultiplierPlugin::MultiplierPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
+  MultiplierPlugin::MultiplierPlugin(
+      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin(info) {
     // extract parameters
     if(parameters.find("factor") == parameters.end()) {
@@ -102,4 +103,4 @@ namespace ChimeraTK { namespace LNMBackend {
       const UndecoratedParams&) {
     return MultiplierPlugin_Helper<UserType, TargetType>::decorateAccessor(target, _factor);
   }
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

@@ -7,10 +7,11 @@
 #include "predicates.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace ChimeraTK {
 
-  DeviceInfoMap::DeviceInfoMap(const std::string& fileName) : _dmapFileName(fileName) {}
+  DeviceInfoMap::DeviceInfoMap(std::string fileName) : _dmapFileName(std::move(fileName)) {}
 
   size_t DeviceInfoMap::getSize() {
     return _deviceInfoElements.size();
@@ -44,7 +45,7 @@ namespace ChimeraTK {
   DeviceInfoMap::DeviceInfo::DeviceInfo() : dmapFileLineNumber(0) {}
 
   std::pair<std::string, std::string> DeviceInfoMap::DeviceInfo::getDeviceFileAndMapFileName() const {
-    return std::pair<std::string, std::string>(uri, mapFileName);
+    return {uri, mapFileName};
   }
 
   std::ostream& operator<<(std::ostream& os, const DeviceInfoMap::DeviceInfo& deviceInfo) {
@@ -67,7 +68,7 @@ namespace ChimeraTK {
     std::sort(dmaps.begin(), dmaps.end(), copmaredRegisterInfosByName2_functor());
     iter_p = dmaps.begin();
     iter_n = iter_p + 1;
-    while(1) {
+    while(true) {
       if((*iter_p).deviceName == (*iter_n).deviceName) {
         if((*iter_p).uri != (*iter_n).uri || (*iter_p).mapFileName != (*iter_n).mapFileName) {
           err.insert(ErrorList::ErrorElem(
@@ -143,7 +144,7 @@ namespace ChimeraTK {
     return _deviceInfoElements.end();
   }
 
-  void DeviceInfoMap::addPluginLibrary(std::string soFile) {
+  void DeviceInfoMap::addPluginLibrary(const std::string& soFile) {
     _pluginLibraries.push_back(soFile);
   }
 

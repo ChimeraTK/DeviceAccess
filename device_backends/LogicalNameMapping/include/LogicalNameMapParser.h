@@ -11,6 +11,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <map>
+#include <utility>
 
 // forward declaration
 namespace xmlpp {
@@ -25,9 +26,8 @@ namespace ChimeraTK {
   class LogicalNameMapParser {
    public:
     /** Constructor: parse map from XML file */
-    LogicalNameMapParser(
-        const std::map<std::string, std::string>& parameters, std::map<std::string, LNMVariable>& variables)
-    : _parameters(parameters), _variables(variables) {}
+    LogicalNameMapParser(std::map<std::string, std::string> parameters, std::map<std::string, LNMVariable>& variables)
+    : _parameters(std::move(parameters)), _variables(variables) {}
 
     /** parse the given XML file */
     BackendRegisterCatalogue<LNMBackendRegisterInfo> parseFile(const std::string& fileName);
@@ -36,7 +36,7 @@ namespace ChimeraTK {
    protected:
     /** called inside parseFile() to parse an XML element and its sub-elements
      * recursively */
-    void parseElement(RegisterPath currentPath, const xmlpp::Element* element,
+    void parseElement(const RegisterPath& currentPath, const xmlpp::Element* element,
         BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue);
 
     /** throw a parsing error with more information */

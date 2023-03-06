@@ -13,8 +13,9 @@
 #include <boost/make_shared.hpp>
 
 #include <exprtk.hpp>
+#include <utility>
 
-namespace ChimeraTK { namespace LNMBackend {
+namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
@@ -36,8 +37,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  MathPlugin::MathPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin(info), _parameters(parameters) {
+  MathPlugin::MathPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters)
+  : AccessorPlugin(info), _parameters(std::move(parameters)) {
     // extract parameters
     if(_parameters.find("formula") == _parameters.end()) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MultiplierPlugin: Missing parameter 'formula'.");
@@ -74,7 +75,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MathPlugin::openHook(boost::shared_ptr<LogicalNameMappingBackend> backend) {
+  void MathPlugin::openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) {
     // make sure backend catalogue is updated with target backend information
     backend->getRegisterCatalogue();
 
@@ -236,7 +237,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
   bool MathPlugin::checkAllParametersWritten(
       std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap) {
-    if(_allParametersWrittenAfterOpen == true) {
+    if(_allParametersWrittenAfterOpen) {
       return true;
     }
 
@@ -247,7 +248,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // The backend is holding the plugin, and the weak pointer is to avoid the backend holind a
     // shared pointer of it self.
 
-    for(auto& acc : accessorsMap) {
+    for(const auto& acc : accessorsMap) {
       if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
         _allParametersWrittenAfterOpen = false;
         break;
@@ -276,7 +277,7 @@ namespace ChimeraTK { namespace LNMBackend {
     }
 
     // registers are either readable or writeable
-    bool isReadable() const override { return !_p->_isWrite; }
+    [[nodiscard]] bool isReadable() const override { return !_p->_isWrite; }
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
@@ -320,7 +321,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     // obtain accessors for parameters
     std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>> accessorMap;
-    for(auto& par : parameters) {
+    for(const auto& par : parameters) {
       accessorMap[par.first] = backend->getRegisterAccessor<double>(par.second, 0, 0, {});
     }
 
@@ -542,9 +543,9 @@ namespace ChimeraTK { namespace LNMBackend {
     symbols.add_vector("x", *valueView);
 
     // iterate parameters, add all but 'formula' parameter as a variable.
-    for(auto& parpair : parameters) {
+    for(const auto& parpair : parameters) {
       if(parpair.first == "formula") continue;
-      auto& acc = parpair.second;
+      const auto& acc = parpair.second;
       acc->setExceptionBackend(backend);
       if(acc->getNumberOfChannels() != 1) {
         throw ChimeraTK::logic_error(
@@ -623,4 +624,4 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

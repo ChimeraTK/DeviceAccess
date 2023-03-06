@@ -13,12 +13,12 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  AsyncNDRegisterAccessor<UserType>::AsyncNDRegisterAccessor(const boost::shared_ptr<DeviceBackend>& backend,
-      const boost::shared_ptr<AsyncAccessorManager>& manager, std::string const& name, size_t nChannels,
-      size_t nElements, AccessModeFlags accessModeFlags, std::string const& unit, std::string const& description)
+  AsyncNDRegisterAccessor<UserType>::AsyncNDRegisterAccessor(boost::shared_ptr<DeviceBackend> backend,
+      boost::shared_ptr<AsyncAccessorManager> manager, std::string const& name, size_t nChannels, size_t nElements,
+      AccessModeFlags accessModeFlags, std::string const& unit, std::string const& description)
 
-  : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(backend),
-    _accessorManager(manager), _receiveBuffer(nChannels, nElements) {
+  : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(std::move(backend)),
+    _accessorManager(std::move(manager)), _receiveBuffer(nChannels, nElements) {
     // Don't throw a ChimeraTK::logic_error here. They are for mistakes an application is doing when using DeviceAccess.
     // If an AsyncNDRegisterAccessor is created without wait_for_new_data it is a mistake in the backend, which is not
     // part of the application.

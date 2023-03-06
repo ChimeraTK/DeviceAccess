@@ -23,8 +23,7 @@
                  << "Caught out_of_range exception: " << outOfRangeException.what();                                   \
     std::cout << errorMessage.str() << std::endl;                                                                      \
     throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
-  }                                                                                                                    \
-  while(false)
+  }
 
 namespace ChimeraTK {
   /**
@@ -36,7 +35,7 @@ namespace ChimeraTK {
 
     explicit DummyBackendBase(std::string const& mapFileName);
 
-    ~DummyBackendBase() override;
+    ~DummyBackendBase() override = default;
 
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override;
 
@@ -82,7 +81,7 @@ namespace ChimeraTK {
       if(registerPathName.startsWith("DUMMY_INTERRUPT_")) {
         int controller, interrupt;
 
-        auto dummyCatalogue = dynamic_cast<DummyBackendRegisterCatalogue*>(_registerMapPointer.get());
+        auto* dummyCatalogue = dynamic_cast<DummyBackendRegisterCatalogue*>(_registerMapPointer.get());
         assert(dummyCatalogue);
         std::tie(controller, interrupt) = dummyCatalogue->extractControllerInterrupt(registerPathName);
 

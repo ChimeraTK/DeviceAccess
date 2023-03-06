@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iterator>
 #include <sstream>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -20,10 +21,13 @@ namespace ChimeraTK {
   class Boolean {
    public:
     Boolean() : m_value() {}
+    // We want implicit construction and conversion. Turn off the linter warnings.
+    // NOLINTBEGIN(hicpp-explicit-conversions, google-explicit-constructor)
     Boolean(bool value) : m_value(value) {}
 
     operator const bool&() const { return m_value; }
     operator bool&() { return m_value; }
+    // NOLINTEND(hicpp-explicit-conversions, google-explicit-constructor)
     // TODO: test user types to numeric etc
 
    private:
@@ -164,25 +168,25 @@ namespace ChimeraTK {
 
     template<>
     struct userTypeToUserType_impl<Void, std::string> {
-      static Void impl(__attribute__((unused)) std::string value) { return Void(); }
+      static Void impl(__attribute__((unused)) const std::string& value) { return {}; }
     };
 
     template<class S>
     struct Round {
       static S nearbyint(S s) { return std::round(s); }
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
     template<>
     struct Round<Boolean> {
       static Boolean nearbyint(Boolean s) { return s; }
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
     template<>
     struct Round<Void> {
       static Void nearbyint(__attribute__((unused)) Void s) { return s; }
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
   } // namespace detail
@@ -356,29 +360,27 @@ namespace ChimeraTK {
   template<typename UserTypeParameter>
   inline Void detail::userTypeToUserType_impl<Void, UserTypeParameter>::impl(
       __attribute__((unused)) UserTypeParameter value) {
-    return Void();
+    return {};
   }
 
   /********************************************************************************************************************/
 
   /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
    *  dependence of the UserType. */
-  typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
+  using userTypeMap = boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
       boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
       boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>,
       boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>,
       boost::fusion::pair<double, double>, boost::fusion::pair<std::string, std::string>,
-      boost::fusion::pair<Boolean, Boolean>, boost::fusion::pair<Void, Void>>
-      userTypeMap;
+      boost::fusion::pair<Boolean, Boolean>, boost::fusion::pair<Void, Void>>;
 
   /** Just like userTypeMap, only without the ChimeraTK::Void type. */
-  typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
-      boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
-      boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>,
-      boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>,
-      boost::fusion::pair<double, double>, boost::fusion::pair<std::string, std::string>,
-      boost::fusion::pair<Boolean, Boolean>>
-      userTypeMapNoVoid;
+  using userTypeMapNoVoid = boost::fusion::map<boost::fusion::pair<int8_t, int8_t>,
+      boost::fusion::pair<uint8_t, uint8_t>, boost::fusion::pair<int16_t, int16_t>,
+      boost::fusion::pair<uint16_t, uint16_t>, boost::fusion::pair<int32_t, int32_t>,
+      boost::fusion::pair<uint32_t, uint32_t>, boost::fusion::pair<int64_t, int64_t>,
+      boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>, boost::fusion::pair<double, double>,
+      boost::fusion::pair<std::string, std::string>, boost::fusion::pair<Boolean, Boolean>>;
 
   /** Map of UserType to a value of a single type (same for evey user type) */
   template<typename TargetType>
@@ -454,6 +456,9 @@ namespace ChimeraTK {
       boost::fusion::pair<uint64_t, T>, boost::fusion::pair<float, T>, boost::fusion::pair<double, T>,
       boost::fusion::pair<std::string, T>, boost::fusion::pair<Boolean, T>>;
 
+// Turn off the linter warning. It is wrong in this case. Putting parentheses would break the C++ syntax, the code does
+// not compile
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                       \
   extern template class TemplateClass<int8_t>;                                                                         \
   extern template class TemplateClass<uint8_t>;                                                                        \
@@ -511,6 +516,7 @@ namespace ChimeraTK {
   template class TemplateClass<double>;                                                                                \
   template class TemplateClass<std::string>;                                                                           \
   template class TemplateClass<ChimeraTK::Boolean> // the last semicolon is added by the user
+// NOLINTEND(bugprone-macro-parentheses)
 
 /** Macro to declare a template class with multiple template parameters for all
  *  supported user types. The variadic arguments are the additional template
@@ -619,13 +625,16 @@ namespace ChimeraTK {
      myDataType = DataType::int32;
      \endcode
      */
+    // Yes, this intentionally is an implicit conversion operator. Turn off the linter warning.
+    // NOLINTBEGIN(google-explicit-constructor, hicpp-explicit-conversions)
     inline operator TheType&() { return _value; }
     inline operator TheType const&() const { return _value; }
+    // NOLINTEND(google-explicit-constructor, hicpp-explicit-conversions)
 
     /** Return whether the raw data type is an integer.
      *  False is also returned for non-numerical types and 'none'.
      */
-    inline bool isIntegral() const {
+    [[nodiscard]] inline bool isIntegral() const {
       switch(_value) {
         case int8:
         case uint8:
@@ -646,7 +655,7 @@ namespace ChimeraTK {
      *  floating point types (currently only signed implementations).
      *  False otherwise (also for non-numerical types and 'none').
      */
-    inline bool isSigned() const {
+    [[nodiscard]] inline bool isSigned() const {
       switch(_value) {
         case int8:
         case int16:
@@ -663,7 +672,7 @@ namespace ChimeraTK {
     /** Returns whether the data type is numeric.
      *  Type 'none' returns false.
      */
-    inline bool isNumeric() const {
+    [[nodiscard]] inline bool isNumeric() const {
       // I inverted the logic to minimise the amout of code. If you add
       // non-numeric types this has to be adapted.
       switch(_value) {
@@ -678,9 +687,13 @@ namespace ChimeraTK {
 
     /** The constructor can get the type as an argument. It defaults to 'none'.
      */
+    // We want implicit construction from the TheType enum.
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     inline DataType(TheType const& value = none) : _value(value) {}
 
     /** Construct DataType from std::type_info. If the type is not known, 'none' is returned. */
+    // We want implicit construction from the type_info
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     inline DataType(const std::type_info& info) {
       if(info == typeid(int8_t)) {
         _value = int8;
@@ -727,7 +740,7 @@ namespace ChimeraTK {
     }
 
     /** Construct DataType from std::string. */
-    inline DataType(const std::string& typeName) {
+    inline explicit DataType(const std::string& typeName) {
       if(typeName == "int8") {
         _value = int8;
       }
@@ -773,7 +786,7 @@ namespace ChimeraTK {
     }
 
     /** Return string representation of the data type */
-    inline std::string getAsString() const {
+    [[nodiscard]] inline std::string getAsString() const {
       switch(_value) {
         case int8:
           return "int8";
@@ -815,7 +828,7 @@ namespace ChimeraTK {
     template<typename X>
     class for_each_callable {
      public:
-      for_each_callable(const X& fn) : fn_(fn) {}
+      explicit for_each_callable(const X& fn) : fn_(fn) {}
 
       template<typename ARG_TYPE>
       void operator()(ARG_TYPE& argument) const {
@@ -878,8 +891,8 @@ namespace ChimeraTK {
     if(!done) {
       class myBadCast : public std::bad_cast {
        public:
-        myBadCast(const std::string& desc) : _desc(desc) {}
-        const char* what() const noexcept override { return _desc.c_str(); }
+        explicit myBadCast(std::string desc) : _desc(std::move(desc)) {}
+        [[nodiscard]] const char* what() const noexcept override { return _desc.c_str(); }
 
        private:
         std::string _desc;
@@ -896,6 +909,9 @@ namespace ChimeraTK {
   template<typename LAMBDATYPE>
   void callForType(const DataType& type, LAMBDATYPE lambda) {
     switch(DataType::TheType(type)) {
+      // The linter thinks the branches are identical. They are not, they have a different type, which is the whole
+      // point of this exercise.
+      // NOLINTBEGIN(bugprone-branch-clone)
       case DataType::int8: {
         lambda(int8_t());
       } break;
@@ -935,11 +951,12 @@ namespace ChimeraTK {
       case DataType::Void: {
         lambda(Void());
       } break;
+      // NOLINTEND(bugprone-branch-clone)
       case DataType::none:
         class myBadCast : public std::bad_cast {
          public:
-          myBadCast(const std::string& desc) : _desc(desc) {}
-          const char* what() const noexcept override { return _desc.c_str(); }
+          explicit myBadCast(std::string desc) : _desc(std::move(desc)) {}
+          [[nodiscard]] const char* what() const noexcept override { return _desc.c_str(); }
 
          private:
           std::string _desc;
@@ -966,6 +983,9 @@ namespace ChimeraTK {
   template<typename LAMBDATYPE>
   void callForRawType(const DataType& type, LAMBDATYPE lambda) {
     switch(DataType::TheType(type)) {
+      // The linter thinks the branches are identical. They are not, they have a different type, which is the whole
+      // point of this exercise.
+      // NOLINTBEGIN(bugprone-branch-clone)
       case DataType::Void: {
         // do nothing:
       } break;
@@ -978,11 +998,12 @@ namespace ChimeraTK {
       case DataType::int32: {
         lambda(int32_t());
       } break;
+      // NOLINTEND(bugprone-branch-clone)
       default:
         class myBadCast : public std::bad_cast {
          public:
-          myBadCast(const std::string& desc) : _desc(desc) {}
-          const char* what() const noexcept override { return _desc.c_str(); }
+          explicit myBadCast(std::string desc) : _desc(std::move(desc)) {}
+          [[nodiscard]] const char* what() const noexcept override { return _desc.c_str(); }
 
          private:
           std::string _desc;

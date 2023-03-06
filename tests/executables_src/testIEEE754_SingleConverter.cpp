@@ -6,6 +6,7 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include "Exception.h"
 #include "IEEE754_SingleConverter.h"
 using namespace ChimeraTK;
 
@@ -100,7 +101,7 @@ BOOST_AUTO_TEST_CASE(test_from_3_25) {
   checkAsRaw(converter.toRaw(Boolean("3.25")), true);
 
   // corner cases
-  BOOST_CHECK_THROW(converter.toRaw(std::string("notAFloat")), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(std::ignore = converter.toRaw(std::string("notAFloat")), ChimeraTK::logic_error);
 
   double tooLarge = DBL_MAX + 1;
   double tooSmall = -(DBL_MAX);

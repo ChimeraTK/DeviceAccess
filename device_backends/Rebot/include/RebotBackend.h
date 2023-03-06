@@ -12,20 +12,20 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
+#include <cstdio>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
 namespace ChimeraTK {
   namespace Rebot {
     class Connection;
-  }
+  } // namespace Rebot
 
   struct RebotProtocolImplementor;
 
@@ -38,8 +38,7 @@ namespace ChimeraTK {
   // still exist thanks to the shared pointer.
   struct ThreadInformerMutex {
     std::mutex mutex;
-    bool quitThread;
-    ThreadInformerMutex() : quitThread(false) {}
+    bool quitThread{false};
   };
 
   class RebotBackend : public NumericAddressedBackend {
@@ -57,7 +56,7 @@ namespace ChimeraTK {
     unsigned int _connectionTimeout;
 
    public:
-    RebotBackend(std::string boardAddr, std::string port, std::string mapFileName = "",
+    RebotBackend(std::string boardAddr, std::string port, const std::string& mapFileName = "",
         uint32_t connectionTimeout_sec = DEFAULT_CONNECTION_TIMEOUT_sec);
     ~RebotBackend() override;
     /// The function opens the connection to the device
@@ -65,7 +64,7 @@ namespace ChimeraTK {
     void closeImpl() override;
     void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
     void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
-    std::string readDeviceInfo() override { return std::string("RebotDevice"); }
+    std::string readDeviceInfo() override { return {"RebotDevice"}; }
 
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
@@ -75,7 +74,7 @@ namespace ChimeraTK {
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
    protected:
-    void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
+    void heartbeatLoop(const boost::shared_ptr<ThreadInformerMutex>& threadInformerMutex);
     boost::thread _heartbeatThread;
 
     const static uint32_t DEFAULT_CONNECTION_TIMEOUT_sec{5};

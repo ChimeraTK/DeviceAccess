@@ -66,12 +66,12 @@ BOOST_AUTO_TEST_CASE(testFactoryForRebotDeviceCreation) {
   // 3. We don't have a map file, so we have to use numerical addressing
   ChimeraTK::Device thirdDevice;
   thirdDevice.open("(rebot?ip=localhost&port=" + port + ")");
-  BOOST_CHECK(thirdDevice.read<int32_t>(ChimeraTK::numeric_address::BAR / 0 / 0xC) == 48 << 3); // The user register
-                                                                                                // is on bar 0,
-                                                                                                // address 0xC. We
-                                                                                                // have no fixed point
-                                                                                                // data conversion but
-                                                                                                // 3 fractional bits.
+  BOOST_CHECK(thirdDevice.read<int32_t>(ChimeraTK::numeric_address::BAR() / 0 / 0xC) == 48 << 3); // The user register
+                                                                                                  // is on bar 0,
+                                                                                                  // address 0xC. We
+                                                                                                  // have no fixed point
+                                                                                                  // data conversion but
+                                                                                                  // 3 fractional bits.
   thirdDevice.close();
 
   // 4. This should print a warning. We can't check that, so we just check that

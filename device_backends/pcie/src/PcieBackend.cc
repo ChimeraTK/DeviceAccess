@@ -5,26 +5,27 @@
 
 // the io constants and struct for the driver
 #include "llrfdrv_io_compat.h"
-#include "pciedev_io.h"
+#include "pciedev_io_compat.h"
 #include "pcieuni_io_compat.h"
 #include <sys/ioctl.h>
 
 #include <boost/bind/bind.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <errno.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
+#include <utility>
 
 namespace ChimeraTK {
 
-  PcieBackend::PcieBackend(std::string deviceNodeName, std::string mapFileName)
+  PcieBackend::PcieBackend(std::string deviceNodeName, const std::string& mapFileName)
   : NumericAddressedBackend(mapFileName), _deviceID(0), _ioctlPhysicalSlot(0), _ioctlDriverVersion(0), _ioctlDMA(0),
-    _deviceNodeName(deviceNodeName) {}
+    _deviceNodeName(std::move(deviceNodeName)) {}
 
   PcieBackend::~PcieBackend() {
     close();
@@ -58,12 +59,15 @@ namespace ChimeraTK {
       _ioctlPhysicalSlot = PCIEDEV_PHYSICAL_SLOT;
       _ioctlDriverVersion = PCIEDEV_DRIVER_VERSION;
       _ioctlDMA = PCIEDEV_READ_DMA;
-      _readDMAFunction = boost::bind(&PcieBackend::readDMAViaIoctl, this, boost::placeholders::_1,
-          boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4);
-      _writeFunction = boost::bind(&PcieBackend::writeWithStruct, this, boost::placeholders::_1,
-          boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4);
-      _readFunction = boost::bind(&PcieBackend::readWithStruct, this, boost::placeholders::_1, boost::placeholders::_2,
-          boost::placeholders::_3, boost::placeholders::_4);
+      _readDMAFunction = [&](uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+        PcieBackend::readDMAViaIoctl(bar, address, data, sizeInBytes);
+      };
+      _writeFunction = [&](uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
+        writeWithStruct(bar, address, data, sizeInBytes);
+      };
+      _readFunction = [&](uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+        readWithStruct(bar, address, data, sizeInBytes);
+      };
       return;
     }
 
@@ -72,12 +76,15 @@ namespace ChimeraTK {
       _ioctlPhysicalSlot = LLRFDRV_PHYSICAL_SLOT;
       _ioctlDriverVersion = LLRFDRV_DRIVER_VERSION;
       _ioctlDMA = 0;
-      _readDMAFunction = boost::bind(&PcieBackend::readDMAViaStruct, this, boost::placeholders::_1,
-          boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4);
-      _writeFunction = boost::bind(&PcieBackend::writeWithStruct, this, boost::placeholders::_1,
-          boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4);
-      _readFunction = boost::bind(&PcieBackend::readWithStruct, this, boost::placeholders::_1, boost::placeholders::_2,
-          boost::placeholders::_3, boost::placeholders::_4);
+      _readDMAFunction = [&](uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+        PcieBackend::readDMAViaStruct(bar, address, data, sizeInBytes);
+      };
+      _writeFunction = [&](uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
+        writeWithStruct(bar, address, data, sizeInBytes);
+      };
+      _readFunction = [&](uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+        readWithStruct(bar, address, data, sizeInBytes);
+      };
       return;
     }
 
@@ -86,14 +93,15 @@ namespace ChimeraTK {
       _ioctlPhysicalSlot = PCIEUNI_PHYSICAL_SLOT;
       _ioctlDriverVersion = PCIEUNI_DRIVER_VERSION;
       _ioctlDMA = PCIEUNI_READ_DMA;
-      _readDMAFunction = boost::bind(&PcieBackend::readDMAViaIoctl, this, boost::placeholders::_1,
-          boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4);
-      _writeFunction = boost::bind(&PcieBackend::directWrite, this, boost::placeholders::_1, boost::placeholders::_2,
-          boost::placeholders::_3, boost::placeholders::_4);
-      _readFunction = boost::bind(&PcieBackend::directRead, this, boost::placeholders::_1, boost::placeholders::_2,
-          boost::placeholders::_3, sizeof(int32_t));
-      _readFunction = boost::bind(&PcieBackend::directRead, this, boost::placeholders::_1, boost::placeholders::_2,
-          boost::placeholders::_3, boost::placeholders::_4);
+      _readDMAFunction = [&](uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+        PcieBackend::readDMAViaIoctl(bar, address, data, sizeInBytes);
+      };
+      _writeFunction = [&](uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
+        directWrite(bar, address, data, sizeInBytes);
+      };
+      _readFunction = [&](uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+        directRead(bar, address, data, sizeInBytes);
+      };
       return;
     }
 
@@ -126,10 +134,7 @@ namespace ChimeraTK {
     l_RW.size_rw = 0; // does not overwrite the struct but writes one word back to data
     l_RW.data_rw = -1;
     l_RW.rsrvd_rw = 0;
-    if(::read(_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)) {
-      return false;
-    }
-    return true;
+    return ::read(_deviceID, &l_RW, sizeof(device_rw)) == sizeof(device_rw);
   }
 
   void PcieBackend::readInternal(uint8_t bar, uint32_t address, int32_t* data) {
@@ -145,7 +150,7 @@ namespace ChimeraTK {
     if(::read(_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)) {
       throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device: "));
     }
-    *data = l_RW.data_rw;
+    *data = static_cast<int32_t>(l_RW.data_rw);
   }
 
   void PcieBackend::directRead(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
@@ -230,7 +235,9 @@ namespace ChimeraTK {
       pl_RW = &l_RW;
     }
     else {
-      pl_RW = (device_rw*)data;
+      // We are reaching down into the C-interface for the ioctl. There is not we can do about reinterpret-casting into
+      // the correct type. NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      pl_RW = reinterpret_cast<device_rw*>(data);
     }
 
     pl_RW->data_rw = 0;
@@ -302,8 +309,10 @@ namespace ChimeraTK {
   }
 
   boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
       std::string address, std::map<std::string, std::string> parameters) {
-    if(address.size() == 0) {
+    if(address.empty()) {
       throw ChimeraTK::logic_error("Device address not specified.");
     }
 

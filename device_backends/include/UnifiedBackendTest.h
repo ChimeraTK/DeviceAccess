@@ -13,6 +13,7 @@
 #include <numeric>
 #include <string>
 #include <thread>
+#include <utility>
 
 // disable shadow warning, boost::mpl::for_each is triggering this warning on Ubuntu 16.04
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -50,7 +51,7 @@ namespace ChimeraTK {
       TestCapability _testRawTransfer = TestCapability::unspecified,
       TestCapability _testCatalogue = TestCapability::enabled>
   struct TestCapabilities {
-    constexpr TestCapabilities() {}
+    constexpr TestCapabilities() = default;
 
     /// Allows to prevent the test from executing any synchronous read tests.
     /// This should be used only when testing TransferElements which do not support reads without
@@ -339,7 +340,7 @@ namespace ChimeraTK {
      *
      *  A second CDD should be specified, if it is possible to reach the same registers through a different backend.
      */
-    void runTests(const std::string& cdd, const std::string& cdd2 = "");
+    void runTests(const std::string& cdd_, const std::string& cdd2_ = "");
 
     /**
      *  Call if not a real backend is tested but just a special TransferElement implementation. This will disable
@@ -441,8 +442,8 @@ namespace ChimeraTK {
 
     /// Special DeviceBackend used for testing the exception reporting to the backend
     struct ExceptionReportingBackend : DeviceBackendImpl {
-      ExceptionReportingBackend(const boost::shared_ptr<DeviceBackend>& target) : _target(target) {}
-      ~ExceptionReportingBackend() override {}
+      explicit ExceptionReportingBackend(boost::shared_ptr<DeviceBackend> target) : _target(std::move(target)) {}
+      ~ExceptionReportingBackend() override = default;
 
       void setException() override {
         _hasSeenException = true;
@@ -490,12 +491,12 @@ namespace ChimeraTK {
     // Proxy for calling forceAsyncReadInconsistency() only if allowed by capabilities.
     template<typename T, bool condition = (T::capabilities.asyncReadInconsistency == TestCapability::enabled)>
     struct forceAsyncReadInconsistency_proxy_helper {
-      forceAsyncReadInconsistency_proxy_helper(T t) { t.forceAsyncReadInconsistency(); }
+      explicit forceAsyncReadInconsistency_proxy_helper(T t) { t.forceAsyncReadInconsistency(); }
     };
 
     template<typename T>
     struct forceAsyncReadInconsistency_proxy_helper<T, false> {
-      forceAsyncReadInconsistency_proxy_helper(T) {
+      explicit forceAsyncReadInconsistency_proxy_helper(T) {
         std::cout << "Unexpected use of disabled capability." << std::endl;
         std::terminate();
       }
@@ -549,13 +550,13 @@ namespace ChimeraTK {
         bool condition = (T::capabilities.forceDataLossWrite == TestCapability::enabled ||
             T::capabilities.writeNeverLosesData == TestCapability::enabled)>
     struct writeQueueLength_proxy_helper {
-      writeQueueLength_proxy_helper(T t) { result = t.writeQueueLength(); }
+      explicit writeQueueLength_proxy_helper(T t) { result = t.writeQueueLength(); }
       size_t result;
     };
 
     template<typename T>
     struct writeQueueLength_proxy_helper<T, false> {
-      writeQueueLength_proxy_helper(T) {
+      explicit writeQueueLength_proxy_helper(T) {
         std::cout << "Unexpected use of disabled capability." << std::endl;
         std::terminate();
       }
@@ -570,7 +571,7 @@ namespace ChimeraTK {
     // Proxy for getting nValuesToTest() if defined, and otherwise use the default
     template<typename T>
     class has_nValuesToTest {
-      typedef char one;
+      using one = char;
       struct two {
         char x[2];
       };
@@ -586,12 +587,12 @@ namespace ChimeraTK {
 
     template<typename T, bool hasFn = has_nValuesToTest<T>::value>
     struct nValuesToTest_proxy_helper {
-      nValuesToTest_proxy_helper(T t) { result = t.nValuesToTest(); }
+      explicit nValuesToTest_proxy_helper(T t) { result = t.nValuesToTest(); }
       size_t result;
     };
     template<typename T>
     struct nValuesToTest_proxy_helper<T, false> {
-      nValuesToTest_proxy_helper(T) { result = 2; }
+      explicit nValuesToTest_proxy_helper(T) { result = 2; }
       size_t result;
     };
 
@@ -619,26 +620,27 @@ namespace ChimeraTK {
   }
 
   template<>
-  bool compareHelper<double>(double a, double b) {
+  inline bool compareHelper<double>(double a, double b) {
     return std::abs(a - b) <= std::numeric_limits<double>::epsilon() * 10. * std::max(std::abs(a), std::abs(b));
   }
 
   template<>
-  bool compareHelper<float>(float a, float b) {
+  inline bool compareHelper<float>(float a, float b) {
     return std::abs(a - b) <= std::numeric_limits<float>::epsilon() * 10.F * std::max(std::abs(a), std::abs(b));
   }
 
+  // Turn off the linter warning. It shows for strings only and we can't change the template signature here.
   template<>
-  bool compareHelper<std::string>(std::string a, std::string b) {
+  inline bool compareHelper<std::string>(std::string a, std::string b) { // NOLINT(performance-unnecessary-value-param)
     return a == b;
   }
 } // namespace ChimeraTK
 
 namespace std {
-  std::string to_string(const std::string& v) {
+  inline std::string to_string(const std::string& v) {
     return v;
   }
-  std::string to_string(const char*& v) {
+  inline std::string to_string(const char*& v) {
     return {v};
   }
 } // namespace std
@@ -647,10 +649,14 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  size_t CHECK_REPEAT_COUNT = 0;
-
   // Helper macro to compare the value on an accessor and the expected 2D value
   // Note: we use a macro and not a function, so BOOST_ERROR prints us the line number of the actual test!
+
+  // As the function only works with the correct objects and it is unlikely that expressions are used as input
+  // parameters, we  turn off the linter warning about parentheses around the macro arguments. The parentheses would
+  // make the code harder to read.
+
+  // NOLINTBEGIN(bugprone-macro-parentheses)
 #define CHECK_EQUALITY(accessor, expectedValue)                                                                        \
   {                                                                                                                    \
     typedef typename decltype(expectedValue)::value_type::value_type CHECK_EQUALITY_UserType;                          \
@@ -667,7 +673,7 @@ namespace ChimeraTK {
         }                                                                                                              \
         if(!compareHelper(                                                                                             \
                accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {     \
-          if(fail.size() == 0) {                                                                                       \
+          if(fail.empty()) {                                                                                           \
             fail = "Accessor content differs from expected value. First difference at index [" +                       \
                 std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                           \
                 "]: " + std::to_string(accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                                 \
@@ -676,7 +682,7 @@ namespace ChimeraTK {
         }                                                                                                              \
       }                                                                                                                \
     }                                                                                                                  \
-    if(fail != "") {                                                                                                   \
+    if(!fail.empty()) {                                                                                                \
       BOOST_ERROR(fail);                                                                                               \
     }                                                                                                                  \
     if(CHECK_EQUALITY_warnExpectedZero && !std::is_same<CHECK_EQUALITY_UserType, ChimeraTK::Boolean>::value) {         \
@@ -703,7 +709,7 @@ namespace ChimeraTK {
         }                                                                                                              \
         if(!compareHelper(                                                                                             \
                foundValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
-          if(fail.size() == 0) {                                                                                       \
+          if(fail.empty()) {                                                                                           \
             fail = "Data content differs from expected value. First difference at index [" +                           \
                 std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                           \
                 "]: " + std::to_string(foundValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
@@ -712,7 +718,7 @@ namespace ChimeraTK {
         }                                                                                                              \
       }                                                                                                                \
     }                                                                                                                  \
-    if(fail != "") {                                                                                                   \
+    if(!fail.empty()) {                                                                                                \
       BOOST_ERROR(fail);                                                                                               \
     }                                                                                                                  \
     if(CHECK_EQUALITY_warnExpectedZero && !std::is_same<CHECK_EQUALITY_UserType, ChimeraTK::Boolean>::value) {         \
@@ -743,7 +749,7 @@ namespace ChimeraTK {
           }                                                                                                            \
           if(!compareHelper(                                                                                           \
                  accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k], expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {   \
-            if(fail.size() == 0) {                                                                                     \
+            if(fail.empty()) {                                                                                         \
               fail = "Accessor content differs from expected value. First difference at index [" +                     \
                   std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
                   "]: " + std::to_string(accessor[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                               \
@@ -752,7 +758,7 @@ namespace ChimeraTK {
           }                                                                                                            \
         }                                                                                                              \
       }                                                                                                                \
-      if(fail.size() == 0) break;                                                                                      \
+      if(fail.empty()) break;                                                                                          \
       bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
       BOOST_CHECK_MESSAGE(!timeout_reached, fail);                                                                     \
       if(timeout_reached) break;                                                                                       \
@@ -785,7 +791,7 @@ namespace ChimeraTK {
           }                                                                                                            \
           if(!compareHelper(CHECK_EQUALITY_value[CHECK_EQUALITY_i][CHECK_EQUALITY_k],                                  \
                  expectedValue[CHECK_EQUALITY_i][CHECK_EQUALITY_k])) {                                                 \
-            if(fail.size() == 0) {                                                                                     \
+            if(fail.empty()) {                                                                                         \
               fail = "Data content differs from expected value. First difference at index [" +                         \
                   std::to_string(CHECK_EQUALITY_i) + "][" + std::to_string(CHECK_EQUALITY_k) +                         \
                   "]: " + std::to_string(CHECK_EQUALITY_value[CHECK_EQUALITY_i][CHECK_EQUALITY_k]) +                   \
@@ -794,7 +800,7 @@ namespace ChimeraTK {
           }                                                                                                            \
         }                                                                                                              \
       }                                                                                                                \
-      if(fail.size() == 0) break;                                                                                      \
+      if(fail.empty()) break;                                                                                          \
       bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
       BOOST_CHECK_MESSAGE(!timeout_reached, fail);                                                                     \
       if(timeout_reached) break;                                                                                       \
@@ -806,6 +812,7 @@ namespace ChimeraTK {
     }                                                                                                                  \
   }                                                                                                                    \
   (void)(0)
+  // NOLINTEND(bugprone-macro-parentheses)
 
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
@@ -822,11 +829,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename VECTOR_OF_REGISTERS_T>
-  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::runTests(const std::string& backend, const std::string& backend2) {
-    cdd = backend;
-    cdd2 = backend2;
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::runTests(const std::string& cdd_, const std::string& cdd2_) {
+    cdd = cdd_;
+    cdd2 = cdd2_;
     std::cout << "=== UnifiedBackendTest for " << cdd;
-    if(cdd2 != "") std::cout << " and " << cdd2;
+    if(!cdd2.empty()) std::cout << " and " << cdd2;
     std::cout << std::endl;
 
     size_t nSyncReadRegisters = 0;
@@ -958,7 +965,6 @@ namespace ChimeraTK {
           BOOST_ERROR("Device did not recover within 60 seconds after forced ChimeraTK::runtime_error.");
         }
       }
-      continue;
     }
   }
 
@@ -1149,6 +1155,10 @@ namespace ChimeraTK {
 
 /********************************************************************************************************************/
 
+// Turn off the warning about parameter parentheses. They probably are even wrong for template arguments,
+// and clutter the readability for variable names.
+// NOLINTBEGIN(bugprone-macro-parentheses)
+
 /// Helper macros for test_B_4_2_4
 #define ALTER_AND_STORE_APPLICATION_BUFFER(UserType, accessor)                                                         \
   std::vector<std::vector<UserType>> STORE_APPLICATION_BUFFER_data;                                                    \
@@ -1167,6 +1177,8 @@ namespace ChimeraTK {
   CHECK_EQUALITY(accessor, STORE_APPLICATION_BUFFER_data);                                                             \
   BOOST_CHECK(STORE_APPLICATION_BUFFER_version == accessor.getVersionNumber());                                        \
   BOOST_CHECK(STORE_APPLICATION_BUFFER_validity == accessor.dataValidity())
+
+  // NOLINTEND(bugprone-macro-parentheses)
 
   /**
    *  Test transfer implementations do not change the application buffer
@@ -1877,7 +1889,7 @@ namespace ChimeraTK {
     std::cout << "--- test_B_8_5_1 - activateAsynchronousRead" << std::endl;
     Device d(cdd);
     Device d2;
-    if(cdd2 != "") {
+    if(!cdd2.empty()) {
       d2.open(cdd2);
       d2.close();
     }
@@ -1890,10 +1902,10 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
       TwoDRegisterAccessor<UserType> reg2;
-      if(cdd2 != "") {
+      if(!cdd2.empty()) {
         d2.open();
         reg2.replace(d2.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data}));
-        if(cdd2 != "") BOOST_CHECK(reg2.readNonBlocking() == false); /// REMOVE
+        if(!cdd2.empty()) BOOST_CHECK(reg2.readNonBlocking() == false); /// REMOVE
       }
 
       // Set remote value to be read.
@@ -1902,7 +1914,7 @@ namespace ChimeraTK {
 
       // open the device
       d.open();
-      if(cdd2 != "") BOOST_CHECK(reg2.readNonBlocking() == false); /// REMOVE
+      if(!cdd2.empty()) BOOST_CHECK(reg2.readNonBlocking() == false); /// REMOVE
 
       // Activate async read
       d.activateAsyncRead();
@@ -1913,7 +1925,7 @@ namespace ChimeraTK {
       // Check application buffer
       CHECK_EQUALITY(reg, v1);
 
-      if(cdd2 != "") {
+      if(!cdd2.empty()) {
         // wait a bit, check that accessor of second device does not receive data
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(10ms);
@@ -3352,7 +3364,7 @@ namespace ChimeraTK {
           if(x.isReadable()) {
             x.setRemoteValue();
             reg.read();
-            auto expectedRawValue = x.template getRemoteValue<RawType>(/* raw = */ true);
+            auto expectedRawValue = x.template getRemoteValue<RawType>(/* getRaw = */ true);
             CHECK_EQUALITY(reg, expectedRawValue);
 
             auto expectedCookedValue = x.template getRemoteValue<UserType>();
@@ -3369,10 +3381,10 @@ namespace ChimeraTK {
             CHECK_EQUALITY_VECTOR(readCookedValue, expectedCookedValue);
           }
           if(x.isWriteable()) {
-            auto newValue = x.template generateValue<RawType>(/* raw = */ true);
+            auto newValue = x.template generateValue<RawType>(/* getRaw = */ true);
             reg = newValue;
             reg.write();
-            auto readbackValue = x.template getRemoteValue<RawType>(/* raw = */ true);
+            auto readbackValue = x.template getRemoteValue<RawType>(/* getRaw = */ true);
             CHECK_EQUALITY_VECTOR(readbackValue, newValue);
 
             // test setting as cooked

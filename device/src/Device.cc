@@ -6,7 +6,7 @@
 #include "DeviceBackend.h"
 
 #include <cmath>
-#include <string.h>
+#include <cstring>
 
 namespace ChimeraTK {
 
@@ -41,7 +41,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void Device::checkPointersAreNotNull() const {
-    if(static_cast<bool>(_deviceBackendPointer) == false) {
+    if(!static_cast<bool>(_deviceBackendPointer)) {
       throw ChimeraTK::logic_error("Device has not been opened correctly");
     }
   }
@@ -71,7 +71,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool Device::isOpened() const {
-    if(static_cast<bool>(_deviceBackendPointer) != false) {
+    if(static_cast<bool>(_deviceBackendPointer)) {
       return _deviceBackendPointer->isOpen();
     }
     return false; // no backend is assigned: the device is not opened
@@ -80,7 +80,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool Device::isFunctional() const {
-    if(static_cast<bool>(_deviceBackendPointer) != false) {
+    if(static_cast<bool>(_deviceBackendPointer)) {
       return _deviceBackendPointer->isFunctional();
     }
     return false; // no backend is assigned: the device is not opened
@@ -103,7 +103,7 @@ namespace ChimeraTK {
   VoidRegisterAccessor Device::getVoidRegisterAccessor(
       const RegisterPath& registerPathName, const AccessModeFlags& flags) const {
     checkPointersAreNotNull();
-    return VoidRegisterAccessor(_deviceBackendPointer->getRegisterAccessor<Void>(registerPathName, 0, 0, flags));
+    return {_deviceBackendPointer->getRegisterAccessor<Void>(registerPathName, 0, 0, flags)};
   }
 
   /********************************************************************************************************************/

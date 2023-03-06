@@ -27,9 +27,8 @@ namespace ChimeraTK {
      *  an AsyncAccessorManager where you can unsubscribe. As the AsyncAccessorManager is
      *  the factory for AsyncNDRegisterAccessor, this is only an implementation detail.
      */
-    AsyncNDRegisterAccessor(const boost::shared_ptr<DeviceBackend>& backend,
-        const boost::shared_ptr<AsyncAccessorManager>& manager, std::string const& name, size_t nChannels,
-        size_t nElements, AccessModeFlags accessModeFlags,
+    AsyncNDRegisterAccessor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<AsyncAccessorManager> manager,
+        std::string const& name, size_t nChannels, size_t nElements, AccessModeFlags accessModeFlags,
         std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string());
 
@@ -98,8 +97,9 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Writing is not supported for " + this->getName());
       }
       // The following code is taken from the NDRegisterAccessorDecorator:
-      for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i)
+      for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i) {
         buffer_2D[i].swap(_writeAccessor->accessChannel(i));
+      }
       _writeAccessor->setDataValidity(this->_dataValidity);
       _writeAccessor->preWrite(type, versionNumber);
     }
@@ -113,8 +113,9 @@ namespace ChimeraTK {
       // The following code is taken from the NDRegisterAccessorDecorator:
       // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
       auto _ = cppext::finally([&] {
-        for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i)
+        for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i) {
           buffer_2D[i].swap(_writeAccessor->accessChannel(i));
+        }
       });
       _writeAccessor->setActiveException(this->_activeException);
       _writeAccessor->postWrite(type, versionNumber);
@@ -124,11 +125,11 @@ namespace ChimeraTK {
     // implementation.
     void doPostRead([[maybe_unused]] TransferType type, bool updateDataBuffer) override;
 
-    bool isReadOnly() const override {
+    [[nodiscard]] bool isReadOnly() const override {
       return !isWriteable(); // as the accessor is always readable, isReadOnly() is equivalent to !isWriteable()
     }
-    bool isReadable() const override { return true; }
-    bool isWriteable() const override { return static_cast<bool>(_writeAccessor); }
+    [[nodiscard]] bool isReadable() const override { return true; }
+    [[nodiscard]] bool isWriteable() const override { return static_cast<bool>(_writeAccessor); }
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
       this->_exceptionBackend = exceptionBackend;

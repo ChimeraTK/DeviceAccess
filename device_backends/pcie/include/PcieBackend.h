@@ -6,8 +6,8 @@
 
 #include <boost/function.hpp>
 
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdlib>
 
 namespace ChimeraTK {
 
@@ -17,9 +17,9 @@ namespace ChimeraTK {
   class PcieBackend : public NumericAddressedBackend {
    private:
     int _deviceID;
-    unsigned long _ioctlPhysicalSlot;
-    unsigned long _ioctlDriverVersion;
-    unsigned long _ioctlDMA;
+    uint64_t _ioctlPhysicalSlot;
+    uint64_t _ioctlDriverVersion;
+    uint64_t _ioctlDMA;
     std::string _deviceNodeName;
 
     /// A function pointer which calls the correct dma read function (via ioctl or
@@ -56,7 +56,7 @@ namespace ChimeraTK {
     /** constructor called through createInstance to create device object */
 
    public:
-    PcieBackend(std::string deviceNodeName, std::string mapFileName = "");
+    explicit PcieBackend(std::string deviceNodeName, const std::string& mapFileName = "");
     ~PcieBackend() override;
 
     void open() override;

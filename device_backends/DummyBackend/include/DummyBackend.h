@@ -44,8 +44,8 @@ namespace ChimeraTK {
    */
   class DummyBackend : public DummyBackendBase {
    public:
-    DummyBackend(std::string mapFileName);
-    ~DummyBackend() override;
+    explicit DummyBackend(const std::string& mapFileName);
+    ~DummyBackend() override = default;
 
     void open() override;
 
@@ -76,7 +76,7 @@ namespace ChimeraTK {
      *  We have to use the old module/register interface because the dummy uses the old style
      *  mapping internally.
      */
-    DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
+    DummyRegisterRawAccessor getRawAccessor(const std::string& module, const std::string& register_name);
 
     VersionNumber triggerInterrupt(int interruptControllerNumber, int interruptNumber) override;
 

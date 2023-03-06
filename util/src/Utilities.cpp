@@ -11,6 +11,7 @@
 
 #include <cxxabi.h>
 #include <execinfo.h>
+#include <utility>
 #include <vector>
 
 namespace ChimeraTK {
@@ -24,7 +25,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool Utilities::isSdm(std::string theString) {
+  bool Utilities::isSdm(const std::string& theString) {
     size_t signatureLen = 6;
     if(theString.length() < signatureLen) return false;
     if(theString.substr(0, 6) != "sdm://") return false;
@@ -123,7 +124,7 @@ namespace ChimeraTK {
           // parameter token complete (for one key-value pair)
           boost::trim(token);
           if(token.length() > 0) { // ignore empty parameter
-            auto equalSign = token.find_first_of("=");
+            auto equalSign = token.find_first_of('=');
             if(equalSign == std::string::npos) {
               throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (parameters must be "
                                            "specified as key=value pairs): " +
@@ -185,17 +186,17 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  Sdm Utilities::parseSdm(std::string sdmString) {
+  Sdm Utilities::parseSdm(const std::string& sdmString) {
     Sdm sdmInfo;
     size_t signatureLen = 6;
     if(sdmString.length() < signatureLen) throw ChimeraTK::logic_error("Invalid sdm.");
     if(sdmString.substr(0, 6) != "sdm://") throw ChimeraTK::logic_error("Invalid sdm.");
     int pos = 6;
 
-    std::size_t found = sdmString.find_first_of("/", pos);
+    std::size_t found = sdmString.find_first_of('/', pos);
     std::string subUri;
     if(found != std::string::npos) {
-      sdmInfo._Host = sdmString.substr(pos, found - pos); // Get the Host
+      sdmInfo.host = sdmString.substr(pos, found - pos); // Get the Host
     }
     else {
       throw ChimeraTK::logic_error("Invalid sdm.");
@@ -217,35 +218,37 @@ namespace ChimeraTK {
     }
     std::vector<std::string> tokens;
     boost::split(tokens, subUri, boost::is_any_of(":;="));
-    int numOfTokens = tokens.size();
+    size_t numOfTokens = tokens.size();
     if(numOfTokens < 1) return sdmInfo;
-    int counter = 0;
-    sdmInfo._Interface = tokens[counter]; // Get the Interface
+    size_t counter = 0;
+    sdmInfo.interface = tokens[counter]; // Get the Interface
     counter++;
     if(counter < numOfTokens) {
       // Get the Instance
-      found = sdmString.find_first_of(":", pos);
+      found = sdmString.find_first_of(':', pos);
       if(found != std::string::npos) {
-        sdmInfo._Instance = tokens[counter];
+        sdmInfo.instance = tokens[counter];
         counter++;
       }
     }
     if(counter < numOfTokens) {
       // Get the Protocol
-      found = sdmString.find_first_of(";", pos);
+      found = sdmString.find_first_of(';', pos);
       if(found != std::string::npos) {
-        sdmInfo._Protocol = tokens[counter];
+        sdmInfo.protocol = tokens[counter];
         counter++;
       }
     }
     if(counter < numOfTokens) {
       // Get the Parameters
-      found = sdmString.find_first_of("=", pos);
+      found = sdmString.find_first_of('=', pos);
       if(found != std::string::npos) {
         std::string parameters = tokens[counter];
         std::vector<std::string> paramterTokens;
         boost::split(paramterTokens, parameters, boost::is_any_of(","));
-        for(uint i = 0; i < paramterTokens.size(); i++) sdmInfo._Parameters.push_back(paramterTokens[i]);
+        for(auto& paramterToken : paramterTokens) {
+          sdmInfo.parameters.push_back(paramterToken);
+        }
       }
     }
 
@@ -254,35 +257,35 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  Sdm Utilities::parseDeviceString(std::string deviceString) {
+  Sdm Utilities::parseDeviceString(const std::string& deviceString) {
     Sdm sdmInfo;
     if(deviceString.substr(0, 5) == "/dev/") {
-      sdmInfo._Interface = "pci";
+      sdmInfo.interface = "pci";
       if(deviceString.length() > 5) {
-        sdmInfo._Instance = deviceString.substr(5);
+        sdmInfo.instance = deviceString.substr(5);
       }
     }
     else if((boost::ends_with(deviceString, ".map")) || (boost::ends_with(deviceString, ".mapp"))) {
-      sdmInfo._Interface = "dummy";
-      sdmInfo._Instance = deviceString;
+      sdmInfo.interface = "dummy";
+      sdmInfo.instance = deviceString;
       /*another change in interface requires now instance
                 to be ignored and old expect old Instance parameter
                 as firt item of the Parameters list*/
-      sdmInfo._Parameters.push_back(sdmInfo._Instance);
+      sdmInfo.parameters.push_back(sdmInfo.instance);
     }
-    else
+    else {
       return sdmInfo;
-    sdmInfo._Host = ".";
-    sdmInfo._Protocol = "";
+    }
+    sdmInfo.host = ".";
+    sdmInfo.protocol = "";
     return sdmInfo;
   }
 
   /********************************************************************************************************************/
 
-  DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath) {
-    DMapFileParser fileParser;
+  DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(const std::string& aliasName, const std::string& dmapFilePath) {
     DeviceInfoMap::DeviceInfo deviceInfo;
-    auto deviceInfoPointer = fileParser.parse(dmapFilePath);
+    auto deviceInfoPointer = ChimeraTK::DMapFileParser::parse(dmapFilePath);
     deviceInfoPointer->getDeviceInfo(aliasName, deviceInfo);
     return deviceInfo;
   }
@@ -295,10 +298,8 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("Dmap file not set");
     }
 
-    DMapFileParser fileParser;
-
     try {
-      auto deviceInfoMap = fileParser.parse(dmapFileName);
+      auto deviceInfoMap = ChimeraTK::DMapFileParser::parse(dmapFileName);
 
       std::vector<std::string> listOfDeviceAliases;
       listOfDeviceAliases.reserve(deviceInfoMap->getSize());
@@ -311,7 +312,7 @@ namespace ChimeraTK {
     }
     catch(ChimeraTK::runtime_error& e) {
       std::cout << e.what() << std::endl;
-      return std::vector<std::string>(); // empty list in case of failure
+      return {}; // empty list in case of failure
     }
   }
 
@@ -324,7 +325,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void setDMapFilePath(std::string dmapFilePath) {
-    BackendFactory::getInstance().setDMapFilePath(dmapFilePath);
+    BackendFactory::getInstance().setDMapFilePath(std::move(dmapFilePath));
   }
 
   /********************************************************************************************************************/

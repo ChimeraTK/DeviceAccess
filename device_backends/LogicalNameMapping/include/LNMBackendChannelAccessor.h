@@ -16,7 +16,7 @@ namespace ChimeraTK {
   template<typename UserType>
   class LNMBackendChannelAccessor : public NDRegisterAccessor<UserType> {
    public:
-    LNMBackendChannelAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath& registerPathName,
+    LNMBackendChannelAccessor(const boost::shared_ptr<DeviceBackend>& dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName) {
       // check for unknown flags
@@ -83,7 +83,7 @@ namespace ChimeraTK {
       this->_dataValidity = _accessor->dataValidity();
     }
 
-    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<const LNMBackendChannelAccessor<UserType>>(other);
       if(!rhsCasted) return false;
       if(_registerPathName != rhsCasted->_registerPathName) return false;
@@ -91,11 +91,11 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool isReadOnly() const override { return true; }
+    [[nodiscard]] bool isReadOnly() const override { return true; }
 
-    bool isReadable() const override { return true; }
+    [[nodiscard]] bool isReadable() const override { return true; }
 
-    bool isWriteable() const override { return false; }
+    [[nodiscard]] bool isWriteable() const override { return false; }
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
       this->_exceptionBackend = exceptionBackend;

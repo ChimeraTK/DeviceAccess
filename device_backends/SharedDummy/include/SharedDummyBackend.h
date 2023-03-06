@@ -25,10 +25,10 @@
 #include <vector>
 
 // Define shared-memory compatible vector type and corresponding allocator
-typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>
-    ShmemAllocator;
-typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
+using ShmemAllocator =
+    boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>;
+using SharedMemoryVector = boost::interprocess::vector<int32_t, ShmemAllocator>;
+using PidSet = boost::interprocess::vector<int32_t, ShmemAllocator>;
 
 namespace ChimeraTK {
 
@@ -46,7 +46,7 @@ namespace ChimeraTK {
    */
   class SharedDummyBackend : public DummyBackendBase {
    public:
-    SharedDummyBackend(std::string instanceId, std::string mapFileName);
+    SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName);
     ~SharedDummyBackend() override;
 
     void open() override;
@@ -93,7 +93,7 @@ namespace ChimeraTK {
       /**
        * Finds or constructs a vector object in the shared memory.
        */
-      SharedMemoryVector* findOrConstructVector(const std::string& objName, const size_t size);
+      SharedMemoryVector* findOrConstructVector(const std::string& objName, size_t size);
 
       /**
        * Get information on the shared memory segment
@@ -135,7 +135,7 @@ namespace ChimeraTK {
       // to facilitate compatibility checks later
       unsigned* requiredVersion{nullptr};
 
-      size_t getRequiredMemoryWithOverhead(void);
+      size_t getRequiredMemoryWithOverhead();
       /**
        * Checks and if needed corrects the state of the pid set, i.e
        * if accessing processes have been terminated and could not clean up for
@@ -143,10 +143,10 @@ namespace ChimeraTK {
        * accessing process exits gracefully, the shared memory will be removed.
        * returns bool reInitRequired
        */
-      bool checkPidSetConsistency(void);
+      bool checkPidSetConsistency();
       /// Resets all elements in shared memory except for the pidSet.
-      void reInitMemory(void);
-      std::vector<std::string> listNamedElements(void);
+      void reInitMemory();
+      std::vector<std::string> listNamedElements();
 
      protected:
       // interprocess mutex, has to be accessible by SharedDummyBackend class
@@ -177,11 +177,11 @@ namespace ChimeraTK {
     // However, this implies the restriction that you must not create more than one backend instance per shared memory
     // region inside a process. E.g. if you wanted to write a test by tricking the backend factory into creating more
     // than one backend instance for the same process and shared memory, you will have a problem.
-    typedef std::uint32_t SemId;
+    using SemId = std::uint32_t;
 
     // info about interrupt (for API)
     struct InterruptInfo {
-      InterruptInfo() {}
+      InterruptInfo() = default;
       InterruptInfo(int controllerId, int intNumber) : _controllerId(controllerId), _intNumber(intNumber) {}
       int _controllerId;
       int _intNumber;
@@ -189,16 +189,16 @@ namespace ChimeraTK {
 
     /// entry per semaphore in shared memory
     struct SemEntry {
-      SemEntry() {}
+      SemEntry() = default;
       boost::interprocess::interprocess_semaphore s{0};
-      SemId semId;
+      SemId semId{};
       bool used = false;
     };
 
     /// info about interrupt that can be placed in shm
     struct InterruptEntry {
-      int _controllerId;
-      int _intNumber;
+      int _controllerId{};
+      int _intNumber{};
       std::uint32_t _counter = 0;
       bool used = false;
     };
@@ -218,9 +218,9 @@ namespace ChimeraTK {
       // - add/remove functions to add/remove a semaphore
       // - functions to update interrupt counts
 
-      typedef boost::interprocess::interprocess_semaphore Sem;
+      using Sem = boost::interprocess::interprocess_semaphore;
 
-      ShmForSems() {}
+      ShmForSems() = default;
       ShmForSems(const ShmForSems&) = delete;
 
       /// find unsed semaphore, mark it as used and return pointer to it
@@ -275,13 +275,13 @@ namespace ChimeraTK {
 
     struct InterruptDispatcherThread {
       /// starts dispatcher thread and then registers a semaphore of the semaphore array
-      InterruptDispatcherThread(InterruptDispatcherInterface* dispatcherInterf);
+      explicit InterruptDispatcherThread(InterruptDispatcherInterface* dispatcherInterf);
       InterruptDispatcherThread(const InterruptDispatcherThread&) = delete;
       /// stops and removes thread
       ~InterruptDispatcherThread();
 
       void run();
-      void stop();
+      void stop() noexcept;
       /// called for each interrupt event. Implements actual dispatching
       void handleInterrupt(int interruptControllerNumber, int interruptNumber);
 
@@ -291,7 +291,7 @@ namespace ChimeraTK {
       SemId _semId;
       ShmForSems* _semShm;
       ShmForSems::Sem* _sem = nullptr;
-      boost::thread* _thr;
+      boost::thread _thr;
       std::atomic_bool _started{false};
       std::atomic_bool _stop{false};
     };

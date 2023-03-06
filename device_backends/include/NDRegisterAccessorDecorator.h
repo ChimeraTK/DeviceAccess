@@ -119,7 +119,7 @@ namespace ChimeraTK {
   template<typename UserType, typename TargetUserType = UserType>
   class NDRegisterAccessorDecorator : public detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType> {
    public:
-    NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
+    explicit NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
     : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
           target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
       _target = target;
@@ -150,11 +150,11 @@ namespace ChimeraTK {
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
 
-    bool isReadOnly() const override { return _target->isReadOnly(); }
+    [[nodiscard]] bool isReadOnly() const override { return _target->isReadOnly(); }
 
-    bool isReadable() const override { return _target->isReadable(); }
+    [[nodiscard]] bool isReadable() const override { return _target->isReadable(); }
 
-    bool isWriteable() const override { return _target->isWriteable(); }
+    [[nodiscard]] bool isWriteable() const override { return _target->isWriteable(); }
 
     std::vector<boost::shared_ptr<ChimeraTK::TransferElement>> getHardwareAccessingElements() override {
       return _target->getHardwareAccessingElements();

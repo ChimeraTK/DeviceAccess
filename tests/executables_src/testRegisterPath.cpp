@@ -98,8 +98,8 @@ void RegisterPathTest::testNumericAddresses() {
   path2 = path1 / 3;
   BOOST_CHECK(path2 == "/SomeModule/withSomeRegister/3");
 
-  BOOST_CHECK(BAR == "/#");
-  BOOST_CHECK(BAR / 0 / 32 * 8 == "/#/0/32*8");
+  BOOST_CHECK(BAR() == "/#");
+  BOOST_CHECK(BAR() / 0 / 32 * 8 == "/#/0/32*8");
 }
 
 void RegisterPathTest::testComponents() {

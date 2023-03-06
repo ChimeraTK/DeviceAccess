@@ -7,11 +7,12 @@
 
 #include <boost/make_shared.hpp>
 
-namespace ChimeraTK { namespace LNMBackend {
+namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  ForcePollingReadPlugin::ForcePollingReadPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>&)
+  ForcePollingReadPlugin::ForcePollingReadPlugin(
+      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>&)
   : AccessorPlugin(info) {}
 
   /********************************************************************************************************************/
@@ -56,4 +57,4 @@ namespace ChimeraTK { namespace LNMBackend {
     }
     return ForcePollingReadPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

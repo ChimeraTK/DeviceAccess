@@ -18,9 +18,9 @@ namespace ChimeraTK {
    */
   class LogicalNameMappingBackend : public DeviceBackendImpl {
    public:
-    LogicalNameMappingBackend(std::string lmapFileName = "");
+    explicit LogicalNameMappingBackend(std::string lmapFileName = "");
 
-    ~LogicalNameMappingBackend() override {}
+    ~LogicalNameMappingBackend() override = default;
 
     void open() override;
 

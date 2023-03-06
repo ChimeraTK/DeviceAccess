@@ -5,7 +5,7 @@
 #include "DeviceInfoMap.h"
 #include "Exception.h"
 
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 namespace ChimeraTK {
@@ -30,19 +30,21 @@ namespace ChimeraTK {
      * @param file_name name of DMAP file
      * @return pointer to dmapFile object
      */
-    DeviceInfoMapPointer parse(const std::string& file_name);
+    static DeviceInfoMapPointer parse(const std::string& file_name);
 
    protected:
     // @todo FIXME passing the arguments C-style is super ugly
-    void parseForLoadLib(std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
-    void parseRegularLine(std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
-    void raiseException(std::string file_name, std::string line, uint32_t line_nr);
+    static void parseForLoadLib(
+        const std::string& file_name, const std::string& line, uint32_t line_nr, const DeviceInfoMapPointer& dmap);
+    static void parseRegularLine(
+        const std::string& file_name, const std::string& line, uint32_t line_nr, const DeviceInfoMapPointer& dmap);
+    static void raiseException(const std::string& file_name, const std::string& line, uint32_t line_nr);
 
     // Entries in the dmap file can be relative to the dmap file.
     // The dmap file itself can be an absolute or relative path.
     // This function return the absolute path of the dmap entry, correctly
     // resolved with respect to the dmap file.
-    std::string absPathOfDMapContent(std::string dmapContent, std::string dmapFileName);
+    static std::string absPathOfDMapContent(const std::string& dmapContent, const std::string& dmapFileName);
   };
 
   namespace detail {

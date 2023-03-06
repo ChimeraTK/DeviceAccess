@@ -7,7 +7,7 @@
 
 namespace ChimeraTK {
 
-  static const std::string DUMMY_WRITEABLE_SUFFIX{"DUMMY_WRITEABLE"};
+  constexpr auto DUMMY_WRITEABLE_SUFFIX = "DUMMY_WRITEABLE";
 
   /********************************************************************************************************************/
 
@@ -69,10 +69,11 @@ namespace ChimeraTK {
       auto controller = std::stoi(match[1].str());
       auto interrupt = std::stoi(match[2].str());
       try {
-        auto& interruptsForController = _mapOfInterrupts.at(unsigned(controller));
-        if(interruptsForController.find(unsigned(interrupt)) == interruptsForController.end())
+        const auto& interruptsForController = _mapOfInterrupts.at(unsigned(controller));
+        if(interruptsForController.find(unsigned(interrupt)) == interruptsForController.end()) {
           throw ChimeraTK::logic_error(
               "Invalid interrupt for controller (" + match[0].str() + ", " + match[1].str() + ": " + regPathNameStr);
+        }
       }
       catch(std::out_of_range&) {
         throw ChimeraTK::logic_error(
@@ -90,10 +91,11 @@ namespace ChimeraTK {
     // for the special functions.
     // This should go away once the pattern is changed to a CRTP, so the base classes know the
     // actual type they are.
-    auto* c = new DummyBackendRegisterCatalogue;
-    fillFromThis(c);
-    c->_mapOfInterrupts = _mapOfInterrupts;
-    return std::unique_ptr<BackendRegisterCatalogueBase>(c);
+    std::unique_ptr<BackendRegisterCatalogueBase> c = std::make_unique<DummyBackendRegisterCatalogue>();
+    auto* c_impl = dynamic_cast<DummyBackendRegisterCatalogue*>(c.get());
+    fillFromThis(c_impl);
+    c_impl->_mapOfInterrupts = _mapOfInterrupts;
+    return c;
   }
 
   /********************************************************************************************************************/

@@ -154,17 +154,17 @@ BOOST_AUTO_TEST_CASE(testParseCDD) {
 
 BOOST_AUTO_TEST_CASE(testParseSdm) {
   Sdm sdm = Utilities::parseSdm(VALID_SDM);
-  BOOST_CHECK(sdm._Host == ".");
-  BOOST_CHECK(sdm._Interface == "pci");
-  BOOST_CHECK(sdm._Instance == "pcieunidummys6");
-  BOOST_CHECK(sdm._Parameters.size() == 0);
-  BOOST_CHECK(sdm._Protocol == "undefined");
+  BOOST_CHECK(sdm.host == ".");
+  BOOST_CHECK(sdm.interface == "pci");
+  BOOST_CHECK(sdm.instance == "pcieunidummys6");
+  BOOST_CHECK(sdm.parameters.size() == 0);
+  BOOST_CHECK(sdm.protocol == "undefined");
 
   sdm = Utilities::parseSdm(VALID_SDM_WITH_PARAMS);
-  BOOST_CHECK(sdm._Host == ".");
-  BOOST_CHECK(sdm._Interface == "dummy");
-  BOOST_CHECK(sdm._Parameters.size() == 1);
-  BOOST_CHECK(sdm._Parameters.front() == "goodMapFile.map");
+  BOOST_CHECK(sdm.host == ".");
+  BOOST_CHECK(sdm.interface == "dummy");
+  BOOST_CHECK(sdm.parameters.size() == 1);
+  BOOST_CHECK(sdm.parameters.front() == "goodMapFile.map");
   BOOST_CHECK_THROW(Utilities::parseSdm(""),
       ChimeraTK::logic_error); // Empty string
   BOOST_CHECK_THROW(Utilities::parseSdm("sdm:"),
@@ -180,17 +180,17 @@ BOOST_AUTO_TEST_CASE(testParseSdm) {
 
 BOOST_AUTO_TEST_CASE(testParseDeviceString) {
   Sdm sdm = Utilities::parseDeviceString(VALID_PCI_STRING);
-  BOOST_CHECK(sdm._Interface == "pci");
+  BOOST_CHECK(sdm.interface == "pci");
   sdm = Utilities::parseDeviceString(VALID_DUMMY_STRING);
-  BOOST_CHECK(sdm._Interface == "dummy");
+  BOOST_CHECK(sdm.interface == "dummy");
   sdm = Utilities::parseDeviceString(VALID_DUMMY_STRING_2);
-  BOOST_CHECK(sdm._Interface == "dummy");
+  BOOST_CHECK(sdm.interface == "dummy");
   sdm = Utilities::parseDeviceString(INVALID_DEVICE_STRING);
-  BOOST_CHECK(sdm._Interface == "");
+  BOOST_CHECK(sdm.interface == "");
   sdm = Utilities::parseDeviceString(INVALID_DEVICE_STRING_2);
-  BOOST_CHECK(sdm._Interface == "");
+  BOOST_CHECK(sdm.interface == "");
   sdm = Utilities::parseDeviceString(INVALID_DEVICE_STRING_3);
-  BOOST_CHECK(sdm._Interface == "");
+  BOOST_CHECK(sdm.interface == "");
 }
 
 /**********************************************************************************************************************/

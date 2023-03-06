@@ -10,13 +10,13 @@
 
 #include <string>
 
-namespace ChimeraTK { namespace LNMBackend {
+namespace ChimeraTK::LNMBackend {
   class DoubleBufferPlugin : public AccessorPlugin<DoubleBufferPlugin> {
     template<typename UserType>
     friend class DoubleBufferAccessorDecorator;
 
    public:
-    DoubleBufferPlugin(LNMBackendRegisterInfo info, std::map<std::string, std::string> parameters);
+    DoubleBufferPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
 
     void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
     template<typename UserType, typename TargetType>
@@ -51,7 +51,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     void doPostRead(TransferType type, bool hasNewData) override;
 
-    bool isWriteable() const override { return false; }
+    [[nodiscard]] bool isWriteable() const override { return false; }
 
     void doPreWrite(TransferType, VersionNumber) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend DoubleBufferPlugin: Writing is not allowed.");
@@ -84,4 +84,4 @@ namespace ChimeraTK { namespace LNMBackend {
     uint32_t _testUSleep{0};
   };
 
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

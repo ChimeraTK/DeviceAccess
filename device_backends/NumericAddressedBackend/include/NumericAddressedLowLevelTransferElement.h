@@ -15,7 +15,7 @@ namespace ChimeraTK {
   namespace detail {
     template<typename UserType, typename DataConverterType, bool isRaw>
     struct NumericAddressedPrePostActionsImplementor;
-  }
+  } // namespace detail
 
   /*********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends,
@@ -30,8 +30,8 @@ namespace ChimeraTK {
   class NumericAddressedLowLevelTransferElement : public TransferElement {
    public:
     NumericAddressedLowLevelTransferElement(
-        boost::shared_ptr<NumericAddressedBackend> dev, size_t bar, size_t startAddress, size_t numberOfBytes)
-    : TransferElement("", {AccessMode::raw}), _dev(dev), _bar(bar), isShared(false),
+        const boost::shared_ptr<NumericAddressedBackend>& dev, size_t bar, size_t startAddress, size_t numberOfBytes)
+    : TransferElement("", {AccessMode::raw}), _dev(dev), _bar(bar),
       _unalignedAccess(_dev->_unalignedAccess, std::defer_lock) {
       if(!dev->barIndexValid(bar)) {
         std::stringstream errorMessage;
@@ -41,13 +41,17 @@ namespace ChimeraTK {
       setAddress(startAddress, numberOfBytes);
     }
 
-    virtual ~NumericAddressedLowLevelTransferElement() {}
+    ~NumericAddressedLowLevelTransferElement() override = default;
 
     void doReadTransferSynchronously() override {
+      // There is nothing we can do about reinterpet_casting with the C-style interface
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       _dev->read(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override {
+      // There is nothing we can do about reinterpet_casting with the C-style interface
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       _dev->write(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
       return false;
     }
@@ -63,6 +67,8 @@ namespace ChimeraTK {
     void doPreWrite(TransferType, VersionNumber) override {
       if(_isUnaligned) {
         _unalignedAccess.lock();
+        // There is nothing we can do about reinterpet_casting with the C-style interface
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         _dev->read(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
       }
     }
@@ -166,14 +172,14 @@ namespace ChimeraTK {
     uint64_t _bar;
 
     /** start address w.r.t. the PCIe bar */
-    uint64_t _startAddress;
+    uint64_t _startAddress{};
 
     /** number of bytes to access */
-    size_t _numberOfBytes;
+    size_t _numberOfBytes{};
 
     /** flag if changeAddress() has been called, which is this low-level transfer
      * element is shared between multiple accessors */
-    bool isShared;
+    bool isShared{false};
 
     /** flag whether access is unaligned */
     bool _isUnaligned{false};

@@ -13,14 +13,14 @@
 #include <thread>
 #include <vector>
 
-namespace ChimeraTK { namespace Rebot {
+namespace ChimeraTK::Rebot {
 
   /// Handles the communication over TCP protocol with RebotDevice-based devices
   class Connection {
    public:
     /// Gets an IP address and port of the device but does not open the
     /// connection
-    Connection(const std::string& address, const std::string& port, uint32_t connectionTimeout_sec);
+    Connection(std::string address, std::string port, uint32_t connectionTimeout_sec);
 
     /// Opens a connection to the device.
     void open();
@@ -48,4 +48,4 @@ namespace ChimeraTK { namespace Rebot {
     void disconnectionTimerStart();
     void disconnectionTimerCancel(const boost::system::error_code& ec);
   };
-}} // namespace ChimeraTK::Rebot
+} // namespace ChimeraTK::Rebot

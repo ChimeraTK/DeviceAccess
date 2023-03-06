@@ -14,6 +14,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <utility>
+
 using namespace std::string_literals;
 
 namespace ChimeraTK {
@@ -209,7 +211,8 @@ namespace ChimeraTK {
    public:
     FixedPointConvertingDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
         FixedPointConverter fixedPointConverter)
-    : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _fixedPointConverter(fixedPointConverter) {}
+    : NDRegisterAccessorDecorator<UserType, TargetUserType>(target),
+      _fixedPointConverter(std::move(fixedPointConverter)) {}
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
 
@@ -238,7 +241,8 @@ namespace ChimeraTK {
       _target->postWrite(type, versionNumber);
     }
 
-    bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
+    [[nodiscard]] bool mayReplaceOther(
+        const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
       auto casted = boost::dynamic_pointer_cast<FixedPointConvertingDecorator<UserType, TargetUserType> const>(other);
       if(!casted) return false;
       if(_fixedPointConverter != casted->_fixedPointConverter) return false;
@@ -259,7 +263,7 @@ namespace ChimeraTK {
    public:
     FixedPointConvertingRawDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
         FixedPointConverter fixedPointConverter)
-    : NDRegisterAccessorDecorator<TargetUserType>(target), _fixedPointConverter(fixedPointConverter) {
+    : NDRegisterAccessorDecorator<TargetUserType>(target), _fixedPointConverter(std::move(fixedPointConverter)) {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
     }
@@ -279,7 +283,8 @@ namespace ChimeraTK {
       buffer_2D[channel][sample] = _fixedPointConverter.toRaw<COOKED_TYPE>(value);
     }
 
-    bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
+    [[nodiscard]] bool mayReplaceOther(
+        const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
       auto casted = boost::dynamic_pointer_cast<FixedPointConvertingRawDecorator<TargetUserType> const>(other);
       if(!casted) return false;
       if(_fixedPointConverter != casted->_fixedPointConverter) return false;
@@ -390,11 +395,9 @@ namespace ChimeraTK {
           FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
               info.channels.front().signedFlag));
     }
-    else {
-      // this is handled by the template specialisation for int32_t
-      throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
-          "match the expected type. Use an int32_t instead! (Register name: " + registerPathName + "')");
-    }
+    // this is handled by the template specialisation for int32_t
+    throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
+        "match the expected type. Use an int32_t instead! (Register name: " + registerPathName + "')");
   }
 
   /********************************************************************************************************************/
@@ -443,7 +446,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_synchronized(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister,
+      const AccessModeFlags& flags) {
     auto info = _registerMap.getBackendRegister(registerPathName);
     boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
         getRegisterAccessor_helper(info, numberOfWords, wordOffsetInRegister, flags);
@@ -455,11 +459,9 @@ namespace ChimeraTK {
           FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
               info.channels.front().signedFlag));
     }
-    else {
-      // this is handled by the template specialisation for int32_t
-      throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
-          "match the expected type. Use an int32_t instead! (Register name: " + registerPathName + "')");
-    }
+    // this is handled by the template specialisation for int32_t
+    throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
+        "match the expected type. Use an int32_t instead! (Register name: " + registerPathName + "')");
   }
 
   /********************************************************************************************************************/
@@ -488,18 +490,17 @@ namespace ChimeraTK {
           FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
               info.channels.front().signedFlag));
     }
-    else {
-      return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
-          FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-              info.channels.front().signedFlag));
-    }
+    return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
+        FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
+            info.channels.front().signedFlag));
   }
 
   /********************************************************************************************************************/
 
   template<>
   boost::shared_ptr<NDRegisterAccessor<int32_t>> SubdeviceBackend::getRegisterAccessor_synchronized<int32_t>(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister,
+      const AccessModeFlags& flags) {
     auto info = _registerMap.getBackendRegister(registerPathName);
     boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
         getRegisterAccessor_helper(info, numberOfWords, wordOffsetInRegister, flags);
@@ -511,11 +512,9 @@ namespace ChimeraTK {
           FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
               info.channels.front().signedFlag));
     }
-    else {
-      return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
-          FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-              info.channels.front().signedFlag));
-    }
+    return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
+        FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
+            info.channels.front().signedFlag));
   }
 
   /********************************************************************************************************************/

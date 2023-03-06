@@ -4,6 +4,7 @@
 #include "RegisterPath.h"
 
 #include <iostream>
+#include <tuple>
 
 namespace ChimeraTK {
 
@@ -12,7 +13,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   RegisterPath operator/(const RegisterPath& leftHandSide, const RegisterPath& rightHandSide) {
-    leftHandSide.getCommonAltSeparator(rightHandSide); // just to check compatibility of the two RegisterPaths
+    std::ignore =
+        leftHandSide.getCommonAltSeparator(rightHandSide); // just to check compatibility of the two RegisterPaths
     RegisterPath ret(leftHandSide);
     ret.path += rightHandSide.path; // rightHandSide has a leading separator
     ret.removeExtraSeparators();

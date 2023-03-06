@@ -5,6 +5,7 @@
 #include "AsyncNDRegisterAccessor.h"
 
 #include <mutex>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -58,10 +59,10 @@ namespace ChimeraTK {
     size_t numberOfWords;
     size_t wordOffsetInRegister;
     AccessModeFlags flags;
-    AccessorInstanceDescriptor(RegisterPath name_, std::type_index type_, size_t numberOfWords_,
+    AccessorInstanceDescriptor(const RegisterPath& name_, std::type_index type_, size_t numberOfWords_,
         size_t wordOffsetInRegister_, AccessModeFlags flags_)
     : name(name_), type(type_), numberOfWords(numberOfWords_), wordOffsetInRegister(wordOffsetInRegister_),
-      flags(flags_) {}
+      flags(std::move(flags_)) {}
   };
 
   /** The AsyncAccessorManager has three main functionalities:
@@ -95,7 +96,7 @@ namespace ChimeraTK {
 
     /** Send an exception to all accessors. This automatically de-activates them.
      */
-    void sendException(std::exception_ptr e);
+    void sendException(const std::exception_ptr& e);
 
     /** Activate all accessors and send the initial value. Generates a new version number which is used for
      *  all initial values and  which can be read out with getLastVersion().

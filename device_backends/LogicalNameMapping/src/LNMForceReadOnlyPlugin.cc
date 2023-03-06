@@ -8,11 +8,12 @@
 
 #include <boost/make_shared.hpp>
 
-namespace ChimeraTK { namespace LNMBackend {
+namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  ForceReadOnlyPlugin::ForceReadOnlyPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>&)
+  ForceReadOnlyPlugin::ForceReadOnlyPlugin(
+      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>&)
   : AccessorPlugin(info) {}
 
   /********************************************************************************************************************/
@@ -31,7 +32,7 @@ namespace ChimeraTK { namespace LNMBackend {
   struct ForceReadOnlyPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D;
 
-    ForceReadOnlyPluginDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target)
+    explicit ForceReadOnlyPluginDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target) {
       // make sure the target register is writeable and scalar
       if(!target->isReadable()) {
@@ -40,7 +41,7 @@ namespace ChimeraTK { namespace LNMBackend {
       }
     }
 
-    bool isWriteable() const override { return false; }
+    [[nodiscard]] bool isWriteable() const override { return false; }
 
     void doPreWrite(TransferType, VersionNumber) override {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend ForceReadOnlyPlugin: Writing is not allowed.");
@@ -76,4 +77,4 @@ namespace ChimeraTK { namespace LNMBackend {
       const UndecoratedParams&) {
     return ForceReadOnlyPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
   }
-}} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::LNMBackend

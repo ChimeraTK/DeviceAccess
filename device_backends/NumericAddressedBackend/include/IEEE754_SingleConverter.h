@@ -2,12 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "Exception.h"
 #include "SupportedUserTypes.h"
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <float.h> // for float limits
+#include <cfloat> // for float limits
 #include <memory.h>
 
 namespace ChimeraTK {
@@ -19,18 +18,18 @@ namespace ChimeraTK {
     struct Round {
       static S nearbyint(S s) { return round(s); }
 
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
-    typedef boost::numeric::converter<DestType, SourceType, boost::numeric::conversion_traits<DestType, SourceType>,
-        boost::numeric::def_overflow_handler, Round<SourceType>>
-        converter;
+    using converter =
+        boost::numeric::converter<DestType, SourceType, boost::numeric::conversion_traits<DestType, SourceType>,
+            boost::numeric::def_overflow_handler, Round<SourceType>>;
   };
 
   template<typename SourceType>
   struct RoundingRangeCheckingDataConverter<SourceType, Void> {
     struct converter {
-      static Void convert(__attribute__((unused)) SourceType s) { return Void(); }
+      static Void convert(__attribute__((unused)) SourceType s) { return {}; }
     };
   };
 
@@ -76,7 +75,7 @@ namespace ChimeraTK {
     template<typename CookedType>
     uint32_t toRaw(CookedType cookedValue) const;
 
-    IEEE754_SingleConverter(std::string = "") {}
+    explicit IEEE754_SingleConverter(const std::string& = "") {}
 
     // all IEEE754_SingleConverters are the same
     bool operator!=(const IEEE754_SingleConverter& /*other*/) const { return false; }
@@ -114,6 +113,7 @@ namespace ChimeraTK {
 
     // step 2: reinterpret float to int32 to send it to the device
     void* warningAvoider = &genericRepresentation;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
 
     return rawValue;
@@ -124,6 +124,7 @@ namespace ChimeraTK {
     static void impl(const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end, COOKED_ITERATOR cooked_begin) {
       for(auto it = raw_begin; it != raw_end; ++it) {
         // Step 1: convert the raw data to the "generic" representation in the CPU: float
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         float genericRepresentation = *(reinterpret_cast<const float*>(&(*it)));
 
         // Step 2: convert the float to the cooked type
@@ -134,6 +135,6 @@ namespace ChimeraTK {
   };
 
   template<>
-  uint32_t IEEE754_SingleConverter::toRaw(std::string cookedValue) const;
+  [[nodiscard]] uint32_t IEEE754_SingleConverter::toRaw(std::string cookedValue) const;
 
 } // namespace ChimeraTK

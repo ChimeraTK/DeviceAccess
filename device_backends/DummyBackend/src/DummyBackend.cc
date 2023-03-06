@@ -16,13 +16,9 @@
 
 namespace ChimeraTK {
 
-  DummyBackend::DummyBackend(std::string mapFileName) : DummyBackendBase(mapFileName), _mapFile(mapFileName) {
+  DummyBackend::DummyBackend(const std::string& mapFileName) : DummyBackendBase(mapFileName), _mapFile(mapFileName) {
     resizeBarContents();
   }
-
-  // Nothing to clean up, all objects clean up for themselves when
-  // they go out of scope.
-  DummyBackend::~DummyBackend() {}
 
   void DummyBackend::open() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -34,11 +30,10 @@ namespace ChimeraTK {
     std::lock_guard<std::mutex> lock(mutex);
     std::map<uint64_t, size_t> barSizesInBytes = getBarSizesInBytesFromRegisterMapping();
 
-    for(std::map<uint64_t, size_t>::const_iterator barSizeInBytesIter = barSizesInBytes.begin();
-        barSizeInBytesIter != barSizesInBytes.end(); ++barSizeInBytesIter) {
+    for(auto& barSizesInByte : barSizesInBytes) {
       // the size of the vector is in words, not in bytes -> convert fist with rounding up
-      auto nwords = (barSizeInBytesIter->second + sizeof(int32_t) - 1) / sizeof(int32_t);
-      _barContents[barSizeInBytesIter->first].resize(nwords, 0);
+      auto nwords = (barSizesInByte.second + sizeof(int32_t) - 1) / sizeof(int32_t);
+      _barContents[barSizesInByte.first].resize(nwords, 0);
     }
   }
 
@@ -81,7 +76,7 @@ namespace ChimeraTK {
           continue;
         }
         _barContents[bar].at(wordBaseIndex + wordIndex) = data[wordIndex];
-      });
+      })
     }
     // we call the callback functions after releasing the mutex in order to
     // avoid the risk of deadlocks.
@@ -132,15 +127,12 @@ namespace ChimeraTK {
     AddressRange firstAddressInBar(addressRange.bar, 0, 0);
     AddressRange endAddress(addressRange.bar, addressRange.offset + addressRange.sizeInBytes, 0);
 
-    std::multimap<AddressRange, boost::function<void(void)>>::iterator startIterator =
-        _writeCallbackFunctions.lower_bound(firstAddressInBar);
+    auto startIterator = _writeCallbackFunctions.lower_bound(firstAddressInBar);
 
-    std::multimap<AddressRange, boost::function<void(void)>>::iterator endIterator =
-        _writeCallbackFunctions.lower_bound(endAddress);
+    auto endIterator = _writeCallbackFunctions.lower_bound(endAddress);
 
     std::list<boost::function<void(void)>> returnList;
-    for(std::multimap<AddressRange, boost::function<void(void)>>::iterator callbackIter = startIterator;
-        callbackIter != endIterator; ++callbackIter) {
+    for(auto callbackIter = startIterator; callbackIter != endIterator; ++callbackIter) {
       if(isWriteRangeOverlap(callbackIter->first, addressRange)) {
         returnList.push_back(callbackIter->second);
       }
@@ -161,7 +153,7 @@ namespace ChimeraTK {
     // if at least one register is writable there is an overlap of writable
     // registers
     for(uint64_t address = startAddress; address < endAddress; address += sizeof(int32_t)) {
-      if(isReadOnly(firstRange.bar, address) == false) {
+      if(!isReadOnly(firstRange.bar, address)) {
         return true;
       }
     }
@@ -171,6 +163,8 @@ namespace ChimeraTK {
   }
 
   boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
       std::string address, std::map<std::string, std::string> parameters) {
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("No map file name given.");
@@ -191,8 +185,8 @@ namespace ChimeraTK {
     return parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
   }
 
-  DummyRegisterRawAccessor DummyBackend::getRawAccessor(std::string module, std::string register_name) {
-    return DummyRegisterRawAccessor(shared_from_this(), module, register_name);
+  DummyRegisterRawAccessor DummyBackend::getRawAccessor(const std::string& module, const std::string& register_name) {
+    return {shared_from_this(), module, register_name};
   }
 
   VersionNumber DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {

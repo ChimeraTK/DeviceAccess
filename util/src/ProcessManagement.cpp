@@ -5,11 +5,11 @@
 
 #include <sys/types.h>
 
+#include <cerrno>
+#include <csignal>
 #include <cstring>
-#include <errno.h>
 #include <iostream>
 #include <pwd.h>
-#include <signal.h>
 #include <string>
 #include <unistd.h>
 
@@ -17,11 +17,11 @@ bool processExists(unsigned pid) {
   return !kill((pid_t)pid, 0);
 }
 
-unsigned getOwnPID(void) {
+unsigned getOwnPID() {
   return (unsigned)getpid();
 }
 
-std::string getUserName(void) {
+std::string getUserName() {
   errno = 0;
   auto* pwent = getpwuid(geteuid());
   auto savedErr = errno;

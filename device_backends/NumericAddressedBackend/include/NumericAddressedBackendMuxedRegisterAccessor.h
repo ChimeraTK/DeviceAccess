@@ -4,7 +4,6 @@
 
 #include "createDataConverter.h"
 #include "Exception.h"
-#include "MapFileParser.h"
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedRegisterCatalogue.h"
@@ -15,10 +14,10 @@
 
 namespace ChimeraTK {
 
-  static const std::string MULTIPLEXED_SEQUENCE_PREFIX = "AREA_MULTIPLEXED_SEQUENCE_";
-  static const std::string SEQUENCE_PREFIX = "SEQUENCE_";
+  constexpr auto MULTIPLEXED_SEQUENCE_PREFIX = "AREA_MULTIPLEXED_SEQUENCE_";
+  constexpr auto SEQUENCE_PREFIX = "SEQUENCE_";
 
-  static const std::string MEM_MULTIPLEXED_PREFIX = "MEM_MULTIPLEXED_";
+  constexpr auto MEM_MULTIPLEXED_PREFIX = "MEM_MULTIPLEXED_";
 
   /********************************************************************************************************************/
 
@@ -27,7 +26,8 @@ namespace ChimeraTK {
     /** Iteration on a raw buffer with a given pitch (increment from one element to the next) in bytes */
     template<typename DATA_TYPE>
     struct pitched_iterator : std::iterator<std::random_access_iterator_tag, DATA_TYPE> {
-      pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<uint8_t*>(begin)), _pitch(pitch) {}
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<std::byte*>(begin)), _pitch(pitch) {}
 
       template<typename OTHER_DATA_TYPE>
       explicit pitched_iterator(pitched_iterator<OTHER_DATA_TYPE>& other) : _ptr(other._ptr), _pitch(other._pitch) {}
@@ -45,10 +45,11 @@ namespace ChimeraTK {
       bool operator==(pitched_iterator other) const { return _ptr == other._ptr; }
       bool operator!=(pitched_iterator other) const { return !(*this == other); }
       size_t operator-(pitched_iterator other) const { return _ptr - other._ptr; }
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       DATA_TYPE& operator*() const { return *reinterpret_cast<DATA_TYPE*>(_ptr); }
 
      private:
-      uint8_t* _ptr;
+      std::byte* _ptr;
       const size_t _pitch;
 
       template<typename OTHER_DATA_TYPE>
@@ -65,7 +66,7 @@ namespace ChimeraTK {
   class NumericAddressedBackendMuxedRegisterAccessor : public NDRegisterAccessor<UserType> {
    public:
     NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath& registerPathName, size_t numberOfElements,
-        size_t elementsOffset, boost::shared_ptr<DeviceBackend> _backend);
+        size_t elementsOffset, const boost::shared_ptr<DeviceBackend>& _backend);
 
     void doReadTransferSynchronously() override;
 
@@ -79,7 +80,7 @@ namespace ChimeraTK {
       if(!_ioDevice->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
     }
 
-    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted =
           boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>>(
               other);
@@ -90,11 +91,11 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool isReadOnly() const override { return isReadable() && !isWriteable(); }
+    [[nodiscard]] bool isReadOnly() const override { return isReadable() && !isWriteable(); }
 
-    bool isReadable() const override { return _registerInfo.isReadable(); }
+    [[nodiscard]] bool isReadable() const override { return _registerInfo.isReadable(); }
 
-    bool isWriteable() const override { return _registerInfo.isWriteable(); }
+    [[nodiscard]] bool isWriteable() const override { return _registerInfo.isWriteable(); }
 
    protected:
     /** One converter for each sequence. Fixed point converters can have different parameters.*/
@@ -127,7 +128,7 @@ namespace ChimeraTK {
   template<class UserType, class ConverterType>
   NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>::NumericAddressedBackendMuxedRegisterAccessor(
       const RegisterPath& registerPathName, size_t numberOfElements, size_t elementsOffset,
-      boost::shared_ptr<DeviceBackend> _backend)
+      const boost::shared_ptr<DeviceBackend>& _backend)
   : NDRegisterAccessor<UserType>(registerPathName, {}),
     _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)) {
     // Obtain information about the area
@@ -170,9 +171,14 @@ namespace ChimeraTK {
     }
 
     // allocate the raw io buffer. Make it one element larger to make sure we can access the last byte via int32_t*
-    _ioBuffer.resize(_registerInfo.elementPitchBits / 8 * _registerInfo.nElements / sizeof(int32_t) + 1);
+    _ioBuffer.resize(
+        static_cast<size_t>(_registerInfo.elementPitchBits) / 8 * _registerInfo.nElements / sizeof(int32_t) + 1);
 
     // compute pitched iterators for accessing the channels
+    // Silence the linter: Yes, we are doing a reinterpet cast. There is nothing we can do about it when we're
+    // bit-fiddling
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     auto* ioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(auto& c : _registerInfo.channels) {
       assert(c.bitOffset % 8 == 0);

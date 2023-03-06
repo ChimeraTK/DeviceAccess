@@ -13,11 +13,11 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
-#include <stdint.h>
 #include <string>
 
 namespace ChimeraTK {
@@ -40,7 +40,7 @@ namespace ChimeraTK {
      *    number of the respective number of bits
      *    (i.e. in signed 6 bit, 0 fractional bits 0x3F is -1)
      */
-    FixedPointConverter(
+    explicit FixedPointConverter(
         std::string variableName, unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
 
     /** Conversion function from type T to fixed point.
@@ -90,13 +90,13 @@ namespace ChimeraTK {
     }
 
     /** Read back the number of bits the converter is using. */
-    unsigned int getNBits() { return _nBits; }
+    [[nodiscard]] unsigned int getNBits() const { return _nBits; }
 
     /** Read back the fractional bits the converter is using. */
-    int getFractionalBits() { return _fractionalBits; }
+    [[nodiscard]] int getFractionalBits() const { return _fractionalBits; }
 
     /** Read back wether the conversion is using signed values. */
-    bool isSigned() { return _isSigned; }
+    [[nodiscard]] bool isSigned() const { return _isSigned; }
 
     /** Reconfigure the fixed point converter with new type information */
     void reconfigure(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
@@ -123,16 +123,16 @@ namespace ChimeraTK {
     /// is faster than division in the floating point unit.
     double _inverseFractionalBitsCoefficient;
 
-    int32_t _signBitMask;        ///< The bit which represents the sign
-    int32_t _usedBitsMask;       ///< The bits which are used
-    int32_t _unusedBitsMask;     ///< The bits which are not used
-    int32_t _bitShiftMask;       ///< Mask with N most significant bits set, where N is
-                                 ///< the number of factional bits
-    int32_t _bitShiftMaskSigned; ///< Mask with N most significant bits set, where N
-                                 ///< is the number of factional bits + 1 if signed
+    int32_t _signBitMask{};        ///< The bit which represents the sign
+    int32_t _usedBitsMask{};       ///< The bits which are used
+    int32_t _unusedBitsMask{};     ///< The bits which are not used
+    int32_t _bitShiftMask{};       ///< Mask with N most significant bits set, where N is
+                                   ///< the number of factional bits
+    int32_t _bitShiftMaskSigned{}; ///< Mask with N most significant bits set, where N
+                                   ///< is the number of factional bits + 1 if signed
 
-    int32_t _maxRawValue; ///< The maximum possible fixed point value
-    int32_t _minRawValue; ///< The minimum possible fixed point value
+    int32_t _maxRawValue{}; ///< The maximum possible fixed point value
+    int32_t _minRawValue{}; ///< The minimum possible fixed point value
 
     /// maximum cooked values (depending on user type)
     userTypeMap _maxCookedValues;
@@ -151,7 +151,7 @@ namespace ChimeraTK {
     /// helper class to initialise coefficients etc. for all possible UserTypes
     class initCoefficients {
      public:
-      initCoefficients(FixedPointConverter* fpc) : _fpc(fpc) {}
+      explicit initCoefficients(FixedPointConverter* fpc) : _fpc(fpc) {}
 
       template<typename Pair>
       void operator()(Pair) const {
@@ -214,7 +214,7 @@ namespace ChimeraTK {
     struct Round {
       static S nearbyint(S s) { return round(s); }
 
-      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
     /** helper function to test if UserTyped value is negative without triggering a
@@ -225,6 +225,9 @@ namespace ChimeraTK {
     bool isNegativeUserType(UserType value) const;
 
     // helper function: force unused leading bits to 0 for positive or 1 for negative numbers
+    // NOLINTBEGIN(hicpp-signed-bitwise)
+    // NOLINTBEGIN(bugprone-narrowing-conversions)
+    // Turn off the linter warning. Yes, we are fiddling with the bit interpretation here, that's the whole point.
     void padUnusedBits(int32_t& rawValue) const {
       if(!(rawValue & _signBitMask)) {
         rawValue &= _usedBitsMask;
@@ -233,10 +236,15 @@ namespace ChimeraTK {
         rawValue |= _unusedBitsMask;
       }
     }
+    // NOLINTEND(bugprone-narrowing-conversions)
+    // NOLINTEND(hicpp-signed-bitwise)
   };
 
   /**********************************************************************************************************************/
 
+  // FIXME: replace reinterpret_cast with bit_cast once C++20 is available for us.
+  // Until then, turn off the linter warning about reinterpret_cast
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
   template<typename UserType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
   void FixedPointConverter::vectorToCooked_impl<UserType, RAW_ITERATOR, COOKED_ITERATOR>::impl(
       const FixedPointConverter& fpc, const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end,
@@ -270,14 +278,14 @@ namespace ChimeraTK {
         break;
       }
       case 7: { // _fpc->_nBits == 16 && _fpc->_fractionalBits < 0  && _fpc->_fractionalBits > -16 && !_fpc->_isSigned
-        const uint32_t f = fpc._fractionalBitsCoefficient;
+        const auto f = static_cast<uint32_t>(fpc._fractionalBitsCoefficient);
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
           return numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&rawValue)));
         });
         break;
       }
       case 8: { //  _fpc->_nBits == 16 && _fpc->_fractionalBits < 0 && _fpc->_fractionalBits > -16 && _fpc->_isSigned
-        const int32_t f = fpc._fractionalBitsCoefficient;
+        const auto f = static_cast<int32_t>(fpc._fractionalBitsCoefficient);
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
           return numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&rawValue)));
         });
@@ -320,6 +328,7 @@ namespace ChimeraTK {
       }
     }
   }
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
   /**********************************************************************************************************************/
 
@@ -339,12 +348,11 @@ namespace ChimeraTK {
       // extract the sign and leave the positive number
       bool isNegative = isNegativeUserType(cookedValue);
       if(isNegative && !_isSigned) return _minRawValue;
-      if(isNegative)
-        cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be
-                                          // used as UserType might be double
-
+      if(isNegative) {
+        cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be used as UserType might be double
+      }
       // cast into raw type
-      uint32_t rawValue = static_cast<uint32_t>(cookedValue);
+      auto rawValue = static_cast<uint32_t>(cookedValue);
 
       // handle sign
       if(_isSigned && isNegative) {
@@ -352,49 +360,47 @@ namespace ChimeraTK {
       }
 
       // return with bit mask applied
-      return rawValue & _usedBitsMask;
+      return rawValue & static_cast<uint32_t>(_usedBitsMask);
     }
-    else {
-      // convert into double and scale by fractional bit coefficient
-      double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);
+    // convert into double and scale by fractional bit coefficient
+    double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);
 
-      // Convert into either signed or uinsigned int32_t, depending on _isSigned,
-      // so the conversion handls the sign correctly. Store always in a uint32_t,
-      // since this is our raw type. The conversion will properly round, when
-      // needed. Negative overflow exceptions need to be cought for some corner
-      // cases (e.g. number of fractional bits >= number of bits in total).
-      // Positive overflow cannot happen due to the rangecheck above (the negative
-      // branch has one more possible value).
-      uint32_t raw;
-      try {
-        if(_isSigned) {
-          typedef boost::numeric::converter<int32_t, double, boost::numeric::conversion_traits<int32_t, double>,
-              boost::numeric::def_overflow_handler, Round<double>>
-              converter_signed;
-          raw = converter_signed::convert(d_cooked);
-        }
-        else {
-          typedef boost::numeric::converter<uint32_t, double, boost::numeric::conversion_traits<uint32_t, double>,
-              boost::numeric::def_overflow_handler, Round<double>>
-              converter_unsigned;
-          raw = converter_unsigned::convert(d_cooked);
-        }
+    // Convert into either signed or uinsigned int32_t, depending on _isSigned,
+    // so the conversion handls the sign correctly. Store always in a uint32_t,
+    // since this is our raw type. The conversion will properly round, when
+    // needed. Negative overflow exceptions need to be cought for some corner
+    // cases (e.g. number of fractional bits >= number of bits in total).
+    // Positive overflow cannot happen due to the rangecheck above (the negative
+    // branch has one more possible value).
+    int32_t raw;
+    try {
+      if(_isSigned) {
+        typedef boost::numeric::converter<int32_t, double, boost::numeric::conversion_traits<int32_t, double>,
+            boost::numeric::def_overflow_handler, Round<double>>
+            converter_signed;
+        raw = converter_signed::convert(d_cooked);
       }
-      catch(boost::numeric::negative_overflow& e) {
-        raw = _minRawValue;
+      else {
+        typedef boost::numeric::converter<uint32_t, double, boost::numeric::conversion_traits<uint32_t, double>,
+            boost::numeric::def_overflow_handler, Round<double>>
+            converter_unsigned;
+        raw = static_cast<int32_t>(converter_unsigned::convert(d_cooked));
       }
-
-      // apply bit mask
-      return raw & _usedBitsMask;
     }
+    catch(boost::numeric::negative_overflow& e) {
+      raw = _minRawValue;
+    }
+
+    // apply bit mask
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    return raw & _usedBitsMask;
   }
 
   /**********************************************************************************************************************/
 
   template<typename UserType, typename std::enable_if<std::is_signed<UserType>{}, int>::type>
   bool FixedPointConverter::isNegativeUserType(UserType value) const {
-    if(value < 0) return true;
-    return false;
+    return static_cast<bool>(value < 0);
   }
 
   template<typename UserType, typename std::enable_if<!std::is_signed<UserType>{}, int>::type>
@@ -439,12 +445,12 @@ namespace ChimeraTK {
 
   /**********************************************************************************************************************/
   template<>
-  uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const;
+  [[nodiscard]] uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const;
 
   template<>
-  uint32_t FixedPointConverter::toRaw<Boolean>(Boolean cookedValue) const;
+  [[nodiscard]] uint32_t FixedPointConverter::toRaw<Boolean>(Boolean cookedValue) const;
 
   template<>
-  uint32_t FixedPointConverter::toRaw<Void>(__attribute__((unused)) Void cookedValue) const;
+  [[nodiscard]] uint32_t FixedPointConverter::toRaw<Void>(__attribute__((unused)) Void cookedValue) const;
 
 } // namespace ChimeraTK

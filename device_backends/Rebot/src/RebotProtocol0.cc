@@ -36,11 +36,11 @@ namespace ChimeraTK {
     // read implementation for protocol 0 : we are limited in the read size and
     // have to do multiple calls to fetchFromRebotServer
 
-    int iterationsRequired = registerInfo.nWords / READ_BLOCK_SIZE;
-    int leftOverWords = registerInfo.nWords % READ_BLOCK_SIZE;
+    size_t iterationsRequired = registerInfo.nWords / READ_BLOCK_SIZE;
+    size_t leftOverWords = registerInfo.nWords % READ_BLOCK_SIZE;
 
     // read in till the last multiple of READ_BLOCK_SIZE
-    for(int count = 0; count < iterationsRequired; ++count) {
+    for(size_t count = 0; count < iterationsRequired; ++count) {
       fetchFromRebotServer(
           registerInfo.addressInWords + (count * READ_BLOCK_SIZE), READ_BLOCK_SIZE, data + (count * READ_BLOCK_SIZE));
     }
@@ -63,7 +63,7 @@ namespace ChimeraTK {
     }
   }
 
-  void RebotProtocol0::fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords, int32_t* dataLocation) {
+  void RebotProtocol0::fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords, int32_t* dataLocation) const {
     sendRebotReadRequest(wordAddress, numberOfWords);
 
     // first check that the response starts with READ_ACK. If it is an error code
@@ -80,7 +80,7 @@ namespace ChimeraTK {
     transferVectorToDataPtr(readData, dataLocation);
   }
 
-  void RebotProtocol0::sendRebotReadRequest(const uint32_t wordAddress, const uint32_t wordsToRead) {
+  void RebotProtocol0::sendRebotReadRequest(const uint32_t wordAddress, const uint32_t wordsToRead) const {
     unsigned int datasendSize = 3 * sizeof(int);
     std::vector<char> datasend(datasendSize);
     std::vector<uint32_t> packet(3);
@@ -90,10 +90,10 @@ namespace ChimeraTK {
     _tcpCommunicator->write(packet);
   }
 
-  void RebotProtocol0::transferVectorToDataPtr(std::vector<uint32_t> source, int32_t* destination) {
+  void RebotProtocol0::transferVectorToDataPtr(const std::vector<uint32_t>& source, int32_t* destination) {
     // FIXME: just use memcopy
-    for(auto& i : source) {
-      *destination = i;
+    for(const auto& i : source) {
+      *destination = static_cast<int32_t>(i);
       ++destination; // this will not change the destination ptr value outside the
                      // scope of this function (signature pass by value)
     }
