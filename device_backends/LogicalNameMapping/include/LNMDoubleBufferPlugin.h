@@ -69,7 +69,7 @@ namespace ChimeraTK::LNMBackend {
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> /* newElement */) override {
       // do nothing, we do not support merging of DoubleBufferAccessorDecorators
     }
-    [[nodiscard]] virtual bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const;
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override;
 
    private:
     // we know that plugin exists at least as long as any register (of the catalogue) refers to it,
