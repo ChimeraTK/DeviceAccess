@@ -25,7 +25,14 @@ namespace ChimeraTK {
 
     /** Iteration on a raw buffer with a given pitch (increment from one element to the next) in bytes */
     template<typename DATA_TYPE>
-    struct pitched_iterator : std::iterator<std::random_access_iterator_tag, DATA_TYPE> {
+    struct pitched_iterator {
+      // standard iterator traits
+      using iterator_category = std::random_access_iterator_tag;
+      using value_type = DATA_TYPE;
+      using difference_type = std::ptrdiff_t;
+      using pointer = DATA_TYPE*;
+      using reference = DATA_TYPE&;
+
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<std::byte*>(begin)), _pitch(pitch) {}
 
