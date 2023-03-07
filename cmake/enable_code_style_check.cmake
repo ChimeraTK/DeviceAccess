@@ -20,3 +20,6 @@
 enable_testing()
 add_test(NAME coding_style COMMAND ${CMAKE_SOURCE_DIR}/cmake/check-coding-style.sh ${CMAKE_BINARY_DIR}
                            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# coding style will return 77 if no clang-format-14 could be found AND none of the other tests fail
+set_property(TEST coding_style PROPERTY SKIP_RETURN_CODE 77)
