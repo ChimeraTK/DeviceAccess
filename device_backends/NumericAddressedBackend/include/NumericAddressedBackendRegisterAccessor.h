@@ -141,8 +141,8 @@ namespace ChimeraTK {
       else {
         // optimised variant for raw transfers (unless type is a string)
         auto* itsrc = _rawAccessor->begin(_registerInfo.address);
-        auto itdst = buffer_2D[0].begin();
-        memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(int32_t));
+        auto* itdst = buffer_2D[0].data();
+        memcpy(itdst, itsrc, buffer_2D[0].size() * sizeof(UserType));
       }
 
       // we don't put the setting of the version number into the PrePostActionImplementor
