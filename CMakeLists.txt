@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.16)
 Project(ChimeraTK-DeviceAccess)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
 set(${PROJECT_NAME}_MINOR_VERSION 07)
 set(${PROJECT_NAME}_PATCH_VERSION 01)
