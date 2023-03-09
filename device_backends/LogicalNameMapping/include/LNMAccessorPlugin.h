@@ -23,6 +23,7 @@ namespace ChimeraTK::LNMBackend {
    *  plugins, the class AccessorPlugin should be implemented, not this one. */
   class AccessorPluginBase {
    public:
+    explicit AccessorPluginBase(const LNMBackendRegisterInfo& info);
     virtual ~AccessorPluginBase() = default;
 
     /** Called by the backend when obtaining a register accessor. */
@@ -39,19 +40,29 @@ namespace ChimeraTK::LNMBackend {
     /**
      *  Update the register info inside the catalogue if needed. This function is called by the backend after the
      *  LNMBackendRegisterInfo has
-     *  been filled with all information from the target backend. If plugins intend to change the catalogue information,
+     *  been filled with all information from the target backend.
+     *
+     *  This function implements the common steps and calls doRegisterInfoUpdate. where the actual implementation is happening.
+     */
+    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&);
+
+    /**
+     *   Implementation of the plugin specific register information update. Do not call this function directly.
+     *   It is always called from updateRegisterInfo()
+     *
+     *   If plugins intend to change the catalogue information,
      *  they need to do it in this function. This function is only called if the RegisterCatalogue is obtained from the
      *  device, so do not rely on this function to be called.
      *
      *  If the plugin needs data that depends on the target and which is only available after opening (e.g. whether the
-     *  register is writeable), the plugin has to call updateRegisterInfo in the openHook() and can then
+     *  register is writeable), the plugin has to call updateRegisterInfo() in the openHook() and can then
      *  modify internal variables in the updateRegisterInfo function.
      *
      *  Note: in principle it is fine to do nothing in this function, if no catalogue change is required. This function
      *  intentionally has no empty default implementation, because it might otherwise easy to overlook that the register
      *  info must be updated here instead of the constructor.
      */
-    virtual void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) = 0;
+    virtual void doRegisterInfoUpdate() = 0;
 
     /**
      *  Hook called when the backend is opened, at the end of the open() function after all backend work has been done
@@ -69,6 +80,10 @@ namespace ChimeraTK::LNMBackend {
      *  moved into the exception state.
      */
     virtual void exceptionHook() {}
+
+   protected:
+    /** RegisterInfo describing the the target register for which this plugin instance should work. */
+    LNMBackendRegisterInfo _info;
   };
 
   /** Base class for plugins that modify the behaviour of accessors in the logical name mapping backend. Plugins need to
@@ -117,9 +132,6 @@ namespace ChimeraTK::LNMBackend {
     boost::shared_ptr<NDRegisterAccessor<UserType>> getAccessor_impl(
         boost::shared_ptr<LogicalNameMappingBackend>& backend, size_t numberOfWords, size_t wordOffsetInRegister,
         AccessModeFlags flags, size_t pluginIndex);
-
-    /** RegisterInfo describing the the target register for which this plugin instance should work. */
-    LNMBackendRegisterInfo _info;
   };
 
   /********************************************************************************************************************/
@@ -137,7 +149,7 @@ namespace ChimeraTK::LNMBackend {
    public:
     MultiplierPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
-    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
+    void doRegisterInfoUpdate() override;
     DataType getTargetDataType(DataType) const override { return DataType::float64; }
 
     template<typename UserType, typename TargetType>
@@ -156,7 +168,7 @@ namespace ChimeraTK::LNMBackend {
    public:
     MathPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
 
-    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
+    void doRegisterInfoUpdate() override;
     DataType getTargetDataType(DataType) const override { return DataType::float64; }
 
     template<typename UserType, typename TargetType>
@@ -211,7 +223,7 @@ namespace ChimeraTK::LNMBackend {
    public:
     MonostableTriggerPlugin(LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters);
 
-    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
+    void doRegisterInfoUpdate() override;
     DataType getTargetDataType(DataType) const override { return DataType::uint32; }
 
     template<typename UserType, typename TargetType>
@@ -229,7 +241,7 @@ namespace ChimeraTK::LNMBackend {
    public:
     ForceReadOnlyPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
-    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
+    void doRegisterInfoUpdate() override;
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
@@ -242,7 +254,7 @@ namespace ChimeraTK::LNMBackend {
    public:
     ForcePollingReadPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
-    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
+    void doRegisterInfoUpdate() override;
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
@@ -255,7 +267,7 @@ namespace ChimeraTK::LNMBackend {
    public:
     TypeHintModifierPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
 
-    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
+    void doRegisterInfoUpdate() override;
 
    private:
     DataType _dataType{DataType::none};
@@ -266,7 +278,7 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   template<typename Derived>
-  AccessorPlugin<Derived>::AccessorPlugin(const LNMBackendRegisterInfo& info) : _info(info) {
+  AccessorPlugin<Derived>::AccessorPlugin(const LNMBackendRegisterInfo& info) : AccessorPluginBase(info) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl);
   }
 

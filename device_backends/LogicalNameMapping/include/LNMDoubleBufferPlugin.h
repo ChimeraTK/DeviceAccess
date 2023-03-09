@@ -18,7 +18,7 @@ namespace ChimeraTK::LNMBackend {
    public:
     DoubleBufferPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
 
-    void updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>&) override;
+    void doRegisterInfoUpdate() override;
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,

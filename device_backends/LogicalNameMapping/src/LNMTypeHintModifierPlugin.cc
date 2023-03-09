@@ -26,10 +26,7 @@ namespace ChimeraTK::LNMBackend {
     }
   }
 
-  void TypeHintModifierPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
-    // first update the info so we have the latest version from the catalogue.
-    _info = catalogue.getBackendRegister(_info.name);
-
+  void TypeHintModifierPlugin::doRegisterInfoUpdate() {
     // keep raw data type and transport layer data type from original entry
     auto d = _info._dataDescriptor;
 
@@ -47,7 +44,5 @@ namespace ChimeraTK::LNMBackend {
     }
 
     d = _info._dataDescriptor;
-
-    catalogue.modifyRegister(_info);
   }
 } // namespace ChimeraTK::LNMBackend

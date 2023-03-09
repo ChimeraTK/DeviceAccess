@@ -17,13 +17,10 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void ForcePollingReadPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
-    // first update the info so we have the latest version from the catalogue.
-    _info = catalogue.getBackendRegister(_info.name);
+  void ForcePollingReadPlugin::doRegisterInfoUpdate() {
     if(_info.supportedFlags.has(AccessMode::wait_for_new_data)) {
       _info.supportedFlags.remove(AccessMode::wait_for_new_data);
     }
-    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/
