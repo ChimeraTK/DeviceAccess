@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.0.2)
 Project(ChimeraTK-DeviceAccess)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
 set(${PROJECT_NAME}_MINOR_VERSION 07)
 set(${PROJECT_NAME}_PATCH_VERSION 01)
@@ -30,8 +32,8 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 # add dependencies
 include(cmake/add_dependency.cmake)
 add_dependency(Boost COMPONENTS thread system chrono filesystem REQUIRED)
-add_dependency(ChimeraTK-cppext REQUIRED 01.04)
-add_dependency(exprtk REQUIRED 01.00)
+add_dependency(ChimeraTK-cppext  01.04 REQUIRED)
+add_dependency(exprtk 01.00 REQUIRED )
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
