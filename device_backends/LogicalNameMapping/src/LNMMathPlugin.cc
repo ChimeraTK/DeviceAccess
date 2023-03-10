@@ -56,10 +56,7 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MathPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
-    // first update the info so we have the latest version from the catalogue.
-    _info = catalogue.getBackendRegister(_info.name);
-
+  void MathPlugin::doRegisterInfoUpdate() {
     // Change data type to non-integral
     _info._dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
     _info.supportedFlags.remove(AccessMode::raw);
@@ -68,7 +65,6 @@ namespace ChimeraTK::LNMBackend {
     if(_info.writeable && _info.readable) {
       _info.readable = false;
     }
-    catalogue.modifyRegister(_info);
 
     _isWrite = _info.writeable;
   }

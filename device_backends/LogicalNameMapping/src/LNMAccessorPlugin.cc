@@ -3,7 +3,6 @@
 
 #include "LNMBackendRegisterInfo.h"
 #include "LNMDoubleBufferPlugin.h"
-#include "NDRegisterAccessorDecorator.h"
 
 #include <boost/make_shared.hpp>
 
@@ -35,6 +34,24 @@ namespace ChimeraTK::LNMBackend {
       return boost::make_shared<DoubleBufferPlugin>(info, parameters);
     }
     throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
+  }
+
+  AccessorPluginBase::AccessorPluginBase(const LNMBackendRegisterInfo& info) : _info(info) {
+    // do not hold shared pointers to other plugins or even to yourself inside a plugin.
+    _info.plugins.clear();
+  }
+
+  void AccessorPluginBase::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
+    // First update the info so we have the latest version from the catalogue.
+    // At this point we also get a list of shared_ptrs of all plugins inside the info object.
+    _info = catalogue.getBackendRegister(_info.name);
+    // Do the actual info modifications as implemented by the plugin.
+    doRegisterInfoUpdate();
+    // Write the modifications back to the catalogue (still including plugins).
+    catalogue.modifyRegister(_info);
+    // Remove the list of plugins from the copy inside the plugin, which otherwise would hold a shared_ptr to itself.
+    // For abstraction reasons it also must not know about other plugins, so it is safe to remove the whole list.
+    _info.plugins.clear();
   }
 
 } // namespace ChimeraTK::LNMBackend

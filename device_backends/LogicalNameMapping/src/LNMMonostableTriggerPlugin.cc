@@ -35,14 +35,11 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MonostableTriggerPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
-    // first update the info so we have the latest version from the catalogue.
-    _info = catalogue.getBackendRegister(_info.name);
+  void MonostableTriggerPlugin::doRegisterInfoUpdate() {
     // Change register info to write-only and data type nodata
     _info.readable = false;
     _info._dataDescriptor = ChimeraTK::DataDescriptor(ChimeraTK::DataDescriptor::FundamentalType::nodata);
     _info.supportedFlags.remove(AccessMode::raw);
-    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/
