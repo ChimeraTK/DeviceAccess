@@ -18,12 +18,9 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void ForceReadOnlyPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
-    // first update the info so we have the latest version from the catalogue.
-    _info = catalogue.getBackendRegister(_info.name);
+  void ForceReadOnlyPlugin::doRegisterInfoUpdate() {
     // Change register info to read-only
     _info.writeable = false;
-    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/

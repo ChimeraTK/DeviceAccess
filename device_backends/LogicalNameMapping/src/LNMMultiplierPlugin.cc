@@ -24,12 +24,9 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MultiplierPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
-    // first update the info so we have the latest version from the catalogue.
-    _info = catalogue.getBackendRegister(_info.name);
+  void MultiplierPlugin::doRegisterInfoUpdate() {
     _info._dataDescriptor = ChimeraTK::DataDescriptor(DataType("float64"));
     _info.supportedFlags.remove(AccessMode::raw);
-    catalogue.modifyRegister(_info);
   }
 
   /********************************************************************************************************************/

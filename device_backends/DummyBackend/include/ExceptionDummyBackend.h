@@ -32,69 +32,17 @@ namespace ChimeraTK {
     std::atomic<bool> thereHaveBeenExceptions{false};
 
     static boost::shared_ptr<DeviceBackend> createInstance(
-        // FIXME #11279 Implement API breaking changes from linter warnings
-        // NOLINTNEXTLINE(performance-unnecessary-value-param)
-        [[maybe_unused]] std::string, std::map<std::string, std::string> parameters) {
-      return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
-    }
+        std::string address, std::map<std::string, std::string> parameters);
 
-    void open() override {
-      if(throwExceptionOpen) {
-        thereHaveBeenExceptions = true;
-        throw(ChimeraTK::runtime_error("DummyException: open throws by request"));
-      }
-      ChimeraTK::DummyBackend::open();
-      thereHaveBeenExceptions = false;
-    }
+    void open() override;
 
-    void closeImpl() override {
-      setException();
-      DummyBackend::closeImpl();
-    }
+    void closeImpl() override;
 
-    void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
-      if(throwExceptionRead) {
-        thereHaveBeenExceptions = true;
-        throw(ChimeraTK::runtime_error("DummyException: read throws by request"));
-      }
-      ChimeraTK::DummyBackend::read(bar, address, data, sizeInBytes);
-    }
+    void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
 
-    void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
-      if(throwExceptionWrite) {
-        thereHaveBeenExceptions = true;
-        throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
-      }
-      ChimeraTK::DummyBackend::write(bar, address, data, sizeInBytes);
+    void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
 
-      // increment write counter and update write order (only if address points to beginning of a register!)
-      auto itWriteOrder = _writeOrderMap.find(std::make_pair(bar, address));
-      if(itWriteOrder != _writeOrderMap.end()) {
-        // update write order
-        auto generatedOrderNumber = ++_writeOrderCounter;
-        auto& orderNumberInMap = itWriteOrder->second;
-        // atomically update order number in the map only if the generated order number is bigger. This will be always
-        // the case, unless there is a concurrent write operation updating the order number in between.
-        size_t current;
-        while((current = orderNumberInMap.load()) < generatedOrderNumber) {
-          orderNumberInMap.compare_exchange_weak(current, generatedOrderNumber);
-        }
-
-        // increment write counter
-        auto itWriteCounter = _writeCounterMap.find(std::make_pair(bar, address));
-        assert(itWriteCounter != _writeCounterMap.end()); // always inserted together
-        itWriteCounter->second++;
-      }
-    }
-
-    bool isFunctional() const override {
-      // thereHaveBeenExceptions is different from _hasActiceException
-      // * thereHaveBeenExceptions is set when this class originally raised an exception
-      // * _hasActiveException is raised externally via setException. This can happen if a transfer element from another
-      // backend,
-      //   which is in the same logical name mapping backend than this class, has seen an exception.
-      return (_opened && !throwExceptionOpen && !thereHaveBeenExceptions && !_hasActiveException);
-    }
+    bool isFunctional() const override;
 
     /// Specific override which allows to create push-type accessors
     template<typename UserType>
@@ -208,12 +156,6 @@ namespace ChimeraTK {
 
     /// Map used allow determining number of writes of a specific register by tests. Map key is pair of bar and address.
     std::map<std::pair<uint64_t, uint64_t>, std::atomic<size_t>> _writeCounterMap;
-
-    class BackendRegisterer {
-     public:
-      BackendRegisterer();
-    };
-    static BackendRegisterer backendRegisterer;
   };
 
   /********************************************************************************************************************/

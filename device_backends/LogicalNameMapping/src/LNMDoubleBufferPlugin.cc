@@ -34,15 +34,12 @@ namespace ChimeraTK::LNMBackend {
     _readerCount = readerCountMap[id];
   }
 
-  void DoubleBufferPlugin::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
-    // first update the info so we have the latest version from the catalogue.
-    _info = catalogue.getBackendRegister(_info.name);
+  void DoubleBufferPlugin::doRegisterInfoUpdate() {
     // Change register info to read-only
     _info.writeable = false;
     _info.supportedFlags.remove(AccessMode::raw);
     // also remove raw-type info from DataDescriptor
     _info._dataDescriptor.setRawDataType(DataType::none);
-    catalogue.modifyRegister(_info);
   }
 
   template<typename UserType, typename TargetType>

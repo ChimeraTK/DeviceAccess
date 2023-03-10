@@ -2,18 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ExceptionDummyBackend.h"
 
-#include "BackendFactory.h"
-
 namespace ChimeraTK {
-
-  ExceptionDummy::BackendRegisterer ExceptionDummy::backendRegisterer;
-
-  /********************************************************************************************************************/
-
-  ExceptionDummy::BackendRegisterer::BackendRegisterer() {
-    std::cout << "ExceptionDummy::BackendRegisterer: registering backend type ExceptionDummy" << std::endl;
-    ChimeraTK::BackendFactory::getInstance().registerBackendType("ExceptionDummy", &ExceptionDummy::createInstance);
-  }
 
   /********************************************************************************************************************/
 
@@ -97,5 +86,87 @@ namespace ChimeraTK {
     std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
     return _activateNewPushAccessors;
   }
+
+  /********************************************************************************************************************/
+
+  boost::shared_ptr<DeviceBackend> ExceptionDummy::createInstance(
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
+      [[maybe_unused]] std::string address, std::map<std::string, std::string> parameters) {
+    if(parameters["map"].empty()) {
+      throw ChimeraTK::logic_error("No map file name given.");
+    }
+    return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
+  }
+
+  /********************************************************************************************************************/
+
+  void ExceptionDummy::open() {
+    if(throwExceptionOpen) {
+      thereHaveBeenExceptions = true;
+      throw(ChimeraTK::runtime_error("DummyException: open throws by request"));
+    }
+    ChimeraTK::DummyBackend::open();
+    thereHaveBeenExceptions = false;
+  }
+
+  /********************************************************************************************************************/
+
+  void ExceptionDummy::closeImpl() {
+    setException();
+    DummyBackend::closeImpl();
+  }
+
+  /********************************************************************************************************************/
+
+  void ExceptionDummy::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
+    if(throwExceptionRead) {
+      thereHaveBeenExceptions = true;
+      throw(ChimeraTK::runtime_error("DummyException: read throws by request"));
+    }
+    ChimeraTK::DummyBackend::read(bar, address, data, sizeInBytes);
+  }
+
+  /********************************************************************************************************************/
+
+  void ExceptionDummy::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
+    if(throwExceptionWrite) {
+      thereHaveBeenExceptions = true;
+      throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
+    }
+    ChimeraTK::DummyBackend::write(bar, address, data, sizeInBytes);
+
+    // increment write counter and update write order (only if address points to beginning of a register!)
+    auto itWriteOrder = _writeOrderMap.find(std::make_pair(bar, address));
+    if(itWriteOrder != _writeOrderMap.end()) {
+      // update write order
+      auto generatedOrderNumber = ++_writeOrderCounter;
+      auto& orderNumberInMap = itWriteOrder->second;
+      // atomically update order number in the map only if the generated order number is bigger. This will be always
+      // the case, unless there is a concurrent write operation updating the order number in between.
+      size_t current;
+      while((current = orderNumberInMap.load()) < generatedOrderNumber) {
+        orderNumberInMap.compare_exchange_weak(current, generatedOrderNumber);
+      }
+
+      // increment write counter
+      auto itWriteCounter = _writeCounterMap.find(std::make_pair(bar, address));
+      assert(itWriteCounter != _writeCounterMap.end()); // always inserted together
+      itWriteCounter->second++;
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  bool ExceptionDummy::isFunctional() const {
+    // thereHaveBeenExceptions is different from _hasActiceException
+    // * thereHaveBeenExceptions is set when this class originally raised an exception
+    // * _hasActiveException is raised externally via setException. This can happen if a transfer element from another
+    // backend,
+    //   which is in the same logical name mapping backend than this class, has seen an exception.
+    return (_opened && !throwExceptionOpen && !thereHaveBeenExceptions && !_hasActiveException);
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK
