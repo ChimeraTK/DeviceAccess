@@ -43,7 +43,7 @@ namespace ChimeraTK::LNMBackend {
 
   void AccessorPluginBase::updateRegisterInfo(BackendRegisterCatalogue<LNMBackendRegisterInfo>& catalogue) {
     // First update the info so we have the latest version from the catalogue.
-    // At this point we also get a list of shared_pts of all plugins inside the info object.
+    // At this point we also get a list of shared_ptrs of all plugins inside the info object.
     _info = catalogue.getBackendRegister(_info.name);
     // Do the actual info modifications as implemented by the plugin.
     doRegisterInfoUpdate();
