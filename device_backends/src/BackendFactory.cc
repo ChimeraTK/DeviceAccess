@@ -23,6 +23,7 @@
 #include "DMapFileParser.h"
 #include "DummyBackend.h"
 #include "Exception.h"
+#include "ExceptionDummyBackend.h"
 #include "LogicalNameMappingBackend.h"
 #include "SharedDummyBackend.h"
 #include "SubdeviceBackend.h"
@@ -183,6 +184,7 @@ namespace ChimeraTK {
     registerBackendType("logicalNameMap", &LogicalNameMappingBackend::createInstance, {"map"});
     registerBackendType("subdevice", &SubdeviceBackend::createInstance, {"map"});
     registerBackendType("sharedMemoryDummy", &SharedDummyBackend::createInstance, {"map"});
+    registerBackendType("ExceptionDummy", &ExceptionDummy::createInstance, {"map"});
   }
   /********************************************************************************************************************/
 
