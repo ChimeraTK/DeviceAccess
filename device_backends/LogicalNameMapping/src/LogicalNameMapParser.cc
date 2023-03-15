@@ -26,7 +26,6 @@ namespace ChimeraTK {
 
     std::string value;
     for(auto& child : childList) {
-      // Check for CDATA node
       if(!child) {
         parsingError(child, "Got nullptr from parser library.");
       }
