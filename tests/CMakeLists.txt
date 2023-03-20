@@ -17,15 +17,13 @@ link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/executables_src testExecutables)
 
-
 foreach( testExecutableSrcFile ${testExecutables})
   #NAME_WE means the base name without path and (longest) extension
   get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
   if (HAVE_PCIE_BACKEND OR NOT(executableName STREQUAL "testDevice" OR executableName STREQUAL "testMtca4uDeviceAccess" OR executableName STREQUAL "testPcieBackend" OR executableName STREQUAL "testRegisterAccess"))
     add_executable(${executableName} ${testExecutableSrcFile})
-    # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
-    # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
-    target_link_libraries(${executableName} ${Boost_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
+    target_link_libraries(${executableName} 
+        PRIVATE ${Boost_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
     add_test(${executableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${executableName})
   endif()
 endforeach(testExecutableSrcFile)
@@ -35,13 +33,14 @@ endforeach(testExecutableSrcFile)
 # Instructions for compiling the rebot dummy server
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/src srcFilesForDummyServerLib)
 add_library(RebotDummyServerLib ${srcFilesForDummyServerLib})
+target_link_libraries(RebotDummyServerLib PUBLIC ChimeraTK::ChimeraTK-cppext)
 add_executable(RebotDummyServer ${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/main.cpp)
 # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
 # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
-target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME})
+target_link_libraries(RebotDummyServer PRIVATE RebotDummyServerLib ${PROJECT_NAME})
 
-target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
-target_link_libraries(testRebotConnectionTimeouts RebotDummyServerLib)
+target_link_libraries(testRebotHeartbeatCount PRIVATE RebotDummyServerLib)
+target_link_libraries(testRebotConnectionTimeouts PRIVATE RebotDummyServerLib)
 
 
 #
@@ -56,7 +55,7 @@ foreach( executablesrc ${executables})
   get_filename_component(exename ${executablesrc} NAME_WE)
   if (HAVE_PCIE_BACKEND OR NOT(exename STREQUAL "testPcieErrorHandling"))
     add_executable(${exename} ${executablesrc})
-    target_link_libraries(${exename} ${PROJECT_NAME} ${Boost_LIBRARIES} ${PROJECT_NAME}_TEST_LIBRARY)
+    target_link_libraries(${exename} PRIVATE ${PROJECT_NAME} ${Boost_LIBRARIES} ${PROJECT_NAME}_TEST_LIBRARY)
   endif()
 endforeach(executablesrc)
 
@@ -148,5 +147,6 @@ foreach( backendTestLibSrcFile ${backendTestLibSources})
   #NAME_WE means the base name without path and (longest) extension
   get_filename_component(libName ${backendTestLibSrcFile} NAME_WE)
   add_library(${libName} SHARED ${backendTestLibSrcFile})
-  target_link_libraries(${libName} ${PROJECT_NAME})
+  # for these libraries, cmake EXPORTS are not created anyway, so link PRIVATE
+  target_link_libraries(${libName} PRIVATE ${PROJECT_NAME})
 endforeach()
