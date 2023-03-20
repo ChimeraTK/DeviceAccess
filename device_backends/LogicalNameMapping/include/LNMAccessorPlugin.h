@@ -240,30 +240,19 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TargetType>
-  struct AccessorPlugin_Helper {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>&) {
-      assert(false); // When overriding getTargetDataType(), also decorateAccessor()
-                     // must be overridden!
-      return {};
-    }
-  };
-
-  template<typename UserType>
-  struct AccessorPlugin_Helper<UserType, UserType> {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target) {
-      return target;
-    }
-  };
-
   template<typename Derived>
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams&) {
-    return AccessorPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
+    if constexpr(std::is_same<UserType, TargetType>::value) {
+      return target;
+    }
+
+    assert(false); // When overriding getTargetDataType(), also decorateAccessor()
+                   // must be overridden!
+
+    return {};
   }
 
   /********************************************************************************************************************/

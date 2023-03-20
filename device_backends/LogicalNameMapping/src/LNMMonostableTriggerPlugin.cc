@@ -117,30 +117,16 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  /** Helper class to implement MonostableTriggerPluginPlugin::decorateAccessor (can later be realised with if
-   * constexpr) */
-  template<typename UserType, typename TargetType>
-  struct MonostableTriggerPlugin_Helper {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>&, double, uint32_t, uint32_t) {
-      assert(false); // only specialisation is valid
-      return {};
-    }
-  };
-  template<typename UserType>
-  struct MonostableTriggerPlugin_Helper<UserType, uint32_t> {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<uint32_t>>& target, double milliseconds, uint32_t active,
-        uint32_t inactive) {
-      return boost::make_shared<MonostableTriggerPluginDecorator<UserType>>(target, milliseconds, active, inactive);
-    }
-  };
-
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MonostableTriggerPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams&) {
-    return MonostableTriggerPlugin_Helper<UserType, TargetType>::decorateAccessor(
-        target, _milliseconds, _active, _inactive);
+    if constexpr(std::is_same<TargetType, uint32_t>::value) {
+      return boost::make_shared<MonostableTriggerPluginDecorator<UserType>>(target, _milliseconds, _active, _inactive);
+    }
+
+    assert(false);
+
+    return {};
   }
 } // namespace ChimeraTK::LNMBackend
