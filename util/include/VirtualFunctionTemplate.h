@@ -2,20 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-/* We need special compiler flags for boost fusion.
- * Make sure they are set before the functions are included.
- *
- * Note: We cannot just set them here because the boost fusion headers might
- * have been included before, without the flags, so the follwing includes have
- * no effect and the files are already included with the wrong parameters.
- */
-#if FUSION_MAX_MAP_SIZE != 30 || FUSION_MAX_VECTOR_SIZE != 30
-#  error The sizes for boost::fusion are not set correctly as compiler flags.
-#  error Include the compiler flags provided by chimeratk-deviceaccess:
-#  error* In cmake: set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-DeviceAccess_CXX_FLAGS}")
-#  error* in standard Makefiles: CPPFLAGS += $(shell ChimeraTK-DeviceAccess-config --cppflags)
-#endif
-
 #include "SupportedUserTypes.h"
 
 #include <boost/bind/bind.hpp>
