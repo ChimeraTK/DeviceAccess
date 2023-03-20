@@ -63,10 +63,6 @@ endforeach(executablesrc)
 #
 # copy the scripts directory to the build location:
 COPY_CONTENT_TO_BUILD_DIR("${CMAKE_CURRENT_SOURCE_DIR}/scripts")
-# This file needs to be prepared with some constants by cmake first
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/testVirtualFunctionTemplateCompilerFlags.sh.in
-  ${PROJECT_BINARY_DIR}/scripts/testVirtualFunctionTemplateCompilerFlags.sh)
-#
 # Add the scripts as ctests.
 FILE(GLOB location_of_script_files
     "${PROJECT_BINARY_DIR}/scripts/*.sh")
