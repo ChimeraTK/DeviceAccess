@@ -9,7 +9,7 @@
 # * Run 'cmake' and point it to the example source directory. You might have to
 #   specify where to find the DeviceAccess library if it is not in the
 #   system configuration, using either CMAKE_PREFIX_PATH or CMAKE_INSTALL_PREFIX.
-#   $ cmake WHEREEVER/YOU/SAVED/DeviceAccess/examples -DCMAKE_PREFIX_PATH=DeviceAccess_CUSTOM_INSTALLATION_PATH
+#   $ cmake WHEREEVER/YOU/SAVED/DeviceAccess/examples -DCMAKE_INSTALL_PREFIX=DeviceAccess_CUSTOM_INSTALLATION_PATH
 #  
 # * Build the examples by running make.
 #   $ make
