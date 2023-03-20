@@ -47,7 +47,7 @@ namespace ChimeraTK {
   DeviceDescriptor Utilities::parseDeviceDesciptor(std::string cddString) {
     DeviceDescriptor result;
 
-    // first trim the string to remove whitspaces before and after the outer
+    // first trim the string to remove whitespaces before and after the outer
     // parentheses
     boost::trim(cddString);
 
