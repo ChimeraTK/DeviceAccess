@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<logicalNameMap>
+<module name="DET">
+    <redirectedRegister name="GAIN">
+        <targetDevice>HOLD</targetDevice>
+        <targetRegister>HOLD0/WORD_G</targetRegister>
+          <plugin name="math">
+              <parameter name="enable_push_parameters" />
+              <parameter name="formula">
+                  16 * clamp(0, integrationCycles, 15) + clamp(0, x, 3)
+              </parameter>
+              <parameter name="integrationCycles">/DET/EXPOSURE</parameter>
+          </plugin>
+    </redirectedRegister>
+    <variable name="EXPOSURE">
+        <type>uint32</type>
+        <value>0</value>
+    </variable>
+</module>
+</logicalNameMap>

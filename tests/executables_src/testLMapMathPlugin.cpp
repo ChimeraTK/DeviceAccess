@@ -150,6 +150,30 @@ BOOST_AUTO_TEST_CASE(testParameters) {
 
 /********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testParametersCleanup) {
+  // regression test for bug https://redmine.msktools.desy.de/issues/11506
+  // (math plugin + push-parameter + shm has resource cleanup problem)
+  setDMapFilePath("mathPluginWithPushPars.dmap");
+  ChimeraTK::Device device;
+  device.open("EOD");
+
+  // auto accTarget = device.getScalarRegisterAccessor<uint32_t>("HOLD/WORD_G");
+  auto scalarPar = device.getScalarRegisterAccessor<uint32_t>("DET/GAIN");
+  auto accMathWrite = device.getScalarRegisterAccessor<double>("DET/EXPOSURE");
+
+  scalarPar = 6;
+  scalarPar.write();
+
+  accMathWrite = 56;
+  accMathWrite.write();
+
+  scalarPar = 4;
+  scalarPar.write();
+  accMathWrite.write();
+}
+
+/********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testExceptions) {
   // missing parameter "formula"
   ChimeraTK::Device device;
