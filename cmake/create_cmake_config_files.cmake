@@ -66,6 +66,9 @@ macro(prependToList list arg)
     endforeach()
 endmacro()
 
+# this defines architecture-dependent ${CMAKE_INSTALL_LIBDIR}
+include(GNUInstallDirs)
+
 # for lib, which might be lib File or linker flag or imported target, 
 # puts recursively resolved library list into ${linkLibs}, which will contain a library file list
 # and recursively resolve link flags into ${linkFlags}
@@ -93,8 +96,8 @@ function(resolveImportedLib lib linkLibs linkFlags libDirs incDirs cxxFlags)
                 # We cannot find target library location of this project via target properties at this point.
                 # Therefore, we simply assume that by convention, all our libs are installed into ${CMAKE_INSTALL_PREFIX}/lib.
                 # Exceptions are allowed if -L<libdir> is already in linker flags
-                appendToList(linkFlags1 "-L${CMAKE_INSTALL_PREFIX}/lib")
-                appendToList(libDirs1 "${CMAKE_INSTALL_PREFIX}/lib")
+                appendToList(linkFlags1 "-L${CMAKE_INSTALL_FULL_LIBDIR}")
+                appendToList(libDirs1 "${CMAKE_INSTALL_FULL_LIBDIR}")
                 appendToList(linkLibs1 "-l${PROJECT_NAME}")
             else()
                 get_property(lib_loc TARGET ${lib} PROPERTY LOCATION)
@@ -291,7 +294,7 @@ if(${PROVIDES_EXPORTED_TARGETS})
     install(EXPORT ${PROJECT_NAME}Targets
             FILE ${PROJECT_NAME}Targets.cmake
             NAMESPACE ChimeraTK::
-            DESTINATION "lib/cmake/${PROJECT_NAME}"
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
     )
 
     include(CMakePackageConfigHelpers)
@@ -299,7 +302,7 @@ if(${PROVIDES_EXPORTED_TARGETS})
     # although @ONLY arg is not supported, this behaves in the same way.
     configure_package_config_file("${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
       "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-      INSTALL_DESTINATION "lib/cmake/${PROJECT_NAME}"
+      INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
     )
 
     # remove any previously installed share/cmake-xx/Modules/Find<ProjectName>.cmake from this project since it does not harmonize with new Config
@@ -317,6 +320,6 @@ endif()
 install(FILES
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-        DESTINATION "lib/cmake/${PROJECT_NAME}"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
         COMPONENT dev
 )
