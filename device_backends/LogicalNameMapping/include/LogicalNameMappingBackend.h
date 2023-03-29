@@ -20,7 +20,7 @@ namespace ChimeraTK {
    public:
     explicit LogicalNameMappingBackend(std::string lmapFileName = "");
 
-    ~LogicalNameMappingBackend() override = default;
+    ~LogicalNameMappingBackend() override { std::cout << "~LogicalNameMappingBackend()" << std::endl; };
 
     void open() override;
 
