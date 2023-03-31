@@ -1,7 +1,7 @@
 <logicalNameMap>
 
   <redirectedRegister name="testDefaultValues">
-    <targetDevice>(TestDummy?map=mtcadummy.map)</targetDevice>
+    <targetDevice>(sharedMemoryDummy?map=mtcadummy.map)</targetDevice>
     <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
     <plugin name="monostableTrigger">
       <parameter name="milliseconds">100</parameter>
@@ -9,7 +9,7 @@
   </redirectedRegister>
 
   <redirectedRegister name="testNonDefaultValues">
-    <targetDevice>(TestDummy?map=mtcadummy.map)</targetDevice>
+    <targetDevice>(sharedMemoryDummy?map=mtcadummy.map)</targetDevice>
     <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
     <plugin name="monostableTrigger">
       <parameter name="milliseconds">100</parameter>
@@ -19,7 +19,7 @@
   </redirectedRegister>
 
   <redirectedRegister name="testDifferentDelay">
-    <targetDevice>(TestDummy?map=mtcadummy.map)</targetDevice>
+    <targetDevice>(sharedMemoryDummy?map=mtcadummy.map)</targetDevice>
     <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
     <plugin name="monostableTrigger">
       <parameter name="milliseconds">500</parameter>
