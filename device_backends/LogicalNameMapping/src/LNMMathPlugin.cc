@@ -40,6 +40,7 @@ namespace ChimeraTK::LNMBackend {
     template<typename T>
     void computeResult(std::vector<double>& x, std::vector<T>& resultBuffer);
 
+    // (re)start _pushParameterWriteThread if required
     void startPushParameterWriteThread();
     // stop _pushParameterWriteThread and wait on termination
     void stopPushParameterWriteThread();
@@ -136,6 +137,7 @@ namespace ChimeraTK::LNMBackend {
 
     // if we have push-type parameters triggering a write of the target, start the _pushParameterWriteThread
     if(_hasPushParameter) {
+      // TODO remove? plugin reference not there.
       // assert(_isWrite); // we do not set hasPushParameter if !isWrite
 
       // If the thread is still running, it will terminate soon by itself. We must not attempt to terminate it here,
@@ -152,6 +154,7 @@ namespace ChimeraTK::LNMBackend {
       _pushParameterWriteThread = boost::thread([&] { parameterReadLoop(); });
 
       // do not proceed before the thread is ready to receive new data
+      // TODO discuss - is this really required?
       _waitUntilParameterThreadLaunched.wait();
     }
   }
@@ -178,7 +181,8 @@ namespace ChimeraTK::LNMBackend {
           continue;
         }
       }
-      assert(!_backend.lock()->_asyncReadActive);
+      // TODO discuss - why was it failing, is assertion relevant at all?
+      // assert(!_backend.lock()->_asyncReadActive);
       assert(_lastWrittenValue.size() == target->getNumberOfSamples());
 
     } // end scope of the barrierWaitCaller. At this point the finally is executed and other thread is notified that
@@ -188,6 +192,10 @@ namespace ChimeraTK::LNMBackend {
     while(true) {
       try {
         _pushParameterReadGroup.readAny();
+        // TODO check locking scheme.
+        // Martin said we need to wait on notification, then lock and poll
+        // but all parameters (push and poll) are in group. so why?
+        // what about main value. its not in the group but we have last value, and push handled by other thread.
         {
           std::unique_lock<std::recursive_mutex> lk(_writeMutex);
           if(!checkAllParametersWritten(_accessorMap)) {
@@ -342,7 +350,7 @@ namespace ChimeraTK::LNMBackend {
           }
         }
       }
-      // prepare for updates via push-type parameters
+
       if(h->_hasPushParameter) {
         // fill the _pushParameterReadGroup
         for(const auto& parpair : parameters) {
