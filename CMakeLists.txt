@@ -85,7 +85,6 @@ foreach(subdir ${subdirs})
 endforeach()
 
 include(CheckLibraryExists)
-find_package(Threads)
 
 check_library_exists(rt shm_open "sys/mman.h" HAVE_SHMOPEN_RT)
 if(HAVE_SHMOPEN_RT)
@@ -105,7 +104,6 @@ target_include_directories(${PROJECT_NAME} INTERFACE "$<INSTALL_INTERFACE:includ
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 target_link_libraries(${PROJECT_NAME}
     PRIVATE ${CMAKE_DL_LIBS} PkgConfig::LibXML++ PkgConfig::glib
-    PRIVATE Threads::Threads
     # we set this public because of Backend libs using shm_open (e.g. test code)
     PUBLIC ${RT_LIBRARIES}
     PUBLIC ${Boost_LIBRARIES} 
