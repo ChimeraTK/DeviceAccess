@@ -37,3 +37,8 @@ set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -O3 -g")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0")
 set(CMAKE_C_FLAGS_TSAN "${CMAKE_C_FLAGS} -g -O1 -fsanitize=thread -fno-inline")
 set(CMAKE_C_FLAGS_ASAN "${CMAKE_C_FLAGS} -g -O0 -fsanitize=address -fsanitize=undefined -fsanitize=leak")
+
+
+# Make sure any non-standard library path are added in library or executable targets.
+# Since this in done only at install time, behavior of unit tests is not affected.
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
