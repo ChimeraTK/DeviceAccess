@@ -91,6 +91,8 @@ namespace ChimeraTK::LNMBackend {
       _enablePushParameters = true;
       _parameters.erase("enable_push_parameters");
     }
+
+    gCleanup.registerP(this);
   }
 
   /********************************************************************************************************************/
@@ -176,7 +178,6 @@ namespace ChimeraTK::LNMBackend {
   boost::shared_ptr<MathPluginFormulaHelper> MathPlugin::getFormulaHelper() {
     if(!_h) {
       _h = boost::make_shared<MathPluginFormulaHelper>();
-      gCleanup.registerH(_h);
     }
     return _h;
   }
@@ -690,16 +691,17 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MathPlugin::MathPluginCleanup::registerH(boost::shared_ptr<MathPluginFormulaHelper>& h) {
-    _helpers.insert(h);
+  void MathPlugin::MathPluginCleanup::registerP(MathPlugin* p) {
+    _plugins.insert(p);
   }
 
   MathPlugin::MathPluginCleanup::~MathPluginCleanup() {
     // note, in static global destructor, must not call close on backend, only terminate thread.
     // reason: we don't know about global destructors order
-    for(auto& h : _helpers) {
-      if(h) {
-        h->stopPushParameterWriteThread();
+    for(auto* p : _plugins) {
+      if(p && p->_h) {
+        p->_h.reset();
+        _plugins.erase(p);
       }
     }
   }

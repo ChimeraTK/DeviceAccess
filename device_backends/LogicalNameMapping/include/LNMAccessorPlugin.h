@@ -194,10 +194,10 @@ namespace ChimeraTK::LNMBackend {
      * Therefore, we register the MathPluginFormulaHelpers with a global set for cleanup.
      */
     struct MathPluginCleanup {
-      void registerH(boost::shared_ptr<MathPluginFormulaHelper>& h);
+      void registerP(MathPlugin* h);
       ~MathPluginCleanup();
 
-      std::set<boost::shared_ptr<MathPluginFormulaHelper>> _helpers;
+      std::set<MathPlugin*> _plugins;
     };
 
    private:
