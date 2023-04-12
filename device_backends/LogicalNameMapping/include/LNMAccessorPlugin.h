@@ -187,9 +187,22 @@ namespace ChimeraTK::LNMBackend {
     std::map<std::string, std::string> _parameters;
     std::string _formula;              // extracted from _parameters
     bool _enablePushParameters{false}; // extracted from _parameters
+
+    /**
+     * Since the push-parameter threads may hold accessors referring back to the LNMBackend, we generally cannot
+     * terminate it from MathPlugin destructor (which then is never called).
+     * Therefore, we register the MathPluginFormulaHelpers with a global set for cleanup.
+     */
+    struct MathPluginCleanup {
+      void registerH(boost::shared_ptr<MathPluginFormulaHelper>& h);
+      ~MathPluginCleanup();
+
+      std::set<boost::shared_ptr<MathPluginFormulaHelper>> _helpers;
+    };
+
    private:
-    // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime
-    boost::weak_ptr<MathPluginFormulaHelper> _h;
+    boost::shared_ptr<MathPluginFormulaHelper> _h;
+    static MathPluginCleanup gCleanup;
   };
 
   /** Monostable Trigger Plugin: Write value to target which falls back to another value after defined time. */

@@ -152,31 +152,33 @@ BOOST_AUTO_TEST_CASE(testParameters) {
 
 /********************************************************************************************************************/
 
-/**
- * dummy backend used for testing the double buffering handshake.
- * a double-buffer read consists of (write ctrl, read buffernumber, read other buffer, write ctrl)
- * The overwritten functions of this class refer to the inner protocol
- */
-struct DummyForCleanupCheck : public LogicalNameMappingBackend {
-  using LogicalNameMappingBackend::LogicalNameMappingBackend;
+/////**
+// * dummy backend used for testing the double buffering handshake.
+// * a double-buffer read consists of (write ctrl, read buffernumber, read other buffer, write ctrl)
+// * The overwritten functions of this class refer to the inner protocol
+// */
+// struct DummyForCleanupCheck : public LogicalNameMappingBackend {
+//  using LogicalNameMappingBackend::LogicalNameMappingBackend;
 
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
-    return returnInstance<DummyForCleanupCheck>(
-        parameters.at("map"), DummyBackend::convertPathRelativeToDmapToAbs(parameters.at("map")));
-  }
-  ~DummyForCleanupCheck() override { // TODO check called
-  }
+//  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+//    return returnInstance<DummyForCleanupCheck>(
+//        parameters.at("map"), DummyBackend::convertPathRelativeToDmapToAbs(parameters.at("map")));
+//  }
+//  ~DummyForCleanupCheck() override { // TODO check called
+//    cleanupCalled = true;
+//  }
 
-  struct BackendRegisterer {
-    BackendRegisterer() {
-      ChimeraTK::BackendFactory::getInstance().registerBackendType(
-          "DummyForCleanupCheck", &DummyForCleanupCheck::createInstance, {"map"});
-    }
-  };
-};
-static std::string rawDeviceCdd("(DummyForDoubleBuffering?map=doubleBuffer.map)");
+//  struct BackendRegisterer {
+//    BackendRegisterer() {
+//      ChimeraTK::BackendFactory::getInstance().registerBackendType(
+//          "DummyForCleanupCheck", &DummyForCleanupCheck::createInstance, {"map"});
+//    }
+//  };
+//  static std::atomic_bool cleanupCalled;
+//};
+// static std::string rawDeviceCdd("(DummyForDoubleBuffering?map=doubleBuffer.map)");
 
-static DummyForCleanupCheck::BackendRegisterer gDFCCRegisterer;
+// static DummyForCleanupCheck::BackendRegisterer gDFCCRegisterer;
 
 BOOST_AUTO_TEST_CASE(testParametersCleanup) {
   // regression test for bug https://redmine.msktools.desy.de/issues/11506
@@ -201,6 +203,8 @@ BOOST_AUTO_TEST_CASE(testParametersCleanup) {
 
   // TODO we should add a check that things got cleaned up - but how? check shm status? not nice!
   // or better, Exception Dummy?
+  // this check is problematic - we might have to trigger cleanup from the test.
+  // BOOST_CHECK(DummyForCleanupCheck::cleanupCalled);
 }
 
 /********************************************************************************************************************/
