@@ -146,6 +146,13 @@ namespace ChimeraTK::LNMBackend {
           auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
           if(paramFlags.has(AccessMode::wait_for_new_data)) {
             flags = {AccessMode::wait_for_new_data};
+            // We only allow push-type parameters for Variables defined via LogicalNameMapping.
+            // If we allowed other cases (e.g. redirected registers to a device supporting wait_for_new_data, it
+            // would be hard to define when pushParameterThread should be stopped
+            if(backend->_catalogue_mutable.getBackendRegister(parpair.second).targetType !=
+                LNMBackendRegisterInfo::VARIABLE) {
+              throw logic_error("only LNM defined variables allowed as push parameters!");
+            }
           }
           auto acc = backend->getRegisterAccessor<double>(parpair.second, 0, 0, flags);
           if(acc->getNumberOfChannels() != 1) {
