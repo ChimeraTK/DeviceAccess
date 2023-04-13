@@ -84,7 +84,7 @@ MACRO( COPY_MAPPING_FILES )
     invalid8.xlmap invalidStartIndex1.xlmap invalidStartIndex2.xlmap
     invalidDuplicateName.xlmap
     withParams.xlmap is_functional.xlmap logicalnamemap.dmap
-    mathPlugin.xlmap mathPlugin-broken.xlmap
+    mathPlugin.xlmap mathPlugin-broken.xlmap mathPlugin-broken2.xlmap
     mathPluginWithPushPars.dmap mathPluginWithPushPars.map mathPluginWithPushPars.xlmap
     monostableTriggerPlugin.xlmap
     forceReadOnlyPlugin.xlmap forceReadOnlyPlugin2.xlmap typeHintModifierPlugin.xlmap

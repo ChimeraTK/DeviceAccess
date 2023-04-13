@@ -214,10 +214,10 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   ChimeraTK::Device device;
   BOOST_CHECK_THROW(device.open("(logicalNameMap?map=mathPlugin-broken.xlmap)"), ChimeraTK::logic_error);
 
-  // open device with map file which parses
-  device.open("(logicalNameMap?map=mathPlugin.xlmap)");
+  BOOST_CHECK_THROW(device.open("(logicalNameMap?map=mathPlugin-broken2.xlmap)"), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<double>("BrokenFormula"), ChimeraTK::logic_error);
+  // open device with map file which parses and all contained formulas compile
+  device.open("(logicalNameMap?map=mathPlugin.xlmap)");
 
   auto acc1 = device.getOneDRegisterAccessor<double>("WrongReturnSizeInArray");
   BOOST_CHECK_THROW(acc1.read(), ChimeraTK::logic_error);
