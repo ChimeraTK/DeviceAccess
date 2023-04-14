@@ -4,6 +4,7 @@
 #include "BackendFactory.h"
 #include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
+#include "LNMBackendVariableAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "ReadAnyGroup.h"
 #include "TransferElement.h"
@@ -19,7 +20,7 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  struct MathPluginFormulaHelper {
+  struct MathPluginFormulaHelper : public boost::enable_shared_from_this<MathPluginFormulaHelper> {
     std::string varName;
     exprtk::expression<double> expression;
     exprtk::symbol_table<double> symbols;
@@ -143,6 +144,7 @@ namespace ChimeraTK::LNMBackend {
         for(const auto& parpair : _parameters) {
           // push-type parameters need to be obtained with wait_for_new_data, others without
           AccessModeFlags flags{};
+          bool breakShptrLoop = false;
           auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
           if(paramFlags.has(AccessMode::wait_for_new_data)) {
             flags = {AccessMode::wait_for_new_data};
@@ -153,8 +155,16 @@ namespace ChimeraTK::LNMBackend {
                 LNMBackendRegisterInfo::VARIABLE) {
               throw logic_error("only LNM defined variables allowed as push parameters!");
             }
+            breakShptrLoop = true;
           }
           auto acc = backend->getRegisterAccessor<double>(parpair.second, 0, 0, flags);
+          if(breakShptrLoop) {
+            // we must not refer back to the backend via push-type variable
+            // cf ticket https://redmine.msktools.desy.de/issues/11506
+            auto a = boost::dynamic_pointer_cast<LNMBackendVariableAccessor<double>>(acc);
+            assert(a);
+            a->undoBackendReferenceCount();
+          }
           if(acc->getNumberOfChannels() != 1) {
             throw ChimeraTK::logic_error(
                 "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: '" +
@@ -183,10 +193,12 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   boost::shared_ptr<MathPluginFormulaHelper> MathPlugin::getFormulaHelper() {
-    if(!_h) {
-      _h = boost::make_shared<MathPluginFormulaHelper>();
+    auto p = _h.lock();
+    if(!p) {
+      p = boost::make_shared<MathPluginFormulaHelper>();
+      _h = p;
     }
-    return _h;
+    return p;
   }
 
   /********************************************************************************************************************/
@@ -221,6 +233,9 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   void MathPluginFormulaHelper::parameterReadLoop() {
+    // this function is main of push-parameter handling thread.
+    // store a this pointer on the stack to ensure object won't get deleted while thread is running
+    auto thisp = shared_from_this();
     boost::shared_ptr<NDRegisterAccessor<double>> target;
     { // scope for the barrier wait caller
       // Use finally to ensure that the barrier::wait is always called, even if the thread kicks out with an exception
@@ -280,8 +295,8 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   void MathPlugin::closeHook() {
-    if(_h) {
-      _h->stopPushParameterWriteThread();
+    if(auto h = _h.lock()) {
+      h->stopPushParameterWriteThread();
     }
   }
 
@@ -703,14 +718,16 @@ namespace ChimeraTK::LNMBackend {
   }
 
   MathPlugin::MathPluginCleanup::~MathPluginCleanup() {
+    // TODO check that superfluous and remove
+
     // note, in static global destructor, must not call close on backend, only terminate thread.
     // reason: we don't know about global destructors order
-    for(auto* p : _plugins) {
-      if(p && p->_h) {
-        p->_h.reset();
-        _plugins.erase(p);
-      }
-    }
+    //    for(auto* p : _plugins) {
+    //      if(p && p->_h) {
+    //        p->_h.reset();
+    //        _plugins.erase(p);
+    //      }
+    //    }
   }
 
   MathPlugin::MathPluginCleanup MathPlugin::gCleanup;

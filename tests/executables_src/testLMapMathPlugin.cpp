@@ -186,25 +186,64 @@ BOOST_AUTO_TEST_CASE(testParametersCleanup) {
   setDMapFilePath("mathPluginWithPushPars.dmap");
   ChimeraTK::Device device;
   device.open("EOD");
+  device.activateAsyncRead();
+  ChimeraTK::Device targetDevice;
+  targetDevice.open("HOLD");
 
-  // auto accTarget = device.getScalarRegisterAccessor<uint32_t>("HOLD/WORD_G");
-  auto scalarPar = device.getScalarRegisterAccessor<uint32_t>("DET/GAIN");
-  auto accMathWrite = device.getScalarRegisterAccessor<double>("DET/EXPOSURE");
+  auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("HOLD0/WORD_G");
+  auto scalarPar = device.getScalarRegisterAccessor<uint32_t>("DET/EXPOSURE");
+  auto accMathWrite = device.getScalarRegisterAccessor<double>("DET/GAIN");
 
-  scalarPar = 6;
+  scalarPar = 2;
   scalarPar.write();
 
-  accMathWrite = 56;
+  accMathWrite = 1;
   accMathWrite.write();
 
-  scalarPar = 4;
-  scalarPar.write();
-  accMathWrite.write();
+  usleep(1000000); // TODO improve
+  accTarget.readLatest();
+  BOOST_CHECK_EQUAL(int(accTarget), 10 * (int)scalarPar + (int)accMathWrite);
+
+  // next, check that
 
   // TODO we should add a check that things got cleaned up - but how? check shm status? not nice!
   // or better, Exception Dummy?
   // this check is problematic - we might have to trigger cleanup from the test.
   // BOOST_CHECK(DummyForCleanupCheck::cleanupCalled);
+}
+BOOST_AUTO_TEST_CASE(testPushPars) {
+  setDMapFilePath("mathPluginWithPushPars.dmap");
+  ChimeraTK::Device targetDevice;
+  targetDevice.open("HOLD");
+
+  auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("HOLD0/WORD_G");
+  auto pollPar = targetDevice.getScalarRegisterAccessor<uint32_t>("HOLD0/POLLPAR");
+  pollPar = 1;
+  pollPar.write();
+
+  ChimeraTK::Device device;
+  device.open("EOD");
+  device.activateAsyncRead();
+  auto scalarPar = device.getScalarRegisterAccessor<uint32_t>("DET/EXPOSURE");
+
+  scalarPar = 2;
+  scalarPar.write();
+
+  // check that even if main value (x in formula) is not written, writing parameter should given proper result
+  int accMathWrite0 = 0; // initial value for "x"
+
+  usleep(1000000); // TODO improve
+  accTarget.readLatest();
+  BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)scalarPar + accMathWrite0);
+
+  auto accMathWrite = device.getScalarRegisterAccessor<double>("DET/GAIN");
+  accMathWrite = 3;
+  accMathWrite.write();
+
+  usleep(1000000); // TODO improve
+  accTarget.readLatest();
+  BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)scalarPar + (int)accMathWrite);
+  //
 }
 
 /********************************************************************************************************************/
@@ -239,7 +278,6 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testCDATAFormula) {
-  // missing parameter "formula"
   ChimeraTK::Device device;
 
   // open device with map file which parses

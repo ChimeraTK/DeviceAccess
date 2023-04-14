@@ -201,7 +201,8 @@ namespace ChimeraTK::LNMBackend {
     };
 
    private:
-    boost::shared_ptr<MathPluginFormulaHelper> _h;
+    // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime
+    boost::weak_ptr<MathPluginFormulaHelper> _h;
     static MathPluginCleanup gCleanup;
   };
 

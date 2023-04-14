@@ -41,6 +41,10 @@ namespace ChimeraTK {
 
     void interrupt() override;
 
+    /// to be called only internally by LNMBackend. This deletes the shared ptr count to the LNM backend,
+    /// in order to break a shared ptr loop
+    void undoBackendReferenceCount();
+
    protected:
     /// register and module name
     RegisterPath _registerPathName;
@@ -300,6 +304,13 @@ namespace ChimeraTK {
       auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
       this->interrupt_impl(vtEntry.subscriptions[this->getId()]);
     });
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void LNMBackendVariableAccessor<UserType>::undoBackendReferenceCount() {
+    _dev.reset(_dev.get(), [](LogicalNameMappingBackend*) {});
   }
 
   /********************************************************************************************************************/
