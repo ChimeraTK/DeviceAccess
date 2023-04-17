@@ -1,0 +1,104 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
+#include "LNMAccessorPlugin.h"
+
+#include <boost/make_shared.hpp>
+
+#include <exprtk.hpp>
+#include <utility>
+
+namespace ChimeraTK::LNMBackend {
+
+  // forward declaration needed for MathPlugin
+  struct MathPluginFormulaHelper;
+
+  /** Math Plugin: Apply mathematical formula to register's data. The formula is parsed by the exprtk library. */
+  class MathPlugin : public AccessorPlugin<MathPlugin> {
+   public:
+    MathPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
+
+    void doRegisterInfoUpdate() override;
+    DataType getTargetDataType(DataType) const override { return DataType::float64; }
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
+
+    void openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) override;
+    void closeHook() override;
+    void exceptionHook() override;
+
+    /// if not yet existing, creates the instance and returns it
+    /// if already existing, backend ptr may be empty
+    boost::shared_ptr<MathPluginFormulaHelper> getFormulaHelper(boost::shared_ptr<LogicalNameMappingBackend> backend);
+    LNMBackendRegisterInfo* info() { return &_info; }
+
+    bool _isWrite{false};
+
+    std::map<std::string, std::string> _parameters;
+    std::string _formula;              // extracted from _parameters
+    bool _enablePushParameters{false}; // extracted from _parameters
+    bool _hasPushParameter{false};     // only releant if _isWrite
+
+   private:
+    // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime
+    boost::weak_ptr<MathPluginFormulaHelper> _h;
+  };
+
+  /********************************************************************************************************************/
+
+  struct MathPluginFormulaHelper {
+    std::string varName;
+    exprtk::expression<double> expression;
+    exprtk::symbol_table<double> symbols;
+    exprtk::rtl::vecops::package<double> vecOpsPkg;
+    std::unique_ptr<exprtk::vector_view<double>> valueView;
+    std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
+
+    boost::weak_ptr<LogicalNameMappingBackend> _backend;
+    boost::shared_ptr<NDRegisterAccessor<double>> _target;
+    // We assume plugin lives at least as long as MathPluginFormulaHelper
+    MathPlugin* _mp;
+
+    MathPluginFormulaHelper(MathPlugin* p, const boost::shared_ptr<LogicalNameMappingBackend>& backend);
+
+    void compileFormula(const std::string& formula,
+        const std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>>& parameters,
+        size_t nElements);
+
+    template<typename T>
+    void computeResult(std::vector<double>& x, std::vector<T>& resultBuffer);
+
+    // This function updates result in target based on latest values of parameter accessors and lastMainValue
+    void updateResult(TransferType type, ChimeraTK::VersionNumber versionNumber);
+
+    // Checks that all parameters have been written since opening the device.
+    // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
+    // Only call this function when holding the _writeMutex. It updates the _allParametersWrittenAfterOpen
+    // variable which is protected by that mutex.
+    bool checkAllParametersWritten(
+        std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap);
+
+    //  only used if _hasPushParameter == true
+    // The _writeMutex has two functions:
+    // - It protects resources which are shared by main accesor and parameter accessors
+    // - It is held while an accessor is doing the preWrite/writeTransfer/postWrite sequence.
+    //   If the other thread would be able to do a transfer bwetween the preWrite and the actual transfer this
+    //   would lead to wrong results (although formally the code is thread safe)
+    // Use a recursive mutex because it is allowed to call preWrite() multiple times before executing
+    // the writeTransfer, and the mutex is accquired in preWrite() and release in only in postWrite().
+    std::recursive_mutex _writeMutex;
+    std::vector<double> _lastMainValue;
+    ChimeraTK::DataValidity _lastMainValidity;
+
+    // TODO - check if these are still needed
+    bool _mainValueWrittenAfterOpen{false};     // only needed if _hasPushParameter == true
+    bool _allParametersWrittenAfterOpen{false}; // only needed if _hasPushParameter == true
+
+    std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> _accessorMap;
+  };
+
+} // namespace ChimeraTK::LNMBackend

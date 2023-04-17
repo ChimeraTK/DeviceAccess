@@ -10,6 +10,10 @@
 
 namespace ChimeraTK {
 
+  namespace LNMBackend {
+    class MathPlugin;
+  }
+
   struct LNMVariable {
     /** Hold values of CONSTANT or VARIABLE types in a type-dependent table. Only the entry matching the valueType
      *  is actually valid.
@@ -31,6 +35,9 @@ namespace ChimeraTK {
 
     /** Mutex one needs to hold while accessing valueTable. */
     std::mutex valueTable_mutex;
+
+    /** formulas which need updates after variable was written */
+    std::list<LNMBackend::MathPlugin*> usingFormulas;
   };
 
 } /* namespace ChimeraTK */

@@ -4,8 +4,12 @@
 
 #include "Device.h"
 #include "FixedPointConverter.h"
+#include "LNMAccessorPlugin.h"
+#include "LNMMathPlugin.h"
 #include "LogicalNameMappingBackend.h"
 #include "NDRegisterAccessor.h"
+
+#include <ChimeraTK/cppext/finally.hpp>
 
 #include <algorithm>
 
@@ -24,6 +28,8 @@ namespace ChimeraTK {
     void doReadTransferSynchronously() override;
 
     void doPreWrite(TransferType type, VersionNumber) override;
+
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override;
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override;
 
@@ -68,6 +74,9 @@ namespace ChimeraTK {
 
     /// access mode flags
     AccessModeFlags _flags;
+
+    /// in case a MathPlugin formulas are using this variable, a references to the FormulaHelpers
+    std::list<boost::shared_ptr<LNMBackend::MathPluginFormulaHelper>> _formulaHelpers;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
@@ -154,6 +163,20 @@ namespace ChimeraTK {
       });
     }
 
+    // make sure FormulaHelpers for MathPlugin instances involving this variable as push-parameter are created
+    // not for wait_for_new_data accessors, these are not used for writing
+    // (TODO discuss - is this always true)?
+    // we require the check for elimination of recursion
+    if(!flags.has(AccessMode::wait_for_new_data)) {
+      auto& lnmVariable = _dev->_variables[_info.name];
+      for(auto* mp : lnmVariable.usingFormulas) {
+        if(mp->_hasPushParameter) {
+          auto h = mp->getFormulaHelper(_dev);
+          _formulaHelpers.push_back(h);
+        }
+      }
+    }
+
     // allocate application buffer
     NDRegisterAccessor<UserType>::buffer_2D.resize(1);
     NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
@@ -231,6 +254,49 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  void LNMBackendVariableAccessor<UserType>::doPostWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+    // call write functions which make use of this parameter in MathPlugin-handled formulas
+
+    auto& lnmVariable = _dev->_variables[_info.name];
+    for(auto* mp : lnmVariable.usingFormulas) {
+      if(mp->_hasPushParameter) {
+        auto h = mp->getFormulaHelper({});
+        h->updateResult(type, versionNumber);
+
+        // TODO discuss error handling
+        // How should it be done, I see options
+        // (a) just throw exception as it comes from h->updateResult
+        // (b) set exception on target, as done in MathPluginDecorator - see below
+
+        bool skipWriteDelegation = true;
+
+        if(skipWriteDelegation && (this->_activeException != nullptr)) {
+          // Something has thrown before the target's preWrite was called. Re-throw it here.
+          // Do not unlock the mutex. It never has been locked.
+          std::rethrow_exception(this->_activeException);
+        }
+
+        // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
+        auto _ = cppext::finally([&] {
+          if(mp->_hasPushParameter) {
+            h->_writeMutex.unlock();
+          }
+        });
+
+        if(skipWriteDelegation) {
+          return; // the trarget preWrite() has not been executed, so stop here
+        }
+
+        // delegate to the target
+        h->_target->setActiveException(this->_activeException);
+        h->_target->postWrite(type, versionNumber);
+        // (the "finally" lambda releasing the lock is executed here latest)
+      }
+    }
+  }
+  /********************************************************************************************************************/
+
+  template<typename UserType>
   bool LNMBackendVariableAccessor<UserType>::mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const {
     return false; // never replace, since it does not optimise anything
   }
@@ -304,13 +370,6 @@ namespace ChimeraTK {
       auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
       this->interrupt_impl(vtEntry.subscriptions[this->getId()]);
     });
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  void LNMBackendVariableAccessor<UserType>::undoBackendReferenceCount() {
-    _dev.reset(_dev.get(), [](LogicalNameMappingBackend*) {});
   }
 
   /********************************************************************************************************************/

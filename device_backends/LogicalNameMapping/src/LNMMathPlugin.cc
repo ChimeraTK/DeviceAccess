@@ -1,82 +1,16 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "LNMMathPlugin.h"
+
 #include "BackendFactory.h"
-#include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
-#include "LNMBackendVariableAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
-#include "ReadAnyGroup.h"
 #include "TransferElement.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
-#include <boost/make_shared.hpp>
-
-#include <exprtk.hpp>
-#include <utility>
-
 namespace ChimeraTK::LNMBackend {
-
-  /********************************************************************************************************************/
-
-  struct MathPluginFormulaHelper : public boost::enable_shared_from_this<MathPluginFormulaHelper> {
-    std::string varName;
-    exprtk::expression<double> expression;
-    exprtk::symbol_table<double> symbols;
-    exprtk::rtl::vecops::package<double> vecOpsPkg;
-    std::unique_ptr<exprtk::vector_view<double>> valueView;
-    std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
-
-    boost::weak_ptr<LogicalNameMappingBackend> _backend;
-    // Points to member of MathPlugin. We assume plugin lives at least as long as MathPluginFormulaHelper
-    LNMBackendRegisterInfo* _info;
-
-    ~MathPluginFormulaHelper() { stopPushParameterWriteThread(); }
-
-    void compileFormula(const std::string& formula,
-        const std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>>& parameters,
-        size_t nElements);
-
-    template<typename T>
-    void computeResult(std::vector<double>& x, std::vector<T>& resultBuffer);
-
-    // (re)start _pushParameterWriteThread if required
-    void startPushParameterWriteThread();
-    // stop _pushParameterWriteThread and wait on termination
-    void stopPushParameterWriteThread();
-
-    // This function is starting a loop and will be executed in the _parameterThread;
-    void parameterReadLoop();
-
-    // Checks that all parameters have been written since opening the device.
-    // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
-    // Only call this function when holding the _writeMutex. It updates the _allParametersWrittenAfterOpen
-    // variable which is protected by that mutex.
-    bool checkAllParametersWritten(
-        std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap);
-
-    //  only used if _hasPushParameter == true
-    // The _writeMutex has two functions:
-    // - It protects resources which are share by an accesor and the parameter thread
-    //   (Currently: _lastWrittenValue and _mainValueWrittenAfterOpen)
-    // - It is held while an accessor or the parameter thread is doing the preWrite/writeTransfer/postWrite sequence.
-    //   If the other thread would be able to do a transfer bwetween the preWrite and the actual transfer this
-    //   would lead to wrong results (although formally the code is thread safe)
-    // Use a recursive mutex because it is allowed to call preWrite() multiple times before executing
-    // the writeTransfer, and the mutex is accquired in preWrite() and release in only in postWrite().
-    std::recursive_mutex _writeMutex;
-
-    std::vector<double> _lastWrittenValue; // only used if _hasPushParameter == true
-
-    bool _hasPushParameter{false};                       // can only be true if _isWrite == true
-    bool _mainValueWrittenAfterOpen{false};              // only needed if _hasPushParameter == true
-    bool _allParametersWrittenAfterOpen{false};          // only needed if _hasPushParameter == true
-    boost::thread _pushParameterWriteThread;             // only used if _hasPushParameter == true
-    boost::barrier _waitUntilParameterThreadLaunched{2}; // sync point for parameter thread and accessor thread
-    ReadAnyGroup _pushParameterReadGroup;                // only used if _hasPushParameter == true
-    std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> _accessorMap;
-  };
 
   /********************************************************************************************************************/
 
@@ -93,7 +27,6 @@ namespace ChimeraTK::LNMBackend {
       _parameters.erase("enable_push_parameters");
     }
 
-    gCleanup.registerP(this);
   }
 
   /********************************************************************************************************************/
@@ -117,85 +50,40 @@ namespace ChimeraTK::LNMBackend {
     // make sure backend catalogue is updated with target backend information
     backend->getRegisterCatalogue();
 
-    // we also start write-push-parameter handling thread here, because we want to be
-    // sensitive to parameter changes even when main value (via MathPluginDecorator) is not instantiated
-    auto h = getFormulaHelper();
-
-    // if this is the first call: setup MathPluginFormulaHelper
-    if(h->_backend._empty()) {
-      // store backend as weak pointer for later use
-      h->_backend = backend;
-      h->_info = info();
-      auto length = info()->length;
-
-      // If write direction, check for push-type parameters if enabled
-      if(_isWrite && _enablePushParameters) {
-        for(const auto& parpair : _parameters) {
-          auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
-          if(paramFlags.has(AccessMode::wait_for_new_data)) {
-            h->_hasPushParameter = true;
-            break;
-          }
+    // If write direction, check for push-type parameters if enabled
+    if(_isWrite && _enablePushParameters) {
+      for(const auto& parpair : _parameters) {
+        auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
+        if(paramFlags.has(AccessMode::wait_for_new_data)) {
+          _hasPushParameter = true;
+          break;
         }
       }
+    }
 
-      if(h->_hasPushParameter) {
-        // fill the _pushParameterReadGroup
-        for(const auto& parpair : _parameters) {
-          // push-type parameters need to be obtained with wait_for_new_data, others without
-          AccessModeFlags flags{};
-          bool breakShptrLoop = false;
-          auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
-          if(paramFlags.has(AccessMode::wait_for_new_data)) {
-            flags = {AccessMode::wait_for_new_data};
-            // We only allow push-type parameters for Variables defined via LogicalNameMapping.
-            // If we allowed other cases (e.g. redirected registers to a device supporting wait_for_new_data, it
-            // would be hard to define when pushParameterThread should be stopped
-            if(backend->_catalogue_mutable.getBackendRegister(parpair.second).targetType !=
-                LNMBackendRegisterInfo::VARIABLE) {
-              throw logic_error("only LNM defined variables allowed as push parameters!");
-            }
-            breakShptrLoop = true;
-          }
-          auto acc = backend->getRegisterAccessor<double>(parpair.second, 0, 0, flags);
-          if(breakShptrLoop) {
-            // we must not refer back to the backend via push-type variable
-            // cf ticket https://redmine.msktools.desy.de/issues/11506
-            auto a = boost::dynamic_pointer_cast<LNMBackendVariableAccessor<double>>(acc);
-            assert(a);
-            a->undoBackendReferenceCount();
-          }
-          if(acc->getNumberOfChannels() != 1) {
-            throw ChimeraTK::logic_error(
-                "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: '" +
-                info()->name + "', parameter name: '" + parpair.first + "'");
-          }
-          h->_pushParameterReadGroup.add(acc);
-          h->_accessorMap[parpair.first] = acc;
+    if(_hasPushParameter) {
+      for(const auto& parpair : _parameters) {
+        auto pname = parpair.second;
+        if(backend->_variables.find(pname) == backend->_variables.end()) {
+          // TODO discuss - throwing an error here is ok only if we require all (even poll-type) parameters of the
+          // formula to be LNM variables; i.e. a redirectedRegister as parameter will not work then.
+          // throw logic_error("no LNM variable defined for parameter " + pname);
         }
-        h->_pushParameterReadGroup.finalise();
-        h->_lastWrittenValue.resize(length);
-      }
-      else {
-        // obtain poll-type accessors for parameters
-        for(const auto& par : _parameters) {
-          h->_accessorMap[par.first] = backend->getRegisterAccessor<double>(par.second, 0, 0, {});
+        else {
+          backend->_variables[pname].usingFormulas.push_back(this);
         }
       }
-
-      // compile formula
-      h->compileFormula(_formula, h->_accessorMap, length);
-      h->varName = info()->name;
-      h->startPushParameterWriteThread();
     }
   }
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<MathPluginFormulaHelper> MathPlugin::getFormulaHelper() {
+  boost::shared_ptr<MathPluginFormulaHelper> MathPlugin::getFormulaHelper(
+      boost::shared_ptr<LogicalNameMappingBackend> backend) {
     auto p = _h.lock();
     if(!p) {
-      p = boost::make_shared<MathPluginFormulaHelper>();
+      assert(backend);
+      p = boost::make_shared<MathPluginFormulaHelper>(this, backend);
       _h = p;
     }
     return p;
@@ -203,123 +91,52 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MathPluginFormulaHelper::startPushParameterWriteThread() {
-    // The main value has  to be written once before the parameter thread will write anything,
-    // and all parameters have to be written before the accessor itself will write to the device.
-    // Set this before launching the thread, so we don't have to fiddle with the mutex here.
-    _mainValueWrittenAfterOpen = false;
-    _allParametersWrittenAfterOpen = false;
+  void MathPluginFormulaHelper::updateResult(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+    assert(_lastMainValue.size() == _target->getNumberOfSamples());
 
-    // if we have push-type parameters triggering a write of the target, start the _pushParameterWriteThread
-    if(_hasPushParameter) {
-      // If the thread is still running, it will terminate soon by itself. We must not attempt to terminate it here,
-      // because it would be subject to the race condition that the thread still sees an exception from before recovery
-      // which results in putting the device back into exception state.
-      // The reason why we might need to wait here is that we cannot wait for the thread to terminate in the exception
-      // hook, because it might be called from inside the thread.
-      while(_pushParameterWriteThread.joinable()) {
-        _pushParameterReadGroup.interrupt();
-        _pushParameterWriteThread.try_join_for(boost::chrono::milliseconds(100));
-      }
+    {
+      std::unique_lock<std::recursive_mutex> lk(_writeMutex);
 
-      // start write thread
-      _pushParameterWriteThread = boost::thread([&] { parameterReadLoop(); });
+      auto paramDataValidity = ChimeraTK::DataValidity::ok;
 
-      // do not proceed before the thread is ready to receive new data
-      _waitUntilParameterThreadLaunched.wait();
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  void MathPluginFormulaHelper::parameterReadLoop() {
-    // this function is main of push-parameter handling thread.
-    // store a this pointer on the stack to ensure object won't get deleted while thread is running
-    auto thisp = shared_from_this();
-    boost::shared_ptr<NDRegisterAccessor<double>> target;
-    { // scope for the barrier wait caller
-      // Use finally to ensure that the barrier::wait is always called, even if the thread kicks out with an exception
-      auto barrierWaitCaller = cppext::finally([&] { _waitUntilParameterThreadLaunched.wait(); });
-
-      // obtain target accessor
-      auto targetDevice = BackendFactory::getInstance().createBackend(_info->deviceName);
-      target = targetDevice->getRegisterAccessor<double>(_info->registerName, _info->length, _info->firstIndex, {});
-      // empty all queues (initial values, remaining exceptions from previous thread runs). Ignore all exceptions.
-      while(true) {
-        auto notfy = _pushParameterReadGroup.waitAnyNonBlocking();
-        if(!notfy.isReady()) break;
-        try {
-          notfy.accept();
-        }
-        catch(...) {
-          continue;
+      //  update parameters
+      for(auto& p : params) {
+        p.first->readLatest();
+        // check the DataValidity of parameter.
+        if(p.first->dataValidity() == ChimeraTK::DataValidity::faulty) {
+          // probably compiler optimize it automatically and assign it only once.
+          paramDataValidity = ChimeraTK::DataValidity::faulty;
         }
       }
-      // thread is started from openHook, so async mode should not be active yet
-      assert(!_backend.lock()->_asyncReadActive);
-      assert(_lastWrittenValue.size() == target->getNumberOfSamples());
 
-    } // end scope of the barrierWaitCaller. At this point the finally is executed and other thread is notified that
-    // this thread has started and the opend hook can complete.
-
-    // start processing loop
-    while(true) {
-      try {
-        // accessors are not thread-safe. we use them from two threads. so we need to
-        // wait, lock, read, unlock in one thread; just wait (no readlatest) in other thread.
-        // otherwise, would hold the lock all the time!
-        auto notification = _pushParameterReadGroup.waitAny();
-        {
-          std::unique_lock<std::recursive_mutex> lk(_writeMutex);
-          notification.accept();
-          _pushParameterReadGroup.processPolled();
-
-          if(!checkAllParametersWritten(_accessorMap)) {
-            continue;
-          }
-          if(!_mainValueWrittenAfterOpen) {
-            continue;
-          }
-
-          computeResult(_lastWrittenValue, target->accessChannel(0));
-          target->writeDestructively();
-        }
-      }
-      catch([[maybe_unused]] ChimeraTK::runtime_error& e) {
-        // no need to report the exception, as the accessor should have already done it
+      if(!checkAllParametersWritten(_accessorMap) || !_mainValueWrittenAfterOpen) {
         return;
       }
+
+      computeResult(_lastMainValue, _target->accessChannel(0));
+      // pass validity to target and delegate preWrite
+      if(paramDataValidity == ChimeraTK::DataValidity::ok && _lastMainValidity == ChimeraTK::DataValidity::ok) {
+        _target->setDataValidity(ChimeraTK::DataValidity::ok);
+      }
+      else {
+        _target->setDataValidity(ChimeraTK::DataValidity::faulty);
+      }
+
+      _target->writeDestructively(versionNumber);
+
+      // TODO check - which protocoly is right here? write or (preWrite, transfer, postWrite)?
+      //_target->preWrite(type, versionNumber);
     }
   }
 
   /********************************************************************************************************************/
 
   void MathPlugin::closeHook() {
-    if(auto h = _h.lock()) {
-      h->stopPushParameterWriteThread();
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  void MathPluginFormulaHelper::stopPushParameterWriteThread() {
-    // terminate _pushParameterWriteThread if running
-    if(_hasPushParameter) {
-      // if called from within _pushParameterWriteThread, we must not join, but there is nothing to do anyway, as
-      // the thread will terminate due to the exception!
-      if(boost::this_thread::get_id() != _pushParameterWriteThread.get_id()) {
-        while(_pushParameterWriteThread.joinable()) {
-          _pushParameterReadGroup.interrupt();
-          _pushParameterWriteThread.try_join_for(boost::chrono::milliseconds(100));
-        }
-      }
-    }
   }
 
   /********************************************************************************************************************/
 
   void MathPlugin::exceptionHook() {
-    // terminate _pushParameterWriteThread if running, just as device is closed
     closeHook();
   }
 
@@ -332,11 +149,8 @@ namespace ChimeraTK::LNMBackend {
     }
 
     // we can assign temporary values to _allParametersWrittenAfterOpen because it's protected by the mutex
-    // (must be locked before calling this function)
     _allParametersWrittenAfterOpen = true;
     auto backend = _backend.lock(); // No need to check the lock of the weak pointer, it cannot fail.
-    // The backend is holding the plugin, and the weak pointer is to avoid the backend holind a
-    // shared pointer of it self.
 
     for(const auto& acc : accessorsMap) {
       if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
@@ -344,8 +158,6 @@ namespace ChimeraTK::LNMBackend {
         break;
       }
     }
-    // The _allParametersWrittenAfterOpen is transporting the result to the accessor thread, the
-    // return value is going to the parameter thread.
     return _allParametersWrittenAfterOpen;
   }
 
@@ -409,9 +221,7 @@ namespace ChimeraTK::LNMBackend {
     target->setExceptionBackend(backend);
     this->_exceptionBackend = backend;
 
-    h = _p->getFormulaHelper();
-    // helper has been setup at openHook
-    assert(!h->_backend._empty());
+    h = _p->getFormulaHelper(backend);
   }
 
   /********************************************************************************************************************/
@@ -420,6 +230,8 @@ namespace ChimeraTK::LNMBackend {
   void MathPluginDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     _target->postRead(type, hasNewData);
     if(!hasNewData) return;
+
+    // TODO check whether we can reuse code from MathPluginFormulaHelper::update
 
     // update parameters
     auto paramDataValidity = ChimeraTK::DataValidity::ok;
@@ -456,10 +268,7 @@ namespace ChimeraTK::LNMBackend {
     auto paramDataValidity = ChimeraTK::DataValidity::ok;
     // update parameters
     for(auto& p : h->params) {
-      // call readLatest only if push-parameter thread is not active; otherwise, push-parameter thread handles reads
-      if(!h->_hasPushParameter) {
         p.first->readLatest();
-      }
       // check the DataValidity of parameter.
       if(p.first->dataValidity() == ChimeraTK::DataValidity::faulty) {
         // probably compiler optimize it automatically and assign it only once.
@@ -474,14 +283,14 @@ namespace ChimeraTK::LNMBackend {
       _target->accessData(0, k) = userTypeToNumeric<double>(buffer_2D[0][k]);
     }
 
-    // update last written data buffer for updater thread if needed
-    if(h->_hasPushParameter) {
+    // update last written data buffer for other threads if needed
+    if(_p->_hasPushParameter) {
       // Accquire the lock and hold it until the transaction is completed in postWrite.
       // This is safe because it is guaranteed by the framework that pre- and post actions are called in pairs.
       h->_writeMutex.lock();
-      h->_lastWrittenValue = _target->accessChannel(0);
-      h->_mainValueWrittenAfterOpen = true; // We have stored the value for the parameters thread,
-                                            // even if it's not written yet because not all parameters are there
+      h->_lastMainValue = _target->accessChannel(0);
+      h->_lastMainValidity = _target->dataValidity();
+      h->_mainValueWrittenAfterOpen = true;
     }
 
     // Note: There is a potential race condition that the parameter thread has not processed a parameter yet but the
@@ -493,7 +302,7 @@ namespace ChimeraTK::LNMBackend {
     // 2. We cannot determine the correct version number from the poll-type accessors anyway because they always get
     //    a fresh version number. (We could use read_latest on push-type, but this would be less efficient,
     //    and still leave point 1.)
-    if(h->_hasPushParameter && !h->_allParametersWrittenAfterOpen) {
+    if(_p->_hasPushParameter && !h->_allParametersWrittenAfterOpen) {
       return;
     }
 
@@ -544,7 +353,7 @@ namespace ChimeraTK::LNMBackend {
 
     // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
     auto _ = cppext::finally([&] {
-      if(h->_hasPushParameter) {
+      if(_p->_hasPushParameter) {
         h->_writeMutex.unlock();
       }
     });
@@ -602,6 +411,54 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams&) {
     return MathPlugin_Helper<UserType, TargetType>::decorateAccessor(backend, target, _parameters, this);
+  }
+
+  /********************************************************************************************************************/
+
+  MathPluginFormulaHelper::MathPluginFormulaHelper(
+      MathPlugin* p, const boost::shared_ptr<LogicalNameMappingBackend>& backend)
+  : _backend(backend), _mp(p) {
+    auto* info = _mp->info();
+    auto length = info->length;
+
+    if(_mp->_hasPushParameter) {
+      for(const auto& parpair : _mp->_parameters) {
+        // push-type parameters need to be obtained with wait_for_new_data, others without
+        AccessModeFlags flags{};
+        auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
+        if(paramFlags.has(AccessMode::wait_for_new_data)) {
+          flags = {AccessMode::wait_for_new_data};
+          // We only allow push-type parameters for Variables defined via LogicalNameMapping.
+          // If we allowed other cases (e.g. redirected registers to a device supporting wait_for_new_data, it
+          // would be hard to define when pushParameterThread should be stopped
+          if(backend->_catalogue_mutable.getBackendRegister(parpair.second).targetType !=
+              LNMBackendRegisterInfo::VARIABLE) {
+            throw logic_error("only LNM defined variables allowed as push parameters!");
+          }
+        }
+        auto acc = backend->getRegisterAccessor<double>(parpair.second, 0, 0, flags);
+        if(acc->getNumberOfChannels() != 1) {
+          throw ChimeraTK::logic_error(
+              "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: '" +
+              info->name + "', parameter name: '" + parpair.first + "'");
+        }
+        _accessorMap[parpair.first] = acc;
+      }
+      _lastMainValue.resize(length);
+    }
+    else {
+      // obtain poll-type accessors for parameters
+      for(const auto& par : _mp->_parameters) {
+        _accessorMap[par.first] = backend->getRegisterAccessor<double>(par.second, 0, 0, {});
+      }
+    }
+
+    // compile formula
+    compileFormula(_mp->_formula, _accessorMap, length);
+    varName = info->name;
+
+    auto targetDevice = BackendFactory::getInstance().createBackend(info->deviceName);
+    _target = targetDevice->getRegisterAccessor<double>(info->registerName, info->length, info->firstIndex, {});
   }
 
   /********************************************************************************************************************/
@@ -710,26 +567,5 @@ namespace ChimeraTK::LNMBackend {
           "': The expression returned " + std::to_string(results.count()) + " results, expect exactly one result.");
     }
   }
-
-  /********************************************************************************************************************/
-
-  void MathPlugin::MathPluginCleanup::registerP(MathPlugin* p) {
-    _plugins.insert(p);
-  }
-
-  MathPlugin::MathPluginCleanup::~MathPluginCleanup() {
-    // TODO check that superfluous and remove
-
-    // note, in static global destructor, must not call close on backend, only terminate thread.
-    // reason: we don't know about global destructors order
-    //    for(auto* p : _plugins) {
-    //      if(p && p->_h) {
-    //        p->_h.reset();
-    //        _plugins.erase(p);
-    //      }
-    //    }
-  }
-
-  MathPlugin::MathPluginCleanup MathPlugin::gCleanup;
 
 } // namespace ChimeraTK::LNMBackend
