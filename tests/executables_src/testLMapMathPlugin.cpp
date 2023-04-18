@@ -153,9 +153,14 @@ BOOST_AUTO_TEST_CASE(testParameters) {
 BOOST_AUTO_TEST_CASE(testExceptions) {
   // missing parameter "formula"
   ChimeraTK::Device device;
+
+  // open device with map file which does not parse
   BOOST_CHECK_THROW(device.open("(logicalNameMap?map=mathPlugin-broken.xlmap)"), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(device.open("(logicalNameMap?map=mathPlugin-broken2.xlmap)"), ChimeraTK::logic_error);
+  // open device with map file which parses but contains broken formula
+  // exception might be thrown in open or only when register requested
+  BOOST_CHECK_THROW(device.open("(logicalNameMap?map=mathPlugin-broken2.xlmap)");
+                    device.getOneDRegisterAccessor<double>("BrokenFormula"), ChimeraTK::logic_error);
 
   // open device with map file which parses and all contained formulas compile
   device.open("(logicalNameMap?map=mathPlugin.xlmap)");
