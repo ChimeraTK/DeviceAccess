@@ -259,38 +259,13 @@ namespace ChimeraTK {
     for(auto* mp : lnmVariable.usingFormulas) {
       if(mp->_hasPushParameter) {
         auto h = mp->getFormulaHelper({});
-        h->updateResult(type, versionNumber);
-
-        // TODO discuss error handling
-        // How should it be done, I see options
-        // (a) just throw exception as it comes from h->updateResult
-        // (b) set exception on target, as done in MathPluginDecorator - see below
-
-        bool skipWriteDelegation = true;
-
-        if(skipWriteDelegation && (this->_activeException != nullptr)) {
-          // Something has thrown before the target's preWrite was called. Re-throw it here.
-          // Do not unlock the mutex. It never has been locked.
-          std::rethrow_exception(this->_activeException);
-        }
-
-        // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
-        auto _ = cppext::finally([&] {
-          if(mp->_hasPushParameter) {
-            h->_writeMutex.unlock();
-          }
-        });
-
-        if(skipWriteDelegation) {
-          return; // the trarget preWrite() has not been executed, so stop here
-        }
-
-        // delegate to the target
-        h->_target->setActiveException(this->_activeException);
-        h->_target->postWrite(type, versionNumber);
-        // (the "finally" lambda releasing the lock is executed here latest)
+        h->updateResult(versionNumber);
+        // error handling: updateResult does it already.
+        // we don't want to issue exceptions from VariableAccessor, since a variable change is not closely related
+        // to where the error appears (e.g. error appears when writing to target)
       }
     }
+    // TODO also need in openHook or doPreWrite, check that parameter is readable.
   }
   /********************************************************************************************************************/
 

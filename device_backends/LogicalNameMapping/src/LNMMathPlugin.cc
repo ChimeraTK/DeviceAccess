@@ -61,7 +61,8 @@ namespace ChimeraTK::LNMBackend {
       }
     }
 
-    // TODO - we need to  specify behavior on open!
+    // we expect that all values used in the formula need to be written after open, before we provide first result
+    // exception: push-type parameters which provide their initial value upon open anyway.
     _mainValueWrittenAfterOpen = false;
     _allParametersWrittenAfterOpen = false;
 
@@ -71,6 +72,7 @@ namespace ChimeraTK::LNMBackend {
         if(backend->_variables.find(pname) == backend->_variables.end()) {
           // TODO discuss - throwing an error here is ok only if we require all (even poll-type) parameters of the
           // formula to be LNM variables; i.e. a redirectedRegister as parameter will not work then.
+          // -> first check that this does not become a problem for servers!
           // throw logic_error("no LNM variable defined for parameter " + pname);
         }
         else {
@@ -97,10 +99,10 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MathPluginFormulaHelper::updateResult(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+  void MathPluginFormulaHelper::updateResult(ChimeraTK::VersionNumber versionNumber) {
     assert(_lastMainValue.size() == _target->getNumberOfSamples());
 
-    {
+    try {
       std::unique_lock<std::recursive_mutex> lk(_writeMutex);
 
       auto paramDataValidity = ChimeraTK::DataValidity::ok;
@@ -129,9 +131,12 @@ namespace ChimeraTK::LNMBackend {
       }
 
       _target->writeDestructively(versionNumber);
-
-      // TODO check - which protocoly is right here? write or (preWrite, transfer, postWrite)?
-      //_target->preWrite(type, versionNumber);
+    }
+    catch(runtime_error&) {
+      // runtime_error from param.readLatest() or target->write()
+      // we could actually even ignore it, since we don't expect exceptions on param.readLatest(), and target->write()
+      // already puts backend into exception state.
+      _target->getExceptionBackend()->setException();
     }
   }
 

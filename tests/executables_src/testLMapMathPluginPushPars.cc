@@ -11,21 +11,6 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-#define CHECK_TIMEOUT(execPreCheck, condition, maxMilliseconds)                                                        \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    execPreCheck while(!(condition)) {                                                                                 \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) {                                                                                            \
-        std::cout << "failed condition: " << #condition << std::endl;                                                  \
-        break;                                                                                                         \
-      }                                                                                                                \
-      usleep(100000);                                                                                                  \
-      execPreCheck                                                                                                     \
-    }                                                                                                                  \
-  }
-
 BOOST_AUTO_TEST_SUITE(LMapMathPluginTestSuite)
 
 /********************************************************************************************************************/
@@ -71,14 +56,13 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     scalarPar = 2;
     scalarPar.write();
 
-    // check that even if main value (x in formula) is not written, writing parameter should give proper result
-    int accMathWrite0 = 0; // initial value for "x"
-
-    CHECK_TIMEOUT(accTarget.readLatest();
-                  , int(accTarget) == 100 * (int)pollPar + 10 * (int)scalarPar + accMathWrite0, 5000);
+    auto accMathWrite = device.getScalarRegisterAccessor<double>("DET/GAIN");
+    // we don't have main value (x in formula) yet, since it wasn't yet written.
+    // therefore, we expect to have no value yet for formula output (0 is default from dummy construction)
+    accTarget.readLatest();
+    BOOST_CHECK_EQUAL(int(accTarget), 0);
 
     // write to main value and check result
-    auto accMathWrite = device.getScalarRegisterAccessor<double>("DET/GAIN");
     accMathWrite = 3;
     accMathWrite.write();
     accTarget.readLatest();
@@ -88,6 +72,27 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     // note, it's a new feature that result is completely written when write() returns.
     scalarPar = 4;
     scalarPar.write();
+    accTarget.readLatest();
+    BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)scalarPar + (int)accMathWrite);
+
+    // check that MathPlugin waits on all initial values.
+    device.close();
+    targetDevice.open(); // open again since low-level device was closed by LNM
+    accTarget = 0;       // reset result in dummy
+    accTarget.write();
+    pollPar.write();
+    device.open("EOD");
+
+    accMathWrite = 3;
+    accMathWrite.write();
+    BOOST_CHECK_EQUAL(int(accTarget), 0);
+    // push-type variable provides initial or last value on activateAsync
+    // scalarPar.write(); // TODO remove?
+    // after removal, test fails - discuss whether this is a bug!
+
+    device.activateAsyncRead();
+    // activateAsyncRead does not guarantee initial value is there immediately
+    usleep(1000000);
     accTarget.readLatest();
     BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)scalarPar + (int)accMathWrite);
   }

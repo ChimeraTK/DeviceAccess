@@ -43,7 +43,6 @@ namespace ChimeraTK::LNMBackend {
     bool _enablePushParameters{false}; // extracted from _parameters
     bool _hasPushParameter{false};     // only releant if _isWrite
 
-    // TODO - check if these are still needed
     bool _mainValueWrittenAfterOpen{false};     // only needed if _hasPushParameter == true
     bool _allParametersWrittenAfterOpen{false}; // only needed if _hasPushParameter == true
     bool _creatingFormulaHelper{false};         // a flag to prevent recursion
@@ -78,7 +77,7 @@ namespace ChimeraTK::LNMBackend {
     void computeResult(std::vector<double>& x, std::vector<T>& resultBuffer);
 
     // This function updates result in target based on latest values of parameter accessors and lastMainValue
-    void updateResult(TransferType type, ChimeraTK::VersionNumber versionNumber);
+    void updateResult(ChimeraTK::VersionNumber versionNumber);
 
     // Checks that all parameters have been written since opening the device.
     // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
