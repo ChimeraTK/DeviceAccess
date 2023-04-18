@@ -87,7 +87,9 @@ namespace ChimeraTK::LNMBackend {
     auto p = _h.lock();
     if(!p) {
       assert(backend);
+      _creatingFormulaHelper = true;
       p = boost::make_shared<MathPluginFormulaHelper>(this, backend);
+      _creatingFormulaHelper = false;
       _h = p;
     }
     return p;
@@ -461,7 +463,13 @@ namespace ChimeraTK::LNMBackend {
     compileFormula(_mp->_formula, _accessorMap, length);
     varName = info->name;
 
-    auto targetDevice = BackendFactory::getInstance().createBackend(info->deviceName);
+    boost::shared_ptr<DeviceBackend> targetDevice;
+    if(info->deviceName == "this") {
+      targetDevice = _backend.lock();
+    }
+    else {
+      targetDevice = BackendFactory::getInstance().createBackend(info->deviceName);
+    }
     _target = targetDevice->getRegisterAccessor<double>(info->registerName, info->length, info->firstIndex, {});
   }
 

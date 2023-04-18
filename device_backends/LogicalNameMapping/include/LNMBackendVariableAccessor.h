@@ -164,17 +164,15 @@ namespace ChimeraTK {
     }
 
     // make sure FormulaHelpers for MathPlugin instances involving this variable as push-parameter are created
-    // not for wait_for_new_data accessors, these are not used for writing
-    // (TODO discuss - is this always true)?
-    // we require the check for elimination of recursion
-    if(!flags.has(AccessMode::wait_for_new_data)) {
       auto& lnmVariable = _dev->_variables[_info.name];
       for(auto* mp : lnmVariable.usingFormulas) {
         if(mp->_hasPushParameter) {
-          auto h = mp->getFormulaHelper(_dev);
-          _formulaHelpers.push_back(h);
+          // following check eliminates recursion, getFormulaHelper also creates Variable accessors
+          if(!mp->_creatingFormulaHelper) {
+            auto h = mp->getFormulaHelper(_dev);
+            _formulaHelpers.push_back(h);
+          }
         }
-      }
     }
 
     // allocate application buffer

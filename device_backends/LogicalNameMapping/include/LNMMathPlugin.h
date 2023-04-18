@@ -46,6 +46,7 @@ namespace ChimeraTK::LNMBackend {
     // TODO - check if these are still needed
     bool _mainValueWrittenAfterOpen{false};     // only needed if _hasPushParameter == true
     bool _allParametersWrittenAfterOpen{false}; // only needed if _hasPushParameter == true
+    bool _creatingFormulaHelper{false};         // a flag to prevent recursion
 
    private:
     // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime
