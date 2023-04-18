@@ -61,6 +61,10 @@ namespace ChimeraTK::LNMBackend {
       }
     }
 
+    // TODO - we need to  specify behavior on open!
+    _mainValueWrittenAfterOpen = false;
+    _allParametersWrittenAfterOpen = false;
+
     if(_hasPushParameter) {
       for(const auto& parpair : _parameters) {
         auto pname = parpair.second;
@@ -109,7 +113,7 @@ namespace ChimeraTK::LNMBackend {
         }
       }
 
-      if(!checkAllParametersWritten(_accessorMap) || !_mainValueWrittenAfterOpen) {
+      if(!checkAllParametersWritten(_accessorMap) || !_mp->_mainValueWrittenAfterOpen) {
         return;
       }
 
@@ -144,21 +148,21 @@ namespace ChimeraTK::LNMBackend {
 
   bool MathPluginFormulaHelper::checkAllParametersWritten(
       std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap) {
-    if(_allParametersWrittenAfterOpen) {
+    if(_mp->_allParametersWrittenAfterOpen) {
       return true;
     }
 
     // we can assign temporary values to _allParametersWrittenAfterOpen because it's protected by the mutex
-    _allParametersWrittenAfterOpen = true;
+    _mp->_allParametersWrittenAfterOpen = true;
     auto backend = _backend.lock(); // No need to check the lock of the weak pointer, it cannot fail.
 
     for(const auto& acc : accessorsMap) {
       if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
-        _allParametersWrittenAfterOpen = false;
+        _mp->_allParametersWrittenAfterOpen = false;
         break;
       }
     }
-    return _allParametersWrittenAfterOpen;
+    return _mp->_allParametersWrittenAfterOpen;
   }
 
   /********************************************************************************************************************/
@@ -290,7 +294,7 @@ namespace ChimeraTK::LNMBackend {
       h->_writeMutex.lock();
       h->_lastMainValue = _target->accessChannel(0);
       h->_lastMainValidity = _target->dataValidity();
-      h->_mainValueWrittenAfterOpen = true;
+      _p->_mainValueWrittenAfterOpen = true;
     }
 
     // Note: There is a potential race condition that the parameter thread has not processed a parameter yet but the
@@ -302,7 +306,7 @@ namespace ChimeraTK::LNMBackend {
     // 2. We cannot determine the correct version number from the poll-type accessors anyway because they always get
     //    a fresh version number. (We could use read_latest on push-type, but this would be less efficient,
     //    and still leave point 1.)
-    if(_p->_hasPushParameter && !h->_allParametersWrittenAfterOpen) {
+    if(_p->_hasPushParameter && !_p->_allParametersWrittenAfterOpen) {
       return;
     }
 

@@ -43,6 +43,10 @@ namespace ChimeraTK::LNMBackend {
     bool _enablePushParameters{false}; // extracted from _parameters
     bool _hasPushParameter{false};     // only releant if _isWrite
 
+    // TODO - check if these are still needed
+    bool _mainValueWrittenAfterOpen{false};     // only needed if _hasPushParameter == true
+    bool _allParametersWrittenAfterOpen{false}; // only needed if _hasPushParameter == true
+
    private:
     // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime
     boost::weak_ptr<MathPluginFormulaHelper> _h;
@@ -93,10 +97,6 @@ namespace ChimeraTK::LNMBackend {
     std::recursive_mutex _writeMutex;
     std::vector<double> _lastMainValue;
     ChimeraTK::DataValidity _lastMainValidity;
-
-    // TODO - check if these are still needed
-    bool _mainValueWrittenAfterOpen{false};     // only needed if _hasPushParameter == true
-    bool _allParametersWrittenAfterOpen{false}; // only needed if _hasPushParameter == true
 
     std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> _accessorMap;
   };
