@@ -88,7 +88,10 @@ function(expandDoocsComponentName longName shortName)
 endfunction()
 
 
-include(FindPkgConfig)
+if(NOT PKG_CONFIG_FOUND)
+  include(CMakeFindDependencyMacro)
+  find_dependency(PkgConfig)
+endif()
 # thread libraries are required by DOOCS but seem not to be added through pkgconfig...
 find_package(Threads REQUIRED)
 
