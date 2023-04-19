@@ -30,11 +30,9 @@ else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-# add dependencies. use add_dependency only where imported targets not yet existing.
-include(cmake/add_dependency.cmake)
 FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
 FIND_PACKAGE(ChimeraTK-cppext 01.05 REQUIRED)
-add_dependency(exprtk 01.00 REQUIRED)
+FIND_PACKAGE(exprtk 01.04 REQUIRED)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
@@ -103,10 +101,10 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${projectCxxFlags})
 target_include_directories(${PROJECT_NAME} INTERFACE "$<INSTALL_INTERFACE:include>")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE ${CMAKE_DL_LIBS} PkgConfig::LibXML++ PkgConfig::glib
+    PRIVATE ${CMAKE_DL_LIBS} PkgConfig::LibXML++ PkgConfig::glib ChimeraTK::exprtk
     # we set this public because of Backend libs using shm_open (e.g. test code)
     PUBLIC ${RT_LIBRARIES}
-    PUBLIC ${Boost_LIBRARIES} 
+    PUBLIC ${Boost_LIBRARIES}
     # cppext is public because anything using DeviceAccess also needs to find cppext headers
     PUBLIC ChimeraTK::ChimeraTK-cppext)
 
