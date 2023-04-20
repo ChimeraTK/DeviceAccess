@@ -4,7 +4,7 @@
 # Configuration packages for servers can have a very simple CMakeLists.txt like this:
 #
 #   PROJECT(exampleserver-config NONE)
-#   cmake_minimum_required(VERSION 3.5)
+#   cmake_minimum_required(VERSION 3.14)
 #
 #   # Note: Always keep MAJOR_VERSION and MINOR_VERSION identical to the server version. Count only the patch separately.
 #   set(${PROJECT_NAME}_MAJOR_VERSION 01)
@@ -14,6 +14,7 @@
 #
 #   include(cmake/config_generator_project.cmake)
 #
+cmake_minimum_required(VERSION 3.14)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
@@ -22,25 +23,12 @@ list(APPEND CMAKE_MODULE_PATH ${ConfigGenerator_DIR}/shared)
 
 set(DESTDIR share/ConfigGenerator-${PROJECT_NAME}-${${PROJECT_NAME}_MAJOR_VERSION}-${${PROJECT_NAME}_MINOR_VERSION})
 
-# copy all script files from config generator to our build directory
-file(GLOB_RECURSE scripts RELATIVE ${ConfigGenerator_DIR} ${ConfigGenerator_DIR}/*)
-foreach(script ${scripts})
-  configure_file("${ConfigGenerator_DIR}/${script}" "${PROJECT_BINARY_DIR}/${script}" COPYONLY)
-endforeach()
-
-# find all server type directories in our source directory
+# find all server type directories in our source directory and copy them to the build directory
 file(GLOB hostlists RELATIVE ${PROJECT_SOURCE_DIR} */hostlist)
 foreach(hostlist ${hostlists})
   string(REPLACE "/hostlist" "" servertype "${hostlist}")
+  file(COPY "${PROJECT_SOURCE_DIR}/${servertype}" DESTINATION "${PROJECT_BINARY_DIR}")
   list(APPEND servertypes "${servertype}")
-endforeach()
-
-# copy all server type directories to the build directory
-foreach(servertype ${servertypes})
-  file(GLOB_RECURSE files FOLLOW_SYMLINKS RELATIVE ${PROJECT_SOURCE_DIR} ${servertype}/*)
-  foreach(f ${files})
-    configure_file("${f}" "${PROJECT_BINARY_DIR}/${f}" COPYONLY)
-  endforeach()
 endforeach()
 
 # install server types (scripts are installed by upstream config generator project)
@@ -50,4 +38,3 @@ foreach(servertype ${servertypes})
   file(GLOB thefiles LIST_DIRECTORIES no "${servertype}/*")
   install(FILES ${thefiles} DESTINATION "${DESTDIR}/${servertype}")
 endforeach()
-
