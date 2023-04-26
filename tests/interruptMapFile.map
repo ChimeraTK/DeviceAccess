@@ -1,20 +1,22 @@
 # name                               number_of_elements  address  size  bar  width  fracbits  signed     read_mode
 
-APP0.INTERRUPT_VOID_1                0                    0x0      0    0      0        0        0        INTERRUPT0:0
+APP0.INTERRUPT_VOID_1                0                    0x0      0    0      0        0        0        INTERRUPT0
 APP0.INTERRUPT_VOID_2                0                    0x0      0    0      0        0        0        INTERRUPT1:1
+APP0.INTERRUPT_VOID_3                0                    0x0      0    0      0        0        0        INTERRUPT2:2:2
 
-APP0.INTERRUPT_UINT_1                1                    0x100    4    0     32        0        0        INTERRUPT2:0
-APP0.INTERRUPT_INT_1                 1                    0x104    4    0     32        0        1        INTERRUPT2:1
+APP0.INTERRUPT_UINT_1                1                    0x100    4    0     32        0        0        INTERRUPT20
+APP0.NESTED_INTERRUPT_INT_1          1                    0x104    4    0     32        0        1        INTERRUPT21:1
+APP0.DEEP_NESTED_INTERRUPT_INT_2     1                    0x108    4    0     32        0        1        INTERRUPT22:3:4
 
-APP0.INTERRUPT_FIXPOINT_SIGNED       1                    0x200    4    0     32       24        1        INTERRUPT3:0
-APP0.INTERRUPT_FIXPOINT_UNSIGNED     1                    0x220    4    0     32       24        0        INTERRUPT3:1
+APP0.INTERRUPT_FIXPOINT_SIGNED       1                    0x200    4    0     32       24        1        INTERRUPT3
+APP0.INTERRUPT_FIXPOINT_UNSIGNED     1                    0x220    4    0     32       24        0        INTERRUPT3
 
-APP0.INTERRUPT_ARRAY_UINT            3                    0x300   12    0     32        0        0        INTERRUPT4:0
-APP0.INTERRUPT_ARRAY_INT             3                    0x400   12    0     32        0        1        INTERRUPT4:1
-APP0.INTERRUPT_ARRAY_FIXPOINT        3                    0x500   12    0     32       24        0        INTERRUPT4:2
+APP0.INTERRUPT_ARRAY_UINT            3                    0x300   12    0     32        0        0        INTERRUPT4
+APP0.INTERRUPT_ARRAY_INT             3                    0x400   12    0     32        0        1        INTERRUPT4
+APP0.INTERRUPT_ARRAY_FIXPOINT        3                    0x500   12    0     32       24        0        INTERRUPT4
 
 # The sequences with default fixed point interpretation 32 bit int (also the shorter ones)
-APP0.AREA_MULTIPLEXED_SEQUENCE_INTERRUPT_AREA_INT 15 0 60 0 16 -2 1 INTERRUPT5:0
+APP0.AREA_MULTIPLEXED_SEQUENCE_INTERRUPT_AREA_INT 15 0 60 0 16 -2 1 INTERRUPT5
 APP0.SEQUENCE_INTERRUPT_AREA_INT_0 1 0 4 0 16 0 0 
 APP0.SEQUENCE_INTERRUPT_AREA_INT_1 1 4 4 0 16 0 0
 APP0.SEQUENCE_INTERRUPT_AREA_INT_2 1 8 4 0 16 0 0

@@ -116,8 +116,9 @@ namespace ChimeraTK {
 
     accessTypeStr.erase(pos, strToFind.length());
 
-    auto delimiterPos = accessTypeStr.find(':');
-    while(delimiterPos != std::string::npos) {
+    size_t delimiterPos;
+    do {
+      delimiterPos = accessTypeStr.find(':');
       std::string interruptStr = accessTypeStr.substr(0, delimiterPos);
       uint32_t interruptNumber = 0;
       try {
@@ -132,9 +133,10 @@ namespace ChimeraTK {
       retVal.push_back(interruptNumber);
 
       // cut off the already processed part and process the rest
-      accessTypeStr = accessTypeStr.substr(delimiterPos + 1);
-      delimiterPos = accessTypeStr.find(':');
-    }
+      if(delimiterPos != std::string::npos) {
+        accessTypeStr = accessTypeStr.substr(delimiterPos + 1);
+      }
+    } while(delimiterPos != std::string::npos);
 
     return retVal;
   }
