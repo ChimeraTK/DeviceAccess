@@ -471,7 +471,7 @@ BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
   // Also get pointer to the backend in order to check the catalogue
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
 
-  const std::string DUMMY_INTERRUPT{"/DUMMY_INTERRUPT_3_0"};
+  const std::string DUMMY_INTERRUPT{"/DUMMY_INTERRUPT_3"};
   auto ro_register = dummyDevice.getScalarRegisterAccessor<int>(DUMMY_INTERRUPT);
 
   // The suffixed register must not appear in the catalogue when iterating
