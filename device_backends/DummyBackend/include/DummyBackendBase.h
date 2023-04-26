@@ -79,11 +79,15 @@ namespace ChimeraTK {
       // First check if the request is for one of the special DUMMY_INTEERRUPT_X_Y registers. if so, early return
       // this special accessor.
       if(registerPathName.startsWith("DUMMY_INTERRUPT_")) {
-        int controller, interrupt;
+        bool interruptFound;
+        uint32_t interrupt;
 
         auto* dummyCatalogue = dynamic_cast<DummyBackendRegisterCatalogue*>(_registerMapPointer.get());
         assert(dummyCatalogue);
-        std::tie(controller, interrupt) = dummyCatalogue->extractControllerInterrupt(registerPathName);
+        std::tie(interruptFound, interrupt) = dummyCatalogue->extractControllerInterrupt(registerPathName);
+        if(!interruptFound) {
+          throw ChimeraTK::logic_error("Unknown dummy interrupt " + registerPathName);
+        }
 
         // Delegate the other parameters down to the accessor which will throw accordingly, to satisfy the specification
         // Since the accessor will keep a shared pointer to the backend, we can safely capture "this"

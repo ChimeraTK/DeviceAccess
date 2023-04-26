@@ -41,12 +41,8 @@ namespace ChimeraTK {
       basePath--;
       return NumericAddressedRegisterCatalogue::hasRegister(basePath);
     }
-    try {
-      (void)extractControllerInterrupt(registerPathName);
+    if(extractControllerInterrupt(registerPathName).first) {
       return true;
-    }
-    catch(ChimeraTK::logic_error&) {
-      // Was no DUMMY_INTERRUPT register.
     }
     return NumericAddressedRegisterCatalogue::hasRegister(path);
   }
