@@ -3,7 +3,7 @@
 INTA_RO                   1        0        4    0      32                 0       0   RO
 INTB_WO                   1        4        4    0      32                 0       0   WO
 INTC_RW                   1        8        4    0      32                 0       0   RW
-INTD_ASYNC                1       12        4    0      32                 0       0   INTERRUPT1:1
+INTD_ASYNC                1       12        4    0      32                 0       0   INTERRUPT1
 # registers for back-door access
 MIRRORED.INTA_RO          1      400        4    0      32                 0       0   RW
 MIRRORED.INTB_WO          1      404        4    0      32                 0       0   RW
@@ -20,5 +20,5 @@ MIRRORED.AREA1          100      400      400    0      32                 0    
 # status/command register for helper process
 MIRRORREQUEST.TYPE        1      800        4    0      16                 0       0   RW
 MIRRORREQUEST.BUSY        1      804        4    0       1                 0       0   RW
-MIRRORREQUEST.UPDATED     1      808        4    0      32                 0       0   INTERRUPT1:0
+MIRRORREQUEST.UPDATED     1      808        4    0      32                 0       0   INTERRUPT0
 MIRRORREQUEST.DATA_INTERRUPT 1      812        4    0      32                 0       0   RW
