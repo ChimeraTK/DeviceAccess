@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(Test_setWriteAccessor) {
 
   BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
   auto dummy = boost::dynamic_pointer_cast<DummyBackend>(d.getBackend());
-  dummy->triggerInterrupt(5, 6); // the interrupt with data
+  dummy->triggerInterrupt(6); // the interrupt with data
   BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
 
   BOOST_CHECK(int(asyncAccessor) != 43);

@@ -124,7 +124,7 @@ namespace ChimeraTK {
         }
 
         for(uint32_t i = 0; i < numberOfInterrupts; i++) {
-          dispatchInterrupt(0, 0);
+          dispatchInterrupt(0);
         }
       }
     }

@@ -118,7 +118,7 @@ struct Integers_signed32_async {
 
   void setRemoteValue() {
     acc = generateValue<minimumUserType>()[0][0];
-    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
+    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(6);
   }
 
   void forceAsyncReadInconsistency() { acc = generateValue<minimumUserType>()[0][0]; }
@@ -127,7 +127,7 @@ struct Integers_signed32_async {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
     exceptionDummy->throwExceptionOpen = enable;
-    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
+    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(6);
   }
 };
 struct Integers_signed32_async_rw {
@@ -167,7 +167,7 @@ struct Integers_signed32_async_rw {
 
   void setRemoteValue() {
     acc = generateValue<minimumUserType>()[0][0];
-    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
+    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(6);
   }
 
   void forceAsyncReadInconsistency() { acc = generateValue<minimumUserType>()[0][0]; }
@@ -176,7 +176,7 @@ struct Integers_signed32_async_rw {
     exceptionDummy->throwExceptionRead = enable;
     exceptionDummy->throwExceptionWrite = enable;
     exceptionDummy->throwExceptionOpen = enable;
-    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(5, 6);
+    if(exceptionDummy->isOpen()) exceptionDummy->triggerInterrupt(6);
   }
 };
 
@@ -567,14 +567,14 @@ struct MuxedNodmaAsync {
         acc[c][e] = v[c][e];
       }
     }
-    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(5, 6);
+    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(6);
   }
 
   void setForceRuntimeError(bool enable, size_t) {
     exceptionDummyMuxed->throwExceptionRead = enable;
     exceptionDummyMuxed->throwExceptionWrite = enable;
     exceptionDummyMuxed->throwExceptionOpen = enable;
-    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(5, 6);
+    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(6);
   }
 };
 

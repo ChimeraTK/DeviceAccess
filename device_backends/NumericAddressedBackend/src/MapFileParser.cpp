@@ -63,8 +63,7 @@ namespace ChimeraTK {
     for(const auto& pl : parsedLines) {
       if(isScalarOr1D(pl.pathName)) {
         auto registerInfo = NumericAddressedRegisterInfo(pl.pathName, pl.nElements, pl.address, pl.nBytes, pl.bar,
-            pl.width, pl.nFractionalBits, pl.signedFlag, pl.registerAccess, pl.type, pl.interruptCtrlNumber,
-            pl.interruptNumber);
+            pl.width, pl.nFractionalBits, pl.signedFlag, pl.registerAccess, pl.type, pl.interruptID);
         pmap.addRegister(registerInfo);
       }
       else if(is2D(pl.pathName)) {
@@ -109,43 +108,35 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::pair<bool, std::pair<unsigned int, unsigned int>> MapFileParser::getInterruptData(std::string accessTypeStr) {
+  std::vector<uint32_t> MapFileParser::getInterruptData(std::string accessTypeStr) {
     std::string strToFind("INTERRUPT");
     auto pos = accessTypeStr.find(strToFind);
-    if(pos == std::string::npos) return {false, {0, 0}};
+    if(pos == std::string::npos) return {};
+    std::vector<uint32_t> retVal;
 
-    unsigned int interruptCtrlNumber = 0;
-    unsigned int interruptNumber = 0;
     accessTypeStr.erase(pos, strToFind.length());
 
     auto delimiterPos = accessTypeStr.find(':');
-    if(delimiterPos != std::string::npos) {
-      std::string interruptCtrlNumberStr = accessTypeStr.substr(0, delimiterPos);
-      std::string interrupNumberStr = accessTypeStr.substr(delimiterPos + 1);
+    while(delimiterPos != std::string::npos) {
+      std::string interruptStr = accessTypeStr.substr(0, delimiterPos);
+      uint32_t interruptNumber = 0;
       try {
-        interruptCtrlNumber = std::stoul(interruptCtrlNumberStr, nullptr, 0); // base 0 = auto, hex or dec or oct
+        interruptNumber =
+            static_cast<uint32_t>(std::stoul(interruptStr, nullptr, 0)); // base 0 = auto, hex or dec or oct
       }
       catch(std::exception& e) {
         throw ChimeraTK::logic_error(
             std::string("Map file error in accessString: wrong argument in interrupt controller number. Argument: '") +
-            interruptCtrlNumberStr + "', caught exception: " + e.what());
+            interruptStr + "', caught exception: " + e.what());
       }
+      retVal.push_back(interruptNumber);
 
-      try {
-        interruptNumber = std::stoul(interrupNumberStr, nullptr, 0); // base 0 = auto, hex or dec or oct
-      }
-      catch(std::exception& e) {
-        throw ChimeraTK::logic_error(
-            std::string("Map file error in accessString: wrong argument in interrupt number. Argument: '") +
-            interrupNumberStr + "', caught exception: " + e.what());
-      }
-    }
-    else {
-      throw ChimeraTK::logic_error(
-          std::string("Map file error in accessString: Delimiter ':' not found in INTERRPUT description "));
+      // cut off the already processed part and process the rest
+      accessTypeStr = accessTypeStr.substr(delimiterPos + 1);
+      delimiterPos = accessTypeStr.find(':');
     }
 
-    return {true, {interruptCtrlNumber, interruptNumber}};
+    return retVal;
   }
 
   /********************************************************************************************************************/
@@ -259,14 +250,12 @@ namespace ChimeraTK {
         std::transform(accessString.begin(), accessString.end(), accessString.begin(),
             [](unsigned char c) { return std::toupper(c); });
 
-        // first check if access mode is INTERRUPT and additionally check the interrupt controller number and
-        // interrupt number
+        // first check if access mode is INTERRUPT
         auto interruptData = getInterruptData(accessString);
 
-        if(interruptData.first) {
+        if(!interruptData.empty()) {
           pl.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
-          pl.interruptCtrlNumber = interruptData.second.first;
-          pl.interruptNumber = interruptData.second.second;
+          pl.interruptID = interruptData;
         }
         else if(accessString == "RO") {
           pl.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
@@ -398,15 +387,15 @@ namespace ChimeraTK {
     // compute number of blocks (= samples per channel)
     auto nBlocks = static_cast<uint32_t>(std::floor(pl.nBytes / bytesPerBlock));
     auto name2D = make2DName(pl.pathName, prefix);
-    auto registerInfo = NumericAddressedRegisterInfo(name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels,
-        pl.registerAccess, pl.interruptCtrlNumber, pl.interruptNumber);
+    auto registerInfo = NumericAddressedRegisterInfo(
+        name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels, pl.registerAccess, pl.interruptID);
     pmap.addRegister(registerInfo);
 
     // create 1D entry for reading the multiplexed raw data
     assert(pl.nBytes % 4 == 0);
-    auto registerInfoMuxedRaw = NumericAddressedRegisterInfo(name2D + ".MULTIPLEXED_RAW", pl.nBytes / 4, pl.address,
-        pl.nBytes, pl.bar, 32, 0, true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT,
-        pl.interruptCtrlNumber, pl.interruptNumber);
+    auto registerInfoMuxedRaw =
+        NumericAddressedRegisterInfo(name2D + ".MULTIPLEXED_RAW", pl.nBytes / 4, pl.address, pl.nBytes, pl.bar, 32, 0,
+            true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT, pl.interruptID);
     pmap.addRegister(registerInfoMuxedRaw);
   }
 

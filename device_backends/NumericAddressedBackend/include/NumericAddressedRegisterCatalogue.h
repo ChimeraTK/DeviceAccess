@@ -57,14 +57,14 @@ namespace ChimeraTK {
     explicit NumericAddressedRegisterInfo(RegisterPath const& pathName_ = {}, uint32_t nElements_ = 0,
         uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
         int32_t nFractionalBits_ = 0, bool signedFlag_ = true, Access dataAccess_ = Access::READ_WRITE,
-        Type dataType_ = Type::FIXED_POINT, uint32_t interruptCtrlNumber_ = 0, uint32_t interruptNumber_ = 0);
+        Type dataType_ = Type::FIXED_POINT, std::vector<uint32_t> interruptId_ = {});
 
     /**
      * Constructor to set all data members for 2D registers.
      */
     NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_, uint64_t address_, uint32_t nElements_,
         uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_, Access dataAccess_,
-        uint32_t interruptCtrlNumber_, uint32_t interruptNumber_);
+        std::vector<uint32_t> interruptId_);
 
     NumericAddressedRegisterInfo(const NumericAddressedRegisterInfo&) = default;
 
@@ -114,8 +114,7 @@ namespace ChimeraTK {
     uint64_t address; /**< Lower part of the address relative to BAR, in bytes */
 
     Access registerAccess; /**< Data access direction: Read, write, read and write or interrupt */
-    uint32_t interruptCtrlNumber;
-    uint32_t interruptNumber;
+    std::vector<uint32_t> interruptId;
 
     /** Define per-channel information (bit interpretation etc.), 1D/scalars have exactly one entry. */
     std::vector<ChannelInfo> channels;
@@ -138,17 +137,17 @@ namespace ChimeraTK {
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
 
-    [[nodiscard]] const std::map<unsigned int, std::set<unsigned int>>& getListOfInterrupts() const;
+    [[nodiscard]] const std::set<std::vector<uint32_t>>& getListOfInterrupts() const;
 
     void addRegister(const NumericAddressedRegisterInfo& registerInfo);
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
    protected:
     /**
-     *  Map of interrupts. Key is an interrupt controller number and value is a set of interrupts numbers assigned to
-     *  the given interrupt controller.
+     *  set of interrupt ID. Each interrupt ID is a vector of (nested) interrupt numbers.
+     *  (Use a vector because it's the easiest container, and set because it ensures that each entry is there only once).
      */
-    std::map<unsigned int, std::set<unsigned int>> _mapOfInterrupts;
+    std::set<std::vector<uint32_t>> _listOfInterrupts;
   };
 
   /********************************************************************************************************************/

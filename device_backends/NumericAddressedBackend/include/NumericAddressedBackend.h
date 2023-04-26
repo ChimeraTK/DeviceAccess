@@ -161,11 +161,11 @@ namespace ChimeraTK {
      *  Function to be called by implementing backend when an interrupt arrives. It usually is
      *  called from the interrupt handling thread.
      *
-     *  Throws std::out_of_range if an invalid interruptControllerNumber/interruptNumber is given as parameter.
+     *  Throws std::out_of_range if an invalid interruptNumber is given as parameter.
      *
      *   @returns The version number that was send with all data in this interrupt.
      */
-    VersionNumber dispatchInterrupt(int interruptControllerNumber, int interruptNumber);
+    VersionNumber dispatchInterrupt(uint32_t interruptNumber);
 
    private:
     /**
@@ -174,12 +174,12 @@ namespace ChimeraTK {
      * modified. This map is filled in the constructor. The rest of the code is accessing it through the const
      * _interruptDispatchers reference, which is thread safe.
      */
-    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _interruptDispatchersNonConst;
+    std::map<uint32_t, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _primaryInterruptDispatchersNonConst;
 
     /** Access to const members of std::containers is thread safe. So we use a const reference throughout the code.
      */
-    std::map<std::pair<int, int>, boost::shared_ptr<NumericAddressedInterruptDispatcher>> const& _interruptDispatchers{
-        _interruptDispatchersNonConst};
+    std::map<uint32_t, boost::shared_ptr<NumericAddressedInterruptDispatcher>> const& _primaryInterruptDispatchers{
+        _primaryInterruptDispatchersNonConst};
   };
 
 } // namespace ChimeraTK

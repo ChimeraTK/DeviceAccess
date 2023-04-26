@@ -43,7 +43,7 @@ namespace ChimeraTK {
     _eventFiles.clear();
     for(size_t i = 0; i < _maxInterrupts; i++) {
       try {
-        _eventFiles.emplace_back(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, 0, i));
+        _eventFiles.emplace_back(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, i));
       }
       catch(const runtime_error&) {
         break;

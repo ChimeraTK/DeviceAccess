@@ -40,13 +40,13 @@ namespace ChimeraTK {
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override;
 
     /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
-     *  for that particular interrupt controller and interrupt number, the data will be read out
+     *  for that particular interrupt number, the data will be read out
      *  through a synchronous accessor and pushed into the data transport queues of the asynchronous
      *  accessors, so they can be received by the application.
      *
      *   @returns The version number that was send with all data in this interrupt.
      */
-    virtual VersionNumber triggerInterrupt(int interruptControllerNumber, int interruptNumber) = 0;
+    virtual VersionNumber triggerInterrupt(uint32_t interruptNumber) = 0;
 
     /** You cannot override the read version with 32 bit address any more. Please change your
      *  implementation to the 64 bit signature.
@@ -88,8 +88,8 @@ namespace ChimeraTK {
         // Delegate the other parameters down to the accessor which will throw accordingly, to satisfy the specification
         // Since the accessor will keep a shared pointer to the backend, we can safely capture "this"
         auto d = new DummyInterruptTriggerAccessor<UserType>(
-            shared_from_this(), [this, controller, interrupt]() { return triggerInterrupt(controller, interrupt); },
-            registerPathName, numberOfWords, wordOffsetInRegister, flags);
+            shared_from_this(), [this, interrupt]() { return triggerInterrupt(interrupt); }, registerPathName,
+            numberOfWords, wordOffsetInRegister, flags);
 
         return boost::shared_ptr<NDRegisterAccessor<UserType>>(d);
       }

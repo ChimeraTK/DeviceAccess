@@ -63,7 +63,7 @@ namespace ChimeraTK {
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
-    VersionNumber triggerInterrupt(int interruptControllerNumber, int interruptNumber) override;
+    VersionNumber triggerInterrupt(uint32_t interruptNumber) override;
 
    private:
     /** name of the map file */
@@ -283,7 +283,7 @@ namespace ChimeraTK {
       void run();
       void stop() noexcept;
       /// called for each interrupt event. Implements actual dispatching
-      void handleInterrupt(int interruptControllerNumber, int interruptNumber);
+      void handleInterrupt(uint32_t interruptNumber);
 
      private:
       // plain pointer, because of cyclic dependency

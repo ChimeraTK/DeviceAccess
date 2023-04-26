@@ -142,8 +142,8 @@ namespace ChimeraTK {
     return boost::filesystem::canonical(absPathToMapFile).string();
   }
 
-  VersionNumber SharedDummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
-    this->sharedMemoryManager.intDispatcherIf->triggerInterrupt(interruptControllerNumber, interruptNumber);
+  VersionNumber SharedDummyBackend::triggerInterrupt(uint32_t interruptNumber) {
+    this->sharedMemoryManager.intDispatcherIf->triggerInterrupt(0, interruptNumber);
 
     // Since VersionNumber consistency is defined only per process, we generate a new one here
     // and also in the triggered process
@@ -250,6 +250,7 @@ namespace ChimeraTK {
         std::memcpy(interruptEntries, _semShm->interruptEntries, sizeof(interruptEntries));
       }
       for(auto& entry : interruptEntries) {
+        assert(entry._controllerId == 0);
         if(!entry.used) continue;
 
         // find match with controllerId and intNumber
@@ -262,7 +263,7 @@ namespace ChimeraTK {
             std::cout << "existing interrupt event for x,y = " << entry._controllerId << ", " << entry._intNumber
                       << std::endl;
 #endif
-            handleInterrupt(entry._controllerId, entry._intNumber);
+            handleInterrupt(entry._intNumber);
             it->second++;
           }
         }
@@ -273,7 +274,7 @@ namespace ChimeraTK {
           std::cout << "count = " << entry._counter << " interrupt events for x,y = " << entry._controllerId << ", "
                     << entry._intNumber << std::endl;
 #endif
-          handleInterrupt(entry._controllerId, entry._intNumber);
+          handleInterrupt(entry._intNumber);
           lastInterruptState[key] = entry._counter;
         }
       }
@@ -312,15 +313,14 @@ namespace ChimeraTK {
     }
   }
 
-  void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(
-      int interruptControllerNumber, int interruptNumber) {
+  void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(uint32_t interruptNumber) {
     try {
       SharedDummyBackend& backend = _dispatcherInterf->_backend;
-      backend.dispatchInterrupt(interruptControllerNumber, interruptNumber);
+      backend.dispatchInterrupt(interruptNumber);
     }
     catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("InterruptDispatcherThread::triggerInterrupt(): Error: Unknown interrupt " +
-          std::to_string(interruptControllerNumber) + ", " + std::to_string(interruptNumber));
+      throw ChimeraTK::logic_error(
+          "InterruptDispatcherThread::triggerInterrupt(): Error: Unknown interrupt " + std::to_string(interruptNumber));
     }
   }
 
