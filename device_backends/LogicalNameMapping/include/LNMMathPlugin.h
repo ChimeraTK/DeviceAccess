@@ -43,9 +43,19 @@ namespace ChimeraTK::LNMBackend {
     bool _enablePushParameters{false}; // extracted from _parameters
     bool _hasPushParameter{false};     // only releant if _isWrite
 
-    bool _mainValueWrittenAfterOpen{false};     // only needed if _hasPushParameter == true
-    bool _allParametersWrittenAfterOpen{false}; // only needed if _hasPushParameter == true
-    bool _creatingFormulaHelper{false};         // a flag to prevent recursion
+    //  only used if _hasPushParameter == true
+    // The _writeMutex has two functions:
+    // - It protects resources which are shared by main accesor and parameter accessors
+    // - It is held while an accessor is doing the preWrite/writeTransfer/postWrite sequence.
+    //   If the other thread would be able to do a transfer bwetween the preWrite and the actual transfer this
+    //   would lead to wrong results (although formally the code is thread safe)
+    // Use a recursive mutex because it is allowed to call preWrite() multiple times before executing
+    // the writeTransfer, and the mutex is accquired in preWrite() and release in only in postWrite().
+    std::recursive_mutex _writeMutex;
+    bool _mainValueWrittenAfterOpen{false};
+    bool _allParametersWrittenAfterOpen{false};
+
+    bool _creatingFormulaHelper{false}; // a flag to prevent recursion
 
    private:
     // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime
@@ -83,18 +93,9 @@ namespace ChimeraTK::LNMBackend {
     // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
     // Only call this function when holding the _writeMutex. It updates the _allParametersWrittenAfterOpen
     // variable which is protected by that mutex.
-    bool checkAllParametersWritten(
-        std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap);
+    bool checkAllParametersWritten();
 
     //  only used if _hasPushParameter == true
-    // The _writeMutex has two functions:
-    // - It protects resources which are shared by main accesor and parameter accessors
-    // - It is held while an accessor is doing the preWrite/writeTransfer/postWrite sequence.
-    //   If the other thread would be able to do a transfer bwetween the preWrite and the actual transfer this
-    //   would lead to wrong results (although formally the code is thread safe)
-    // Use a recursive mutex because it is allowed to call preWrite() multiple times before executing
-    // the writeTransfer, and the mutex is accquired in preWrite() and release in only in postWrite().
-    std::recursive_mutex _writeMutex;
     std::vector<double> _lastMainValue;
     ChimeraTK::DataValidity _lastMainValidity;
 

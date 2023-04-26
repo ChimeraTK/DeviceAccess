@@ -61,18 +61,11 @@ namespace ChimeraTK::LNMBackend {
       }
     }
 
-    // we expect that all values used in the formula need to be written after open, before we provide first result
-    // exception: push-type parameters which provide their initial value upon open anyway.
-    // TODO check - is there a mutex we need to lock?
-    // in case of re-open, it may be that FormulaHelper already exists, then need locking
-    auto h = getFormulaHelper({});
-    if(h) {
-      h->_writeMutex.lock();
-    }
-    _mainValueWrittenAfterOpen = false;
-    _allParametersWrittenAfterOpen = false;
-    if(h) {
-      h->_writeMutex.unlock();
+    // we require that all values used in the formula need to be written after open, before we provide first result
+    {
+      std::unique_lock<std::recursive_mutex> lk(_writeMutex);
+      _mainValueWrittenAfterOpen = false;
+      _allParametersWrittenAfterOpen = false;
     }
 
     if(_hasPushParameter) {
@@ -114,7 +107,7 @@ namespace ChimeraTK::LNMBackend {
     assert(_lastMainValue.size() == _target->getNumberOfSamples());
 
     try {
-      std::unique_lock<std::recursive_mutex> lk(_writeMutex);
+      std::unique_lock<std::recursive_mutex> lk(_mp->_writeMutex);
 
       auto paramDataValidity = ChimeraTK::DataValidity::ok;
 
@@ -128,7 +121,7 @@ namespace ChimeraTK::LNMBackend {
         }
       }
 
-      if(!checkAllParametersWritten(_accessorMap) || !_mp->_mainValueWrittenAfterOpen) {
+      if(!checkAllParametersWritten() || !_mp->_mainValueWrittenAfterOpen) {
         return;
       }
 
@@ -164,24 +157,21 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  bool MathPluginFormulaHelper::checkAllParametersWritten(
-      std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap) {
+  bool MathPluginFormulaHelper::checkAllParametersWritten() {
     if(_mp->_allParametersWrittenAfterOpen) {
       return true;
     }
 
-    // we can assign temporary values to _allParametersWrittenAfterOpen because it's protected by the mutex
-    _mp->_allParametersWrittenAfterOpen = true;
     auto backend = _backend.lock(); // No need to check the lock of the weak pointer, it cannot fail.
 
-    for(const auto& acc : accessorsMap) {
+    for(const auto& acc : _accessorMap) {
       // push-type accessors: version number check will notice whether valid data has been provided after open
       // poll-type accessors: version number check always succeeds since readLatest returns new version numbers
-      if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
-        _mp->_allParametersWrittenAfterOpen = false;
-        break;
+      if(acc.second->getVersionNumber() <= backend->getVersionOnOpen()) {
+        return false;
       }
     }
+    _mp->_allParametersWrittenAfterOpen = true;
     return _mp->_allParametersWrittenAfterOpen;
   }
 
@@ -285,6 +275,11 @@ namespace ChimeraTK::LNMBackend {
     if(!_p->_isWrite) {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
+    if(!this->_exceptionBackend->isFunctional()) {
+      // throw ChimeraTK::runtime_error("previous unrecovered error while trying to write: " + this->getName());
+      std::cout << "previous unrecovered error while trying to write: " + this->getName() << std::endl;
+    }
+
     // The readLatest might throw an exception. In this case preWrite() is never delegated and we must not call the
     // target's postWrite().
     _skipWriteDelegation = true;
@@ -311,23 +306,15 @@ namespace ChimeraTK::LNMBackend {
     if(_p->_hasPushParameter) {
       // Accquire the lock and hold it until the transaction is completed in postWrite.
       // This is safe because it is guaranteed by the framework that pre- and post actions are called in pairs.
-      h->_writeMutex.lock();
+      _p->_writeMutex.lock();
       h->_lastMainValue = _target->accessChannel(0);
       h->_lastMainValidity = _target->dataValidity();
       _p->_mainValueWrittenAfterOpen = true;
-    }
 
-    // Note: There is a potential race condition that the parameter thread has not processed a parameter yet but the
-    // poll registers here have already seen it and could in principle run. However, this would lead to inconsistent
-    // behaviour because sometimes writing all parameters and then the accessor itself exactly once after opening
-    // would lead to two writes, because eventually the thread will also write. So there are two reasons we must wait
-    // for the flag from the thread
-    // 1. Ensure a consistent number of write operations
-    // 2. We cannot determine the correct version number from the poll-type accessors anyway because they always get
-    //    a fresh version number. (We could use read_latest on push-type, but this would be less efficient,
-    //    and still leave point 1.)
-    if(_p->_hasPushParameter && !_p->_allParametersWrittenAfterOpen) {
-      return;
+      // TODO we probably bail out too early - should issue error if backend excep[tion
+      if(!h->checkAllParametersWritten()) {
+        return;
+      }
     }
 
     // There either are only poll-type parameters, or all push-type parameters have been received.
@@ -378,7 +365,7 @@ namespace ChimeraTK::LNMBackend {
     // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
     auto _ = cppext::finally([&] {
       if(_p->_hasPushParameter) {
-        h->_writeMutex.unlock();
+        _p->_writeMutex.unlock();
       }
     });
 
