@@ -363,6 +363,17 @@ namespace ChimeraTK {
                 std::terminate();
               }
             }
+            // also give MathPlugin instances which are using the variable as push-parameter the chance to update
+            for(auto* mp : lnmVariable.usingFormulas) {
+              if(mp->_hasPushParameter) {
+                auto h = mp->getFormulaHelper({});
+                if(h) {
+                  // accessor to formula result or parameter exists
+                  // h->updateResult(vtEntry.latestVersion);
+                  // TODO fix- parameter accessor for push-parameter does not have new value yet!
+                }
+              }
+            }
           });
         }
         catch(std::bad_cast& e) {

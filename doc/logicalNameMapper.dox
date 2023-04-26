@@ -140,7 +140,7 @@ to parse the library. For an exact documentation of the possible syntax, please 
 http://www.partow.net/programming/exprtk/index.html
 
 The math plugin enforces the register to be used in a single direction (read or write). If the target register is
-writable, the logical register will be write-only, otherwise read-only. In case a writeable regiser shall be read
+writable, the logical register will be write-only, otherwise read-only. In case a writeable register shall be read
 through the math plugin, the \ref plugins_reference_force_read_only "forceReadOnly" plugin shall be specified before the
 math plugin.
 
@@ -150,14 +150,15 @@ number of elements of the target register. All calculations will be done interna
 Parameters:
 - <code>formula</code>: The formula to apply to the data. Within the formula, the parameter <code>x</code> can be used
   to reference the current register value.
-- <code>enable_push_parameters</code>: This parameter takes no value. If the parameter is present, the target
-  register is writeable and there is at least one parameter which supports AccessMode::wait_for_new_data, a thread will
-  be launched when opening the device. This thread will wait for any of the push-type parameters to change. If a change
-  is received, all poll-type parameters are polled, the result of the formula is computed (based on the last data
-  written to the logical register) and the target register is written.
+- <code>enable_push_parameters</code>: This parameter takes no value. It enables push-like logic for all paramters
+  which support wait_for_new_data, in particular for variables defined in the logical name map.
+  When writing to these parameters, the formula result is recalculated and immediately written to the target register.
+  A side constraint is that the value <code>x</code> was written as well, since last (re-)opening of the device.
 - Any additional parameter value will be interpreted as a register name of the logical name mapper device. The register
   value will be made available to the formula by the name of the parameter. Everytime the formula is evaluated, the
   registers will be read, so the current values are provided.
+- CAVEAT: initial values for variable parameters are not used! The plugin waits until all parameters as well as the main 
+  value <code>x</code> was written after (re-)opening of the device, before evaluating the formula.
 
 Examples for formulae:
 - <code>x/7 + 13</code>

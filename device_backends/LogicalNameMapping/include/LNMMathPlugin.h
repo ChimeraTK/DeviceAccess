@@ -32,7 +32,7 @@ namespace ChimeraTK::LNMBackend {
     void exceptionHook() override;
 
     /// if not yet existing, creates the instance and returns it
-    /// if already existing, backend ptr may be empty
+    /// if already existing, backend ptr may be empty, otherwise returns nullptr
     boost::shared_ptr<MathPluginFormulaHelper> getFormulaHelper(boost::shared_ptr<LogicalNameMappingBackend> backend);
     LNMBackendRegisterInfo* info() { return &_info; }
 

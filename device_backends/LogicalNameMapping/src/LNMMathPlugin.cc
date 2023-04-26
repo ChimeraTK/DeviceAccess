@@ -63,8 +63,17 @@ namespace ChimeraTK::LNMBackend {
 
     // we expect that all values used in the formula need to be written after open, before we provide first result
     // exception: push-type parameters which provide their initial value upon open anyway.
+    // TODO check - is there a mutex we need to lock?
+    // in case of re-open, it may be that FormulaHelper already exists, then need locking
+    auto h = getFormulaHelper({});
+    if(h) {
+      h->_writeMutex.lock();
+    }
     _mainValueWrittenAfterOpen = false;
     _allParametersWrittenAfterOpen = false;
+    if(h) {
+      h->_writeMutex.unlock();
+    }
 
     if(_hasPushParameter) {
       for(const auto& parpair : _parameters) {
@@ -88,7 +97,9 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend> backend) {
     auto p = _h.lock();
     if(!p) {
-      assert(backend);
+      if(!backend) {
+        return nullptr;
+      }
       _creatingFormulaHelper = true;
       p = boost::make_shared<MathPluginFormulaHelper>(this, backend);
       _creatingFormulaHelper = false;
@@ -164,6 +175,8 @@ namespace ChimeraTK::LNMBackend {
     auto backend = _backend.lock(); // No need to check the lock of the weak pointer, it cannot fail.
 
     for(const auto& acc : accessorsMap) {
+      // push-type accessors: version number check will notice whether valid data has been provided after open
+      // poll-type accessors: version number check always succeeds since readLatest returns new version numbers
       if(acc.second->getVersionNumber() == backend->getVersionOnOpen()) {
         _mp->_allParametersWrittenAfterOpen = false;
         break;

@@ -252,13 +252,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void LNMBackendVariableAccessor<UserType>::doPostWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+  void LNMBackendVariableAccessor<UserType>::doPostWrite(
+      TransferType /*type*/, ChimeraTK::VersionNumber versionNumber) {
     // call write functions which make use of this parameter in MathPlugin-handled formulas
 
     auto& lnmVariable = _dev->_variables[_info.name];
     for(auto* mp : lnmVariable.usingFormulas) {
       if(mp->_hasPushParameter) {
         auto h = mp->getFormulaHelper({});
+        assert(h);
         h->updateResult(versionNumber);
         // error handling: updateResult does it already.
         // we don't want to issue exceptions from VariableAccessor, since a variable change is not closely related
@@ -266,6 +268,9 @@ namespace ChimeraTK {
       }
     }
     // TODO also need in openHook or doPreWrite, check that parameter is readable.
+    // runtime_error or logic_error?
+    // I guess logic_error if catalogue already says it's not readable
+    // by why in openHook or doPreWrite, isn't it good enough here?
   }
   /********************************************************************************************************************/
 

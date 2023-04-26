@@ -967,8 +967,7 @@ struct RegVariableAsPushParameterInMath_x
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
 
-    // TODO fix - this should no longer be necessary!
-    // In addion we have to write the two parameters. Otherwise writing will have no effect.
+    // In addition we have to write the two parameters. Otherwise writing must have no effect.
     auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     p1->read();
     p1->write();
@@ -996,9 +995,6 @@ struct RegVariableAsPushParameterInMath_x_not_written1
     lmapBackend->open(); // this test is explicitly for writing after open
     lmapBackend->activateAsyncRead();
 
-    // TODO fix - this should no longer be necessary!
-
-    // In addion we have to write the two parameters. Otherwise writing will have no effect.
     auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     p1->read();
     p1->write();
@@ -1024,9 +1020,6 @@ struct RegVariableAsPushParameterInMath_x_not_written2
     lmapBackend->open(); // this test is explicitly for writing after open
     lmapBackend->activateAsyncRead();
 
-    // TODO fix - this should no longer be necessary!
-    // In addion we have to write the two parameters. Otherwise writing will have no effect.
-    // Don't write p2
     auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
     p2->read();
     p2->write();
