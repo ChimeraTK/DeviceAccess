@@ -1,4 +1,4 @@
 # name                    nr of elements       address          size           bar    width   fracbits    signed   
 BOARD.WORD_FIRMWARE           0x00000001    0x00000000    0x00000004    0x00000000       32         0         0
-BOARD.WORD_FIRMWARE_ASYNC     0x00000001    0x00000000    0x00000004    0x00000000       32         0         0  INTERRUPT5:6
+BOARD.WORD_FIRMWARE_ASYNC     0x00000001    0x00000000    0x00000004    0x00000000       32         0         0  INTERRUPT6
 BOARD.WORD_STATUS             0x00000001    0x00000008    0x00000004    0x00000000       32         0         0
