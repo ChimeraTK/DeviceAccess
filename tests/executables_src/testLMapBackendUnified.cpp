@@ -794,8 +794,7 @@ struct RegVariableAsPushParameterInMath_var1
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
 
-    // TODO fix - this should no longer be necessary!
-    // In addion we have to write the accessor which has the math plugin and the second parameter.
+    // In addition we have to write the accessor which has the math plugin and the second parameter.
     // Otherwise writing of the parameters will have no effect.
     auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
     x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
@@ -928,8 +927,7 @@ struct RegVariableAsPushParameterInMath_var2
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
 
-    // TODO fix - this should no longer be necessary!
-    // In addion we have to write the accessor which has the math plugin and the first parameter.
+    // In addition we have to write the accessor which has the math plugin and the first parameter.
     // Otherwise writing of the parameters will have no effect.
     auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
     x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;

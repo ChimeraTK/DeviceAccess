@@ -379,7 +379,6 @@ namespace ChimeraTK {
                     std::cout << "logic_error in activateAsyncRead: " << e.what() << std::endl;
                     std::terminate();
                   }
-                  // TODO fix- parameter accessor for push-parameter does not have new value yet!
                 }
               }
             }

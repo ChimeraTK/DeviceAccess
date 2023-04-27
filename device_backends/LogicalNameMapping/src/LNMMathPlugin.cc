@@ -83,12 +83,13 @@ namespace ChimeraTK::LNMBackend {
       for(const auto& parpair : _parameters) {
         auto pname = parpair.second;
         if(backend->_variables.find(pname) == backend->_variables.end()) {
-          // TODO discuss - throwing an error here is ok only if we require all (even poll-type) parameters of the
-          // formula to be LNM variables; i.e. a redirectedRegister as parameter will not work then.
-          // -> first check that this does not become a problem for servers!
+          // throwing an error here would be ok if we require all parameters of the
+          // formula to be LNM variables; i.e. a redirectedRegister as parameter would not work then.
+          // However we do have servers using that currently.
           // throw logic_error("no LNM variable defined for parameter " + pname);
         }
         else {
+          // add this only if not yet in there, otherwise re-open of device would blow up size.
           backend->_variables[pname].usingFormulas.push_back(this);
         }
       }
@@ -255,8 +256,6 @@ namespace ChimeraTK::LNMBackend {
     _target->postRead(type, hasNewData);
     if(!hasNewData) return;
 
-    // TODO check whether we can reuse code from MathPluginFormulaHelper::update
-
     // update parameters
     auto paramDataValidity = ChimeraTK::DataValidity::ok;
     for(auto& p : h->params) {
@@ -289,7 +288,6 @@ namespace ChimeraTK::LNMBackend {
     auto backend = h->_backend.lock();
     if(!backend->isOpen()) {
       throw ChimeraTK::logic_error("LNM backend not opened!");
-      // TODO fix- seems logic_error is also wrong..
     }
     if(!backend->isFunctional()) {
       std::cout << "previous unrecovered error while trying to write: " + this->getName() << std::endl;
@@ -327,7 +325,6 @@ namespace ChimeraTK::LNMBackend {
       h->_lastMainValidity = _target->dataValidity();
       _p->_mainValueWrittenAfterOpen = true;
 
-      // TODO we probably bail out too early - should issue error if backend excep[tion
       if(!h->checkAllParametersWritten()) {
         return;
       }
