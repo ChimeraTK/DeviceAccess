@@ -287,8 +287,8 @@ namespace ChimeraTK::LNMBackend {
     if(!_p->_isWrite) {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
-    // we know exceptionBackend is our LNM backend
-    auto backend = boost::static_pointer_cast<LogicalNameMappingBackend>(this->_exceptionBackend);
+    // LNM backend - we know it exists
+    auto backend = h->_backend.lock();
     if(!backend->isOpen()) {
       throw ChimeraTK::logic_error("LNM backend not opened!");
       // TODO fix- seems logic_error is also wrong..

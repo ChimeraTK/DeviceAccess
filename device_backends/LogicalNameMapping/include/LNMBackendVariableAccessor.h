@@ -253,7 +253,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void LNMBackendVariableAccessor<UserType>::doPostWrite(
-      TransferType /*type*/, ChimeraTK::VersionNumber versionNumber) {
+      TransferType /*type*/, ChimeraTK::VersionNumber /* versionNumber */) {
     // call write functions which make use of this parameter in MathPlugin-handled formulas
 
     auto& lnmVariable = _dev->_variables[_info.name];
