@@ -369,7 +369,16 @@ namespace ChimeraTK {
                 auto h = mp->getFormulaHelper({});
                 if(h) {
                   // accessor to formula result or parameter exists
-                  // h->updateResult(vtEntry.latestVersion);
+                  try {
+                    h->updateResult({});
+                  }
+                  // the only exception that updateResult may throw is logic_error; we print the message & terminate
+                  // since termination would be anyway be enforced by this function being 'noexcept',
+                  // but we also want the message for debugging purposes.
+                  catch(logic_error& e) {
+                    std::cout << "logic_error in activateAsyncRead: " << e.what() << std::endl;
+                    std::terminate();
+                  }
                   // TODO fix- parameter accessor for push-parameter does not have new value yet!
                 }
               }

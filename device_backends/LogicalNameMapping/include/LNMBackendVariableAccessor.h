@@ -261,17 +261,15 @@ namespace ChimeraTK {
       if(mp->_hasPushParameter) {
         auto h = mp->getFormulaHelper({});
         assert(h);
-        h->updateResult(versionNumber);
+        // we must create new versionNumbers since there could have been writes to target, not triggered from this var.
+        h->updateResult({});
         // error handling: updateResult does it already.
         // we don't want to issue exceptions from VariableAccessor, since a variable change is not closely related
         // to where the error appears (e.g. error appears when writing to target)
       }
     }
-    // TODO also need in openHook or doPreWrite, check that parameter is readable.
-    // runtime_error or logic_error?
-    // I guess logic_error if catalogue already says it's not readable
-    // by why in openHook or doPreWrite, isn't it good enough here?
   }
+
   /********************************************************************************************************************/
 
   template<typename UserType>

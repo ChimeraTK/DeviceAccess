@@ -48,7 +48,19 @@ namespace ChimeraTK::LNMBackend {
 
   void MathPlugin::openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) {
     // make sure backend catalogue is updated with target backend information
-    backend->getRegisterCatalogue();
+    auto catalogue = backend->getRegisterCatalogue();
+
+    // produce logic_error if MathPlugin has insufficient access rights to parameters
+    if(_isWrite && !_info.isWriteable()) {
+      throw ChimeraTK::logic_error("MathPlugin target not writeable:" + _info.name);
+    }
+    for(const auto& parpair : _parameters) {
+      auto r = catalogue.getRegister(parpair.second);
+
+      if(!r.isReadable()) {
+        throw ChimeraTK::logic_error("MathPlugin parameter not readable:" + parpair.second);
+      }
+    }
 
     // If write direction, check for push-type parameters if enabled
     if(_isWrite && _enablePushParameters) {
@@ -275,9 +287,15 @@ namespace ChimeraTK::LNMBackend {
     if(!_p->_isWrite) {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
-    if(!this->_exceptionBackend->isFunctional()) {
-      // throw ChimeraTK::runtime_error("previous unrecovered error while trying to write: " + this->getName());
+    // we know exceptionBackend is our LNM backend
+    auto backend = boost::static_pointer_cast<LogicalNameMappingBackend>(this->_exceptionBackend);
+    if(!backend->isOpen()) {
+      throw ChimeraTK::logic_error("LNM backend not opened!");
+      // TODO fix- seems logic_error is also wrong..
+    }
+    if(!backend->isFunctional()) {
       std::cout << "previous unrecovered error while trying to write: " + this->getName() << std::endl;
+      throw ChimeraTK::runtime_error("previous unrecovered error while trying to write: " + this->getName());
     }
 
     // The readLatest might throw an exception. In this case preWrite() is never delegated and we must not call the
