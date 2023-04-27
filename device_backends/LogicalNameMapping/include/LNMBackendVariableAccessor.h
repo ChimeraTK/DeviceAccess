@@ -164,15 +164,15 @@ namespace ChimeraTK {
     }
 
     // make sure FormulaHelpers for MathPlugin instances involving this variable as push-parameter are created
-      auto& lnmVariable = _dev->_variables[_info.name];
-      for(auto* mp : lnmVariable.usingFormulas) {
-        if(mp->_hasPushParameter) {
-          // following check eliminates recursion, getFormulaHelper also creates Variable accessors
-          if(!mp->_creatingFormulaHelper) {
-            auto h = mp->getFormulaHelper(_dev);
-            _formulaHelpers.push_back(h);
-          }
+    auto& lnmVariable = _dev->_variables[_info.name];
+    for(auto* mp : lnmVariable.usingFormulas) {
+      if(mp->_hasPushParameter) {
+        // following check eliminates recursion, getFormulaHelper also creates Variable accessors
+        if(!mp->_creatingFormulaHelper) {
+          auto h = mp->getFormulaHelper(_dev);
+          _formulaHelpers.push_back(h);
         }
+      }
     }
 
     // allocate application buffer

@@ -26,7 +26,6 @@ namespace ChimeraTK::LNMBackend {
       _enablePushParameters = true;
       _parameters.erase("enable_push_parameters");
     }
-
   }
 
   /********************************************************************************************************************/
@@ -158,8 +157,7 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  void MathPlugin::closeHook() {
-  }
+  void MathPlugin::closeHook() {}
 
   /********************************************************************************************************************/
 
@@ -305,7 +303,7 @@ namespace ChimeraTK::LNMBackend {
     auto paramDataValidity = ChimeraTK::DataValidity::ok;
     // update parameters
     for(auto& p : h->params) {
-        p.first->readLatest();
+      p.first->readLatest();
       // check the DataValidity of parameter.
       if(p.first->dataValidity() == ChimeraTK::DataValidity::faulty) {
         // probably compiler optimize it automatically and assign it only once.
