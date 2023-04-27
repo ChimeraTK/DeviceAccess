@@ -232,6 +232,7 @@ namespace ChimeraTK {
     {
       std::lock_guard<boost::interprocess::named_mutex> lock(_dispatcherInterf->_shmMutex);
       for(auto& entry : _semShm->interruptEntries) {
+        assert(entry._controllerId == 0);
         if(!entry.used) continue;
         lastInterruptState[std::make_pair(entry._controllerId, entry._intNumber)] = entry._counter;
       }

@@ -116,14 +116,14 @@ namespace ChimeraTK {
     virtual void closeImpl() {}
 
     /**
-     *  This function is called every time an accessor which is assicated with the particular interupt controller and
+     *  This function is called every time an accessor which is assicated with the particular primary
      *  interrupt number is created. The idea is to have a lazy initialisation of the interrupt handling threads, so
      *  only those threads are running for which accessors have been created. The function implementation must check
      *  whether the according thread is already running and should do nothing when called a second time.
      *
      *  The function has an empty default implementation.
      */
-    virtual void startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber);
+    virtual void startInterruptHandlingThread(uint32_t interruptNumber);
 
    protected:
     /*

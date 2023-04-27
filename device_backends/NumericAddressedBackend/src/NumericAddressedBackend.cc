@@ -136,7 +136,7 @@ namespace ChimeraTK {
           wordOffsetInRegister, flags);
       // The new subscriber might already be activated. Hence the exception backend is already set by the interrupt
       // dispatcher.
-      startInterruptHandlingThread(0, registerInfo.interruptId.front());
+      startInterruptHandlingThread(registerInfo.interruptId.front());
       return newSubscriber;
     }
     return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
@@ -235,8 +235,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   // empty default implementation
-  void NumericAddressedBackend::startInterruptHandlingThread(
-      [[maybe_unused]] unsigned int interruptControllerNumber, [[maybe_unused]] unsigned int interruptNumber) {}
+  void NumericAddressedBackend::startInterruptHandlingThread([[maybe_unused]] unsigned int interruptNumber) {}
 
   /********************************************************************************************************************/
 

@@ -129,10 +129,7 @@ namespace ChimeraTK {
 #endif
   }
 
-  void XdmaBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) {
-    if(interruptControllerNumber != 0) {
-      throw ChimeraTK::logic_error("XDMA: backend only uses interrupt controller 0");
-    }
+  void XdmaBackend::startInterruptHandlingThread(uint32_t interruptNumber) {
     if(_eventFiles.empty()) {
       throw ChimeraTK::logic_error("XDMA: trying to use interrupts, but no event files available");
     }
