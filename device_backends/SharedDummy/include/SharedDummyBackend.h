@@ -179,14 +179,6 @@ namespace ChimeraTK {
     // than one backend instance for the same process and shared memory, you will have a problem.
     using SemId = std::uint32_t;
 
-    // info about interrupt (for API)
-    struct InterruptInfo {
-      InterruptInfo() = default;
-      InterruptInfo(int controllerId, int intNumber) : _controllerId(controllerId), _intNumber(intNumber) {}
-      int _controllerId;
-      int _intNumber;
-    };
-
     /// entry per semaphore in shared memory
     struct SemEntry {
       SemEntry() = default;
@@ -196,8 +188,10 @@ namespace ChimeraTK {
     };
 
     /// info about interrupt that can be placed in shm
+    /// The _contollerID is conceptually wrong at this place. It is not used any more.
+    /// We keep it and set it to 0 to have the shm compaitible with older versions.
     struct InterruptEntry {
-      int _controllerId{};
+      int _controllerId{0};
       int _intNumber{};
       std::uint32_t _counter = 0;
       bool used = false;
@@ -231,12 +225,12 @@ namespace ChimeraTK {
 
       /// update shm entry to tell that interrupt is triggered
       /// implementation: increase interrupt count of given interrupt
-      void addInterrupt(InterruptInfo ii);
+      void addInterrupt(uint32_t interruptNumber);
 
       /// find list of semaphores to be triggered for given interrupt info
       /// if requested, update associated info
       /// i.e. store interrupt number so it can be found by triggered process
-      std::list<Sem*> findSems(InterruptInfo ii = {}, bool update = false);
+      std::list<Sem*> findSems(uint32_t interruptNumber = {}, bool update = false);
 
       /// for debugging purposes
       void print();
@@ -265,7 +259,7 @@ namespace ChimeraTK {
       static void cleanupShm(boost::interprocess::managed_shared_memory& shm, PidSet* pidSet);
 
       /// to be called from process which wishes to trigger some interrupt
-      void triggerInterrupt(int controllerId, int intNumber);
+      void triggerInterrupt(uint32_t intNumber);
       boost::interprocess::named_mutex& _shmMutex;
       SemId _semId;
       ShmForSems* _semBuf;
