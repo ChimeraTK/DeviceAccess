@@ -2557,18 +2557,7 @@ namespace ChimeraTK {
       d.setException();
 
       // Check for runtime_error where it is now expected
-      // BOOST_CHECK_THROW(reg.write(), runtime_error);
-      bool thrown = false;
-      try {
-        reg.write();
-      }
-      catch(runtime_error& e) {
-        thrown = true;
-      }
-      if(!thrown) {
-        std::cout << "runtime err not thrown !" << std::endl;
-        BOOST_CHECK(thrown);
-      }
+      BOOST_CHECK_THROW(reg.write(), runtime_error);
 
       // recover
       this->recoverDevice(d);

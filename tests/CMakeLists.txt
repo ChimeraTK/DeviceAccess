@@ -85,7 +85,7 @@ MACRO( COPY_MAPPING_FILES )
     invalidDuplicateName.xlmap
     withParams.xlmap is_functional.xlmap logicalnamemap.dmap
     mathPlugin.xlmap mathPlugin-broken.xlmap mathPlugin-broken2.xlmap
-    mathPluginWithPushPars-testCleanup.dmap mathPluginWithPushPars.map mathPluginWithPushPars.xlmap
+    mathPluginWithPushPars.dmap mathPluginWithPushPars.map mathPluginWithPushPars.xlmap
     monostableTriggerPlugin.xlmap
     forceReadOnlyPlugin.xlmap forceReadOnlyPlugin2.xlmap typeHintModifierPlugin.xlmap
     performanceTest.map run_performance_test.sh

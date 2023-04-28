@@ -38,7 +38,7 @@ std::atomic_bool DummyForCleanupCheck::cleanupCalled;
 static DummyForCleanupCheck::BackendRegisterer gDFCCRegisterer;
 
 BOOST_AUTO_TEST_CASE(testPushPars) {
-  setDMapFilePath("mathPluginWithPushPars-testCleanup.dmap");
+  setDMapFilePath("mathPluginWithPushPars.dmap");
   {
     // we enforce that initial values from variable definition in xlmap are never used in MathPugin
     // - therefore, in test here, we must issue write for all push-parameters

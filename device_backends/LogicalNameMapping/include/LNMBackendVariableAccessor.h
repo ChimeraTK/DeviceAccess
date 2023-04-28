@@ -47,10 +47,6 @@ namespace ChimeraTK {
 
     void interrupt() override;
 
-    /// to be called only internally by LNMBackend. This deletes the shared ptr count to the LNM backend,
-    /// in order to break a shared ptr loop
-    void undoBackendReferenceCount();
-
    protected:
     /// register and module name
     RegisterPath _registerPathName;
@@ -75,7 +71,7 @@ namespace ChimeraTK {
     /// access mode flags
     AccessModeFlags _flags;
 
-    /// in case a MathPlugin formulas are using this variable, a references to the FormulaHelpers
+    /// in case a MathPlugin formulas are using this variable, references to the FormulaHelpers
     std::list<boost::shared_ptr<LNMBackend::MathPluginFormulaHelper>> _formulaHelpers;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
