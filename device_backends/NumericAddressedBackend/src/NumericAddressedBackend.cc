@@ -28,6 +28,10 @@ namespace ChimeraTK {
         // interrupt is a vector of nested interrupts
         _primaryInterruptDispatchersNonConst.try_emplace(
             interruptID.front(), boost::make_shared<NumericAddressedInterruptDispatcher>());
+        // FIXME: Put nested interrupt dispatchers
+        if(interruptID.size() > 1) {
+          throw ChimeraTK::logic_error("Nested interrupts are not supported yet!");
+        }
       }
     }
   }
