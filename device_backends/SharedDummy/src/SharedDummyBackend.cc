@@ -371,7 +371,7 @@ namespace ChimeraTK {
   void SharedDummyBackend::ShmForSems::addInterrupt(uint32_t interruptNumber) {
     bool found = false;
     for(auto& entry : interruptEntries) {
-      if(entry.used && entry._controllerId == 0 && entry._intNumber == interruptNumber) {
+      if(entry.used && entry._controllerId == 0 && static_cast<uint32_t>(entry._intNumber) == interruptNumber) {
         entry._counter++;
         found = true;
         break;

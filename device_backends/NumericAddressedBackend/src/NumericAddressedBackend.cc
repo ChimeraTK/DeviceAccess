@@ -122,7 +122,8 @@ namespace ChimeraTK {
       auto getNestedInterruptDispatcher =
           [](std::vector<uint32_t> interruptID,
               std::map<uint32_t, boost::shared_ptr<NumericAddressedInterruptDispatcher>> dispatchers,
-              auto&& getNestedInterruptDispatcher) -> boost::shared_ptr<NumericAddressedInterruptDispatcher> {
+              [[maybe_unused]] auto&& getNestedInterruptDispatcher)
+          -> boost::shared_ptr<NumericAddressedInterruptDispatcher> {
         auto dispatcher = dispatchers[interruptID.front()];
         if(interruptID.size() == 1) {
           return dispatcher;
