@@ -71,6 +71,13 @@ namespace ChimeraTK::LNMBackend {
         }
       }
     }
+    if(_isWrite && _enablePushParameters && !_hasPushParameter) {
+      throw ChimeraTK::logic_error(
+          "MathPlugin (writing) with push_parameters requested but no present parameters supports it");
+    }
+    if(!_isWrite && _enablePushParameters) {
+      throw ChimeraTK::logic_error("MathPlugin (reading) does not support push_parameters");
+    }
 
     // we require that all values used in the formula need to be written after open, before we provide first result
     {
@@ -154,6 +161,7 @@ namespace ChimeraTK::LNMBackend {
       // runtime_error from param.readLatest() or target->write()
       // we could actually even ignore it, since we don't expect exceptions on param.readLatest(), and target->write()
       // already puts backend into exception state.
+      // TODO discuss - should we direct to lnmBackend->getExceptionBackend() instead?
       _target->getExceptionBackend()->setException();
     }
   }
