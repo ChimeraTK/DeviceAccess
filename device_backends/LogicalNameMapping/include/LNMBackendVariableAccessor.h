@@ -251,18 +251,12 @@ namespace ChimeraTK {
   void LNMBackendVariableAccessor<UserType>::doPostWrite(
       TransferType /*type*/, ChimeraTK::VersionNumber /* versionNumber */) {
     // call write functions which make use of this parameter in MathPlugin-handled formulas
-
-    auto& lnmVariable = _dev->_variables[_info.name];
-    for(auto* mp : lnmVariable.usingFormulas) {
-      if(mp->_hasPushParameter) {
-        auto h = mp->getFormulaHelper({});
-        assert(h);
-        // we must create new versionNumbers since there could have been writes to target, not triggered from this var.
-        h->updateResult({});
-        // error handling: updateResult does it already.
-        // we don't want to issue exceptions from VariableAccessor, since a variable change is not closely related
-        // to where the error appears (e.g. error appears when writing to target)
-      }
+    for(const auto& h : _formulaHelpers) {
+      // we must create new versionNumbers since there could have been writes to target, not triggered from this var.
+      h->updateResult({});
+      // error handling: updateResult does it already.
+      // we don't want to issue exceptions from VariableAccessor, since a variable change is not closely related
+      // to where the error appears (e.g. error appears when writing to target)
     }
   }
 
