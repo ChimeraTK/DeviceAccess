@@ -54,15 +54,15 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     pollPar = 1;
     pollPar.write();
 
-    ChimeraTK::Device device("EOD");
-    device.open();
-    device.activateAsyncRead();
-    auto pushPar = device.getScalarRegisterAccessor<uint32_t>("DET/EXPOSURE");
+    ChimeraTK::Device logicalDevice("EOD");
+    logicalDevice.open();
+    logicalDevice.activateAsyncRead();
+    auto pushPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/EXPOSURE");
 
     pushPar = 2;
     pushPar.write();
 
-    auto accMathWrite = device.getScalarRegisterAccessor<double>("DET/GAIN");
+    auto accMathWrite = logicalDevice.getScalarRegisterAccessor<double>("DET/GAIN");
     // we don't have main value (x in formula) yet, since it wasn't yet written.
     // therefore, we expect to have no value yet for formula output (0 is default from dummy construction)
     accTarget.readLatest();
@@ -82,13 +82,13 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)pushPar + (int)accMathWrite);
 
     // check that MathPlugin waits on all initial values.
-    device.close();
+    logicalDevice.close();
     targetDevice.open(); // open again since low-level device was closed by LNM
     accTarget = 0;       // reset result in dummy
     accTarget.write();
     pollPar.write(); // restore value in case lost during reopen (actually not required with current dummy impl)
-    device.open();
-    device.activateAsyncRead();
+    logicalDevice.open();
+    logicalDevice.activateAsyncRead();
 
     accMathWrite = 5;
     accMathWrite.write();
@@ -102,8 +102,8 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
 
     // user expectation will be that write-behavior does not depend on when we call activateAsyncRead,
     // so test that update is retrieved even if it's called last
-    device.close();
-    device.open();
+    logicalDevice.close();
+    logicalDevice.open();
     accTarget = 0;
     accTarget.write();
     pollPar.write();
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     accMathWrite.write();
     pushPar = 6;
     pushPar.write();
-    device.activateAsyncRead();
+    logicalDevice.activateAsyncRead();
     accTarget.readLatest();
     BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)pushPar + (int)accMathWrite);
   }
