@@ -54,8 +54,8 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     pollPar = 1;
     pollPar.write();
 
-    ChimeraTK::Device device;
-    device.open("EOD");
+    ChimeraTK::Device device("EOD");
+    device.open();
     device.activateAsyncRead();
     auto pushPar = device.getScalarRegisterAccessor<uint32_t>("DET/EXPOSURE");
 
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     accTarget = 0;       // reset result in dummy
     accTarget.write();
     pollPar.write(); // restore value in case lost during reopen (actually not required with current dummy impl)
-    device.open("EOD");
+    device.open();
     device.activateAsyncRead();
 
     accMathWrite = 5;
