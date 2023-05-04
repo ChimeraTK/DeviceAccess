@@ -72,7 +72,7 @@ namespace ChimeraTK::LNMBackend {
     std::unique_ptr<exprtk::vector_view<double>> valueView;
     std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
 
-    boost::weak_ptr<LogicalNameMappingBackend> _backend;
+    boost::shared_ptr<LogicalNameMappingBackend> _backend;
     boost::shared_ptr<NDRegisterAccessor<double>> _target;
     // We assume plugin lives at least as long as MathPluginFormulaHelper
     MathPlugin* _mp;

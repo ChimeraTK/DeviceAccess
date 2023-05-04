@@ -183,12 +183,10 @@ namespace ChimeraTK::LNMBackend {
       return true;
     }
 
-    auto backend = _backend.lock(); // No need to check the lock of the weak pointer, it cannot fail.
-
     for(const auto& acc : _accessorMap) {
       // push-type accessors: version number check will notice whether valid data has been provided after open
       // poll-type accessors: version number check always succeeds since readLatest returns new version numbers
-      if(acc.second->getVersionNumber() <= backend->getVersionOnOpen()) {
+      if(acc.second->getVersionNumber() <= _backend->getVersionOnOpen()) {
         return false;
       }
     }
@@ -224,7 +222,7 @@ namespace ChimeraTK::LNMBackend {
     bool doWriteTransfer(ChimeraTK::VersionNumber) override;
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber) override;
 
-    boost::shared_ptr<MathPluginFormulaHelper> h;
+    boost::shared_ptr<MathPluginFormulaHelper> _h;
     MathPlugin* _p;
 
     // If not all parameters have been updated in the plugin, all parts of the write
@@ -254,7 +252,7 @@ namespace ChimeraTK::LNMBackend {
     target->setExceptionBackend(backend);
     this->_exceptionBackend = backend;
 
-    h = _p->getFormulaHelper(backend);
+    _h = _p->getFormulaHelper(backend);
   }
 
   /********************************************************************************************************************/
@@ -266,7 +264,7 @@ namespace ChimeraTK::LNMBackend {
 
     // update parameters
     auto paramDataValidity = ChimeraTK::DataValidity::ok;
-    for(auto& p : h->params) {
+    for(auto& p : _h->params) {
       p.first->readLatest();
       if(p.first->dataValidity() == ChimeraTK::DataValidity::faulty) {
         // probably compiler optimize it automatically and assign it only once.
@@ -275,7 +273,7 @@ namespace ChimeraTK::LNMBackend {
     }
 
     // evaluate the expression and store into application buffer
-    h->computeResult(_target->accessChannel(0), buffer_2D[0]);
+    _h->computeResult(_target->accessChannel(0), buffer_2D[0]);
 
     // update version number and validity from target
     this->_versionNumber = _target->getVersionNumber();
@@ -292,8 +290,8 @@ namespace ChimeraTK::LNMBackend {
     if(!_p->_isWrite) {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
-    // LNM backend - we know it exists
-    auto backend = h->_backend.lock();
+    // LNM backend
+    auto backend = _h->_backend;
     if(!backend->isOpen()) {
       throw ChimeraTK::logic_error("LNM backend not opened!");
     }
@@ -308,7 +306,7 @@ namespace ChimeraTK::LNMBackend {
 
     auto paramDataValidity = ChimeraTK::DataValidity::ok;
     // update parameters
-    for(auto& p : h->params) {
+    for(auto& p : _h->params) {
       p.first->readLatest();
       // check the DataValidity of parameter.
       if(p.first->dataValidity() == ChimeraTK::DataValidity::faulty) {
@@ -329,11 +327,11 @@ namespace ChimeraTK::LNMBackend {
       // Accquire the lock and hold it until the transaction is completed in postWrite.
       // This is safe because it is guaranteed by the framework that pre- and post actions are called in pairs.
       _p->_writeMutex.lock();
-      h->_lastMainValue = _target->accessChannel(0);
-      h->_lastMainValidity = _target->dataValidity();
+      _h->_lastMainValue = _target->accessChannel(0);
+      _h->_lastMainValidity = _target->dataValidity();
       _p->_mainValueWrittenAfterOpen = true;
 
-      if(!h->checkAllParametersWritten()) {
+      if(!_h->checkAllParametersWritten()) {
         return;
       }
     }
@@ -343,7 +341,7 @@ namespace ChimeraTK::LNMBackend {
     _skipWriteDelegation = false;
 
     // evaluate the expression and store into target accessor
-    h->computeResult(_target->accessChannel(0), _target->accessChannel(0));
+    _h->computeResult(_target->accessChannel(0), _target->accessChannel(0));
 
     // pass validity to target and delegate preWrite
     if(paramDataValidity == ChimeraTK::DataValidity::ok && this->_dataValidity == ChimeraTK::DataValidity::ok) {
@@ -407,7 +405,7 @@ namespace ChimeraTK::LNMBackend {
     this->_exceptionBackend = exceptionBackend;
     _target->setExceptionBackend(exceptionBackend);
     // params is a map with NDRegisterAccessors as key
-    for(auto& p : h->params) {
+    for(auto& p : _h->params) {
       p.first->setExceptionBackend(exceptionBackend);
     }
   }
@@ -473,7 +471,7 @@ namespace ChimeraTK::LNMBackend {
 
     boost::shared_ptr<DeviceBackend> targetDevice;
     if(info->deviceName == "this") {
-      targetDevice = _backend.lock();
+      targetDevice = _backend;
     }
     else {
       targetDevice = BackendFactory::getInstance().createBackend(info->deviceName);
@@ -487,7 +485,6 @@ namespace ChimeraTK::LNMBackend {
 
       const std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>>& parameters,
       size_t nElements) {
-    const boost::shared_ptr<LogicalNameMappingBackend>& backend = _backend.lock();
 
     // create exprtk parser
     exprtk::parser<double> parser;
@@ -512,7 +509,7 @@ namespace ChimeraTK::LNMBackend {
     for(const auto& parpair : parameters) {
       if(parpair.first == "formula") continue;
       const auto& acc = parpair.second;
-      acc->setExceptionBackend(backend);
+      acc->setExceptionBackend(_backend);
       if(acc->getNumberOfChannels() != 1) {
         throw ChimeraTK::logic_error(
             "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: '" + varName +
