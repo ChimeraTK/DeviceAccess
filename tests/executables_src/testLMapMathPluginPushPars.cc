@@ -65,23 +65,23 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     auto accMathWrite = logicalDevice.getScalarRegisterAccessor<double>("DET/GAIN");
     // we don't have main value (x in formula) yet, since it wasn't yet written.
     // therefore, we expect to have no value yet for formula output (0 is default from dummy construction)
-    accTarget.readLatest();
-    BOOST_CHECK_EQUAL(int(accTarget), 0);
+    accTarget.read();
+    BOOST_TEST(int(accTarget) == 0);
 
     // write to main value and check result
     accMathWrite = 3;
     accMathWrite.write();
-    accTarget.readLatest();
-    BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)pushPar + (int)accMathWrite);
+    accTarget.read();
+    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
 
     // write to push-parameter and check result
     // note, it's a new feature that result is completely written when write() returns.
     pushPar = 4;
     pushPar.write();
-    accTarget.readLatest();
-    BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)pushPar + (int)accMathWrite);
+    accTarget.read();
+    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
 
-    // check that MathPlugin waits on all initial values.
+    // re-open and test again, with different write order (x,p) instead of (p,x)
     logicalDevice.close();
     targetDevice.open(); // open again since low-level device was closed by LNM
     accTarget = 0;       // reset result in dummy
@@ -93,12 +93,12 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     accMathWrite = 5;
     accMathWrite.write();
     // check that MathPlugin did not yet write to the device - it must wait on push-parameter value
-    accTarget.readLatest();
+    accTarget.read();
     BOOST_CHECK_EQUAL(int(accTarget), 0);
 
     pushPar.write();
-    accTarget.readLatest();
-    BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)pushPar + (int)accMathWrite);
+    accTarget.read();
+    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
 
     // user expectation will be that write-behavior does not depend on when we call activateAsyncRead,
     // so test that update is retrieved even if it's called last
@@ -111,9 +111,10 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     accMathWrite.write();
     pushPar = 6;
     pushPar.write();
+    BOOST_TEST(int(accTarget) == 0);
     logicalDevice.activateAsyncRead();
-    accTarget.readLatest();
-    BOOST_CHECK_EQUAL(int(accTarget), 100 * (int)pollPar + 10 * (int)pushPar + (int)accMathWrite);
+    accTarget.read();
+    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
   }
   // regression test for bug https://redmine.msktools.desy.de/issues/11506
   // (math plugin + push-parameter + shm has resource cleanup problem)
