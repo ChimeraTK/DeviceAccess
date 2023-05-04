@@ -203,8 +203,7 @@ namespace ChimeraTK::LNMBackend {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::buffer_2D;
 
     MathPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
-        const std::map<std::string, std::string>& parameters, MathPlugin* p);
+        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target, MathPlugin* p);
 
     void doPreRead(TransferType type) override {
       if(_p->_isWrite) {
@@ -241,8 +240,7 @@ namespace ChimeraTK::LNMBackend {
 
   template<typename UserType>
   MathPluginDecorator<UserType>::MathPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-      const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
-      const std::map<std::string, std::string>& /* parameters */, MathPlugin* p)
+      const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target, MathPlugin* p)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType, double>(target), _p(p) {
     // 2D arrays are not yet supported
     if(_target->getNumberOfChannels() != 1) {
@@ -416,35 +414,17 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  /** Helper class to implement MultiplierPlugin::decorateAccessor (can later be realised with if constexpr) */
-  template<typename UserType, typename TargetType>
-  struct MathPlugin_Helper {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>&,
-        const std::map<std::string, std::string>&, MathPlugin*) {
-      assert(false); // only specialisation is valid
-      return {};
-    }
-  };
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  struct MathPlugin_Helper<UserType, double> {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<double>>& target,
-        const std::map<std::string, std::string>& parameters, MathPlugin* p) {
-      return boost::make_shared<MathPluginDecorator<UserType>>(backend, target, parameters, p);
-    }
-  };
-
-  /********************************************************************************************************************/
-
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MathPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams&) {
-    return MathPlugin_Helper<UserType, TargetType>::decorateAccessor(backend, target, _parameters, this);
+    if constexpr(std::is_same_v<TargetType, double>) {
+      return boost::make_shared<MathPluginDecorator<UserType>>(backend, target, this);
+    }
+    else {
+      // this code branch is compiled because of mpl for loop over types, but must never run
+      assert(false);
+    }
   }
 
   /********************************************************************************************************************/
