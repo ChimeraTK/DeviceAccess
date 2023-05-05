@@ -3,7 +3,7 @@
 <module name="DET">
     <redirectedRegister name="X">
         <targetDevice>HOLD</targetDevice>
-        <targetRegister>MATHTARGET</targetRegister>
+        <targetRegister>MATHTEST/TARGET</targetRegister>
           <plugin name="math">
               <parameter name="enable_push_parameters" />
               <parameter name="formula">
@@ -19,7 +19,7 @@
     </variable>
     <redirectedRegister name="POLLPAR">
         <targetDevice>HOLD</targetDevice>
-        <targetRegister>POLLPAR</targetRegister>
+        <targetRegister>MATHTEST/POLLPAR</targetRegister>
           <plugin name="forceReadOnly" />
     </redirectedRegister>
 </module>

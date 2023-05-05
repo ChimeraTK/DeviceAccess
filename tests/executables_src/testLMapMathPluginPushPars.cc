@@ -50,19 +50,19 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     ChimeraTK::Device targetDevice;
     auto targetWriteCount = [&targetDevice]() {
       auto exceptionDummyForTargetDev = boost::static_pointer_cast<ExceptionDummy>(targetDevice.getBackend());
-      return exceptionDummyForTargetDev->getWriteCount("MATHTARGET");
+      return exceptionDummyForTargetDev->getWriteCount("MATHTEST/TARGET");
     };
     size_t writeCount = 0; // this counter tracks expected writes to target register
 
     targetDevice.open("HOLD");
-    auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTARGET");
+    auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTEST/TARGET");
+    auto pollPar = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTEST/POLLPAR");
+    pollPar = 1;
+    pollPar.write();
 
     ChimeraTK::Device logicalDevice("EOD");
     logicalDevice.open();
     logicalDevice.activateAsyncRead();
-    auto pollPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/POLLPAR");
-    pollPar = 1;
-    pollPar.write();
     auto pushPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/PUSHPAR");
 
     pushPar = 2;
