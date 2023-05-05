@@ -13,7 +13,23 @@
               <parameter name="pollPar">/DET/POLLPAR</parameter>
           </plugin>
     </redirectedRegister>
+    <redirectedRegister name="X2">
+        <targetDevice>HOLD</targetDevice>
+        <targetRegister>MATHTEST/TARGET2</targetRegister>
+          <plugin name="math">
+              <parameter name="enable_push_parameters" />
+              <parameter name="formula">
+                  200 * clamp(0, pushPar2, 9) + 20 * clamp(0, pushPar, 9) + 2*clamp(0, x, 9)
+              </parameter>
+              <parameter name="pushPar">/DET/PUSHPAR</parameter>
+              <parameter name="pushPar2">/DET/PUSHPAR2</parameter>
+          </plugin>
+    </redirectedRegister>
     <variable name="PUSHPAR">
+        <type>uint32</type>
+        <value>0</value>
+    </variable>
+    <variable name="PUSHPAR2">
         <type>uint32</type>
         <value>0</value>
     </variable>

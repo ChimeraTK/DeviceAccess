@@ -37,7 +37,7 @@ namespace ChimeraTK {
     std::mutex valueTable_mutex;
 
     /** formulas which need updates after variable was written */
-    std::list<LNMBackend::MathPlugin*> usingFormulas;
+    std::set<LNMBackend::MathPlugin*> usingFormulas;
   };
 
 } /* namespace ChimeraTK */

@@ -98,7 +98,7 @@ namespace ChimeraTK::LNMBackend {
         }
         else {
           // add this only if not yet in there, otherwise re-open of device would blow up size.
-          backend->_variables[pname].usingFormulas.push_back(this);
+          backend->_variables[pname].usingFormulas.insert(this);
         }
       }
     }

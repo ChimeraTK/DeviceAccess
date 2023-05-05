@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     logicalDevice.open();
     accTarget = 0;
     accTarget.write();
-    writeCount++;                                 // direct write from test also must be counted
+    writeCount++;                                 // direct write from test also counts
     BOOST_TEST(targetWriteCount() == writeCount); // sanity check (that we are counting correctly)
     pollPar.write();
     accMathWrite = 7;
@@ -132,11 +132,41 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     BOOST_TEST(int(accTarget) == 0);
     BOOST_TEST(targetWriteCount() == writeCount);
     logicalDevice.activateAsyncRead();
-    // here activateAsyncRead should have triggered single write
+    // activateAsyncRead should have triggered single write
     writeCount++;
     BOOST_TEST(targetWriteCount() == writeCount);
     accTarget.read();
     BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
+
+    // we also need to test that write count is correct if there are two push-parameters
+    auto pushPar2 = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/PUSHPAR2");
+    auto accMathWrite2 = logicalDevice.getScalarRegisterAccessor<double>("DET/X2");
+    auto accTarget2 = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTEST/TARGET2");
+    auto targetWriteCount2 = [&targetDevice]() {
+      auto exceptionDummyForTargetDev = boost::static_pointer_cast<ExceptionDummy>(targetDevice.getBackend());
+      return exceptionDummyForTargetDev->getWriteCount("MATHTEST/TARGET2");
+    };
+    size_t writeCount2 = 0; // this counter tracks expected writes to target register TARGET2
+    pushPar = 1;
+    pushPar.write();
+    pushPar2 = 2;
+    pushPar2.write();
+    accMathWrite2 = 3;
+    accMathWrite2.write();
+    accTarget2.read();
+    BOOST_TEST(int(accTarget2) == 200 * pushPar2 + 20 * pushPar + 2 * accMathWrite2);
+    writeCount2++;
+    BOOST_TEST(targetWriteCount2() == writeCount2);
+    logicalDevice.close();
+    logicalDevice.open();
+    pushPar.write();
+    pushPar2.write();
+    accMathWrite2.write();
+    BOOST_TEST(targetWriteCount2() == writeCount2);
+    logicalDevice.activateAsyncRead();
+    writeCount2++;
+    BOOST_TEST(int(accTarget2) == 200 * pushPar2 + 20 * pushPar + 2 * accMathWrite2);
+    BOOST_TEST(targetWriteCount2() == writeCount2);
   }
   // regression test for bug https://redmine.msktools.desy.de/issues/11506
   // (math plugin + push-parameter + shm has resource cleanup problem)
