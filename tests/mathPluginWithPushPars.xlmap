@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <logicalNameMap>
 <module name="DET">
-    <redirectedRegister name="GAIN">
+    <redirectedRegister name="X">
         <targetDevice>HOLD</targetDevice>
-        <targetRegister>HOLD0/WORD_G</targetRegister>
+        <targetRegister>MATHTARGET</targetRegister>
           <plugin name="math">
               <parameter name="enable_push_parameters" />
               <parameter name="formula">
-                  100 * clamp(0, pollPar, 9) + 10 * clamp(0, exposure, 9) + clamp(0, x, 9)
+                  100 * clamp(0, pollPar, 9) + 10 * clamp(0, pushPar, 9) + clamp(0, x, 9)
               </parameter>
-              <parameter name="exposure">/DET/EXPOSURE</parameter>
+              <parameter name="pushPar">/DET/PUSHPAR</parameter>
               <parameter name="pollPar">/DET/POLLPAR</parameter>
           </plugin>
     </redirectedRegister>
-    <variable name="EXPOSURE">
+    <variable name="PUSHPAR">
         <type>uint32</type>
         <value>0</value>
     </variable>
     <redirectedRegister name="POLLPAR">
         <targetDevice>HOLD</targetDevice>
-        <targetRegister>HOLD0/POLLPAR</targetRegister>
+        <targetRegister>POLLPAR</targetRegister>
           <plugin name="forceReadOnly" />
     </redirectedRegister>
 </module>

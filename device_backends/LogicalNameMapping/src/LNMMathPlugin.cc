@@ -486,7 +486,6 @@ namespace ChimeraTK::LNMBackend {
 
       const std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>>& parameters,
       size_t nElements) {
-
     // create exprtk parser
     exprtk::parser<double> parser;
 

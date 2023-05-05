@@ -50,25 +50,25 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     ChimeraTK::Device targetDevice;
     auto targetWriteCount = [&targetDevice]() {
       auto exceptionDummyForTargetDev = boost::static_pointer_cast<ExceptionDummy>(targetDevice.getBackend());
-      return exceptionDummyForTargetDev->getWriteCount("HOLD0/WORD_G");
+      return exceptionDummyForTargetDev->getWriteCount("MATHTARGET");
     };
     size_t writeCount = 0; // this counter tracks expected writes to target register
 
     targetDevice.open("HOLD");
-    auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("HOLD0/WORD_G");
-    auto pollPar = targetDevice.getScalarRegisterAccessor<uint32_t>("HOLD0/POLLPAR");
-    pollPar = 1;
-    pollPar.write();
+    auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTARGET");
 
     ChimeraTK::Device logicalDevice("EOD");
     logicalDevice.open();
     logicalDevice.activateAsyncRead();
-    auto pushPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/EXPOSURE");
+    auto pollPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/POLLPAR");
+    pollPar = 1;
+    pollPar.write();
+    auto pushPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/PUSHPAR");
 
     pushPar = 2;
     pushPar.write();
 
-    auto accMathWrite = logicalDevice.getScalarRegisterAccessor<double>("DET/GAIN");
+    auto accMathWrite = logicalDevice.getScalarRegisterAccessor<double>("DET/X");
     // we don't have main value (x in formula) yet, since it wasn't yet written.
     // therefore, we expect to have no value yet for formula output (0 is default from dummy construction)
     accTarget.read();
