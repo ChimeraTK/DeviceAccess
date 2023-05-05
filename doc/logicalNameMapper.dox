@@ -157,7 +157,7 @@ Parameters:
 - Any additional parameter value will be interpreted as a register name of the logical name mapper device. The register
   value will be made available to the formula by the name of the parameter. Everytime the formula is evaluated, the
   registers will be read, so the current values are provided.
-- CAVEAT: initial values for variable parameters are not used! The plugin waits until all parameters as well as the main 
+- initial values for variable parameters are not used! The plugin waits until all parameters as well as the main 
   value <code>x</code> was written after (re-)opening of the device, before evaluating the formula.
 
 Examples for formulae:
