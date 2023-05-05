@@ -76,8 +76,7 @@ endif()
 
 foreach(subdir ${subdirs})
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/src sources)
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include
-      ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/internal)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include)
   file(GLOB_RECURSE headers "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/*")
   set(SOURCE ${SOURCE} ${sources} ${headers})
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/

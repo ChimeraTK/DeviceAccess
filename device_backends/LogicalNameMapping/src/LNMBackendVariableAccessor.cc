@@ -56,7 +56,7 @@ namespace ChimeraTK {
       std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
 
       callForType(_info.valueType, [&, this](auto arg) {
-        typedef decltype(arg) T;
+        using T = decltype(arg);
         auto& vtEntry = boost::fusion::at_key<T>(lnmVariable.valueTable.table);
         // create subscription queue
         cppext::future_queue<typename LNMVariable::ValueTable<T>::QueuedValue> queue(3);
@@ -106,7 +106,7 @@ namespace ChimeraTK {
       auto& lnmVariable = _dev->_variables[_info.name];
       std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
       callForType(_info.valueType, [&, this](auto arg) {
-        typedef decltype(arg) T;
+        using T = decltype(arg);
         auto& vtEntry = boost::fusion::at_key<T>(lnmVariable.valueTable.table);
         vtEntry.subscriptions.erase(this->getId());
       });
