@@ -3,6 +3,7 @@
 
 #include "LogicalNameMappingBackend.h"
 
+#include "internal/LNMMathPluginFormulaHelper.h"
 #include "LNMBackendBitAccessor.h"
 #include "LNMBackendChannelAccessor.h"
 #include "LNMBackendVariableAccessor.h"

@@ -4,6 +4,7 @@
 #include "LNMMathPlugin.h"
 
 #include "BackendFactory.h"
+#include "internal/LNMMathPluginFormulaHelper.h"
 #include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
