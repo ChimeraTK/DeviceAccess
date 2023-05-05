@@ -108,7 +108,7 @@ namespace ChimeraTK::LNMBackend {
   boost::shared_ptr<MathPluginFormulaHelper> MathPlugin::getFormulaHelper(
       boost::shared_ptr<LogicalNameMappingBackend> backend) {
     // lock against concurrent creation
-    std::unique_lock<std::recursive_mutex> lk(_writeMutex);
+    std::unique_lock<std::recursive_mutex> lk{_writeMutex};
     auto p = _h.lock();
     if(!p) {
       if(!backend) {
