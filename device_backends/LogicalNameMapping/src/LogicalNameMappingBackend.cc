@@ -371,7 +371,7 @@ namespace ChimeraTK {
                 if(h) {
                   // accessor to formula result or parameter exists
                   try {
-                    h->updateResult({});
+                    h->updateResult(vtEntry.latestVersion);
                   }
                   // the only exception that updateResult may throw is logic_error; we print the message & terminate
                   // since termination would be anyway be enforced by this function being 'noexcept',

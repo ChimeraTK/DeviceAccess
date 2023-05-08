@@ -156,13 +156,14 @@ namespace ChimeraTK::LNMBackend {
         _target->setDataValidity(ChimeraTK::DataValidity::faulty);
       }
 
-      _target->writeDestructively(versionNumber);
+      // if versionNumber at target register is already greater, take it instead of supplied versionNumber
+      auto writeVs = std::max<ChimeraTK::VersionNumber>(versionNumber, _target->getVersionNumber());
+      _target->writeDestructively(writeVs);
     }
     catch(runtime_error&) {
       // runtime_error from param.readLatest() or target->write()
       // we could actually even ignore it, since we don't expect exceptions on param.readLatest(), and target->write()
       // already puts backend into exception state.
-      // TODO discuss - should we direct to lnmBackend->getExceptionBackend() instead?
       _target->getExceptionBackend()->setException();
     }
   }
@@ -351,7 +352,9 @@ namespace ChimeraTK::LNMBackend {
     else {
       _target->setDataValidity(ChimeraTK::DataValidity::faulty);
     }
-    _target->preWrite(type, versionNumber);
+    // if versionNumber at target register is already greater, take it instead of supplied versionNumber
+    auto writeVs = std::max<ChimeraTK::VersionNumber>(versionNumber, _target->getVersionNumber());
+    _target->preWrite(type, writeVs);
   }
 
   /********************************************************************************************************************/
