@@ -150,15 +150,15 @@ number of elements of the target register. All calculations will be done interna
 Parameters:
 - <code>formula</code>: The formula to apply to the data. Within the formula, the parameter <code>x</code> can be used
   to reference the current register value.
-- <code>enable_push_parameters</code>: This parameter takes no value. It enables push-like logic for all paramters
+- <code>enable_push_parameters</code>: This parameter takes no value. It enables push-like logic for all parameters
   which support wait_for_new_data, in particular for variables defined in the logical name map.
   When writing to these parameters, the formula result is recalculated and immediately written to the target register.
   A side constraint is that the value <code>x</code> was written as well, since last (re-)opening of the device.
 - Any additional parameter value will be interpreted as a register name of the logical name mapper device. The register
   value will be made available to the formula by the name of the parameter. Everytime the formula is evaluated, the
   registers will be read, so the current values are provided.
-- initial values for variable parameters are not used! The plugin waits until all parameters as well as the main 
-  value <code>x</code> was written after (re-)opening of the device, before evaluating the formula.
+  For math plugin writing to target, we allow only lnm variables as parameters. Initial values for variable parameters are not used!
+  The plugin waits until all parameters as well as the main value <code>x</code> was written after (re-)opening of the device, before evaluating the formula.
 
 Examples for formulae:
 - <code>x/7 + 13</code>

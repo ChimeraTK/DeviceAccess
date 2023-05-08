@@ -62,22 +62,31 @@ namespace ChimeraTK::LNMBackend {
       }
     }
 
-    // If write direction, check for push-type parameters if enabled
-    if(_isWrite && _enablePushParameters) {
+    if(_isWrite) {
+      // Write direction: check that we have only variables as parameters
+      // Current push implementation (via LNMBackendVariableAccessor<UserType>::doPostWrite) is only for variables
+      // Therefore, we agreed to disallow non-variables, even push-feature not requested
       for(const auto& parpair : _parameters) {
-        auto paramFlags = backend->getRegisterCatalogue().getRegister(parpair.second).getSupportedAccessModes();
-        if(paramFlags.has(AccessMode::wait_for_new_data)) {
-          _hasPushParameter = true;
-          break;
+        std::string pname = RegisterPath(parpair.second); // conversion to RegisterPath and back adds leading /
+        if(backend->_variables.find(pname) == backend->_variables.end()) {
+          throw logic_error("no LNM variable defined for parameter " + pname);
+        }
+        else {
+          if(_enablePushParameters) {
+            _hasPushParameter = true;
+            // add this only if not yet in there, otherwise re-open of device would blow up size.
+            backend->_variables[pname].usingFormulas.insert(this);
+          }
         }
       }
+      if(_enablePushParameters && !_hasPushParameter) {
+        throw ChimeraTK::logic_error("MathPlugin (writing) with push_parameters requested but there is no parameter!");
+      }
     }
-    if(_isWrite && _enablePushParameters && !_hasPushParameter) {
-      throw ChimeraTK::logic_error(
-          "MathPlugin (writing) with push_parameters requested but no present parameters supports it");
-    }
-    if(!_isWrite && _enablePushParameters) {
-      throw ChimeraTK::logic_error("MathPlugin (reading) does not support push_parameters");
+    else { // reading MathPlugin
+      if(_enablePushParameters) {
+        throw ChimeraTK::logic_error("MathPlugin (reading) does not support push_parameters");
+      }
     }
 
     // we require that all values used in the formula need to be written after open, before we provide first result
@@ -85,22 +94,6 @@ namespace ChimeraTK::LNMBackend {
       std::unique_lock<std::recursive_mutex> lk(_writeMutex);
       _mainValueWrittenAfterOpen = false;
       _allParametersWrittenAfterOpen = false;
-    }
-
-    if(_hasPushParameter) {
-      for(const auto& parpair : _parameters) {
-        auto pname = parpair.second;
-        if(backend->_variables.find(pname) == backend->_variables.end()) {
-          // throwing an error here would be ok if we require all parameters of the
-          // formula to be LNM variables; i.e. a redirectedRegister as parameter would not work then.
-          // However we do have servers using that currently.
-          // throw logic_error("no LNM variable defined for parameter " + pname);
-        }
-        else {
-          // add this only if not yet in there, otherwise re-open of device would blow up size.
-          backend->_variables[pname].usingFormulas.insert(this);
-        }
-      }
     }
   }
 
