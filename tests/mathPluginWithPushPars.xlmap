@@ -7,10 +7,9 @@
           <plugin name="math">
               <parameter name="enable_push_parameters" />
               <parameter name="formula">
-                  100 * clamp(0, pollPar, 9) + 10 * clamp(0, pushPar, 9) + clamp(0, x, 9)
+                   10 * clamp(0, pushPar, 9) + clamp(0, x, 9)
               </parameter>
               <parameter name="pushPar">/DET/PUSHPAR</parameter>
-              <parameter name="pollPar">/DET/POLLPAR</parameter>
           </plugin>
     </redirectedRegister>
     <redirectedRegister name="X2">

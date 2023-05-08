@@ -56,9 +56,6 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
 
     targetDevice.open("HOLD");
     auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTEST/TARGET");
-    auto pollPar = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTEST/POLLPAR");
-    pollPar = 1;
-    pollPar.write();
 
     ChimeraTK::Device logicalDevice("EOD");
     logicalDevice.open();
@@ -79,7 +76,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     accMathWrite = 3;
     accMathWrite.write();
     accTarget.read();
-    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
+    BOOST_TEST(int(accTarget) == 10 * pushPar + accMathWrite);
     // check that result was written exactly once
     writeCount++;
     BOOST_TEST(targetWriteCount() == writeCount);
@@ -89,7 +86,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     pushPar = 4;
     pushPar.write();
     accTarget.read();
-    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
+    BOOST_TEST(int(accTarget) == 10 * pushPar + accMathWrite);
     writeCount++;
     BOOST_TEST(targetWriteCount() == writeCount);
 
@@ -98,8 +95,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     targetDevice.open(); // open again since low-level device was closed by LNM
     accTarget = 0;       // reset result in dummy
     accTarget.write();
-    writeCount++;    // direct write from test also must be counted
-    pollPar.write(); // restore value in case lost during reopen (actually not required with current dummy impl)
+    writeCount++; // direct write from test also must be counted
     logicalDevice.open();
     logicalDevice.activateAsyncRead();
 
@@ -112,7 +108,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
 
     pushPar.write();
     accTarget.read();
-    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
+    BOOST_TEST(int(accTarget) == 10 * pushPar + accMathWrite);
     writeCount++;
     BOOST_TEST(targetWriteCount() == writeCount);
 
@@ -124,7 +120,6 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     accTarget.write();
     writeCount++;                                 // direct write from test also counts
     BOOST_TEST(targetWriteCount() == writeCount); // sanity check (that we are counting correctly)
-    pollPar.write();
     accMathWrite = 7;
     accMathWrite.write();
     pushPar = 6;
@@ -136,7 +131,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     writeCount++;
     BOOST_TEST(targetWriteCount() == writeCount);
     accTarget.read();
-    BOOST_TEST(int(accTarget) == 100 * pollPar + 10 * pushPar + accMathWrite);
+    BOOST_TEST(int(accTarget) == 10 * pushPar + accMathWrite);
 
     // we also need to test that write count is correct if there are two push-parameters
     auto pushPar2 = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/PUSHPAR2");
