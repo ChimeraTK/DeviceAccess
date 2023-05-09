@@ -67,14 +67,6 @@ namespace ChimeraTK {
      */
     void deactivate() { _isActive = false; }
 
-    /** Set an accessor if the register is writeable. As the asynchronous mechanism is generic and does not
-     *  access the hardware, an implementation which can write is added here.
-     */
-    void setWriteAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> const& writeAccessor) {
-      assert(writeAccessor->isWriteable());
-      _writeAccessor = writeAccessor;
-    }
-
     ////////////////////////////////////////////////////
     // implementation of inherited, virtual functions //
     ////////////////////////////////////////////////////
@@ -85,40 +77,22 @@ namespace ChimeraTK {
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
-      return _writeAccessor->writeTransfer(versionNumber);
+      assert(false);
+      return false;
     }
 
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
-      return _writeAccessor->writeTransferDestructively(versionNumber);
+      assert(false);
+      return false;
     }
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {
-      if(!_writeAccessor) {
-        throw ChimeraTK::logic_error("Writing is not supported for " + this->getName());
-      }
-      // The following code is taken from the NDRegisterAccessorDecorator:
-      for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i) {
-        buffer_2D[i].swap(_writeAccessor->accessChannel(i));
-      }
-      _writeAccessor->setDataValidity(this->_dataValidity);
-      _writeAccessor->preWrite(type, versionNumber);
+      throw ChimeraTK::logic_error("Writing is not supported for " + this->getName());
     }
 
     void doPreRead([[maybe_unused]] TransferType type) override {
       if(!_backend->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
       // Pre-read conceptually does nothing in synchronous reads
-    }
-
-    void doPostWrite(TransferType type, VersionNumber versionNumber) override {
-      // The following code is taken from the NDRegisterAccessorDecorator:
-      // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
-      auto _ = cppext::finally([&] {
-        for(size_t i = 0; i < _writeAccessor->getNumberOfChannels(); ++i) {
-          buffer_2D[i].swap(_writeAccessor->accessChannel(i));
-        }
-      });
-      _writeAccessor->setActiveException(this->_activeException);
-      _writeAccessor->postWrite(type, versionNumber);
     }
 
     // Don't ask my why in template code the [[maybe_unused]] must be here, but gives a warning when put to the
@@ -129,7 +103,7 @@ namespace ChimeraTK {
       return !isWriteable(); // as the accessor is always readable, isReadOnly() is equivalent to !isWriteable()
     }
     [[nodiscard]] bool isReadable() const override { return true; }
-    [[nodiscard]] bool isWriteable() const override { return static_cast<bool>(_writeAccessor); }
+    [[nodiscard]] bool isWriteable() const override { return false; }
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
       this->_exceptionBackend = exceptionBackend;
@@ -158,8 +132,6 @@ namespace ChimeraTK {
     // bool _hasException{false};
 
     cppext::future_queue<Buffer, cppext::SWAP_DATA> _dataTransportQueue{_queueSize};
-
-    boost::shared_ptr<NDRegisterAccessor<UserType>> _writeAccessor;
   };
 
   /**********************************************************************************************************/
