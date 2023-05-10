@@ -34,6 +34,9 @@ namespace ChimeraTK::LNMBackend {
     if(name == "doubleBuffer") {
       return boost::make_shared<DoubleBufferPlugin>(info, pluginIndex, parameters);
     }
+    if(name == "bitRange") {
+      return boost::make_shared<BitRangeAccessPlugin>(info, parameters);
+    }
     throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
   }
 

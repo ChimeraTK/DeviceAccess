@@ -73,6 +73,9 @@ namespace ChimeraTK {
     struct SharedAccessor {
       boost::weak_ptr<NDRegisterAccessor<UserType>> accessor;
       std::recursive_mutex mutex;
+
+      // Must only be modified while holding mutex
+      int useCount{0};
     };
 
     /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of
