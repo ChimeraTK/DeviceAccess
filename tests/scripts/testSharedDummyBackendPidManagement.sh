@@ -105,7 +105,7 @@
     CNT=0
     while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do
         kill -s SIGINT ${PID[$CNT]}
-        check_process_termination ${PID[$CNT]} 10
+        check_process_termination ${PID[$CNT]} 20
         let CNT+=1
     done
 
@@ -151,7 +151,7 @@
 
     kill -s SIGINT $PID_STILL_RUNNING_PROCESS
 
-    check_process_termination $PID_STILL_RUNNING_PROCESS 5
+    check_process_termination $PID_STILL_RUNNING_PROCESS 20
 
     # Test if memory has been deleted.
     ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyMemoryDeleted

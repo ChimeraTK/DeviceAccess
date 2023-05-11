@@ -1,0 +1,4 @@
+@MAPFILE_REVISION 0
+MATHTEST.POLLPAR                                              1      0          4      1     32      0    0   RW
+MATHTEST.TARGET                                               1      4          4      1     32      0    0   RW
+MATHTEST.TARGET2                                              1      8          4      1     32      0    0   RW
