@@ -122,14 +122,14 @@ namespace ChimeraTK {
       auto getNestedInterruptDispatcher =
           [](std::vector<uint32_t> interruptID,
               std::map<uint32_t, boost::shared_ptr<NumericAddressedInterruptDispatcher>> dispatchers,
-              [[maybe_unused]] auto&& getNestedInterruptDispatcher)
+              [[maybe_unused]] auto&& _getNestedInterruptDispatcher)
           -> boost::shared_ptr<NumericAddressedInterruptDispatcher> {
         auto dispatcher = dispatchers[interruptID.front()];
         if(interruptID.size() == 1) {
           return dispatcher;
         }
         throw ChimeraTK::logic_error("Nested interrupts are not supported yet!");
-        // return getNestedInterruptDispatcher({++interruptID.begin(), interruptID.end(),
+        // return _getNestedInterruptDispatcher({++interruptID.begin(), interruptID.end(),
         // dispatcher->getInterruptControllerHandler()->dispatchers});
       };
 
