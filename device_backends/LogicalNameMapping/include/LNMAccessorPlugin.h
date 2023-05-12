@@ -297,7 +297,9 @@ namespace ChimeraTK::LNMBackend {
 
       if(_needSharedTarget) {
         auto& map = boost::fusion::at_key<decltype(T)>(backend->sharedAccessorMap.table);
-        LogicalNameMappingBackend::AccessorKey key{backend.get(), RegisterPath(_info.registerName)};
+        RegisterPath path{_info.registerName};
+        path.setAltSeparator(".");
+        LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
 
         if(auto it = map.find(key); it == map.end() || (target = it->second.accessor.lock()) == nullptr) {
           // obtain target accessor with desired type

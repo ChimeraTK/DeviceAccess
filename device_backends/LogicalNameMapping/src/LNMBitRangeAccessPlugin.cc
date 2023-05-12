@@ -60,7 +60,9 @@ namespace ChimeraTK::LNMBackend {
       }
 
       auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
-      LogicalNameMappingBackend::AccessorKey key{backend.get(), RegisterPath(target->getName())};
+      RegisterPath path{target->getName()};
+      path.setAltSeparator(".");
+      LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
 
       if(auto it = map.find(key); it != map.end()) {
         _lock = {it->second.mutex, &(it->second.useCount)};
