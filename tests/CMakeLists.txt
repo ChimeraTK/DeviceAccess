@@ -101,6 +101,7 @@ MACRO( COPY_MAPPING_FILES )
     uioBackendTest.dmap
     uioBackendTest.mapp
     doubleBufferHW.xlmap doubleBufferHW.map doubleBufferHW.dmap
+    bitRangeReadPlugin.xlmap
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.
