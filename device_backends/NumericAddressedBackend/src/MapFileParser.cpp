@@ -107,8 +107,8 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-
-  std::vector<uint32_t> MapFileParser::getInterruptData(std::string accessTypeStr) {
+  // FIXME: This funtion does a lot of string copying. This can be optimised, for instance by using a string_view.
+  std::vector<uint32_t> MapFileParser::getInterruptId(std::string accessTypeStr) {
     std::string strToFind("INTERRUPT");
     auto pos = accessTypeStr.find(strToFind);
     if(pos == std::string::npos) return {};
@@ -253,11 +253,11 @@ namespace ChimeraTK {
             [](unsigned char c) { return std::toupper(c); });
 
         // first check if access mode is INTERRUPT
-        auto interruptData = getInterruptData(accessString);
+        auto interruptId = getInterruptId(accessString);
 
-        if(!interruptData.empty()) {
+        if(!interruptId.empty()) {
           pl.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
-          pl.interruptID = interruptData;
+          pl.interruptID = interruptId;
         }
         else if(accessString == "RO") {
           pl.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;

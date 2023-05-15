@@ -72,11 +72,11 @@ namespace ChimeraTK {
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
-    /// Specific override which allows to create "DUMMY_INTEERRUPT_X_Y" accessors
+    /// Specific override which allows to create "DUMMY_INTEERRUPT_X" accessors
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-      // First check if the request is for one of the special DUMMY_INTEERRUPT_X_Y registers. if so, early return
+      // First check if the request is for one of the special DUMMY_INTEERRUPT_X registers. if so, early return
       // this special accessor.
       if(registerPathName.startsWith("DUMMY_INTERRUPT_")) {
         bool interruptFound;
