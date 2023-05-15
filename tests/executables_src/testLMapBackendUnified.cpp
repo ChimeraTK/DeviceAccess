@@ -57,7 +57,7 @@ struct RegisterDescriptorBase {
     dummy.throwExceptionWrite = enable;
     dummy.throwExceptionOpen = enable;
     if(derived->isPush() && enable) {
-      dummy.triggerInterrupt(5, 6);
+      dummy.triggerInterrupt(6);
     }
   }
 };
@@ -95,8 +95,8 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       derived->acc[derived->channel][k] = v[k];
     }
     if(derived->isPush()) {
-      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
-      dynamic_cast<DummyBackend&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
+      // At the moment only interrupt 6 is used, so we hard code it here. Can be made more flexible if needed.
+      dynamic_cast<DummyBackend&>(derived->acc.getBackend()).triggerInterrupt(6);
     }
   }
 };
@@ -167,7 +167,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       }
     } // release the buffer lock before triggering another thread
     if(derived->isPush()) {
-      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
+      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(6);
     }
   }
 };
@@ -306,8 +306,8 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   void setRemoteValue() {
     derived->target.setRemoteValue();
     if(derived->isPush()) {
-      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
-      exceptionDummyPush->triggerInterrupt(5, 6);
+      // At the moment only interrupt 6 is used, so we hard code it here. Can be made more flexible if needed.
+      exceptionDummyPush->triggerInterrupt(6);
     }
   }
 

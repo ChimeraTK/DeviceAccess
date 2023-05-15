@@ -189,13 +189,13 @@ namespace ChimeraTK {
     return {shared_from_this(), module, register_name};
   }
 
-  VersionNumber DummyBackend::triggerInterrupt(int interruptControllerNumber, int interruptNumber) {
+  VersionNumber DummyBackend::triggerInterrupt(uint32_t interruptNumber) {
     try {
-      return dispatchInterrupt(interruptControllerNumber, interruptNumber);
+      return dispatchInterrupt(interruptNumber);
     }
     catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error("DummyBackend::triggerInterrupt(): Error: Unknown interrupt " +
-          std::to_string(interruptControllerNumber) + ", " + std::to_string(interruptNumber));
+      throw ChimeraTK::logic_error(
+          "DummyBackend::triggerInterrupt(): Error: Unknown interrupt " + std::to_string(interruptNumber));
     }
   }
 

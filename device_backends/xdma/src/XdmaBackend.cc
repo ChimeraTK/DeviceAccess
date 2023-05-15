@@ -43,7 +43,7 @@ namespace ChimeraTK {
     _eventFiles.clear();
     for(size_t i = 0; i < _maxInterrupts; i++) {
       try {
-        _eventFiles.emplace_back(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, 0, i));
+        _eventFiles.emplace_back(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, i));
       }
       catch(const runtime_error&) {
         break;
@@ -129,10 +129,7 @@ namespace ChimeraTK {
 #endif
   }
 
-  void XdmaBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) {
-    if(interruptControllerNumber != 0) {
-      throw ChimeraTK::logic_error("XDMA: backend only uses interrupt controller 0");
-    }
+  void XdmaBackend::startInterruptHandlingThread(uint32_t interruptNumber) {
     if(_eventFiles.empty()) {
       throw ChimeraTK::logic_error("XDMA: trying to use interrupts, but no event files available");
     }

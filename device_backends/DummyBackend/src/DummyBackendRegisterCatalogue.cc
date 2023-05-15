@@ -41,21 +41,17 @@ namespace ChimeraTK {
       basePath--;
       return NumericAddressedRegisterCatalogue::hasRegister(basePath);
     }
-    try {
-      (void)extractControllerInterrupt(registerPathName);
+    if(extractControllerInterrupt(registerPathName).first) {
       return true;
-    }
-    catch(ChimeraTK::logic_error&) {
-      // Was no DUMMY_INTERRUPT register.
     }
     return NumericAddressedRegisterCatalogue::hasRegister(path);
   }
 
   /********************************************************************************************************************/
 
-  std::pair<int, int> DummyBackendRegisterCatalogue::extractControllerInterrupt(
+  std::pair<bool, int> DummyBackendRegisterCatalogue::extractControllerInterrupt(
       const RegisterPath& registerPathName) const {
-    static const std::string DUMMY_INTERRUPT_REGISTER_NAME{"^/DUMMY_INTERRUPT_([0-9]+)_([0-9]+)$"};
+    static const std::string DUMMY_INTERRUPT_REGISTER_NAME{"^/DUMMY_INTERRUPT_([0-9]+)$"};
 
     const std::string regPathNameStr{registerPathName};
     const std::regex dummyInterruptRegex{DUMMY_INTERRUPT_REGISTER_NAME};
@@ -66,22 +62,14 @@ namespace ChimeraTK {
       // FIXME: Ideally, this test and the need for passing in the lambda function should be done
       // in the constructor of the accessor. But passing down the base-class of the backend is very weird
       // due to the sort-of CRTP pattern used in this base class.
-      auto controller = std::stoi(match[1].str());
-      auto interrupt = std::stoi(match[2].str());
-      try {
-        const auto& interruptsForController = _mapOfInterrupts.at(unsigned(controller));
-        if(interruptsForController.find(unsigned(interrupt)) == interruptsForController.end()) {
-          throw ChimeraTK::logic_error(
-              "Invalid interrupt for controller (" + match[0].str() + ", " + match[1].str() + ": " + regPathNameStr);
+      auto primaryInterrupt = static_cast<unsigned int>(std::stoul(match[1].str()));
+      for(auto& interruptID : _listOfInterrupts) {
+        if(interruptID.front() == primaryInterrupt) {
+          return {true, primaryInterrupt};
         }
       }
-      catch(std::out_of_range&) {
-        throw ChimeraTK::logic_error(
-            "Invalid interrupt controller (" + match[0].str() + ", " + match[1].str() + ": " + regPathNameStr);
-      }
-      return std::make_pair(controller, interrupt);
     }
-    throw ChimeraTK::logic_error("Invalid register path " + regPathNameStr);
+    return {false, 0};
   }
   /********************************************************************************************************************/
 
@@ -94,7 +82,7 @@ namespace ChimeraTK {
     std::unique_ptr<BackendRegisterCatalogueBase> c = std::make_unique<DummyBackendRegisterCatalogue>();
     auto* c_impl = dynamic_cast<DummyBackendRegisterCatalogue*>(c.get());
     fillFromThis(c_impl);
-    c_impl->_mapOfInterrupts = _mapOfInterrupts;
+    c_impl->_listOfInterrupts = _listOfInterrupts;
     return c;
   }
 

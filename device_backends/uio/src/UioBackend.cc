@@ -77,10 +77,7 @@ namespace ChimeraTK {
     _uioAccess->write(bar, address, data, sizeInBytes);
   }
 
-  void UioBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int interruptNumber) {
-    if(interruptControllerNumber != 0) {
-      throw ChimeraTK::logic_error("UIO: Backend only uses interrupt controller 0");
-    }
+  void UioBackend::startInterruptHandlingThread(uint32_t interruptNumber) {
     if(interruptNumber != 0) {
       throw ChimeraTK::logic_error("UIO: Backend only uses interrupt number 0");
     }
@@ -124,7 +121,7 @@ namespace ChimeraTK {
         }
 
         for(uint32_t i = 0; i < numberOfInterrupts; i++) {
-          dispatchInterrupt(0, 0);
+          dispatchInterrupt(0);
         }
       }
     }

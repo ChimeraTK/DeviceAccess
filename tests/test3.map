@@ -24,4 +24,4 @@
 /ByteRaw/fixedPoint8_4s               1 15  1 1  8     4 1 RW
 
 # These registers are interrupt-backed registers
-/Integers/signed32_async              1  8  4 1 32     0 1 INTERRUPT5:6
+/Integers/signed32_async              1  8  4 1 32     0 1 INTERRUPT6

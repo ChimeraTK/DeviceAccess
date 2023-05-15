@@ -83,9 +83,9 @@ namespace {
       ScalarRegisterAccessor<int> mirrorRequest_DataInterrupt =
           dev.getScalarRegisterAccessor<int>("MIRRORREQUEST/DATA_INTERRUPT");
       ScalarRegisterAccessor<int> mirrorRequestUpdated_Interrupt{
-          dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_0")};
+          dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_0")};
 
-      ScalarRegisterAccessor<int> dataInterrupt{dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1_1")};
+      ScalarRegisterAccessor<int> dataInterrupt{dev.getScalarRegisterAccessor<int>("DUMMY_INTERRUPT_1")};
 
       do {
         // poll Busy until it is set to true, indicating a new request

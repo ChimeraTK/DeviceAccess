@@ -81,6 +81,10 @@ struct HelperProcess {
     BOOST_CHECK(!std::system("./testSharedDummyBackendUnifiedExt "
                              "--run_test=SharedDummyBackendUnifiedTestSuite/testRegisterAccessor > /dev/null"
                              " & echo $! > ./testSharedDummyBackendUnifiedExt.pid"));
+    // check that the helper application is running
+    boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
+    BOOST_REQUIRE_MESSAGE(std::system("ps $(cat testSharedDummyBackendUnifiedExt.pid) > /dev/null") == 0,
+        "FATAL: background application \'testSharedDummyBackendUnifiedExt\' not running!");
   }
   // request helper to stop gracefully - this includes a handshake waiting on it's termination
   void stopGracefully() { requestMirroring(MirrorRequestType::stop); }

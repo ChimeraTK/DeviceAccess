@@ -37,7 +37,7 @@ static auto exceptionDummy =
 /**********************************************************************************************************************/
 
 struct Interrupt_dummy {
-  std::string path() { return "/DUMMY_INTERRUPT_5_6"; }
+  std::string path() { return "/DUMMY_INTERRUPT_6"; }
   bool isWriteable() { return true; }
   bool isReadable() { return true; }
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }

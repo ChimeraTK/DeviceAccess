@@ -14,9 +14,11 @@ namespace ChimeraTK {
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
 
-    // Helper function to get x and y from DUMMY_INTERRUPT_x_y. Throws if
-    // x, y is not in the list of known interrupts.
-    [[nodiscard]] std::pair<int, int> extractControllerInterrupt(const RegisterPath& registerPathName) const;
+    // Helper function to get x from DUMMY_INTERRUPT_x.
+    // The first parameter is "true" if an according interrupt is in the catalogue. If the registerPathName
+    // is not DUMMY_INTERRUPT_x or the interrupt is not in the catalogue, the first parameter is "false", and the second
+    // parameter is invalid.
+    [[nodiscard]] std::pair<bool, int> extractControllerInterrupt(const RegisterPath& registerPathName) const;
 
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
   };
