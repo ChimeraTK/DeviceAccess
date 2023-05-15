@@ -4,7 +4,7 @@ Project(ChimeraTK-DeviceAccess)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
-set(${PROJECT_NAME}_MINOR_VERSION 09)
+set(${PROJECT_NAME}_MINOR_VERSION 10)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
@@ -77,9 +77,11 @@ endif()
 foreach(subdir ${subdirs})
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/src sources)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include)
-  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/*.h")
+  file(GLOB_RECURSE headers "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/*")
   set(SOURCE ${SOURCE} ${sources} ${headers})
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/ DESTINATION include/ChimeraTK)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/
+      DESTINATION include/ChimeraTK
+      PATTERN "internal" EXCLUDE)
 endforeach()
 
 include(CheckLibraryExists)

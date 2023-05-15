@@ -3,6 +3,7 @@
 
 #include "LogicalNameMappingBackend.h"
 
+#include "internal/LNMMathPluginFormulaHelper.h"
 #include "LNMBackendBitAccessor.h"
 #include "LNMBackendChannelAccessor.h"
 #include "LNMBackendVariableAccessor.h"
@@ -361,6 +362,25 @@ namespace ChimeraTK {
               catch(std::system_error& e) {
                 std::cerr << "Caught system error in activateAsyncRead(): " << e.what() << std::endl;
                 std::terminate();
+              }
+            }
+            // also give MathPlugin instances which are using the variable as push-parameter the chance to update
+            for(auto* mp : lnmVariable.usingFormulas) {
+              if(mp->_hasPushParameter) {
+                auto h = mp->getFormulaHelper({});
+                if(h) {
+                  // accessor to formula result or parameter exists
+                  try {
+                    h->updateResult(vtEntry.latestVersion);
+                  }
+                  // the only exception that updateResult may throw is logic_error; we print the message & terminate
+                  // since termination would be anyway be enforced by this function being 'noexcept',
+                  // but we also want the message for debugging purposes.
+                  catch(logic_error& e) {
+                    std::cout << "logic_error in activateAsyncRead: " << e.what() << std::endl;
+                    std::terminate();
+                  }
+                }
               }
             }
           });

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "LogicalNameMappingBackend.h"
-#include "ReadAnyGroup.h"
 #include "VirtualFunctionTemplate.h"
 
 #include <utility>
@@ -160,63 +159,7 @@ namespace ChimeraTK::LNMBackend {
     double _factor;
   };
 
-  // forward declaration needed for MathPlugin
-  struct MathPluginFormulaHelper;
-
-  /** Math Plugin: Apply mathematical formula to register's data. The formula is parsed by the exprtk library. */
-  class MathPlugin : public AccessorPlugin<MathPlugin> {
-   public:
-    MathPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
-
-    void doRegisterInfoUpdate() override;
-    DataType getTargetDataType(DataType) const override { return DataType::float64; }
-
-    template<typename UserType, typename TargetType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
-
-    void openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) override;
-    void closeHook() override;
-    void exceptionHook() override;
-
-    // This function is starting a loop and will be executed in the _parameterThread;
-    void parameterReadLoop();
-
-    bool _isWrite{false};
-    bool _hasPushParameter{false};                       // can only be true if _isWrite == true
-    bool _mainValueWrittenAfterOpen{false};              // only needed if _hasPushParameter == true
-    bool _allParametersWrittenAfterOpen{false};          // only needed if _hasPushParameter == true
-    boost::thread _pushParameterWriteThread;             // only used if _hasPushParameter == true
-    boost::barrier _waitUntilParameterThreadLaunched{2}; // sync point for parameter thread and accessor thread
-    ReadAnyGroup _pushParameterReadGroup;                // only used if _hasPushParameter == true
-    std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> _pushParameterAccessorMap; // only used if
-                                                                                                    // _hasPushParameter
-                                                                                                    // == true
-    boost::shared_ptr<MathPluginFormulaHelper> _h; // only used if _hasPushParameter == true
-    std::vector<double> _lastWrittenValue;         // only used if _hasPushParameter == true
-    // The _writeMutex has two functions:
-    // - It protects resources which are share by an accesor and the parameter thread
-    //   (Currently: _lastWrittenValue and _mainValueWrittenAfterOpen)
-    // - It is held while an accessor or the parameter thread is doing the preWrite/writeTransfer/postWrite sequence.
-    //   If the other thread would be able to do a transfer bwetween the preWrite and the actual transfer this
-    //   would lead to wrong results (although formally the code is thread safe)
-    // Use a recursive mutex because it is allowed to call preWrite() multiple times before executing
-    // the writeTransfer, and the mutex is accquired in preWrite() and release in only in postWrite().
-    std::recursive_mutex _writeMutex;                    // only used if _hasPushParameter == true
-    boost::weak_ptr<LogicalNameMappingBackend> _backend; // set in openHook()
-
-    std::map<std::string, std::string> _parameters;
-    std::string _formula;              // extracted from _parameters
-    bool _enablePushParameters{false}; // extracted from _parameters
-
-    // Checks that all parameters have been written since opening the device.
-    // Returns false as long as at least one parameter is still on the backend's _versionOnOpen.
-    // Only call this function when holding the _writeMutex. It updates the _allParametersWrittenAfterOpen
-    // variable which is protected by that mutex.
-    bool checkAllParametersWritten(
-        std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> const& accessorsMap);
-  };
+  /********************************************************************************************************************/
 
   /** Monostable Trigger Plugin: Write value to target which falls back to another value after defined time. */
   class MonostableTriggerPlugin : public AccessorPlugin<MonostableTriggerPlugin> {

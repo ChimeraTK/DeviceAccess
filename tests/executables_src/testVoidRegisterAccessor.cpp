@@ -13,7 +13,7 @@ using namespace ChimeraTK;
 
 #include <future>
 
-void testAsyncRO(RegisterPath name, unsigned int interruptController, unsigned int interruptNumber) {
+void testAsyncRO(RegisterPath name, unsigned int interruptNumber) {
   // The typical use case: The underlying register is a read-only interrput
   Device d("(dummy?map=goodMapFile.map)");
   d.open();
@@ -34,26 +34,26 @@ void testAsyncRO(RegisterPath name, unsigned int interruptController, unsigned i
 
   auto dummy = boost::dynamic_pointer_cast<DummyBackend>(d.getBackend());
 
-  dummy->triggerInterrupt(interruptController, interruptNumber);
+  dummy->triggerInterrupt(interruptNumber);
   BOOST_CHECK(isReadFinished.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
 
   // check that the implementations for readNonBlocking() and readLatest() delegate to the right function (the return
   // value still contains information) Trigger twice, then evaluate
-  dummy->triggerInterrupt(interruptController, interruptNumber);
-  dummy->triggerInterrupt(interruptController, interruptNumber);
+  dummy->triggerInterrupt(interruptNumber);
+  dummy->triggerInterrupt(interruptNumber);
   BOOST_CHECK(asyncAccessor.readNonBlocking());
   BOOST_CHECK(asyncAccessor.readNonBlocking());
   BOOST_CHECK(!asyncAccessor.readNonBlocking()); // third readNonBlocking return false
 
-  dummy->triggerInterrupt(interruptController, interruptNumber);
-  dummy->triggerInterrupt(interruptController, interruptNumber);
+  dummy->triggerInterrupt(interruptNumber);
+  dummy->triggerInterrupt(interruptNumber);
   BOOST_CHECK(asyncAccessor.readLatest());
   BOOST_CHECK(!asyncAccessor.readLatest()); // second readLatest return false
 }
 
 BOOST_AUTO_TEST_CASE(TestAsyncRO) {
-  testAsyncRO("MODULE0/INTERRUPT_VOID1", 1, 3);
-  testAsyncRO("MODULE0/INTERRUPT_TYPE", 5, 6);
+  testAsyncRO("MODULE0/INTERRUPT_VOID1", 3);
+  testAsyncRO("MODULE0/INTERRUPT_TYPE", 6);
 }
 
 BOOST_AUTO_TEST_CASE(TestAsyncRW) {

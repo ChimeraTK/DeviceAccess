@@ -1,0 +1,20 @@
+<logicalNameMap>
+  <variable name="SimpleArray">
+    <type>integer</type>
+    <value index="0">0</value>
+    <value index="1">0</value>
+    <value index="2">0</value>
+    <value index="3">0</value>
+    <value index="4">0</value>
+    <value index="5">0</value>
+    <numberOfElements>6</numberOfElements>
+  </variable>
+
+  <redirectedRegister name="BrokenFormula">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleArray</targetRegister>
+    <plugin name="math">
+      <parameter name="formula">this doesnt make sense</parameter>
+    </plugin>
+  </redirectedRegister>
+</logicalNameMap>

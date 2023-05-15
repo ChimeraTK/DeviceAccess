@@ -3,6 +3,7 @@
 
 #include "LNMBackendRegisterInfo.h"
 #include "LNMDoubleBufferPlugin.h"
+#include "LNMMathPlugin.h"
 
 #include <boost/make_shared.hpp>
 

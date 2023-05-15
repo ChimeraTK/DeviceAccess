@@ -92,14 +92,6 @@
     </plugin>
   </redirectedRegister>
 
-  <redirectedRegister name="BrokenFormula">
-    <targetDevice>this</targetDevice>
-    <targetRegister>SimpleArray</targetRegister>
-    <plugin name="math">
-      <parameter name="formula">this doesnt make sense</parameter>
-    </plugin>
-  </redirectedRegister>
-
   <redirectedRegister name="WrongReturnSizeInArray">
     <targetDevice>this</targetDevice>
     <targetRegister>SimpleArray</targetRegister>

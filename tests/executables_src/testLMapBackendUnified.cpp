@@ -57,7 +57,7 @@ struct RegisterDescriptorBase {
     dummy.throwExceptionWrite = enable;
     dummy.throwExceptionOpen = enable;
     if(derived->isPush() && enable) {
-      dummy.triggerInterrupt(5, 6);
+      dummy.triggerInterrupt(6);
     }
   }
 };
@@ -95,8 +95,8 @@ struct ChannelRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       derived->acc[derived->channel][k] = v[k];
     }
     if(derived->isPush()) {
-      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
-      dynamic_cast<DummyBackend&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
+      // At the moment only interrupt 6 is used, so we hard code it here. Can be made more flexible if needed.
+      dynamic_cast<DummyBackend&>(derived->acc.getBackend()).triggerInterrupt(6);
     }
   }
 };
@@ -167,7 +167,7 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
       }
     } // release the buffer lock before triggering another thread
     if(derived->isPush()) {
-      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(5, 6);
+      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(6);
     }
   }
 };
@@ -306,8 +306,8 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   void setRemoteValue() {
     derived->target.setRemoteValue();
     if(derived->isPush()) {
-      // At the moment only interrupt 5:6 is used, so we hard code it here. Can be made more flexible if needed.
-      exceptionDummyPush->triggerInterrupt(5, 6);
+      // At the moment only interrupt 6 is used, so we hard code it here. Can be made more flexible if needed.
+      exceptionDummyPush->triggerInterrupt(6);
     }
   }
 
@@ -793,7 +793,8 @@ struct RegVariableAsPushParameterInMath_var1
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
-    // In addion we have to write the accessor which has the math plugin and the second parameter.
+
+    // In addition we have to write the accessor which has the math plugin and the second parameter.
     // Otherwise writing of the parameters will have no effect.
     auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
     x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
@@ -925,7 +926,8 @@ struct RegVariableAsPushParameterInMath_var2
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
-    // In addion we have to write the accessor which has the math plugin and the first parameter.
+
+    // In addition we have to write the accessor which has the math plugin and the first parameter.
     // Otherwise writing of the parameters will have no effect.
     auto x = lmapBackend->getRegisterAccessor<double>("/RegisterWithVariableAsPushParameterInMath", 0, 0, {});
     x->accessData(0) = RegVariableAsPushParameterInMathBase_lastX;
@@ -962,7 +964,8 @@ struct RegVariableAsPushParameterInMath_x
     // async read here which is required for the test to be successful. The assumption is that generateValue is not
     // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
     lmapBackend->activateAsyncRead();
-    // In addion we have to write the two parameters. Otherwise writing will have no effect.
+
+    // In addition we have to write the two parameters. Otherwise writing must have no effect.
     auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     p1->read();
     p1->write();
@@ -989,7 +992,7 @@ struct RegVariableAsPushParameterInMath_x_not_written1
     lmapBackend->close();
     lmapBackend->open(); // this test is explicitly for writing after open
     lmapBackend->activateAsyncRead();
-    // In addion we have to write the two parameters. Otherwise writing will have no effect.
+
     auto p1 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest1", 0, 0, {});
     p1->read();
     p1->write();
@@ -1014,8 +1017,7 @@ struct RegVariableAsPushParameterInMath_x_not_written2
     lmapBackend->close();
     lmapBackend->open(); // this test is explicitly for writing after open
     lmapBackend->activateAsyncRead();
-    // In addion we have to write the two parameters. Otherwise writing will have no effect.
-    // Don't write p2
+
     auto p2 = lmapBackend->getRegisterAccessor<double>("/VariableForMathTest2", 0, 0, {});
     p2->read();
     p2->write();
