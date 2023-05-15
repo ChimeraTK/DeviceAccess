@@ -244,10 +244,6 @@ namespace ChimeraTK {
       // asyncAccessor (which is generic)
       auto synchronousFlags = flags;
       synchronousFlags.remove(AccessMode::wait_for_new_data);
-
-      // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
-      newSubscriber->setWriteAccessor(
-          backend->getRegisterAccessor<UserType>(name, numberOfWords, wordOffsetInRegister, synchronousFlags));
     }
 
     asyncVariable->_asyncAccessor = newSubscriber;

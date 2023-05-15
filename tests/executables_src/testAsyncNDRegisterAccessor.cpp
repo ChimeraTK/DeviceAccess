@@ -22,14 +22,10 @@ BOOST_AUTO_TEST_CASE(Test_setWriteAccessor) {
   auto asyncAccessor = d.getScalarRegisterAccessor<int>("MODULE0/INTERRUPT_TYPE", 0, {AccessMode::wait_for_new_data});
 
   auto syncAccessor = d.getScalarRegisterAccessor<int>("MODULE0/INTERRUPT_TYPE/DUMMY_WRITEABLE", 0);
-  auto syncAccessor_ptr = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(syncAccessor.get()->shared_from_this());
-  auto asyncAccessor_casted = dynamic_cast<AsyncNDRegisterAccessor<int>*>(asyncAccessor.get());
 
-  asyncAccessor_casted->setWriteAccessor(syncAccessor_ptr);
-
-  BOOST_CHECK(!asyncAccessor.isReadOnly());
+  BOOST_CHECK(asyncAccessor.isReadOnly());
   BOOST_CHECK(asyncAccessor.isReadable());
-  BOOST_CHECK(asyncAccessor.isWriteable());
+  BOOST_CHECK(!asyncAccessor.isWriteable());
 
   asyncAccessor.read(); // the initial value has arrived
   auto isReadFinished = std::async(std::launch::async, [&] { asyncAccessor.read(); });
@@ -41,8 +37,8 @@ BOOST_AUTO_TEST_CASE(Test_setWriteAccessor) {
 
   BOOST_CHECK(int(asyncAccessor) != 43);
 
-  asyncAccessor = 43;
-  asyncAccessor.write();
+  syncAccessor = 43;
+  syncAccessor.write();
 
   BOOST_CHECK_EQUAL(d.read<int>("MODULE0/INTERRUPT_TYPE"), 43);
 }
