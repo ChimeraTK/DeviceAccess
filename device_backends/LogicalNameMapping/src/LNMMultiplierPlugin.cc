@@ -13,8 +13,8 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   MultiplierPlugin::MultiplierPlugin(
-      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin(info) {
+      const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
+  : AccessorPlugin(info, pluginIndex) {
     // extract parameters
     if(parameters.find("factor") == parameters.end()) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MultiplierPlugin: Missing parameter 'factor'.");

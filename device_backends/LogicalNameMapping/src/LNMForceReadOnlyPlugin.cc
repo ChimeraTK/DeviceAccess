@@ -13,8 +13,8 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   ForceReadOnlyPlugin::ForceReadOnlyPlugin(
-      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>&)
-  : AccessorPlugin(info) {}
+      const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>&)
+  : AccessorPlugin(info, pluginIndex) {}
 
   /********************************************************************************************************************/
 

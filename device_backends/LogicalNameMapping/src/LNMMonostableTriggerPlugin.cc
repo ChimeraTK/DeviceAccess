@@ -13,8 +13,8 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   MonostableTriggerPlugin::MonostableTriggerPlugin(
-      LNMBackendRegisterInfo info, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin(info) {
+      LNMBackendRegisterInfo info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
+  : AccessorPlugin(info, pluginIndex) {
     // extract parameters
     if(parameters.find("milliseconds") == parameters.end()) {
       throw ChimeraTK::logic_error(

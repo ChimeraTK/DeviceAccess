@@ -17,19 +17,8 @@ namespace ChimeraTK::LNMBackend {
 
   class MathPlugin;
 
-  struct MathPluginFormulaHelper {
-    std::string varName;
-    exprtk::expression<double> expression;
-    exprtk::symbol_table<double> symbols;
-    exprtk::rtl::vecops::package<double> vecOpsPkg;
-    std::unique_ptr<exprtk::vector_view<double>> valueView;
-    std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
-
-    boost::shared_ptr<LogicalNameMappingBackend> _backend;
-    boost::shared_ptr<NDRegisterAccessor<double>> _target;
-    // We assume plugin lives at least as long as MathPluginFormulaHelper
-    MathPlugin* _mp;
-
+  class MathPluginFormulaHelper {
+   public:
     MathPluginFormulaHelper(MathPlugin* p, const boost::shared_ptr<LogicalNameMappingBackend>& backend);
 
     void compileFormula(const std::string& formula,
@@ -38,6 +27,9 @@ namespace ChimeraTK::LNMBackend {
 
     template<typename T>
     void computeResult(std::vector<double>& x, std::vector<T>& resultBuffer);
+
+    // This function updates all parameter accessors and return their worst validity
+    [[nodiscard]] ChimeraTK::DataValidity updateParameters();
 
     // This function updates result in target based on latest values of parameter accessors and lastMainValue
     void updateResult(ChimeraTK::VersionNumber versionNumber);
@@ -48,9 +40,25 @@ namespace ChimeraTK::LNMBackend {
     // variable which is protected by that mutex.
     bool checkAllParametersWritten();
 
-    //  only used if _hasPushParameter == true
-    std::vector<double> _lastMainValue;
-    ChimeraTK::DataValidity _lastMainValidity;
+    // set the exception backend for all parameter accessors
+    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend);
+
+    // return the LNM backend
+    boost::shared_ptr<LogicalNameMappingBackend> getBackend();
+
+   protected:
+    std::string varName;
+    exprtk::expression<double> expression;
+    exprtk::symbol_table<double> symbols;
+    exprtk::rtl::vecops::package<double> vecOpsPkg;
+    std::unique_ptr<exprtk::vector_view<double>> valueView;
+    std::map<boost::shared_ptr<NDRegisterAccessor<double>>, std::unique_ptr<exprtk::vector_view<double>>> params;
+
+    boost::shared_ptr<LogicalNameMappingBackend> _backend;
+    boost::shared_ptr<NDRegisterAccessor<double>> _target;
+
+    // We assume plugin lives at least as long as MathPluginFormulaHelper
+    MathPlugin* _mp;
 
     std::map<std::string, boost::shared_ptr<NDRegisterAccessor<double>>> _accessorMap;
   };

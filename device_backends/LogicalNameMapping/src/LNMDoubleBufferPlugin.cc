@@ -7,8 +7,8 @@
 
 namespace ChimeraTK::LNMBackend {
   DoubleBufferPlugin::DoubleBufferPlugin(
-      const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters)
-  : AccessorPlugin(info), _parameters(std::move(parameters)) {
+      const LNMBackendRegisterInfo& info, size_t pluginIndex, std::map<std::string, std::string> parameters)
+  : AccessorPlugin(info, pluginIndex), _parameters(std::move(parameters)) {
     if(info.targetType == LNMBackendRegisterInfo::CHANNEL) {
       // we do not support redirectedChannel with doubleBuffer because it has no benefit and will cause
       // trouble in interplay with TransferGroup
