@@ -430,7 +430,7 @@ namespace ChimeraTK {
         }
 
         // create instance of plugin and add to the list in the register info
-        info.plugins.push_back(LNMBackend::makePlugin(info, pluginName, parameters));
+        info.plugins.push_back(LNMBackend::makePlugin(info, info.plugins.size(), pluginName, parameters));
       }
 
       // add register to catalogue

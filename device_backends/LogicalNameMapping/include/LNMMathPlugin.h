@@ -16,7 +16,7 @@ namespace ChimeraTK::LNMBackend {
   /** Math Plugin: Apply mathematical formula to register's data. The formula is parsed by the exprtk library. */
   class MathPlugin : public AccessorPlugin<MathPlugin> {
    public:
-    MathPlugin(const LNMBackendRegisterInfo& info, std::map<std::string, std::string> parameters);
+    MathPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex, std::map<std::string, std::string> parameters);
 
     void doRegisterInfoUpdate() override;
     DataType getTargetDataType(DataType) const override { return DataType::float64; }
@@ -53,6 +53,8 @@ namespace ChimeraTK::LNMBackend {
     std::recursive_mutex _writeMutex;
     bool _mainValueWrittenAfterOpen{false};
     bool _allParametersWrittenAfterOpen{false};
+    std::vector<double> _lastMainValue;
+    ChimeraTK::DataValidity _lastMainValidity;
 
     bool _creatingFormulaHelper{false}; // a flag to prevent recursion
 

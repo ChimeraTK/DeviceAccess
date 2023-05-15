@@ -192,6 +192,22 @@
         <parameter name="enable_push_parameters"/>
       </plugin>
     </redirectedRegister>
+
+    <variable name="RedirectedBitWithMath">
+      <type>float64</type>
+      <value>11</value>
+    </variable>
+    <redirectedBit name="RedirectedBitWithMath_helper">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD.WORD_STATUS</targetRegister>
+      <targetBit>3</targetBit>
+      <plugin name="math">
+        <parameter name="formula">myBit - x</parameter>
+        <parameter name="myBit">/RedirectedBitWithMath</parameter>
+        <parameter name="enable_push_parameters"/>
+      </plugin>
+    </redirectedBit>
+
     <redirectedRegister name="MonostableTrigger">
     <targetDevice><par>target</par></targetDevice>
       <targetRegister>ADC.WORD_ADC_ENA</targetRegister>

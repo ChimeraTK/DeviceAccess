@@ -11,28 +11,28 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<AccessorPluginBase> makePlugin(
-      LNMBackendRegisterInfo info, const std::string& name, const std::map<std::string, std::string>& parameters) {
+  boost::shared_ptr<AccessorPluginBase> makePlugin(LNMBackendRegisterInfo info, size_t pluginIndex,
+      const std::string& name, const std::map<std::string, std::string>& parameters) {
     if(name == "multiply") {
-      return boost::make_shared<MultiplierPlugin>(info, parameters);
+      return boost::make_shared<MultiplierPlugin>(info, pluginIndex, parameters);
     }
     if(name == "math") {
-      return boost::make_shared<MathPlugin>(info, parameters);
+      return boost::make_shared<MathPlugin>(info, pluginIndex, parameters);
     }
     if(name == "monostableTrigger") {
-      return boost::make_shared<MonostableTriggerPlugin>(info, parameters);
+      return boost::make_shared<MonostableTriggerPlugin>(info, pluginIndex, parameters);
     }
     if(name == "forceReadOnly") {
-      return boost::make_shared<ForceReadOnlyPlugin>(info, parameters);
+      return boost::make_shared<ForceReadOnlyPlugin>(info, pluginIndex, parameters);
     }
     if(name == "forcePollingRead") {
-      return boost::make_shared<ForcePollingReadPlugin>(info, parameters);
+      return boost::make_shared<ForcePollingReadPlugin>(info, pluginIndex, parameters);
     }
     if(name == "typeHintModifier") {
-      return boost::make_shared<TypeHintModifierPlugin>(info, parameters);
+      return boost::make_shared<TypeHintModifierPlugin>(info, pluginIndex, parameters);
     }
     if(name == "doubleBuffer") {
-      return boost::make_shared<DoubleBufferPlugin>(info, parameters);
+      return boost::make_shared<DoubleBufferPlugin>(info, pluginIndex, parameters);
     }
     throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
   }

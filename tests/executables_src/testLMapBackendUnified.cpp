@@ -692,7 +692,7 @@ struct RegWordFirmwareWithMath_R_push : RegWordFirmwareWithMath<RegWordFirmwareW
   T convertRawToCooked(Traw value) {
     return value + 2.345;
   }
-  // Mutliply plugin does not support access mode raw
+  // Math plugin does not support access mode raw
   ChimeraTK::AccessModeFlags supportedFlags() { return {AccessMode::wait_for_new_data}; }
 };
 
@@ -723,7 +723,7 @@ struct RegWordFirmwareAsParameterInMath : ScalarRegisterDescriptorBase<RegWordFi
 
   typedef double minimumUserType;
   typedef minimumUserType rawUserType;
-  // Mutliply plugin does not support access mode raw
+  // Math plugin does not support access mode raw
   static constexpr auto capabilities =
       ScalarRegisterDescriptorBase<RegWordFirmwareAsParameterInMath>::capabilities.disableTestRawTransfer();
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
@@ -1024,6 +1024,38 @@ struct RegVariableAsPushParameterInMath_x_not_written2
   }
 };
 
+// template type UserType and RawType have to be double for the math plugin, so we make that explicit in this helper
+// function
+struct RawToCookedProvider_BitWithMath {
+  static constexpr double theOffset = 10;
+
+  static double convertRawToCooked_impl(double value, boost::shared_ptr<LogicalNameMappingBackend>&) {
+    return ((uint32_t(value) >> 3) & 1) + theOffset;
+  }
+};
+
+struct RegRedirectedBitWithMath
+: RegVariableAsPushParameterInMathBase<RegRedirectedBitWithMath, RawToCookedProvider_BitWithMath> {
+  std::string path() { return "/RedirectedBitWithMath"; }
+
+  const double increment = 8;
+  typedef int32_t rawUserType;
+
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {
+    // this is a bit a hack: we know that the test has to generate a value before writing, so we can activate
+    // async read here which is required for the test to be successful. The assumption is that generateValue is not
+    // called before the device is open... FIXME: Better introduce a proper pre-write hook in the UnifiedBackendTest!
+    lmapBackend->activateAsyncRead();
+
+    // In addition we have to write the accessor which has the math plugin.
+    // Otherwise writing of the parameters will have no effect.
+    auto x = lmapBackend->getRegisterAccessor<double>("/RedirectedBitWithMath_helper", 0, 0, {});
+    x->accessData(0) = RawToCookedProvider_BitWithMath::theOffset;
+    x->write();
+  }
+};
+
 /// Test monostable trigger plugin (rather minimal test, needs extension!)
 struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger> {
   std::string path() { return "/MonostableTrigger"; }
@@ -1113,6 +1145,7 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegVariableAsPushParameterInMath_x>()
       .addRegister<RegVariableAsPushParameterInMath_x_not_written1>()
       .addRegister<RegVariableAsPushParameterInMath_x_not_written2>()
+      .addRegister<RegRedirectedBitWithMath>()
       .addRegister<RegMonostableTrigger>()
       .runTests(lmapCdd);
 }

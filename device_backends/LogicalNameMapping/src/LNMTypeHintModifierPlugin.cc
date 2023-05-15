@@ -9,8 +9,8 @@
 
 namespace ChimeraTK::LNMBackend {
   TypeHintModifierPlugin::TypeHintModifierPlugin(
-      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin<TypeHintModifierPlugin>(info) {
+      const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
+  : AccessorPlugin<TypeHintModifierPlugin>(info, pluginIndex) {
     try {
       std::string typeName = parameters.at("type");
       if(typeName == "integer") typeName = "int32";
