@@ -305,7 +305,6 @@ namespace ChimeraTK::LNMBackend {
           // obtain target accessor with desired type
           target = backend->getRegisterAccessor_impl<decltype(T)>(
               _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
-          // double buffering plugin needs numberOfWords, wordOffsetInRegister of already existing accessor
           map[key].accessor = target;
         }
       }
@@ -314,7 +313,6 @@ namespace ChimeraTK::LNMBackend {
             _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
       }
 
-      // obtain target accessor with desired type
       // double buffering plugin needs numberOfWords, wordOffsetInRegister of already existing accessor
       UndecoratedParams accessorParams(numberOfWords, wordOffsetInRegister, flags);
       decorated = static_cast<Derived*>(this)->template decorateAccessor<UserType>(backend, target, accessorParams);
