@@ -46,7 +46,7 @@ namespace ChimeraTK::LNMBackend {
 
     /********************************************************************************************************************/
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, uint64_t shift,
+        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name, uint64_t shift,
         uint64_t numberOfBits)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
@@ -60,7 +60,7 @@ namespace ChimeraTK::LNMBackend {
       }
 
       auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
-      RegisterPath path{target->getName()};
+      RegisterPath path{name};
       path.setAltSeparator(".");
       LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
 
@@ -217,11 +217,11 @@ namespace ChimeraTK::LNMBackend {
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> BitRangeAccessPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
-      const UndecoratedParams&) {
+      const UndecoratedParams& params) {
 
     if constexpr(std::is_integral<TargetType>::value) {
       return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(
-          backend, target, _shift, _numberOfBits);
+          backend, target, params._name, _shift, _numberOfBits);
     }
 
     assert(false);
