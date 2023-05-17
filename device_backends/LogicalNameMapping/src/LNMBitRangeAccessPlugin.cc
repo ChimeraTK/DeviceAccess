@@ -135,7 +135,6 @@ namespace ChimeraTK::LNMBackend {
       }
       else {
         memcpy(&value, buffer_2D[0].data(), sizeof(UserType));
-        value <<= _shift;
       }
 
       // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
@@ -145,7 +144,7 @@ namespace ChimeraTK::LNMBackend {
       }
 
       _target->accessData(0) &= ~_mask;
-      _target->accessData(0) |= value;
+      _target->accessData(0) |= (value << _shift);
 
       _temporaryVersion = {};
       _target->setDataValidity(this->_dataValidity);
