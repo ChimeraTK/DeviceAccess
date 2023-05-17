@@ -71,7 +71,10 @@ namespace ChimeraTK::LNMBackend {
         assert(false);
       }
 
-      _mask = ((1U << _numberOfBits) - 1) << _shift;
+      // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
+      _mask = (static_cast<uint64_t>(-(_numberOfBits != 0)) &
+                  (static_cast<uint64_t>(-1) >> ((sizeof(uint64_t) * CHAR_BIT) - _numberOfBits)))
+          << _shift;
     }
 
     /********************************************************************************************************************/
