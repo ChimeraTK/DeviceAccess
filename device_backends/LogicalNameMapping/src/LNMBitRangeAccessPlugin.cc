@@ -50,8 +50,8 @@ namespace ChimeraTK::LNMBackend {
         uint64_t numberOfBits)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
-        throw ChimeraTK::logic_error(
-            "LogicalNameMappingBackend BitRangeAccessPluginDecorator: Cannot target non-scalar registers.");
+        throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
+            TransferElement::getName() + ": Cannot target non-scalar registers.");
       }
 
       if(sizeof(UserType) * 8 < _numberOfBits) {
@@ -118,7 +118,7 @@ namespace ChimeraTK::LNMBackend {
       _lock.lock();
 
       if(!_target->isWriteable()) {
-        throw ChimeraTK::logic_error("This register with BitRange plugin is not writeable.");
+        throw ChimeraTK::logic_error("Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
       }
 
       uint64_t value{};
@@ -180,24 +180,25 @@ namespace ChimeraTK::LNMBackend {
       auto [_, ec]{std::from_chars(shift.data(), shift.data() + shift.size(), _shift)};
       if(ec != std::errc()) {
         throw ChimeraTK::logic_error(
-            R"(LogicalNameMappingBackend BitRangeAccessPlugin: Unparseable parameter "shift".)");
+            "LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() + R"(: Unparseable parameter "shift".)");
       }
     }
     catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error(R"(LogicalNameMappingBackend BitRangeAccessPlugin: Missing parameter "shift".)");
+      throw ChimeraTK::logic_error(
+          "LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() + R"(: Missing parameter "shift".)");
     }
 
     try {
       const auto& numberOfBits = parameters.at("numberOfBits");
       auto [_, ec]{std::from_chars(numberOfBits.data(), numberOfBits.data() + numberOfBits.size(), _numberOfBits)};
       if(ec != std::errc()) {
-        throw ChimeraTK::logic_error(
-            R"(LogicalNameMappingBackend BitRangeAccessPlugin: Unparseable parameter "numberOfBits".)");
+        throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
+            R"(: Unparseable parameter "numberOfBits".)");
       }
     }
     catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error(
-          R"(LogicalNameMappingBackend BitRangeAccessPlugin: Missing parameter "numberOfBits".)");
+      throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
+          R"(: Missing parameter "numberOfBits".)");
     }
   }
 
