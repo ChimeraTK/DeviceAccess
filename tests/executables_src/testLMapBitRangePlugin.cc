@@ -70,7 +70,8 @@ BOOST_AUTO_TEST_CASE(testSimpleWrite) {
   accTarget.read();
   BOOST_TEST(accTarget == 0x760f);
 
-  // Use of overlapping ranges is undefined
+  // Use of overlapping ranges in transfer groups is undefined, so only use
+  // the distinct accessors
   auto group = TransferGroup();
   group.addAccessor(accRangedLo);
   group.addAccessor(accRangedHi);
