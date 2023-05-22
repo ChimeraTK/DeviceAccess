@@ -314,6 +314,8 @@ namespace ChimeraTK::LNMBackend {
             _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
       }
 
+      std::cout << _info._dataDescriptor.transportLayerDataType() << std::endl;
+
       // double buffering plugin needs numberOfWords, wordOffsetInRegister of already existing accessor
       UndecoratedParams accessorParams(_info.registerName, numberOfWords, wordOffsetInRegister, flags);
       decorated = static_cast<Derived*>(this)->template decorateAccessor<UserType>(backend, target, accessorParams);

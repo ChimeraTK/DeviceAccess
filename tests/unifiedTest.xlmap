@@ -231,4 +231,12 @@
         <parameter name="numberOfBits">16</parameter>
       </plugin>
     </redirectedRegister>
+    <redirectedRegister name="BitRangeMiddle">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD/WORD_FIRMWARE</targetRegister>
+      <plugin name ="bitRange">
+      <parameter name="shift">4</parameter>
+      <parameter name="numberOfBits">9</parameter>
+      </plugin>
+    </redirectedRegister>
 </logicalNameMap>

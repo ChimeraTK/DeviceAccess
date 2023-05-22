@@ -18,6 +18,15 @@
         </plugin>
     </redirectedRegister>
 
+    <redirectedRegister name="TooLarge">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">12</parameter>
+            <parameter name="numberOfBits">8</parameter>
+        </plugin>
+    </redirectedRegister>
+
     <redirectedRegister name="LoByte">
         <targetDevice>this</targetDevice>
         <targetRegister>SimpleScalar</targetRegister>

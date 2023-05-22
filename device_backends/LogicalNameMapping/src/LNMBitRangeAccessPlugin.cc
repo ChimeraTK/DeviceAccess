@@ -40,23 +40,26 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
+  // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
+  constexpr uint64_t getMaskForNBits(uint64_t numberOfBits) {
+    return (static_cast<uint64_t>(-(numberOfBits != 0)) &
+        (static_cast<uint64_t>(-1) >> ((sizeof(uint64_t) * CHAR_BIT) - numberOfBits)));
+  }
+
+  /********************************************************************************************************************/
+
   template<typename UserType, typename TargetType>
   struct BitRangeAccessPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::buffer_2D;
 
     /********************************************************************************************************************/
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name, uint64_t shift,
-        uint64_t numberOfBits)
+        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
+        uint64_t shift, uint64_t numberOfBits)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
             TransferElement::getName() + ": Cannot target non-scalar registers.");
-      }
-
-      if(sizeof(UserType) * 8 < _numberOfBits) {
-        throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: UserType is too small "
-                                     "for configured number of bits");
       }
 
       auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
@@ -71,10 +74,8 @@ namespace ChimeraTK::LNMBackend {
         assert(false);
       }
 
-      // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
-      _mask = (static_cast<uint64_t>(-(_numberOfBits != 0)) &
-                  (static_cast<uint64_t>(-1) >> ((sizeof(uint64_t) * CHAR_BIT) - _numberOfBits)))
-          << _shift;
+      _baseBitMask = getMaskForNBits(_numberOfBits);
+      _maskOnTarget = _baseBitMask << _shift;
     }
 
     /********************************************************************************************************************/
@@ -91,33 +92,37 @@ namespace ChimeraTK::LNMBackend {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
       _target->postRead(type, hasNewData);
       if(!hasNewData) return;
+      auto validity = _target->dataValidity();
 
-      if constexpr(std::is_same<UserType, ChimeraTK::Void>::value) {
+      if constexpr(!std::is_integral<UserType>::value) {
         // This should never be reached, the decorate function should make sure that we only have integral types here
-        assert(false);
-      }
-      else if constexpr(std::is_same<UserType, std::string>::value) {
-        // This should never be reached, the decorate function should make sure that we only have integral types here
-        assert(false);
-      }
-      else if constexpr(std::is_same<UserType, ChimeraTK::Boolean>::value) {
         assert(false);
       }
       else {
         uint64_t v{};
+        static_assert(sizeof(TargetType) <= sizeof(uint64_t), "Target data type too big.");
+
         auto targetValue = _target->accessData(0);
         memcpy(std::addressof(v), std::addressof(targetValue), sizeof(TargetType));
-        v = (v & _mask) >> _shift;
+        v = (v & _maskOnTarget) >> _shift;
+
+        // There are bits set outside of the range of the UserType
+        // Clamping according to B.2.4 and setting the faulty flag
+        // FIXME: Probably easier once the FixpointConverter is supporting 64bit raw types
+        if((v & ~_userTypeMask) != 0) {
+          v = std::numeric_limits<UserType>::max();
+          validity = DataValidity::faulty;
+        }
         memcpy(buffer_2D[0].data(), &v, sizeof(UserType));
       }
 
-      this->_versionNumber = {};
-      this->_dataValidity = _target->dataValidity();
+      this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
+      this->_dataValidity = validity;
     }
 
     /********************************************************************************************************************/
 
-    void doPreWrite(TransferType type, VersionNumber /*versionNumber*/) override {
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       _lock.lock();
 
       if(!_target->isWriteable()) {
@@ -125,19 +130,20 @@ namespace ChimeraTK::LNMBackend {
       }
 
       uint64_t value{};
-      if constexpr(std::is_same<UserType, ChimeraTK::Void>::value) {
+      if constexpr(!std::is_integral<UserType>::value) {
         // This should never be reached, the decorate function should make sure that we only have integral types here
-        assert(false);
-      }
-      else if constexpr(std::is_same<UserType, std::string>::value) {
-        // This should never be reached, the decorate function should make sure that we only have integral types here
-        assert(false);
-      }
-      else if constexpr(std::is_same<UserType, ChimeraTK::Boolean>::value) {
         assert(false);
       }
       else {
         memcpy(&value, buffer_2D[0].data(), sizeof(UserType));
+      }
+
+      // We have received more data than we actually have bits for
+      if((value & ~_baseBitMask) != 0) {
+        this->_dataValidity = DataValidity::faulty;
+        value = _baseBitMask;
+      } else {
+        this->_dataValidity = DataValidity::ok;
       }
 
       // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
@@ -146,10 +152,10 @@ namespace ChimeraTK::LNMBackend {
         _target->read();
       }
 
-      _target->accessData(0) &= ~_mask;
+      _target->accessData(0) &= ~_maskOnTarget;
       _target->accessData(0) |= (value << _shift);
 
-      _temporaryVersion = {};
+      _temporaryVersion = std::max(versionNumber, _target->getVersionNumber());
       _target->setDataValidity(this->_dataValidity);
       _target->preWrite(type, _temporaryVersion);
     }
@@ -163,7 +169,10 @@ namespace ChimeraTK::LNMBackend {
 
     uint64_t _shift;
     uint64_t _numberOfBits;
-    uint64_t _mask;
+    uint64_t _maskOnTarget;
+    uint64_t _userTypeMask{getMaskForNBits(sizeof(UserType) * CHAR_BIT)};
+    uint64_t _targetTypeMask{getMaskForNBits(sizeof(TargetType) * CHAR_BIT)};
+    uint64_t _baseBitMask;
 
     ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
@@ -180,7 +189,7 @@ namespace ChimeraTK::LNMBackend {
 
     try {
       const auto& shift = parameters.at("shift");
-      auto [_, ec]{std::from_chars(shift.data(), shift.data() + shift.size(), _shift)};
+      auto [suffix, ec]{std::from_chars(shift.data(), shift.data() + shift.size(), _shift)};
       if(ec != std::errc()) {
         throw ChimeraTK::logic_error(
             "LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() + R"(: Unparseable parameter "shift".)");
@@ -193,7 +202,7 @@ namespace ChimeraTK::LNMBackend {
 
     try {
       const auto& numberOfBits = parameters.at("numberOfBits");
-      auto [_, ec]{std::from_chars(numberOfBits.data(), numberOfBits.data() + numberOfBits.size(), _numberOfBits)};
+      auto [suffix, ec]{std::from_chars(numberOfBits.data(), numberOfBits.data() + numberOfBits.size(), _numberOfBits)};
       if(ec != std::errc()) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
             R"(: Unparseable parameter "numberOfBits".)");

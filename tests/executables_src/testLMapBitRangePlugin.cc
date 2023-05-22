@@ -90,8 +90,32 @@ BOOST_AUTO_TEST_CASE(testAccessorSanity) {
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
 
+  // Manual test for spec B.2.4
   // Accessor too small for the configured number of bits
-  BOOST_CHECK_THROW(std::ignore = device.getScalarRegisterAccessor<uint8_t>("Middle"), ChimeraTK::logic_error);
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+
+  auto accMiddle = device.getScalarRegisterAccessor<int8_t>("Middle");
+  accTarget.setAndWrite(0x1fff);
+  accMiddle.read();
+  BOOST_TEST(accMiddle == 127);
+  BOOST_CHECK(accMiddle.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+
+  // The Number of bits requested from the target register is larger than the register
+  auto accTooLarge = device.getScalarRegisterAccessor<int16_t>("TooLarge");
+  accTooLarge.setAndWrite(0xff1);
+  accTarget.read();
+  BOOST_CHECK(accTarget == std::numeric_limits<int16_t>::max());
+
+  // The number of bits requested is smaller than what is available in the user type and the value
+  // written in the accessor is larger than maximum value in those bits
+  accTarget.setAndWrite(0);
+
+  auto accMiddle2 = device.getScalarRegisterAccessor<int16_t>("MidByte");
+  accMiddle2.setAndWrite(0x100);
+  accTarget.read();
+  BOOST_TEST(accTarget == 0x0ff0);
+  BOOST_CHECK(accMiddle2.dataValidity() == ChimeraTK::DataValidity::faulty);
 }
 
 /********************************************************************************************************************/
