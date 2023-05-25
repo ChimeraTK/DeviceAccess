@@ -76,17 +76,17 @@ namespace ChimeraTK {
       assert(false);
     }
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
+    bool doWriteTransfer([[maybe_unused]] ChimeraTK::VersionNumber versionNumber) override {
       assert(false);
       return false;
     }
 
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
+    bool doWriteTransferDestructively([[maybe_unused]] ChimeraTK::VersionNumber versionNumber) override {
       assert(false);
       return false;
     }
 
-    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
+    void doPreWrite([[maybe_unused]] TransferType type, [[maybe_unused]] VersionNumber versionNumber) override {
       throw ChimeraTK::logic_error("Writing is not supported for " + this->getName());
     }
 
