@@ -7,6 +7,7 @@
  * FIXME: Port this to virtual time
  ******************************************************************************/
 
+#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE RebotHeartbeatCountTest
 // Only after defining the name include the unit test header.
 #include <boost/test/unit_test.hpp>
