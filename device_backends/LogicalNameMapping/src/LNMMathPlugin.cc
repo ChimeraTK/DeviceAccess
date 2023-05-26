@@ -419,6 +419,7 @@ namespace ChimeraTK::LNMBackend {
     else {
       // this code branch is compiled because of mpl for loop over types, but must never run
       assert(false);
+      return {};
     }
   }
 
