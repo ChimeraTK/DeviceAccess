@@ -176,19 +176,20 @@ namespace ChimeraTK::LNMBackend {
 
     ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
+    bool _writeable{false};
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::_target;
   };
 
   /********************************************************************************************************************/
 
-  BitRangeAccessPlugin::BitRangeAccessPlugin(
-      const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin<BitRangeAccessPlugin>(info) {
+  BitRangeAccessPlugin::BitRangeAccessPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
+  : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex) {
     _needSharedTarget = true;
 
     try {
       const auto& shift = parameters.at("shift");
+
       auto [suffix, ec]{std::from_chars(shift.data(), shift.data() + shift.size(), _shift)};
       if(ec != std::errc()) {
         throw ChimeraTK::logic_error(

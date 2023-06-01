@@ -234,7 +234,8 @@ namespace ChimeraTK::LNMBackend {
 
   class BitRangeAccessPlugin : public AccessorPlugin<BitRangeAccessPlugin> {
    public:
-    BitRangeAccessPlugin(const LNMBackendRegisterInfo& info, const std::map<std::string, std::string>& parameters);
+    BitRangeAccessPlugin(
+        const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters);
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
