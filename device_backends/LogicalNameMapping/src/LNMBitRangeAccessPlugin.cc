@@ -29,7 +29,7 @@ namespace ChimeraTK::LNMBackend {
       _lock.unlock();
     }
 
-    int useCount() const {
+    [[nodiscard]] int useCount() const {
       assert(_lock.owns_lock());
       return *_targetUseCount;
     }
