@@ -35,7 +35,6 @@ BOOST_AUTO_TEST_CASE(testSimpleRead) {
   BOOST_TEST(accRangedHi == 0x1f);
   BOOST_TEST(accRangedMid == 0xf0);
 
-
   TransferGroup group;
   group.addAccessor(accRangedLo);
   group.addAccessor(accRangedHi);
@@ -102,7 +101,6 @@ BOOST_AUTO_TEST_CASE(testAccessorSanity) {
   accMiddle.read();
   BOOST_TEST(accMiddle == 127);
   BOOST_CHECK(accMiddle.dataValidity() == ChimeraTK::DataValidity::faulty);
-
 
   // The Number of bits requested from the target register is larger than the register
   auto accTooLarge = device.getScalarRegisterAccessor<int16_t>("TooLarge");

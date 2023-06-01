@@ -12,7 +12,8 @@ namespace ChimeraTK::LNMBackend {
   /** Helper struct to hold extra parameters needed by some plugins, used in decorateAccessor() */
   struct UndecoratedParams {
     UndecoratedParams(const std::string& name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : _name(name), _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister), _flags(std::move(flags)) {}
+    : _name(name), _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister),
+      _flags(std::move(flags)) {}
     std::string _name;
     size_t _numberOfWords;
     size_t _wordOffsetInRegister;

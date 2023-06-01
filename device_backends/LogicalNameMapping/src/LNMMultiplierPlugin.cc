@@ -82,7 +82,7 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams&) {
     if constexpr(std::is_same<TargetType, double>::value) {
-       return boost::make_shared<MultiplierPluginDecorator<UserType>>(target, _factor);
+      return boost::make_shared<MultiplierPluginDecorator<UserType>>(target, _factor);
     }
 
     assert(false);

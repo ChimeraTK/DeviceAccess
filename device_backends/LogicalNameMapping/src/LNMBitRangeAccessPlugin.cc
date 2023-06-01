@@ -61,8 +61,8 @@ namespace ChimeraTK::LNMBackend {
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
-      _writeable{_target->isWriteable()} {
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift),
+      _numberOfBits(numberOfBits), _writeable{_target->isWriteable()} {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
             TransferElement::getName() + ": Cannot target non-scalar registers.");

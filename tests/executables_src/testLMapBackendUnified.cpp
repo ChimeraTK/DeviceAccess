@@ -1100,8 +1100,6 @@ struct RegBitRangeDescriptor : OneDRegisterDescriptorBase<Derived> {
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
 
-
-
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
 
   size_t nRuntimeErrorCases() { return derived->target.nRuntimeErrorCases(); }
@@ -1146,7 +1144,7 @@ struct RegLowerHalfOfFirmware : RegBitRangeDescriptor<RegLowerHalfOfFirmware> {
 };
 
 struct RegUpperHalfOfFirmware : RegBitRangeDescriptor<RegUpperHalfOfFirmware> {
-  std::string path() { return "/BitRangeUpper";  }
+  std::string path() { return "/BitRangeUpper"; }
 
   using minimumUserType = int16_t;
 
