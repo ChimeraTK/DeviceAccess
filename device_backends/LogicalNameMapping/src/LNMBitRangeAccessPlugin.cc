@@ -73,7 +73,8 @@ namespace ChimeraTK::LNMBackend {
       path.setAltSeparator(".");
       LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
 
-      if(auto it = map.find(key); it != map.end()) {
+      auto it = map.find(key);
+      if(it != map.end()) {
         _lock = {it->second.mutex, &(it->second.useCount)};
       }
       else {

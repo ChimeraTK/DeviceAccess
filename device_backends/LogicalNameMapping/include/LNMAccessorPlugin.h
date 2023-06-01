@@ -308,7 +308,8 @@ namespace ChimeraTK::LNMBackend {
         path.setAltSeparator(".");
         LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
 
-        if(auto it = map.find(key); it == map.end() || (target = it->second.accessor.lock()) == nullptr) {
+        auto it = map.find(key);
+        if(it == map.end() || (target = it->second.accessor.lock()) == nullptr) {
           // obtain target accessor with desired type
           target = backend->getRegisterAccessor_impl<decltype(T)>(
               _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
