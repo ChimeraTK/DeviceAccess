@@ -110,6 +110,10 @@ namespace ChimeraTK::LNMBackend {
     friend Derived;
 
    protected:
+    /**
+     * Deriving plugins should set this to true if they want to use interlocked access to the same
+     * target accessor. Otherwise different accessors for the same target will given out.
+     */
     bool _needSharedTarget{false};
 
    public:
