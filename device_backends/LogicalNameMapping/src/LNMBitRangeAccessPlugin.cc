@@ -61,7 +61,8 @@ namespace ChimeraTK::LNMBackend {
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits) {
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
+      _writeable{_target->isWriteable()} {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
             TransferElement::getName() + ": Cannot target non-scalar registers.");
@@ -130,8 +131,9 @@ namespace ChimeraTK::LNMBackend {
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       _lock.lock();
 
-      if(!_target->isWriteable()) {
-        throw ChimeraTK::logic_error("Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
+      if(!_writeable) {
+        throw ChimeraTK::logic_error(
+            "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
       }
 
       uint64_t value{};
@@ -147,7 +149,8 @@ namespace ChimeraTK::LNMBackend {
       if((value & ~_baseBitMask) != 0) {
         this->_dataValidity = DataValidity::faulty;
         value = _baseBitMask;
-      } else {
+      }
+      else {
         this->_dataValidity = DataValidity::ok;
       }
 
@@ -172,6 +175,26 @@ namespace ChimeraTK::LNMBackend {
       _target->postWrite(type, _temporaryVersion);
     }
 
+    /********************************************************************************************************************/
+
+    void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
+      auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType, TargetType>>(newElement);
+
+      // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
+      // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
+      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write order
+      // for overlapping bit ranges
+      if(casted && casted.get() != this && casted->_target == _target) {
+        if((casted->_maskOnTarget & _maskOnTarget) != 0) {
+          casted->_writeable = false;
+          _writeable = false;
+        }
+      }
+      NDRegisterAccessorDecorator<UserType, TargetType>::replaceTransferElement(newElement);
+    }
+
+    /********************************************************************************************************************/
+
     uint64_t _shift;
     uint64_t _numberOfBits;
     uint64_t _maskOnTarget;
@@ -188,7 +211,8 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  BitRangeAccessPlugin::BitRangeAccessPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
+  BitRangeAccessPlugin::BitRangeAccessPlugin(
+      const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex) {
     _needSharedTarget = true;
 
@@ -197,13 +221,13 @@ namespace ChimeraTK::LNMBackend {
 
       auto [suffix, ec]{std::from_chars(shift.data(), shift.data() + shift.size(), _shift)};
       if(ec != std::errc()) {
-        throw ChimeraTK::logic_error(
-            "LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() + R"(: Unparseable parameter "shift".)");
+        throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
+            R"(: Unparseable parameter "shift".)");
       }
     }
     catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error(
-          "LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() + R"(: Missing parameter "shift".)");
+      throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
+          R"(: Missing parameter "shift".)");
     }
 
     try {
@@ -236,7 +260,6 @@ namespace ChimeraTK::LNMBackend {
   boost::shared_ptr<NDRegisterAccessor<UserType>> BitRangeAccessPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
-
     if constexpr(std::is_integral<TargetType>::value) {
       return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(
           backend, target, params._name, _shift, _numberOfBits);

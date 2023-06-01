@@ -293,6 +293,7 @@ When used like below on a 32bit register, the redirected register will give acce
 Notes and CAVEATS:
 - Only accessors with integral types can be requested from the LMAP device
 - wait_for_new_data is currently not supported
-- When overlapping bit ranges are used in a TransferGroup, behavior is undefined
+- When overlapping bit ranges are used in a TransferGroup, the TransferGroup will become read-only since write order
+  of overlapping registers cannot be guaranteed
 - If the target register is writeable, the plugin does read-modify-write
 */

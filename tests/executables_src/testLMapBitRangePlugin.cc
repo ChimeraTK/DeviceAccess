@@ -79,11 +79,14 @@ BOOST_AUTO_TEST_CASE(testSimpleWrite) {
   accRangedHi = 0x75;
   accRangedLo = 0x80;
 
-  group.dump();
   group.write();
   accTarget.read();
 
   BOOST_TEST(accTarget == 0x7580);
+
+  // Add overlapping accessor to group, check that the group cannot be written anymore
+  group.addAccessor(accRangedMid);
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(testAccessorSanity) {
