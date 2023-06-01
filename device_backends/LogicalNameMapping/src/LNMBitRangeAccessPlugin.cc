@@ -42,6 +42,11 @@ namespace ChimeraTK::LNMBackend {
 
   // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
   constexpr uint64_t getMaskForNBits(uint64_t numberOfBits) {
+    // Prevent warning about undefined behavior if shifting right by 64 bit below
+    if(numberOfBits == 0) {
+      return 0;
+    }
+
     return (static_cast<uint64_t>(-(numberOfBits != 0)) &
         (static_cast<uint64_t>(-1) >> ((sizeof(uint64_t) * CHAR_BIT) - numberOfBits)));
   }
