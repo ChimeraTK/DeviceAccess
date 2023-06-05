@@ -218,6 +218,8 @@ namespace ChimeraTK::LNMBackend {
     try {
       const auto& shift = parameters.at("shift");
 
+      // This is how you are supposed to use std::from_chars with std::string
+      // NOLINTNEXTLINE(unsafe-buffer-usage)
       auto [suffix, ec]{std::from_chars(shift.data(), shift.data() + shift.size(), _shift)};
       if(ec != std::errc()) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
@@ -231,6 +233,8 @@ namespace ChimeraTK::LNMBackend {
 
     try {
       const auto& numberOfBits = parameters.at("numberOfBits");
+      // This is how you are supposed to use std::from_chars with std::string
+      // NOLINTNEXTLINE(unsafe-buffer-usage)
       auto [suffix, ec]{std::from_chars(numberOfBits.data(), numberOfBits.data() + numberOfBits.size(), _numberOfBits)};
       if(ec != std::errc()) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
