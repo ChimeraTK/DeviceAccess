@@ -214,9 +214,7 @@ namespace ChimeraTK::LNMBackend {
 
   BitRangeAccessPlugin::BitRangeAccessPlugin(
       const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex) {
-    _needSharedTarget = true;
-
+  : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex, true) {
     try {
       const auto& shift = parameters.at("shift");
 

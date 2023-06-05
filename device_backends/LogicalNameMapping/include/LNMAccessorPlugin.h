@@ -102,7 +102,7 @@ namespace ChimeraTK::LNMBackend {
      *   const std::map<std::string, std::string>& parameters
      *  Since the parameters are not used in the base class, they do not need to be passed on.
      */
-    explicit AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex);
+    explicit AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex, bool shareTargetAccessors = false);
 
    private:
     // we make our destructor private and add Derived as a friend to enforce the correct CRTP
@@ -114,7 +114,7 @@ namespace ChimeraTK::LNMBackend {
      * Deriving plugins should set this to true if they want to use interlocked access to the same
      * target accessor. Otherwise different accessors for the same target will given out.
      */
-    bool _needSharedTarget{false};
+    const bool _needSharedTarget;
 
    public:
     /**
@@ -259,8 +259,9 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   template<typename Derived>
-  AccessorPlugin<Derived>::AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex)
-  : AccessorPluginBase(info), _pluginIndex(pluginIndex) {
+  AccessorPlugin<Derived>::AccessorPlugin(
+      const LNMBackendRegisterInfo& info, size_t pluginIndex, bool shareTargetAccessors)
+  : AccessorPluginBase(info), _needSharedTarget{shareTargetAccessors}, _pluginIndex(pluginIndex) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl);
   }
 
