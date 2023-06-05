@@ -25,24 +25,6 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  /** Helper class to implement MonostableTriggerPluginPlugin::decorateAccessor (can later be realised with if
-   * constexpr) */
-  template<typename UserType, typename TargetType>
-  struct ForcePollingReadPlugin_Helper {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>&) {
-      assert(false); // only specialisation is valid
-      return {};
-    }
-  };
-  template<typename UserType>
-  struct ForcePollingReadPlugin_Helper<UserType, UserType> {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target) {
-      return target;
-    }
-  };
-
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> ForcePollingReadPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
@@ -52,6 +34,13 @@ namespace ChimeraTK::LNMBackend {
           "AccessMode::wait_for_new_data is disallowed through ForcePollingReadPlugin for register '" +
           target->getName() + "'.");
     }
-    return ForcePollingReadPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
+
+    if constexpr(std::is_same<UserType, TargetType>::value) {
+      return target;
+    }
+
+    assert(false);
+
+    return {};
   }
 } // namespace ChimeraTK::LNMBackend

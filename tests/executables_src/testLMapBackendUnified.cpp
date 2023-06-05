@@ -1091,6 +1091,80 @@ struct RegMonostableTrigger : ScalarRegisterDescriptorBase<RegMonostableTrigger>
   DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_STATUS"};
 };
 
+// Base descriptor for bit accessors
+template<typename Derived>
+struct RegBitRangeDescriptor : OneDRegisterDescriptorBase<Derived> {
+  using RegisterDescriptorBase<Derived>::derived;
+  static constexpr auto capabilities = RegisterDescriptorBase<Derived>::capabilities.disableTestRawTransfer();
+
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 1; }
+
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+
+  size_t nRuntimeErrorCases() { return derived->target.nRuntimeErrorCases(); }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue() {
+    return derived->target.template generateValue<UserType>();
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue() {
+    uint64_t v = derived->target.template getRemoteValue<uint64_t>()[0][0];
+    uint64_t mask = ((1 << derived->width) - 1) << derived->shift;
+    UserType result = (v & mask) >> derived->shift;
+    return {{result}};
+  }
+
+  void setRemoteValue() { derived->target.setRemoteValue(); }
+
+  void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }
+};
+
+struct BitRangeAccessorTarget : ScalarRegisterDescriptorBase<BitRangeAccessorTarget> {
+  std::string path() { return "/BOARD.WORD_FIRMWARE"; }
+
+  const uint32_t increment = 0x1313'2131;
+
+  using minimumUserType = uint32_t;
+  using rawUserType = int32_t;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/BOARD.WORD_FIRMWARE"};
+};
+
+struct RegLowerHalfOfFirmware : RegBitRangeDescriptor<RegLowerHalfOfFirmware> {
+  std::string path() { return "/BitRangeLower"; }
+
+  using minimumUserType = int8_t;
+
+  uint16_t width = 8;
+  uint16_t shift = 8;
+
+  BitRangeAccessorTarget target;
+};
+
+struct RegUpperHalfOfFirmware : RegBitRangeDescriptor<RegUpperHalfOfFirmware> {
+  std::string path() { return "/BitRangeUpper"; }
+
+  using minimumUserType = int16_t;
+
+  uint16_t width = 16;
+  uint16_t shift = 16;
+
+  BitRangeAccessorTarget target;
+};
+
+struct Reg9BitsInChar : RegBitRangeDescriptor<Reg9BitsInChar> {
+  std::string path() { return "/BitRangeMiddle"; }
+
+  using minimumUserType = int8_t;
+
+  uint16_t width = 9;
+  uint16_t shift = 4;
+
+  BitRangeAccessorTarget target;
+};
+
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
@@ -1147,6 +1221,9 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegVariableAsPushParameterInMath_x_not_written2>()
       .addRegister<RegRedirectedBitWithMath>()
       .addRegister<RegMonostableTrigger>()
+      .addRegister<RegLowerHalfOfFirmware>()
+      .addRegister<RegUpperHalfOfFirmware>()
+      .addRegister<Reg9BitsInChar>()
       .runTests(lmapCdd);
 }
 

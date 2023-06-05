@@ -215,4 +215,28 @@
         <parameter name="milliseconds">100</parameter>
       </plugin>
     </redirectedRegister>
+    <redirectedRegister name="BitRangeLower">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD/WORD_FIRMWARE</targetRegister>
+      <plugin name="bitRange">
+        <parameter name="shift">8</parameter>
+        <parameter name="numberOfBits">8</parameter>
+      </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="BitRangeUpper">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD/WORD_FIRMWARE</targetRegister>
+      <plugin name="bitRange">
+        <parameter name="shift">16</parameter>
+        <parameter name="numberOfBits">16</parameter>
+      </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="BitRangeMiddle">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>BOARD/WORD_FIRMWARE</targetRegister>
+      <plugin name ="bitRange">
+      <parameter name="shift">4</parameter>
+      <parameter name="numberOfBits">9</parameter>
+      </plugin>
+    </redirectedRegister>
 </logicalNameMap>

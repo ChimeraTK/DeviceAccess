@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<logicalNameMap>
+    <variable name="SimpleScalar">
+        <type>int16</type>
+        <value>0</value>
+    </variable>
+    <variable name="F32">
+        <type>float32</type>
+        <value>0</value>
+    </variable>
+
+    <redirectedRegister name="Middle">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">3</parameter>
+            <parameter name="numberOfBits">10</parameter>
+        </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="TooLarge">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">12</parameter>
+            <parameter name="numberOfBits">8</parameter>
+        </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="LoByte">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">0</parameter>
+            <parameter name="numberOfBits">8</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="HiByte">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">8</parameter>
+            <parameter name="numberOfBits">8</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="MidByte">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">4</parameter>
+            <parameter name="numberOfBits">8</parameter>
+        </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="Fraction">
+        <targetDevice>this</targetDevice>
+        <targetRegister>F32</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">0</parameter>
+            <parameter name="numberOfBits">23</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="Exponent">
+        <targetDevice>this</targetDevice>
+        <targetRegister>F32</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">23</parameter>
+            <parameter name="numberOfBits">8</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="Sign">
+        <targetDevice>this</targetDevice>
+        <targetRegister>F32</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">30</parameter>
+            <parameter name="numberOfBits">1</parameter>
+        </plugin>
+    </redirectedRegister>
+</logicalNameMap>

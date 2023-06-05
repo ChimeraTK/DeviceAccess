@@ -11,8 +11,10 @@ namespace ChimeraTK::LNMBackend {
 
   /** Helper struct to hold extra parameters needed by some plugins, used in decorateAccessor() */
   struct UndecoratedParams {
-    UndecoratedParams(size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister), _flags(std::move(flags)) {}
+    UndecoratedParams(const std::string& name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
+    : _name(name), _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister),
+      _flags(std::move(flags)) {}
+    std::string _name;
     size_t _numberOfWords;
     size_t _wordOffsetInRegister;
     AccessModeFlags _flags;
@@ -100,12 +102,19 @@ namespace ChimeraTK::LNMBackend {
      *   const std::map<std::string, std::string>& parameters
      *  Since the parameters are not used in the base class, they do not need to be passed on.
      */
-    explicit AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex);
+    explicit AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex, bool shareTargetAccessors = false);
 
    private:
     // we make our destructor private and add Derived as a friend to enforce the correct CRTP
     ~AccessorPlugin() override = default;
     friend Derived;
+
+   protected:
+    /**
+     * Deriving plugins should set this to true if they want to use interlocked access to the same
+     * target accessor. Otherwise different accessors for the same target will given out.
+     */
+    const bool _needSharedTarget;
 
    public:
     /**
@@ -216,7 +225,7 @@ namespace ChimeraTK::LNMBackend {
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
   };
 
-  /** TypeHintModifier Plugin: Change the catalog type of the mapped register. No actual type conversion takes place */
+  /** TypeHintModifier Plugin: Change the catalogue type of the mapped register. No actual type conversion takes place */
   class TypeHintModifierPlugin : public AccessorPlugin<TypeHintModifierPlugin> {
    public:
     TypeHintModifierPlugin(
@@ -228,42 +237,49 @@ namespace ChimeraTK::LNMBackend {
     DataType _dataType{DataType::none};
   };
 
+  class BitRangeAccessPlugin : public AccessorPlugin<BitRangeAccessPlugin> {
+   public:
+    BitRangeAccessPlugin(
+        const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters);
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
+
+    void doRegisterInfoUpdate() override;
+    DataType getTargetDataType(DataType /*userType*/) const override { return DataType::uint64; }
+    uint32_t _shift{0};
+    uint32_t _numberOfBits{0};
+    bool _writeable{true};
+  };
+
   /********************************************************************************************************************/
   /* Implementations follow here                                                                                      */
   /********************************************************************************************************************/
 
   template<typename Derived>
-  AccessorPlugin<Derived>::AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex)
-  : AccessorPluginBase(info), _pluginIndex(pluginIndex) {
+  AccessorPlugin<Derived>::AccessorPlugin(
+      const LNMBackendRegisterInfo& info, size_t pluginIndex, bool shareTargetAccessors)
+  : AccessorPluginBase(info), _needSharedTarget{shareTargetAccessors}, _pluginIndex(pluginIndex) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl);
   }
 
   /********************************************************************************************************************/
-
-  template<typename UserType, typename TargetType>
-  struct AccessorPlugin_Helper {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>&) {
-      assert(false); // When overriding getTargetDataType(), also decorateAccessor()
-                     // must be overridden!
-      return {};
-    }
-  };
-
-  template<typename UserType>
-  struct AccessorPlugin_Helper<UserType, UserType> {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target) {
-      return target;
-    }
-  };
 
   template<typename Derived>
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams&) {
-    return AccessorPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
+    if constexpr(std::is_same<UserType, TargetType>::value) {
+      return target;
+    }
+
+    assert(false); // When overriding getTargetDataType(), also decorateAccessor()
+                   // must be overridden!
+
+    return {};
   }
 
   /********************************************************************************************************************/
@@ -279,17 +295,35 @@ namespace ChimeraTK::LNMBackend {
 
     // obtain desired target type from plugin implementation
     auto type = getTargetDataType(typeid(UserType));
-    if((_info._dataDescriptor.rawDataType() == DataType::none) and flags.has(AccessMode::raw)) {
+    if((_info._dataDescriptor.rawDataType() == DataType::none) && flags.has(AccessMode::raw)) {
       throw ChimeraTK::logic_error(
           "Access mode 'raw' is not supported for register '" + std::string(_info.getRegisterName()) + "'");
     }
 
     callForType(type, [&](auto T) {
-      // obtain target accessor with desired type
-      auto target = backend->getRegisterAccessor_impl<decltype(T)>(
-          _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<decltype(T)>> target;
+
+      if(_needSharedTarget) {
+        auto& map = boost::fusion::at_key<decltype(T)>(backend->sharedAccessorMap.table);
+        RegisterPath path{_info.registerName};
+        path.setAltSeparator(".");
+        LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
+
+        auto it = map.find(key);
+        if(it == map.end() || (target = it->second.accessor.lock()) == nullptr) {
+          // obtain target accessor with desired type
+          target = backend->getRegisterAccessor_impl<decltype(T)>(
+              _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
+          map[key].accessor = target;
+        }
+      }
+      else {
+        target = backend->getRegisterAccessor_impl<decltype(T)>(
+            _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
+      }
+
       // double buffering plugin needs numberOfWords, wordOffsetInRegister of already existing accessor
-      UndecoratedParams accessorParams(numberOfWords, wordOffsetInRegister, flags);
+      UndecoratedParams accessorParams(_info.registerName, numberOfWords, wordOffsetInRegister, flags);
       decorated = static_cast<Derived*>(this)->template decorateAccessor<UserType>(backend, target, accessorParams);
     });
 

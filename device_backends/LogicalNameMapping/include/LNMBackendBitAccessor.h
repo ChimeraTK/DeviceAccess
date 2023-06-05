@@ -62,7 +62,9 @@ namespace ChimeraTK {
         auto& map = boost::fusion::at_key<uint64_t>(_dev->sharedAccessorMap.table);
         // we need an identifier of the device in the key, in case the logical name mapping accesses more than one
         // device with same set of register names
-        LogicalNameMappingBackend::AccessorKey key(targetDevice.get(), RegisterPath(info.registerName));
+        RegisterPath path{info.registerName};
+        path.setAltSeparator(".");
+        LogicalNameMappingBackend::AccessorKey key(targetDevice.get(), path);
         auto it = map.find(key);
         // Obtain accessor if not found in the map or if weak pointer has expired
         // Note: we must not use boost::weak_ptr::expired() here, because we have to check the status and obtain the

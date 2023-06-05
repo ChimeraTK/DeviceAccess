@@ -302,7 +302,7 @@ namespace ChimeraTK {
       }
       std::string moduleName = nameAttr->get_value();
 
-      // iterate over childs in module
+      // iterate over children in module
       for(const auto& child : element->get_children()) {
         // cast into element, ignore if not an element (e.g. comment)
         const auto* childElement = dynamic_cast<const xmlpp::Element*>(child);
@@ -393,7 +393,7 @@ namespace ChimeraTK {
         parsingError(element, "Wrong logical register type: " + type);
       }
 
-      // iterate over childs of the register to find plugins
+      // iterate over children of the register to find plugins
       for(const auto& child : element->get_children()) {
         // cast into element, ignore if not an element (e.g. comment)
         const auto* childElement = dynamic_cast<const xmlpp::Element*>(child);

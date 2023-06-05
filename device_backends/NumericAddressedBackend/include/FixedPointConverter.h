@@ -28,15 +28,15 @@ namespace ChimeraTK {
   class FixedPointConverter {
    public:
     /** The constructor defines the conversion factor.
-     *  @param variableName The name of the variable. It is useds in case an
+     *  @param variableName The name of the variable. It is used in case an
      exception is thrown which significantly simplifies the debugging.
      *  @param nBits The number of total bits must not exceed 32.
-     *  @param fractionalBits The numer of fractional bits can range from
+     *  @param fractionalBits The number of fractional bits can range from
      *    -1024+nBits to 1021-nBits (in case of a double user type). For integer
      *    user types, no fractional bits are allowed.
      *  @param isSignedFlag Flag whether the most significant bit is interpreted
      as
-     *    sign bit. Negative numbers are interpretes as two's complement
+     *    sign bit. Negative numbers are interpreted as two's complement
      *    number of the respective number of bits
      *    (i.e. in signed 6 bit, 0 fractional bits 0x3F is -1)
      */
@@ -365,12 +365,12 @@ namespace ChimeraTK {
     // convert into double and scale by fractional bit coefficient
     double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);
 
-    // Convert into either signed or uinsigned int32_t, depending on _isSigned,
-    // so the conversion handls the sign correctly. Store always in a uint32_t,
+    // Convert into either signed or unsigned int32_t, depending on _isSigned,
+    // so the conversion handles the sign correctly. Store always in a uint32_t,
     // since this is our raw type. The conversion will properly round, when
-    // needed. Negative overflow exceptions need to be cought for some corner
+    // needed. Negative overflow exceptions need to be caught for some corner
     // cases (e.g. number of fractional bits >= number of bits in total).
-    // Positive overflow cannot happen due to the rangecheck above (the negative
+    // Positive overflow cannot happen due to the range check above (the negative
     // branch has one more possible value).
     int32_t raw;
     try {

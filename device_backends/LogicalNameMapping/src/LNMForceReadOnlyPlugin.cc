@@ -51,27 +51,16 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  /** Helper class to implement ForceReadOnlyPlugin::decorateAccessor (can later be realised with if constexpr) */
-  template<typename UserType, typename TargetType>
-  struct ForceReadOnlyPlugin_Helper {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>&) {
-      assert(false); // only specialisation is valid
-      return {};
-    }
-  };
-  template<typename UserType>
-  struct ForceReadOnlyPlugin_Helper<UserType, UserType> {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target) {
-      return boost::make_shared<ForceReadOnlyPluginDecorator<UserType>>(target);
-    }
-  };
-
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> ForceReadOnlyPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams&) {
-    return ForceReadOnlyPlugin_Helper<UserType, TargetType>::decorateAccessor(target);
+    if constexpr(std::is_same<UserType, TargetType>::value) {
+      return boost::make_shared<ForceReadOnlyPluginDecorator<UserType>>(target);
+    }
+
+    assert(false);
+
+    return {};
   }
 } // namespace ChimeraTK::LNMBackend

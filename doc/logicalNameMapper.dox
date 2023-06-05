@@ -70,6 +70,14 @@ Example with most features:
       <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
       <targetBit>0</targetBit>
     </redirectedBit>
+    <redirectedRegister name="MapFileRevision">
+      <targetDevice>PCIE2</targetDevice>
+      <targetRegister>BOARD.WORD_FIRMWARE</targetRegister>
+      <plugin name="bitRange">
+        <parameter name="shift">16</parameter>
+        <parameter name="numberOfBits">16</parameter>
+      </plugin>
+    </redirectedRegister>
 </logicalNameMap>
 \endcode
 
@@ -263,4 +271,29 @@ Notes and CAVEATS:
   finishes. Regions are identified on the basis of the controlRegister.
   However, current implementation is not safe for concurrent readers from different processes.
 
+\subsubsection plugins_reference_bit_range bitRange
+
+<code>bitRange</code> enables to split a single variable into one or multiple variables which can be used to manipulate
+those parts individually without having to deal with bit masks yourself.
+
+Parameters:
+- <code>shift</code>: Position of the first bit of the mask
+- <code>numberOfBits</code>: Length of the mask
+
+
+When used like below on a 32bit register, the redirected register will give access to the upper word of that register.
+\code{xml}
+<plugin name="bitRange">
+  <parameter name="shift">16</parameter>
+  <parameter name="numberOfBits">16</parameter>
+</plugin>
+\endcode
+
+
+Notes and CAVEATS:
+- Only accessors with integral types can be requested from the LMAP device
+- wait_for_new_data is currently not supported
+- When overlapping bit ranges are used in a TransferGroup, the TransferGroup will become read-only since write order
+  of overlapping registers cannot be guaranteed
+- If the target register is writeable, the plugin does read-modify-write
 */

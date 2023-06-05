@@ -73,12 +73,15 @@ namespace ChimeraTK {
     struct SharedAccessor {
       boost::weak_ptr<NDRegisterAccessor<UserType>> accessor;
       std::recursive_mutex mutex;
+
+      // Must only be modified while holding mutex
+      int useCount{0};
     };
 
     /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of
      *  LNMBackendBitAccessor. Multiple instances of LNMBackendBitAccessor referring to different bits of the same
      *  register share their target accessor. This sharing is governed by this map. */
-    using AccessorKey = std::pair<DeviceBackend*, std::string>;
+    using AccessorKey = std::pair<DeviceBackend*, RegisterPath>;
     template<typename UserType>
     using SharedAccessorMap = std::map<AccessorKey, SharedAccessor<UserType>>;
     TemplateUserTypeMap<SharedAccessorMap> sharedAccessorMap;
