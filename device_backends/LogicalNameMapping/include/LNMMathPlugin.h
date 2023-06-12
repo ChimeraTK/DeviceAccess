@@ -27,6 +27,7 @@ namespace ChimeraTK::LNMBackend {
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
 
     void openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) override;
+    void postParsingHook(const boost::shared_ptr<const LogicalNameMappingBackend>& backend) override;
     void closeHook() override;
     void exceptionHook() override;
 

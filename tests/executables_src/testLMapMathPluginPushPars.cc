@@ -185,6 +185,7 @@ BOOST_AUTO_TEST_CASE(testPushParsLateOpen) {
 
     ChimeraTK::Device logicalDevice("EOD");
     auto pushPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/PUSHPAR");
+    // TODO test this later auto accMathWrite = logicalDevice.getScalarRegisterAccessor<double>("DET/X");
     logicalDevice.open();
     logicalDevice.activateAsyncRead();
     auto accMathWrite = logicalDevice.getScalarRegisterAccessor<double>("DET/X");
