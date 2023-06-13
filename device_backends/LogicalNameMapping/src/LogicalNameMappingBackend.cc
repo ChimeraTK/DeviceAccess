@@ -31,6 +31,13 @@ namespace ChimeraTK {
     for(const auto& devName : getTargetDevices()) {
       _devices[devName] = BackendFactory::getInstance().createBackend(devName);
     }
+    // iterate over plugins and call postParsingHook
+    for(auto& reg : _catalogue_mutable) {
+      for(auto& p : reg.plugins) {
+        auto thisp = boost::static_pointer_cast<const LogicalNameMappingBackend>(shared_from_this());
+        p->postParsingHook(thisp);
+      }
+    }
   }
 
   /********************************************************************************************************************/

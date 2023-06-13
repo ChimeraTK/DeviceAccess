@@ -43,6 +43,12 @@ namespace ChimeraTK::LNMBackend {
     }
 
     _isWrite = _info.writeable;
+
+    if(!_isWrite) { // reading MathPlugin
+      if(_enablePushParameters) {
+        throw ChimeraTK::logic_error("MathPlugin (reading) does not support push_parameters");
+      }
+    }
   }
 
   /********************************************************************************************************************/
@@ -63,38 +69,39 @@ namespace ChimeraTK::LNMBackend {
       }
     }
 
-    if(_isWrite) {
-      // Write direction: check that we have only variables as parameters
-      // Current push implementation (via LNMBackendVariableAccessor<UserType>::doPostWrite) is only for variables
-      // Therefore, we agreed to disallow non-variables, even push-feature not requested
-      for(const auto& parpair : _parameters) {
-        std::string pname = RegisterPath(parpair.second); // conversion to RegisterPath and back adds leading /
-        if(backend->_variables.find(pname) == backend->_variables.end()) {
-          throw logic_error("no LNM variable defined for parameter " + pname);
-        }
-        else {
-          if(_enablePushParameters) {
-            _hasPushParameter = true;
-            // add this only if not yet in there, otherwise re-open of device would blow up size.
-            backend->_variables[pname].usingFormulas.insert(this);
-          }
-        }
-      }
-      if(_enablePushParameters && !_hasPushParameter) {
-        throw ChimeraTK::logic_error("MathPlugin (writing) with push_parameters requested but there is no parameter!");
-      }
-    }
-    else { // reading MathPlugin
-      if(_enablePushParameters) {
-        throw ChimeraTK::logic_error("MathPlugin (reading) does not support push_parameters");
-      }
-    }
-
     // we require that all values used in the formula need to be written after open, before we provide first result
     {
       std::unique_lock<std::recursive_mutex> lk(_writeMutex);
       _mainValueWrittenAfterOpen = false;
       _allParametersWrittenAfterOpen = false;
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  void MathPlugin::postParsingHook(const boost::shared_ptr<const LogicalNameMappingBackend>& backend) {
+    // whether this plugin is write mode depends on catalogue of target device so we need to update catalogue
+    // note, some target devices (e.g. DOOCS backend) provide their catalogue only on open, so it's not final here.
+    auto catalogue = backend->getRegisterCatalogue();
+    if(_isWrite) {
+      // Write direction: check that we have only lnm defined variables as parameters
+      // Current push implementation (via LNMBackendVariableAccessor<UserType>::doPostWrite) is only for variables.
+      // Therefore, we agreed to disallow non-variables, even when push-feature not requested.
+      for(const auto& parpair : _parameters) {
+        std::string pname = RegisterPath(parpair.second); // conversion to RegisterPath and back adds leading '/'
+        if(backend->_variables.find(pname) == backend->_variables.end()) {
+          throw logic_error("no LNM variable defined for parameter " + pname);
+        }
+        // set up connections for push-enabled variables. It is important that we do this already before openHook,
+        // since RegisterAccessor to Variable can be requested earlier!
+        if(_enablePushParameters) {
+          _hasPushParameter = true;
+          backend->_variables[pname].usingFormulas.insert(this);
+        }
+      }
+      if(_enablePushParameters && !_hasPushParameter) {
+        throw ChimeraTK::logic_error("MathPlugin (writing) with push_parameters requested but there is no parameter!");
+      }
     }
   }
 
