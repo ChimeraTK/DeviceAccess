@@ -102,7 +102,8 @@ namespace ChimeraTK {
      * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
      * the write actually takes place.
      */
-    void writeIfDifferent(UserType newValue, VersionNumber versionNumber = VersionNumber{nullptr});
+    void writeIfDifferent(UserType newValue, VersionNumber versionNumber = VersionNumber{nullptr},
+        DataValidity validity = DataValidity::ok);
 
     /**
      * Convenience function to set and write new value. The given version number.
@@ -136,7 +137,8 @@ namespace ChimeraTK {
 
     ScalarRegisterAccessor<std::string>& operator=(std::string rightHandSide);
 
-    void writeIfDifferent(const std::string& newValue, VersionNumber versionNumber = VersionNumber{nullptr});
+    void writeIfDifferent(const std::string& newValue, VersionNumber versionNumber = VersionNumber{nullptr},
+        DataValidity dataValidity = DataValidity::ok);
 
     friend class TransferGroup;
   };
@@ -239,10 +241,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType, typename TAG>
-  void ScalarRegisterAccessor<UserType, TAG>::writeIfDifferent(UserType newValue, VersionNumber versionNumber) {
-    if(get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr)) {
+  void ScalarRegisterAccessor<UserType, TAG>::writeIfDifferent(
+      UserType newValue, VersionNumber versionNumber, DataValidity validity) {
+    if(get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr) ||
+        this->dataValidity() != validity) {
       operator=(newValue);
-      if(versionNumber == VersionNumber{nullptr}) versionNumber = {};
+      if(versionNumber == VersionNumber{nullptr}) {
+        versionNumber = {};
+      }
+      this->setDataValidity(validity);
       this->write(versionNumber);
     }
   }
@@ -287,10 +294,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline void ScalarRegisterAccessor<std::string>::writeIfDifferent(
-      const std::string& newValue, VersionNumber versionNumber) {
-    if(get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr)) {
+      const std::string& newValue, VersionNumber versionNumber, DataValidity validity) {
+    if(get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr) ||
+        this->dataValidity() != validity) {
       operator=(newValue);
       if(versionNumber == VersionNumber{nullptr}) versionNumber = {};
+      this->setDataValidity(validity);
       this->write(versionNumber);
     }
   }

@@ -11,6 +11,7 @@ using namespace boost::unit_test_framework;
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "ScalarRegisterAccessor.h"
+#include "WriteCountingBackend.h"
 #include <unordered_map>
 
 #include <boost/bind/bind.hpp>
@@ -26,32 +27,6 @@ using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
 
-struct WriteCountingBackend : public DummyBackend {
-  using DummyBackend::DummyBackend;
-
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
-    return returnInstance<WriteCountingBackend>(
-        parameters.at("map"), convertPathRelativeToDmapToAbs(parameters.at("map")));
-  }
-
-  size_t writeCount{0};
-
-  void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
-    ++writeCount;
-    DummyBackend::write(bar, address, data, sizeInBytes);
-  }
-
-  struct BackendRegisterer {
-    BackendRegisterer() {
-      ChimeraTK::BackendFactory::getInstance().registerBackendType(
-          "WriteCountingDummy", &WriteCountingBackend::createInstance, {"map"});
-    }
-  };
-};
-
-static WriteCountingBackend::BackendRegisterer gWriteCountingBackendRegisterer;
-
-/**********************************************************************************************************************/
 BOOST_AUTO_TEST_CASE(testCreation) {
   setDMapFilePath("dummies.dmap");
   std::cout << "testCreation" << std::endl;
@@ -76,6 +51,7 @@ BOOST_AUTO_TEST_CASE(testCreation) {
 }
 
 /**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
   setDMapFilePath("dummies.dmap");
   std::cout << "testRegisterAccessor" << std::endl;
@@ -186,6 +162,7 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
 }
 
 /**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testFloatRegisterAccessor) {
   setDMapFilePath("dummies.dmap");
   std::cout << "testFloatRegisterAccessor" << std::endl;
@@ -231,6 +208,7 @@ BOOST_AUTO_TEST_CASE(testFloatRegisterAccessor) {
 }
 
 /**********************************************************************************************************************/
+
 /// test the scalar accessor as one value in a larger register
 BOOST_AUTO_TEST_CASE(testWordOffset) {
   setDMapFilePath("dummies.dmap");
@@ -262,6 +240,7 @@ BOOST_AUTO_TEST_CASE(testWordOffset) {
 }
 
 /**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testUniqueID) {
   setDMapFilePath("dummies.dmap");
   std::cout << "testUniqueID" << std::endl;
@@ -336,9 +315,11 @@ BOOST_AUTO_TEST_CASE(testUniqueID) {
   device.close();
 }
 
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
+  std::cout << "testWriteIfDifferent" << std::endl;
   setDMapFilePath("dummies.dmap");
-  std::cout << "testRegisterAccessor" << std::endl;
 
   Device device;
   device.open("(WriteCountingDummy?map=goodMapFile.map)");
@@ -355,7 +336,7 @@ BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
   // dummy register accessor for comparison
   DummyRegisterAccessor<int> dummy(backend.get(), "APP0", "WORD_STATUS");
 
-  // Inital write and writeIfDifferent with same Value
+  // Inital write and writeIfDifferent with same value
   accessor = 501;
   accessor.write();
   size_t counterBefore = backend->writeCount;
@@ -363,21 +344,33 @@ BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
   size_t counterAfter = backend->writeCount;
   BOOST_CHECK(counterBefore == counterAfter);
 
-  // writeIfDifferent with different Value
+  // writeIfDifferent with different value
   counterBefore = backend->writeCount;
   accessor.writeIfDifferent(502); // should write
   counterAfter = backend->writeCount;
   BOOST_CHECK(counterAfter == counterBefore + 1);
 
-  // writeIfDifferent with same Value, but explizit version number
+  // writeIfDifferent with same value, but explicit version number
   counterBefore = backend->writeCount;
   accessor.writeIfDifferent(502, VersionNumber{}); // should not write
   counterAfter = backend->writeCount;
   BOOST_CHECK(counterAfter == counterBefore);
 
-  // writeIfDifferent with different Value, and explicit version number
+  // writeIfDifferent with different value, and explicit version number
   counterBefore = backend->writeCount;
   accessor.writeIfDifferent(514, VersionNumber{}); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // writeIfDifferent with same value, but different DataValidity
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(514, VersionNumber{nullptr}, DataValidity::faulty); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // writeIfDifferent with same value, but different DataValidity (now back at OK)
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent(514); // should write
   counterAfter = backend->writeCount;
   BOOST_CHECK(counterAfter == counterBefore + 1);
 

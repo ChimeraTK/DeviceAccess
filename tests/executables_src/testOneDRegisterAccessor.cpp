@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE OneDRegisterAccessorTest
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
 
-///@todo FIXME My dynamic init header is a hack. Change the test to use
-/// BOOST_AUTO_TEST_CASE!
 #include "BackendFactory.h"
-#include "boost_dynamic_init_test.h"
 #include "Device.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "OneDRegisterAccessor.h"
+#include "WriteCountingBackend.h"
 
 #include <boost/bind/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -18,52 +22,26 @@
 #include <math.h>
 
 using namespace boost::unit_test_framework;
-namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
-class OneDRegisterTest {
- public:
-  OneDRegisterTest() {
-    device = boost::shared_ptr<Device>(new Device());
-    device->open("DUMMYD1");
+
+struct Fixture {
+  Fixture() {
+    setDMapFilePath("dummies.dmap");
+    device.open("(WriteCountingDummy?map=goodMapFile.map)");
   }
 
-  /// test the register accessor
-  void testRegisterAccessor();
-
- private:
-  boost::shared_ptr<Device> device;
-  friend class OneDRegisterTestSuite;
+  Device device;
 };
 
 /**********************************************************************************************************************/
-class OneDRegisterTestSuite : public test_suite {
- public:
-  OneDRegisterTestSuite() : test_suite("OneDRegisterAccessor test suite") {
-    BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
-    boost::shared_ptr<OneDRegisterTest> bufferingRegisterTest(new OneDRegisterTest);
 
-    add(BOOST_CLASS_TEST_CASE(&OneDRegisterTest::testRegisterAccessor, bufferingRegisterTest));
-  }
-};
-
-/**********************************************************************************************************************/
-bool init_unit_test() {
-  framework::master_test_suite().p_name.value = "DummyRegister test suite";
-  framework::master_test_suite().add(new OneDRegisterTestSuite);
-
-  return true;
-}
-
-/**********************************************************************************************************************/
-void OneDRegisterTest::testRegisterAccessor() {
+BOOST_FIXTURE_TEST_CASE(testRegisterAccessor, Fixture) {
   std::cout << "testRegisterAccessor" << std::endl;
 
   // obtain register accessor with integral type
-  OneDRegisterAccessor<int> intRegister = device->getOneDRegisterAccessor<int>("APP0/MODULE0");
+  OneDRegisterAccessor<int> intRegister = device.getOneDRegisterAccessor<int>("APP0/MODULE0");
   BOOST_CHECK(intRegister.isReadOnly() == false);
   BOOST_CHECK(intRegister.isReadable());
   BOOST_CHECK(intRegister.isWriteable());
@@ -72,7 +50,7 @@ void OneDRegisterTest::testRegisterAccessor() {
   BOOST_CHECK(intRegister.getNElements() == 3);
 
   // test operator[] on r.h.s.
-  device->write<int>("APP0/MODULE0", std::vector<int>({5, -77, 99}));
+  device.write<int>("APP0/MODULE0", std::vector<int>({5, -77, 99}));
   intRegister.read();
   BOOST_CHECK(intRegister[0] == 5);
   BOOST_CHECK(intRegister[1] == -77);
@@ -83,7 +61,7 @@ void OneDRegisterTest::testRegisterAccessor() {
   intRegister[1] = 999;
   intRegister[2] = 222;
   intRegister.write();
-  BOOST_CHECK(device->read<int>("APP0/MODULE0", 3) == std::vector<int>({-666, 999, 222}));
+  BOOST_CHECK(device.read<int>("APP0/MODULE0", 3) == std::vector<int>({-666, 999, 222}));
 
   // test data() function
   int* ptr = intRegister.data();
@@ -104,7 +82,7 @@ void OneDRegisterTest::testRegisterAccessor() {
     ic++;
   }
   intRegister.write();
-  BOOST_CHECK(device->read<int>("APP0/MODULE0", 3) == std::vector<int>({1000, 2000, 3000}));
+  BOOST_CHECK(device.read<int>("APP0/MODULE0", 3) == std::vector<int>({1000, 2000, 3000}));
 
   // test iterators with rbegin and rend
   ic = 0;
@@ -113,10 +91,10 @@ void OneDRegisterTest::testRegisterAccessor() {
     ic++;
   }
   intRegister.write();
-  BOOST_CHECK(device->read<int>("APP0/MODULE0", 3) == std::vector<int>({999, 666, 333}));
+  BOOST_CHECK(device.read<int>("APP0/MODULE0", 3) == std::vector<int>({999, 666, 333}));
 
   // test const iterators in both directions
-  device->write("APP0/MODULE0", std::vector<int>({1234, 2468, 3702}));
+  device.write("APP0/MODULE0", std::vector<int>({1234, 2468, 3702}));
   intRegister.read();
   const OneDRegisterAccessor<int> const_intRegister = intRegister;
   ic = 0;
@@ -146,15 +124,70 @@ void OneDRegisterTest::testRegisterAccessor() {
 
   // obtain register accessor with fractional type, to check if fixed-point
   // conversion is working (3 fractional bits)
-  OneDRegisterAccessor<double> floatRegister = device->getOneDRegisterAccessor<double>("MODULE0/WORD_USER1");
+  OneDRegisterAccessor<double> floatRegister = device.getOneDRegisterAccessor<double>("MODULE0/WORD_USER1");
 
   // test operator[] on r.h.s.
-  device->write("APP0/MODULE0", std::vector<int>({-120, 2468}));
+  device.write("APP0/MODULE0", std::vector<int>({-120, 2468}));
   floatRegister.read();
   BOOST_CHECK(floatRegister[0] == -120. / 8.);
 
   // test operator[] on l.h.s.
   floatRegister[0] = 42. / 8.;
   floatRegister.write();
-  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({42, 2468}));
+  BOOST_CHECK(device.read<int>("APP0/MODULE0", 2) == std::vector<int>({42, 2468}));
 }
+
+/**********************************************************************************************************************/
+
+BOOST_FIXTURE_TEST_CASE(testWriteIfDifferent, Fixture) {
+  std::cout << "testWriteIfDifferent" << std::endl;
+
+  OneDRegisterAccessor<int> accessor = device.getOneDRegisterAccessor<int>("APP0/MODULE0");
+
+  // dummy register accessor for comparison
+  auto backend = boost::dynamic_pointer_cast<WriteCountingBackend>(device.getBackend());
+  BOOST_CHECK(backend != NULL);
+  DummyRegisterAccessor<int> dummy(backend.get(), "APP0", "MODULE0");
+
+  // Inital write and writeIfDifferent with same value
+  accessor = {501, 502, 503};
+  accessor.write();
+  size_t counterBefore = backend->writeCount;
+  accessor.writeIfDifferent({501, 502, 503}); // should not write
+  size_t counterAfter = backend->writeCount;
+  BOOST_CHECK(counterBefore == counterAfter);
+
+  // writeIfDifferent with different value
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent({501, 504, 503}); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // writeIfDifferent with same value, but explicit version number
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent({501, 504, 503}, VersionNumber{}); // should not write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore);
+
+  // writeIfDifferent with different value, and explicit version number
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent({505, 504, 503}, VersionNumber{}); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // writeIfDifferent with same value, but different DataValidity
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent({505, 504, 503}, VersionNumber{nullptr}, DataValidity::faulty); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  // writeIfDifferent with same value, but different DataValidity (now back at OK)
+  counterBefore = backend->writeCount;
+  accessor.writeIfDifferent({505, 504, 503}); // should write
+  counterAfter = backend->writeCount;
+  BOOST_CHECK(counterAfter == counterBefore + 1);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
