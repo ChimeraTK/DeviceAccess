@@ -168,6 +168,51 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
   BOOST_CHECK(DummyForCleanupCheck::cleanupCalled);
 }
 
+BOOST_AUTO_TEST_CASE(testPushParsLateOpen) {
+  // test that push-parameter logic also works if accessor to variable is obtained first, before device is opened
+  // this is a regression test for bug https://redmine.msktools.desy.de/issues/11910
+  setDMapFilePath("mathPluginWithPushPars.dmap");
+  {
+    ChimeraTK::Device targetDevice;
+    auto targetWriteCount = [&targetDevice]() {
+      auto exceptionDummyForTargetDev = boost::static_pointer_cast<ExceptionDummy>(targetDevice.getBackend());
+      return exceptionDummyForTargetDev->getWriteCount("MATHTEST/TARGET");
+    };
+    size_t writeCount = 0; // this counter tracks expected writes to target register
+
+    targetDevice.open("HOLD");
+    auto accTarget = targetDevice.getScalarRegisterAccessor<uint32_t>("MATHTEST/TARGET");
+
+    ChimeraTK::Device logicalDevice("EOD");
+    auto pushPar = logicalDevice.getScalarRegisterAccessor<uint32_t>("DET/PUSHPAR");
+    auto accMathWrite = logicalDevice.getScalarRegisterAccessor<double>("DET/X");
+    logicalDevice.open();
+    logicalDevice.activateAsyncRead();
+
+    pushPar = 2;
+    pushPar.write();
+
+    // write to main value and check result
+    accMathWrite = 3;
+    accMathWrite.write();
+    accTarget.read();
+    BOOST_TEST(int(accTarget) == 10 * pushPar + accMathWrite);
+    // check that result was written exactly once
+    writeCount++;
+    BOOST_TEST(targetWriteCount() == writeCount);
+
+    // write to push-parameter and check result
+    // note, it's a new feature that result is completely written when write() returns.
+    pushPar = 4;
+    pushPar.write();
+    accTarget.read();
+    BOOST_TEST(int(accTarget) == 10 * pushPar + accMathWrite);
+    writeCount++;
+    BOOST_TEST(targetWriteCount() == writeCount);
+  }
+  BOOST_CHECK(DummyForCleanupCheck::cleanupCalled);
+}
+
 /********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
