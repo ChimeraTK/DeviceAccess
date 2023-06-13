@@ -43,6 +43,8 @@ namespace ChimeraTK {
     faulty /// The data is not considered valid
   };
 
+  std::ostream& operator<<(std::ostream& os, const DataValidity& validity);
+
   /**
    * @brief Used to indicate the applicable operation on a Transferelement.
    */
