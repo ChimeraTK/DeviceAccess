@@ -14,4 +14,4 @@ namespace ChimeraTK {
     return os;
   }
 
-}
+} // namespace ChimeraTK

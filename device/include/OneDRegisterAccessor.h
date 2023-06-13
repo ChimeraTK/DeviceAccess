@@ -114,7 +114,8 @@ namespace ChimeraTK {
      * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
      * the write actually takes place.
      */
-    void writeIfDifferent(const std::vector<UserType>& newValue, VersionNumber versionNumber = VersionNumber{nullptr});
+    void writeIfDifferent(const std::vector<UserType>& newValue, VersionNumber versionNumber = VersionNumber{nullptr},
+        DataValidity validity = DataValidity::ok);
 
     friend class TransferGroup;
 
@@ -207,11 +208,12 @@ namespace ChimeraTK {
    */
   template<typename UserType>
   void OneDRegisterAccessor<UserType>::writeIfDifferent(
-      const std::vector<UserType>& newValue, VersionNumber versionNumber) {
+      const std::vector<UserType>& newValue, VersionNumber versionNumber, DataValidity validity) {
     if(!std::equal(newValue.begin(), newValue.end(), get()->accessChannel(0).begin()) ||
-        this->getVersionNumber() == VersionNumber(nullptr)) {
+        this->getVersionNumber() == VersionNumber(nullptr) || this->dataValidity() != validity) {
       operator=(newValue);
       if(versionNumber == VersionNumber{nullptr}) versionNumber = {};
+      this->setDataValidity(validity);
       this->write(versionNumber);
     }
   }
