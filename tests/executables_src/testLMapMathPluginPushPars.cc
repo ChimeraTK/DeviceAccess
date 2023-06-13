@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
 
 BOOST_AUTO_TEST_CASE(testPushParsLateOpen) {
   // test that push-parameter logic also works if accessor to variable is obtained first, before device is opened
-  // this is a regression test for bug ???
+  // this is a regression test for bug https://redmine.msktools.desy.de/issues/11910
   setDMapFilePath("mathPluginWithPushPars.dmap");
   {
     ChimeraTK::Device targetDevice;

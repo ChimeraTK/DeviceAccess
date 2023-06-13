@@ -81,7 +81,7 @@ namespace ChimeraTK::LNMBackend {
 
   void MathPlugin::postParsingHook(const boost::shared_ptr<const LogicalNameMappingBackend>& backend) {
     // whether this plugin is write mode depends on catalogue of target device so we need to update catalogue
-    // TODO discuss - what happens for target devices which provide their catalogue only on open, e.g. DOOCS backend?
+    // note, some target devices (e.g. DOOCS backend) provide their catalogue only on open, so it's not final here.
     auto catalogue = backend->getRegisterCatalogue();
     if(_isWrite) {
       // Write direction: check that we have only lnm defined variables as parameters

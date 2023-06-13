@@ -75,9 +75,7 @@ namespace ChimeraTK::LNMBackend {
      *  Hook called after the parsing of logical name map. This can be used for setup code which needs complete
      *  logical name map definitions but must be executed before any register accessor is created.
      */
-    virtual void postParsingHook(const boost::shared_ptr<const LogicalNameMappingBackend>& backend) {
-      std::ignore = backend;
-    }
+    virtual void postParsingHook([[maybe_unused]] const boost::shared_ptr<const LogicalNameMappingBackend>& backend) {}
 
     /**
      *  Hook called when the backend is closed, at the beginning of the close() function when the device is still open.
