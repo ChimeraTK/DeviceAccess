@@ -4,6 +4,9 @@ namespace ChimeraTK {
 
 
 \section conceptOverview Concept overview
+
+@warning This concept is outdated. It describes the current state but will change with the introduction of nested interrupts and interrupt controller handlers!
+
 \image html "doc/NABackendAsyncConcept.png" "object diagram for AyncNDRegisterAccessor" width=1000
 
 - For each AsyncAccessor that user requests: an AsyncVariable is created interally, with 1:1 correspondence
@@ -146,13 +149,13 @@ while the read is coming from a thread receiving data though the transfer protoc
 
 <pre>
 # name            nElements  address  nBytes  bar  width  bitInterpretation signed accessMode
-APP.0.DATA_READY          0        0       0    0      0                  0      0 INTERRUPT1:5
-APP.0.PUSH_DATA           4       12      16    1     32                  8      1 INTERRUPT2:3
+APP.0.DATA_READY          0        0       0    0      0                  0      0 INTERRUPT1
+APP.0.PUSH_DATA           4       12      16    1     32                  8      1 INTERRUPT2
 </pre>
 
-The map file has been extended by the access mode INTERRUPTx:y. Before, only RW and RO were allowed. x and y are the
-number of the interrupt controller and the interrupt number, respectively. Registers with access mode INTERRUPT will
-implicitly be treated as read-only.
+The map file has a special access mode INTERRUPTx, in addition to the synchronous modes RW and RO.
+x is the numeric identifyer for a device interrupt. Registers with access mode INTERRUPT are treated as read-only.
+In future, this will be extended to allow nested interrupts (INTERRUPTx:y, INTERRUPTx:y:z, etc.) in combination with interrupt controller handlers.
 
 For interrupts it is possible to have void-type entries. The width of these "registers" is 0 bits. For consistency all other fields also have to be 0. They don't make sense in this context and have to be 0 to avoid confusion.
 
