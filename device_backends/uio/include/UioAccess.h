@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "MmioAccess.h"
+
 #include <boost/filesystem.hpp>
 
 #include <atomic>
@@ -11,6 +13,7 @@ namespace ChimeraTK {
   /// @brief Implements a generic userspace interface for UIO devices.
   class UioAccess {
    private:
+    std::unique_ptr<MmioAccess> _mmio;
     boost::filesystem::path _deviceFilePath;
     int _deviceFileDescriptor = 0;
     void* _deviceUserBase = nullptr;

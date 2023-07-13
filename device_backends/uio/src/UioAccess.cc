@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <fcntl.h>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <poll.h>
 
@@ -16,7 +17,8 @@ namespace ChimeraTK {
 
   UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {
     std::string fileName = _deviceFilePath.filename().string();
-    _deviceKernelBase = (void*)readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/addr");
+    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    _deviceKernelBase = reinterpret_cast<void*>(readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/addr"));
     _deviceMemSize = readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/size");
     _lastInterruptCount = readUint32FromFile("/sys/class/uio/" + fileName + "/event");
 
@@ -32,14 +34,13 @@ namespace ChimeraTK {
   }
 
   void UioAccess::open() {
-    UioMMap();
+    _mmio = std::make_unique<MmioAccess>(_deviceFileDescriptor, _deviceMemSize, true);
     _opened = true;
   }
 
   void UioAccess::close() {
     if(!_opened) {
-      UioUnmap();
-      ::close(_deviceFileDescriptor);
+      _mmio.reset();
       _opened = false;
     }
   }
@@ -50,16 +51,14 @@ namespace ChimeraTK {
     }
 
     // This is a temporary work around, because register nodes of current map use absolute bus addresses.
+    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     address = address % reinterpret_cast<uint64_t>(_deviceKernelBase);
 
     if(address + sizeInBytes > _deviceMemSize) {
       throw ChimeraTK::logic_error("UIO: Read request exceeds device memory region");
     }
 
-    void* targetAddress = static_cast<uint8_t*>(_deviceUserBase) + address;
-
-    // Is inherently thread-safe
-    std::memcpy(data, targetAddress, sizeInBytes);
+    _mmio->read(address, data, sizeInBytes);
   }
 
   void UioAccess::write(uint64_t map, uint64_t address, int32_t const* data, size_t sizeInBytes) {
@@ -67,16 +66,18 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("UIO: Multiple memory regions are not supported");
     }
 
+    std::cout << "Calling uio-access write " << map << " " << address << ":" << (void*)data << " " << sizeInBytes
+              << std::endl;
+
     // This is a temporary work around, because register nodes of current map use absolute bus addresses.
+    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     address = address % reinterpret_cast<uint64_t>(_deviceKernelBase);
 
     if(address + sizeInBytes > _deviceMemSize) {
       throw ChimeraTK::logic_error("UIO: Write request exceeds device memory region");
     }
-    void* targetAddress = static_cast<uint8_t*>(_deviceUserBase) + address;
 
-    // Is inherently thread-safe
-    std::memcpy(targetAddress, data, sizeInBytes);
+    _mmio->write(address, data, sizeInBytes);
   }
 
   uint32_t UioAccess::waitForInterrupt(int timeoutMs) {
@@ -85,9 +86,7 @@ namespace ChimeraTK {
     // Will hold the number of new interrupts
     uint32_t occurredInterruptCount = 0;
 
-    struct pollfd pfd;
-    pfd.fd = _deviceFileDescriptor;
-    pfd.events = POLLIN;
+    struct pollfd pfd = {_deviceFileDescriptor, POLLIN, 0};
 
     int ret = poll(&pfd, 1, timeoutMs);
 

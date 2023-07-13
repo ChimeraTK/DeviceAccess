@@ -11,18 +11,22 @@ namespace ChimeraTK {
   // Simple RAII wrapper for a device file
   class DeviceFile : private boost::noncopyable {
    private:
-    std::string _strerror(const std::string& msg) const;
-    const std::string _path;
-    int _fd;
+    [[nodiscard]] std::string _strerror(const std::string& msg) const;
+    std::string _path{};
+    int _fd{-1};
+    int _savedErrno{0};
+    bool _fdOwner{true};
 
    public:
     DeviceFile() = delete;
-    DeviceFile(const std::string& filePath, int flags);
-    DeviceFile(DeviceFile&& d);
+    DeviceFile(std::string filePath, int flags);
+    DeviceFile(int fd, bool takeFdOwnership = true);
+    DeviceFile(DeviceFile&& d) noexcept;
     virtual ~DeviceFile();
 
-    operator int() const;
-    std::string name() const;
+    explicit operator int() const;
+    [[nodiscard]] std::string path() const;
+    [[nodiscard]] int fd() const;
   };
 
 } // namespace ChimeraTK
