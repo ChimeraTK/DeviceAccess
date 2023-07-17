@@ -108,9 +108,12 @@ namespace ChimeraTK {
           continue;
         }
 
-        for(uint32_t i = 0; i < numberOfInterrupts; i++) {
-          dispatchInterrupt(0);
+#ifdef _DEBUG
+        if(numberOfInterrupts > 1) {
+          std::cout << "UioBackend: Lost " << (numberOfInterrupts - 1) << " interrupts. " << std::endl;
         }
+#endif
+        dispatchInterrupt(0);
       }
     }
   }
