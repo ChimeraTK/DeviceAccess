@@ -49,7 +49,7 @@ DAQ.WORD_TRG_DELAY_ENA                                      3   2684453000      
 DAQ.WORD_TRG_CNT_BUF0                                       3   2684453012           12    0   16    0    0   RO
 DAQ.WORD_TRG_CNT_BUF1                                       3   2684453024           12    0   16    0    0   RO
 DAQ.WORD_TIMESTAMP_RST                                      3   2684453036           12    0    1    0    0   RW
-MOTOR_CONTROL.IRQ                                           0            0            0    0    0    0    0   INTERRUPT0:0
+MOTOR_CONTROL.IRQ                                           0            0            0    0    0    0    0   INTERRUPT0
 MOTOR_CONTROL.ID                                            1   2684473344            4    0   32    0    0   RO
 MOTOR_CONTROL.VERSION                                       1   2684473348            4    0   32    0    0   RO
 MOTOR_CONTROL.MOTOR_START                                   1   2684473352            4    0    1    0    0   RW
@@ -58,7 +58,7 @@ MOTOR_CONTROL.MOTOR_MAX_ACC                                 1   2684473360      
 MOTOR_CONTROL.MOTOR_MAX_VEL                                 1   2684473364            4    0   32    0    0   RW
 MOTOR_CONTROL.MOTOR_BASE_VEL                                1   2684473368            4    0   32    0    0   RW
 MOTOR_CONTROL.MOTOR_PULSE_WIDTH                             1   2684473372            4    0   32    0    0   RW
-MOTOR_CONTROL.MOTOR_POSITION                                1   2684473376            4    0   32    0    0   INTERRUPT0:0
+MOTOR_CONTROL.MOTOR_POSITION                                1   2684473376            4    0   32    0    0   INTERRUPT0
 MOTOR_CONTROL.MOTOR_POSITION_RESET                          1   2684473380            4    0    1    0    0   RW
 UNIO.WORD_ID                                                1   2684473472            4    0   32    0    0   RO
 UNIO.WORD_VERSION                                           1   2684473476            4    0   32    0    0   RO
