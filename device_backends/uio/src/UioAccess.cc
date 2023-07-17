@@ -15,6 +15,9 @@
 namespace ChimeraTK {
 
   UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {
+    if(boost::filesystem::is_symlink(_deviceFilePath)) {
+      _deviceFilePath = boost::filesystem::canonical(_deviceFilePath);
+    }
     std::string fileName = _deviceFilePath.filename().string();
     _deviceKernelBase = (void*)readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/addr");
     _deviceMemSize = readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/size");
