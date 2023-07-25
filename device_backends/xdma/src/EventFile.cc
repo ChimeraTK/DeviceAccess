@@ -11,7 +11,7 @@ namespace io = boost::asio;
 
 namespace ChimeraTK {
   EventThread::EventThread(EventFile& owner)
-  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file}, _thread{&EventThread::start, this} {
+  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file.fd()}, _thread{&EventThread::start, this} {
 #ifdef _DEBUG
     std::cout << "XDMA: EventThread " << _owner._file.name() << " ctor\n";
 #endif

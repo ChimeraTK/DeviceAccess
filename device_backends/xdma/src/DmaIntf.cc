@@ -17,7 +17,7 @@ namespace ChimeraTK {
   DmaIntf::~DmaIntf() {}
 
   void DmaIntf::read(uintptr_t address, int32_t* __restrict__ buf, size_t nbytes) {
-    ssize_t result = ::pread(_c2h, buf, nbytes, address);
+    ssize_t result = ::pread(_c2h.fd(), buf, nbytes, address);
     if(result != static_cast<ssize_t>(nbytes)) {
       throw(ChimeraTK::runtime_error(
           "DmaIntf read size mismatch: read " + std::to_string(result) + " bytes, expected " + std::to_string(nbytes)));
@@ -25,7 +25,7 @@ namespace ChimeraTK {
   }
 
   void DmaIntf::write(uintptr_t address, const int32_t* data, size_t nbytes) {
-    ssize_t result = ::pwrite(_h2c, data, nbytes, address);
+    ssize_t result = ::pwrite(_h2c.fd(), data, nbytes, address);
     if(result != static_cast<ssize_t>(nbytes)) {
       throw(ChimeraTK::runtime_error("DmaIntf write size mismatch: wrote " + std::to_string(result) +
           " bytes, expected " + std::to_string(nbytes)));
