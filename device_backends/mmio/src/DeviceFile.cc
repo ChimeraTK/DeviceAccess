@@ -5,18 +5,18 @@
 
 #include "Exception.h"
 
+#include <climits>
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
-#include <limits.h>
-#include <utility>
 #include <unistd.h>
+#include <utility>
 
 namespace ChimeraTK {
 
   DeviceFile::DeviceFile(std::string deviceFilePath, int flags) : _path{std::move(deviceFilePath)} {
 #ifdef _DEBUG
-    std::cout << "XDMA: opening device file " << _path << std::endl;
+    std::cout << "MMIO: opening device file " << _path << std::endl;
 #endif
     _fd = ::open(_path.c_str(), flags);
     _savedErrno = errno;
@@ -38,13 +38,12 @@ namespace ChimeraTK {
     }
   }
 
-    DeviceFile::DeviceFile(DeviceFile && d) noexcept
-  : _path(std::move(d._path)), _fd(std::exchange(d._fd, 0)) {}
+  DeviceFile::DeviceFile(DeviceFile&& d) noexcept : _path(std::move(d._path)), _fd(std::exchange(d._fd, 0)) {}
 
   DeviceFile::~DeviceFile() {
     if(_fd > 0) {
 #ifdef _DEBUG
-      std::cout << "XDMA: closing device file " << _path << std::endl;
+      std::cout << "MMIO: closing device file " << _path << std::endl;
 #endif
       ::close(_fd);
     }
