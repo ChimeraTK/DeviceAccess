@@ -45,16 +45,18 @@ set(DOOCS_noAsNeededFlag 1)
 # note, helper functions and variables should also be prefixed with DOOCS_, since everything is exported to
 #  project calling find_package(DOOCS)
 
-function (DOOCS_addToPkgConfPath newPath)
+function (DOOCS_prependToPkgConfPath newPath)
     if (NOT (":$ENV{PKG_CONFIG_PATH}:" MATCHES ":${newPath}:"))
-        set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:${newPath})
+        set(ENV{PKG_CONFIG_PATH} ${newPath}:$ENV{PKG_CONFIG_PATH})
     endif()
 endfunction()
 
+DOOCS_prependToPkgConfPath(/export/doocs/lib/pkgconfig)
 if(DOOCS_DIR)
-    DOOCS_addToPkgConfPath(${DOOCS_DIR}/pkgconfig)
+    # prepend pkgconfig for user-set doocs dir; this makes sure system-installed DOOCS is overwritten
+    DOOCS_prependToPkgConfPath(${DOOCS_DIR}/x86_64-linux-gnu/pkgconfig)
+    DOOCS_prependToPkgConfPath(${DOOCS_DIR}/pkgconfig)
 endif()
-DOOCS_addToPkgConfPath(/export/doocs/lib/pkgconfig)
 if (NOT DOOCS_FIND_QUIETLY)
     message("FindDOOCS: Using PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
 endif()
