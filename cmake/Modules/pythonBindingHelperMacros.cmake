@@ -26,11 +26,12 @@ endfunction()
 # cmake -DPYTHON3=TRUE ../ 
 function(get_python_interpreter_string python_interpreter)
   if(PYTHON3)
-      set(${python_interpreter} "python3" PARENT_SCOPE)
+      find_program(pyint "python3")
   else()
-      set(${python_interpreter} "python" PARENT_SCOPE)
+      find_program(pyint "python")
   endif()
-  
+  message("Python interpreter: ${pyint}")
+  set(${python_interpreter} ${pyint} PARENT_SCOPE)
 endfunction()
 
 
@@ -100,41 +101,15 @@ function(get_python_module_install_path python_version_string install_path)
     
 endfunction()
 
-function (get_boost_python_component_name pythonlib_version boost_version component_name)
-
-    get_os_distro_vendor(os_vendor)
-    get_os_distro_version(os_distro_version)
+function (get_boost_python_component_name pythonlib_version boost_version python_component_name numpy_component_name)
 
     convert_version_string_to_list(${pythonlib_version} version_list)
     list(GET version_list 0 py_major_version)
     list(GET version_list 1 py_minor_version)
 
-    if(${boost_version} VERSION_LESS 1.67.0)
-    # This kludge is here because boost python component naming was not
-    # consistent across distributions before 1.67; hence the special
-    # handling.
-      if("${os_vendor}" STREQUAL "Ubuntu")
-          set(python3_prefix "python3-py")
-          if (${os_distro_version} VERSION_LESS 18.10)
-              set(python3_prefix "python-py")
-          endif()
-          if(PYTHON3)
-              set(${component_name} "${python3_prefix}${py_major_version}${py_minor_version}" PARENT_SCOPE)
-          else()
-              set(${component_name} "python" PARENT_SCOPE)
-          endif()
-      else()
-      # This is probably the default on  Debian before the names were made 
-      # consistent(have not verified though)
-          if(PYTHON3)
-              set(${component_name} "python${py_major_version}" PARENT_SCOPE)
-          else()
-              set(${component_name} "python" PARENT_SCOPE)
-          endif()
-      endif()
-    else()
-       set(${component_name} "python${py_major_version}${py_minor_version}" PARENT_SCOPE)
-    endif()
+    set(${python_component_name} "python${py_major_version}${py_minor_version}" PARENT_SCOPE)
+    set(${numpy_component_name} "numpy${py_major_version}${py_minor_version}" PARENT_SCOPE)
+
 endfunction()
 
 function (convert_version_string_to_list version_string version_list)
@@ -194,7 +169,8 @@ ENDMACRO( COPY_SOURCE_TO_TARGET )
 MACRO( ADD_SCRIPTS_AS_TESTS list_of_script_files )
     foreach( script_path ${list_of_script_files} )
         get_filename_component(test_name ${script_path} NAME_WE)
-        add_test( ${test_name} ${script_path} )
+        add_test(NAME ${test_name} COMMAND ${python_interpreter} ${script_path} WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        message("adding test at ${script_path}")
     endforeach( script_path )
 ENDMACRO( ADD_SCRIPTS_AS_TESTS )
 
@@ -257,7 +233,7 @@ FUNCTION(ADD_HTML_DOCUMENTATION_SUPPORT)
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                     COMMENT "Generating html documentation" VERBATIM)
   #unfortunately sphinx needs to scan the library, so we first have to run the build step before we get proper documentation
-  add_dependencies(doc mtca4udeviceaccess)
+  add_dependencies(doc _da_python_bindings)
 
   set(DOC_TARGET_ADDED TRUE CACHE INTERNAL "Doc target has been configured")
 ENDFUNCTION()
