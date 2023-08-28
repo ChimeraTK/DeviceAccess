@@ -66,9 +66,6 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("UIO: Multiple memory regions are not supported");
     }
 
-    std::cout << "Calling uio-access write " << map << " " << address << ":" << (void*)data << " " << sizeInBytes
-              << std::endl;
-
     // This is a temporary work around, because register nodes of current map use absolute bus addresses.
     //NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     address = address % reinterpret_cast<uint64_t>(_deviceKernelBase);
