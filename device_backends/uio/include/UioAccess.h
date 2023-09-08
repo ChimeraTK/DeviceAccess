@@ -13,7 +13,7 @@ namespace ChimeraTK {
   /// @brief Implements a generic userspace interface for UIO devices.
   class UioAccess {
    private:
-    std::unique_ptr<MmioAccess> _mmio;
+    std::optional<MmioAccess> _mmio;
     boost::filesystem::path _deviceFilePath;
     int _deviceFileDescriptor = 0;
     void* _deviceUserBase = nullptr;
@@ -21,12 +21,6 @@ namespace ChimeraTK {
     size_t _deviceMemSize = 0;
     uint32_t _lastInterruptCount = 0;
     std::atomic<bool> _opened{false};
-
-    /// @brief Maps user space memory range to address range of UIO device.
-    void UioMMap();
-
-    /// @brief Unmaps user space memory range for address range of UIO device.
-    void UioUnmap();
 
     /// @brief Subtracts uint32_t values taking overflow into account.
     /// @param minuend Minuend of subtraction

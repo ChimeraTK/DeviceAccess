@@ -16,17 +16,6 @@
 namespace ChimeraTK {
 
   UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {
-    std::string fileName = _deviceFilePath.filename().string();
-    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    _deviceKernelBase = reinterpret_cast<void*>(readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/addr"));
-    _deviceMemSize = readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/size");
-    _lastInterruptCount = readUint32FromFile("/sys/class/uio/" + fileName + "/event");
-
-    // Open UIO device file here, so that interrupt thread can run before calling open()
-    _deviceFileDescriptor = ::open(_deviceFilePath.c_str(), O_RDWR);
-    if(_deviceFileDescriptor < 0) {
-      throw ChimeraTK::runtime_error("UIO: Failed to open device file '" + getDeviceFilePath() + "'");
-    }
   }
 
   UioAccess::~UioAccess() {
@@ -34,7 +23,13 @@ namespace ChimeraTK {
   }
 
   void UioAccess::open() {
-    _mmio = std::make_unique<MmioAccess>(_deviceFileDescriptor, _deviceMemSize, true);
+    std::string fileName = _deviceFilePath.filename().string();
+    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    _deviceKernelBase = reinterpret_cast<void*>(readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/addr"));
+    _deviceMemSize = readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/size");
+    _lastInterruptCount = readUint32FromFile("/sys/class/uio/" + fileName + "/event");
+
+    _mmio.emplace(_deviceFilePath.c_str(), _deviceMemSize);
     _opened = true;
   }
 
@@ -83,13 +78,13 @@ namespace ChimeraTK {
     // Will hold the number of new interrupts
     uint32_t occurredInterruptCount = 0;
 
-    struct pollfd pfd = {_deviceFileDescriptor, POLLIN, 0};
+    struct pollfd pfd = {_mmio->getFile().fd(), POLLIN, 0};
 
     int ret = poll(&pfd, 1, timeoutMs);
 
     if(ret >= 1) {
       // No timeout, start reading
-      ret = ::read(_deviceFileDescriptor, &totalInterruptCount, sizeof(totalInterruptCount));
+      ret = ::read(_mmio->getFile().fd(), &totalInterruptCount, sizeof(totalInterruptCount));
 
       if(ret != (ssize_t)sizeof(totalInterruptCount)) {
         throw ChimeraTK::runtime_error("UIO - Reading interrupt failed: " + std::string(std::strerror(errno)));
@@ -111,7 +106,7 @@ namespace ChimeraTK {
 
   void UioAccess::clearInterrupts() {
     uint32_t unmask = 1;
-    ssize_t ret = ::write(_deviceFileDescriptor, &unmask, sizeof(unmask));
+    ssize_t ret = ::write(_mmio->getFile().fd(), &unmask, sizeof(unmask));
 
     if(ret != (ssize_t)sizeof(unmask)) {
       throw ChimeraTK::runtime_error("UIO - Waiting for interrupt failed: " + std::string(std::strerror(errno)));
@@ -120,19 +115,6 @@ namespace ChimeraTK {
 
   std::string UioAccess::getDeviceFilePath() {
     return _deviceFilePath.string();
-  }
-
-  void UioAccess::UioMMap() {
-    _deviceUserBase = mmap(NULL, _deviceMemSize, PROT_READ | PROT_WRITE, MAP_SHARED, _deviceFileDescriptor, 0);
-    if(_deviceUserBase == MAP_FAILED) {
-      ::close(_deviceFileDescriptor);
-      throw ChimeraTK::runtime_error("UIO: Cannot allocate memory for UIO device '" + getDeviceFilePath() + "'");
-    }
-    return;
-  }
-
-  void UioAccess::UioUnmap() {
-    munmap(_deviceUserBase, _deviceMemSize);
   }
 
   uint32_t UioAccess::subtractUint32OverflowSafe(uint32_t minuend, uint32_t subtrahend) {
