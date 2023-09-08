@@ -790,14 +790,8 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(
             "TransferElement::interrupt() called on '" + _name + "' but AccessMode::wait_for_new_data is not set.");
       }
-      try {
-        // We cannot do anything against the boost exception not being derived from the base exception, but have to use
-        // it to interrupt the boost thread. Hence it is ok to suppress the linter warning here.
-        throw boost::thread_interrupted(); // NOLINT(hicpp-exception-baseclass)
-      }
-      catch(...) {
-        dataTransportQueue.push_overwrite_exception(std::current_exception());
-      }
+
+      dataTransportQueue.push_overwrite_exception(std::make_exception_ptr(boost::thread_interrupted()));
     }
 
     /** Check whether a read transaction is in progress, i.e. preRead() has been called but not yet postRead(). */
