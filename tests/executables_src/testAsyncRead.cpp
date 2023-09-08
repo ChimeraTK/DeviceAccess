@@ -726,12 +726,9 @@ BOOST_AUTO_TEST_CASE(testReadAnyException) {
     });
 
     // put exception to queue
-    try {
-      throw boost::thread_interrupted();
-    }
-    catch(...) {
-      backend->notificationQueue["/a1"].push_exception(std::current_exception()); // trigger transfer
-    }
+    backend->notificationQueue["/a1"].push_exception(
+        std::make_exception_ptr(boost::thread_interrupted())); // trigger transfer
+
     thread.join();
     BOOST_TEST(exceptionFound == true);
     BOOST_TEST(a1_casted->nPostReadCalled == nPostReadCalledReference + 1);
