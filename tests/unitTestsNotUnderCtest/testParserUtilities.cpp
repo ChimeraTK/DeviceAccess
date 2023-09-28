@@ -5,10 +5,8 @@
 #include "parserUtilities.h"
 
 #include <iostream>
+#include <utility>
 
-namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
 using namespace boost::unit_test_framework;
 namespace parsutils = ChimeraTK::parserUtilities;
 
@@ -21,7 +19,7 @@ namespace parsutils = ChimeraTK::parserUtilities;
 /******************************************************************************/
 class ParserUtilsTestClass {
  public:
-  explicit ParserUtilsTestClass(std::string const& currentWorkingDirectory);
+  explicit ParserUtilsTestClass(std::string currentWorkingDirectory);
   void testGetCurrentWorkingDir();
   void testConvertToAbsPath();
   void testExtractDirectory();
@@ -47,10 +45,10 @@ class ParserUtilitiesTestSuite : public test_suite {
 
 bool init_unit_test() {
   if(framework::master_test_suite().argc < 2) {
-    std::cout << "Usage: " << framework::master_test_suite().argv[0] << "currentWorkingDir" << std::endl;
+    std::cout << "Usage: " << framework::master_test_suite().argv[0] << " currentWorkingDir" << std::endl;
     return false;
   }
-  auto currentWorkingDir = framework::master_test_suite().argv[1];
+  auto *currentWorkingDir = framework::master_test_suite().argv[1];
 
   framework::master_test_suite().p_name.value = "Rebot backend test suite";
   framework::master_test_suite().add(new ParserUtilitiesTestSuite(currentWorkingDir));
@@ -58,8 +56,8 @@ bool init_unit_test() {
   return true;
 }
 
-ParserUtilsTestClass::ParserUtilsTestClass(const std::string& currentWorkingDirectory)
-: _currentWorkingDir(currentWorkingDirectory) {}
+ParserUtilsTestClass::ParserUtilsTestClass(std::string currentWorkingDirectory)
+: _currentWorkingDir(std::move(currentWorkingDirectory)) {}
 
 /******************************************************************************/
 
@@ -93,10 +91,10 @@ void ParserUtilsTestClass::testExtractDirectory() {
 
 void ParserUtilsTestClass::testExtractFileName() {
   BOOST_CHECK(parsutils::extractFileName("./test") == "test");
-  BOOST_CHECK(parsutils::extractFileName("./test/") == "");
+  BOOST_CHECK(parsutils::extractFileName("./test/").empty());
   BOOST_CHECK(parsutils::extractFileName("/test") == "test");
-  BOOST_CHECK(parsutils::extractFileName("/test/") == "");
-  BOOST_CHECK(parsutils::extractFileName("") == "");
+  BOOST_CHECK(parsutils::extractFileName("/test/").empty());
+  BOOST_CHECK(parsutils::extractFileName("").empty());
 }
 
 void ParserUtilsTestClass::testConcatenatePaths() {
