@@ -48,7 +48,7 @@ bool init_unit_test() {
     std::cout << "Usage: " << framework::master_test_suite().argv[0] << " currentWorkingDir" << std::endl;
     return false;
   }
-  auto *currentWorkingDir = framework::master_test_suite().argv[1];
+  auto* currentWorkingDir = framework::master_test_suite().argv[1];
 
   framework::master_test_suite().p_name.value = "Rebot backend test suite";
   framework::master_test_suite().add(new ParserUtilitiesTestSuite(currentWorkingDir));
