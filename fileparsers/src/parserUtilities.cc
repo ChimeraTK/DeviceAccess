@@ -59,6 +59,9 @@ namespace ChimeraTK::parserUtilities {
   }
 
   std::string appendForwardSlash(const std::string& path) {
+    if(path.empty()) {
+      return "/";
+    }
     if(path.back() == '/') { // path ends with '/'
       return path;
     }
