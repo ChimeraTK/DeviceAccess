@@ -35,3 +35,12 @@ endif( ${PROJECT_NAME}_BUILDVERSION )
 
 set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 
+# The following generates a cpp header file that can be used to access the CMAKE version info.
+# The "VersionInfo.h" is available in the project's build directory and included in the build.
+
+string(REGEX REPLACE "^0" "" ${PROJECT_NAME}_MAJOR_VERSION_INT ${${PROJECT_NAME}_MAJOR_VERSION})
+string(REGEX REPLACE "^0" "" ${PROJECT_NAME}_MINOR_VERSION_INT ${${PROJECT_NAME}_MINOR_VERSION})
+string(REGEX REPLACE "^0" "" ${PROJECT_NAME}_PATCH_VERSION_INT ${${PROJECT_NAME}_PATCH_VERSION})
+
+configure_file(cmake/version_info_template.h.in "${PROJECT_BINARY_DIR}/generated/VersionInfo.h")
+include_directories(${PROJECT_BINARY_DIR}/generated)
