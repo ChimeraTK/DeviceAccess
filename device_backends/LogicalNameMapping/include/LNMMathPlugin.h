@@ -59,6 +59,9 @@ namespace ChimeraTK::LNMBackend {
 
     bool _creatingFormulaHelper{false}; // a flag to prevent recursion
 
+    static thread_local int64_t _prePostWriteCounter;
+    static thread_local int64_t _writeLockCounter;
+
    private:
     // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime
     boost::weak_ptr<MathPluginFormulaHelper> _h;

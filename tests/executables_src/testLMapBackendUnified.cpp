@@ -144,9 +144,12 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     std::vector<UserType> v;
     typedef typename Derived::rawUserType Traw;
     typedef typename Derived::minimumUserType T;
-    auto bufferLock = derived->acc.getBufferLock();
+    Traw e;
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      Traw e = derived->acc[i + derived->myOffset()];
+      {
+        auto bufferLock = derived->acc.getBufferLock();
+        e = derived->acc[i + derived->myOffset()];
+      }
       if(!getRaw) {
         v.push_back(derived->template convertRawToCooked<T, Traw>(e));
       }
