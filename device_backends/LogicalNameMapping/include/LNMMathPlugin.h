@@ -56,11 +56,9 @@ namespace ChimeraTK::LNMBackend {
     bool _allParametersWrittenAfterOpen{false};
     std::vector<double> _lastMainValue;
     ChimeraTK::DataValidity _lastMainValidity;
+    static thread_local int64_t _writeLockCounter;
 
     bool _creatingFormulaHelper{false}; // a flag to prevent recursion
-
-    static thread_local int64_t _prePostWriteCounter;
-    static thread_local int64_t _writeLockCounter;
 
    private:
     // store weak pointer because plugin lifetime should not extend MathPluginFormulaHelper lifetime

@@ -13,10 +13,6 @@
 
 namespace ChimeraTK::LNMBackend {
 
-  //----------HACK-----------------
-  thread_local int64_t MathPlugin::_prePostWriteCounter = 0;
-  //---------ENDHACK---------------
-
   thread_local int64_t MathPlugin::_writeLockCounter = 0;
 
   /********************************************************************************************************************/
@@ -300,7 +296,6 @@ namespace ChimeraTK::LNMBackend {
 
   template<typename UserType>
   void MathPluginDecorator<UserType>::doPreWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
-    std::cout << "$$$ Increasing: prePostWriteCounter now is " << ++_p->_prePostWriteCounter << std::endl;
     if(!_p->_isWrite) {
       throw ChimeraTK::logic_error("This register with MathPlugin enabled is not writeable: " + _target->getName());
     }
@@ -330,8 +325,11 @@ namespace ChimeraTK::LNMBackend {
     if(_p->_hasPushParameter) {
       // Accquire the lock and hold it until the transaction is completed in postWrite.
       // This is safe because it is guaranteed by the framework that pre- and post actions are called in pairs.
-      std::cout << "locking writemutex" << std::endl;
+      // Do this before the first call to the target, which might create its own locks.
       _p->_writeMutex.lock();
+      // preWrite() might be called multiple times before postWrite() is called. There are multiple conditions
+      // whether the writeMutex is locked (_hasPushParameters, _skipWriteDelegation, exceptions) so we count
+      // separately how many times the lock has been aquired, so we can release it the exact right amount of times.
       ++(_p->_writeLockCounter);
       _p->_lastMainValue = _target->accessChannel(0);
       _p->_lastMainValidity = _target->dataValidity();
@@ -383,11 +381,10 @@ namespace ChimeraTK::LNMBackend {
 
   template<typename UserType>
   void MathPluginDecorator<UserType>::doPostWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
-    std::cout << "$$$ Decreasing: prePostWriteCounter now is " << --_p->_prePostWriteCounter << std::endl;
-    // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
+    // Make sure the mutex is released, even if the delegated postWrite kicks out with an exception.
+    // This has to happen at the very end, after all delegations, such that the target can release all its internal locks first.
     auto _ = cppext::finally([&] {
       if(_p->_writeLockCounter > 0) {
-        std::cout << "unlocking writemutex" << std::endl;
         --(_p->_writeLockCounter);
         _p->_writeMutex.unlock();
       }
