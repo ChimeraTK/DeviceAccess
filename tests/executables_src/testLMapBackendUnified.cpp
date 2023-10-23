@@ -141,21 +141,32 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue(bool getRaw = false) {
-    std::vector<UserType> v;
     typedef typename Derived::rawUserType Traw;
-    typedef typename Derived::minimumUserType T;
-    auto bufferLock = derived->acc.getBufferLock();
+
+    std::vector<UserType> cookedValues(derived->nElementsPerChannel());
+    std::vector<Traw> rawValues(derived->nElementsPerChannel());
+
+    // Keep the scope of the dummy buffer lock as limited as possible (see #12332).
+    // The rawToCooked conversion will acquire a lock via the math pluging decorator,
+    // which will cause lock order inversion if you hold the dummy buffer lock at that point.
+    {
+      auto bufferLock = derived->acc.getBufferLock();
+
+      for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+        rawValues[i] = derived->acc[i + derived->myOffset()];
+      }
+    } // end of bufferLock scope
+
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      Traw e = derived->acc[i + derived->myOffset()];
       if(!getRaw) {
-        v.push_back(derived->template convertRawToCooked<T, Traw>(e));
+        cookedValues[i] = derived->template convertRawToCooked<UserType, Traw>(rawValues[i]);
       }
       else {
-        v.push_back(static_cast<T>(e)); // you can only use raw if user type and raw type are the same, so the static
-                                        // cast is a no-op
+        cookedValues[i] = static_cast<UserType>(rawValues[i]); // you can only use raw if user type and raw type are
+                                                               // the same, so the static cast is a no-op
       }
     }
-    return {v};
+    return {cookedValues};
   }
 
   void setRemoteValue() {

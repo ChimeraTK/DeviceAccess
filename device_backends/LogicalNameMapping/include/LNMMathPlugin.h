@@ -56,6 +56,7 @@ namespace ChimeraTK::LNMBackend {
     bool _allParametersWrittenAfterOpen{false};
     std::vector<double> _lastMainValue;
     ChimeraTK::DataValidity _lastMainValidity;
+    static thread_local int64_t _writeLockCounter;
 
     bool _creatingFormulaHelper{false}; // a flag to prevent recursion
 

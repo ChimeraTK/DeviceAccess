@@ -13,6 +13,8 @@
 
 namespace ChimeraTK::LNMBackend {
 
+  thread_local int64_t MathPlugin::_writeLockCounter = 0;
+
   /********************************************************************************************************************/
 
   MathPlugin::MathPlugin(
@@ -323,7 +325,12 @@ namespace ChimeraTK::LNMBackend {
     if(_p->_hasPushParameter) {
       // Accquire the lock and hold it until the transaction is completed in postWrite.
       // This is safe because it is guaranteed by the framework that pre- and post actions are called in pairs.
+      // Do this before the first call to the target, which might create its own locks.
       _p->_writeMutex.lock();
+      // preWrite() might be called multiple times before postWrite() is called. There are multiple conditions
+      // whether the writeMutex is locked (_hasPushParameters, _skipWriteDelegation, exceptions) so we count
+      // separately how many times the lock has been aquired, so we can release it the exact right amount of times.
+      ++(_p->_writeLockCounter);
       _p->_lastMainValue = _target->accessChannel(0);
       _p->_lastMainValidity = _target->dataValidity();
       _p->_mainValueWrittenAfterOpen = true;
@@ -374,18 +381,20 @@ namespace ChimeraTK::LNMBackend {
 
   template<typename UserType>
   void MathPluginDecorator<UserType>::doPostWrite(TransferType type, ChimeraTK::VersionNumber versionNumber) {
+    // Make sure the mutex is released, even if the delegated postWrite kicks out with an exception.
+    // This has to happen at the very end, after all delegations, such that the target can release all its internal locks first.
+    auto _ = cppext::finally([&] {
+      if(_p->_writeLockCounter > 0) {
+        --(_p->_writeLockCounter);
+        _p->_writeMutex.unlock();
+      }
+    });
+
     if(_skipWriteDelegation && (this->_activeException != nullptr)) {
       // Something has thrown before the target's preWrite was called. Re-throw it here.
       // Do not unlock the mutex. It never has been locked.
       std::rethrow_exception(this->_activeException);
     }
-
-    // make sure the mutex is released, even if the delegated postWrite kicks out with an exception
-    auto _ = cppext::finally([&] {
-      if(_p->_hasPushParameter) {
-        _p->_writeMutex.unlock();
-      }
-    });
 
     if(_skipWriteDelegation) {
       return; // the trarget preWrite() has not been executed, so stop here
