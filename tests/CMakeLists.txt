@@ -103,6 +103,7 @@ MACRO( COPY_MAPPING_FILES )
     doubleBufferHW.xlmap doubleBufferHW.map doubleBufferHW.dmap
     bitRangeReadPlugin.xlmap
     decoratorTest.map
+    testMappedImage.dmap testMappedImage.map
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.
