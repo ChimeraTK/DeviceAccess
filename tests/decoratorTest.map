@@ -1,0 +1,11 @@
+# name                    nr of elements       address          size           bar      width   fracbits    signed   
+SOME.SCALAR               0x00000001           0x00000000       0x00000004     0x0      32         16         1
+SOME.SCALAR_RO            0x00000001           0x00000000       0x00000004     0x0      32         16         1  RO
+SOME.INT                  0x00000001           0x00000004       0x00000004     0x0      32         0          1
+SOME.UINT                 0x00000001           0x00000008       0x00000004     0x0      32         0          0
+SOME.ARRAY                0x00000010           0x00000000       0x00000040     0x2      32         16         1
+#use BAR1 for 2d
+SOME.AREA_MULTIPLEXED_SEQUENCE_TWO_D 6 0 24 1
+SOME.SEQUENCE_TWO_D_0 1 0 4 1
+SOME.SEQUENCE_TWO_D_1 1 4 4 1
+SOME.SEQUENCE_TWO_D_2 1 8 4 1
