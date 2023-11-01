@@ -1,0 +1,2 @@
+DUMMY (dummy?map=testMappedImage.map)
+#DUMMY (sharedMemoryDummy?map=testMappedImage.map)

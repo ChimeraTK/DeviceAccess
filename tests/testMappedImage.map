@@ -1,0 +1,2 @@
+# name                  number_of_elements  address  size  bar  width  fracbits  signed 	read_mode
+DAQ.IMAGE                            1000      0      1000   1   8       0    0   RW
