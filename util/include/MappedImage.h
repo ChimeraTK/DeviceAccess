@@ -38,8 +38,8 @@ namespace ChimeraTK {
     enum class InitData { Yes, No };
     /// This keeps a reference to given OneDRegisterAccessor. If its underlying vector is swapped out,
     /// the MappedStruct stays valid only if the swapped-in vector was also setup as MappedStruct.
-    explicit MappedStruct(ChimeraTK::OneDRegisterAccessor<unsigned char> &accToData,
-                          InitData doInitData = InitData::No);
+    explicit MappedStruct(
+        ChimeraTK::OneDRegisterAccessor<unsigned char>& accToData, InitData doInitData = InitData::No);
 
     /// returns pointer to data for header and struct content. The returned pointer stays valid until
     /// write() or read() is called for the underlying accessor.
@@ -183,27 +183,25 @@ namespace ChimeraTK {
 
   template<class StructHeader>
   unsigned char* MappedStruct<StructHeader>::data() {
-        return _accToData.data();
+    return _accToData.data();
   }
 
   template<class StructHeader>
   size_t MappedStruct<StructHeader>::capacity() const {
-        // reason for cast: getNElements not declared const
-        return const_cast<MappedStruct*>(this)->_accToData.getNElements();
+    // reason for cast: getNElements not declared const
+    return const_cast<MappedStruct*>(this)->_accToData.getNElements();
   }
 
   template<class StructHeader>
-  void MappedStruct<StructHeader>::initData()
-  {
-      size_t sh = sizeof(StructHeader);
-      if (capacity() < sh) {
-          throw logic_error(
-              "buffer provided to MappedStruct is too small for correct initialization");
-      }
-      auto* p = data();
-      new(p) StructHeader;
-      header()->totalLength = sh; // minimal length, could be larger
-      memset(p + sh, 0, capacity() - sh);
+  void MappedStruct<StructHeader>::initData() {
+    size_t sh = sizeof(StructHeader);
+    if(capacity() < sh) {
+      throw logic_error("buffer provided to MappedStruct is too small for correct initialization");
+    }
+    auto* p = data();
+    new(p) StructHeader;
+    header()->totalLength = sh; // minimal length, could be larger
+    memset(p + sh, 0, capacity() - sh);
   }
 
   /*************************** begin MappedImage implementations  ************************************************/
@@ -263,7 +261,7 @@ namespace ChimeraTK {
     }
     auto* h = header();
     // start with default values
-    new (h) ImgHeader;
+    new(h) ImgHeader;
     h->image_format = fmt;
     h->totalLength = totalLen;
     h->width = width;

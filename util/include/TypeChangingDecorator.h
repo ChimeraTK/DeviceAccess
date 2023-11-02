@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include <boost/fusion/include/for_each.hpp>
-#include <boost/numeric/conversion/converter.hpp>
-
 #include <ChimeraTK/NDRegisterAccessorDecorator.h>
 #include <ChimeraTK/SupportedUserTypes.h>
 #include <ChimeraTK/TransferElementAbstractor.h>
+
+#include <boost/fusion/include/for_each.hpp>
+#include <boost/numeric/conversion/converter.hpp>
 
 namespace ChimeraTK {
   /** There are three types of TypeChanging decorators which do different data
@@ -40,7 +40,7 @@ namespace ChimeraTK {
    * and postRead() functions with the implementation. You don't have to care
    * about the implementation type of the transfer element. The factory will
    * automatically create the correct decorator.
-   * 
+   *
    * Note: it is possible to obtain multiple decorators of different types for the same accessor. The user needs to
    * ensure that the preXxx/postXxx transfer functions are properly called for all decorators when required.
    *
@@ -455,18 +455,18 @@ namespace ChimeraTK {
         boost::numeric::def_overflow_handler, csa_helpers::Round<double>>
         FromImplConverter;
     // fixme: are iterartors more efficient?
-      for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
-        for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
-          try {
-            this->buffer_2D[i][j] = FromImplConverter::convert(_target->accessChannel(i)[j]);
-          }
-          catch(boost::numeric::positive_overflow&) {
-            this->buffer_2D[i][j] = std::numeric_limits<T>::max();
-          }
-          catch(boost::numeric::negative_overflow&) {
-            this->buffer_2D[i][j] = std::numeric_limits<T>::min();
-          }
+    for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
+      for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
+        try {
+          this->buffer_2D[i][j] = FromImplConverter::convert(_target->accessChannel(i)[j]);
         }
+        catch(boost::numeric::positive_overflow&) {
+          this->buffer_2D[i][j] = std::numeric_limits<T>::max();
+        }
+        catch(boost::numeric::negative_overflow&) {
+          this->buffer_2D[i][j] = std::numeric_limits<T>::min();
+        }
+      }
     }
   }
 
