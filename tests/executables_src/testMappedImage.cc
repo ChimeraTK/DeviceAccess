@@ -120,6 +120,14 @@ BOOST_FIXTURE_TEST_CASE(testMappedImage, DummyFixture) {
   // compare bottow right value with previously written content.
   auto lastVal = Av(w - 1, h - 1);
   BOOST_CHECK(lastVal == 42);
+
+  // re-use as float and check pixel channel access
+  A0.setShape(2, 1, ImgFormat::FLOAT2);
+  auto AvFloat2 = A0.interpretedView<float>();
+  AvFloat2(0, 0, 1) = 0.1F;
+  AvFloat2(1, 0, 1) = 1.1F;
+  BOOST_TEST(AvFloat2(0, 0, 1) == 0.1F);
+  BOOST_TEST(AvFloat2(1, 0, 1) == 1.1F);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
