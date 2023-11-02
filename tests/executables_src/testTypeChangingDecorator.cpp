@@ -1,8 +1,11 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #define BOOST_TEST_MODULE TypeChangingDecoratorTest
 
-#include <limits>
-
 #include <boost/test/included/unit_test.hpp>
+
+#include <limits>
 using namespace boost::unit_test_framework;
 
 #include "TypeChangingDecorator.h"
@@ -11,8 +14,6 @@ using namespace ChimeraTK;
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/ScalarRegisterAccessor.h>
 #include <ChimeraTK/TransferGroup.h>
-#include "toType.h"
-#include "toDouble.h"
 
 #include <boost/shared_ptr.hpp>
 
