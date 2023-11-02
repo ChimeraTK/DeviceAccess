@@ -61,7 +61,22 @@ namespace ChimeraTK {
 
   /*******************************  application to Image encoding *********************************/
 
-  enum class ImgFormat { Unset = 0, Gray8, Gray16, RGB24, RGBA32 };
+  enum class ImgFormat : unsigned {
+    Unset = 0,
+    Gray8,
+    Gray16,
+    RGB24,
+    RGBA32,
+    // floating point formats for communication of intermediate results
+    FLOAT1,
+    FLOAT2,
+    FLOAT3,
+    FLOAT4,
+    DOUBLE1,
+    DOUBLE2,
+    DOUBLE3,
+    DOUBLE4
+  };
   // values are defined for a bit field
   enum class ImgOptions { RowMajor = 1, ColMajor = 0 };
 
@@ -150,8 +165,7 @@ namespace ChimeraTK {
     }
 
    protected:
-    size_t formatsDefinition(
-        ImgFormat fmt, unsigned width, unsigned height, unsigned& channels, unsigned& bytesPerPixel);
+    void formatsDefinition(ImgFormat fmt, unsigned& channels, unsigned& bytesPerPixel);
   };
 
   /*************************** begin MappedStruct implementations  ************************************************/
@@ -194,8 +208,7 @@ namespace ChimeraTK {
 
   /*************************** begin MappedImage implementations  ************************************************/
 
-  inline size_t MappedImage::formatsDefinition(
-      ImgFormat fmt, unsigned width, unsigned height, unsigned& channels, unsigned& bytesPerPixel) {
+  inline void MappedImage::formatsDefinition(ImgFormat fmt, unsigned& channels, unsigned& bytesPerPixel) {
     switch(fmt) {
       case ImgFormat::Unset:
         assert(false && "ImgFormat::Unset not allowed");
@@ -216,20 +229,35 @@ namespace ChimeraTK {
         channels = 4;
         bytesPerPixel = 4;
         break;
+      case ImgFormat::FLOAT1:
+      case ImgFormat::FLOAT2:
+      case ImgFormat::FLOAT3:
+      case ImgFormat::FLOAT4:
+        channels = unsigned(fmt) - unsigned(ImgFormat::FLOAT1) + 1;
+        bytesPerPixel = 4 * channels;
+        break;
+      case ImgFormat::DOUBLE1:
+      case ImgFormat::DOUBLE2:
+      case ImgFormat::DOUBLE3:
+      case ImgFormat::DOUBLE4:
+        channels = unsigned(fmt) - unsigned(ImgFormat::DOUBLE1) + 1;
+        bytesPerPixel = 8 * channels;
+        break;
     }
-    return sizeof(ImgHeader) + (size_t)width * height * bytesPerPixel;
   }
 
   inline size_t MappedImage::lengthForShape(unsigned width, unsigned height, ImgFormat fmt) {
     unsigned channels;
     unsigned bytesPerPixel;
-    return formatsDefinition(fmt, width, height, channels, bytesPerPixel);
+    formatsDefinition(fmt, channels, bytesPerPixel);
+    return sizeof(ImgHeader) + (size_t)width * height * bytesPerPixel;
   }
 
   inline void MappedImage::setShape(unsigned width, unsigned height, ImgFormat fmt) {
     unsigned channels;
     unsigned bytesPerPixel;
-    size_t totalLen = formatsDefinition(fmt, width, height, channels, bytesPerPixel);
+    formatsDefinition(fmt, channels, bytesPerPixel);
+    size_t totalLen = lengthForShape(width, height, fmt);
     if(totalLen > capacity()) {
       throw logic_error("MappedImage: provided buffer to small for requested image shape");
     }
