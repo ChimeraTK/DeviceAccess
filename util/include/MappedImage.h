@@ -31,6 +31,9 @@ namespace ChimeraTK {
    * Provides interface to a struct that is mapped onto a 1D array of ValType
    * StructHeader must be derived from OpaqueStructHeader.
    * Variable-length structs are supported, as long as they do not grow beyond the size of the given 1D array.
+   *
+   * NOTE: MappedStruct concept is discouraged. Use DataConsistencyGroup of struct members instead if possible.
+   * It is still required for MappedImage.
    */
   template<class StructHeader>
   class MappedStruct {
@@ -137,6 +140,10 @@ namespace ChimeraTK {
 
   /**
    * interface to an image that is mapped onto a 1D array of ValType
+   *
+   * NOTE: MappedImage is based on MappedStruct concept, which is discouraged. Use DataConsistencyGroup of struct
+   * members instead if possible.
+   * MappedImage is currently in used by DoocsAdapter and DoocsBackend.
    */
   class MappedImage : public MappedStruct<ImgHeader> {
    public:
