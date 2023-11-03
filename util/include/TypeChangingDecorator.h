@@ -10,7 +10,7 @@
 #include <boost/numeric/conversion/converter.hpp>
 
 namespace ChimeraTK {
-  /** There are three types of TypeChanging decorators which do different data
+  /** There are two types of TypeChanging decorators which do different data
    * conversions from the user data type to the implementation data type.
    *
    *  \li limiting This decorator
@@ -45,7 +45,7 @@ namespace ChimeraTK {
    * ensure that the preXxx/postXxx transfer functions are properly called for all decorators when required.
    *
    *  @param transferElement The TransferElement to be decorated. It can either be
-   * an NDRegisterAccessor (usually the case) or and NDRegisterAccessorBridge (but
+   * an NDRegisterAccessor (usually the case) or and NDRegisterAccessorAbstractor (but
    * here the user already picks the type he wants).
    *  @param decoratorType The type of decorator you want (see description of
    * DecoratorType)
