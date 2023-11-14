@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE MappedImageTest
-// Only after defining the name include the unit test header.
-#include <boost/test/included/unit_test.hpp>
-// boost unit_test needs to be included before serverBasedTestTools.h
+
 #include "Device.h"
 #include "MappedImage.h"
 #include "OneDRegisterAccessor.h"
