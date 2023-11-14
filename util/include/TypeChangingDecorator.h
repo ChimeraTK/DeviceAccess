@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include <ChimeraTK/NDRegisterAccessorDecorator.h>
-#include <ChimeraTK/SupportedUserTypes.h>
-#include <ChimeraTK/TransferElementAbstractor.h>
+#include "NDRegisterAccessorDecorator.h"
+#include "SupportedUserTypes.h"
+#include "TransferElementAbstractor.h"
 
 #include <boost/fusion/include/for_each.hpp>
 #include <boost/numeric/conversion/converter.hpp>

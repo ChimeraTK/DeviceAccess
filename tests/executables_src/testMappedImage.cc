@@ -5,10 +5,9 @@
 // Only after defining the name include the unit test header.
 #include <boost/test/included/unit_test.hpp>
 // boost unit_test needs to be included before serverBasedTestTools.h
+#include "Device.h"
 #include "MappedImage.h"
-
-#include <ChimeraTK/Device.h>
-#include <ChimeraTK/OneDRegisterAccessor.h>
+#include "OneDRegisterAccessor.h"
 
 #include <boost/test/unit_test.hpp>
 
