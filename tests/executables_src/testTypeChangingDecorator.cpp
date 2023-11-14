@@ -11,9 +11,9 @@ using namespace boost::unit_test_framework;
 #include "TypeChangingDecorator.h"
 using namespace ChimeraTK;
 
-#include <ChimeraTK/Device.h>
-#include <ChimeraTK/ScalarRegisterAccessor.h>
-#include <ChimeraTK/TransferGroup.h>
+#include "Device.h"
+#include "ScalarRegisterAccessor.h"
+#include "TransferGroup.h"
 
 #include <boost/shared_ptr.hpp>
 

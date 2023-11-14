@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "OneDRegisterAccessor.h"
 #include <type_traits>
-
-#include <ChimeraTK/OneDRegisterAccessor.h>
 
 #include <cassert>
 #include <cstring>
