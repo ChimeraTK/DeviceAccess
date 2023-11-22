@@ -37,7 +37,6 @@ FIND_PACKAGE(exprtk 01.04 REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
 PKG_CHECK_MODULES(LibXML++ REQUIRED IMPORTED_TARGET ${LIBXML++_VERSION})
-PKG_CHECK_MODULES(glib REQUIRED IMPORTED_TARGET glib-2.0)
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
@@ -103,7 +102,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${projectCxxFlags})
 target_include_directories(${PROJECT_NAME} INTERFACE "$<INSTALL_INTERFACE:include>")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE ${CMAKE_DL_LIBS} PkgConfig::LibXML++ PkgConfig::glib ChimeraTK::exprtk
+    PRIVATE ${CMAKE_DL_LIBS} PkgConfig::LibXML++ ChimeraTK::exprtk
     # we set this public because of Backend libs using shm_open (e.g. test code)
     PUBLIC ${RT_LIBRARIES}
     PUBLIC ${Boost_LIBRARIES}
