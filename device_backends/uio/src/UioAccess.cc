@@ -58,8 +58,17 @@ namespace ChimeraTK {
 
     volatile int32_t* rptr = static_cast<volatile int32_t*>(_deviceUserBase) + address / sizeof(int32_t);
     while(sizeInBytes >= sizeof(int32_t)) {
-      *data++ = *rptr++;
+      *(data++) = *(rptr++);
       sizeInBytes -= sizeof(int32_t);
+    }
+
+    if(sizeInBytes > 0) {
+      auto* bdata = reinterpret_cast<uint8_t*>(data);
+      const auto* brptr = reinterpret_cast<volatile uint8_t*>(rptr);
+      while(sizeInBytes >= sizeof(int32_t)) {
+        *(bdata++) = *(brptr++);
+        sizeInBytes -= sizeof(uint8_t);
+      }
     }
   }
 
@@ -77,8 +86,17 @@ namespace ChimeraTK {
 
     volatile int32_t* __restrict__ wptr = static_cast<volatile int32_t*>(_deviceUserBase) + address / sizeof(int32_t);
     while(sizeInBytes >= sizeof(int32_t)) {
-      *wptr++ = *data++;
+      *(wptr++) = *(data++);
       sizeInBytes -= sizeof(int32_t);
+    }
+
+    if(sizeInBytes > 0) {
+      const auto* bdata = reinterpret_cast<const uint8_t*>(data);
+      auto* bwptr = reinterpret_cast<volatile uint8_t* __restrict__>(wptr);
+      while(sizeInBytes >= sizeof(int32_t)) {
+        *(bwptr++) = *(bdata++);
+        sizeInBytes -= sizeof(uint8_t);
+      }
     }
   }
 
