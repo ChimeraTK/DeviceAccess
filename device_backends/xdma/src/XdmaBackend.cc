@@ -39,14 +39,13 @@ namespace ChimeraTK {
       }
     }
 
-    // Build vector of event files
-    _eventFiles.clear();
+    // (Re-)Open the event files which are needed
+    std::for_each(_eventFiles.begin(), _eventFiles.end(), [](auto& eventFile) { eventFile = nullptr; });
     for(size_t i = 0; i < _maxInterrupts; i++) {
-      try {
-        _eventFiles.emplace_back(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, i));
-      }
-      catch(const runtime_error&) {
-        break;
+      if(_startInterruptHandlingCalled[i]) {
+        _eventFiles[i] =
+            std::make_unique<EventFile>(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, i));
+        _eventFiles[i]->startThread();
       }
     }
 #ifdef _DEBUG
@@ -57,7 +56,7 @@ namespace ChimeraTK {
   }
 
   void XdmaBackend::closeImpl() {
-    _eventFiles.clear();
+    std::for_each(_eventFiles.begin(), _eventFiles.end(), [](auto& eventFile) { eventFile = nullptr; });
     _ctrlIntf.reset();
     _dmaChannels.clear();
   }
@@ -130,14 +129,20 @@ namespace ChimeraTK {
   }
 
   void XdmaBackend::startInterruptHandlingThread(uint32_t interruptNumber) {
-    if(_eventFiles.empty()) {
-      throw ChimeraTK::logic_error("XDMA: trying to use interrupts, but no event files available");
-    }
-    if(interruptNumber >= _eventFiles.size()) {
+    if(interruptNumber >= _maxInterrupts) {
       throw ChimeraTK::logic_error("XDMA interrupt " + std::to_string(interruptNumber) + " out of range, only 0.." +
-          std::to_string(_eventFiles.size() - 1) + " available\n");
+          std::to_string(_maxInterrupts - 1) + " available\n");
     }
-    _eventFiles[interruptNumber].startThread();
+    _startInterruptHandlingCalled[interruptNumber] = true;
+    if(!isOpen()) {
+      return;
+    }
+
+    if(!_eventFiles[interruptNumber]) {
+      _eventFiles[interruptNumber] = std::make_unique<EventFile>(
+          _devicePath, interruptNumber, std::bind(&XdmaBackend::dispatchInterrupt, this, interruptNumber));
+      _eventFiles[interruptNumber]->startThread();
+    }
   }
 
   std::string XdmaBackend::readDeviceInfo() {
