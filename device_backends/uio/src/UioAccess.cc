@@ -61,15 +61,6 @@ namespace ChimeraTK {
       *(data++) = *(rptr++);
       sizeInBytes -= sizeof(int32_t);
     }
-
-    if(sizeInBytes > 0) {
-      auto* bdata = reinterpret_cast<uint8_t*>(data);
-      const auto* brptr = reinterpret_cast<volatile uint8_t*>(rptr);
-      while(sizeInBytes >= sizeof(int32_t)) {
-        *(bdata++) = *(brptr++);
-        sizeInBytes -= sizeof(uint8_t);
-      }
-    }
   }
 
   void UioAccess::write(uint64_t map, uint64_t address, int32_t const* data, size_t sizeInBytes) {
@@ -88,15 +79,6 @@ namespace ChimeraTK {
     while(sizeInBytes >= sizeof(int32_t)) {
       *(wptr++) = *(data++);
       sizeInBytes -= sizeof(int32_t);
-    }
-
-    if(sizeInBytes > 0) {
-      const auto* bdata = reinterpret_cast<const uint8_t*>(data);
-      auto* bwptr = reinterpret_cast<volatile uint8_t* __restrict__>(wptr);
-      while(sizeInBytes >= sizeof(int32_t)) {
-        *(bwptr++) = *(bdata++);
-        sizeInBytes -= sizeof(uint8_t);
-      }
     }
   }
 
