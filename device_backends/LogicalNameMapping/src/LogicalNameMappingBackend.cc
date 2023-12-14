@@ -52,10 +52,9 @@ namespace ChimeraTK {
     }
 
     // flag as opened
-    _opened = true;
-    _hasException = false;
-    _asyncReadActive = false;
     _versionOnOpen = ChimeraTK::VersionNumber{};
+    _asyncReadActive = false;
+    setOpenedAndClearException();
 
     // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
@@ -287,21 +286,11 @@ namespace ChimeraTK {
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(InstantiateLogicalNameMappingBackendFunctions);
 
   /********************************************************************************************************************/
-  bool LogicalNameMappingBackend::isFunctional() const {
-    if(not _opened) {
-      return false;
-    }
-    if(_hasException) {
-      return false;
-    }
-    return std::all_of(_devices.begin(), _devices.end(), [](auto e) { return e.second->isFunctional(); });
-  }
 
-  /********************************************************************************************************************/
-  void LogicalNameMappingBackend::setException() {
-    _hasException = true;
+  void LogicalNameMappingBackend::setExceptionImpl() noexcept {
+    auto message = getActiveExceptionMessage();
     for(auto& d : _devices) {
-      d.second->setException();
+      d.second->setException(message);
     }
 
     // iterate all push subscriptions of variables and place exception into queue
@@ -315,7 +304,7 @@ namespace ChimeraTK {
             auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
             for(auto& sub : vtEntry.subscriptions) {
               try {
-                throw ChimeraTK::runtime_error("previous, unrecovered fault");
+                throw ChimeraTK::runtime_error(message);
               }
               catch(...) {
                 sub.second.push_overwrite_exception(std::current_exception());
@@ -338,8 +327,9 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
+
   void LogicalNameMappingBackend::activateAsyncRead() noexcept {
-    if(!_opened || _hasException) return;
+    if(!isFunctional()) return;
 
     // store information locally, as variable accessors have async read
     _asyncReadActive = true;

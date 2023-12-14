@@ -26,11 +26,6 @@ namespace ChimeraTK {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     }
 
-    std::atomic<bool> throwExceptionOpen{false};
-    std::atomic<bool> throwExceptionRead{false};
-    std::atomic<bool> throwExceptionWrite{false};
-    std::atomic<bool> thereHaveBeenExceptions{false};
-
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
@@ -41,8 +36,6 @@ namespace ChimeraTK {
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
 
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
-
-    bool isFunctional() const override;
 
     /// Specific override which allows to create push-type accessors
     template<typename UserType>
@@ -94,6 +87,8 @@ namespace ChimeraTK {
         }
       }
 
+      acc->setExceptionBackend(shared_from_this());
+
       return acc;
     }
 
@@ -114,7 +109,7 @@ namespace ChimeraTK {
 
     void activateAsyncRead() noexcept override;
 
-    void setException() override;
+    void setExceptionImpl() noexcept override;
 
     /// Function to test whether async read transfers are activated
     bool asyncReadActivated();

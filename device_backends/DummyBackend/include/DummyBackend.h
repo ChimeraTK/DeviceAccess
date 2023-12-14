@@ -62,8 +62,6 @@ namespace ChimeraTK {
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
 
-    bool isFunctional() const override { return (_opened && !_hasActiveException); }
-
     std::string readDeviceInfo() override;
 
     static boost::shared_ptr<DeviceBackend> createInstance(

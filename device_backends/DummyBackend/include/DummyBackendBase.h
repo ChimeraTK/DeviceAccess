@@ -30,7 +30,7 @@ namespace ChimeraTK {
    * Base class for DummyBackends, provides common functionality
    */
   class DummyBackendBase : public NumericAddressedBackend {
-   protected:
+   public:
     // ctor & dtor private with derived type as friend to enforce correct specialization
 
     explicit DummyBackendBase(std::string const& mapFileName);
@@ -71,6 +71,11 @@ namespace ChimeraTK {
     std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
+
+    std::atomic<bool> throwExceptionOpen{false};
+    std::atomic<bool> throwExceptionRead{false};
+    std::atomic<bool> throwExceptionWrite{false};
+    std::atomic<size_t> throwExceptionCounter{0};
 
     /// Specific override which allows to create "DUMMY_INTEERRUPT_X" accessors
     template<typename UserType>

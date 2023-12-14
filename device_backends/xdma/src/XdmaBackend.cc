@@ -52,7 +52,7 @@ namespace ChimeraTK {
     std::cout << "XDMA: opened interface with " << _dmaChannels.size() << " DMA channels and " << _eventFiles.size()
               << " interrupt sources\n";
 #endif
-    _hasActiveException = false;
+    setOpenedAndClearException();
   }
 
   void XdmaBackend::closeImpl() {
@@ -63,13 +63,6 @@ namespace ChimeraTK {
 
   bool XdmaBackend::isOpen() {
     return _ctrlIntf.has_value();
-  }
-
-  bool XdmaBackend::isFunctional() const {
-    if(!_ctrlIntf || _hasActiveException) {
-      return false;
-    }
-    return true;
   }
 
   XdmaIntfAbstract& XdmaBackend::_intfFromBar(uint64_t bar) {

@@ -8,6 +8,8 @@
 #include <utility>
 
 namespace ChimeraTK {
+  class DummyBackendBase;
+
   /**
    * @brief The DummyInterruptTriggerAccessor class
    *
@@ -21,58 +23,17 @@ namespace ChimeraTK {
    public:
     DummyInterruptTriggerAccessor(boost::shared_ptr<DeviceBackend> backend,
         std::function<VersionNumber(void)> interruptTrigger, const RegisterPath& registerPathName,
-        size_t numberOfElements = 1, size_t elementsOffset = 0, const AccessModeFlags& flags = {})
-    : NDRegisterAccessor<UserType>(registerPathName, {}), _backend(std::move(backend)),
-      _interruptTrigger(std::move(interruptTrigger)) {
-      if(numberOfElements > 1) {
-        throw ChimeraTK::logic_error("DUMMY_INTERRUPT accessor register can have at most one element");
-      }
+        size_t numberOfElements = 1, size_t elementsOffset = 0, const AccessModeFlags& flags = {});
 
-      if(elementsOffset != 0) {
-        throw ChimeraTK::logic_error("DUMMY_INTERRUPT accessor register cannot have any offset");
-      }
-
-      flags.checkForUnknownFlags({});
-
-      NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-      NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
-      NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(1);
-    }
-
-    bool doWriteTransfer(ChimeraTK::VersionNumber) override {
-      _interruptTrigger();
-
-      return false;
-    }
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override;
 
     void doReadTransferSynchronously() override {}
 
-    void doPreRead(TransferType) override {
-      if(not _backend->isOpen()) {
-        throw ChimeraTK::logic_error("Device is not opened.");
-      }
+    void doPreRead(TransferType) override;
 
-      if(not _backend->isFunctional()) {
-        throw ChimeraTK::runtime_error("Exception reported by another accessor.");
-      }
-    }
+    void doPostRead(TransferType, bool hasNewData) override;
 
-    void doPostRead(TransferType, bool hasNewData) override {
-      if(not hasNewData) return;
-      NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(1);
-      TransferElement::_versionNumber = {};
-    }
-
-    void doPreWrite(TransferType, VersionNumber) override {
-      //
-      if(not _backend->isOpen()) {
-        throw ChimeraTK::logic_error("Device is not opened.");
-      }
-
-      if(not _backend->isFunctional()) {
-        throw ChimeraTK::runtime_error("Exception reported by another accessor.");
-      }
-    }
+    void doPreWrite(TransferType, VersionNumber) override;
 
     [[nodiscard]] bool isReadOnly() const override { return false; }
     [[nodiscard]] bool isReadable() const override { return true; }
@@ -86,7 +47,7 @@ namespace ChimeraTK {
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
    private:
-    boost::shared_ptr<DeviceBackend> _backend;
+    boost::shared_ptr<DummyBackendBase> _backend;
     std::function<VersionNumber(void)> _interruptTrigger;
   };
 

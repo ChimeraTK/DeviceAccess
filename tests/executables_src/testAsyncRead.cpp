@@ -107,13 +107,10 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
   void close() override { _opened = false; }
 
-  bool isFunctional() const override { return (_opened && !_hasActiveException); }
-
   std::map<std::string, cppext::future_queue<void>> notificationQueue;
   std::map<std::string, size_t> registers;
 
-  void setException() override {
-    _hasActiveException = true;
+  void setExceptionImpl() noexcept override {
     // FIXME !!!!
     assert(false); // Wrong implementation. All notification queues must see an exception.
   }

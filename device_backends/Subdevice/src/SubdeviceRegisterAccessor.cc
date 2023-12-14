@@ -91,8 +91,8 @@ namespace ChimeraTK {
         }
       }
     }
-    catch(ChimeraTK::runtime_error&) {
-      _exceptionBackend->setException();
+    catch(ChimeraTK::runtime_error& ex) {
+      _exceptionBackend->setException(ex.what());
       throw;
     }
     return false;
