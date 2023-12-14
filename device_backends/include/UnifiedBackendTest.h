@@ -445,9 +445,9 @@ namespace ChimeraTK {
       explicit ExceptionReportingBackend(boost::shared_ptr<DeviceBackend> target) : _target(std::move(target)) {}
       ~ExceptionReportingBackend() override = default;
 
-      void setException() override {
+      void setExceptionImpl() noexcept override {
         _hasSeenException = true;
-        _target->setException();
+        _target->setException(getActiveExceptionMessage());
       }
 
       /// Check whether setException() has been called since the last call to hasSeenException().
@@ -459,7 +459,6 @@ namespace ChimeraTK {
 
       void open() override {}
       void close() override {}
-      bool isFunctional() const override { return false; }
       std::string readDeviceInfo() override { return ""; }
 
       RegisterCatalogue getRegisterCatalogue() const override { throw; }
@@ -1724,7 +1723,7 @@ namespace ChimeraTK {
 
         // Need to report the exception to the exception backend, because this is normally done in
         // TransferElement::read() etc.
-        d.setException();
+        d.setException("Some message");
 
         // complete the operation
         reg.getHighLevelImplElement()->postRead(TransferType::read, false);
@@ -2372,7 +2371,7 @@ namespace ChimeraTK {
     });
 
     // enter exception state
-    d.setException();
+    d.setException("Some message");
 
     // each accessor has now an exception in the queue -> remove from queue
     for(auto& accessor : accessors) {
@@ -2380,8 +2379,8 @@ namespace ChimeraTK {
     }
 
     // call setException repeatedly
-    d.setException();
-    d.setException();
+    d.setException("Some message");
+    d.setException("Some message");
 
     // give potential race conditions a chance...
     usleep(10000);
@@ -2423,7 +2422,7 @@ namespace ChimeraTK {
       reg.read();
 
       // enter exception state
-      d.setException();
+      d.setException("Some message");
 
       // send value, must not be received
       x.setRemoteValue();
@@ -2477,7 +2476,7 @@ namespace ChimeraTK {
     });
 
     // enter exception state
-    d.setException();
+    d.setException("Some message");
 
     usleep(10000); // give potential race conditions a chance...
 
@@ -2518,7 +2517,7 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // put backend into exception state
-      d.setException();
+      d.setException("Some message");
 
       // Check for runtime_error where it is now expected
       BOOST_CHECK_THROW(reg.read(), runtime_error);
@@ -2554,7 +2553,7 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       // put backend into exception state
-      d.setException();
+      d.setException("Some message");
 
       // Check for runtime_error where it is now expected
       BOOST_CHECK_THROW(reg.write(), runtime_error);

@@ -4,10 +4,10 @@
 #include "LNMMathPlugin.h"
 
 #include "BackendFactory.h"
+#include "internal/LNMMathPluginFormulaHelper.h"
 #include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
-#include "internal/LNMMathPluginFormulaHelper.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -191,11 +191,11 @@ namespace ChimeraTK::LNMBackend {
       auto writeVs = std::max<ChimeraTK::VersionNumber>(versionNumber, _target->getVersionNumber());
       _target->writeDestructively(writeVs);
     }
-    catch(runtime_error&) {
+    catch(runtime_error& ex) {
       // runtime_error from param.readLatest() or target->write()
       // we could actually even ignore it, since we don't expect exceptions on param.readLatest(), and target->write()
       // already puts backend into exception state.
-      _target->getExceptionBackend()->setException();
+      _target->getExceptionBackend()->setException(ex.what());
     }
   }
 
@@ -326,9 +326,7 @@ namespace ChimeraTK::LNMBackend {
     if(!backend->isOpen()) {
       throw ChimeraTK::logic_error("LNM backend not opened!");
     }
-    if(!backend->isFunctional()) {
-      throw ChimeraTK::runtime_error("previous unrecovered error while trying to write: " + this->getName());
-    }
+    backend->checkActiveException();
 
     // The readLatest might throw an exception. In this case preWrite() is never delegated and we must not call the
     // target's postWrite().

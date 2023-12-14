@@ -110,7 +110,8 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   // Note: At this point the backend must have been closed, so the client
   // connection of the server is no longer open. Otherwise we will block here
   // forever.
-  assert(d.isOpened() == false);
+  // assert(d.isOpened() == false); // <-- This was wrong behaviour, backends must not close on their own!
+  BOOST_CHECK(d.isOpened());
   rebotServer.stop();
 
   serverThread.join();

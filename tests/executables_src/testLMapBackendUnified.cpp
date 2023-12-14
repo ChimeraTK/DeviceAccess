@@ -251,7 +251,7 @@ struct VariableRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
       lmapBackend->close();
     }
     else if(!backendWasFunctional) {
-      lmapBackend->setException();
+      lmapBackend->setException("Some message");
     }
     std::vector<UserType> v;
     for(size_t k = 0; k < derived->nElementsPerChannel(); ++k) {

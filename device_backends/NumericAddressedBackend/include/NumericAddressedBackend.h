@@ -102,7 +102,7 @@ namespace ChimeraTK {
     NumericAddressedRegisterInfo getRegisterInfo(const RegisterPath& registerPathName);
 
     void activateAsyncRead() noexcept override;
-    void setException() override;
+    void setExceptionImpl() noexcept override;
 
     /**
      *  Deactivates all asynchronous accessors and calls closeImpl().
@@ -148,8 +148,6 @@ namespace ChimeraTK {
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-
-    std::atomic<bool> _hasActiveException{false};
 
     friend NumericAddressedLowLevelTransferElement;
     friend NumericAddressedInterruptDispatcher;

@@ -94,8 +94,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void Device::setException() {
-    _deviceBackendPointer->setException();
+  void Device::setException(const std::string& message) {
+    _deviceBackendPointer->setException(message);
   }
 
   /********************************************************************************************************************/

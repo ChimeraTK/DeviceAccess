@@ -46,7 +46,7 @@ namespace ChimeraTK {
      *  If the working state is unknown, the response should be \c true. Client code will then try to read/write
      *  and might get an exception, while isFunctional()==false means you surely will get an exception.
      */
-    virtual bool isFunctional() const = 0;
+    virtual bool isFunctional() const noexcept = 0;
 
     /**
      *  Return the register catalogue with detailed information on all registers.
@@ -73,12 +73,13 @@ namespace ChimeraTK {
      * information from it programmatically. */
     virtual std::string readDeviceInfo() = 0;
 
-    /** Set the backend into an exception state.
-     *  All backends must remember this, turn off asyncronous reads and all accessors will throw a
-     * ChimeraTK::runtime_error on read and write operations, saying that there is a "previous, unrecovered fault",
-     * until open() has been called successfully.
+    /**
+     * Set the backend into an exception state.
+     * All backends must remember this, turn off asyncronous reads and all accessors will throw a
+     * ChimeraTK::runtime_error on read and write operations with the provided message string, until open() has been
+     * called successfully.
      */
-    virtual void setException() = 0;
+    virtual void setException(const std::string& message) noexcept = 0;
 
     /**
      *  Activate asyncronous read for all transfer elements where AccessMode::wait_for_new_data is set.
@@ -89,6 +90,12 @@ namespace ChimeraTK {
      *  For more details, see \ref transferElement_B_8_5 "Technical specification: TransferElement B.8.5".
      */
     virtual void activateAsyncRead() noexcept {}
+
+    /**
+     * Function to be called by backends when needing to check for an active exception. If an active exception is found,
+     * the appropriate ChimeraTK::runtime_error is thrown by this function.
+     */
+    virtual void checkActiveException() = 0;
   };
 
   /********************************************************************************************************************/

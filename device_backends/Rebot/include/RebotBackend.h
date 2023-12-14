@@ -69,8 +69,6 @@ namespace ChimeraTK {
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
 
-    bool isFunctional() const override;
-
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
    protected:

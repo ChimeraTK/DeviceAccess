@@ -117,9 +117,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void LNMBackendVariableAccessor<UserType>::doReadTransferSynchronously() {
-    if(_dev->_hasException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    _dev->checkActiveException();
   }
 
   /********************************************************************************************************************/
@@ -140,9 +138,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   bool LNMBackendVariableAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber v) {
-    if(_dev->_hasException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    _dev->checkActiveException();
     auto& lnmVariable = _dev->_variables[_info.name];
     std::lock_guard<std::mutex> lock(lnmVariable.valueTable_mutex);
 

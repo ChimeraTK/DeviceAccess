@@ -53,6 +53,8 @@ namespace ChimeraTK {
 
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
+    bool checkConnection() const;
+
     /** constructor called through createInstance to create device object */
 
    public:
@@ -61,8 +63,6 @@ namespace ChimeraTK {
 
     void open() override;
     void closeImpl() override;
-
-    bool isFunctional() const override;
 
     void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override;

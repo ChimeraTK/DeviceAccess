@@ -181,7 +181,7 @@ namespace ChimeraTK {
     obtainTargetBackend();
     // open target backend, unconditionally as it is also used for recovery
     targetDevice->open();
-    _opened = true;
+    setOpenedAndClearException();
   }
 
   /*******************************************************************************************************************/
@@ -519,9 +519,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void SubdeviceBackend::setException() {
+  void SubdeviceBackend::setExceptionImpl() noexcept {
     obtainTargetBackend();
-    targetDevice->setException();
+    targetDevice->setException(getActiveExceptionMessage());
   }
 
   /********************************************************************************************************************/
