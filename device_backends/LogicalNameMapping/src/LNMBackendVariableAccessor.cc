@@ -234,8 +234,8 @@ namespace ChimeraTK {
           this->buffer_2D[0][i] = userTypeToUserType<UserType>(vtEntry.latestValue[i + _wordOffsetInRegister]);
           this->_dataValidity = vtEntry.latestValidity;
         }
+        this->_versionNumber = vtEntry.latestVersion;
       });
-      this->_versionNumber = {};
     }
     else {
       // push-type read transfer: received value is in _queueValue (cf. readQueue continuation in constructor)

@@ -112,8 +112,7 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     writeCount++;
     BOOST_TEST(targetWriteCount() == writeCount);
 
-    // user expectation will be that write-behavior does not depend on when we call activateAsyncRead,
-    // so test that update is retrieved even if it's called last
+    // write-behavior does not depend on whether or when we call activateAsyncRead
     logicalDevice.close();
     logicalDevice.open();
     accTarget = 0;
@@ -121,14 +120,13 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     writeCount++;                                 // direct write from test also counts
     BOOST_TEST(targetWriteCount() == writeCount); // sanity check (that we are counting correctly)
     accMathWrite = 7;
-    accMathWrite.write();
+    accMathWrite.write(); // not all parameters written after open -> no target write
     pushPar = 6;
     pushPar.write();
+    writeCount++;
     BOOST_TEST(int(accTarget) == 0);
     BOOST_TEST(targetWriteCount() == writeCount);
-    logicalDevice.activateAsyncRead();
-    // activateAsyncRead should have triggered single write
-    writeCount++;
+    logicalDevice.activateAsyncRead(); // does not trigger target write
     BOOST_TEST(targetWriteCount() == writeCount);
     accTarget.read();
     BOOST_TEST(int(accTarget) == 10 * pushPar + accMathWrite);
@@ -157,9 +155,9 @@ BOOST_AUTO_TEST_CASE(testPushPars) {
     pushPar.write();
     pushPar2.write();
     accMathWrite2.write();
+    writeCount2++;
     BOOST_TEST(targetWriteCount2() == writeCount2);
     logicalDevice.activateAsyncRead();
-    writeCount2++;
     BOOST_TEST(int(accTarget2) == 200 * pushPar2 + 20 * pushPar + 2 * accMathWrite2);
     BOOST_TEST(targetWriteCount2() == writeCount2);
   }
