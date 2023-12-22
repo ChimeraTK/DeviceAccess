@@ -31,6 +31,10 @@ namespace ChimeraTK::LNMBackend {
     // This function updates all parameter accessors and return their worst validity
     [[nodiscard]] ChimeraTK::DataValidity updateParameters();
 
+    // Clear the queues of all parameter accessors. Called in openHook to prevent old exceptions on the queues to be
+    // rethrown after re-opening the device.
+    void clearParameterQueues();
+
     // This function updates result in target based on latest values of parameter accessors and lastMainValue
     void updateResult(ChimeraTK::VersionNumber versionNumber);
 

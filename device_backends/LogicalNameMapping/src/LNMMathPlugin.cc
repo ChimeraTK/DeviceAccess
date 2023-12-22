@@ -4,10 +4,10 @@
 #include "LNMMathPlugin.h"
 
 #include "BackendFactory.h"
-#include "internal/LNMMathPluginFormulaHelper.h"
 #include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "TransferElement.h"
+#include "internal/LNMMathPluginFormulaHelper.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -77,6 +77,13 @@ namespace ChimeraTK::LNMBackend {
       _mainValueWrittenAfterOpen = false;
       _allParametersWrittenAfterOpen = false;
     }
+
+    // consume all entries from the push-type parameter queues, to prevent old exceptions from being thrown again
+    if(_hasPushParameter) {
+      // Note: This will always create a formula helper even if no accessor participating in this MathPlugin instance
+      // is obtained by the application. This should be only unnecessary memory usage and hence is acceptable for now.
+      getFormulaHelper(backend)->clearParameterQueues();
+    }
   }
 
   /********************************************************************************************************************/
@@ -138,6 +145,21 @@ namespace ChimeraTK::LNMBackend {
       }
     }
     return paramDataValidity;
+  }
+
+  /********************************************************************************************************************/
+
+  void MathPluginFormulaHelper::clearParameterQueues() {
+    for(auto& p : params) {
+      bool dataFoundOnQueue = true;
+      do {
+        try {
+          dataFoundOnQueue = p.first->getReadQueue().pop();
+        }
+        catch(...) {
+        }
+      } while(dataFoundOnQueue);
+    }
   }
 
   /********************************************************************************************************************/
