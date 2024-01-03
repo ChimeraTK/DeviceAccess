@@ -31,8 +31,6 @@ namespace ChimeraTK {
    */
   class DummyBackendBase : public NumericAddressedBackend {
    public:
-    // ctor & dtor private with derived type as friend to enforce correct specialization
-
     explicit DummyBackendBase(std::string const& mapFileName);
 
     ~DummyBackendBase() override = default;

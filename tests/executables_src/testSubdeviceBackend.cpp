@@ -691,7 +691,6 @@ BOOST_AUTO_TEST_CASE(testIsFunctional) {
   Device target;
   target.open("TARGET1");
   BOOST_CHECK(dev.isFunctional());
-  // Close target device.
   dev.setException("Test Exception");
   // Device should not be functional anymore
   BOOST_CHECK(!dev.isFunctional());
