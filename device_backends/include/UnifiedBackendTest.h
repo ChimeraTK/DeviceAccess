@@ -448,6 +448,9 @@ namespace ChimeraTK {
       void setExceptionImpl() noexcept override {
         _hasSeenException = true;
         _target->setException(getActiveExceptionMessage());
+        // do not keep the ExceptionReportingBackend in exception state, otherwise further exceptions do not cause this
+        // function to be executed.
+        setOpenedAndClearException();
       }
 
       /// Check whether setException() has been called since the last call to hasSeenException().
