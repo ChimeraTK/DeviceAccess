@@ -964,7 +964,7 @@ namespace ChimeraTK {
       catch(ChimeraTK::runtime_error&) {
         usleep(10000); // 10ms
         if(i > 6000) {
-          BOOST_ERROR("Device did not recover within 60 seconds after forced ChimeraTK::runtime_error.");
+          BOOST_FAIL("Device did not recover within 60 seconds after forced ChimeraTK::runtime_error.");
         }
       }
     }
@@ -1295,6 +1295,7 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // open the device, then let it throw runtime_error exceptions
         d.open();
 
@@ -1352,6 +1353,7 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // open the device, then let it throw runtime_error exceptions
         d.open();
         d.activateAsyncRead();
@@ -1432,6 +1434,7 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.getVersionNumber() == VersionNumber(nullptr));
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // open the device, then let it throw runtime_error exceptions
         d.open();
 
@@ -1712,6 +1715,7 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // read initial value
         reg.read();
 
@@ -2123,6 +2127,7 @@ namespace ChimeraTK {
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
@@ -2159,6 +2164,7 @@ namespace ChimeraTK {
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
@@ -2195,6 +2201,7 @@ namespace ChimeraTK {
       reg.getHighLevelImplElement()->setExceptionBackend(erb);
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
@@ -2229,6 +2236,7 @@ namespace ChimeraTK {
 
       bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
@@ -2271,6 +2279,7 @@ namespace ChimeraTK {
 
       bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
@@ -2312,6 +2321,7 @@ namespace ChimeraTK {
 
       bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
@@ -3040,6 +3050,7 @@ namespace ChimeraTK {
       auto isWriteable = reg.isWriteable();
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
@@ -3106,6 +3117,7 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on read
         x.setForceRuntimeError(true, i);
 
@@ -3140,6 +3152,7 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         reg.read(); // initial value
 
         // enable exceptions on read
@@ -3176,6 +3189,7 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
 
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
@@ -3209,6 +3223,7 @@ namespace ChimeraTK {
 
       bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
@@ -3253,6 +3268,7 @@ namespace ChimeraTK {
 
       bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
@@ -3296,6 +3312,7 @@ namespace ChimeraTK {
 
       bool didThrow = false;
       for(size_t i = 0; i < x.nRuntimeErrorCases(); ++i) {
+        std::cout << "    -> runtime_error case: " << i << std::endl;
         // enable exceptions on write
         x.setForceRuntimeError(true, i);
 
