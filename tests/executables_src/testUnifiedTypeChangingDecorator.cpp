@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #define BOOST_TEST_MODULE TypeChangingDecoratorUnifiedTest
-// Only after defining the name include the unit test header.
-#include <boost/test/included/unit_test.hpp>
-
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
