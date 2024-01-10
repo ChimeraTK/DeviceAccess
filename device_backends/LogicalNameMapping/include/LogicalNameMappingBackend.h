@@ -24,8 +24,6 @@ namespace ChimeraTK {
 
     void close() override;
 
-    bool isFunctional() const override;
-
     std::string readDeviceInfo() override { return std::string("Logical name mapping file: ") + _lmapFileName; }
 
     static boost::shared_ptr<DeviceBackend> createInstance(
@@ -33,7 +31,7 @@ namespace ChimeraTK {
 
     RegisterCatalogue getRegisterCatalogue() const override;
 
-    void setException() override;
+    void setExceptionImpl() noexcept override;
 
     void activateAsyncRead() noexcept override;
 
@@ -104,10 +102,6 @@ namespace ChimeraTK {
 
     template<typename T>
     friend class LNMBackendVariableAccessor;
-
-    /** Flag storing whether setException has been called. Cleared in open().
-     */
-    std::atomic<bool> _hasException{true};
 
     /// Flag storing whether asynchronous read has been activated.
     std::atomic<bool> _asyncReadActive{false};

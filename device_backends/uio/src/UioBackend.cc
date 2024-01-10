@@ -35,8 +35,7 @@ namespace ChimeraTK {
     }
 
     _uioAccess->open();
-    _hasActiveException = false;
-    _opened = true;
+    setOpenedAndClearException();
   }
 
   void UioBackend::closeImpl() {
@@ -44,13 +43,6 @@ namespace ChimeraTK {
       _uioAccess->close();
     }
     _opened = false;
-  }
-
-  bool UioBackend::isFunctional() const {
-    if(!_opened) return false;
-    if(_hasActiveException) return false;
-
-    return true;
   }
 
   bool UioBackend::barIndexValid(uint64_t bar) {
@@ -61,18 +53,14 @@ namespace ChimeraTK {
 
   void UioBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     assert(_opened);
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("UIO: Previous, un-recovered fault");
-    }
+    checkActiveException();
 
     _uioAccess->read(bar, address, data, sizeInBytes);
   }
 
   void UioBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     assert(_opened);
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("UIO: Previous, un-recovered fault");
-    }
+    checkActiveException();
 
     _uioAccess->write(bar, address, data, sizeInBytes);
   }
@@ -108,14 +96,14 @@ namespace ChimeraTK {
         numberOfInterrupts = _uioAccess->waitForInterrupt(100);
       }
       catch(ChimeraTK::runtime_error& ex) {
-        setException();
+        setException(ex.what());
         continue;
       }
 
       if(numberOfInterrupts > 0) {
         _uioAccess->clearInterrupts();
 
-        if(_hasActiveException) {
+        if(!isFunctional()) {
           // Don't dispatch interrupts in case of exceptions
           continue;
         }

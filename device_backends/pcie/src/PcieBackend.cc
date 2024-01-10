@@ -36,7 +36,7 @@ namespace ChimeraTK {
     std::cout << "open pcie dev" << std::endl;
 #endif
     if(_opened) {
-      if(isFunctional()) return;
+      if(checkConnection()) return;
       ::close(_deviceID);
     }
     _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
@@ -46,8 +46,7 @@ namespace ChimeraTK {
 
     determineDriverAndConfigureIoctl();
 
-    _opened = true;
-    _hasActiveException = false;
+    setOpenedAndClearException();
   }
 
   void PcieBackend::determineDriverAndConfigureIoctl() {
@@ -118,10 +117,7 @@ namespace ChimeraTK {
     _opened = false;
   }
 
-  bool PcieBackend::isFunctional() const {
-    if(!_opened) return false;
-    if(_hasActiveException) return false;
-
+  bool PcieBackend::checkConnection() const {
     // Note: This expects byte 0 of bar 0 to be readable. This is currently guaranteed by our firmware framework. If
     // other firmware needs to be supported, this should be made configurable (via CDD). If a map file is used, we could
     // also use the first readable address specified in the map file.
@@ -198,9 +194,8 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    checkActiveException();
+
     if(bar != 0xD) {
       _readFunction(bar, address, data, sizeInBytes);
     }
@@ -218,9 +213,8 @@ namespace ChimeraTK {
   }
 
   void PcieBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    checkActiveException();
+
     _writeFunction(bar, address, data, sizeInBytes);
   }
 

@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <list>
+#include <mutex>
 
 namespace ChimeraTK {
 
@@ -28,10 +29,63 @@ namespace ChimeraTK {
 
     MetadataCatalogue getMetadataCatalogue() const override { return {}; }
 
+    /**
+     * Function to be (optionally) implemented by backends if additional actions are needed when switching to the
+     * exception state.
+     */
+    virtual void setExceptionImpl() noexcept {}
+
+    /**
+     * Function to be called by backends when needing to check for an active exception. If an active exception is found,
+     * the appropriate ChimeraTK::runtime_error is thrown by this function.
+     */
+    void checkActiveException() final;
+
+    void setException(const std::string& message) noexcept final;
+
+    bool isFunctional() const noexcept final;
+
+    std::string getActiveExceptionMessage() noexcept;
+
    protected:
-    /** flag if device is opened */
+    /** Backends should call this function at the end of a (successful) open() call.*/
+    void setOpenedAndClearException() noexcept;
+
+    /** flag if backend is opened */
     std::atomic<bool> _opened{false};
+
+   private:
+    /** flag if backend is in an exception state */
+    std::atomic<bool> _hasActiveException{false};
+
+    /**
+     *  message for the current exception, if _hasActiveException is true. Access is protected by
+     * _mx_activeExceptionMessage
+     */
+    std::string _activeExceptionMessage;
+
+    /** mutex to protect access to _activeExceptionMessage */
+    std::mutex _mx_activeExceptionMessage;
   };
+
+  /********************************************************************************************************************/
+
+  // This function is rather often called and hence implemented as inline in the header for performance reasons.
+  inline bool DeviceBackendImpl::isFunctional() const noexcept {
+    if(!_opened) return false;
+    if(_hasActiveException) return false;
+    return true;
+  }
+
+  /********************************************************************************************************************/
+
+  // This function is rather often called and hence implemented as inline in the header for performance reasons.
+  inline void DeviceBackendImpl::checkActiveException() {
+    if(_hasActiveException) {
+      std::lock_guard<std::mutex> lk(_mx_activeExceptionMessage);
+      throw ChimeraTK::runtime_error(_activeExceptionMessage);
+    }
+  }
 
   /********************************************************************************************************************/
 

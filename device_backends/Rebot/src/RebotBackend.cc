@@ -91,10 +91,6 @@ namespace ChimeraTK {
     }
   }
 
-  bool RebotBackend::isFunctional() const {
-    return (_connection->isOpen() && !_hasActiveException);
-  }
-
   void RebotBackend::open() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
@@ -103,8 +99,7 @@ namespace ChimeraTK {
     _lastSendTime = testable_rebot_sleep::now();
     _protocolImplementor = getProtocolImplementor(_connection);
 
-    _opened = true;
-    _hasActiveException = false;
+    setOpenedAndClearException();
   }
 
   void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) {
@@ -113,9 +108,7 @@ namespace ChimeraTK {
     if(!isOpen()) {
       throw ChimeraTK::logic_error("Device is closed");
     }
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    checkActiveException();
 
     _lastSendTime = testable_rebot_sleep::now();
     _protocolImplementor->read(addressInBytes, data, sizeInBytes);
@@ -127,9 +120,7 @@ namespace ChimeraTK {
     if(!isOpen()) {
       throw ChimeraTK::logic_error("Device is closed");
     }
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    checkActiveException();
 
     _lastSendTime = testable_rebot_sleep::now();
     _protocolImplementor->write(addressInBytes, data, sizeInBytes);
@@ -202,9 +193,7 @@ namespace ChimeraTK {
         testable_rebot_sleep::sleep_until(wakeupTime);
       }
       catch(ChimeraTK::runtime_error& e) {
-        std::cerr << "RebotBackend: Sending heartbeat failed. Caught exception: " << e.what() << std::endl;
-        std::cerr << "Closing connection." << std::endl;
-        close();
+        setException(std::string("RebotBackend: Sending heartbeat failed. Caught exception: ") + e.what());
       }
     } // while true
   }

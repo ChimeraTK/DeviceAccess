@@ -445,9 +445,9 @@ namespace ChimeraTK {
       try {
         postRead(type, updateDataBuffer);
       }
-      catch(ChimeraTK::runtime_error&) {
+      catch(ChimeraTK::runtime_error& ex) {
         if(_exceptionBackend) {
-          _exceptionBackend->setException();
+          _exceptionBackend->setException(ex.what());
         }
         throw;
       }
@@ -546,9 +546,9 @@ namespace ChimeraTK {
       try {
         postWrite(type, versionNumber);
       }
-      catch(ChimeraTK::runtime_error&) {
+      catch(ChimeraTK::runtime_error& ex) {
         if(_exceptionBackend) {
-          _exceptionBackend->setException();
+          _exceptionBackend->setException(ex.what());
         }
         throw;
       }

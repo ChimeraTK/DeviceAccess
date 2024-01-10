@@ -140,9 +140,7 @@ namespace ChimeraTK {
     /// obtain the target backend if not yet done
     void obtainTargetBackend();
 
-    bool isFunctional() const override { return _opened && targetDevice->isFunctional(); }
-
-    void setException() override;
+    void setExceptionImpl() noexcept override;
 
     void activateAsyncRead() noexcept override;
 

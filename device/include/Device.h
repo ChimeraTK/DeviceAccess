@@ -191,7 +191,7 @@ namespace ChimeraTK {
      * \li All write and synchronous read operations will see a ChimeraTK::runtime_error.
      * \li The exception state stays until open() has successfully been called again.
      */
-    void setException();
+    void setException(const std::string& message);
 
     /**
      * Obtain the backend.

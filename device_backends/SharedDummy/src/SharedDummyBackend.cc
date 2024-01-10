@@ -56,8 +56,7 @@ namespace ChimeraTK {
   }
 
   void SharedDummyBackend::open() {
-    _opened = true;
-    _hasActiveException = false;
+    setOpenedAndClearException();
   }
 
   void SharedDummyBackend::closeImpl() {
@@ -68,9 +67,7 @@ namespace ChimeraTK {
     if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
     }
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    checkActiveException();
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     uint64_t wordBaseIndex = address / sizeof(int32_t);
 
@@ -84,9 +81,7 @@ namespace ChimeraTK {
     if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
     }
-    if(_hasActiveException) {
-      throw ChimeraTK::runtime_error("previous, unrecovered fault");
-    }
+    checkActiveException();
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     uint64_t wordBaseIndex = address / sizeof(int32_t);
 

@@ -43,8 +43,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void ExceptionDummy::setException() {
-    DummyBackend::setException();
+  void ExceptionDummy::setExceptionImpl() noexcept {
+    DummyBackend::setExceptionImpl();
 
     // deactivate async transfers
     std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
@@ -103,17 +103,17 @@ namespace ChimeraTK {
 
   void ExceptionDummy::open() {
     if(throwExceptionOpen) {
-      thereHaveBeenExceptions = true;
-      throw(ChimeraTK::runtime_error("DummyException: open throws by request"));
+      throwExceptionCounter++;
+      setException("DummyException: open throws by request");
+      throw ChimeraTK::runtime_error("DummyException: open throws by request");
     }
     ChimeraTK::DummyBackend::open();
-    thereHaveBeenExceptions = false;
   }
 
   /********************************************************************************************************************/
 
   void ExceptionDummy::closeImpl() {
-    setException();
+    setException("Close ExceptionDummy");
     DummyBackend::closeImpl();
   }
 
@@ -121,8 +121,8 @@ namespace ChimeraTK {
 
   void ExceptionDummy::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     if(throwExceptionRead) {
-      thereHaveBeenExceptions = true;
-      throw(ChimeraTK::runtime_error("DummyException: read throws by request"));
+      throwExceptionCounter++;
+      throw ChimeraTK::runtime_error("DummyException: read throws by request");
     }
     ChimeraTK::DummyBackend::read(bar, address, data, sizeInBytes);
   }
@@ -131,8 +131,8 @@ namespace ChimeraTK {
 
   void ExceptionDummy::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     if(throwExceptionWrite) {
-      thereHaveBeenExceptions = true;
-      throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
+      throwExceptionCounter++;
+      throw ChimeraTK::runtime_error("DummyException: write throws by request");
     }
     ChimeraTK::DummyBackend::write(bar, address, data, sizeInBytes);
 
@@ -154,17 +154,6 @@ namespace ChimeraTK {
       assert(itWriteCounter != _writeCounterMap.end()); // always inserted together
       itWriteCounter->second++;
     }
-  }
-
-  /********************************************************************************************************************/
-
-  bool ExceptionDummy::isFunctional() const {
-    // thereHaveBeenExceptions is different from _hasActiceException
-    // * thereHaveBeenExceptions is set when this class originally raised an exception
-    // * _hasActiveException is raised externally via setException. This can happen if a transfer element from another
-    // backend,
-    //   which is in the same logical name mapping backend than this class, has seen an exception.
-    return (_opened && !throwExceptionOpen && !thereHaveBeenExceptions && !_hasActiveException);
   }
 
   /********************************************************************************************************************/
