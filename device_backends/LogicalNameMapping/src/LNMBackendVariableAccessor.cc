@@ -232,8 +232,12 @@ namespace ChimeraTK {
         auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
         for(size_t i = 0; i < this->buffer_2D[0].size(); ++i) {
           this->buffer_2D[0][i] = userTypeToUserType<UserType>(vtEntry.latestValue[i + _wordOffsetInRegister]);
-          this->_dataValidity = vtEntry.latestValidity;
         }
+        this->_dataValidity = vtEntry.latestValidity;
+        // Note: passing through the version number also for push-type variables is essential for the MathPlugin (cf.
+        // MathPluginFormulaHelper::checkAllParametersWritten()) and does not violate the spec (spec says we should not
+        // be able to see whether there was an update, which still is impossible since updates can have the same
+        // version number as before).
         this->_versionNumber = vtEntry.latestVersion;
       });
     }

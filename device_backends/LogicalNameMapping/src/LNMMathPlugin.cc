@@ -195,8 +195,8 @@ namespace ChimeraTK::LNMBackend {
     }
 
     for(const auto& acc : _accessorMap) {
-      // push-type accessors: version number check will notice whether valid data has been provided after open
-      // poll-type accessors: version number check always succeeds since readLatest returns new version numbers
+      // Version number check will notice whether valid data has been provided after open. This works for both push and
+      // poll, since the LNM variables always pass through the version number from the write operation to the read.
       if(acc.second->getVersionNumber() <= _backend->getVersionOnOpen()) {
         return false;
       }
