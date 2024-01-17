@@ -27,7 +27,10 @@ set(DESTDIR share/ConfigGenerator-${PROJECT_NAME}-${${PROJECT_NAME}_MAJOR_VERSIO
 file(GLOB hostlists RELATIVE ${PROJECT_SOURCE_DIR} */hostlist)
 foreach(hostlist ${hostlists})
   string(REPLACE "/hostlist" "" servertype "${hostlist}")
-  file(COPY "${PROJECT_SOURCE_DIR}/${servertype}" DESTINATION "${PROJECT_BINARY_DIR}")
+  # FOLLOW_SYMLINK_CHAIN is necessary to allow symlinks to git-submodules. This is used to create
+  # "derived" configurations which reuse some files from their base configuration (example: configs for
+  # different control systems)
+  file(COPY "${PROJECT_SOURCE_DIR}/${servertype}" DESTINATION "${PROJECT_BINARY_DIR}" FOLLOW_SYMLINK_CHAIN)
   list(APPEND servertypes "${servertype}")
 endforeach()
 
