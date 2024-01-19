@@ -137,8 +137,24 @@ namespace ChimeraTK {
 
     ScalarRegisterAccessor<std::string>& operator=(std::string rightHandSide);
 
+    /**
+     * Convenience function to set and write new value if it differes from the current value. The given version number
+     * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
+     * the write actually takes place.
+     */
     void writeIfDifferent(const std::string& newValue, VersionNumber versionNumber = VersionNumber{nullptr},
         DataValidity dataValidity = DataValidity::ok);
+
+    /**
+     * Convenience function to set and write new value. The given version number.
+     *  If versionNumber == {}, a new version number is generated.
+     */
+    void setAndWrite(const std::string& newValue, VersionNumber versionNumber = {});
+
+    /**
+     * Convenience function to read and return a value of UserType.
+     */
+    std::string readAndGet();
 
     friend class TransferGroup;
   };
@@ -302,6 +318,21 @@ namespace ChimeraTK {
       this->setDataValidity(validity);
       this->write(versionNumber);
     }
+  }
+
+  /********************************************************************************************************************/
+
+  inline void ScalarRegisterAccessor<std::string>::setAndWrite(
+      const std::string& newValue, VersionNumber versionNumber) {
+    operator=(newValue);
+    this->write(versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  inline std::string ScalarRegisterAccessor<std::string>::readAndGet() {
+    this->read();
+    return get()->accessData(0, 0);
   }
 
   /********************************************************************************************************************/
