@@ -109,6 +109,11 @@ namespace ChimeraTK {
      */
     [[nodiscard]] DataType transportLayerDataType() const;
 
+    /**
+     * Get the minimum data type required to represent the described data type in the host CPU
+     */
+    [[nodiscard]] DataType minimumDataType() const;
+
     bool operator==(const DataDescriptor& other) const;
     bool operator!=(const DataDescriptor& other) const;
 

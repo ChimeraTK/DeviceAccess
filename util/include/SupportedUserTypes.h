@@ -819,6 +819,40 @@ namespace ChimeraTK {
       }
     }
 
+    /** Return std::type_info representation of the data type */
+    [[nodiscard]] inline const std::type_info& getAsTypeInfo() const {
+      switch(_value) {
+        case int8:
+          return typeid(int8_t);
+        case uint8:
+          return typeid(uint8_t);
+        case int16:
+          return typeid(int16_t);
+        case uint16:
+          return typeid(uint16_t);
+        case int32:
+          return typeid(int32_t);
+        case uint32:
+          return typeid(uint32_t);
+        case int64:
+          return typeid(int64_t);
+        case uint64:
+          return typeid(uint64_t);
+        case float32:
+          return typeid(float);
+        case float64:
+          return typeid(double);
+        case string:
+          return typeid(std::string);
+        case Boolean:
+          return typeid(ChimeraTK::Boolean);
+        case Void:
+          return typeid(ChimeraTK::Void);
+        case none:
+          return typeid(nullptr_t);
+      }
+    }
+
    protected:
     TheType _value;
   };

@@ -138,6 +138,58 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
+
+  DataType DataDescriptor::minimumDataType() const {
+    if(fundamentalType() == DataDescriptor::FundamentalType::numeric) {
+      if(isIntegral()) {
+        if(isSigned()) {
+          if(nDigits() > 11) {
+            return typeid(int64_t);
+          }
+          if(nDigits() > 6) {
+            return typeid(int32_t);
+          }
+          if(nDigits() > 4) {
+            return typeid(int16_t);
+          }
+          return typeid(int8_t);
+        }
+        if(nDigits() > 10) {
+          return typeid(uint64_t);
+        }
+        if(nDigits() > 5) {
+          return typeid(uint32_t);
+        }
+        if(nDigits() > 3) {
+          return typeid(uint16_t);
+        }
+        return typeid(uint8_t);
+      }
+      // fractional:
+      // Maximum number of decimal digits to display a float without loss in non-exponential display, including
+      // sign, leading 0, decimal dot and one extra digit to avoid rounding issues (hence the +4).
+      // This computation matches the one performed in the NumericAddressedBackend catalogue.
+      size_t floatMaxDigits = 4 +
+          size_t(std::max(
+              std::log10(std::numeric_limits<float>::max()), -std::log10(std::numeric_limits<float>::denorm_min())));
+      if(nDigits() > floatMaxDigits) {
+        return typeid(double);
+      }
+      return typeid(float);
+    }
+    if(fundamentalType() == DataDescriptor::FundamentalType::boolean) {
+      return typeid(ChimeraTK::Boolean);
+    }
+    if(fundamentalType() == DataDescriptor::FundamentalType::string) {
+      return typeid(std::string);
+    }
+    if(fundamentalType() == DataDescriptor::FundamentalType::nodata) {
+      return typeid(ChimeraTK::Void);
+    }
+    return {};
+  }
+
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   std::ostream& operator<<(std::ostream& stream, const DataDescriptor::FundamentalType& fundamentalType) {
