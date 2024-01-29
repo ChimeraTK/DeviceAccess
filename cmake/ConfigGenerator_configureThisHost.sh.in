@@ -1,0 +1,16 @@
+#!/bin/bash
+
+## The purpose of this script is to call the correct version of the config
+## generator for a particulat server config. The directory with the 
+## config generator version is put into a template by cmake, and this script
+## is placed into the actual server config directory.
+
+server_type="$1"
+if [[ -z ${server_type} ]]; then
+  echo "No server type given at command line."
+  exit 1
+fi
+
+export CFGDIR="$(dirname "$(which "$0")")"
+
+@ConfigGenerator_DIR@/config myself --type ${server_type}
