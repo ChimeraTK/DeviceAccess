@@ -26,7 +26,7 @@
 SET(ConfigGenerator_FOUND 0)
 
 
-file(GLOB ConfigGenerator_SEARCH_PATHS ${CMAKE_CURRENT_LIST_DIR} "/usr/share/ConfigGenerator*")
+file(GLOB ConfigGenerator_SEARCH_PATHS ${CMAKE_CURRENT_LIST_DIR} "${CMAKE_INSTALL_PREFIX}/share/ConfigGenerator*" "/usr/share/ConfigGenerator*")
 FIND_PATH(ConfigGenerator_DIR
     NAMES ConfigGeneratorConfigVersion.cmake
     PATHS ${ConfigGenerator_SEARCH_PATHS}
