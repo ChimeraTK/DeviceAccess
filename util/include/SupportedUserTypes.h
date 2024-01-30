@@ -849,7 +849,7 @@ namespace ChimeraTK {
         case Void:
           return typeid(ChimeraTK::Void);
         case none:
-          return typeid(nullptr_t);
+          return typeid(std::nullptr_t);
       }
     }
 
