@@ -18,8 +18,9 @@ cmake_minimum_required(VERSION 3.14)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
-find_package(ConfigGenerator 02.00 REQUIRED)
+find_package(ConfigGenerator 03.00 REQUIRED)
 list(APPEND CMAKE_MODULE_PATH ${ConfigGenerator_DIR}/shared)
+
 
 set(DESTDIR share/ConfigGenerator-${PROJECT_NAME}-${${PROJECT_NAME}_MAJOR_VERSION}-${${PROJECT_NAME}_MINOR_VERSION})
 
@@ -34,6 +35,10 @@ foreach(hostlist ${hostlists})
   list(APPEND servertypes "${servertype}")
 endforeach()
 
+# prepare a configure script which knows the version of config generator to call
+configure_file(${PROJECT_SOURCE_DIR}/cmake/ConfigGenerator_configureThisHost.sh.in ${PROJECT_BINARY_DIR}/configureThisHost.sh @ONLY)
+
+
 # install server types (scripts are installed by upstream config generator project)
 foreach(servertype ${servertypes})
   install(DIRECTORY "${servertype}/settings" DESTINATION "${DESTDIR}/${servertype}")
@@ -41,3 +46,5 @@ foreach(servertype ${servertypes})
   file(GLOB thefiles LIST_DIRECTORIES no "${servertype}/*")
   install(FILES ${thefiles} DESTINATION "${DESTDIR}/${servertype}")
 endforeach()
+
+install(PROGRAMS ${PROJECT_BINARY_DIR}/configureThisHost.sh DESTINATION "${DESTDIR}" )
