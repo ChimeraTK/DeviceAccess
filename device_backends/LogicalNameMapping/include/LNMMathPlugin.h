@@ -41,7 +41,7 @@ namespace ChimeraTK::LNMBackend {
     std::map<std::string, std::string> _parameters;
     std::string _formula;              // extracted from _parameters
     bool _enablePushParameters{false}; // extracted from _parameters
-    bool _hasPushParameter{false};     // only releant if _isWrite
+    bool _hasPushParameter{false};     // only relevant if _isWrite
 
     //  only used if _hasPushParameter == true
     // The _writeMutex has two functions:
