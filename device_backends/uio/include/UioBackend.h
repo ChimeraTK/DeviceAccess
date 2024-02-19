@@ -30,7 +30,7 @@ namespace ChimeraTK {
     void open() override;
     void closeImpl() override;
 
-    size_t minimumTransferAlignment([[maybe_unused]]uint64_t bar) const override { return 4; }
+    size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override { return 4; }
 
     bool barIndexValid(uint64_t bar) override;
 
