@@ -44,7 +44,7 @@ namespace ChimeraTK {
     }
   }
 
-  void UioAccess::read(uint64_t map, uint64_t address, int32_t* data, size_t sizeInBytes) {
+  void UioAccess::read(uint64_t map, uint64_t address, int32_t* __restrict__ data, size_t sizeInBytes) {
     if(map > 0) {
       throw ChimeraTK::logic_error("UIO: Multiple memory regions are not supported");
     }
@@ -56,10 +56,11 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("UIO: Read request exceeds device memory region");
     }
 
-    void* targetAddress = static_cast<uint8_t*>(_deviceUserBase) + address;
-
-    // Is inherently thread-safe
-    std::memcpy(data, targetAddress, sizeInBytes);
+    volatile int32_t* rptr = static_cast<volatile int32_t*>(_deviceUserBase) + address / sizeof(int32_t);
+    while(sizeInBytes >= sizeof(int32_t)) {
+      *(data++) = *(rptr++);
+      sizeInBytes -= sizeof(int32_t);
+    }
   }
 
   void UioAccess::write(uint64_t map, uint64_t address, int32_t const* data, size_t sizeInBytes) {
@@ -73,10 +74,12 @@ namespace ChimeraTK {
     if(address + sizeInBytes > _deviceMemSize) {
       throw ChimeraTK::logic_error("UIO: Write request exceeds device memory region");
     }
-    void* targetAddress = static_cast<uint8_t*>(_deviceUserBase) + address;
 
-    // Is inherently thread-safe
-    std::memcpy(targetAddress, data, sizeInBytes);
+    volatile int32_t* __restrict__ wptr = static_cast<volatile int32_t*>(_deviceUserBase) + address / sizeof(int32_t);
+    while(sizeInBytes >= sizeof(int32_t)) {
+      *(wptr++) = *(data++);
+      sizeInBytes -= sizeof(int32_t);
+    }
   }
 
   uint32_t UioAccess::waitForInterrupt(int timeoutMs) {
