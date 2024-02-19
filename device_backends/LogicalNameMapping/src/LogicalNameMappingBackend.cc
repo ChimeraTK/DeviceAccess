@@ -8,6 +8,7 @@
 #include "LNMBackendChannelAccessor.h"
 #include "LNMBackendVariableAccessor.h"
 #include "LogicalNameMapParser.h"
+#include "SupportedUserTypes.h"
 
 namespace ChimeraTK {
 
@@ -63,6 +64,17 @@ namespace ChimeraTK {
     for(auto& reg : _catalogue_mutable) {
       for(auto& plug : dynamic_cast<LNMBackendRegisterInfo&>(reg).plugins) {
         plug->openHook(boost::dynamic_pointer_cast<LogicalNameMappingBackend>(shared_from_this()));
+      }
+    }
+
+    // update versions of constants
+    auto versionForConstants = ChimeraTK::VersionNumber{}; // needs to be bigger than _versionOnOpen
+    for(auto& [name, variable] : _variables) {
+      if(variable.isConstant) {
+        std::lock_guard<std::mutex> lk(variable.valueTable_mutex);
+        ChimeraTK::callForType(variable.valueType, [&](auto v) {
+          boost::fusion::at_key<decltype(v)>(variable.valueTable.table).latestVersion = versionForConstants;
+        });
       }
     }
   }

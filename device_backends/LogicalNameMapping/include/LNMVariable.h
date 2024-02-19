@@ -38,6 +38,12 @@ namespace ChimeraTK {
 
     /** formulas which need updates after variable was written */
     std::set<LNMBackend::MathPlugin*> usingFormulas;
+
+    /** type of the variable */
+    ChimeraTK::DataType valueType;
+
+    /** flag whether this variable is actaully a constant */
+    bool isConstant{false};
   };
 
 } /* namespace ChimeraTK */
