@@ -364,6 +364,8 @@ namespace ChimeraTK {
           boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue =
               this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value", catalogue);
         });
+        lnmVariable.isConstant = true;
+        lnmVariable.valueType = info.valueType;
         info.firstIndex = 0;
         info.length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", catalogue, true, 1);
         info.nChannels = 1;
@@ -381,6 +383,8 @@ namespace ChimeraTK {
           boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table).latestValue =
               this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value", catalogue);
         });
+        lnmVariable.isConstant = false;
+        lnmVariable.valueType = info.valueType;
         info.firstIndex = 0;
         info.length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", catalogue, true, 1);
         info.nChannels = 1;
