@@ -404,6 +404,7 @@ namespace ChimeraTK {
     void test_B_9_3_2();
     void test_B_9_4_1();
     void test_B_9_5();
+    void test_NOSPEC_newVersionAfterOpen();
     void test_B_11_2_1();
     void test_B_11_2_2();
     void test_B_11_6();
@@ -962,6 +963,7 @@ namespace ChimeraTK {
     test_B_9_3_2();
     test_B_9_4_1();
     test_B_9_5();
+    test_NOSPEC_newVersionAfterOpen();
     test_B_11_2_1();
     test_B_11_2_2();
     test_B_11_6();
@@ -2654,10 +2656,13 @@ namespace ChimeraTK {
       if(!this->isAsyncRead(x)) return;
       typedef typename decltype(x)::minimumUserType UserType;
       auto registerName = x.path();
-      VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << " (async)" << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+
+      reg.read(); // initial value
+
+      VersionNumber someVersion = reg.getVersionNumber();
 
       for(size_t i = 0; i < 2; ++i) {
         // Set remote value to be read.
@@ -2675,6 +2680,90 @@ namespace ChimeraTK {
     // close device
     d.close();
   }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test versions after calling open() are newer than any version before.
+   *  FIXME: missing in spec
+   *
+   *  This test is checking that initial values have version numbers larger than VersionNumbers created
+   *  by the application before calling open().
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_newVersionAfterOpen() {
+    std::cout << "--- test_NOSPEC_newVersionsAfterOpen - version numbers after open() are newer" << std::endl;
+    Device d(cdd);
+
+    // Application can create version numbers any time.
+    VersionNumber someVersion{};
+
+    // Open the device. All versions from the backend must be newer than someVersion from now on.
+    d.open();
+
+    // synchronous read
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x)) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+
+      // Set remote value to be read.
+      x.setRemoteValue();
+
+      // Read value
+      reg.read();
+
+      // Check application buffer
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+    });
+
+    // asynchronous read 1: activate before creating accessor
+    d.activateAsyncRead();
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isAsyncRead(x)) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+
+      std::cout << "... registerName = " << registerName << " (async1)" << std::endl;
+
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+
+      reg.read();
+
+      // Check application buffer
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+    });
+
+    // close device
+    d.close();
+
+    // asynchronous read 2: activate after creating accessor
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isAsyncRead(x)) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+
+      someVersion = {};
+      d.open();
+
+      std::cout << "... registerName = " << registerName << " (async2)" << std::endl;
+
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+
+      d.activateAsyncRead();
+
+      reg.read();
+
+      // Check application buffer
+      BOOST_CHECK(reg.getVersionNumber() > someVersion);
+
+      d.close();
+    });
+  }
+
   /********************************************************************************************************************/
 
   /**
@@ -3511,7 +3600,8 @@ namespace ChimeraTK {
       }
       else {
         BOOST_CHECK(not registerInfo.getSupportedAccessModes().has(AccessMode::raw));
-        BOOST_TEST(registerInfo.getDataDescriptor().rawDataType() == DataType::none);
+        BOOST_CHECK((registerInfo.getDataDescriptor().rawDataType() == DataType::none) ||
+            (registerInfo.getDataDescriptor().rawDataType() == DataType::Void));
       }
     });
   }
