@@ -13,9 +13,7 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
-#include "ExceptionDummyBackend.h"
 #include "TransferGroup.h"
-#include "UnifiedBackendTest.h"
 
 namespace ChimeraTK {
   using namespace ChimeraTK;
@@ -65,21 +63,25 @@ BOOST_AUTO_TEST_CASE(testCreation) {
 
   // some error cases:
   // too many elements requested
-  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 11), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(std::ignore = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 11), ChimeraTK::logic_error);
   // offset exceeds range (or would result in accessor with 0 elements)
-  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 10), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 11), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 2), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      std::ignore = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 10), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      std::ignore = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 11), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      std::ignore = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 2), ChimeraTK::logic_error);
   // sum of requested elements and offset too large
-  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 5, 6), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      std::ignore = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 5, 6), ChimeraTK::logic_error);
 
   // get accessor in raw mode
   // FIXME: This was never used, so raw mode is never tested anywhere
   auto accessor5 = device.getOneDRegisterAccessor<int32_t>("MODULE1/TEST_AREA", 0, 0, {AccessMode::raw});
   BOOST_CHECK(accessor5.getNElements() == 10);
   // only int32_t works, other types fail
-  BOOST_CHECK_THROW(
-      device.getOneDRegisterAccessor<double>("MODULE1/TEST_AREA", 0, 0, {AccessMode::raw}), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(std::ignore = device.getOneDRegisterAccessor<double>("MODULE1/TEST_AREA", 0, 0, {AccessMode::raw}),
+      ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/

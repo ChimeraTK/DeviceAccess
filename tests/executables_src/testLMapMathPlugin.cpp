@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   // open device with map file which parses but contains broken formula
   // exception might be thrown in open or only when register requested
   BOOST_CHECK_THROW(device.open("(logicalNameMap?map=mathPlugin-broken2.xlmap)");
-                    device.getOneDRegisterAccessor<double>("BrokenFormula"), ChimeraTK::logic_error);
+                    std::ignore = device.getOneDRegisterAccessor<double>("BrokenFormula"), ChimeraTK::logic_error);
 
   // open device with map file which parses and all contained formulas compile
   device.open("(logicalNameMap?map=mathPlugin.xlmap)");
