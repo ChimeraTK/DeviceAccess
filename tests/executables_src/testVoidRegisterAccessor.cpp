@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(TestSyncRO) {
   Device d("(dummy?map=goodMapFile.map)");
   d.open();
 
-  BOOST_CHECK_THROW(d.getVoidRegisterAccessor("MODULE0/INTERRUPT_VOID1"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(std::ignore = d.getVoidRegisterAccessor("MODULE0/INTERRUPT_VOID1"), ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(TestSyncW) {

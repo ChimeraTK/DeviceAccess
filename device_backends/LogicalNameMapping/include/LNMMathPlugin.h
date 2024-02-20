@@ -11,7 +11,7 @@
 namespace ChimeraTK::LNMBackend {
 
   // forward declaration needed for MathPlugin
-  struct MathPluginFormulaHelper;
+  class MathPluginFormulaHelper;
 
   /** Math Plugin: Apply mathematical formula to register's data. The formula is parsed by the exprtk library. */
   class MathPlugin : public AccessorPlugin<MathPlugin> {

@@ -24,6 +24,11 @@ namespace ChimeraTK {
     NDRegisterAccessorAbstractor() = default;
 
     /**
+     * Declare that we want the default copy constructor although we delete the assigmnent operator.
+     */
+    NDRegisterAccessorAbstractor(const NDRegisterAccessorAbstractor&) = default;
+
+    /**
      * Assign a new accessor to this NDRegisterAccessorAbstractor. Since another  NDRegisterAccessorAbstractor is passed
      * as argument, both NDRegisterAccessorAbstractors will then point to the same accessor and thus are sharing the
      * same buffer. To obtain a new copy of the accessor with a distinct buffer, the corresponding
