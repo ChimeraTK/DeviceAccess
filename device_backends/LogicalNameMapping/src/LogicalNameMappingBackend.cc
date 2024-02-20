@@ -69,7 +69,8 @@ namespace ChimeraTK {
 
     // update versions of constants
     auto versionForConstants = ChimeraTK::VersionNumber{}; // needs to be bigger than _versionOnOpen
-    for(auto& [name, variable] : _variables) {
+    for(auto& nameAndVar : _variables) {
+      auto& variable = nameAndVar.second;
       if(variable.isConstant) {
         std::lock_guard<std::mutex> lk(variable.valueTable_mutex);
         ChimeraTK::callForType(variable.valueType, [&](auto v) {
