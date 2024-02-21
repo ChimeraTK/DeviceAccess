@@ -59,6 +59,6 @@ The formal parsing rules are as following:
 - The list of key=value pairs is optional, in which case the "?" separator can be omitted. The previous token is then terminated by the end of the CDD (i.e. the closing parentheses).
 - All parts of the CDD are case sensitive.
 - Any number of white space characters directly adjacent to any separator character (including the "=" of the key=value pairs) or the outer parentheses are ignored.
-- Escaping rules: The following characters can be escaped by prepending a backslash: "&", "(", ")", " " (blank), "?" and "\". "\t" will be unescaped into a tab character. Inside matching parentheses, escaped characters are not unescaped.
+- Escaping rules: The following characters can be escaped by prepending a backslash: "&", "(", ")", " " (blank), "?" and "\". &quot;\\t&quot; will be unescaped into a tab character. Inside matching parentheses, escaped characters are not unescaped.
 
 */
