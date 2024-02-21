@@ -25,7 +25,7 @@ class) to disctinguish which functionalitily you want:
     a.replace(b); // replace the whole accessor, now 'a' points to REG_B
 \endcode
 
-### Details:
+\subsection q_and_a_details Details:
 The original implementation had the default assignment operator which would
 replace the whole accessor, incl. the register it points to. This is what you
 need in the constructor of a class to initialise its member accessors:
