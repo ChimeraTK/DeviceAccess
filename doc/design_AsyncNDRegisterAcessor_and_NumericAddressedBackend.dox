@@ -67,27 +67,35 @@ digraph reverse_ownership_scheme {
   rankdir=LR
   
   Backend[color=blue, fontcolor=blue]
-  TriggerDistributor[color=blue, fontcolor=blue]
-  Backend -> TriggerDistributor[color=blue, fontcolor=blue]
+  AsyncDomainContainer[color=blue, fontcolor=blue]
+  Backend->AsyncDomainContainer[color=blue, fontcolor=blue]
+  AsyncDomain[label="AsyncDomain\<nullptr_t\>", color=blue, fontcolor=blue];
+  AsyncDomain -> TriggerDistributor [ arrowhead="empty", style="dashed"]
+  TriggerDistributor -> AsyncDomain
+  Backend -> AsyncDomain[color=blue, fontcolor=blue]
+  AsyncDomainContainer -> AsyncDomain [ arrowhead="empty", style="dashed"]
   
+  secondAsyncDomain[label ="AsyncDomain\<nullptr_t\>", style="dotted", color=blue, fontcolor=blue]
+  Backend -> secondAsyncDomain[color=blue, fontcolor=blue]
   secondPrimaryDistributor[label ="TriggerDistributor", style="dotted", color=blue, fontcolor=blue]
-  Backend -> secondPrimaryDistributor[color=blue, fontcolor=blue]
-  thirdPrimaryDistributor[label ="TriggerDistributor", style="dotted", color=blue, fontcolor=blue]
-  Backend -> thirdPrimaryDistributor[color=blue, fontcolor=blue]
+  secondAsyncDomain -> secondPrimaryDistributor [ arrowhead="empty", style="dashed"];
+  secondPrimaryDistributor -> secondAsyncDomain
+  AsyncDomainContainer -> secondAsyncDomain [ arrowhead="empty", style="dashed"]
+
 
   subgraph cluster_distributor1{
-   label="VariableDistributor<Void>" URL="\ref VariableDistributor";
-   distrVars1 [ label="<distrVar1>VoidAsyncVariable|<distrVar2>VoidAsyncVariable|..."];
+   label="VariableDistributor<nullptr_t>" URL="\ref VariableDistributor";
+   distrVars1 [ label="<distrVar1>VoidAsyncVariable|<distrVar2>VoidAsyncVariable|<distrVarN>..."];
   }
 
   TriggerDistributor->distrVars1 [ lhead=cluster_distributor1, arrowhead="empty", style="dashed"  ];
-  distrVars1->TriggerDistributor [ ltail=cluster_distributor1, label=" "];
+  distrVars1->TriggerDistributor [ ltail=cluster_distributor1];
 
   distr1Acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
-  distr1Acc1 ->  distrVars1:distrVar1  [ lhead=cluster_distributor1 ];
+  distr1Acc1 ->  distrVars1:distrVar2  [ lhead=cluster_distributor1 ];
   distrVars1:distrVar1 -> distr1Acc1 [ arrowhead="empty", style="dashed"];
   distr1Acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
-  distr1Acc2 ->  distrVars1:distrVar2  [ lhead=cluster_distributor1 ];
+  distr1Acc2 ->  distrVars1:distrVarN  [ lhead=cluster_distributor1 ];
   distrVars1:distrVar2 -> distr1Acc2 [ arrowhead="empty", style="dashed"];
 
   subgraph cluster_PollDistributor{
@@ -150,7 +158,7 @@ digraph reverse_ownership_scheme {
   TransferGroup2->TriggerDistributor2 [ ltail=cluster_PollDistributor2, label=" " ];
 
   subgraph cluster_distributor2{
-   label="VariableDistributor<Void>" URL="\ref VariableDistributor";
+   label="VariableDistributor<nullptr_t>" URL="\ref VariableDistributor";
    distrVars2 [ label="<distrVar3>VoidAsyncVariable|<distrVar4>VoidAsyncVariable|..."];
   }
 
