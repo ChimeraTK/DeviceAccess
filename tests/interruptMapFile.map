@@ -5,8 +5,8 @@ APP0.INTERRUPT_VOID_2                0                    0x0      0    0      0
 APP0.INTERRUPT_VOID_3                0                    0x0      0    0      0        0        0        INTERRUPT2:2:2
 
 APP0.INTERRUPT_UINT_1                1                    0x100    4    0     32        0        0        INTERRUPT20
-APP0.NESTED_INTERRUPT_INT_1          1                    0x104    4    0     32        0        1        INTERRUPT21:1
-APP0.DEEP_NESTED_INTERRUPT_INT_2     1                    0x108    4    0     32        0        1        INTERRUPT22:3:4
+APP0.SUB_INTERRUPT_INT_1             1                    0x104    4    0     32        0        1        INTERRUPT21:1
+APP0.SUB_SUB_INTERRUPT_INT_2         1                    0x108    4    0     32        0        1        INTERRUPT22:3:4
 
 APP0.INTERRUPT_FIXPOINT_SIGNED       1                    0x200    4    0     32       24        1        INTERRUPT3
 APP0.INTERRUPT_FIXPOINT_UNSIGNED     1                    0x220    4    0     32       24        0        INTERRUPT3

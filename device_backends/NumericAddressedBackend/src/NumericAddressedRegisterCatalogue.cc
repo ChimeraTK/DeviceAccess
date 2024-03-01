@@ -226,6 +226,15 @@ namespace ChimeraTK {
       }
       return NumericAddressedRegisterInfo(path, nElements, address, nBytes, bar);
     }
+    if(path.startsWith("!")) {
+      auto canonicalInterrupt = _canonicalInterrupts.find(path);
+      if(canonicalInterrupt == _canonicalInterrupts.end()) {
+        throw ChimeraTK::logic_error("Illegal canonical interrupt path: '" + (path) + "'");
+      }
+      return NumericAddressedRegisterInfo(path, 0, 0, 0, 0, 0, 0, false,
+          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+          canonicalInterrupt->second);
+    }
     return BackendRegisterCatalogue::getBackendRegister(path);
   }
 
@@ -234,6 +243,9 @@ namespace ChimeraTK {
   [[nodiscard]] bool NumericAddressedRegisterCatalogue::hasRegister(const RegisterPath& registerPathName) const {
     if(registerPathName.startsWith(numeric_address::BAR())) {
       /// TODO check whether given address is correct
+      return true;
+    }
+    if(_canonicalInterrupts.find(registerPathName) != _canonicalInterrupts.end()) {
       return true;
     }
     return BackendRegisterCatalogue::hasRegister(registerPathName);
@@ -250,6 +262,14 @@ namespace ChimeraTK {
   void NumericAddressedRegisterCatalogue::addRegister(const NumericAddressedRegisterInfo& registerInfo) {
     if(registerInfo.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) {
       _listOfInterrupts.insert(registerInfo.interruptId);
+      RegisterPath canonicalName = "!" + std::to_string(registerInfo.interruptId.front());
+      std::vector<uint32_t> canonicalID = {registerInfo.interruptId.front()};
+      _canonicalInterrupts[canonicalName] = canonicalID;
+      for(auto subId = ++registerInfo.interruptId.begin(); subId != registerInfo.interruptId.end(); ++subId) {
+        canonicalName += ":" + std::to_string(*subId);
+        canonicalID.push_back(*subId);
+        _canonicalInterrupts[canonicalName] = canonicalID;
+      }
     }
     BackendRegisterCatalogue<NumericAddressedRegisterInfo>::addRegister(registerInfo);
   }
@@ -261,6 +281,7 @@ namespace ChimeraTK {
     auto* casted_c = dynamic_cast<NumericAddressedRegisterCatalogue*>(c.get());
     fillFromThis(casted_c);
     casted_c->_listOfInterrupts = _listOfInterrupts;
+    casted_c->_canonicalInterrupts = _canonicalInterrupts;
     return c;
   }
 

@@ -14,11 +14,12 @@ namespace ChimeraTK {
 
   template<typename UserType>
   AsyncNDRegisterAccessor<UserType>::AsyncNDRegisterAccessor(boost::shared_ptr<DeviceBackend> backend,
-      boost::shared_ptr<AsyncAccessorManager> manager, std::string const& name, size_t nChannels, size_t nElements,
-      AccessModeFlags accessModeFlags, std::string const& unit, std::string const& description)
+      boost::shared_ptr<AsyncAccessorManager> manager, boost::shared_ptr<AsyncDomain> asyncDomain,
+      std::string const& name, size_t nChannels, size_t nElements, AccessModeFlags accessModeFlags,
+      std::string const& unit, std::string const& description)
 
   : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(std::move(backend)),
-    _accessorManager(std::move(manager)), _receiveBuffer(nChannels, nElements) {
+    _accessorManager(std::move(manager)), _asyncDomain(std::move(asyncDomain)), _receiveBuffer(nChannels, nElements) {
     // Don't throw a ChimeraTK::logic_error here. They are for mistakes an application is doing when using DeviceAccess.
     // If an AsyncNDRegisterAccessor is created without wait_for_new_data it is a mistake in the backend, which is not
     // part of the application.
@@ -56,6 +57,14 @@ namespace ChimeraTK {
       for(; source != _receiveBuffer.value.end(); ++source, ++destination) {
         destination->swap(*source);
       }
+    }
+  }
+
+  /**********************************************************************************************************/
+  template<typename UserType>
+  void AsyncNDRegisterAccessor<UserType>::sendDestructively(typename NDRegisterAccessor<UserType>::Buffer& data) {
+    if(_asyncDomain->unsafeGetIsActive()) {
+      _dataTransportQueue.push_overwrite(std::move(data));
     }
   }
 

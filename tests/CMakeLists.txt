@@ -100,7 +100,7 @@ MACRO( COPY_MAPPING_FILES )
     doubleBuffer.map doubleBuffer.xlmap
     uioBackendTest.dmap
     uioBackendTest.mapp
-    doubleBufferHW.xlmap doubleBufferHW.map doubleBufferHW.dmap
+    doubleBufferHW.xlmap doubleBufferHW.map doubleBufferHW.dmap testHierarchicalInterrupts.map
     bitRangeReadPlugin.xlmap
     decoratorTest.map
     testMappedImage.dmap testMappedImage.map

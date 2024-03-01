@@ -2468,11 +2468,11 @@ namespace ChimeraTK {
       // enter exception state
       d.setException("Some message");
 
+      // get the exception off the queue. From this point on no other data must be received.
+      BOOST_CHECK_THROW(reg.read(), runtime_error); // (no test intended, just catch)
+
       // send value, must not be received
       x.setRemoteValue();
-
-      // get the exception off the queue
-      BOOST_CHECK_THROW(reg.read(), runtime_error); // (no test intended, just catch)
 
       // give potential race conditions a chance...
       usleep(100000);

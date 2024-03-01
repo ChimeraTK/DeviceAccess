@@ -2,9 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "AsyncDomainImpl.h"
 #include "DeviceBackendImpl.h"
+#include "InterruptControllerHandler.h"
 #include "NumericAddressedRegisterCatalogue.h"
 #include "VersionNumber.h"
+
+#include <boost/pointer_cast.hpp>
 
 #include <mutex>
 #include <string>
@@ -12,7 +16,7 @@
 namespace ChimeraTK {
 
   class NumericAddressedLowLevelTransferElement;
-  class NumericAddressedInterruptDispatcher;
+  class TriggeredPollDistributor;
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
@@ -102,7 +106,6 @@ namespace ChimeraTK {
     NumericAddressedRegisterInfo getRegisterInfo(const RegisterPath& registerPathName);
 
     void activateAsyncRead() noexcept override;
-    void setExceptionImpl() noexcept override;
 
     /**
      *  Deactivates all asynchronous accessors and calls closeImpl().
@@ -143,14 +146,8 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version
-    // internally, but is not given out
-    template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-
     friend NumericAddressedLowLevelTransferElement;
-    friend NumericAddressedInterruptDispatcher;
+    friend TriggeredPollDistributor;
 
     template<class UserType, class ConverterType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;
@@ -169,15 +166,24 @@ namespace ChimeraTK {
     /**
      *  This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
      *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not
-     * modified. This map is filled in the constructor. The rest of the code is accessing it through the const
-     * _interruptDispatchers reference, which is thread safe.
+     *  modified. This map is filled in the constructor. The rest of the code is accessing it through the const
+     *  _primaryInterruptDistributors reference, which is thread safe.
      */
-    std::map<uint32_t, boost::shared_ptr<NumericAddressedInterruptDispatcher>> _primaryInterruptDispatchersNonConst;
+    std::map<uint32_t, boost::shared_ptr<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>>
+        _primaryInterruptDistributorsNonConst;
 
     /** Access to const members of std::containers is thread safe. So we use a const reference throughout the code.
      */
-    std::map<uint32_t, boost::shared_ptr<NumericAddressedInterruptDispatcher>> const& _primaryInterruptDispatchers{
-        _primaryInterruptDispatchersNonConst};
+    std::map<uint32_t, boost::shared_ptr<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>> const&
+        _primaryInterruptDistributors{_primaryInterruptDistributorsNonConst};
+
+    InterruptControllerHandlerFactory _interruptControllerHandlerFactory{this};
+
+    // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version
+    // internally, but is not given out
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
   };
 
 } // namespace ChimeraTK

@@ -248,11 +248,11 @@ BOOST_AUTO_TEST_CASE(testInterruptMapFileParse) {
       false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {20});
 
   RegisterInfoents[4] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.NESTED_INTERRUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true,
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.SUB_INTERRUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true,
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {21, 1});
 
   RegisterInfoents[5] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.DEEP_NESTED_INTERRUPT_INT_2", 0x01, 0x108, 0x04, 0x0, 32, 0, true,
+      ChimeraTK::NumericAddressedRegisterInfo("APP0.SUB_SUB_INTERRUPT_INT_2", 0x01, 0x108, 0x04, 0x0, 32, 0, true,
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {22, 3, 4});
 
   RegisterInfoents[6] =

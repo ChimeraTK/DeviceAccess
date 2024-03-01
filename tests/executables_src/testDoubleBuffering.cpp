@@ -8,9 +8,8 @@ using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "DummyBackend.h"
-#include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
-#include "LogicalNameMappingBackend.h"
+#include "TransferGroup.h"
 #include "UnifiedBackendTest.h"
 
 #include <boost/thread/barrier.hpp>
