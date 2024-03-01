@@ -1,0 +1,20 @@
+@![5] {"dummy":{"module":"/int_ctrls/controller5"}}
+@![4] {"dummy":{"module":"/int_ctrls/controller4"}}
+@![4,8] {"dummy":{"module":"/int_ctrls/controller4_8"}}
+
+# Just a couple of (nested) interrupts, and their interface modules
+# The final interrupt or an associated data register must be in the map file
+# such that the application knows about it at all.
+/interrupt6      0  0  0  0  0   0  0 INTERRUPT6
+/interrupt5_9    0  0  0  0  0   0  0 INTERRUPT5:9
+/interrupt4_8_2  0  0  0  0  0   0  0 INTERRUPT4:8:2
+/interrupt4_8_3  0  0  0  0  0   0  0 INTERRUPT4:8:3
+
+/datafrom6       1   0 4  0  32  0  1 INTERRUPT6
+/datafrom5_9     1   4 4  0  32  0  1 INTERRUPT5:9
+/datafrom4_8_2   1   8 4  0  32  0  1 INTERRUPT4:8:2
+/datafrom4_8_3   1  12 4  0  32  0  1 INTERRUPT4:8:3
+
+/int_ctrls/controller5/active_ints   1 0 4 2 32 0 0 RO
+/int_ctrls/controller4/active_ints   1 4 4 2 32 0 0 RO
+/int_ctrls/controller4_8/active_ints 1 8 4 2 32 0 0 RO

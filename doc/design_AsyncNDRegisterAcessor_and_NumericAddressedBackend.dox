@@ -5,9 +5,186 @@ namespace ChimeraTK {
 
 \section conceptOverview Concept overview
 
-@warning This concept is outdated. It describes the current state but will change with the introduction of nested interrupts and interrupt controller handlers!
+@warning This document is currently being rewritten!
 
-\image html "doc/NABackendAsyncConcept.png" "object diagram for AyncNDRegisterAccessor" width=1000
+\subsection design_AsyncAccessorManager AsyncNDRegisterAccessors and the AsyncAccessorManager
+\dot
+digraph aysnc_manager_var_relation {
+  compound=true;
+  node [shape=record, fontname=Helvetica, fontsize=10];
+  rankdir=LR
+  subgraph cluster_mgr{
+   label="AsyncAccessorManager" URL="\ref AsyncAccessorManager";
+   vars [ label="<var1>AsyncVariable|<var2>AsyncVariable|..." URL="\ref AsyncVariable"];
+  }
+  acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor"];
+  acc1 -> vars:var1  [ label="shared_ptr", lhead=cluster_mgr ];
+  vars:var1 -> acc1 [ arrowhead="empty", style="dashed", label="weak_ptr" ];
+  acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor"];
+  acc2 -> vars:var2 [ lhead=cluster_mgr ];
+  vars:var2 -> acc2 [ arrowhead="empty", style="dashed" ];
+}
+\enddot
+
+\subsection design_TriggeredPollDistributor The TriggeredPollDistributor
+
+\dot
+digraph triggered_poll_distributor {
+  compound=true;
+  node [shape=record, fontname=Helvetica, fontsize=10];
+  rankdir=LR
+  subgraph cluster_PollDistributor{
+    label="TriggeredPollDistributor" URL="\ref TriggeredPollDistributor";
+    TransferGroup
+    NDRegisterAccessor [ label="NDRegisterAccessor" ]
+    NDRegisterAccessor2 [ label="NDRegisterAccessor" ]
+    vars [ label="<var1>PolledAsyncVariable|<var2>PolledAsyncVariable|..." URL="\ref AsyncVariable"];
+  }
+  acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor"];
+  vars:var1 ->  acc1 [ arrowhead="empty", style="dashed", label="weak_ptr" ];
+  acc1 -> vars:var1 [ label="shared_ptr",  lhead=cluster_PollDistributor];
+
+  acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor"];
+  acc2 -> vars:var2 [ lhead=cluster_PollDistributor ];
+  vars:var2 ->  acc2 [ arrowhead="empty", style="dashed"];
+  
+  TransferGroup -> NDRegisterAccessor;
+  TransferGroup -> NDRegisterAccessor2;
+
+  NDRegisterAccessor-> vars:var1 [ arrowhead="none", arrowtail="normal", dir = "back"];
+  NDRegisterAccessor2-> vars:var2 [ arrowhead="none", arrowtail="normal", dir = "back"];
+  
+  
+}
+\enddot
+
+\subsection design_TriggerDistributor The TriggerDistributor
+
+\dot
+digraph reverse_ownership_scheme {
+  compound=true;
+  node [shape=record, fontname=Helvetica, fontsize=10];
+  rankdir=LR
+  
+  Backend[color=blue, fontcolor=blue]
+  TriggerDistributor[color=blue, fontcolor=blue]
+  Backend -> TriggerDistributor[color=blue, fontcolor=blue]
+  
+  secondPrimaryDistributor[label ="TriggerDistributor", style="dotted", color=blue, fontcolor=blue]
+  Backend -> secondPrimaryDistributor[color=blue, fontcolor=blue]
+  thirdPrimaryDistributor[label ="TriggerDistributor", style="dotted", color=blue, fontcolor=blue]
+  Backend -> thirdPrimaryDistributor[color=blue, fontcolor=blue]
+
+  subgraph cluster_distributor1{
+   label="VariableDistributor<Void>" URL="\ref VariableDistributor";
+   distrVars1 [ label="<distrVar1>VoidAsyncVariable|<distrVar2>VoidAsyncVariable|..."];
+  }
+
+  TriggerDistributor->distrVars1 [ lhead=cluster_distributor1, arrowhead="empty", style="dashed"  ];
+  distrVars1->TriggerDistributor [ ltail=cluster_distributor1, label=" "];
+
+  distr1Acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  distr1Acc1 ->  distrVars1:distrVar1  [ lhead=cluster_distributor1 ];
+  distrVars1:distrVar1 -> distr1Acc1 [ arrowhead="empty", style="dashed"];
+  distr1Acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  distr1Acc2 ->  distrVars1:distrVar2  [ lhead=cluster_distributor1 ];
+  distrVars1:distrVar2 -> distr1Acc2 [ arrowhead="empty", style="dashed"];
+
+  subgraph cluster_PollDistributor{
+    label="TriggeredPollDistributor" URL="\ref TriggeredPollDistributor";
+    TransferGroup
+    NDRegisterAccessor [ label="NDRegisterAccessor", color=red, fontcolor=red ]
+    NDRegisterAccessor2 [ label="NDRegisterAccessor", color=red, fontcolor=red  ]
+    vars [ label="<var1>PolledAsyncVariable|<var2>PolledAsyncVariable|..." URL="\ref AsyncVariable"];
+  }
+  acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  vars:var1 ->  acc1 [ arrowhead="empty", style="dashed", label="weak_ptr" ];
+  acc1 -> vars:var1 [ label="shared_ptr",  lhead=cluster_PollDistributor];
+
+  acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  acc2 -> vars:var2 [ lhead=cluster_PollDistributor ];
+  vars:var2 ->  acc2 [ arrowhead="empty", style="dashed"];
+  
+  TransferGroup -> NDRegisterAccessor;
+  TransferGroup -> NDRegisterAccessor2;
+
+  NDRegisterAccessor-> vars:var1 [ arrowhead="none", arrowtail="normal", dir = "back"];
+  NDRegisterAccessor2-> vars:var2 [ arrowhead="none", arrowtail="normal", dir = "back"];
+
+  TriggerDistributor->TransferGroup  [ lhead=cluster_PollDistributor, arrowhead="empty", style="dashed"  ];
+  TransferGroup->TriggerDistributor [ ltail=cluster_PollDistributor, label=" " ];
+
+  subgraph cluster_interruptCtrlHdl1{
+    label="InterruptControllerHandler" URL="\ref InterruptControllerHandler";
+    hdlAccs1 [ label="<hdlAcc1>NDRegisterAccessor|<hdlAcc2>NDRegisterAccessor|...", color=red, fontcolor=red ];
+  }
+  TriggerDistributor->hdlAccs1 [ lhead=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
+  hdlAccs1->TriggerDistributor [ ltail=cluster_interruptCtrlHdl1, label=" " ];
+
+  TriggerDistributor2 [label = TriggerDistributor]
+  hdlAccs1->TriggerDistributor2 [ ltail=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
+  TriggerDistributor2->hdlAccs1 [ lhead=cluster_interruptCtrlHdl1, label=" " ];
+
+  subgraph cluster_PollDistributor2{
+    label="TriggeredPollDistributor" URL="\ref TriggeredPollDistributor";
+    TransferGroup2 [ label="TransferGroup" ]
+    NDRegisterAccessor3 [ label="NDRegisterAccessor" , color=red, fontcolor=red ]
+    NDRegisterAccessor4 [ label="NDRegisterAccessor" , color=red, fontcolor=red ]
+    polledVars2 [ label="<polledVar3>PolledAsyncVariable|<polledVar4>PolledAsyncVariable|..."];
+  }
+  polledAcc3 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  polledVars2:polledVar3 ->  polledAcc3 [ arrowhead="empty", style="dashed"];
+  polledAcc3 -> polledVars2:polledVar3 [ label=" ", lhead=cluster_PollDistributor2];
+
+  polledAcc4 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  polledVars2:polledVar4 ->  polledAcc4 [arrowhead="empty", style="dashed" ];
+  polledAcc4 -> polledVars2:polledVar4 [ label=" ", lhead=cluster_PollDistributor2];
+  
+  TransferGroup2 -> NDRegisterAccessor3
+  TransferGroup2 -> NDRegisterAccessor4;
+
+  NDRegisterAccessor3->  polledVars2:polledVar3 [ arrowhead="none", arrowtail="normal", dir = "back"];
+  NDRegisterAccessor4->  polledVars2:polledVar4  [ arrowhead="none", arrowtail="normal", dir = "back"];
+
+  TriggerDistributor2->TransferGroup2  [ lhead=cluster_PollDistributor2, arrowhead="empty", style="dashed"  ];
+  TransferGroup2->TriggerDistributor2 [ ltail=cluster_PollDistributor2, label=" " ];
+
+  subgraph cluster_distributor2{
+   label="VariableDistributor<Void>" URL="\ref VariableDistributor";
+   distrVars2 [ label="<distrVar3>VoidAsyncVariable|<distrVar4>VoidAsyncVariable|..."];
+  }
+
+  TriggerDistributor2->distrVars2 [ lhead=cluster_distributor2, arrowhead="empty", style="dashed"  ];
+  distrVars2->TriggerDistributor2 [ ltail=cluster_distributor2, label=" "];
+
+  distr2Acc3 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  distr2Acc3 ->  distrVars2:distrVar3  [ lhead=cluster_distributor2 ];
+  distrVars2:distrVar3 -> distr2Acc3 [ arrowhead="empty", style="dashed"];
+  distr2Acc4 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
+  distr2Acc4 ->  distrVars2:distrVar4  [ lhead=cluster_distributor2 ];
+  distrVars2:distrVar4 -> distr2Acc4 [ arrowhead="empty", style="dashed"];
+
+  interruptCtrlHdl2 [label="InterruptControllerHandler\n...", style="dotted"]
+  
+  TriggerDistributor2->interruptCtrlHdl2 [ arrowhead="empty", style="dashed"]
+  interruptCtrlHdl2->TriggerDistributor2
+}
+\enddot
+
+- Access is from left to right (trigger/data distribution), mostly through weak pointers (dashed lines and empty arrow head)
+- Fixed ownership when starting the backend: Primary TriggerDistributors (blue)
+- InterruptControllerHandlers and TriggeredPollDistributors are holding accessors to the backend to read data or do handshakes (red), which in turn are holding shared pointers to the backend (shared ownership). The backend must never (also not indirectly) hold a shared pointer to any of these entities because it would introduce a closed ownership circle and the backend could never be deleted properly.
+- Ownership via solid line arrow, mostly from left to right. In the end the AsyncNDRegisterAccessors handed out to the user (green) are are holding the whole infrastructure
+  (except for primary TriggerDistributors in blue)
+- When an accessor is requested, the request goes to the primary TriggerDistributor, which creates all required InterruptControllerHandlers, TriggerDistributors, VariableDistributors
+  or TriggeredPollDistributors when needed, and hands out the AsyncNDRegisterAccessor which holds the ownership. It shares the ownership with other AsyncNDRegisterAccessors.
+- When the last owning AsyncNDRegisterAccessors goes out of scope, the according distributors are deleted.
+- If there are no subscribers, i.e. AsyncNDRegisterAccessors being held by the application, the primary TriggerDistributors are empty and do nothing.
+
+#########################################################################################################################################
+# Old text below. Cross-read before deleting to check if something relevant has been missed!
+#########################################################################################################################################
+
 
 - For each AsyncAccessor that user requests: an AsyncVariable is created interally, with 1:1 correspondence
   AsyncAccessor ↔ AsyncVar
@@ -155,13 +332,18 @@ APP.0.PUSH_DATA           4       12      16    1     32                  8     
 
 The map file has a special access mode INTERRUPTx, in addition to the synchronous modes RW and RO.
 x is the numeric identifyer for a device interrupt. Registers with access mode INTERRUPT are treated as read-only.
-In future, this will be extended to allow nested interrupts (INTERRUPTx:y, INTERRUPTx:y:z, etc.) in combination with interrupt controller handlers.
+Nested interrupts (INTERRUPTx:y, INTERRUPTx:y:z, etc.) are supported in combination with InterruptControllerHandlers (see below).
 
 For interrupts it is possible to have void-type entries. The width of these "registers" is 0 bits. For consistency all other fields also have to be 0. They don't make sense in this context and have to be 0 to avoid confusion.
 
+For each interrupt and nesting level it is possible to get a void accessor via the canonical interrupt name '!x:y:z:'. For instance for a nested interrupt with data on INTERRUPT3:9:4, it is possible to get void accessors for '!3', '!3:9' and '!3:9:4'. This is useful to check whether a primary interrupt has arrived, or any interrupt on the nested controller 3:9.
+
+\subsection design_interrupt_constroller_handlers InterruptControllerHandlers
+
 \subsection implementation_async_NumericAddressed Design and implementation details
 
-The NumericAddressedBackend has a complete implementation of the AsyncAccessorManager and the AsyncVariable, called
+The NumericAddressedBackend has a complete implementation 0
+of the AsyncAccessorManager and the AsyncVariable, called
 NumericAddressedInterruptDispatcher and NumericAddressedAsyncVariable, respectively.
 
 - Each NumericAddressedAsyncVariable has a synchronous accessor for reading the data from the device when an
@@ -177,10 +359,10 @@ NumericAddressedInterruptDispatcher and NumericAddressedAsyncVariable, respectiv
 
 \subsection  async_NumericAddressedBackend_interface Interface to implementing backends
 
-The list of accessor managers is private, and all implementing backends interface with it through two functions.
+The list of primary TriggerDistributors is private, and all implementing backends interface with it through two functions.
 
 - NumericAddressedBackend::startInterruptHandlingThread(unsigned int interruptControllerNumber, unsigned int
-  interruptNumber) is a virtual function which is called each time an accessor for that interrupt is requested.
+  primaryInterruptNumber) is a virtual function which is called each time an accessor for that primary interrupt is requested.
   This allows the lazy start of the interrupt handling threads, which are not started if no accessors are requested.
   The implementation must assure that the thread is only started once. In general, the NumericAddressedBackend does
   not take care of interrupt handling threads, except for calling this virtual function. Each backend implementation
@@ -188,7 +370,7 @@ The list of accessor managers is private, and all implementing backends interfac
   There is an empty default implementation of startInterruptHandlingThread() for backward compatibility
   (backends that don't support asynchronous data (yet) or that don't need a separate thread like the dummies).
 - The interrupt handling threads call NumericAddressedBackend::dispatchInterrupt(unsigned int interruptControllerNumber,
-   unsigned int  interruptNumber) each time the according interrupt arrives.
+  unsigned int  primaryInterruptNumber) each time the according interrupt arrives.
   
 All other functionality for subscription, activation/deactivation and exception handling is already handled in the
 NumericAddressedBackend base class.

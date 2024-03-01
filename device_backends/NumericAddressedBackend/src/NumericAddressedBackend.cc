@@ -3,13 +3,15 @@
 
 #include "NumericAddressedBackend.h"
 
+#include "AsyncDomainsContainer.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
 #include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
-#include "NumericAddressedInterruptDispatcher.h"
+#include "TriggerDistributor.h"
+#include <nlohmann/json.hpp>
 
 namespace ChimeraTK {
 
@@ -23,16 +25,37 @@ namespace ChimeraTK {
       MapFileParser parser;
       std::tie(_registerMap, _metadataCatalogue) = parser.parse(mapFileName);
 
-      // create all the interrupt dispatchers that are described in the map file
-      for(const auto& interruptID : _registerMap.getListOfInterrupts()) {
-        // interrupt is a vector of nested interrupts
-        _primaryInterruptDispatchersNonConst.try_emplace(
-            interruptID.front(), boost::make_shared<NumericAddressedInterruptDispatcher>());
-        // FIXME: Put nested interrupt dispatchers
-        if(interruptID.size() > 1) {
-          throw ChimeraTK::logic_error("Nested interrupts are not supported yet!");
+      // Add information about interrupt controller handlers from the map file meta data to the factory.
+      for(auto const& metaDataEntry : _metadataCatalogue) {
+        auto const& key = metaDataEntry.first;
+        if(key[0] == '!') {
+          auto jkey = nlohmann::json::parse(std::string({++key.begin(), key.end()})); // key without the !
+          auto interruptId = jkey.get<std::vector<uint32_t>>();
+
+          auto jdescriptor = nlohmann::json::parse(metaDataEntry.second);
+          auto controllerType = jdescriptor.begin().key();
+          auto controllerDescription = jdescriptor.front().dump();
+          _interruptControllerHandlerFactory.addControllerDescription(
+              interruptId, controllerType, controllerDescription);
         }
       }
+
+      // Create all primary interrupt distributors that are described in the map file. The interrupt dispatcher thread
+      // needs them so have something to access (even though nothing will happen as long as none is subscribed).
+      // They don't have controller handlers (nested interrupts) yet because these can hold accessors, which
+      // in turn have shared pointers to the backend, which cannot be created in the backend constructor.
+      // They will be added when accessors are subscribing.
+      auto domainsContainer = std::make_unique<AsyncDomainsContainer<uint32_t>>();
+      for(const auto& interruptID : _registerMap.getListOfInterrupts()) {
+        auto creatorFct = [&](boost::shared_ptr<AsyncDomain> asyncDomain) {
+          return boost::make_shared<TriggerDistributor>(shared_from_this(), &_interruptControllerHandlerFactory,
+              std::vector<uint32_t>({interruptID.front()}), nullptr, asyncDomain);
+        };
+        auto asyncDomain = boost::make_shared<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>(creatorFct);
+        _primaryInterruptDistributorsNonConst.try_emplace(interruptID.front(), asyncDomain);
+        domainsContainer->asyncDomains.try_emplace(interruptID.front(), asyncDomain);
+      }
+      _asyncDomainsContainer = std::move(domainsContainer);
     }
   }
 
@@ -119,28 +142,12 @@ namespace ChimeraTK {
             "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
       }
 
-      auto getNestedInterruptDispatcher =
-          [](std::vector<uint32_t> interruptID,
-              std::map<uint32_t, boost::shared_ptr<NumericAddressedInterruptDispatcher>> dispatchers,
-              [[maybe_unused]] auto&& _getNestedInterruptDispatcher)
-          -> boost::shared_ptr<NumericAddressedInterruptDispatcher> {
-        auto dispatcher = dispatchers[interruptID.front()];
-        if(interruptID.size() == 1) {
-          return dispatcher;
-        }
-        throw ChimeraTK::logic_error("Nested interrupts are not supported yet!");
-        // return _getNestedInterruptDispatcher({++interruptID.begin(), interruptID.end(),
-        // dispatcher->getInterruptControllerHandler()->dispatchers});
-      };
+      const auto& primaryDistributor = _primaryInterruptDistributors.at(registerInfo.interruptId.front());
 
-      auto interruptDispatcher = getNestedInterruptDispatcher(
-          registerInfo.interruptId, _primaryInterruptDispatchers, getNestedInterruptDispatcher);
-      assert(interruptDispatcher);
-      auto newSubscriber = interruptDispatcher->template subscribe<UserType>(
-          boost::dynamic_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerPathName, numberOfWords,
-          wordOffsetInRegister, flags);
+      auto newSubscriber =
+          primaryDistributor->subscribe<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
       // The new subscriber might already be activated. Hence the exception backend is already set by the interrupt
-      // dispatcher.
+      // distributor.
       startInterruptHandlingThread(registerInfo.interruptId.front());
       return newSubscriber;
     }
@@ -218,21 +225,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void NumericAddressedBackend::activateAsyncRead() noexcept {
-    for(const auto& it : _primaryInterruptDispatchers) {
-      it.second->activate();
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  void NumericAddressedBackend::setExceptionImpl() noexcept {
-    try {
-      throw ChimeraTK::runtime_error(getActiveExceptionMessage());
-    }
-    catch(...) {
-      for(const auto& it : _primaryInterruptDispatchers) {
-        it.second->sendException(std::current_exception());
-      }
+    VersionNumber v{};
+    for(const auto& it : _primaryInterruptDistributors) {
+      it.second->activate(nullptr, v);
     }
   }
 
@@ -244,7 +239,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void NumericAddressedBackend::close() {
-    for(const auto& it : _primaryInterruptDispatchers) {
+    for(const auto& it : _primaryInterruptDistributors) {
       it.second->deactivate();
     }
     closeImpl();
@@ -253,9 +248,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   VersionNumber NumericAddressedBackend::dispatchInterrupt(uint32_t interruptNumber) {
-    // This function just makes sure that at() is used to access the _interruptDispatchers map,
+    // This function just makes sure that at() is used to access the _primaryInterruptDistributors map,
     // which guarantees that the map is not altered.
-    return _primaryInterruptDispatchers.at(interruptNumber)->trigger();
+    VersionNumber v{};
+    _primaryInterruptDistributors.at(interruptNumber)->distribute(nullptr, v);
+    return v;
   }
 
   /********************************************************************************************************************/

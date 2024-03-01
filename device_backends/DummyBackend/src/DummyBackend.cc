@@ -5,7 +5,6 @@
 #include "DummyRegisterAccessor.h"
 #include "Exception.h"
 #include "MapFileParser.h"
-#include "NumericAddressedInterruptDispatcher.h"
 #include "parserUtilities.h"
 
 #include <boost/lambda/lambda.hpp>

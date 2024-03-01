@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "AsyncDomain.h"
 #include "DeviceBackend.h"
 #include "NDRegisterAccessor.h"
 
@@ -16,7 +17,7 @@ namespace ChimeraTK {
    *  as continuation of the void queue in TransferElement. This allows to
    *  receive the content of the buffer_2D, the version number and the data validity flag.
    *  The implementation is complete. The interrupt handling thread in the backend implementation
-   *  can write to the queues through the member functions, and activate and deactivate the accessor.
+   *  can write to the queues through the member functions.
    */
   template<typename UserType>
   class AsyncNDRegisterAccessor : public NDRegisterAccessor<UserType> {
@@ -28,44 +29,21 @@ namespace ChimeraTK {
      *  the factory for AsyncNDRegisterAccessor, this is only an implementation detail.
      */
     AsyncNDRegisterAccessor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<AsyncAccessorManager> manager,
-        std::string const& name, size_t nChannels, size_t nElements, AccessModeFlags accessModeFlags,
-        std::string const& unit = std::string(TransferElement::unitNotSet),
+        boost::shared_ptr<AsyncDomain> asyncDomain, std::string const& name, size_t nChannels, size_t nElements,
+        AccessModeFlags accessModeFlags, std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string());
 
     ~AsyncNDRegisterAccessor() override;
 
-    /** Pushes the exception to the queue and marks the accessor as inactive, so nothing
-     *  is pushed until re-activation.
+    /** Pushes the exception to the queue. Must only be called from within deactivateAsyncAndExecute()
+     *  to make sure it does not conflict with a re-enabling, which might violate the order guarantee in the spec.
      */
-    void sendException(std::exception_ptr& e) {
-      if(_isActive) {
-        _dataTransportQueue.push_overwrite_exception(e);
-      }
-      _isActive = false;
-    }
+    void sendException(std::exception_ptr& e) { _dataTransportQueue.push_overwrite_exception(e); }
 
     /** You can only send destructively. If you want to keep a copy you have to make one yourself.
      *  This is more efficient that having one extra buffer within each AsyncNDRegisterAccessor.
      */
-    void sendDestructively(typename NDRegisterAccessor<UserType>::Buffer& data) {
-      if(!_isActive) { // || _hasException) {
-        return;
-      }
-
-      _dataTransportQueue.push_overwrite(std::move(data));
-    }
-
-    /** Activate the accessor and send the initial value.
-     */
-    void activate(typename NDRegisterAccessor<UserType>::Buffer& initialValue) {
-      //_hasException = false;
-      _isActive = true;
-      sendDestructively(initialValue);
-    }
-
-    /** Needs to be called in case a device is closed.
-     */
-    void deactivate() { _isActive = false; }
+    void sendDestructively(typename NDRegisterAccessor<UserType>::Buffer& data);
 
     ////////////////////////////////////////////////////
     // implementation of inherited, virtual functions //
@@ -92,7 +70,7 @@ namespace ChimeraTK {
 
     void doPreRead([[maybe_unused]] TransferType type) override {
       if(!_backend->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
-      // Pre-read conceptually does nothing in synchronous reads
+      // Pre-read conceptually does nothing in asynchronous reads
     }
 
     // Don't ask my why in template code the [[maybe_unused]] must be here, but gives a warning when put to the
@@ -121,15 +99,10 @@ namespace ChimeraTK {
    protected:
     boost::shared_ptr<DeviceBackend> _backend;
     boost::shared_ptr<AsyncAccessorManager> _accessorManager;
+    boost::shared_ptr<AsyncDomain> _asyncDomain;
     using typename NDRegisterAccessor<UserType>::Buffer;
     using NDRegisterAccessor<UserType>::buffer_2D;
     Buffer _receiveBuffer;
-
-    // variables to simplify the bookkeeping and only send to the queue when it is allowed
-    bool _isActive{false};
-    // FIXME: This was taken from ExceptionDummyPushDecorator but I think it does not add any value unless there is
-    // a scenario where it is allowed to send an exception before the accessor is activated
-    // bool _hasException{false};
 
     cppext::future_queue<Buffer, cppext::SWAP_DATA> _dataTransportQueue{_queueSize};
   };

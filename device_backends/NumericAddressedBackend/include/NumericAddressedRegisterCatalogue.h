@@ -148,6 +148,17 @@ namespace ChimeraTK {
      *  (Use a vector because it's the easiest container, and set because it ensures that each entry is there only once).
      */
     std::set<std::vector<uint32_t>> _listOfInterrupts;
+
+    /** A canonical interrupt path consists of an
+     *  exclamation mark, followed by a numeric interrupt and a colon separated
+     *  list of nested interrupts. For each interrupt with nested levels there
+     *  is always a canonical interrupt for all higher levels.
+     *
+     *  Example:
+     *  For the canonical interrupt `!3:5:9` there are is an interrupt `!3:5` and the
+     *  primary interrupt `!3`.
+     */
+    std::map<RegisterPath, std::vector<uint32_t>> _canonicalInterrupts;
   };
 
   /********************************************************************************************************************/

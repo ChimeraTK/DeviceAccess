@@ -13,9 +13,6 @@
 
 namespace ChimeraTK {
 
-  // Forward declarations
-  class DummyBackendBase;
-
   template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor;
 
