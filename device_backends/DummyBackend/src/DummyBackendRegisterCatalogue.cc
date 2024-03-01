@@ -83,6 +83,7 @@ namespace ChimeraTK {
     auto* c_impl = dynamic_cast<DummyBackendRegisterCatalogue*>(c.get());
     fillFromThis(c_impl);
     c_impl->_listOfInterrupts = _listOfInterrupts;
+    c_impl->_canonicalInterrupts = _canonicalInterrupts;
     return c;
   }
 

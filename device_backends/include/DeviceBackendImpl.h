@@ -2,8 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "AsyncDomainsContainerBase.h"
 #include "DeviceBackend.h"
 #include "Exception.h"
+#include <condition_variable>
+#include <shared_mutex>
+
+#include <ChimeraTK/cppext/finally.hpp>
 
 #include <atomic>
 #include <list>
@@ -53,6 +58,12 @@ namespace ChimeraTK {
 
     /** flag if backend is opened */
     std::atomic<bool> _opened{false};
+
+    /** Container for AsyncDomains to support wait_for_new_data.
+     *  The variable is initialised with an empty base implementation here. Backends which support push type accessors
+     *  will replace it with a proper implementation.
+     */
+    std::unique_ptr<AsyncDomainsContainerBase> _asyncDomainsContainer{std::make_unique<AsyncDomainsContainerBase>()};
 
    private:
     /** flag if backend is in an exception state */

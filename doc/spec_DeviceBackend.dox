@@ -2,7 +2,7 @@ namespace ChimeraTK {
 /**
 \page spec_DeviceBackend Technical specification DeviceBackend
 
-> **This is a stub to collect snipptes which are not to be forgotten when writing the spec.**
+> **This is a stub to collect snipptes which are not to be forgotten when writing the spec**.
 
 - After DeviceBackend::setException() has been called, DeviceBackend::isFunctional() returns false until open() has been called successfully.
 

@@ -8,7 +8,6 @@
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
-#include "NumericAddressedInterruptDispatcher.h"
 
 #include <sstream>
 
