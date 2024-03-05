@@ -69,7 +69,10 @@ namespace ChimeraTK {
     // we can't use try_emplace because the map contains weak pointers
     boost::shared_ptr<TriggerDistributor> distributor;
     auto distributorIter = _distributors.find(interruptID.front());
-    if(distributorIter == _distributors.end()) {
+    if(distributorIter != _distributors.end()) {
+      distributor = distributorIter->second.lock();
+    }
+    if(!distributor) {
       distributor = boost::make_shared<TriggerDistributor>(
           _backend, _controllerHandlerFactory, qualifiedInterruptId, shared_from_this(), _asyncDomain);
       _distributors[interruptID.front()] = distributor;
@@ -77,17 +80,6 @@ namespace ChimeraTK {
         // Creating a new version here is correct. Nothing has been distributed to any accessor connected to this
         // sub-interrupt yet because we just created this distributor.
         distributor->activate(nullptr, {});
-      }
-    }
-    else {
-      distributor = distributorIter->second.lock();
-      if(!distributor) {
-        distributor = boost::make_shared<TriggerDistributor>(
-            _backend, _controllerHandlerFactory, qualifiedInterruptId, shared_from_this(), _asyncDomain);
-        distributorIter->second = distributor;
-        if(_asyncDomain->_isActive) {
-          distributor->activate(nullptr, {});
-        }
       }
     }
     return distributor->getDistributorRecursive<DistributorType>(interruptID);
