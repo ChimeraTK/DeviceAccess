@@ -278,8 +278,11 @@ those parts individually without having to deal with bit masks yourself.
 
 Parameters:
 - <code>shift</code>: Position of the first bit of the mask
-- <code>numberOfBits</code>: Length of the mask
-
+- <code>numberOfBits</code>: Length of the mask. Cannot be larger than 32.
+- <code>dataInterpretationFractionalBits</code>: Optional, how many of the bits are representing the fractional part of
+  a fixed point value. Defaults to <code>0</code>. See ChimeraTK::FixedPointConverter() for details.
+- <code>dataInterpretationSigned</code>: Optional, whether the type represented by numberOfBits is signed. Defaults to
+  <code>false</code>
 
 When used like below on a 32bit register, the redirected register will give access to the upper word of that register.
 \code{xml}
@@ -289,11 +292,18 @@ When used like below on a 32bit register, the redirected register will give acce
 </plugin>
 \endcode
 
+The snippet below will map the upper word to a signed 16 bit integer
+\code{xml}
+<plugin name="bitRange">
+  <parameter name="shift">16</parameter>
+  <parameter name="numberOfBits">16</parameter>
+  <parameter name="dataInterpretationSigned">true</parameter>
+</plugin>
+\endcode
 
 Notes and CAVEATS:
-- Only accessors with integral types can be requested from the LMAP device
 - wait_for_new_data is currently not supported
 - When overlapping bit ranges are used in a TransferGroup, the TransferGroup will become read-only since write order
   of overlapping registers cannot be guaranteed
-- If the target register is writeable, the plugin does read-modify-write
+- If the target register is writeable, the plugin does read-modify-write if the target register is also readable.
 */
