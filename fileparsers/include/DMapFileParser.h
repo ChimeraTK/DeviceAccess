@@ -47,14 +47,4 @@ namespace ChimeraTK {
     static std::string absPathOfDMapContent(const std::string& dmapContent, const std::string& dmapFileName);
   };
 
-  namespace detail {
-
-    /** This special exception is required only internally by the DMapFilesParser to
-     * distinguish the special case of an empty DMAP file (in which case not the
-     * entire parser should fail). */
-    struct EmptyDMapFileException : ChimeraTK::logic_error {
-      using ChimeraTK::logic_error::logic_error;
-    };
-  } // namespace detail
-
 } // namespace ChimeraTK

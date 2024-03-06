@@ -23,8 +23,6 @@ namespace ChimeraTK {
    *
    */
   class DeviceInfoMap {
-    friend class DMapFilesParser;
-
    public:
     /**
      * @brief  Stores information about one device
@@ -69,7 +67,6 @@ namespace ChimeraTK {
      */
     class ErrorList {
       friend class DeviceInfoMap;
-      friend class DMapFilesParser;
 
      public:
       /**
