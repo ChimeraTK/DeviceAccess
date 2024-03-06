@@ -200,4 +200,35 @@ BOOST_AUTO_TEST_CASE(testBitExtraction) {
 
 /********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testDataDescription) {
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+  accTarget.setAndWrite(0x5555);
+
+  auto accLo = device.getScalarRegisterAccessor<uint8_t>("LoByte");
+  auto accLoSigned = device.getScalarRegisterAccessor<int8_t>("LowerSigned");
+
+  accLo.read();
+  accLoSigned.read();
+  BOOST_TEST(accLo == 85);
+  BOOST_TEST(accLoSigned == 85);
+
+  accTarget.setAndWrite(0x5580);
+
+  accLo.read();
+  accLoSigned.read();
+
+  BOOST_TEST(int(accLo) == 128);
+  BOOST_TEST(int(accLoSigned) == -128);
+
+  accTarget.setAndWrite(0x5555);
+  auto accFixed = device.getScalarRegisterAccessor<float>("LowerFixedPoint");
+  accFixed.read();
+  BOOST_TEST(accFixed == 5.3125);
+}
+
+/********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -96,30 +96,27 @@
             <parameter name="type">Boolean</parameter>
         </plugin>
     </redirectedRegister>
-
-
-    <redirectedRegister name="Fraction">
+    <redirectedRegister name="LowerSigned">
         <targetDevice>this</targetDevice>
-        <targetRegister>F32</targetRegister>
+        <targetRegister>SimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">0</parameter>
-            <parameter name="numberOfBits">23</parameter>
-        </plugin>
-    </redirectedRegister>
-    <redirectedRegister name="Exponent">
-        <targetDevice>this</targetDevice>
-        <targetRegister>F32</targetRegister>
-        <plugin name="bitRange">
-            <parameter name="shift">23</parameter>
             <parameter name="numberOfBits">8</parameter>
+            <parameter name="dataInterpretationSigned">true</parameter>
         </plugin>
     </redirectedRegister>
-    <redirectedRegister name="Sign">
+    <redirectedRegister name="LowerFixedPoint">
         <targetDevice>this</targetDevice>
-        <targetRegister>F32</targetRegister>
+        <targetRegister>SimpleScalar</targetRegister>
         <plugin name="bitRange">
-            <parameter name="shift">30</parameter>
-            <parameter name="numberOfBits">1</parameter>
+            <parameter name="shift">0</parameter>
+            <parameter name="numberOfBits">8</parameter>
+            <parameter name="dataInterpretationBits">8</parameter>
+            <parameter name="dataInterpretationFractionalBits">4</parameter>
+            <parameter name="dataInterpretationSigned">true</parameter>
+        </plugin>
+        <plugin name="typeHintModifier">
+            <parameter name="type">float32</parameter>
         </plugin>
     </redirectedRegister>
 </logicalNameMap>
