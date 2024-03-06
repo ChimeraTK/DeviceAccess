@@ -52,6 +52,52 @@
         </plugin>
     </redirectedRegister>
 
+    <redirectedRegister name="Bit0">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">0</parameter>
+            <parameter name="numberOfBits">1</parameter>
+        </plugin>
+        <plugin name="typeHintModifier">
+            <parameter name="type">Boolean</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="Bit1">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">1</parameter>
+            <parameter name="numberOfBits">1</parameter>
+        </plugin>
+        <plugin name="typeHintModifier">
+            <parameter name="type">Boolean</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="Bit2">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">2</parameter>
+            <parameter name="numberOfBits">1</parameter>
+        </plugin>
+        <plugin name="typeHintModifier">
+            <parameter name="type">Boolean</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="Bit3">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">3</parameter>
+            <parameter name="numberOfBits">1</parameter>
+        </plugin>
+        <plugin name="typeHintModifier">
+            <parameter name="type">Boolean</parameter>
+        </plugin>
+    </redirectedRegister>
+
+
     <redirectedRegister name="Fraction">
         <targetDevice>this</targetDevice>
         <targetRegister>F32</targetRegister>

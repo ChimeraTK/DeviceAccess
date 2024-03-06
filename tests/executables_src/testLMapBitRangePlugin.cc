@@ -88,6 +88,8 @@ BOOST_AUTO_TEST_CASE(testSimpleWrite) {
   BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
 }
 
+/********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testAccessorSanity) {
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
@@ -117,6 +119,83 @@ BOOST_AUTO_TEST_CASE(testAccessorSanity) {
   accTarget.read();
   BOOST_TEST(accTarget == 0x0ff0);
   BOOST_CHECK(accMiddle2.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testMathPluginChaining) {
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+  accTarget.setAndWrite(0x1fff);
+
+  // Write some value in range (range is 0-5)
+  auto accClamped = device.getScalarRegisterAccessor<int8_t>("LoByteClamped");
+  accClamped.setAndWrite(0x01);
+  accTarget.read();
+  BOOST_TEST(accTarget == 0x1f01);
+  BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  // Write some value outside of the clamped range
+  accClamped.setAndWrite(55);
+  accTarget.read();
+  BOOST_TEST(accTarget == 0x1f05);
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testBitExtraction) {
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+  accTarget.setAndWrite(0x5555);
+
+  auto accRangedHi = device.getScalarRegisterAccessor<uint16_t>("HiByte");
+
+  auto accBit0 = device.getScalarRegisterAccessor<ChimeraTK::Boolean>("Bit0");
+  auto accBit1 = device.getScalarRegisterAccessor<ChimeraTK::Boolean>("Bit1");
+  auto accBit2 = device.getScalarRegisterAccessor<ChimeraTK::Boolean>("Bit2");
+  auto accBit3 = device.getScalarRegisterAccessor<ChimeraTK::Boolean>("Bit3");
+
+  // See that the bits we get match the value we have
+  accBit0.read();
+  accBit1.read();
+  accBit2.read();
+  accBit3.read();
+
+  BOOST_TEST(accBit0);
+  BOOST_TEST(!accBit1);
+  BOOST_TEST(accBit2);
+  BOOST_TEST(!accBit3);
+
+  // Write to the part that is not mapped to single bits
+  // make sure the single bits are not modified
+  accRangedHi.setAndWrite(0x11);
+  accTarget.read();
+
+  BOOST_TEST(accTarget == 0x1155);
+
+  accBit0.read();
+  accBit1.read();
+  accBit2.read();
+  accBit3.read();
+
+  BOOST_TEST(accBit0);
+  BOOST_TEST(!accBit1);
+  BOOST_TEST(accBit2);
+  BOOST_TEST(!accBit3);
+
+  // Toggle single bits, make sure that this does not spread across the rest of the bits
+  accBit1.setAndWrite(true);
+  accBit3.setAndWrite(true);
+
+  accTarget.read();
+
+  BOOST_TEST(accTarget == 0x115F);
+  accRangedHi.read();
+  BOOST_TEST(accRangedHi == 0x11);
 }
 
 /********************************************************************************************************************/
