@@ -204,7 +204,7 @@ Examples for formulae:
 The <code>forceReadOnly</code> plugin changes the access mode of a register to read-only. The target register has to be
 writeable. This plugin accepts no parameters.
 
-\subsection plugins_reference_force_polling_read forcePollingRead
+\subsubsection plugins_reference_force_polling_read forcePollingRead
 The <code>forcePollingRead</code> plugin changes the access mode of a register from push-type to poll-type. The plugin
 accepts no parameters. Will do nothing if the register is poll-type allready.
 
