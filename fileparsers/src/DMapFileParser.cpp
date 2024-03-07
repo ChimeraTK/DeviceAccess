@@ -46,8 +46,6 @@ namespace ChimeraTK {
     file.close();
 
     if(dmap->getSize() == 0) {
-      // need to throw special exception for the DMapFilesParser - this is
-      // actually a ChimeraTK::logic_error exception!
       throw ChimeraTK::logic_error("No data in in dmap file: \"" + file_name + "\"");
     }
     return dmap;
