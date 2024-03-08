@@ -107,12 +107,13 @@ namespace ChimeraTK::LNMBackend {
         uint64_t v{_target->accessData(0)};
         v = (v & _maskOnTarget) >> _shift;
 
-               // There are bits set outside of the range of the UserType
-               // Clamping according to B.2.4 and setting the faulty flag
-        if((v & ~_userTypeMask) != 0) {
+        buffer_2D[0][0] = fixedPointConverter.scalarToCooked<UserType>(uint32_t(v));
+        // There are bits set outside of the range of the UserType
+        // Clamping according to B.2.4 and setting the faulty flag
+        auto raw = fixedPointConverter.toRaw(buffer_2D[0][0]);
+        if(raw != v) {
           validity = DataValidity::faulty;
         }
-        buffer_2D[0][0] = fixedPointConverter.scalarToCooked<UserType>(uint32_t(v));
 
         this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
         this->_dataValidity = validity;
@@ -134,11 +135,20 @@ namespace ChimeraTK::LNMBackend {
 
       auto value = fixedPointConverter.toRaw(buffer_2D[0][0]);
 
-      // We have received more data than we actually have bits for
-      if((value & ~_baseBitMask) != 0) {
-        this->_dataValidity = DataValidity::faulty;
+      // FIXME: This needs a change in the fixedpoint converter to tell us that it has clamped the value
+
+      if constexpr(!std::is_same_v<UserType, Void>) {
+        auto cooked = fixedPointConverter.scalarToCooked<UserType>(value);
+        // NOLINTNEXTLINE(float-equal)
+        if(buffer_2D[0][0] != cooked) {
+          this->_dataValidity = DataValidity::faulty;
+        }
+        else {
+          this->_dataValidity = DataValidity::ok;
+        }
       }
       else {
+        // Void is always considered ok
         this->_dataValidity = DataValidity::ok;
       }
 
