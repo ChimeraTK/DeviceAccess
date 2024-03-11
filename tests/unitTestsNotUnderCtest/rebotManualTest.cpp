@@ -26,7 +26,7 @@ int main() {
   unsigned long duration;
   std::string write_register;
   std::string read_register;
-  /********************************************************************************/
+  /********************************************************************************************************************/
   {
     std::cout << "Starting Test: Connection Timeout" << std::endl;
     std::cout << "Power down tmcb and press enter" << std::endl;
@@ -43,13 +43,13 @@ int main() {
       std::cout << "Test Succesful: connection timed out after " << duration << " s" << std::endl;
     }
   }
-  /********************************************************************************/
+  /********************************************************************************************************************/
   std::cout << std::endl;
   std::cout << std::endl;
   std::cout << "Power on tmcb and press enter after it appears on the network" << std::endl;
   std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-  /********************************************************************************/
+  /********************************************************************************************************************/
   {
     std::cout << "Starting Test: Read Timeout" << std::endl;
     std::cout << "Please enter register name on the tmcb to read from:" << std::endl;
@@ -68,7 +68,7 @@ int main() {
       std::cout << "Test Succesful: Read timed out after " << duration << " s" << std::endl;
     }
   }
-  /********************************************************************************/
+  /********************************************************************************************************************/
 
   std::cout << std::endl;
   std::cout << std::endl;
@@ -77,7 +77,7 @@ int main() {
 
   std::cout << std::endl;
   std::cout << std::endl;
-  /********************************************************************************/
+  /********************************************************************************************************************/
   {
     std::cout << "Starting Test: Write Timeout" << std::endl;
     std::cout << "Use same register as read for this test? Press enter if yes; else type new name" << std::endl;
@@ -103,7 +103,7 @@ int main() {
       std::cout << "Test Succesful: Write timed out after " << duration << " s" << std::endl;
     }
   }
-  /********************************************************************************/
+  /********************************************************************************************************************/
 
   std::cout << "****************************************************************" << std::endl;
   std::cout << "*              Tests complete                                  *" << std::endl;

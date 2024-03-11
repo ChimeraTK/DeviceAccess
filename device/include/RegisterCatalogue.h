@@ -14,7 +14,7 @@ namespace ChimeraTK {
   class BackendRegisterCatalogueBase;
   class const_RegisterCatalogueImplIterator;
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Catalogue of register information */
   class RegisterCatalogue {
@@ -79,7 +79,7 @@ namespace ChimeraTK {
     std::unique_ptr<BackendRegisterCatalogueBase> _impl;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Virtual base class for the catalogue const iterator. The typical interator interface is realised in the
@@ -105,6 +105,6 @@ namespace ChimeraTK {
     [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> clone() const = 0;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

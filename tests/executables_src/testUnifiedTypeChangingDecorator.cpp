@@ -83,11 +83,11 @@ boost::shared_ptr<NDRegisterAccessor<std::string>> DecoratorBackend::getRegister
   std::terminate();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 DecoratorBackend::BackendRegisterer DecoratorBackend::backendRegisterer;
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 DecoratorBackend::BackendRegisterer::BackendRegisterer() {
   std::cout << "DecoratorBackend::BackendRegisterer: registering backend type DecoratorBackend" << std::endl;

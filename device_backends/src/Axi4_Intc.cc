@@ -19,7 +19,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::unique_ptr<Axi4_Intc> Axi4_Intc::create(InterruptControllerHandlerFactory* controllerHandlerFactory,
       std::vector<uint32_t> const& controllerID, [[maybe_unused]] std::string const& desrciption,

@@ -15,7 +15,7 @@ namespace ChimeraTK {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable);
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   void TriggeredPollDistributor::trigger(VersionNumber version) {
     if(!_asyncDomain->unsafeGetIsActive()) {
       return;
@@ -36,7 +36,7 @@ namespace ChimeraTK {
     }
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   void TriggeredPollDistributor::activate(VersionNumber version) {
     trigger(version);
   }

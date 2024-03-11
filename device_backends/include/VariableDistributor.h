@@ -28,7 +28,7 @@ namespace ChimeraTK {
     VersionNumber _version{nullptr};
   };
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename SourceType, typename UserType>
   class GenericAsyncVariable : public AsyncVariableImpl<UserType> {
@@ -52,7 +52,7 @@ namespace ChimeraTK {
     VersionNumber& _version;
   };
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // partial template specialisation by inheritance for void
   template<typename UserType>
@@ -61,9 +61,9 @@ namespace ChimeraTK {
     void fillSendBuffer() final;
   };
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   // Implementations
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename SourceType>
   VariableDistributor<SourceType>::VariableDistributor(boost::shared_ptr<DeviceBackend> backend,
       std::vector<uint32_t> interruptID, boost::shared_ptr<TriggerDistributor> parent,
@@ -72,14 +72,14 @@ namespace ChimeraTK {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable);
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename SourceType>
   void VariableDistributor<SourceType>::activate(SourceType data, VersionNumber version) {
     assert(_asyncDomain->unsafeGetIsActive());
     distribute(data, version);
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename SourceType>
   void VariableDistributor<SourceType>::distribute(SourceType data, VersionNumber version) {
     if(!_asyncDomain->unsafeGetIsActive()) {
@@ -95,7 +95,7 @@ namespace ChimeraTK {
     }
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // currently only for void
   template<>
@@ -107,7 +107,7 @@ namespace ChimeraTK {
     return std::make_unique<VoidAsyncVariable<UserType>>(_sourceBuffer, _version, 1, 1);
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename UserType>
   void VoidAsyncVariable<UserType>::fillSendBuffer() {
     // We know that the SourceBuffer contains nullptr. We don't have a conversion formula for that to user type

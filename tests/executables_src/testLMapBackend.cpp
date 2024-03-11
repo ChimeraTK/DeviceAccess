@@ -16,7 +16,7 @@ using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(LMapBackendTestSuite)
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testExceptions) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   BOOST_CHECK(device.isOpened() == false);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testCatalogue) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(testCatalogue) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteConstant) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteConstant) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteVariable) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteVariable) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteRegister) {
   std::vector<int> area(1024);
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteRegister) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadWriteRange) {
   std::vector<int> area(1024);
@@ -337,7 +337,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteRange) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
   std::vector<int> area(1024);
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
   std::vector<int> area(1024);
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRegisterAccessorForChannel) {
   std::vector<int> area(1024);
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForChannel) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRegisterAccessorForBit) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -884,7 +884,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForBit) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testOther) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -895,7 +895,7 @@ BOOST_AUTO_TEST_CASE(testOther) {
   device.close();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testParameters) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -906,7 +906,7 @@ BOOST_AUTO_TEST_CASE(testParameters) {
   BOOST_CHECK_EQUAL(device.read<int>("SingleWordWithParams"), 42);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -990,7 +990,7 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   for(int i = 0; i < 1024; ++i) BOOST_CHECK_EQUAL(area[i], -100 + i);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 BOOST_AUTO_TEST_CASE(testIsFunctional) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   auto exceptionDummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>(

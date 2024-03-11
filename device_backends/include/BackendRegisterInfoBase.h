@@ -10,7 +10,7 @@
 
 namespace ChimeraTK {
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** DeviceBackend-independent register description. */
   class BackendRegisterInfoBase {
@@ -47,7 +47,7 @@ namespace ChimeraTK {
     [[nodiscard]] virtual std::unique_ptr<BackendRegisterInfoBase> clone() const = 0;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   inline unsigned int BackendRegisterInfoBase::getNumberOfDimensions() const {
     if(getNumberOfChannels() > 1) return 2;

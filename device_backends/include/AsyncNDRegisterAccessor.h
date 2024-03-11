@@ -107,11 +107,11 @@ namespace ChimeraTK {
     cppext::future_queue<Buffer, cppext::SWAP_DATA> _dataTransportQueue{_queueSize};
   };
 
-  /**********************************************************************************************************/
+  /********************************************************************************************************************/
   /* Implementations are in the .cc file. We use the trick to declare for all known types here,             */
   /* and instantiate all of them in the .cc file. This is necessary because we cannot include               */
   /* AsyncAccessorManager.h to avoid a circular dependency, but need it for the implementation.             */
-  /**********************************************************************************************************/
+  /********************************************************************************************************************/
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor);
 
 } // namespace ChimeraTK

@@ -61,7 +61,7 @@ namespace ChimeraTK {
 
   } /* namespace detail */
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Base class for register accessors which can be part of a TransferGroup */
   class TransferElement : public boost::enable_shared_from_this<TransferElement> {
@@ -860,7 +860,7 @@ namespace ChimeraTK {
 } /* namespace ChimeraTK */
 namespace std {
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Hash function for putting TransferElementID e.g. into an std::unordered_map
    */
@@ -869,7 +869,7 @@ namespace std {
     std::size_t operator()(const ChimeraTK::TransferElementID& f) const { return std::hash<size_t>{}(f._id); }
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Comparison for putting TransferElementID e.g. into an std::map */
   template<>

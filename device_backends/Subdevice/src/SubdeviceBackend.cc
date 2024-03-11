@@ -47,7 +47,7 @@ namespace ChimeraTK {
     return boost::shared_ptr<DeviceBackend>(new SubdeviceBackend(parameters));
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   SubdeviceBackend::SubdeviceBackend(std::map<std::string, std::string> parameters) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
@@ -167,7 +167,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void SubdeviceBackend::obtainTargetBackend() {
     if(targetDevice != nullptr) return;
@@ -175,7 +175,7 @@ namespace ChimeraTK {
     targetDevice = factoryInstance.createBackend(targetAlias);
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void SubdeviceBackend::open() {
     obtainTargetBackend();
@@ -184,7 +184,7 @@ namespace ChimeraTK {
     setOpenedAndClearException();
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void SubdeviceBackend::close() {
     obtainTargetBackend();

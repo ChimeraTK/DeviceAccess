@@ -13,7 +13,7 @@ using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(LMathPluginDataValidityTestSuite)
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadSync) {
   ChimeraTK::Device device;
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(testReadSync) {
   BOOST_CHECK(accMathRead.dataValidity() == ChimeraTK::DataValidity::ok);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testWrite) {
   ChimeraTK::Device device;
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(testWrite) {
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadSyncWithParameters) {
   ChimeraTK::Device device;
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(testReadSyncWithParameters) {
   BOOST_CHECK(accMathRead.dataValidity() == ChimeraTK::DataValidity::ok);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testWriteWithParameters) {
   ChimeraTK::Device device;

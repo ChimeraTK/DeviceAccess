@@ -16,7 +16,7 @@ namespace ChimeraTK {
   : _id(std::move(interruptID)), _backend(backend), _interruptControllerHandlerFactory(controllerHandlerFactory),
     _parent(std::move(parent)), _asyncDomain(std::move(asyncDomain)) {}
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename DistributorType>
   boost::shared_ptr<DistributorType> TriggerDistributor::getDistributorRecursive(
@@ -62,7 +62,7 @@ namespace ChimeraTK {
     return controllerHandler->getDistributorRecursive<DistributorType>({++interruptID.begin(), interruptID.end()});
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   // This function is never called. It only exists to instantiate the template code because we had to put the
   // implementation into then .cc-file to avoid circular header inclusion.
   boost::shared_ptr<TriggeredPollDistributor> getPollDistributorRecursive(
@@ -70,14 +70,14 @@ namespace ChimeraTK {
     return distributor.getDistributorRecursive<TriggeredPollDistributor>(interruptID);
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   boost::shared_ptr<VariableDistributor<std::nullptr_t>> getVariableDistributorRecursive(
       std::vector<uint32_t> const& interruptID, TriggerDistributor& distributor) {
     return distributor.getDistributorRecursive<VariableDistributor<std::nullptr_t>>(interruptID);
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void TriggerDistributor::distribute([[maybe_unused]] std::nullptr_t, VersionNumber version) {
     if(!_asyncDomain->unsafeGetIsActive()) {
@@ -97,7 +97,7 @@ namespace ChimeraTK {
     }
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void TriggerDistributor::activate([[maybe_unused]] std::nullptr_t, VersionNumber version) {
     auto pollDistributor = _pollDistributor.lock();
@@ -114,7 +114,7 @@ namespace ChimeraTK {
     }
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void TriggerDistributor::sendException(const std::exception_ptr& e) {
     auto pollDistributor = _pollDistributor.lock();
@@ -131,7 +131,7 @@ namespace ChimeraTK {
     }
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> TriggerDistributor::SubscriptionImplementor<

@@ -37,7 +37,7 @@ namespace ChimeraTK {
     VersionNumber _notDistributedVersion{nullptr};
   };
 
-  //******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename DistributorType, typename BackendDataType>
   void AsyncDomainImpl<DistributorType, BackendDataType>::distribute(BackendDataType data, VersionNumber version) {
@@ -58,7 +58,7 @@ namespace ChimeraTK {
     distributor->distribute(data, version);
   }
 
-  //******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename DistributorType, typename BackendDataType>
   void AsyncDomainImpl<DistributorType, BackendDataType>::activate(BackendDataType data, VersionNumber version) {
@@ -80,7 +80,7 @@ namespace ChimeraTK {
     }
   }
 
-  //******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename DistributorType, typename BackendDataType>
   void AsyncDomainImpl<DistributorType, BackendDataType>::deactivate() {
@@ -89,7 +89,7 @@ namespace ChimeraTK {
     _isActive = false;
   }
 
-  //******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename DistributorType, typename BackendDataType>
   void AsyncDomainImpl<DistributorType, BackendDataType>::sendException(const std::exception_ptr& e) noexcept {
@@ -109,7 +109,7 @@ namespace ChimeraTK {
     distributor->sendException(e);
   }
 
-  //******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename DistributorType, typename BackendDataType>
   template<typename UserDataType>

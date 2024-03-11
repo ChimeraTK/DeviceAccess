@@ -45,7 +45,7 @@ namespace ChimeraTK {
     class StopThread : public std::exception {};
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename KeyType>
   void AsyncDomainsContainer<KeyType>::distributeExceptions() {
@@ -71,14 +71,14 @@ namespace ChimeraTK {
     }
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename KeyType>
   AsyncDomainsContainer<KeyType>::AsyncDomainsContainer() {
     _distributorThread = std::thread([&] { distributeExceptions(); });
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename KeyType>
   AsyncDomainsContainer<KeyType>::~AsyncDomainsContainer() {
@@ -99,7 +99,7 @@ namespace ChimeraTK {
     _isSendingExceptions = false;
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename KeyType>
   void AsyncDomainsContainer<KeyType>::sendExceptions(const std::string& exceptionMessage) {

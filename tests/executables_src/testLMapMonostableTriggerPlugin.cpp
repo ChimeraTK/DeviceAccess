@@ -15,7 +15,7 @@ using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(LMapMonostableTriggerPluginTestSuite)
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 class TestDummy : public ChimeraTK::DummyBackend {
  public:
@@ -66,7 +66,7 @@ TestDummy::BackendRegisterer::BackendRegisterer() {
   ChimeraTK::BackendFactory::getInstance().registerBackendType("TestDummy", &TestDummy::createInstance);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDefaultValues) {
   std::cout << "testDefaultValues" << std::endl;
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(testDefaultValues) {
   }
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testNonDefaultValues) {
   std::cout << "testNonDefaultValues" << std::endl;
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(testNonDefaultValues) {
   }
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDifferentDelay) {
   std::cout << "testDifferentDelay" << std::endl;
@@ -149,6 +149,6 @@ BOOST_AUTO_TEST_CASE(testDifferentDelay) {
     BOOST_CHECK(target->delay.count() < 600);
   }
 }
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

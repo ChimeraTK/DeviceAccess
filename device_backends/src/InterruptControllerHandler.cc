@@ -10,20 +10,20 @@
 #include <tuple>
 
 namespace ChimeraTK {
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   InterruptControllerHandlerFactory::InterruptControllerHandlerFactory(DeviceBackend* backend) : _backend(backend) {
     // we already know about the build-in handlers
     _creatorFunctions["AXI4_INTC"] = Axi4_Intc::create;
     _creatorFunctions["dummy"] = DummyIntc::create;
   }
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   void InterruptControllerHandlerFactory::addControllerDescription(
       std::vector<uint32_t> const& controllerID, std::string const& name, std::string const& description) {
     _controllerDescriptions[controllerID] = {name, description};
   }
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   boost::shared_ptr<InterruptControllerHandler> InterruptControllerHandlerFactory::createInterruptControllerHandler(
       std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor> parent) {
     assert(!controllerID.empty());
@@ -46,18 +46,18 @@ namespace ChimeraTK {
     return creatorFunctionIter->second(this, controllerID, description, std::move(parent));
   }
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   boost::shared_ptr<DeviceBackend> InterruptControllerHandlerFactory::getBackend() {
     return boost::dynamic_pointer_cast<DeviceBackend>(_backend->shared_from_this());
   }
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   InterruptControllerHandler::InterruptControllerHandler(InterruptControllerHandlerFactory* controllerHandlerFactory,
       std::vector<uint32_t> controllerID, boost::shared_ptr<TriggerDistributor> parent)
   : _backend(controllerHandlerFactory->getBackend()), _controllerHandlerFactory(controllerHandlerFactory),
     _id(std::move(controllerID)), _parent(std::move(parent)), _asyncDomain(_parent->getAsyncDomain()) {}
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename DistributorType>
   boost::shared_ptr<DistributorType> InterruptControllerHandler::getDistributorRecursive(
       std::vector<uint32_t> const& interruptID) {
@@ -85,7 +85,7 @@ namespace ChimeraTK {
     return distributor->getDistributorRecursive<DistributorType>(interruptID);
   }
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // This function only exists to instantiate the template code because we could not put the implementation into the
   // header. We have to have it in the .cc file to prevent circular header inclusion.
@@ -93,7 +93,7 @@ namespace ChimeraTK {
       std::vector<uint32_t> const& interruptID, InterruptControllerHandler& handler) {
     return handler.getDistributorRecursive<TriggeredPollDistributor>(interruptID);
   }
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // This function only exists to instantiate the template code because we could not put the implementation into the
   // header. We have to have it in the .cc file to prevent circular header inclusion.
@@ -102,7 +102,7 @@ namespace ChimeraTK {
     return handler.getDistributorRecursive<VariableDistributor<std::nullptr_t>>(interruptID);
   }
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   void InterruptControllerHandler::activate(VersionNumber version) {
     for(auto& distributorIter : _distributors) {
       auto distributor = distributorIter.second.lock();
@@ -112,7 +112,7 @@ namespace ChimeraTK {
     }
   }
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
   void InterruptControllerHandler::sendException(const std::exception_ptr& e) {
     for(auto& distributorIter : _distributors) {
       auto distributor = distributorIter.second.lock();

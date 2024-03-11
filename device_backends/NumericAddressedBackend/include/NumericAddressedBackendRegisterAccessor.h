@@ -16,7 +16,7 @@ namespace ChimeraTK {
   template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.

@@ -1,11 +1,10 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-/******************************************************************************
- * This file currently runs on real time, so it will take about a minute to
- *finish!
- * FIXME: Port this to virtual time
- ******************************************************************************/
+/**********************************************************************************************************************/
+/* This file currently runs on real time, so it will take about a minute to finish!                                   */
+/* FIXME: Port this to virtual time                                                                                   */
+/**********************************************************************************************************************/
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE RebotHeartbeatCountTest

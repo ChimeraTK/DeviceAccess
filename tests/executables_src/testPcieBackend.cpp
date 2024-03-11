@@ -41,7 +41,7 @@ using ChimeraTK::numeric_address::BAR;
 #define PCIE_UNI_DEVICE "PCIE0"
 #define NON_EXISTING_DEVICE "DUMMY9"
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Use a file lock on /var/run/lock/mtcadummy/<devicenode> for all device nodes
 // we are using in this test, to ensure we are not running concurrent tests in
@@ -82,7 +82,7 @@ struct TestLocker {
 };
 static TestLocker testLocker;
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 /** The unit tests for the PcieBackend class, based on the
  *  boost unit test library. We use a class which holds a private
@@ -145,7 +145,7 @@ class PcieBackendTest {
   std::string checkDmaValues(std::vector<int32_t> const& dmaBuffer);
 };
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 class PcieBackendTestSuite : public test_suite {
  public:
@@ -205,7 +205,7 @@ class PcieBackendTestSuite : public test_suite {
  private:
 };
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 bool init_unit_test() {
   framework::master_test_suite().p_name.value = "PcieBackend test suite";
@@ -229,7 +229,7 @@ bool init_unit_test() {
   return true;
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // The implementations of the individual tests
 
@@ -265,7 +265,7 @@ std::string PcieBackendTest::checkDmaValues(std::vector<int32_t> const& dmaBuffe
   return errorMessage.str();
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testReadDeviceInfo() {
   std::cout << "testReadDeviceInfo" << std::endl;
@@ -286,7 +286,7 @@ void PcieBackendTest::testReadDeviceInfo() {
   BOOST_CHECK_EQUAL(referenceInfo.str(), deviceInfo);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testReadDMA() {
   std::cout << "testReadDMA" << std::endl;
@@ -316,13 +316,13 @@ void PcieBackendTest::testReadDMA() {
   }
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testWriteDMA() {
   std::cout << "testWriteDMA" << std::endl;
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testRead() {
   std::cout << "testRead" << std::endl;
@@ -363,7 +363,7 @@ void PcieBackendTest::testRead() {
   BOOST_CHECK_MESSAGE(errorMessage.empty(), errorMessage);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testWriteArea() {
   std::cout << "testWriteArea" << std::endl;
@@ -398,7 +398,7 @@ void PcieBackendTest::testWriteArea() {
   BOOST_CHECK(readbackBuffer == writeBuffer);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testReadRegister() {
   std::cout << "testReadRegister" << std::endl;
@@ -421,7 +421,7 @@ void PcieBackendTest::testReadRegister() {
   BOOST_CHECK_THROW(_pcieBackendInstance->getRegisterAccessor<int>("#6/0x3C", 4, 0, {}), ChimeraTK::logic_error);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testWriteRegister() {
   std::cout << "testWriteRegister" << std::endl;
@@ -440,7 +440,7 @@ void PcieBackendTest::testWriteRegister() {
   BOOST_CHECK_EQUAL(originalUserWord + 1, newUserWord);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testClose() {
   std::cout << "testClose" << std::endl;
@@ -453,7 +453,7 @@ void PcieBackendTest::testClose() {
   BOOST_CHECK(_pcieBackendInstance->isOpen() == false);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testOpen() {
   std::cout << "testOpen" << std::endl;
@@ -464,7 +464,7 @@ void PcieBackendTest::testOpen() {
   BOOST_CHECK(_pcieBackendInstance->isOpen());
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void PcieBackendTest::testCreateBackend() {
   std::cout << "testCreateBackend" << std::endl;
@@ -525,4 +525,4 @@ void PcieBackendTest::testCreateBackend() {
   _pcieBackendInstance->close();
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/

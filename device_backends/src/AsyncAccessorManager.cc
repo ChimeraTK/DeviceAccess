@@ -5,7 +5,7 @@
 
 namespace ChimeraTK {
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   void AsyncAccessorManager::unsubscribe(TransferElementID id) {
     // The destructor of the AsyncVariable implementation must do all necessary clean-up
     _asyncVariables.erase(id);
@@ -13,7 +13,7 @@ namespace ChimeraTK {
     asyncVariableMapChanged();
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   void AsyncAccessorManager::sendException(const std::exception_ptr& e) {
     for(auto& var : _asyncVariables) {
       var.second->sendException(e);

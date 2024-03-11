@@ -326,7 +326,7 @@ struct BitRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
   void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }
 };
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 /* Now for each register in unifiedTest.xlmap we define a descriptor */
 
 /// Test passing through scalar accessors
@@ -1177,7 +1177,7 @@ struct Reg9BitsInChar : RegBitRangeDescriptor<Reg9BitsInChar> {
   BitRangeAccessorTarget target;
 };
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
   std::string dummyCdd = "(ExceptionDummy?map=mtcadummy.map)";
@@ -1239,6 +1239,6 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .runTests(lmapCdd);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

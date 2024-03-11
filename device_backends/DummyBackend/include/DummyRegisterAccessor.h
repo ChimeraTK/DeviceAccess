@@ -11,7 +11,7 @@ namespace ChimeraTK {
   /// point conversion. These classes are put into a separate name space, as they
   /// should never be instantiated by the user.
   namespace proxies {
-    /*********************************************************************************************************************/
+    /******************************************************************************************************************/
     /// Temporary proxy class for use in the DummyRegister and
     /// DummyMultiplexedRegister classes. Will be returned in place of l.h.s.
     /// references to the register elements, to allow read-write access to registers
@@ -74,7 +74,7 @@ namespace ChimeraTK {
       int32_t* buffer;
     };
 
-    /*********************************************************************************************************************/
+    /******************************************************************************************************************/
     /// Temporary proxy class for sequences, used in the DummyMultiplexedRegister
     /// class. Will be returned by the first [] operator.
     template<typename T>
@@ -112,7 +112,7 @@ namespace ChimeraTK {
     };
   } // namespace proxies
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /** Register accessor for accessing single word or 1D array registers internally
    * of a DummyBackend implementation. This accessor should be used to access the
    * dummy registers through the "backdoor" when unit-testing e.g. a library or
@@ -206,7 +206,7 @@ namespace ChimeraTK {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /** Register accessor for accessing multiplexed 2D array registers internally of
    * a DummyBackend implementation. This accessor is similar to the DummyRegister
    * accessor but works with multiplexed registers. The interface is similar to
