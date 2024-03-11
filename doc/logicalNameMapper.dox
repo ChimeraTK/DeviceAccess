@@ -279,9 +279,9 @@ those parts individually without having to deal with bit masks yourself.
 Parameters:
 - <code>shift</code>: Position of the first bit of the mask
 - <code>numberOfBits</code>: Length of the mask. Cannot be larger than 32.
-- <code>dataInterpretationFractionalBits</code>: Optional, how many of the bits are representing the fractional part of
+- <code>fractionalBits</code>: Optional, how many of the bits are representing the fractional part of
   a fixed point value. Defaults to <code>0</code>. See ChimeraTK::FixedPointConverter() for details.
-- <code>dataInterpretationSigned</code>: Optional, whether the type represented by numberOfBits is signed. Defaults to
+- <code>signed</code>: Optional, whether the type represented by numberOfBits is signed. Defaults to
   <code>false</code>
 
 When used like below on a 32bit register, the redirected register will give access to the upper word of that register.
@@ -297,7 +297,7 @@ The snippet below will map the upper word to a signed 16 bit integer
 <plugin name="bitRange">
   <parameter name="shift">16</parameter>
   <parameter name="numberOfBits">16</parameter>
-  <parameter name="dataInterpretationSigned">true</parameter>
+  <parameter name="signed">true</parameter>
 </plugin>
 \endcode
 
