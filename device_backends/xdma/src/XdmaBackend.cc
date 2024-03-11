@@ -39,15 +39,8 @@ namespace ChimeraTK {
       }
     }
 
-    // (Re-)Open the event files which are needed
+    // (Re-)Open the event files only when you acquire an accessaor.
     std::for_each(_eventFiles.begin(), _eventFiles.end(), [](auto& eventFile) { eventFile = nullptr; });
-    for(size_t i = 0; i < _maxInterrupts; i++) {
-      if(_startInterruptHandlingCalled[i]) {
-        _eventFiles[i] =
-            std::make_unique<EventFile>(_devicePath, i, std::bind(&XdmaBackend::dispatchInterrupt, this, i));
-        _eventFiles[i]->startThread();
-      }
-    }
 #ifdef _DEBUG
     std::cout << "XDMA: opened interface with " << _dmaChannels.size() << " DMA channels and " << _eventFiles.size()
               << " interrupt sources\n";
