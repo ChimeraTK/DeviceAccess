@@ -108,8 +108,10 @@ namespace ChimeraTK::LNMBackend {
         v = (v & _maskOnTarget) >> _shift;
 
         buffer_2D[0][0] = fixedPointConverter.scalarToCooked<UserType>(uint32_t(v));
-        // There are bits set outside of the range of the UserType
-        // Clamping according to B.2.4 and setting the faulty flag
+        // Do a quick check if the fixed point converter clamped. Then set the
+        // data validity faulty according to B.2.4.1
+        // For proper implementation of this, the fixed point converter needs to signalize
+        // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
         auto raw = fixedPointConverter.toRaw(buffer_2D[0][0]);
         if(raw != v) {
           validity = DataValidity::faulty;
@@ -135,22 +137,9 @@ namespace ChimeraTK::LNMBackend {
 
       auto value = fixedPointConverter.toRaw(buffer_2D[0][0]);
 
-      // FIXME: This needs a change in the fixedpoint converter to tell us that it has clamped the value
-
-      if constexpr(!std::is_same_v<UserType, Void>) {
-        auto cooked = fixedPointConverter.scalarToCooked<UserType>(value);
-        // NOLINTNEXTLINE(float-equal)
-        if(buffer_2D[0][0] != cooked) {
-          this->_dataValidity = DataValidity::faulty;
-        }
-        else {
-          this->_dataValidity = DataValidity::ok;
-        }
-      }
-      else {
-        // Void is always considered ok
-        this->_dataValidity = DataValidity::ok;
-      }
+      // FIXME: Not setting the data validity according to the spec point B2.5.1.
+      // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
+      // To be revisted after fixing https://redmine.msktools.desy.de/issues/12912
 
       // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
       // Otherwise it will overwrite the
