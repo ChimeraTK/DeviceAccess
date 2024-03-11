@@ -65,7 +65,7 @@ namespace ChimeraTK {
 
   } // namespace detail
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for
    * multiplexd 2D registers
    */

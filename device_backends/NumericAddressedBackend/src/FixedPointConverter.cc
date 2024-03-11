@@ -18,7 +18,7 @@ namespace ChimeraTK {
     reconfigure(nBits, fractionalBits, isSignedFlag);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void FixedPointConverter::reconfigure(unsigned int nBits, int fractionalBits, bool isSignedFlag) {
     _nBits = nBits;
@@ -82,7 +82,7 @@ namespace ChimeraTK {
     boost::fusion::for_each(_minCookedValues, initCoefficients(this));
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<>
   // sorry, linter. We can't change the signature here. This is a template specialisation for std::string.

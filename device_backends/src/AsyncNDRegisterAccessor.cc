@@ -42,7 +42,7 @@ namespace ChimeraTK {
         [&](Buffer& buf) { std::swap(_receiveBuffer, buf); }, std::launch::deferred);
   }
 
-  /**********************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename UserType>
   void AsyncNDRegisterAccessor<UserType>::doPostRead([[maybe_unused]] TransferType type, bool updateDataBuffer) {
     if(updateDataBuffer) {
@@ -60,7 +60,7 @@ namespace ChimeraTK {
     }
   }
 
-  /**********************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename UserType>
   void AsyncNDRegisterAccessor<UserType>::sendDestructively(typename NDRegisterAccessor<UserType>::Buffer& data) {
     if(_asyncDomain->unsafeGetIsActive()) {

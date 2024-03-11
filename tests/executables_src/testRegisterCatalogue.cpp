@@ -11,7 +11,7 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 class myRegisterInfo : public BackendRegisterInfoBase {
  public:
@@ -55,7 +55,7 @@ class myRegisterInfo : public BackendRegisterInfoBase {
   AccessModeFlags _supportedFlags;
 };
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 class CatalogueGenerator {
  public:
@@ -80,11 +80,11 @@ class CatalogueGenerator {
   myRegisterInfo theInfo3{"/justAName", 1, 1, 0, dataDescriptor3, false, false, {}};
 };
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE(RegisterCatalogueTestSuite)
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDirectAccess) {
   CatalogueGenerator generator;
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(testDirectAccess) {
   BOOST_TEST(info.getSupportedAccessModes().has(AccessMode::raw) == false);
   BOOST_TEST(info.getSupportedAccessModes().has(AccessMode::wait_for_new_data) == false);
 }
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testClone) {
   CatalogueGenerator generator;
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(testClone) {
   BOOST_CHECK(seenObjects[2] == generator.theInfo3);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRangeBasedLoopBackend) {
   CatalogueGenerator generator;
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(testRangeBasedLoopBackend) {
   BOOST_CHECK(seenObjects[2] == generator.theInfo3);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRangeBasedLoopBackendConst) {
   CatalogueGenerator generator;
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(testRangeBasedLoopBackendConst) {
   BOOST_CHECK(seenObjects[2] == generator.theInfo3);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRangeBasedLoopFrontend) {
   CatalogueGenerator generator;
@@ -229,6 +229,6 @@ BOOST_AUTO_TEST_CASE(testRangeBasedLoopFrontend) {
   BOOST_TEST(seenObjects[2].getRegisterName() == generator.theInfo3.getRegisterName());
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

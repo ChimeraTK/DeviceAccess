@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 /* Tests for the NDReigsterAccessorDecorator base class                                                             */
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE TransferElementTest
@@ -18,7 +18,7 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 /** Special accessor used to test the behaviour of the NDReigsterAccessorDecorator base class */
 template<typename UserType>
@@ -277,7 +277,7 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
   bool push() { return this->_readQueue.push(); }
 };
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 /**
  *  This test that the NDRegisterAccessorDecorator base class complies to the following specification:
@@ -361,4 +361,4 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   BOOST_CHECK_THROW(accessor.writeDestructively(), boost::thread_interrupted);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/

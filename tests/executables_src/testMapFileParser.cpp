@@ -19,7 +19,7 @@ using namespace boost::unit_test_framework;
 
 BOOST_AUTO_TEST_SUITE(MapFileParserTestSuite)
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void printRegInfo(const ChimeraTK::NumericAddressedRegisterInfo& info, std::ostream& ostr = std::cout) {
   ostr << "Register " << info.pathName << ": at " << info.bar << "," << info.address << " nElems = " << info.nElements
@@ -36,7 +36,7 @@ void printRegInfo(const ChimeraTK::NumericAddressedRegisterInfo& info, std::ostr
   }
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 void compareCatalogue(const NumericAddressedRegisterCatalogue& regcat,
     const std::vector<ChimeraTK::NumericAddressedRegisterInfo>& RegisterInfoents) {
@@ -55,36 +55,36 @@ void compareCatalogue(const NumericAddressedRegisterCatalogue& regcat,
   }
 }
 
-/*******************************************************************************************************************/
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testFileDoesNotExist) {
   ChimeraTK::MapFileParser fileparser;
   BOOST_CHECK_THROW(fileparser.parse("NonexistentFile.map"), ChimeraTK::logic_error);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testInvalidMetadata) {
   ChimeraTK::MapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("invalid_metadata.map"), ChimeraTK::logic_error);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMandatoryRegisterFieldMissing) {
   ChimeraTK::MapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("MandatoryRegisterfIeldMissing.map"), ChimeraTK::logic_error);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testIncorrectRegisterWidth) {
   ChimeraTK::MapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth.map"), ChimeraTK::logic_error);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testFracBits) {
   ChimeraTK::MapFileParser map_file_parser1;
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(testFracBits) {
   BOOST_CHECK_THROW(map_file_parser2.parse("IncorrectFracBits2.map"), ChimeraTK::logic_error);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testGoodMapFileParse) {
   ChimeraTK::MapFileParser map_file_parser;
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(testGoodMapFileParse) {
   compareCatalogue(regcat, RegisterInfoents);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   ChimeraTK::MapFileParser map_file_parser;
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   compareCatalogue(regcat, RegisterInfoents);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMixedMapFileParse) {
   ChimeraTK::MapFileParser map_file_parser;
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(testMixedMapFileParse) {
   compareCatalogue(regcat, RegisterInfoents);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testInterruptBadMapFileParse) {
   ChimeraTK::MapFileParser fileparser;
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(testInterruptBadMapFileParse) {
   BOOST_CHECK_THROW(fileparser.parse("interruptMapFileWithError4.map"), ChimeraTK::logic_error);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testInterruptMapFileParse) {
   ChimeraTK::MapFileParser fileparser;
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(testInterruptMapFileParse) {
   compareCatalogue(regcat, RegisterInfoents);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMapFileWithCommentsParse) {
   ChimeraTK::MapFileParser map_file_parser;
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(testMapFileWithCommentsParse) {
   compareCatalogue(regcat, RegisterInfoents);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
   ChimeraTK::MapFileParser map_file_parser;
@@ -478,6 +478,6 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
   compareCatalogue(regcat, RegisterInfoents);
 }
 
-/*******************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

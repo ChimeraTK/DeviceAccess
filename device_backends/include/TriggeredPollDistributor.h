@@ -48,7 +48,7 @@ namespace ChimeraTK {
     VersionNumber _version{nullptr};
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Implementation of the PolledAsyncVariable for the concrete UserType.
    */
@@ -69,9 +69,9 @@ namespace ChimeraTK {
     const std::string& getDescription() override { return syncAccessor->getDescription(); }
   };
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   // Implementations
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   std::unique_ptr<AsyncVariable> TriggeredPollDistributor::createAsyncVariable(
@@ -95,7 +95,7 @@ namespace ChimeraTK {
     return std::make_unique<PolledAsyncVariable<UserType>>(syncAccessor, _version);
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename UserType>
   void PolledAsyncVariable<UserType>::fillSendBuffer() {
     this->_sendBuffer.versionNumber = _version;
@@ -103,7 +103,7 @@ namespace ChimeraTK {
     this->_sendBuffer.value.swap(syncAccessor->accessChannels());
   }
 
-  //*********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename UserType>
   PolledAsyncVariable<UserType>::PolledAsyncVariable(
       boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, VersionNumber& v)

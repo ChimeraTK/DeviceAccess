@@ -5,13 +5,13 @@
 
 namespace ChimeraTK {
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::vector<boost::shared_ptr<TransferElement>> TransferElementAbstractor::getHardwareAccessingElements() {
     return _impl->getHardwareAccessingElements();
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::list<boost::shared_ptr<TransferElement>> TransferElementAbstractor::getInternalElements() {
     auto result = _impl->getInternalElements();
@@ -19,7 +19,7 @@ namespace ChimeraTK {
     return result;
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void TransferElementAbstractor::replaceTransferElement(const boost::shared_ptr<TransferElement>& newElement) {
     if(newElement->mayReplaceOther(_impl)) {
@@ -32,13 +32,13 @@ namespace ChimeraTK {
     }
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void TransferElementAbstractor::setPersistentDataStorage(
       boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) {
     _impl->setPersistentDataStorage(std::move(storage));
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

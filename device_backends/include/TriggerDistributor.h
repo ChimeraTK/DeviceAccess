@@ -75,7 +75,7 @@ namespace ChimeraTK {
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TriggerDistributor::SubscriptionImplementor);
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> TriggerDistributor::subscribe(

@@ -9,7 +9,7 @@ static const unsigned int DEFAULT_SERVER_PORT = 5001;
 static const std::string DEFAULT_MAP_FILE = "./testFile.map";
 static const unsigned int DEFAULT_PROTOCOL_VERSION = 0x0;
 
-/**************************************************************************/
+/**********************************************************************************************************************/
 struct Argument {
   std::string _shortName;
   std::string _longName;
@@ -18,7 +18,7 @@ struct Argument {
 };
 std::string getArgumentValue(Argument& argument, char** argumentArray);
 
-/**************************************************************************/
+/**********************************************************************************************************************/
 
 unsigned int getPortNumber(char** argumentArray) {
   Argument portFlag("-p", "--port");

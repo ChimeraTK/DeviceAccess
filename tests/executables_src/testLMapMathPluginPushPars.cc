@@ -14,7 +14,7 @@ using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(LMapMathPluginTestSuite)
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct DummyForCleanupCheck : public LogicalNameMappingBackend {
   using LogicalNameMappingBackend::LogicalNameMappingBackend;
@@ -211,6 +211,6 @@ BOOST_AUTO_TEST_CASE(testPushParsLateOpen) {
   BOOST_CHECK(DummyForCleanupCheck::cleanupCalled);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

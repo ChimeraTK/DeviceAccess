@@ -21,7 +21,7 @@ namespace ChimeraTK {
   class DeviceBackend;
   class AsyncDomain;
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Knows which type of InterruptControllerHandler to create for which interrupt.
    *  It is filled from the meta information from the map file.
@@ -53,7 +53,7 @@ namespace ChimeraTK {
         _creatorFunctions;
   };
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Interface base class for interrupt controller handlers. It implements the interface with the
    * DeviceBackend and the TriggerDistributors. Implementations must fill the pure virtual "handle()"
@@ -96,6 +96,6 @@ namespace ChimeraTK {
     boost::shared_ptr<AsyncDomain> _asyncDomain;
   };
 
-  //*****************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

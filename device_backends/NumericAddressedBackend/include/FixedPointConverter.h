@@ -240,7 +240,7 @@ namespace ChimeraTK {
     // NOLINTEND(hicpp-signed-bitwise)
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // FIXME: replace reinterpret_cast with bit_cast once C++20 is available for us.
   // Until then, turn off the linter warning about reinterpret_cast
@@ -330,7 +330,7 @@ namespace ChimeraTK {
   }
   // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   uint32_t FixedPointConverter::toRaw(UserType cookedValue) const {
@@ -396,7 +396,7 @@ namespace ChimeraTK {
     return raw & _usedBitsMask;
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, typename std::enable_if<std::is_signed<UserType>{}, int>::type>
   bool FixedPointConverter::isNegativeUserType(UserType value) const {
@@ -408,7 +408,7 @@ namespace ChimeraTK {
     return false;
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename RAW_ITERATOR, typename COOKED_ITERATOR>
   struct FixedPointConverter::vectorToCooked_impl<std::string, RAW_ITERATOR, COOKED_ITERATOR> {
@@ -443,7 +443,7 @@ namespace ChimeraTK {
     }
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<>
   [[nodiscard]] uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const;
 

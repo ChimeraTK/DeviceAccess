@@ -90,6 +90,8 @@ struct DeviceFixture_HW {
   }
 };
 
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testWithHardware0, DeviceFixture_HW) {
   /*
    * Here we check that we can actually detect corrupted data, if double buffer feature is off
@@ -105,6 +107,8 @@ BOOST_FIXTURE_TEST_CASE(testWithHardware0, DeviceFixture_HW) {
   BOOST_CHECK(dataCorruptionCount > 0);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testWithHardware1, DeviceFixture_HW) {
   /*
    * Here we look for data corruption when firmware uses double buffering.
@@ -119,7 +123,6 @@ BOOST_FIXTURE_TEST_CASE(testWithHardware1, DeviceFixture_HW) {
   BOOST_CHECK(dataCorruptionCount == 0);
 }
 
-/********************************************************************************************
-*************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

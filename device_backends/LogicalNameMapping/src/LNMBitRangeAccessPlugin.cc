@@ -57,7 +57,7 @@ namespace ChimeraTK::LNMBackend {
   struct BitRangeAccessPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::buffer_2D;
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits)
@@ -85,7 +85,7 @@ namespace ChimeraTK::LNMBackend {
       _maskOnTarget = _baseBitMask << _shift;
     }
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
 
     void doPreRead(TransferType type) override {
       _lock.lock();
@@ -93,7 +93,7 @@ namespace ChimeraTK::LNMBackend {
       _target->preRead(type);
     }
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
 
     void doPostRead(TransferType type, bool hasNewData) override {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
@@ -127,7 +127,7 @@ namespace ChimeraTK::LNMBackend {
       this->_dataValidity = validity;
     }
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override {
       _lock.lock();
@@ -169,14 +169,14 @@ namespace ChimeraTK::LNMBackend {
       _target->preWrite(type, _temporaryVersion);
     }
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
 
     void doPostWrite(TransferType type, VersionNumber /*versionNumber*/) override {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
       _target->postWrite(type, _temporaryVersion);
     }
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
       auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType, TargetType>>(newElement);
@@ -194,7 +194,7 @@ namespace ChimeraTK::LNMBackend {
       NDRegisterAccessorDecorator<UserType, TargetType>::replaceTransferElement(newElement);
     }
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
 
     uint64_t _shift;
     uint64_t _numberOfBits;

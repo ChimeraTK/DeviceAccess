@@ -14,9 +14,9 @@ namespace parsutils = ChimeraTK::parserUtilities;
 // to the test suite through the shell script:
 // ./tests/scripts/testParserUtilities.sh
 
-/******************************************************************************/
+/**********************************************************************************************************************/
 /*                  Code for setting up test suite                            */
-/******************************************************************************/
+/**********************************************************************************************************************/
 class ParserUtilsTestClass {
  public:
   explicit ParserUtilsTestClass(std::string currentWorkingDirectory);
@@ -59,7 +59,7 @@ bool init_unit_test() {
 ParserUtilsTestClass::ParserUtilsTestClass(std::string currentWorkingDirectory)
 : _currentWorkingDir(std::move(currentWorkingDirectory)) {}
 
-/******************************************************************************/
+/**********************************************************************************************************************/
 
 /* Test cases... */
 void ParserUtilsTestClass::testGetCurrentWorkingDir() {

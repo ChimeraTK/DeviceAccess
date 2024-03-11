@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-/******************************************************************************
- * Keep this file in a way that the tests also run with real hardware.
- ******************************************************************************/
+/**********************************************************************************************************************/
+/* Keep this file in a way that the tests also run with real hardware.                                                */
+/**********************************************************************************************************************/
 
 #include "BackendFactory.h"
 #include "boost_dynamic_init_test.h"
@@ -21,7 +21,7 @@ using ChimeraTK::numeric_address::BAR;
 
 typedef ChimeraTK::DeviceInfoMap::DeviceInfo DeviceInfo;
 
-/******************************************************************************/
+/**********************************************************************************************************************/
 struct RebotServerDetails {
   std::string ip;
   std::string port;
@@ -53,7 +53,7 @@ class RebotTestClass {
   void checkWriteReadFromRegister(ChimeraTK::Device& rebotDevice);
 };
 
-/******************************************************************************/
+/**********************************************************************************************************************/
 class RebotDeviceTestSuite : public test_suite {
  public:
   explicit RebotDeviceTestSuite(std::string const& cardAlias) : test_suite("RebotDeviceTestSuite") {
@@ -81,7 +81,7 @@ bool init_unit_test() {
   return true;
 }
 
-/******************************************************************************/
+/**********************************************************************************************************************/
 
 RebotTestClass::RebotTestClass(std::string const& cardAlias)
 : _cardAlias(cardAlias), _rebotServer(getServerDetails(cardAlias)) {}
@@ -135,16 +135,13 @@ void RebotTestClass::testReadWriteAPIOfRebotBackend() {
   ChimeraTK::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
   rebotBackend.open();
 
-  /*****************
-   * The dummy server wites 0xDEADDEAD to the start address 0x04. Use this for
-   * testing
-   */
+  // The dummy server wites 0xDEADDEAD to the start address 0x04. Use this for testing.
   uint32_t address = 0x04;
   int32_t readValue = 0;
   rebotBackend.read(uint64_t(0), address, &readValue, sizeof(readValue));
   BOOST_CHECK_EQUAL(0xDEADBEEF, readValue);
 
-  /****************************************************************************/
+  /********************************************************************************************************************/
   // Single word read -  Hardcoding addresses for now
   uint64_t word_status_register_address = 0x8;
   int32_t data = -987;
@@ -154,7 +151,7 @@ void RebotTestClass::testReadWriteAPIOfRebotBackend() {
   rebotBackend.read(0, word_status_register_address, &readValue, sizeof(readValue));
 
   BOOST_CHECK_EQUAL(data, readValue);
-  /****************************************************************************/
+  /********************************************************************************************************************/
 
   // Multiword read/write
   uint32_t word_clk_mux_addr = 28;

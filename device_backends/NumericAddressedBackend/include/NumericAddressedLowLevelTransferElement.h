@@ -17,7 +17,7 @@ namespace ChimeraTK {
     struct NumericAddressedPrePostActionsImplementor;
   } // namespace detail
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends,
    * responsible for the underlying raw data access. This accessor is never
    * directly returned to the user and thus is based only on the TransferElement

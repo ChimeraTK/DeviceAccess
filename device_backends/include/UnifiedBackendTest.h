@@ -1186,7 +1186,7 @@ namespace ChimeraTK {
     d.close();
   }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Turn off the warning about parameter parentheses. They probably are even wrong for template arguments,
 // and clutter the readability for variable names.

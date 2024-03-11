@@ -22,7 +22,7 @@ namespace ChimeraTK {
 
   class PersistentDataStorage;
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Base class for register accessors abstractors independent of the UserType */
   class TransferElementAbstractor {
@@ -206,12 +206,12 @@ namespace ChimeraTK {
     boost::shared_ptr<TransferElement> _impl;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   inline bool TransferElementAbstractor::writeDestructively(ChimeraTK::VersionNumber versionNumber) {
     return _impl->writeDestructively(versionNumber);
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */
