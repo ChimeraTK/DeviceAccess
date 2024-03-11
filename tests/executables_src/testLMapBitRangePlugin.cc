@@ -127,22 +127,29 @@ BOOST_AUTO_TEST_CASE(testAccessorSanity) {
 
 BOOST_AUTO_TEST_CASE(testMathPluginChaining) {
   ChimeraTK::Device device;
+  // Regression test that you can chain the bit range plugin with the math plugin
+  // The LoByteClamped register is the low-byte of SimpleScalar, but has a math plugin
+  // chained that will clamp the written value
   device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
 
   auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
   accTarget.setAndWrite(0x1fff);
 
-  // Write some value in range (range is 0-5)
+  // Write some value in range (range is 0-5).
   auto accClamped = device.getScalarRegisterAccessor<int8_t>("LoByteClamped");
   accClamped.setAndWrite(0x01);
   accTarget.read();
+  // Check that the value is passed through correctly and that the upper byte is unchanged.
   BOOST_TEST(accTarget == 0x1f01);
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
 
-  // Write some value outside of the clamped range
+  // Write some value outside of the range clamped by the math plugin.
   accClamped.setAndWrite(55);
   accTarget.read();
+
+  // Check that the value is passed through the math plugin (clamped to max) and that the upper byte is unchanged.
   BOOST_TEST(accTarget == 0x1f05);
+  BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
 }
 
 /********************************************************************************************************************/
