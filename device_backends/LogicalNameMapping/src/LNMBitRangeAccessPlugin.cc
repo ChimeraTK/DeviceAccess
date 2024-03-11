@@ -62,8 +62,8 @@ namespace ChimeraTK::LNMBackend {
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
-      _writeable{_target->isWriteable()},
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift),
+      _numberOfBits(numberOfBits), _writeable{_target->isWriteable()},
       fixedPointConverter(name, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
@@ -121,7 +121,8 @@ namespace ChimeraTK::LNMBackend {
         this->_dataValidity = validity;
       }
       else {
-        throw ChimeraTK::logic_error("Cannot happen");
+        // This code should never be reached so long the the bit range plugin requires its target type to be uint64
+        assert(false);
       }
     }
 
@@ -231,21 +232,20 @@ namespace ChimeraTK::LNMBackend {
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
           R"(: Unparseable parameter "numberOfBits".)");
-      }
     }
 
-    if(const auto it = parameters.find("dataInterpretationFractionalBits"); it != parameters.end()) {
+    if(const auto it = parameters.find("fractionalBits"); it != parameters.end()) {
       // This is how you are supposed to use std::from_chars with std::string
       // NOLINTNEXTLINE(unsafe-buffer-usage)
       auto [suffix, ec]{
           std::from_chars(it->second.data(), it->second.data() + it->second.size(), dataInterpretationFractionalBits)};
       if(ec != std::errc()) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
-            R"(: Unparseable parameter "dataInterpretationFractionalBits".)");
+            R"(: Unparseable parameter "fractionalBits".)");
       }
     }
 
-    if(const auto it = parameters.find("dataInterpretationSigned"); it != parameters.end()) {
+    if(const auto it = parameters.find("signed"); it != parameters.end()) {
       std::stringstream ss(it->second);
       Boolean value;
       ss >> value;
