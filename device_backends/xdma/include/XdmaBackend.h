@@ -23,7 +23,6 @@ namespace ChimeraTK {
     std::optional<CtrlIntf> _ctrlIntf;
     std::vector<DmaIntf> _dmaChannels;
     std::array<std::unique_ptr<EventFile>, _maxInterrupts> _eventFiles;
-    std::array<bool, _maxInterrupts> _startInterruptHandlingCalled{};
 
     const std::string _devicePath;
 
