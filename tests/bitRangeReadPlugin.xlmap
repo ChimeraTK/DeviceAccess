@@ -102,7 +102,19 @@
         <plugin name="bitRange">
             <parameter name="shift">0</parameter>
             <parameter name="numberOfBits">8</parameter>
-            <parameter name="dataInterpretationSigned">true</parameter>
+            <parameter name="signed">true</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="LoByteClamped">
+        <targetDevice>this</targetDevice>
+        <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="math">
+            <parameter name="formula">return [ clamp(0,x,5) ]</parameter>
+        </plugin>
+        <plugin name="bitRange">
+            <parameter name="shift">0</parameter>
+            <parameter name="numberOfBits">8</parameter>
+            <parameter name="signed">true</parameter>
         </plugin>
     </redirectedRegister>
     <redirectedRegister name="LowerFixedPoint">
@@ -111,9 +123,8 @@
         <plugin name="bitRange">
             <parameter name="shift">0</parameter>
             <parameter name="numberOfBits">8</parameter>
-            <parameter name="dataInterpretationBits">8</parameter>
-            <parameter name="dataInterpretationFractionalBits">4</parameter>
-            <parameter name="dataInterpretationSigned">true</parameter>
+            <parameter name="fractionalBits">4</parameter>
+            <parameter name="signed">true</parameter>
         </plugin>
         <plugin name="typeHintModifier">
             <parameter name="type">float32</parameter>
