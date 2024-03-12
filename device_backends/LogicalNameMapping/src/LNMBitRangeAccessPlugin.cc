@@ -60,9 +60,11 @@ namespace ChimeraTK::LNMBackend {
     /******************************************************************************************************************/
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
-        uint64_t shift, uint64_t numberOfBits)
+        uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
+        uint64_t dataInterpretationIsSigned)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift),
-      _numberOfBits(numberOfBits), _writeable{_target->isWriteable()} {
+      _numberOfBits(numberOfBits), _writeable{_target->isWriteable()},
+      fixedPointConverter(name, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
             TransferElement::getName() + ": Cannot target non-scalar registers.");
@@ -99,32 +101,29 @@ namespace ChimeraTK::LNMBackend {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
       _target->postRead(type, hasNewData);
       if(!hasNewData) return;
-      auto validity = _target->dataValidity();
 
-      if constexpr(!std::is_integral<UserType>::value) {
-        // This should never be reached, the decorate function should make sure that we only have integral types here
-        assert(false);
-      }
-      else {
-        uint64_t v{};
-        static_assert(sizeof(TargetType) <= sizeof(uint64_t), "Target data type too big.");
-
-        auto targetValue = _target->accessData(0);
-        memcpy(std::addressof(v), std::addressof(targetValue), sizeof(TargetType));
+      if constexpr(std::is_same_v<uint64_t, TargetType>) {
+        auto validity = _target->dataValidity();
+        uint64_t v{_target->accessData(0)};
         v = (v & _maskOnTarget) >> _shift;
 
-        // There are bits set outside of the range of the UserType
-        // Clamping according to B.2.4 and setting the faulty flag
-        // FIXME: Probably easier once the FixpointConverter is supporting 64bit raw types
-        if((v & ~_userTypeMask) != 0) {
-          v = std::numeric_limits<UserType>::max();
+        buffer_2D[0][0] = fixedPointConverter.scalarToCooked<UserType>(uint32_t(v));
+        // Do a quick check if the fixed point converter clamped. Then set the
+        // data validity faulty according to B.2.4.1
+        // For proper implementation of this, the fixed point converter needs to signalize
+        // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
+        auto raw = fixedPointConverter.toRaw(buffer_2D[0][0]);
+        if(raw != v) {
           validity = DataValidity::faulty;
         }
-        memcpy(buffer_2D[0].data(), &v, sizeof(UserType));
-      }
 
-      this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
-      this->_dataValidity = validity;
+        this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
+        this->_dataValidity = validity;
+      }
+      else {
+        // This code should never be reached so long the the bit range plugin requires its target type to be uint64
+        assert(false);
+      }
     }
 
     /******************************************************************************************************************/
@@ -137,23 +136,11 @@ namespace ChimeraTK::LNMBackend {
             "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
       }
 
-      uint64_t value{};
-      if constexpr(!std::is_integral<UserType>::value) {
-        // This should never be reached, the decorate function should make sure that we only have integral types here
-        assert(false);
-      }
-      else {
-        memcpy(&value, buffer_2D[0].data(), sizeof(UserType));
-      }
+      auto value = fixedPointConverter.toRaw(buffer_2D[0][0]);
 
-      // We have received more data than we actually have bits for
-      if((value & ~_baseBitMask) != 0) {
-        this->_dataValidity = DataValidity::faulty;
-        value = _baseBitMask;
-      }
-      else {
-        this->_dataValidity = DataValidity::ok;
-      }
+      // FIXME: Not setting the data validity according to the spec point B2.5.1.
+      // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
+      // To be revisted after fixing https://redmine.msktools.desy.de/issues/12912
 
       // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
       // Otherwise it will overwrite the
@@ -206,6 +193,7 @@ namespace ChimeraTK::LNMBackend {
     ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
     bool _writeable{false};
+    FixedPointConverter fixedPointConverter;
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::_target;
   };
@@ -243,7 +231,25 @@ namespace ChimeraTK::LNMBackend {
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
-          R"(: Missing parameter "numberOfBits".)");
+          R"(: Unparseable parameter "numberOfBits".)");
+    }
+
+    if(const auto it = parameters.find("fractionalBits"); it != parameters.end()) {
+      // This is how you are supposed to use std::from_chars with std::string
+      // NOLINTNEXTLINE(unsafe-buffer-usage)
+      auto [suffix, ec]{
+          std::from_chars(it->second.data(), it->second.data() + it->second.size(), dataInterpretationFractionalBits)};
+      if(ec != std::errc()) {
+        throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
+            R"(: Unparseable parameter "fractionalBits".)");
+      }
+    }
+
+    if(const auto it = parameters.find("signed"); it != parameters.end()) {
+      std::stringstream ss(it->second);
+      Boolean value;
+      ss >> value;
+      dataInterpretationIsSigned = value;
     }
   }
 
@@ -264,8 +270,8 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
     if constexpr(std::is_integral<TargetType>::value) {
-      return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(
-          backend, target, params._name, _shift, _numberOfBits);
+      return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(backend, target, params._name,
+          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
 
     assert(false);
