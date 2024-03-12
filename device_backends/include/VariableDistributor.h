@@ -101,7 +101,7 @@ namespace ChimeraTK {
   template<>
   template<typename UserType>
   std::unique_ptr<AsyncVariable> VariableDistributor<std::nullptr_t>::createAsyncVariable(
-      [[maybe_unused]] AccessorInstanceDescriptor const& descriptor) {
+      AccessorInstanceDescriptor const&) {
     // for the full implementation
     // - extract size from catalogue and instance descriptor
     return std::make_unique<VoidAsyncVariable<UserType>>(_sourceBuffer, _version, 1, 1);

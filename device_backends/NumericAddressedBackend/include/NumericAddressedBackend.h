@@ -128,6 +128,9 @@ namespace ChimeraTK {
      */
     virtual void startInterruptHandlingThread(uint32_t interruptNumber);
 
+    /** Turn off the internal variable which remembers that async is active. */
+    void setExceptionImpl() noexcept override;
+
    protected:
     /*
      * Register catalogue. A reference is used here which is filled from _registerMapPointer in the constructor to allow
@@ -163,19 +166,22 @@ namespace ChimeraTK {
     VersionNumber dispatchInterrupt(uint32_t interruptNumber);
 
    private:
+    using AsyncDomainPtr_t = boost::weak_ptr<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>;
+
     /**
      *  This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
      *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not
      *  modified. This map is filled in the constructor. The rest of the code is accessing it through the const
-     *  _primaryInterruptDistributors reference, which is thread safe.
+     *  _asyncDomainImpls, which is thread safe.
      */
-    std::map<uint32_t, boost::shared_ptr<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>>
-        _primaryInterruptDistributorsNonConst;
+    std::map<uint32_t, std::unique_ptr<AsyncDomainPtr_t>> _asyncDomainImplsNonConst;
 
     /** Access to const members of std::containers is thread safe. So we use a const reference throughout the code.
+     *  As the target is a weak pointer, which cannot be const because we have to lock it and re-assign a value,
+     *  we put a const unique_ptr in between which is holding the weak pointer.
+     *  The constness is only needed to keep iterators valid across multiple threads without holding a lock.
      */
-    std::map<uint32_t, boost::shared_ptr<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>> const&
-        _primaryInterruptDistributors{_primaryInterruptDistributorsNonConst};
+    std::map<uint32_t, std::unique_ptr<AsyncDomainPtr_t>> const& _asyncDomainImpls{_asyncDomainImplsNonConst};
 
     InterruptControllerHandlerFactory _interruptControllerHandlerFactory{this};
 
@@ -184,6 +190,9 @@ namespace ChimeraTK {
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
+    /** We have to remember this in case a new AsyncDomain is created after calling ActivateAsyncRead. */
+    std::atomic_bool _asyncIsActive{false};
   };
 
 } // namespace ChimeraTK

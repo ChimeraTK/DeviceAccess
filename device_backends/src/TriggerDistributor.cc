@@ -157,7 +157,7 @@ namespace ChimeraTK {
     }
 
     return distributor->template subscribe<UserType>(name, numberOfWords, wordOffsetInRegister, flags);
-  };
+  }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TriggerDistributor::SubscriptionImplementor);
 
