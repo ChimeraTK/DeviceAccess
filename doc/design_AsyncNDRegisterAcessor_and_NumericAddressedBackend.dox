@@ -100,14 +100,14 @@ digraph reverse_ownership_scheme {
   Backend[color=blue, fontcolor=blue]
   AsyncDomainsContainer[color=blue, fontcolor=blue]
   Backend->AsyncDomainsContainer[color=blue, fontcolor=blue]
-  AsyncDomain[label="AsyncDomain\<nullptr_t\>", color=blue, fontcolor=blue];
+  AsyncDomain[label="AsyncDomain\<nullptr_t\>"];
   AsyncDomain -> TriggerDistributor [ arrowhead="empty", style="dashed"]
   TriggerDistributor -> AsyncDomain
-  Backend -> AsyncDomain[color=blue, fontcolor=blue]
+  Backend -> AsyncDomain[ arrowhead="empty", style="dashed"]
   AsyncDomainsContainer -> AsyncDomain [ arrowhead="empty", style="dashed"]
   
-  secondAsyncDomain[label ="AsyncDomain\<nullptr_t\>", style="dotted", color=blue, fontcolor=blue]
-  Backend -> secondAsyncDomain[color=blue, fontcolor=blue]
+  secondAsyncDomain[label ="AsyncDomain\<nullptr_t\>", style="dotted"]
+  Backend -> secondAsyncDomain[ arrowhead="empty", style="dashed"]
   secondPrimaryDistributor[label ="TriggerDistributor", style="dotted"]
   secondAsyncDomain -> secondPrimaryDistributor [ arrowhead="empty", style="dashed"];
   secondPrimaryDistributor -> secondAsyncDomain
@@ -164,6 +164,10 @@ digraph reverse_ownership_scheme {
   hdlAccs1->TriggerDistributor2 [ ltail=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
   hdlAccs1->TriggerDistributor2 [ ltail=cluster_interruptCtrlHdl1, label=" ", dir=back ];
 
+  TriggerDistributor3 [label = TriggerDistributor, style="dotted"]
+  hdlAccs1:hdlAcc2->TriggerDistributor3 [ ltail=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
+  hdlAccs1:hdlAcc2->TriggerDistributor3 [ ltail=cluster_interruptCtrlHdl1, label=" ", dir=back ];
+
   subgraph cluster_PollDistributor2{
     label="TriggeredPollDistributor" URL="\ref TriggeredPollDistributor";
     TransferGroup2 [ label="TransferGroup" ]
@@ -210,16 +214,21 @@ digraph reverse_ownership_scheme {
 }
 \enddot
 
-- The triggers (resulting from interrupts) are dirstibuted from left to right, mostly through weak pointers (dashed lines and empty arrow head)
-- For each interrupt handler thread there is one AsyncDomain which implements a central lock for the whole tree behind it. It protects the trigger distribution against concurrent subscriptions of accessors and the sending of excptions. The AsyncDomain is of the backend data type "nullptr_t" because the triggers are conceptually void. The NumericAddressedBackend is holding shared pointers to the AsyncDomains, but other backends might only have weak pointers.
-- The single instance of the AsyncDomainsContainter is responsible for distributing exceptions to all AsyncDomains. It is always holding shared pointer to the AsyncDomains.
+- The triggers (resulting from interrupts) are distributed from left to right, mostly through weak pointers (dashed lines and empty arrow head)
+- For each interrupt handler thread there is one AsyncDomain which implements a central lock for the whole tree behind it.
+  It protects the trigger distribution against concurrent subscriptions of accessors and the sending of exceptions.
+  The AsyncDomain is of the backend data type "nullptr_t" because the triggers are conceptually void.
+  The NumericAddressedBackend is holding weak pointers to the AsyncDomains. The AsyncDomains are created when they are
+  needed, i.e. when an accessor down the tree is created.
+  Other backends might hold shared pointers to AsyncDomains, depending on the implementation.
+- The single instance of the AsyncDomainsContainter is responsible for distributing exceptions to all AsyncDomains. It is always holding weak pointers to the AsyncDomains.
 - InterruptControllerHandlers and TriggeredPollDistributors are holding accessors to the backend to read data or do handshakes (red), which in turn are holding shared pointers to the backend (shared ownership). The backend must never (also not indirectly) hold a shared pointer to any of these entities because it would introduce a closed ownership circle and the backend could never be deleted properly.
-- Ownership via solid line arrow, mostly from left to right. In the end the AsyncNDRegisterAccessors handed out to the user (green) are are holding the whole infrastructure
-  (except for the AsyncDomains in blue)
+- The ownership is depicted via solid line arrows, mostly from right to left. In the end the AsyncNDRegisterAccessors handed out to the user (green) are holding the whole trigger distribution tree.
+  (except for the AsyncDomainsContainer in blue)
 - When an accessor is requested, the request goes through the AsyncDomain to the primary TriggerDistributor, which creates all required InterruptControllerHandlers, TriggerDistributors, VariableDistributors
   or TriggeredPollDistributors when needed, and hands out the AsyncNDRegisterAccessor which holds the ownership. It shares the ownership with other AsyncNDRegisterAccessors.
 - When the last owning AsyncNDRegisterAccessors goes out of scope, the according distributors are deleted.
-- If there are no subscribers, i.e. AsyncNDRegisterAccessors being held by the application, the AsyncDomain is empty and does nothing.
+- If there are no subscribers, i.e. AsyncNDRegisterAccessors being held by the application, the AsyncDomain shared pointers are empty and trigger distribution does nothing.
 
 
 #########################################################################################################################################

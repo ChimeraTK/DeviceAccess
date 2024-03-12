@@ -40,20 +40,15 @@ namespace ChimeraTK {
         }
       }
 
-      // Create all AsyncDomains. They are still empty here. The TriggerDistributors, TriggeredPollDistributors,
-      // VariableDistributors and InterruptControllerHandlers will be added when accessors are subscribing (see \ref
-      // design_TriggerDistributor).
-      auto domainsContainer = std::make_unique<AsyncDomainsContainer<uint32_t>>();
+      // Create the containers for the AsyncDomains. We have the AsyncDomainsContainer for the
+      // base class (shared) pointer. It is filled dynamically and has a lock because it is only accessed when creating
+      // accessors and sending exceptions.
+      _asyncDomainsContainer = std::make_unique<AsyncDomainsContainer<uint32_t>>();
+      // There also is the container for the implementations. It is only accessed by the const reference after
+      // filling it here, so we don't need a lock for all interrupts during interrupt distribution.
       for(const auto& interruptID : _registerMap.getListOfInterrupts()) {
-        auto creatorFct = [&](boost::shared_ptr<AsyncDomain> asyncDomain) {
-          return boost::make_shared<TriggerDistributor>(shared_from_this(), &_interruptControllerHandlerFactory,
-              std::vector<uint32_t>({interruptID.front()}), nullptr, asyncDomain);
-        };
-        auto asyncDomain = boost::make_shared<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>(creatorFct);
-        _primaryInterruptDistributorsNonConst.try_emplace(interruptID.front(), asyncDomain);
-        domainsContainer->asyncDomains.try_emplace(interruptID.front(), asyncDomain);
+        _asyncDomainImplsNonConst.try_emplace(interruptID.front(), std::make_unique<AsyncDomainPtr_t>());
       }
-      _asyncDomainsContainer = std::move(domainsContainer);
     }
   }
 
@@ -140,13 +135,26 @@ namespace ChimeraTK {
             "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
       }
 
-      const auto& primaryDistributor = _primaryInterruptDistributors.at(registerInfo.interruptId.front());
+      auto asyncDomain = _asyncDomainImpls.at(registerInfo.interruptId.front())->lock();
+
+      if(!asyncDomain) {
+        auto creatorFct = [&](boost::shared_ptr<AsyncDomain> domain) {
+          return boost::make_shared<TriggerDistributor>(shared_from_this(), &_interruptControllerHandlerFactory,
+              std::vector<uint32_t>({registerInfo.interruptId.front()}), nullptr, domain);
+        };
+        asyncDomain = boost::make_shared<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>(creatorFct);
+        *_asyncDomainImpls.at(registerInfo.interruptId.front()) = asyncDomain;
+        auto& domainsContainer = dynamic_cast<AsyncDomainsContainer<uint32_t>&>(*_asyncDomainsContainer);
+        domainsContainer.addAsyncDomain(registerInfo.interruptId.front(), asyncDomain);
+        if(_asyncIsActive) {
+          asyncDomain->activate(nullptr, {});
+          startInterruptHandlingThread(registerInfo.interruptId.front());
+        }
+      }
 
       auto newSubscriber =
-          primaryDistributor->subscribe<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
-      // The new subscriber might already be activated. Hence the exception backend is already set by the interrupt
-      // distributor.
-      startInterruptHandlingThread(registerInfo.interruptId.front());
+          asyncDomain->subscribe<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+      // The new subscriber might already be activated. Hence the exception backend is already set during creation.
       return newSubscriber;
     }
     return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
@@ -223,9 +231,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void NumericAddressedBackend::activateAsyncRead() noexcept {
+    _asyncIsActive = true;
     VersionNumber v{};
-    for(const auto& it : _primaryInterruptDistributors) {
-      it.second->activate(nullptr, v);
+    for(const auto& it : _asyncDomainImpls) {
+      auto asyncDomain = it.second->lock();
+      if(asyncDomain) {
+        asyncDomain->activate(nullptr, v);
+        startInterruptHandlingThread(it.first);
+      }
     }
   }
 
@@ -237,8 +250,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void NumericAddressedBackend::close() {
-    for(const auto& it : _primaryInterruptDistributors) {
-      it.second->deactivate();
+    _asyncIsActive = false;
+    for(const auto& it : _asyncDomainImpls) {
+      auto asyncDomain = it.second->lock();
+      if(asyncDomain) {
+        asyncDomain->deactivate();
+      }
     }
     closeImpl();
   }
@@ -249,7 +266,11 @@ namespace ChimeraTK {
     // This function just makes sure that at() is used to access the _primaryInterruptDistributors map,
     // which guarantees that the map is not altered.
     VersionNumber v{};
-    _primaryInterruptDistributors.at(interruptNumber)->distribute(nullptr, v);
+    auto asyncDomain = _asyncDomainImpls.at(interruptNumber)->lock();
+
+    if(asyncDomain) {
+      asyncDomain->distribute(nullptr, v);
+    }
     return v;
   }
 
@@ -263,6 +284,12 @@ namespace ChimeraTK {
 
   MetadataCatalogue NumericAddressedBackend::getMetadataCatalogue() const {
     return _metadataCatalogue;
+  }
+
+  /********************************************************************************************************************/
+
+  void NumericAddressedBackend::setExceptionImpl() noexcept {
+    _asyncIsActive = false;
   }
 
   /********************************************************************************************************************/

@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <thread>
 
 namespace ChimeraTK {
@@ -35,15 +36,39 @@ namespace ChimeraTK {
     explicit AsyncDomainsContainer();
     ~AsyncDomainsContainer() override;
 
-    std::map<KeyType, boost::weak_ptr<AsyncDomain>> asyncDomains;
     void sendExceptions(const std::string& exceptionMessage) override;
+
+    /**
+     * Adds an AyncDomain to the container. If there is already an entry for that key, and that weak pointer can be
+     * locked, it throws a ChimeraTK::logic_error. This function must only be called if the either an entry for that key
+     * does not exist, or the according share pointer is gone.
+     */
+    void addAsyncDomain(KeyType key, const boost::shared_ptr<AsyncDomain>& asyncDomain);
 
    protected:
     void distributeExceptions();
     cppext::future_queue<std::string> _startExceptionDistribution{2};
     std::thread _distributorThread;
     class StopThread : public std::exception {};
+
+    std::mutex _domainsMutex;
+    std::map<KeyType, boost::weak_ptr<AsyncDomain>> _asyncDomains;
   };
+
+  /********************************************************************************************************************/
+
+  template<typename KeyType>
+  void AsyncDomainsContainer<KeyType>::addAsyncDomain(KeyType key, const boost::shared_ptr<AsyncDomain>& asyncDomain) {
+    std::lock_guard<std::mutex> domainsLock(_domainsMutex);
+
+    auto domainIter = _asyncDomains.find(key);
+    if((domainIter != _asyncDomains.end()) && (domainIter->second.lock())) {
+      std::stringstream errorMessage;
+      errorMessage << "AsyncDomainsContainer: AsyncDomain with key '" << key << "' already exists.";
+      throw ChimeraTK::runtime_error(errorMessage.str());
+    }
+    _asyncDomains[key] = asyncDomain;
+  }
 
   /********************************************************************************************************************/
 
@@ -60,12 +85,16 @@ namespace ChimeraTK {
       }
 
       auto ex = std::make_exception_ptr(ChimeraTK::runtime_error(exceptionMessage));
-      for(auto& keyAndDomain : asyncDomains) {
-        auto domain = keyAndDomain.second.lock();
-        if(domain) {
-          domain->sendException(ex);
+
+      {
+        std::lock_guard<std::mutex> containerLock(_domainsMutex);
+        for(auto& keyAndDomain : _asyncDomains) {
+          auto domain = keyAndDomain.second.lock();
+          if(domain) {
+            domain->sendException(ex);
+          }
         }
-      }
+      } // lock scope
 
       _isSendingExceptions = false;
     }
