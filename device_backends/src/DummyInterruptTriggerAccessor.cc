@@ -45,24 +45,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void DummyInterruptTriggerAccessor<UserType>::doPreRead(TransferType) {
-    if(not _backend->isOpen()) {
-      throw ChimeraTK::logic_error("Device is not opened.");
-    }
-
-    if(_backend->throwExceptionRead) {
-      _backend->throwExceptionCounter++;
-      throw ChimeraTK::runtime_error("DummyBackend: exception on read requested by user");
-    }
-    _backend->checkActiveException();
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  void DummyInterruptTriggerAccessor<UserType>::doPostRead(TransferType, bool hasNewData) {
-    if(not hasNewData) return;
-    NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(1);
-    TransferElement::_versionNumber = {};
+    throw ChimeraTK::logic_error("Cannot read from write-only accessor.");
   }
 
   /********************************************************************************************************************/

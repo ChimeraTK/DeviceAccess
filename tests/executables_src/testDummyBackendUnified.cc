@@ -39,7 +39,7 @@ static auto exceptionDummy =
 struct Interrupt_dummy {
   std::string path() { return "/DUMMY_INTERRUPT_6"; }
   bool isWriteable() { return true; }
-  bool isReadable() { return true; }
+  bool isReadable() { return false; }
   ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
