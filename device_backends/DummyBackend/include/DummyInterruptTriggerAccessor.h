@@ -31,8 +31,6 @@ namespace ChimeraTK {
 
     void doPreRead(TransferType) override;
 
-    void doPostRead(TransferType, bool hasNewData) override;
-
     void doPreWrite(TransferType, VersionNumber) override;
 
     [[nodiscard]] bool isReadOnly() const override { return false; }
