@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnlyRegister) {
   // for the following test cases
 }
 
-BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
+BOOST_AUTO_TEST_CASE(testDummyInterruptCatalogue) {
   ChimeraTK::Device dummyDevice;
   dummyDevice.open("DUMMYD0");
 
@@ -473,7 +473,6 @@ BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
 
   const std::string DUMMY_INTERRUPT{"/DUMMY_INTERRUPT_3"};
-  auto ro_register = dummyDevice.getScalarRegisterAccessor<int>(DUMMY_INTERRUPT);
 
   // The suffixed register must not appear in the catalogue when iterating
   auto dummyCatalogue = dummyBackend->getRegisterCatalogue();
@@ -490,9 +489,42 @@ BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
   BOOST_CHECK(dummyBackend->getRegisterCatalogue().hasRegister(DUMMY_INTERRUPT));
   auto info = dummyCatalogue.getRegister(DUMMY_INTERRUPT);
   BOOST_CHECK_EQUAL(info.getRegisterName(), DUMMY_INTERRUPT);
+  BOOST_CHECK(!info.isReadable());
+  BOOST_CHECK(info.isWriteable());
+  BOOST_TEST(info.getDataDescriptor().fundamentalType() == DataDescriptor::FundamentalType::nodata);
 
-  // Don't close the device here because the backend needs to stay open
-  // for the following test cases
+  dummyDevice.close();
+}
+
+BOOST_AUTO_TEST_CASE(testDummyInterrupt) {
+  ChimeraTK::Device dummyDevice;
+  dummyDevice.open("DUMMYD0");
+  dummyDevice.activateAsyncRead();
+
+  const std::string DUMMY_INTERRUPT{"/DUMMY_INTERRUPT_3"};
+  //
+  // auto ro_register = dummyDevice.getScalarRegisterAccessor<int>(DUMMY_INTERRUPT);
+  auto dummyAsyncAccessor = dummyDevice.getVoidRegisterAccessor(DUMMY_INTERRUPT);
+  BOOST_CHECK(!dummyAsyncAccessor.isReadable());
+  BOOST_CHECK(!dummyAsyncAccessor.isReadOnly());
+  BOOST_CHECK(dummyAsyncAccessor.isWriteable());
+  BOOST_CHECK_THROW(dummyAsyncAccessor.readNonBlocking(), ChimeraTK::logic_error);
+
+  const std::string INTERRUPT{"/!3"}; // canonical path for INTERRUPT3
+  auto asyncAccessor = dummyDevice.getVoidRegisterAccessor(INTERRUPT, {AccessMode::wait_for_new_data});
+  asyncAccessor.read(); // the initial value has arrived
+
+  BOOST_CHECK(!asyncAccessor.readNonBlocking());
+  dummyAsyncAccessor.write();
+  BOOST_CHECK(asyncAccessor.readNonBlocking());
+  BOOST_CHECK(!asyncAccessor.readNonBlocking());
+  dummyAsyncAccessor.write();
+  dummyAsyncAccessor.write();
+  BOOST_CHECK(asyncAccessor.readNonBlocking());
+  BOOST_CHECK(asyncAccessor.readNonBlocking());
+  BOOST_CHECK(!asyncAccessor.readNonBlocking());
+
+  dummyDevice.close();
 }
 
 /**********************************************************************************************************************/
