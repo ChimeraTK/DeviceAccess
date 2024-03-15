@@ -1605,6 +1605,9 @@ namespace ChimeraTK {
 
       std::cout << "... registerName = " << registerName << std::endl;
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+      // a helper to the same register to make sure the sending thread has distributed into the queues before
+      // sending the next data
+      auto helper = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
       // Initial value (stays unchecked here)
       reg.read();
@@ -1626,13 +1629,21 @@ namespace ChimeraTK {
       BOOST_CHECK(reg.getVersionNumber() > someVersion);
       someVersion = reg.getVersionNumber();
 
+      // Clear the queue of the helper so it afterwards will block until the data from the next setRemoteValue() has arrived
+      helper.readLatest();
+
       // Set multiple remote values in a row - they will be queued
       x.setRemoteValue();
       auto v2 = x.template getRemoteValue<UserType>();
+      helper.read();
+
       x.setRemoteValue();
       auto v3 = x.template getRemoteValue<UserType>();
+      helper.read();
+
       x.setRemoteValue();
       auto v4 = x.template getRemoteValue<UserType>();
+      helper.read();
 
       // Read and check second value
       reg.read();
@@ -1694,25 +1705,33 @@ namespace ChimeraTK {
       VersionNumber someVersion{nullptr};
 
       std::cout << "... registerName = " << registerName << std::endl;
-      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+      auto overrunningReg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+      // same register as the overrunningReg. They are both filled by the same thread, so we know that data has been
+      // pushed into the queue where we want to force an overrun
+      auto referenceReg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
       // Initial value (stays unchecked here)
-      reg.read();
+      overrunningReg.read();
+      referenceReg.read();
       usleep(100000); // give potential race conditions a chance to pop up more easily...
-      BOOST_CHECK(reg.readNonBlocking() == false);
+      BOOST_CHECK(overrunningReg.readNonBlocking() == false);
 
       // Provoke queue overflow by filling many values. We are only interested in the last one.
       for(size_t i = 0; i < 10; ++i) {
         x.setRemoteValue();
+        // wait until it arrives in the reference reg so we are sure the other queue is actually overrunning
+        referenceReg.read();
       }
-      auto v5 = x.template getRemoteValue<UserType>();
+      auto val = x.template getRemoteValue<UserType>();
 
       // Read last written value (B.8.2.1)
-      BOOST_CHECK(reg.readLatest() == true);
-      CHECK_EQUALITY(reg, v5);
-      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
-      BOOST_CHECK(reg.getVersionNumber() > someVersion);
-      someVersion = reg.getVersionNumber();
+      BOOST_CHECK(overrunningReg.readLatest() == true);
+      // Use check with timeout. It might be that the referenceReg was filled, but the overrunning reg not yet because
+      // the thread was scheduled out
+      CHECK_EQUALITY_TIMEOUT(overrunningReg, val, 10000);
+      BOOST_CHECK(overrunningReg.dataValidity() == DataValidity::ok);
+      BOOST_CHECK(overrunningReg.getVersionNumber() > someVersion);
+      someVersion = overrunningReg.getVersionNumber();
     });
 
     // close device again
@@ -2661,18 +2680,22 @@ namespace ChimeraTK {
       auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
 
       reg.read(); // initial value
-
       VersionNumber someVersion = reg.getVersionNumber();
 
+      // Backends do not guarantee that the same data and version number are not send twice. Especially for the polled
+      // initial value there is the intrinsic race condition that the subscription and the according pull are happening
+      // concurrently and the data and version number are seen twice.
+      // For the polling backends there is no guarantee that the poll and the data are really matching, so it
+      // might be that the same data is seen twice for different version numbers.
+      //
+      // What is guaranteed if we read after each setRemoteValue(): Once we see the new data, it has to have a new
+      // version number.
+
       for(size_t i = 0; i < 2; ++i) {
-        // Set remote value to be read.
         x.setRemoteValue();
-
-        // Read value
-        reg.read();
-
-        // Check application buffer
-        BOOST_CHECK(reg.getVersionNumber() > someVersion);
+        auto val = x.template getRemoteValue<UserType>();
+        CHECK_EQUALITY_TIMEOUT(reg, val, 30000);
+        BOOST_TEST(reg.getVersionNumber() > someVersion);
         someVersion = reg.getVersionNumber();
       }
     });
@@ -2811,8 +2834,14 @@ namespace ChimeraTK {
       // Change value, must be seen by both accessors, again same version expected
       x.setRemoteValue();
 
-      reg.read();
-      reg2.read();
+      // We have no guarantee that there is only one value in the queue. The setRemoteValue also send the data, and
+      // depending on the subscription status of reg and reg2 they might see this value in addition to initial value,
+      // with unknown timing (extra threads and maybe processes involved). We wait until we get the data that was last
+      // written on both accessors, and then compare the version number.
+      auto val = x.template getRemoteValue<UserType>();
+
+      CHECK_EQUALITY_TIMEOUT(reg, val, 30000);
+      CHECK_EQUALITY_TIMEOUT(reg2, val, 30000);
       BOOST_CHECK_EQUAL(reg.getVersionNumber(), reg2.getVersionNumber());
     });
 
