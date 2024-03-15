@@ -39,15 +39,10 @@ namespace ChimeraTK {
 
       auto distributor = weakDistributor->lock();
       if(!distributor) {
-        distributor = boost::make_shared<DistributorType>(_backend, _id, shared_from_this(), _asyncDomain);
+        distributor = boost::make_shared<DistributorType>(_backend, shared_from_this(), _asyncDomain);
         *weakDistributor = distributor;
         if(_asyncDomain->unsafeGetIsActive()) {
-          if constexpr(std::is_same<DistributorType, TriggeredPollDistributor>::value) {
-            distributor->activate({});
-          }
-          else if constexpr(std::is_same<DistributorType, VariableDistributor<std::nullptr_t>>::value) {
-            distributor->activate(nullptr, {});
-          }
+          distributor->distribute(nullptr, {});
         }
       }
       return distributor;
@@ -85,7 +80,7 @@ namespace ChimeraTK {
     }
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
-      pollDistributor->trigger(version);
+      pollDistributor->distribute(nullptr, version);
     }
     auto controllerHandler = _interruptControllerHandler.lock();
     if(controllerHandler) {
@@ -102,7 +97,7 @@ namespace ChimeraTK {
   void TriggerDistributor::activate([[maybe_unused]] std::nullptr_t, VersionNumber version) {
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
-      pollDistributor->activate(version);
+      pollDistributor->distribute(nullptr, version);
     }
     auto controllerHandler = _interruptControllerHandler.lock();
     if(controllerHandler) {
@@ -110,7 +105,7 @@ namespace ChimeraTK {
     }
     auto variableDistributor = _variableDistributor.lock();
     if(variableDistributor) {
-      variableDistributor->activate(nullptr, version);
+      variableDistributor->distribute(nullptr, version);
     }
   }
 

@@ -9,43 +9,25 @@
 #include <memory>
 
 namespace ChimeraTK {
-  /** The TriggerPollDistributor has two main functionalities:
-   *  * It calls functions for all asynchronous accessors associated with one interrupt
-   *  * It serves as a subscription manager
+  /**
+   *  The TriggeredPollDistributor has std::nullptr_t source data type and is polling the data for the AsyncVariables
+   *  via synchronous accessors in TransferGroup.
    *
-   *  This is done in a single class because the container with the fluctuating number of
-   *  subscribed variables is not thread safe. This class implements a lock so
-   *  dispatching an interrupt is safe against concurrent subscription/unsubscription.
    */
-  class TriggeredPollDistributor : public AsyncAccessorManager {
+  class TriggeredPollDistributor : public SourceTypedAsyncAccessorManager<std::nullptr_t> {
    public:
-    TriggeredPollDistributor(boost::shared_ptr<DeviceBackend> backend, std::vector<uint32_t> interruptID,
-        boost::shared_ptr<TriggerDistributor> parent, boost::shared_ptr<AsyncDomain> asyncDomain);
+    TriggeredPollDistributor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<TriggerDistributor> parent,
+        boost::shared_ptr<AsyncDomain> asyncDomain);
 
-    /** Poll all sync variables and push the data via their async counterparts. Creates a new VersionNumber and
-     * sends all data with this version.
-     */
-    void trigger(VersionNumber version);
+    /** Poll all sync variables. */
+    bool prepareIntermediateBuffers() override;
 
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(AccessorInstanceDescriptor const& descriptor);
 
-    void activate(VersionNumber version);
-
    protected:
-    void asyncVariableMapChanged() override {
-      if(_asyncVariables.empty()) {
-        // all asyncVariables have been unsubscribed - we can finally remove the TransferGroup
-        // This is important since it's elements still keep shared pointers to the backend, creating a shared-ptr loop
-        // replace it by a new TransferGroup just in case another async variable would be created later
-        _transferGroup = std::make_unique<TransferGroup>();
-      }
-    }
-    // unique_ptr because we want to delete it manually
-    std::unique_ptr<TransferGroup> _transferGroup{new TransferGroup};
-    std::vector<uint32_t> _id;
+    TransferGroup _transferGroup;
     boost::shared_ptr<TriggerDistributor> _parent;
-    VersionNumber _version{nullptr};
   };
 
   /********************************************************************************************************************/
@@ -91,7 +73,7 @@ namespace ChimeraTK {
       }
     }
 
-    _transferGroup->addAccessor(syncAccessor);
+    _transferGroup.addAccessor(syncAccessor);
     return std::make_unique<PolledAsyncVariable<UserType>>(syncAccessor, _version);
   }
 

@@ -27,6 +27,8 @@ namespace ChimeraTK {
     virtual void sendException(const std::exception_ptr& e) noexcept = 0;
     virtual ~AsyncDomain() = default;
 
+    std::lock_guard<std::mutex> getDomainLock() { return std::lock_guard<std::mutex>{_mutex}; }
+
    protected:
     // This mutex is protecting all members and all functions in AsyncDomain and AsyncDomainImpl
     std::mutex _mutex;
@@ -46,7 +48,7 @@ namespace ChimeraTK {
     friend class InterruptControllerHandler;
 
     template<typename SourceType>
-    friend class VariableDistributor;
+    friend class SourceTypedAsyncAccessorManager;
 
     template<typename UserType>
     friend class AsyncNDRegisterAccessor;
