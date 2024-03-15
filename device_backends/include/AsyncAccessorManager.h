@@ -105,8 +105,50 @@ namespace ChimeraTK {
     boost::shared_ptr<DeviceBackend> _backend;
     boost::shared_ptr<AsyncDomain> _asyncDomain;
 
-    /// this virtual function lets derived classes react on subscribe / unsubscribe
-    virtual void asyncVariableMapChanged() {}
+    /** This virtual function lets derived classes react on subscribe / unsubscribe. */
+    virtual void asyncVariableMapChanged(TransferElementID) {}
+
+    /**
+     * We have to remember that we are holding the domain lock before we lock
+     * a weak pointer to an AsyncNDRegisterAccessor inside the AsyncVariable to resolve a race conditon:
+     * If all other owners go out of scope while we are distributing data or exceptions, releasing the weak pointer
+     * will call unsubscribe(). In this case we must not try to get the domain lock again in unsubscribe because we are
+     * already holding it in this thread. This implementation was chosen as opposed to using a recursive mutex, because
+     * re-acquiring the recursive mutex might cause lock order inversion and possible dead locks if other locks are
+     * involved in backends that are not part of the core framework.
+     *
+     * The variable is holding a pointer to the actual instance of the AsyncAccessorManager while distributing data or
+     * exceptions, and nullptr otherwise.
+     */
+    thread_local static AsyncAccessorManager* _isHoldingDomainLock;
+    /**
+     * If an unsubscription request is coming in while iterating the _asyncVariables container, we have to remember it
+     * and do it afterwards.
+     */
+    std::list<TransferElementID> _delayedUnsubscriptions;
+
+    /** Internal helper function to avoid code duplication. */
+    void unsubscribeImpl(TransferElementID id);
+  };
+
+  template<typename SourceType>
+  class SourceTypedAsyncAccessorManager : public AsyncAccessorManager {
+   public:
+    using AsyncAccessorManager::AsyncAccessorManager;
+    void distribute(SourceType, VersionNumber version);
+
+    /**
+     * Implement this function in case there is a step between setting the source buffer and filling the user buffers.
+     * The TriggeredPollDistributor is using this to poll the data from the device.
+     * The return status reports whether this step was successful. If not, the distribution will not happen.
+     * In case prepareIntermediateBuffers() is not successful, it must (explicitly or implicitly) call the backend's
+     * setException() method.
+     */
+    virtual bool prepareIntermediateBuffers() { return true; };
+
+   protected:
+    SourceType _sourceBuffer;
+    VersionNumber _version{nullptr};
   };
 
   /** AsyncVariableImpl contains a weak pointer to an AsyncNDRegisterAccessor<UserType> and a send buffer
@@ -204,9 +246,33 @@ namespace ChimeraTK {
     }
 
     _asyncVariables[newSubscriber->getId()] = std::move(untypedAsyncVariable);
+    asyncVariableMapChanged(newSubscriber->getId());
 
-    asyncVariableMapChanged();
     return newSubscriber;
+  }
+  /********************************************************************************************************************/
+  template<typename SourceType>
+  void SourceTypedAsyncAccessorManager<SourceType>::distribute(SourceType data, VersionNumber version) {
+    if(!_asyncDomain->unsafeGetIsActive()) {
+      return;
+    }
+
+    _sourceBuffer = data;
+    _version = version;
+
+    if(prepareIntermediateBuffers()) {
+      assert(_delayedUnsubscriptions.empty());
+      for(auto& var : _asyncVariables) {
+        var.second->fillSendBuffer();
+        _isHoldingDomainLock = this;
+        var.second->send(); // function from  the AsyncVariable base class
+        _isHoldingDomainLock = nullptr;
+      }
+      for(auto id : _delayedUnsubscriptions) {
+        unsubscribeImpl(id);
+      }
+      _delayedUnsubscriptions.clear();
+    }
   }
 
 } // namespace ChimeraTK

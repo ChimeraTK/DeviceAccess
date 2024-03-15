@@ -10,22 +10,15 @@
 namespace ChimeraTK {
 
   template<typename SourceType>
-  class VariableDistributor : public AsyncAccessorManager {
+  class VariableDistributor : public SourceTypedAsyncAccessorManager<SourceType> {
    public:
-    VariableDistributor(boost::shared_ptr<DeviceBackend> backend, std::vector<uint32_t> interruptID,
-        boost::shared_ptr<TriggerDistributor> parent, boost::shared_ptr<AsyncDomain> asyncDomain);
+    VariableDistributor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<TriggerDistributor> parent,
+        boost::shared_ptr<AsyncDomain> asyncDomain);
 
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(AccessorInstanceDescriptor const& descriptor);
 
-    void activate(SourceType, VersionNumber version);
-
-    void distribute(SourceType, VersionNumber version);
-
-    std::vector<uint32_t> _id;
     boost::shared_ptr<TriggerDistributor> _parent;
-    SourceType _sourceBuffer;
-    VersionNumber _version{nullptr};
   };
 
   /********************************************************************************************************************/
@@ -66,33 +59,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   template<typename SourceType>
   VariableDistributor<SourceType>::VariableDistributor(boost::shared_ptr<DeviceBackend> backend,
-      std::vector<uint32_t> interruptID, boost::shared_ptr<TriggerDistributor> parent,
-      boost::shared_ptr<AsyncDomain> asyncDomain)
-  : AsyncAccessorManager(backend, asyncDomain), _id(std::move(interruptID)), _parent(std::move(parent)) {
+      boost::shared_ptr<TriggerDistributor> parent, boost::shared_ptr<AsyncDomain> asyncDomain)
+  : SourceTypedAsyncAccessorManager<SourceType>(backend, asyncDomain), _parent(std::move(parent)) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable);
-  }
-
-  /********************************************************************************************************************/
-  template<typename SourceType>
-  void VariableDistributor<SourceType>::activate(SourceType data, VersionNumber version) {
-    assert(_asyncDomain->unsafeGetIsActive());
-    distribute(data, version);
-  }
-
-  /********************************************************************************************************************/
-  template<typename SourceType>
-  void VariableDistributor<SourceType>::distribute(SourceType data, VersionNumber version) {
-    if(!_asyncDomain->unsafeGetIsActive()) {
-      return;
-    }
-
-    _sourceBuffer = data;
-    _version = version;
-
-    for(auto& var : _asyncVariables) {
-      var.second->fillSendBuffer();
-      var.second->send(); // function from  the AsyncVariable base class
-    }
   }
 
   /********************************************************************************************************************/
