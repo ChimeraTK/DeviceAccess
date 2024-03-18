@@ -10,12 +10,7 @@ namespace ChimeraTK {
   }
 
   UioBackend::~UioBackend() {
-    closeImpl();
-
-    if(_interruptWaitingThread.joinable()) {
-      _stopInterruptLoop = true;
-      _interruptWaitingThread.join();
-    }
+    UioBackend::closeImpl();
   }
 
   boost::shared_ptr<DeviceBackend> UioBackend::createInstance(
@@ -40,8 +35,13 @@ namespace ChimeraTK {
 
   void UioBackend::closeImpl() {
     if(_opened) {
+      if(_interruptWaitingThread.joinable()) {
+        _stopInterruptLoop = true;
+        _interruptWaitingThread.join();
+      }
       _uioAccess->close();
     }
+
     _opened = false;
   }
 
@@ -69,12 +69,15 @@ namespace ChimeraTK {
     if(interruptNumber != 0) {
       throw ChimeraTK::logic_error("UIO: Backend only uses interrupt number 0");
     }
-
-    if(_launchThreadMutex.try_lock()) {
-      /* Mutex was found to be unlocked: Mutex is now locked so that handling thread will
-          be execute once and run until the destructor is called. */
-      _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptLoop, this);
+    if(!isFunctional()) {
+      return;
     }
+    if(_interruptWaitingThread.joinable()) {
+      return;
+    }
+
+    _stopInterruptLoop = false;
+    _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptLoop, this);
   }
 
   std::string UioBackend::readDeviceInfo() {
@@ -89,7 +92,13 @@ namespace ChimeraTK {
   void UioBackend::waitForInterruptLoop() {
     uint32_t numberOfInterrupts;
 
+    // This also enables the interrupts if they are not active.
     _uioAccess->clearInterrupts();
+
+    // Clearing active interrupts actually is only effective after a poll (inside waitForInterrupt)
+    if(_uioAccess->waitForInterrupt(0) > 0) {
+      _uioAccess->clearInterrupts();
+    }
 
     while(!_stopInterruptLoop) {
       try {

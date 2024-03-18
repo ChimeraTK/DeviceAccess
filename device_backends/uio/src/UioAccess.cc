@@ -14,7 +14,13 @@
 
 namespace ChimeraTK {
 
-  UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {
+  UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {}
+
+  UioAccess::~UioAccess() {
+    close();
+  }
+
+  void UioAccess::open() {
     if(boost::filesystem::is_symlink(_deviceFilePath)) {
       _deviceFilePath = boost::filesystem::canonical(_deviceFilePath);
     }
@@ -28,19 +34,12 @@ namespace ChimeraTK {
     if(_deviceFileDescriptor < 0) {
       throw ChimeraTK::runtime_error("UIO: Failed to open device file '" + getDeviceFilePath() + "'");
     }
-  }
-
-  UioAccess::~UioAccess() {
-    close();
-  }
-
-  void UioAccess::open() {
     UioMMap();
     _opened = true;
   }
 
   void UioAccess::close() {
-    if(!_opened) {
+    if(_opened) {
       UioUnmap();
       ::close(_deviceFileDescriptor);
       _opened = false;
