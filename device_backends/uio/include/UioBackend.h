@@ -13,7 +13,6 @@ namespace ChimeraTK {
    private:
     std::shared_ptr<UioAccess> _uioAccess;
 
-    std::mutex _launchThreadMutex;
     std::thread _interruptWaitingThread;
     std::atomic<bool> _stopInterruptLoop{false}; // Used to shut down thread
 
