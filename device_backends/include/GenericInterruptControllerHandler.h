@@ -116,9 +116,9 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _sie; // we either have both SIE or CIE or neither.
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _cie; //
 
-    bool _ierIsReallyImr;
-    bool _icrIsReallyIar;
-    bool _haveSieAndCie;
+    bool _ierIsReallyImr; //C_HAS_IMR
+    bool _icrIsReallyIar; 
+    bool _haveSieAndCie; 
     optionCode _optionMerMieGie;
 
     uint32_t _activeInterrupts; // a local copy of IER

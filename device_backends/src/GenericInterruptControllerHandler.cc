@@ -324,17 +324,23 @@ namespace ChimeraTK {
     }
 
     // Initialise register content
+
     //- [x] set MER = 3 if it exists.
     if(optionRegisterSettings[MER]) {
-      _mer->accessData(0) = 3;
+      //Turn on the Master Enable and HIE (hardware interrupt enable) bits.
+      _mer->accessData(0) = 3; 
       _mer->write();
     }
+
+    //get local copy of IER
+    _ier->read();
+    _activeInterrupts = _ier->accessData(0);
     
     // - [x] Make use of the parsed result
     // what variation do we expect in this signature? Always dummy? Always 0th element.second["module"]?
 
     //- [x] set MER = 3 if it exists.
-    // set class member copy of IER as a local copy
+    //- [x] set class member copy of IER as a local copy -- QUESTION when?
 
     // main registers to set: ISR, IER
     // optional registers:
@@ -351,7 +357,10 @@ namespace ChimeraTK {
   /******************************destructor*************************************************************************/
 
   GenericInterruptControllerHandler::~GenericInterruptControllerHandler() {
-    // TODO: Clear the enabled interrupts in the destructor.
+    // Clear the enabled interrupts
+    _isr->read();
+    _isr->accessData(0) &= ~_activeInterrupts;
+    _isr->write();
   }
 
   /******************************handle*****************************************************************************/
