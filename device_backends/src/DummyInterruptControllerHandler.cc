@@ -22,7 +22,7 @@ namespace ChimeraTK {
   /*****************************************************************************************************************/
 
   void DummyInterruptControllerHandler::handle(VersionNumber version) {
-    //version number uniquely tags the interupt.
+    //version number uniquely tags the interrupt.
     try {
       _activeInterrupts->read();
       for(uint32_t i = 0; i < 32; ++i) {
@@ -53,7 +53,7 @@ namespace ChimeraTK {
       boost::shared_ptr<TriggerDistributor> parent) {
     auto jdescription = nlohmann::json::parse(desrciption);
     auto module = jdescription["module"].get<std::string>();
-    return std::make_unique<DummyInterruptControllerHandler>(controllerHandlerFactory, controllerID, std::move(parent), module);
+    return std::make_unique<DummyInterruptControllerHandler>(controllerHandlerFactory, controllerID, std::move(parent), module); //module takes the place of the path
   }
 
 } // namespace ChimeraTK

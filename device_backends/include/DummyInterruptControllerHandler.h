@@ -15,7 +15,7 @@ namespace ChimeraTK {
         RegisterPath const& module);
     ~DummyInterruptControllerHandler() override = default;
 
-    void handle(VersionNumber version) override;
+    void handle(ChimeraTK::VersionNumber version) override;
 
     static std::unique_ptr<DummyInterruptControllerHandler> create(InterruptControllerHandlerFactory*,
         std::vector<uint32_t> const& controllerID, 
@@ -28,27 +28,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-/*********************************************************************************************************************/
-
-void DummyInterruptControllerHandler::handle(VersionNumber version) {
-  try {
-    _active_Interrupts->read();
-    for(uint32_t i = 0; i< 32; ++i) {
-      if(_activeInterrupts->accessData(0) & 0x1U << i) {
-        try {
-          auto distributor = _distributors.at(i).lock();
-          if(distributor) {
-            distributor->distribute(nullptr, version);
-          }
-        }
-        catch(std::out-of_range&){
-          _backend->setException("Error: DUmmyIntc reports unknown activit interrupt "+ std::to_string(i));
-        }
-      }
-    }
-  }
-  catch(ChimeraTK::runtime_error&) {
-    //Nothing to do. The transferElement part of _activeInterrupts has already called the backend's setException
-  }
-}
