@@ -147,7 +147,7 @@ namespace ChimeraTK {
         auto& domainsContainer = dynamic_cast<AsyncDomainsContainer<uint32_t>&>(*_asyncDomainsContainer);
         domainsContainer.addAsyncDomain(registerInfo.interruptId.front(), asyncDomain);
         if(_asyncIsActive) {
-          asyncDomain->activate(nullptr, {});
+          asyncDomain->activate(nullptr);
           startInterruptHandlingThread(registerInfo.interruptId.front());
         }
       }
@@ -232,11 +232,10 @@ namespace ChimeraTK {
 
   void NumericAddressedBackend::activateAsyncRead() noexcept {
     _asyncIsActive = true;
-    VersionNumber v{};
     for(const auto& it : _asyncDomainImpls) {
       auto asyncDomain = it.second->lock();
       if(asyncDomain) {
-        asyncDomain->activate(nullptr, v);
+        asyncDomain->activate(nullptr);
         startInterruptHandlingThread(it.first);
       }
     }
@@ -265,13 +264,12 @@ namespace ChimeraTK {
   VersionNumber NumericAddressedBackend::dispatchInterrupt(uint32_t interruptNumber) {
     // This function just makes sure that at() is used to access the _primaryInterruptDistributors map,
     // which guarantees that the map is not altered.
-    VersionNumber v{};
     auto asyncDomain = _asyncDomainImpls.at(interruptNumber)->lock();
 
     if(asyncDomain) {
-      asyncDomain->distribute(nullptr, v);
+      return asyncDomain->distribute(nullptr);
     }
-    return v;
+    return VersionNumber{nullptr};
   }
 
   /********************************************************************************************************************/

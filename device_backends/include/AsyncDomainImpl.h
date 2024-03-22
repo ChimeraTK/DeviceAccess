@@ -17,8 +17,36 @@ namespace ChimeraTK {
         std::function<boost::shared_ptr<DistributorType>(boost::shared_ptr<AsyncDomain>)> creatorFunction)
     : _creatorFunction(creatorFunction) {}
 
-    void distribute(BackendDataType data, VersionNumber version);
-    void activate(BackendDataType data, VersionNumber version);
+    /**
+     * Distribute the data via the associated distribution tree.
+     *
+     * If the backend can determine a version number from the data, it has to do this before calling distribute and give
+     * the version as an argument. Otherwise a new version is created under the domain lock.
+     *
+     * As the asynchronous subscription with its thread has to be started before activate() is called, it can happen
+     * that distribute with newer data and a newer version number is called before activate is called with the initial
+     * value. In this case, the data is stored and no data is distributed. The data will later be distributed during
+     * activation instead of the older polled initial value. The return value is VersionNumber{nullptr}.
+     *
+     * In case distribute is called after activate, with a version number older than the polled initial value, the data
+     * is dropped and not distributed. The return value is VersionNumber{nullptr}.
+     *
+     * @ return The version number that has been used for distribution, or VersionNumber{nullptr} if there was no distribution.
+     */
+    VersionNumber distribute(BackendDataType data, VersionNumber version = VersionNumber{nullptr});
+
+    /**
+     * Activate and distribute the initial value.
+     *
+     * If the backend can determine a version number from the data, it has to do this before calling distribute and give
+     * the version as an argument. Otherwise a new version is created under the domain lock.
+     *
+     * In case distribute has been called before with a version number newer than the version of the polled initial
+     * value, these data and version number are distributed instead.
+     *
+     *  @ return The version number that has been used for distribution.
+     */
+    VersionNumber activate(BackendDataType data, VersionNumber version = VersionNumber{nullptr});
     void deactivate();
     void sendException(const std::exception_ptr& e) noexcept override;
 
@@ -35,49 +63,68 @@ namespace ChimeraTK {
     // Data to resolve a race condition (see distribute and activate)
     BackendDataType _notDistributedData;
     VersionNumber _notDistributedVersion{nullptr};
+    VersionNumber _activationVersion{nullptr};
   };
 
   /********************************************************************************************************************/
 
   template<typename DistributorType, typename BackendDataType>
-  void AsyncDomainImpl<DistributorType, BackendDataType>::distribute(BackendDataType data, VersionNumber version) {
+  VersionNumber AsyncDomainImpl<DistributorType, BackendDataType>::distribute(
+      BackendDataType data, VersionNumber version) {
     std::lock_guard l(_mutex);
+    // everything incl. potential creation of a new version number must happen under the lock
+    if(version == VersionNumber(nullptr)) {
+      version = {};
+    }
 
     if(!_isActive) {
-      // Store the data. We might need it later if the data in activate is older due to a race condition
+      // Store the data. We might need it later if the data in activate is older due to a race condition.
       _notDistributedData = data;
       _notDistributedVersion = version;
-      return;
+      return VersionNumber{nullptr};
+    }
+
+    if(version < _activationVersion) {
+      return VersionNumber{nullptr};
     }
 
     auto distributor = _distributor.lock();
     if(!distributor) {
-      return;
+      return VersionNumber{nullptr};
     }
 
     distributor->distribute(data, version);
+    return version;
   }
 
   /********************************************************************************************************************/
 
   template<typename DistributorType, typename BackendDataType>
-  void AsyncDomainImpl<DistributorType, BackendDataType>::activate(BackendDataType data, VersionNumber version) {
+  VersionNumber AsyncDomainImpl<DistributorType, BackendDataType>::activate(
+      BackendDataType data, VersionNumber version) {
     std::lock_guard l(_mutex);
+    // everything incl. potential creation of a new version number must happen under the lock
+    if(version == VersionNumber(nullptr)) {
+      version = {};
+    }
 
     _isActive = true;
 
     auto distributor = _distributor.lock();
     if(!distributor) {
-      return;
+      return VersionNumber{nullptr};
     }
 
     if(version >= _notDistributedVersion) {
       distributor->activate(data, version);
+      _activationVersion = version;
     }
     else {
-      // due to a race condition, data has already been tried to
+      // Due to a race condition, it has been tried to distribute newer data before activate was called.
       distributor->activate(_notDistributedData, _notDistributedVersion);
+      _activationVersion = _notDistributedVersion;
     }
+    return _activationVersion;
   }
 
   /********************************************************************************************************************/
