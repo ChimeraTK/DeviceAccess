@@ -42,13 +42,13 @@ BOOST_AUTO_TEST_CASE(testIERwithISR) {
 
   accInterrupt.read(); // initial value after activation
 
-  auto ier = device.getScalarRegisterAccessor<int>("APP/IER");
+  auto ier = device.getScalarRegisterAccessor<int>("TEST0/IER");
 
   ier.read();
 
   BOOST_TEST(0x10 == ier);
 
-  auto isr = device.getScalarRegisterAccessor<uint32_t>("APP/ISR");
+  auto isr = device.getScalarRegisterAccessor<uint32_t>("TEST0/ISR");
   // prepare the status before sending the interrupt
   // set one more bit to be sensitive to the handshake (need to see changes)
   isr = 0x110;
@@ -82,13 +82,13 @@ BOOST_AUTO_TEST_CASE(testIERwithIAR) {
 
   accInterrupt.read(); // initial value after activation
 
-  auto ier = device.getScalarRegisterAccessor<uint32_t>("APP/IER");
+  auto ier = device.getScalarRegisterAccessor<uint32_t>("TEST1/IER");
 
   ier.read();
 
   BOOST_TEST(0x10 == ier);
 
-  auto accIAR = device.getScalarRegisterAccessor<uint32_t>("APP/IAR");
+  auto accIAR = device.getScalarRegisterAccessor<uint32_t>("TEST1/IAR");
 
   iar = 0x110;
   iar.write();
@@ -121,14 +121,14 @@ BOOST_AUTO_TEST_CASE(testIERwithICR) {
 
   accInterrupt.read(); // initial value after activation
 
-  auto ier = device.getScalarRegisterAccessor<uint32_t>("APP/IER");
+  auto ier = device.getScalarRegisterAccessor<uint32_t>("TEST2/IER");
 
   ier.read();
 
   BOOST_TEST(0x10 == ier);
 
 
-  auto accICR = device.getScalarRegisterAccessor<int>("APP/ICR");
+  auto accICR = device.getScalarRegisterAccessor<int>("TEST2/ICR");
 
   icr = 0x110;
   icr.write();
