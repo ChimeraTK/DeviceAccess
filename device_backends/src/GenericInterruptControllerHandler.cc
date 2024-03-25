@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace ChimeraTK {
-
   namespace genIntC {
 
     // TODO move to some string helper library
@@ -203,7 +202,7 @@ namespace ChimeraTK {
             controllerID2Str(controllerID) + ": Only SIE or SIE can be set, but not both.");
       }
 
-      if(optionRegisterSettings.test(IMR)) {  
+      if(optionRegisterSettings.test(IMaskR)) {  
         if(optionRegisterSettings.test(SIE)) {
           throw ChimeraTK::logic_error("Invalid register " + jdv1.OPTIONS_JSON_KEY +
               " combination specified in map file json descriptor for GenericInterruptControllerHandler " +
@@ -223,16 +222,18 @@ namespace ChimeraTK {
             controllerID2Str(controllerID) + ": Only ICR and IAR cannot not both be set.");
       }
 
-      // throw if both IMR and IER are there
-      if(optionRegisterSettings.test(IMR) and optionRegisterSettings.test(IER)) {
+      // throw if both IMaskR and IER are there
+      if(optionRegisterSettings.test(IMaskR) and optionRegisterSettings.test(IER)) {
         throw ChimeraTK::logic_error("Invalid register " + jdv1.OPTIONS_JSON_KEY +
             " combination specified in map file json descriptor for GenericInterruptControllerHandler " +
-            controllerID2Str(controllerID) + ": Only IER and IMR cannot not both be set.");
+            controllerID2Str(controllerID) + ": Only IER and IMR/IMaskR cannot not both be set.");
       }
 
       // throw if more than one entry of [MIE, GIE, MER] is there (test all combinations)
       int nMieGieMer =
-          ((int)optionRegisterSettings.test(MIE)) + optionRegisterSettings.test(GIE) + optionRegisterSettings.test(MER);
+          static_cast<int>(optionRegisterSettings.test(MIE)) + 
+          static_cast<int>(optionRegisterSettings.test(GIE)) +
+          static_cast<int>(optionRegisterSettings.test(MER));
       if(nMieGieMer > 1) {
         throw ChimeraTK::logic_error("Invalid register " + jdv1.OPTIONS_JSON_KEY +
             " combination specified in map file json descriptor for GenericInterruptControllerHandler " +
@@ -252,6 +253,13 @@ namespace ChimeraTK {
       assert(optionRegisterSettings.test(ISR)); // should never be false
     }                                           // steriliseOptionRegisterSettings
 
+    /*****************************************************************************************************************/
+
+    inline uint32_t i2Mask(const uint32_t ithInterrupt) {
+      // return a 32 bit mask with the ithInterrupt bit from the left set to 1 and all others 0
+      return 0x1U << ithInterrupt;
+    }
+
   } // namespace genIntC
 
   /********************************************************************************************************************/
@@ -268,7 +276,7 @@ namespace ChimeraTK {
   : InterruptControllerHandler(controllerHandlerFactory, controllerID, std::move(parent)), _path(registerPath.c_str()) {
     // Set required registers
     optionRegisterSettings.set(ISR); // Ensure that the required option ISR is always set.
-    if(not(optionRegisterSettings.test(IMR) or optionRegisterSettings.test(IER))) { // Ensure IMR or IER is on
+    if(not(optionRegisterSettings.test(IMaskR) or optionRegisterSettings.test(IER))) { // Ensure IMaskR or IER is on
       optionRegisterSettings.set(IER);
     }
     //Here we could explicitly note we're ignoring IPR with optionRegisterSettings.reset(IPR)
@@ -278,9 +286,10 @@ namespace ChimeraTK {
     // Setup Register Accessors with logic
     _isr = _backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(ISR), 1, 0, {});
 
-    _ierIsReallyImr = optionRegisterSettings.test(IMR);
-    _ier = _backend->getRegisterAccessor<uint32_t>(_path / (_ierIsReallyImr ? IMR : IER), 1, 0, {});
+    _ierIsReallyImaskr = optionRegisterSettings.test(IMaskR);
+    _ier = _backend->getRegisterAccessor<uint32_t>(_path / (_ierIsReallyImaskr ? IMaskR : IER), 1, 0, {});
 
+    _haveIcr = optionRegisterSettings.test(IAR) or optionRegisterSettings.test(ICR);
     _icrIsReallyIar = optionRegisterSettings.test(IAR);
     _icr = _backend->getRegisterAccessor<uint32_t>(_path / (_icrIsReallyIar ? IAR : ICR), 1, 0, {});
 
@@ -334,8 +343,36 @@ namespace ChimeraTK {
 
     //get local copy of IER
     _ier->read();
-    _activeInterrupts = _ier->accessData(0);
-    
+    if(_ierIsReallyImaskr) {
+      _activeInterrupts = ~_ier->accessData(0);
+    }
+    else {
+      _activeInterrupts = _ier->accessData(0);
+    }
+
+    //Disable any interrupts for which there is no valid distributor.
+    //QUESTION where do these distributors come from? Am I doing this too soon?
+    //QUESTION: Is this the right way to do this/
+    for(uint32_t i = 0; i < 32; ++i) {
+      if(_activeInterrupts & i2Mask(i)) { // retain mask pattern QUESTION is that right?
+        try {
+          auto distributor = _distributors.at(i).lock(); // retain
+          if(distributor) {
+          }
+          else{
+            _activeInterrupts &= ~i2Mask(i); // ith bit is 1, all others 0
+          }
+          _distributors.at(i).unlock();  //TODO put in if? //TODO not defined.
+        }
+        catch(std::out_of_range&) {
+          _backend->setException(
+              "Error: GenericInterruptControllerHandler reports unknown interrupt distributor " + std::to_string(i));
+        }
+        catch(ChimeraTK::runtime_error&) {
+        }
+      }
+    } // for
+
     // - [x] Make use of the parsed result
     // what variation do we expect in this signature? Always dummy? Always 0th element.second["module"]?
 
@@ -357,56 +394,184 @@ namespace ChimeraTK {
   /******************************destructor*************************************************************************/
 
   GenericInterruptControllerHandler::~GenericInterruptControllerHandler() {
-    // Clear the enabled interrupts
-    _isr->read();
-    _isr->accessData(0) &= ~_activeInterrupts;
-    _isr->write();
+    _clearAllEnabledInterrupt();
   }
 
-  /******************************handle*****************************************************************************/
+  /*****************************************************************************************************************/
+
+  void GenericInterruptControllerHandler::_clearInterrupt(uint32_t ithInterrupt){
+    uint32_t mask = i2Mask(ithInterrupt); // ith bit is 1, all others 0
+    try {
+      if(_haveIcr) {
+        _icr->accessData(0) = mask;
+        _icr->write();
+      }
+      else {
+        // acknowledge interrupt by setting ith bit of ISR to 0 directly
+        _isr->read();
+        _isr->accessData(0) &= ~mask;
+        _isr->write();
+      }
+    }
+    catch(ChimeraTK::runtime_error&) { }
+  } //_clearInterrupt
+
+  /*****************************************************************************************************************/
+  
+  void GenericInterruptControllerHandler::_clearAllInterrupt(){
+    try {
+      if(_haveIcr) {
+        _icr->accessData(0) = 0xFFFFFFFF;
+        _icr->write();
+      }
+      else {
+        _isr->accessData(0) = 0x0;
+        _isr->write();
+      }
+    }
+    catch(ChimeraTK::runtime_error&) { }
+  } //_clearAllInterrupt
+
+  /*****************************************************************************************************************/
+
+  void GenericInterruptControllerHandler::_clearAllEnabledInterrupt(){
+    try {
+      if(_haveIcr) {
+        _icr->accessData(0) = _activeInterrupts;
+        _icr->write();
+      }
+      else {
+        _isr->read();
+        _isr->accessData(0) &= ~_activeInterrupts;
+        _isr->write();
+      }
+    }
+    catch(ChimeraTK::runtime_error&) { }
+  } //_clearAllEnabledInterrupt
+
+  /*****************************************************************************************************************/
+
+  void GenericInterruptControllerHandler::_disableInterrupt(uint32_t ithInterrupt) {
+    //Enable/Disable of interrupts is done from the local copy of IER
+    //Which contains the bits for the accessors of THIS software instance. 
+    //There might be another process which is accessing other interrupts on the same (primary) controller.
+    /*
+    - When releasing accessor "!0:N" while still holding "!0:L"
+        - [ ] if SIE and CIE are there, it writes ``1<<N`` to CIE
+        - [ ] if IMR is there, it writes ~(`1<<L`) to IMR
+        - [x] if neither (SIE and CIE) nor IMR are present, or only IER is there, it writes (`1<<L`) to IER
+    */
+
+    uint32_t mask = i2Mask(ithInterrupt); // ith bit is 1, all others 0
+    _activeInterrupts &= ~mask;
+    try {
+      if(_ierIsReallyImaskr) {
+        // IMaskR is used, so SIE and CIE are not defined.
+        _ier->accessData(0) = ~_activeInterrupts;
+        _ier->write();
+      }
+      else {
+        if(_haveSieAndCie) {
+          _cie->accessData(0) = mask;
+          _cie->write();
+        }
+        else {
+          _ier->accessData(0) = _activeInterrupts;
+          _ier->write();
+        }
+      }
+    }
+    catch(ChimeraTK::runtime_error&) { }
+  } //_disableInterrupt
+
+  /*****************************************************************************************************************/
+/*
+   - When creating an accessor to "!0:N" (or a nested interrupt "!0:N:M") //MIR = IMR = IMaskR. 
+        - [x] if SIE and CIE are there, it writes ``1<<N`` to SIE and _clears_ with ``1<<N``
+        - [x] if IMR is there, it writes ~(``1<<N``) to IMR and _clears_ with ``1<<N`` 
+        - [x] if neither (SIE and CIE) nor MIR are present, or only IER is there, it writes ``1<<N`` to IER and _clears_ with ``1<<N``
+    - When creating accessor "!0:L" while still holding "!0:N"
+        - [x] if SIE and CIE are there, it writes `1<<L` to SIE and to CIE
+        - [ ] if IMR is there, it writes ~( (``1<<N``) | (`1<<L`) ) to MIR and _clears_ with `1<<L`
+        - [ ] if neither (SIE and CIE) nor IMR are present, or only IER is there, it writes ( ``1<<N``)|(`1<<L`) to IER and _clears_ with `1<<L`
+
+        //QUESTION: Does he really mean write 1<<N, or 1<<N | _activeInterrupts?
+*/
+  void GenericInterruptControllerHandler::_enableInterrupt(uint32_t ithInterrupt) {
+    uint32_t mask = i2Mask(ithInterrupt); // ith bit is 1, all others 0
+    //_activeInterrupts |= mask;
+    try {
+      _isr->read();
+      uint32_t held_interrupts = _isr->accessData(0);
+      //TODO. Read ISR and do the isr | mask logic
+      if(_ierIsReallyImaskr) { //Set IMaskR in the form of IER
+        // set IMaskR, SIE and CIE cannot be defined.
+        _activeInterrupts |= (mask | held_interrupts);
+        _ier->accessData(0) = ~_activeInterrupts;
+        _ier->write();
+      }
+      else { 
+        if(_haveSieAndCie) { //Set SIE
+          _activeInterrupts |= mask;
+          _sie->accessData(0) = mask;
+          _sie->write();
+        }
+        else { //Set IER
+          _activeInterrupts |= (mask | held_interrupts);
+          _ier->accessData(0) = _activeInterrupts;
+          _ier->write();
+        }
+      }
+    }
+    catch(ChimeraTK::runtime_error&) { }
+    _clearInterrupt(ithInterrupt); 
+  } //_enableInterrupt
+
+  /*****************************************************************************************************************/
 
   void GenericInterruptControllerHandler::handle(VersionNumber version) {
-    /* When a trigger comes in, InterruptControllerHandler.handle gets called on the interrupt*/
+    /* When a trigger comes in, InterruptControllerHandler.handle gets called on the interrupt. 
+    * It implements the handshake with the interrupt controller
+    */
     // Stupid testing implementation that always triggers all children
-    for(auto& distributorIter : _distributors) {
+
+    /*for(auto& distributorIter : _distributors) {
       auto distributor = distributorIter.second.lock();
       // The weak pointer might have gone.
-      // FIXME: We need a cleanup function which removes the map entry. Otherwise we might
+      // TODO FIXME: We need a cleanup function which removes the map entry. Otherwise we might
       // be stuck with a bad weak pointer which is tried in each handle() call.
       if(distributor) {
         distributor->distribute(nullptr, version);
       }
-    }
-  } //handle
+    }*/
 
-    /*
-      void GenericInterruptControllerHandler::handle(VersionNumber version) {
-    // The interrupt handling functions implements the handshake with the interrupt controller.
-    // It needs to be implemented individually for each interrupt controller.
-
-  try {
-    _activeInterrupts->read(); //retain 
-    for(uint32_t i = 0; i< 32; ++i) {
-      if(_activeInterrupts->accessData(0) & 0x1U << i) { //retain mask pattern
-        try {
-          boost::weak_ptr<TriggerDistributor> distributor = _distributors.at(i).lock(); //retain
-          if(distributor) {
-            distributor->distribute(nullptr, version); //retain
+    try {
+      _isr->read(); // retain
+      uint32_t ipr = _activeInterrupts & _isr->accessData(0);
+      for(uint32_t i = 0; i < 32; ++i) {
+        if(ipr & i2Mask(i)) { 
+          try {
+            auto distributor = _distributors.at(i).lock(); // retain
+            if(distributor) {
+              distributor->distribute(nullptr, version); // retain
+            }
+            else {
+              _disableInterrupt(i);
+            }
+          } 
+          catch(std::out_of_range&) {
+            _backend->setException(
+                "Error: GenericInterruptControllerHandler reports unknown active interrupt " + std::to_string(i));
           }
-        }
-        catch(std::out_of_range&){
-          _backend->setException("Error: GenIntC reports unknown active interrupt "+ std::to_string(i));
-        }
-      }
+        } 
+      } //for
     }
-  }
-  catch(ChimeraTK::runtime_error&) {
-    //Nothing to do. The transferElement part of _activeInterrupts has already called the backend's setException
-  }
-}
-    */
+    catch(ChimeraTK::runtime_error&) {
+      // Nothing to do. The transferElement part of _activeInterrupts has already called the backend's setException
+    } // catch
+  }   // handle
 
-  /******************************create*****************************************************************************/
+  /*****************************************************************************************************************/
 
   std::unique_ptr<GenericInterruptControllerHandler> GenericInterruptControllerHandler::create(
       InterruptControllerHandlerFactory* controllerHandlerFactory, std::vector<uint32_t> const& controllerID,
