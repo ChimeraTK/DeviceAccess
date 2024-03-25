@@ -19,12 +19,6 @@ namespace ChimeraTK {
   - Clear the enabled interrupts in the destructor.
   - IMPORTANT: Nested interrupt handlers must clear their active interrupt flag first, then the parent interrupt flags
   are cleared.
-  - Suppress all the runtime_error exceptions from internal accessors.
-      The interrupt controller handler is called from the internal interrupt handler thread,
-      and the accessor is calling setException() of the backend already.
-  - IMPORTANT: keep a local copy of the IER.
-      This only contains the bits for the accessors of THIS software instance.
-      There might be another process which is accessing other interrupts on the same (primary) controller.
   */
 
   namespace genIntC {
@@ -42,33 +36,22 @@ namespace ChimeraTK {
       GIE, // Global Interrupt Enable 
       // json name in the snippet names the register as specified in the map file
       // but mer/mie/gie are functionally equivalent. internally, pick one.
-      IER,
+      IER, 
       ICR,
       SIE,
-      ISR,
-      IPR,
-      IMR,
+      ISR, 
+      IPR, 
+      IMaskR, //IMR Acronym Collision 
       CIE,
-      IAR,
-      IVR,
-      ILR,
-      IVAR,
-      IVEAR,             // defined in the standard but not allowed
+      IAR, 
+      IVR,    // defined in the standard but not allowed
+      ILR,    // defined in the standard but not allowed
+      IVAR,   // defined in the standard but not allowed
+      IVEAR,  // defined in the standard but not allowed
+      IModeR, //IMR Acronym Collision, defined in the standard but not allowed
       OPTION_CODE_COUNT, // used for counting how many valid enums there are here & setting list lengths
       INVALID_OPTION_CODE,
     };
-
-    template<typename L, typename R>
-    boost::bimap<L, R> makeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
-      return boost::bimap<L, R>(list.begin(), list.end());
-    }
-
-    auto optionCodeMap = makeBimap<std::string, optionCode>({{"MER", MER}, {"MIE", MIE}, {"GIE", GIE}, {"ISR", ISR},
-        {"IER", IER}, {"ICR", ICR}, {"SIE", SIE},
-
-        {"IPR", IPR}, {"IMR", IMR}, {"CIE", CIE}, {"IAR", IAR},
-
-        {"ILR", ILR}, {"IVR", IVR}, {"IVAR", IVAR}, {"IVEAR", IVEAR}});
 
     optionCode getOptionRegisterEnum(std::string opt);
     std::string getOptionRegisterStr(optionCode optCode);
@@ -76,6 +59,7 @@ namespace ChimeraTK {
     std::string strSet2Str(const std::set<std::string>& strSet, char delimiter = ',');
     std::string intVec2Str(const std::vector<uint32_t>& intVec, char delimiter = ',');
     std::string controllerID2Str(const std::vector<uint32_t>& controllerID);
+    inline uint32_t i2Mask(const uint32_t ithInterrupt);
 
     std::bitset<OPTION_CODE_COUNT> parseAndValidateJsonDescriptionV1(std::vector<uint32_t> const& controllerID,
         std::string const& description, // THE JSON SNIPPET
@@ -90,8 +74,10 @@ namespace ChimeraTK {
   class GenericInterruptControllerHandler : public InterruptControllerHandler {
    public:
     explicit GenericInterruptControllerHandler(InterruptControllerHandlerFactory* controllerHandlerFactory,
-        std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor> parent,
-        std::string registerPath, std::bitset<(ulong)optionCode::OPTION_CODE_COUNT> optionRegisterSettings);
+        std::vector<uint32_t> const& controllerID, 
+        boost::shared_ptr<TriggerDistributor> parent,
+        std::string registerPath, 
+        std::bitset<(ulong)optionCode::OPTION_CODE_COUNT> optionRegisterSettings);
     ~GenericInterruptControllerHandler() override;
 
     void handle(VersionNumber version) override;
@@ -110,20 +96,26 @@ namespace ChimeraTK {
 
    protected:
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _isr;
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _ier; // or Imr //require either ier or imr
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _ier; // or Imaskr //require either ier or imaskr
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _icr; // or iar
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _mer; // or MIE or GIE, all act identically. can have at most 1 of {MIE, GIE, MER}
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _sie; // we either have both SIE or CIE or neither.
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _cie; //
 
-    bool _ierIsReallyImr; //C_HAS_IMR
-    bool _icrIsReallyIar; 
+    bool _ierIsReallyImaskr; 
+    bool _haveIcr; 
     bool _haveSieAndCie; 
     optionCode _optionMerMieGie;
 
     uint32_t _activeInterrupts; // a local copy of IER
 
     RegisterPath _path; // just a string path, with the added overwritten / operator etc.
+
+    void _clearInterrupt(uint32_t ithInterrupt);
+    void _clearAllInterrupt();
+    void _clearAllEnabledInterrupt();
+    void _disableInterrupt(uint32_t ithInterrupt);
+    void _enableInterrupt(uint32_t ithInterrupt);
   };
 
 } // namespace ChimeraTK
