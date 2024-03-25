@@ -13,6 +13,32 @@
 namespace ChimeraTK {
   namespace genIntC {
 
+    template<typename L, typename R>
+    boost::bimap<L, R> _makeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+      return boost::bimap<L, R>(list.begin(), list.end());
+    }
+
+    static auto optionCodeMap = _makeBimap<std::string, optionCode>({
+        {"MER", MER},
+        {"MIE", MIE},
+        {"GIE", GIE},
+        {"ISR", ISR},
+        {"IER", IER},
+        {"ICR", ICR},
+        {"SIE", SIE},
+
+        {"IPR", IPR},
+        {"IMR", IMaskR},
+        {"CIE", CIE},
+        {"IAR", IAR},
+
+        {"ILR", ILR},
+        {"IVR", IVR},
+        {"IVAR", IVAR},
+        {"IVEAR", IVEAR},
+        {"IModeR", IModeR},
+    });
+
     // TODO move to some string helper library
     std::string strSet2Str(const std::set<std::string>& strSet, char delimiter) {
       // default delimiter is ','
@@ -289,9 +315,19 @@ namespace ChimeraTK {
     _ierIsReallyImaskr = optionRegisterSettings.test(IMaskR);
     _ier = _backend->getRegisterAccessor<uint32_t>(_path / (_ierIsReallyImaskr ? IMaskR : IER), 1, 0, {});
 
+  //TODO
     _haveIcr = optionRegisterSettings.test(IAR) or optionRegisterSettings.test(ICR);
-    _icrIsReallyIar = optionRegisterSettings.test(IAR);
-    _icr = _backend->getRegisterAccessor<uint32_t>(_path / (_icrIsReallyIar ? IAR : ICR), 1, 0, {});
+    if (optionRegisterSettings.test(ICR)) {
+      _icr = _backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(ICR), 1, 0, {});
+    }
+    else if(optionRegisterSettings.test(IAR)) {
+      _icr = _backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(IAR), 1, 0, {});
+    }
+    else{
+      _icr = _backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(ISR), 1, 0, {});
+      //_icr.replace(_backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(ISR)));
+    }
+    
 
     _optionMerMieGie = optionRegisterSettings.test(MIE) ? MIE : (optionRegisterSettings.test(GIE) ? GIE : MER);
     _mer = _backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(_optionMerMieGie), 1, 0, {});
@@ -362,7 +398,6 @@ namespace ChimeraTK {
           else{
             _activeInterrupts &= ~i2Mask(i); // ith bit is 1, all others 0
           }
-          _distributors.at(i).unlock();  //TODO put in if? //TODO not defined.
         }
         catch(std::out_of_range&) {
           _backend->setException(
@@ -400,18 +435,20 @@ namespace ChimeraTK {
   /*****************************************************************************************************************/
 
   void GenericInterruptControllerHandler::_clearInterrupt(uint32_t ithInterrupt){
-    uint32_t mask = i2Mask(ithInterrupt); // ith bit is 1, all others 0
     try {
-      if(_haveIcr) {
-        _icr->accessData(0) = mask;
+      //if(_haveIcr) {
+        _icr->accessData(0) = i2Mask(ithInterrupt); // ith bit is 1, all others 0
         _icr->write();
-      }
-      else {
+      //}
+
+      //in write 1 direction, ISR acts as write-1-to-clear.
+
+      /*else {
         // acknowledge interrupt by setting ith bit of ISR to 0 directly
         _isr->read();
         _isr->accessData(0) &= ~mask;
         _isr->write();
-      }
+      }*/
     }
     catch(ChimeraTK::runtime_error&) { }
   } //_clearInterrupt
@@ -499,25 +536,21 @@ namespace ChimeraTK {
 */
   void GenericInterruptControllerHandler::_enableInterrupt(uint32_t ithInterrupt) {
     uint32_t mask = i2Mask(ithInterrupt); // ith bit is 1, all others 0
+    _activeInterrupts |= mask;
     //_activeInterrupts |= mask;
     try {
-      _isr->read();
-      uint32_t held_interrupts = _isr->accessData(0);
       //TODO. Read ISR and do the isr | mask logic
       if(_ierIsReallyImaskr) { //Set IMaskR in the form of IER
         // set IMaskR, SIE and CIE cannot be defined.
-        _activeInterrupts |= (mask | held_interrupts);
         _ier->accessData(0) = ~_activeInterrupts;
         _ier->write();
       }
       else { 
         if(_haveSieAndCie) { //Set SIE
-          _activeInterrupts |= mask;
           _sie->accessData(0) = mask;
           _sie->write();
         }
         else { //Set IER
-          _activeInterrupts |= (mask | held_interrupts);
           _ier->accessData(0) = _activeInterrupts;
           _ier->write();
         }
@@ -554,9 +587,7 @@ namespace ChimeraTK {
             auto distributor = _distributors.at(i).lock(); // retain
             if(distributor) {
               distributor->distribute(nullptr, version); // retain
-            }
-            else {
-              _disableInterrupt(i);
+              _clearInterrupt(i);
             }
           } 
           catch(std::out_of_range&) {

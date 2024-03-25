@@ -53,18 +53,6 @@ namespace ChimeraTK {
       INVALID_OPTION_CODE,
     };
 
-    template<typename L, typename R>
-    boost::bimap<L, R> makeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
-      return boost::bimap<L, R>(list.begin(), list.end());
-    }
-
-    auto optionCodeMap = makeBimap<std::string, optionCode>({{"MER", MER}, {"MIE", MIE}, {"GIE", GIE}, {"ISR", ISR},
-        {"IER", IER}, {"ICR", ICR}, {"SIE", SIE},
-
-        {"IPR", IPR}, {"IMR", IMaskR}, {"CIE", CIE}, {"IAR", IAR},
-
-        {"ILR", ILR}, {"IVR", IVR}, {"IVAR", IVAR}, {"IVEAR", IVEAR}, {"IModeR", IModeR},});
-
     optionCode getOptionRegisterEnum(std::string opt);
     std::string getOptionRegisterStr(optionCode optCode);
 
@@ -116,7 +104,6 @@ namespace ChimeraTK {
 
     bool _ierIsReallyImaskr; 
     bool _haveIcr; 
-    bool _icrIsReallyIar; 
     bool _haveSieAndCie; 
     optionCode _optionMerMieGie;
 
