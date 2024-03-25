@@ -34,9 +34,9 @@ BOOST_AUTO_TEST_CASE(testIERwithISR) {
 
   ChimeraTK::Device device;
   device.open("(dummy:xdma/slot5?map=irq_test.mapp)");
-  BOOST_CHECK(device.isOpened() == true);
-  auto accInterrput = device.getVoidRegisterAccessor("!0:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
-  auto dummyInterrput = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
+  BOOST_TEST(device.isOpened() == true);
+  auto accInterrupt = device.getVoidRegisterAccessor("!0:4",{ChimeraTK::AccessMode::wait_for_new_data});
+  auto dummyInterrupt = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
 
   device.activateAsyncRead();
 
@@ -74,9 +74,8 @@ BOOST_AUTO_TEST_CASE(testIERwithIAR) {
   ChimeraTK::Device device;
   device.open("(dummy:xdma/slot5?map=irq_test.mapp)");
   BOOST_CHECK(device.isOpened() == true);
-  auto accInterrput = device.getVoidRegisterAccessor("!1:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
-
-  auto dummyInterrput = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
+  auto accInterrupt = device.getVoidRegisterAccessor("!1:4", {ChimeraTK::AccessMode::wait_for_new_data});
+  auto dummyInterrupt = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
 
   device.activateAsyncRead();
 
@@ -114,8 +113,8 @@ BOOST_AUTO_TEST_CASE(testIERwithICR) {
   ChimeraTK::Device device;
   device.open("(dummy:xdma/slot5?map=irq_test.mapp)");
   BOOST_CHECK(device.isOpened() == true);
-  auto accInterrput = device.getVoidRegisterAccessor("!2:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
-  auto dummyInterrput = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
+  auto accInterrupt = device.getVoidRegisterAccessor("!2:4", {ChimeraTK::AccessMode::wait_for_new_data});
+  auto dummyInterrupt = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
 
   device.activateAsyncRead();
 
