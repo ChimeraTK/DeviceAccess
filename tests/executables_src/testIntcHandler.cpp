@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(testIERwithIAR) {
   BOOST_TEST(0x10 == ier);
 
   auto accIAR = device.getScalarRegisterAccessor<uint32_t>("APP/IAR");
-  
+
   iar = 0x110;
   iar.write();
 
@@ -107,22 +107,40 @@ BOOST_AUTO_TEST_CASE(testIERwithIAR) {
   device.close();
 }
 /**********************************************************************************************************************/
-/* if ICR is present: INTC writes 1<<n the according bit maskto ICR and not to ISR */
+/* if ICR is present: INTC writes 1<<n the according bit mask to ICR and not to ISR */
 
 BOOST_AUTO_TEST_CASE(testIERwithICR) {
 
   ChimeraTK::Device device;
   device.open("(dummy:xdma/slot5?map=irq_test.mapp)");
   BOOST_CHECK(device.isOpened() == true);
-  auto accInterrput = device.getScalarRegisterAccessor<int>("!2:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
+  auto accInterrput = device.getVoidRegisterAccessor("!2:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
+  auto dummyInterrput = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
 
   device.activateAsyncRead();
 
-  //auto testIER = device.getScalarRegisterAccessor<int>("APP/IER");
+  accInterrupt.read(); // initial value after activation
 
-  //BOOST_CHECK(0x8 == testIER.read());
+  auto ier = device.getScalarRegisterAccessor<uint32_t>("APP/IER");
+
+  ier.read();
+
+  BOOST_TEST(0x10 == ier);
+
 
   auto accICR = device.getScalarRegisterAccessor<int>("APP/ICR");
+
+  icr = 0x110;
+  icr.write();
+
+  dummyInterrupt.write();
+
+  // wait until interrupt handler is done
+  accInterrupt.read();
+
+  icr.read();
+
+  BOOST_TEST(icr == 0x10);
 
   //BOOST_CHECK((accICR >> 3) & 1) == true);
 
