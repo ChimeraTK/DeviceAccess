@@ -90,17 +90,17 @@ BOOST_AUTO_TEST_CASE(testIERwithIAR) {
 
   auto accIAR = device.getScalarRegisterAccessor<uint32_t>("APP/IAR");
   
-  isr = 0x110;
-  isr.write();
+  iar = 0x110;
+  iar.write();
 
   dummyInterrupt.write();
 
   // wait until interrupt handler is done
   accInterrupt.read();
 
-  isr.read();
+  iar.read();
 
-  BOOST_TEST(isr == 0x10);
+  BOOST_TEST(iar == 0x10);
 
   //BOOST_CHECK((accIAR >> 3) & 1) == true);
 
