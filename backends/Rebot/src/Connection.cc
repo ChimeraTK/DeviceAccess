@@ -25,9 +25,8 @@ namespace ChimeraTK::Rebot {
       ioService_.reset();
       ioService_.run();
     }
-    catch (const boost::exception& ex) {
+    catch (const boost::exception&) {
         // error handling
-        std::string info = boost::diagnostic_information(ex);
         throw ChimeraTK::runtime_error("RebotBackend exception: Host unreachable:");
     }
   }
