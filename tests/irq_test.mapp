@@ -10,40 +10,28 @@
 @![7] {"INTC" : {"path": "TEST8", "version":1} }
 
 
-TEST0.DAQ                                                  4096  0x00808000        16384   13   32    0    0   RW
-TEST0.ID                                                      1  0x00800000            4    0   32    0    0   RO
 TEST0.IER                                                     1  0x0080000C            4    0    7    0    0   RW
 TEST0.ISR                                                     1  0x00800008            4    0    7    0    0   RW
-TEST0.ISR.DAQ                                                 0  0x00000000            0    0    0    0    0   INTERRUPT0:4
+TEST0.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT0:4
 
-TEST1.DAQ                                                  4096  0x00908000        16384   13   32    0    0   RW
-TEST1.ID                                                      1  0x00900000            4    0   32    0    0   RO
-TEST1.IER                                                     1  0x0090000C            4    0    7    0    0   RW
+TEST1.IER                                                     1  0x00900000            4    0    7    0    0   RW
 TEST1.IAR                                                     1  0x0090000C            4    0    7    0    0   RW
 TEST1.ISR                                                     1  0x00900008            4    0    7    0    0   RW
-TEST1.ISR.DAQ                                                 0  0x00000000            0    0    0    0    0   INTERRUPT1:4
+TEST1.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT1:4
 
-TEST2.DAQ                                                  4096  0x00A08000        16384   13   32    0    0   RW
-TEST2.ID                                                      1  0x00A00000            4    0   32    0    0   RO
-TEST2.IER                                                     1  0x00A0000C            4    0    7    0    0   RW
+TEST2.IER                                                     1  0x00A00000            4    0    7    0    0   RW
 TEST1.ICR                                                     1  0x00A0000C            4    0    7    0    0   RW
 TEST2.ISR                                                     1  0x00A00008            4    0    7    0    0   RW
-TEST2.ISR.DAQ                                                 0  0x00000000            0    0    0    0    0   INTERRUPT2:4
+TEST2.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT2:4
 
-TEST3.DAQ                                                  4096  0x00B08000        16384   13   32    0    0   RW
-TEST3.ID                                                      1  0x00B00000            4    0   32    0    0   RO
 TEST3.MER                                                     1  0x00B0000C            4    0    7    0    0   RW
 TEST3.ISR                                                     1  0x00B00008            4    0    7    0    0   RW
-TEST3.ISR.DAQ                                                 0  0x00000000            0    0    0    0    0   INTERRUPT3:4
+TEST3.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT3:4
 
-TEST4.DAQ                                                  4096  0x00C08000        16384   13   32    0    0   RW
-TEST4.ID                                                      1  0x00C00000            4    0   32    0    0   RO
 TEST4.MIE                                                     1  0x00C0000C            4    0    7    0    0   RW
 TEST4.ISR                                                     1  0x00C00008            4    0    7    0    0   RW
-TEST4.ISR.DAQ                                                 0  0x00000000            0    0    0    0    0   INTERRUPT4:4
+TEST4.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT4:4
 
-TEST5.DAQ                                                  4096  0x00D08000        16384   13   32    0    0   RW
-TEST5.ID                                                      1  0x00D00000            4    0   32    0    0   RO
 TEST5.SIE                                                     1  0x00D0000C            4    0    7    0    0   RW
 TEST5.ISR                                                     1  0x00D00008            4    0    7    0    0   RW
-TEST5.ISR.DAQ                                                 0  0x00000000            0    0    0    0    0   INTERRUPT5:4
+TEST5.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT5:4

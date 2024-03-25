@@ -35,17 +35,33 @@ BOOST_AUTO_TEST_CASE(testIERwithISR) {
   ChimeraTK::Device device;
   device.open("(dummy:xdma/slot5?map=irq_test.mapp)");
   BOOST_CHECK(device.isOpened() == true);
-  auto accInterrput = device.getScalarRegisterAccessor<int>("!0:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
+  auto accInterrput = device.getVoidRegisterAccessor("!0:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
+  auto dummyInterrput = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
 
   device.activateAsyncRead();
 
-  auto testIER = device.getScalarRegisterAccessor<int>("APP/IER");
+  accInterrupt.read(); // initial value after activation
 
- // BOOST_CHECK(0x8 == testIER.read());
+  auto ier = device.getScalarRegisterAccessor<int>("APP/IER");
 
-  auto accICR = device.getScalarRegisterAccessor<int>("APP/ISR");
+  ier.read();
 
- // BOOST_CHECK((accICR >> 3) & 1) == true);
+  BOOST_TEST(0x10 == ier);
+
+  auto isr = device.getScalarRegisterAccessor<uint32_t>("APP/ISR");
+  // prepare the status before sending the interrupt
+  // set one more bit to be sensitive to the handshake (need to see changes)
+  isr = 0x110;
+  isr.write();
+
+  dummyInterrupt.write();
+
+  // wait until interrupt handler is done
+  accInterrupt.read();
+
+  isr.read();
+
+  BOOST_TEST(isr == 0x10);
 
   device.close();
 }
@@ -58,15 +74,33 @@ BOOST_AUTO_TEST_CASE(testIERwithIAR) {
   ChimeraTK::Device device;
   device.open("(dummy:xdma/slot5?map=irq_test.mapp)");
   BOOST_CHECK(device.isOpened() == true);
-  auto accInterrput = device.getScalarRegisterAccessor<int>("!1:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
+  auto accInterrput = device.getVoidRegisterAccessor("!1:4",0, {ChimeraTK::AccessMode::wait_for_new_data});
+
+  auto dummyInterrput = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0"); // for triggering the dummy interrupt
 
   device.activateAsyncRead();
 
-  //auto testIER = device.getScalarRegisterAccessor<int>("APP/IER");
+  accInterrupt.read(); // initial value after activation
 
-  //BOOST_CHECK(0x8  == testIER.read()):
+  auto ier = device.getScalarRegisterAccessor<uint32_t>("APP/IER");
 
-  auto accIAR = device.getScalarRegisterAccessor<int>("APP/IAR");
+  ier.read();
+
+  BOOST_TEST(0x10 == ier);
+
+  auto accIAR = device.getScalarRegisterAccessor<uint32_t>("APP/IAR");
+  
+  isr = 0x110;
+  isr.write();
+
+  dummyInterrupt.write();
+
+  // wait until interrupt handler is done
+  accInterrupt.read();
+
+  isr.read();
+
+  BOOST_TEST(isr == 0x10);
 
   //BOOST_CHECK((accIAR >> 3) & 1) == true);
 
