@@ -6,7 +6,7 @@
 #include "Exception.h"
 
 #include <utility>
-
+#include <boost/exception/diagnostic_information.hpp> 
 namespace ChimeraTK::Rebot {
 
   using Error = boost::system::error_code;
@@ -16,13 +16,20 @@ namespace ChimeraTK::Rebot {
     connectionTimeout_(boost::posix_time::seconds(connectionTimeout_sec)) {}
 
   void Connection::open() {
-    disconnectionTimerStart();
-    boost::asio::ip::tcp::resolver r(ioService_);
-    boost::asio::async_connect(
-        s_, r.resolve({address_, port_}), [&](const Error ec, auto) { disconnectionTimerCancel(ec); });
+     try{
+      disconnectionTimerStart();
+      boost::asio::ip::tcp::resolver r(ioService_);
+      boost::asio::async_connect(
+          s_, r.resolve({address_, port_}), [&](const Error ec, auto) { disconnectionTimerCancel(ec); });
 
-    ioService_.reset();
-    ioService_.run();
+      ioService_.reset();
+      ioService_.run();
+    }
+    catch (const boost::exception& ex) {
+        // error handling
+        std::string info = boost::diagnostic_information(ex);
+        throw ChimeraTK::runtime_error("RebotBackend exception: Host unreachable:");
+    }
   }
 
   std::vector<uint32_t> Connection::read(uint32_t numWords) {
