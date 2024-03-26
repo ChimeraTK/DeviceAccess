@@ -27,10 +27,10 @@ namespace ChimeraTK {
 
    public:
     EventThread() = delete;
-    EventThread(EventFile& owner);
+    EventThread(EventFile& owner, std::promise<void> subscriptionDonePromise);
     ~EventThread();
 
-    void start();
+    void start(std::promise<void> subscriptionDonePromise);
     void waitForEvent();
     void readEvent(const boost::system::error_code& ec);
     void handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred);
@@ -47,10 +47,10 @@ namespace ChimeraTK {
    public:
     EventFile() = delete;
     EventFile(const std::string& devicePath, size_t interruptIdx, EventCallback callback);
-    EventFile(EventFile&& d) = default;
+    // EventFile(EventFile&& d) = default;
     ~EventFile();
 
-    void startThread();
+    void startThread(std::promise<void> subscriptionDonePromise);
   };
 
 } // namespace ChimeraTK

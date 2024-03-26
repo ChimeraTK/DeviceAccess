@@ -147,8 +147,11 @@ namespace ChimeraTK {
         auto& domainsContainer = dynamic_cast<AsyncDomainsContainer<uint32_t>&>(*_asyncDomainsContainer);
         domainsContainer.addAsyncDomain(registerInfo.interruptId.front(), asyncDomain);
         if(_asyncIsActive) {
+          auto subscriptionDone = activateSubscription(registerInfo.interruptId.front());
+          // wait until the backend reports that the subscription is ready before proceeding with the creation of the
+          // accessor, which will poll the initial value.
+          subscriptionDone.wait();
           asyncDomain->activate(nullptr);
-          startInterruptHandlingThread(registerInfo.interruptId.front());
         }
       }
 
@@ -235,16 +238,24 @@ namespace ChimeraTK {
     for(const auto& it : _asyncDomainImpls) {
       auto asyncDomain = it.second->lock();
       if(asyncDomain) {
+        auto subscriptionDone = activateSubscription(it.first);
+        // Wait until the backends reports that the subscription is complete (typically set from inside another thread)
+        // before polling the initial values when activating the async domain. This is necessary to make sure we don't
+        // miss an update that came in after polling the initial value.
+        subscriptionDone.wait();
         asyncDomain->activate(nullptr);
-        startInterruptHandlingThread(it.first);
       }
     }
   }
 
   /********************************************************************************************************************/
 
-  // empty default implementation
-  void NumericAddressedBackend::startInterruptHandlingThread([[maybe_unused]] unsigned int interruptNumber) {}
+  // The default implementation just returns a ready future.
+  std::future<void> NumericAddressedBackend::activateSubscription([[maybe_unused]] unsigned int interruptNumber) {
+    std::promise<void> subscriptionDonePromise;
+    subscriptionDonePromise.set_value();
+    return subscriptionDonePromise.get_future();
+  }
 
   /********************************************************************************************************************/
 

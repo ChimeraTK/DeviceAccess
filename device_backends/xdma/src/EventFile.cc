@@ -10,8 +10,9 @@
 namespace io = boost::asio;
 
 namespace ChimeraTK {
-  EventThread::EventThread(EventFile& owner)
-  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file}, _thread{&EventThread::start, this} {
+  EventThread::EventThread(EventFile& owner, std::promise<void> subscriptionDonePromise)
+  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file}, _thread{
+                                                       &EventThread::start, this, std::move(subscriptionDonePromise)} {
 #ifdef _DEBUG
     std::cout << "XDMA: EventThread " << _owner._file.name() << " ctor\n";
 #endif
@@ -25,7 +26,10 @@ namespace ChimeraTK {
     _thread.join();
   }
 
-  void EventThread::start() {
+  void EventThread::start(std::promise<void> subscriptionDonePromise) {
+    // The thread has started, next thing is going to be the wait.
+    // This is the time to fulfil the promise that the subscription is done.
+    subscriptionDonePromise.set_value();
     waitForEvent();
     _ctx.run();
   }
@@ -87,11 +91,12 @@ namespace ChimeraTK {
     _evtThread.reset(nullptr);
   }
 
-  void EventFile::startThread() {
+  void EventFile::startThread(std::promise<void> subscriptionDonePromise) {
     if(_evtThread) {
+      subscriptionDonePromise.set_value();
       return;
     }
-    _evtThread = std::make_unique<EventThread>(*this);
+    _evtThread = std::make_unique<EventThread>(*this, std::move(subscriptionDonePromise));
   }
 
 } // namespace ChimeraTK

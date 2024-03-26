@@ -16,7 +16,7 @@ namespace ChimeraTK {
     std::thread _interruptWaitingThread;
     std::atomic<bool> _stopInterruptLoop{false}; // Used to shut down thread
 
-    void waitForInterruptLoop();
+    void waitForInterruptLoop(std::promise<void> subscriptionDonePromise);
 
     /* data */
    public:
@@ -35,7 +35,7 @@ namespace ChimeraTK {
 
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
-    void startInterruptHandlingThread(uint32_t interruptNumber) override;
+    std::future<void> activateSubscription(uint32_t interruptNumber) override;
 
     std::string readDeviceInfo() override;
   };

@@ -65,19 +65,23 @@ namespace ChimeraTK {
     _uioAccess->write(bar, address, data, sizeInBytes);
   }
 
-  void UioBackend::startInterruptHandlingThread(uint32_t interruptNumber) {
+  std::future<void> UioBackend::activateSubscription(uint32_t interruptNumber) {
+    std::promise<void> subscriptionDonePromise;
+
     if(interruptNumber != 0) {
-      throw ChimeraTK::logic_error("UIO: Backend only uses interrupt number 0");
-    }
-    if(!isFunctional()) {
-      return;
+      setException("UIO: Backend only uses interrupt number 0");
+      subscriptionDonePromise.set_value();
+      return subscriptionDonePromise.get_future();
     }
     if(_interruptWaitingThread.joinable()) {
-      return;
+      subscriptionDonePromise.set_value();
+      return subscriptionDonePromise.get_future();
     }
 
     _stopInterruptLoop = false;
-    _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptLoop, this);
+    auto subscriptionDoneFuture = subscriptionDonePromise.get_future();
+    _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptLoop, this, std::move(subscriptionDonePromise));
+    return subscriptionDoneFuture;
   }
 
   std::string UioBackend::readDeviceInfo() {
@@ -89,40 +93,54 @@ namespace ChimeraTK {
     return result;
   }
 
-  void UioBackend::waitForInterruptLoop() {
-    uint32_t numberOfInterrupts;
+  void UioBackend::waitForInterruptLoop(std::promise<void> subscriptionDonePromise) {
+    try { // also the scope for the promiseFulfiller
 
-    // This also enables the interrupts if they are not active.
-    _uioAccess->clearInterrupts();
+      // The NumericAddressedBackend is waiting for subscription done to be fulfilled, so it can continue with
+      // polling the initial values. It is important to clear the old interrupts before this, so we don't clear any
+      // interrupts that are triggered after the polling, but before this tread is ready to process them.
+      //
+      // We put the code into a finally so it is always executed when the promiseFulfiller goes out of scope, even if
+      // there are exceptions in between.
+      //
+      auto promiseFulfiller = cppext::finally([&]() { subscriptionDonePromise.set_value(); });
 
-    // Clearing active interrupts actually is only effective after a poll (inside waitForInterrupt)
-    if(_uioAccess->waitForInterrupt(0) > 0) {
+      // This also enables the interrupts if they are not active.
       _uioAccess->clearInterrupts();
+
+      // Clearing active interrupts actually is only effective after a poll (inside waitForInterrupt)
+      if(_uioAccess->waitForInterrupt(0) > 0) {
+        _uioAccess->clearInterrupts();
+      }
+    } // end of the promiseFulfiller scope
+    catch(ChimeraTK::runtime_error& e) {
+      setException(e.what());
+      return;
     }
 
     while(!_stopInterruptLoop) {
       try {
-        numberOfInterrupts = _uioAccess->waitForInterrupt(100);
+        auto numberOfInterrupts = _uioAccess->waitForInterrupt(100);
+
+        if(numberOfInterrupts > 0) {
+          _uioAccess->clearInterrupts();
+
+          if(!isFunctional()) {
+            break;
+          }
+
+#ifdef _DEBUG_UIO
+          if(numberOfInterrupts > 1) {
+            std::cout << "UioBackend: Lost " << (numberOfInterrupts - 1) << " interrupts. " << std::endl;
+          }
+          std::cout << "dispatching interrupt " << std::endl;
+#endif
+          dispatchInterrupt(0);
+        }
       }
       catch(ChimeraTK::runtime_error& ex) {
         setException(ex.what());
-        continue;
-      }
-
-      if(numberOfInterrupts > 0) {
-        _uioAccess->clearInterrupts();
-
-        if(!isFunctional()) {
-          // Don't dispatch interrupts in case of exceptions
-          continue;
-        }
-
-#ifdef _DEBUG
-        if(numberOfInterrupts > 1) {
-          std::cout << "UioBackend: Lost " << (numberOfInterrupts - 1) << " interrupts. " << std::endl;
-        }
-#endif
-        dispatchInterrupt(0);
+        break;
       }
     }
   }
