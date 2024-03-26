@@ -4,23 +4,14 @@
 #include "InterruptControllerHandler.h"
 #include "NDRegisterAccessor.h"
 #include "RegisterPath.h"
-#include <nlohmann/json.hpp>
 
+#include <nlohmann/json.hpp>
 #include <boost/bimap.hpp>
 
 #include <fstream>
 using json = nlohmann::json;
 
 namespace ChimeraTK {
-
-  /*https://redmine.msktools.desy.de/issues/12890
-  - Only enable those interrupts for which there are accessors or nested controllers (i.e. there is a valid interrupt
-  distributor)
-  - Clear the enabled interrupts in the destructor.
-  - IMPORTANT: Nested interrupt handlers must clear their active interrupt flag first, then the parent interrupt flags
-  are cleared.
-  */
-
   namespace genIntC {
 
     struct jsonDescriptorStandardV1 {
@@ -30,25 +21,23 @@ namespace ChimeraTK {
       inline static const std::string PATH_JSON_KEY = "path";
     };
 
-    enum optionCode {
-      MER = 0, // Master Interrupt Enable,
-      MIE,
-      GIE, // Global Interrupt Enable 
-      // json name in the snippet names the register as specified in the map file
-      // but mer/mie/gie are functionally equivalent. internally, pick one.
+    enum optionCode { 
+      ISR = 0, 
       IER, 
-      ICR,
+      MER, // Master Interrupt Enable,
+      MIE, // Functionally equivalent to MER
+      GIE, // Global Interrupt Enable, Functionally equivalent to MER
+      ICR, //Interrupt Clear Register
+      IAR, //Interrupt Acknowledge Register
+      IPR, //=ISR & IER, a convenience feature for software. 
       SIE,
-      ISR, 
-      IPR, 
-      IMaskR, //IMR Acronym Collision 
       CIE,
-      IAR, 
+      IMaskR, //IMR Acronym Collision 
+      IModeR, //IMR Acronym Collision, defined in the standard but not allowed
       IVR,    // defined in the standard but not allowed
       ILR,    // defined in the standard but not allowed
       IVAR,   // defined in the standard but not allowed
       IVEAR,  // defined in the standard but not allowed
-      IModeR, //IMR Acronym Collision, defined in the standard but not allowed
       OPTION_CODE_COUNT, // used for counting how many valid enums there are here & setting list lengths
       INVALID_OPTION_CODE,
     };
@@ -71,6 +60,14 @@ namespace ChimeraTK {
 
   using namespace genIntC;
 
+  //    /$$$$$$                      /$$$$$$             /$$      /$$$$$$
+  //   /$$__  $$                    |_  $$_/            | $$     /$$__  $$
+  //  | $$  \__/  /$$$$$$  /$$$$$$$   | $$   /$$$$$$$  /$$$$$$  | $$  \__/
+  //  | $$ /$$$$ /$$__  $$| $$__  $$  | $$  | $$__  $$|_  $$_/  | $$
+  //  | $$|_  $$| $$$$$$$$| $$  \ $$  | $$  | $$  \ $$  | $$    | $$
+  //  | $$  \ $$| $$_____/| $$  | $$  | $$  | $$  | $$  | $$ /$$| $$    $$
+  //  |  $$$$$$/|  $$$$$$$| $$  | $$ /$$$$$$| $$  | $$  |  $$$$/|  $$$$$$/
+  //   \______/  \_______/|__/  |__/|______/|__/  |__/   \___/   \______/
   class GenericInterruptControllerHandler : public InterruptControllerHandler {
    public:
     explicit GenericInterruptControllerHandler(InterruptControllerHandlerFactory* controllerHandlerFactory,
@@ -81,41 +78,39 @@ namespace ChimeraTK {
     ~GenericInterruptControllerHandler() override;
 
     void handle(VersionNumber version) override;
-    /* When a trigger comes in, InterruptControllerHandler.handle gets called on the interrupt*/
-
+    void activate(VersionNumber version);
     static std::unique_ptr<GenericInterruptControllerHandler> create(InterruptControllerHandlerFactory*,
         std::vector<uint32_t> const& controllerID,
         std::string const& description, // THE JSON SNIPPET
         boost::shared_ptr<TriggerDistributor> parent);
-    /*
-    knows the signature of the constructor.
-    a factory. it creates interuptcontrollerhandlers.
-
-    //parse in creator. check version.
-    */
 
    protected:
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _isr;
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _ier; // or Imaskr //require either ier or imaskr
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _icr; // or iar
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _mer; // or MIE or GIE, all act identically. can have at most 1 of {MIE, GIE, MER}
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _sie; // we either have both SIE or CIE or neither.
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _cie; //
-
     bool _ierIsReallyImaskr; 
-    bool _haveIcr; 
     bool _haveSieAndCie; 
-    optionCode _optionMerMieGie;
+    bool _hasMer;
+    uint32_t _activeInterrupts; // like a local copy of IER
 
-    uint32_t _activeInterrupts; // a local copy of IER
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _isr;
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _ier; // May point to IER or Imaskr 
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _icr; // May point to ICR, IAR, or ISR, which act identically
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _mer; // May point to MER, MIE, or GIE, all act identically. We can have at most 1 of {MIE, GIE, MER}
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _sie; // We either have both SIE or CIE or neither.
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _cie; 
 
     RegisterPath _path; // just a string path, with the added overwritten / operator etc.
 
-    void _clearInterrupt(uint32_t ithInterrupt);
-    void _clearAllInterrupt();
-    void _clearAllEnabledInterrupt();
-    void _disableInterrupt(uint32_t ithInterrupt);
-    void _enableInterrupt(uint32_t ithInterrupt);
+    void _clearInterruptsFromMask(uint32_t mask);
+    inline void _clearOneInterrupt(uint32_t ithInterrupt);
+    inline void _clearAllInterrupts();
+    inline void _clearAllEnabledInterrupts();
+
+    void _disableInterruptsFromMask(uint32_t mask);
+    inline void _disableOneInterrupt(uint32_t ithInterrupt);
+
+    void _enableInterruptsFromMask(uint32_t mask);
+    inline void _enableOneInterrupt(uint32_t ithInterrupt);
   };
 
 } // namespace ChimeraTK
+
+// https://redmine.msktools.desy.de/issues/12890
