@@ -119,14 +119,15 @@ namespace ChimeraTK {
     virtual void closeImpl() {}
 
     /**
-     *  This function is called every time an accessor which is assicated with the particular primary
-     *  interrupt number is created. The idea is to have a lazy initialisation of the interrupt handling threads, so
-     *  only those threads are running for which accessors have been created. The function implementation must check
-     *  whether the according thread is already running and should do nothing when called a second time.
+     *  Activate/create the subscription for a given interrupt (for instance by starting the according interrupt
+     * handling thread). A future is returned. It becomes ready when the subscription is actually active (e.g. from
+     * inside the an interrupt handling thread after the initialisation sequence with the hardware is done).
      *
-     *  The function has an empty default implementation.
+     *  If the subscription already exists and is active, a ready future is returned.
+     *
+     *  The function has an empty default implementation which returns a ready future.
      */
-    virtual void startInterruptHandlingThread(uint32_t interruptNumber);
+    virtual std::future<void> activateSubscription(uint32_t interruptNumber);
 
     /** Turn off the internal variable which remembers that async is active. */
     void setExceptionImpl() noexcept override;

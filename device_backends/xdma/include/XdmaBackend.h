@@ -39,7 +39,7 @@ namespace ChimeraTK {
     void dump(const int32_t* data, size_t nbytes);
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) override;
-    void startInterruptHandlingThread(uint32_t interruptNumber) override;
+    std::future<void> activateSubscription(uint32_t interruptNumber) override;
     using NumericAddressedBackend::dispatchInterrupt; // make public for EventThread
 
     std::string readDeviceInfo() override;

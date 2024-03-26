@@ -112,20 +112,26 @@ namespace ChimeraTK {
 #endif
   }
 
-  void XdmaBackend::startInterruptHandlingThread(uint32_t interruptNumber) {
+  std::future<void> XdmaBackend::activateSubscription(uint32_t interruptNumber) {
+    std::promise<void> subscriptionDonePromise;
+    auto subscriptionDoneFuture = subscriptionDonePromise.get_future();
     if(interruptNumber >= _maxInterrupts) {
-      throw ChimeraTK::logic_error("XDMA interrupt " + std::to_string(interruptNumber) + " out of range, only 0.." +
+      setException("XDMA interrupt " + std::to_string(interruptNumber) + " out of range, only 0.." +
           std::to_string(_maxInterrupts - 1) + " available\n");
-    }
-    if(!isOpen()) {
-      return;
+      subscriptionDonePromise.set_value();
+      return subscriptionDoneFuture;
     }
 
     if(!_eventFiles[interruptNumber]) {
       _eventFiles[interruptNumber] = std::make_unique<EventFile>(
-          _devicePath, interruptNumber, std::bind(&XdmaBackend::dispatchInterrupt, this, interruptNumber));
-      _eventFiles[interruptNumber]->startThread();
+          _devicePath, interruptNumber, [&]() { XdmaBackend::dispatchInterrupt(interruptNumber); });
+      _eventFiles[interruptNumber]->startThread(std::move(subscriptionDonePromise));
     }
+    else {
+      // thread is already running, just fulfil the promise
+      subscriptionDonePromise.set_value();
+    }
+    return subscriptionDoneFuture;
   }
 
   std::string XdmaBackend::readDeviceInfo() {
