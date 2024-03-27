@@ -13,7 +13,7 @@ namespace ChimeraTK {
   //*****************************************************************************************************************/
   InterruptControllerHandlerFactory::InterruptControllerHandlerFactory(DeviceBackend* backend) : _backend(backend) {
     // we already know about the build-in handlers
-    _creatorFunctions["GenericInterruptControllerHandler"] = GenericInterruptControllerHandler::create;
+    _creatorFunctions["INTC"] = GenericInterruptControllerHandler::create;
     _creatorFunctions["dummy"] = DummyInterruptControllerHandler::create;
   }
 
