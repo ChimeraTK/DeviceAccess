@@ -22,18 +22,18 @@ namespace ChimeraTK {
     };
 
     enum optionCode { 
-      ISR = 0, 
-      IER, 
-      MER, // Master Interrupt Enable,
-      MIE, // Functionally equivalent to MER
-      GIE, // Global Interrupt Enable, Functionally equivalent to MER
+      ISR = 0, //Interrupt Status Register
+      IER, //Interrupt Enable Register
+      MER, //Master Interrupt Register,
+      MIE, //Master Interrupt Enable  Functionally equivalent to MER
+      GIE, //Global Interrupt Enable, Functionally equivalent to MER
       ICR, //Interrupt Clear Register
       IAR, //Interrupt Acknowledge Register
-      IPR, //=ISR & IER, a convenience feature for software. 
-      SIE,
-      CIE,
-      IMaskR, //IMR Acronym Collision 
-      IModeR, //IMR Acronym Collision, defined in the standard but not allowed
+      IPR, //Interrupt Pending Register =ISR & IER, a convenience feature for software. 
+      SIE, //Set Interrupt Enable
+      CIE, //Slear Interrupt Enable
+      IMaskR, //Interrupt Mask Register. IMR Acronym Collision 
+      IModeR, //Interrupt Mode Register. IMR Acronym Collision, defined in the standard but not allowed
       IVR,    // defined in the standard but not allowed
       ILR,    // defined in the standard but not allowed
       IVAR,   // defined in the standard but not allowed
@@ -58,8 +58,7 @@ namespace ChimeraTK {
         std::bitset<OPTION_CODE_COUNT> const& optionRegisterSettings, std::vector<uint32_t> const& controllerID);
   } // namespace genIntC
 
-  using namespace genIntC;
-
+  /********************************************************************************************************************/
   //    /$$$$$$                      /$$$$$$             /$$      /$$$$$$
   //   /$$__  $$                    |_  $$_/            | $$     /$$__  $$
   //  | $$  \__/  /$$$$$$  /$$$$$$$   | $$   /$$$$$$$  /$$$$$$  | $$  \__/
@@ -68,13 +67,14 @@ namespace ChimeraTK {
   //  | $$  \ $$| $$_____/| $$  | $$  | $$  | $$  | $$  | $$ /$$| $$    $$
   //  |  $$$$$$/|  $$$$$$$| $$  | $$ /$$$$$$| $$  | $$  |  $$$$/|  $$$$$$/
   //   \______/  \_______/|__/  |__/|______/|__/  |__/   \___/   \______/
+  /********************************************************************************************************************/
   class GenericInterruptControllerHandler : public InterruptControllerHandler {
    public:
     explicit GenericInterruptControllerHandler(InterruptControllerHandlerFactory* controllerHandlerFactory,
         std::vector<uint32_t> const& controllerID, 
         boost::shared_ptr<TriggerDistributor> parent,
         std::string registerPath, 
-        std::bitset<(ulong)optionCode::OPTION_CODE_COUNT> optionRegisterSettings);
+        std::bitset<(ulong)genIntC::optionCode::OPTION_CODE_COUNT> optionRegisterSettings);
     ~GenericInterruptControllerHandler() override;
 
     void handle(VersionNumber version) override;
@@ -110,7 +110,11 @@ namespace ChimeraTK {
     void _enableInterruptsFromMask(uint32_t mask);
     inline void _enableOneInterrupt(uint32_t ithInterrupt);
   };
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
 
 // https://redmine.msktools.desy.de/issues/12890

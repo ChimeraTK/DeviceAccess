@@ -13,6 +13,13 @@
 namespace ChimeraTK {
   namespace genIntC {
 
+    /******************************************************************************************************************/
+    inline uint32_t i2Mask(const uint32_t ithInterrupt) {
+      // return a 32 bit mask with the ithInterrupt bit from the left set to 1 and all others 0
+      return 0x1U << ithInterrupt;
+    }
+
+    /******************************************************************************************************************/
     //   /$$$$$$$$
     //  | $$_____/
     //  | $$       /$$$$$$$  /$$   /$$ /$$$$$$/$$$$
@@ -26,7 +33,8 @@ namespace ChimeraTK {
       return boost::bimap<L, R>(list.begin(), list.end());
     }
 
-    static auto optionCodeMap = _makeBimap<std::string, optionCode>({
+    /******************************************************************************************************************/
+    static const auto optionCodeMap = _makeBimap<std::string, optionCode>({ 
         {"SIE", SIE},
         {"IER", IER},
         {"MER", MER},
@@ -46,10 +54,9 @@ namespace ChimeraTK {
         {"IVEAR", IVEAR},
     });
 
-    /*****************************************************************************************************************/
-
+    /******************************************************************************************************************/
     optionCode getOptionRegisterEnum(std::string opt) {
-      /*
+      /**
        * If the string is not a recognized option code, returns optionCode::INVALID_OPTION_CODE
        * It is not the job of this function to do any control logic on these code, just convert the strings
        * Example: "ISR" -> optionCode::ISR
@@ -65,10 +72,9 @@ namespace ChimeraTK {
       }
     }
 
-    /*****************************************************************************************************************/
-
+    /******************************************************************************************************************/
     std::string getOptionRegisterStr(optionCode optCode) {
-      /*
+      /**
        * Given the Register option code enum, returns the corresponding string.
        */
       auto it = optionCodeMap.right.find(optCode);
@@ -80,7 +86,7 @@ namespace ChimeraTK {
       }
     }
 
-    /*****************************************************************************************************************/
+    /******************************************************************************************************************/
     //    /$$$$$$   /$$               /$$
     //   /$$__  $$ | $$              |__/
     //  | $$  \__//$$$$$$    /$$$$$$  /$$ /$$$$$$$   /$$$$$$   /$$$$$$$
@@ -94,7 +100,7 @@ namespace ChimeraTK {
     //                                              \______/
     // TODO move to some string helper library
     std::string strSet2Str(const std::set<std::string>& strSet, char delimiter) {
-      // default delimiter is ','
+      // The default delimiter is ','
       std::string result = "";
       if(not strSet.empty()) {
         for(const auto& str : strSet) {
@@ -105,11 +111,12 @@ namespace ChimeraTK {
       return result;
     }
 
-    /*****************************************************************************************************************/
-
+    /******************************************************************************************************************/
     std::string intVec2Str(const std::vector<uint32_t>& intVec, char delimiter) {
-      // default delimiter is ','
-      //  Return a string describing the intVec of the form "1,2,3"
+      /**
+       *  Return a string describing the intVec of the form "1,2,3"
+       *  The default delimiter is ','
+       */
       std::string result = "";
       if(not intVec.empty()) {
         for(const auto& i : intVec) {
@@ -120,15 +127,13 @@ namespace ChimeraTK {
       return result;
     }
 
-    /*****************************************************************************************************************/
-
+    /******************************************************************************************************************/
     std::string controllerID2Str(const std::vector<uint32_t>& controllerID) {
       // Return a string describing the controllerID of the form "[1,2,3]"
       return "[" + intVec2Str(controllerID, ',') + "]";
     }
 
-
-    /****************************************************************************************************************/
+    /******************************************************************************************************************/
     //      /$$$$$  /$$$$$$   /$$$$$$  /$$   /$$
     //     |__  $$ /$$__  $$ /$$__  $$| $$$ | $$
     //        | $$| $$  \__/| $$  \ $$| $$$$| $$
@@ -142,7 +147,8 @@ namespace ChimeraTK {
         std::string const& description,            // THE JSON SNIPPET
         std::string& registerPath) {               // a return value
 
-      /* Extracts and validates data from the json snippet 'descriptor' that matches the version 1 format
+      /**
+       * Extracts and validates data from the json snippet 'descriptor' that matches the version 1 format
        * Expect description of the form  {"path":"APP.INTCB", "options":{"ICR", "IPR", "MER"...}, "version":1}
        * Extracts the value associated with the "path" json flag to registerPath
        * Returns options flags as a bitset indexed by the optionCode enum
@@ -156,8 +162,8 @@ namespace ChimeraTK {
        * this only validates the json snippet.
        */
 
-      const jsonDescriptorStandardV1 jdv1;
-      static const int defaultJsonDescriptorVersion = jdv1.jsonDescriptorVersion;
+      constexpr jsonDescriptorStandardV1 jdv1;
+      static constexpr int defaultJsonDescriptorVersion = jdv1.jsonDescriptorVersion;
       static const std::vector<std::string> defaultOptionRegisterNames = {"ISR", "IER", "MER"};
 
       nlohmann::json jsonDescription;
@@ -209,7 +215,7 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Map file json " + jdv1.OPTIONS_JSON_KEY +
             " key error for GenericInterruptControllerHandler " + controllerID2Str(controllerID) + ": " + e.what());
       }
-      /*
+      /**
        * The case where the json option is provided but empty is covered by
        * turning on ISR immediately and turn on IER with a check below.
        */
@@ -233,7 +239,7 @@ namespace ChimeraTK {
       return optionRegisterSettings;
     } // parseAndValidateJsonDescriptionV1
 
-    /****************************************************************************************************************/
+    /******************************************************************************************************************/
     //    /$$$$$$   /$$                         /$$ /$$ /$$
     //   /$$__  $$ | $$                        |__/| $$|__/
     //  | $$  \__//$$$$$$    /$$$$$$   /$$$$$$  /$$| $$ /$$  /$$$$$$$  /$$$$$$
@@ -244,8 +250,9 @@ namespace ChimeraTK {
     //   \______/   \___/   \_______/|__/      |__/|__/|__/|_______/  \_______/
     void steriliseOptionRegisterSettings(
         std::bitset<OPTION_CODE_COUNT> const& optionRegisterSettings, std::vector<uint32_t> const& controllerID) {
-      /* Ensures permissible combinations of option registers 
-       * by throwing ChimeraTK::logic_error if there are any problems. 
+      /**
+       * Ensures permissible combinations of option registers
+       * by throwing ChimeraTK::logic_error if there are any problems.
        * It enforces the following rules:
        *    Throw if ISR not set
        *    Throw if neither IER nor IMaskR are set.
@@ -329,15 +336,7 @@ namespace ChimeraTK {
 
     } // steriliseOptionRegisterSettings
 
-    /*****************************************************************************************************************/
-
-    inline uint32_t i2Mask(const uint32_t ithInterrupt) {
-      // return a 32 bit mask with the ithInterrupt bit from the left set to 1 and all others 0
-      return 0x1U << ithInterrupt;
-    }
-
   } // namespace genIntC
-  /********************************************************************************************************************/
   //   /$$        /$$$$$$                      /$$$$$$             /$$      /$$$$$$
   //  |  $$      /$$__  $$                    |_  $$_/            | $$     /$$__  $$
   //   \  $$    | $$  \__/  /$$$$$$  /$$$$$$$   | $$   /$$$$$$$  /$$$$$$  | $$  \__/
@@ -347,10 +346,12 @@ namespace ChimeraTK {
   //       \  $$|  $$$$$$/|  $$$$$$$| $$  | $$ /$$$$$$| $$  | $$  |  $$$$/|  $$$$$$/
   //        \__/ \______/  \_______/|__/  |__/|______/|__/  |__/   \___/   \______/
   /********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   using namespace ChimeraTK::genIntC;
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //    /$$$$$$                                  /$$                                     /$$
   //   /$$__  $$                                | $$                                    | $$
   //  | $$  \__/  /$$$$$$  /$$$$$$$   /$$$$$$$ /$$$$$$    /$$$$$$  /$$   /$$  /$$$$$$$ /$$$$$$    /$$$$$$   /$$$$$$
@@ -373,8 +374,10 @@ namespace ChimeraTK {
     }
     //Here we could explicitly note we're ignoring IPR with optionRegisterSettings.reset(IPR)
 
+    /*---------------------------------------------------------------------------------------------------------------*/
     steriliseOptionRegisterSettings(optionRegisterSettings, controllerID);
 
+    /*---------------------------------------------------------------------------------------------------------------*/
     _isr = _backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(ISR), 1, 0, {});
 
     _ierIsReallyImaskr = optionRegisterSettings.test(IMaskR);
@@ -405,6 +408,7 @@ namespace ChimeraTK {
       _cie= _backend->getRegisterAccessor<uint32_t>(_path / getOptionRegisterStr(CIE), 1, 0, {});
     }
 
+    /*---------------------------------------------------------------------------------------------------------------*/
     // Check register readability
     if(!_isr->isReadable()) {
       throw ChimeraTK::runtime_error(
@@ -434,7 +438,7 @@ namespace ChimeraTK {
     }
   } //constructor
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //   /$$$$$$$                        /$$                                     /$$
   //  | $$__  $$                      | $$                                    | $$
   //  | $$  \ $$  /$$$$$$   /$$$$$$$ /$$$$$$    /$$$$$$  /$$   /$$  /$$$$$$$ /$$$$$$
@@ -447,7 +451,7 @@ namespace ChimeraTK {
     _clearAllEnabledInterrupts();
   } //destructor
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //    /$$$$$$  /$$
   //   /$$__  $$| $$
   //  | $$  \__/| $$  /$$$$$$   /$$$$$$   /$$$$$$
@@ -457,8 +461,9 @@ namespace ChimeraTK {
   //  |  $$$$$$/| $$|  $$$$$$$|  $$$$$$$| $$
   //   \______/ |__/ \_______/ \_______/|__/
   void GenericInterruptControllerHandler::_clearInterruptsFromMask(uint32_t mask){
-    /* In mask, 1 bits clear the corresponding registers, 0 bits do nothing. 
-    */
+    /**
+     * In mask, 1 bits clear the corresponding registers, 0 bits do nothing.
+     */
     try {
       _icr->accessData(0) = mask;
       _icr->write();
@@ -466,25 +471,22 @@ namespace ChimeraTK {
     catch(ChimeraTK::runtime_error&) { }
   }
 
-  /*****************************************************************************************************************/
-
+  /********************************************************************************************************************/
   inline void GenericInterruptControllerHandler::_clearOneInterrupt(uint32_t ithInterrupt){
     _clearInterruptsFromMask(i2Mask(ithInterrupt));
   } 
 
-  /*****************************************************************************************************************/
-  
+  /********************************************************************************************************************/
   inline void GenericInterruptControllerHandler::_clearAllInterrupts(){
     _clearInterruptsFromMask(0xFFFFFFFF);
   } 
 
-  /*****************************************************************************************************************/
-
+  /********************************************************************************************************************/
   inline void GenericInterruptControllerHandler::_clearAllEnabledInterrupts(){
     _clearInterruptsFromMask(_activeInterrupts);
   } 
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //   /$$$$$$$  /$$                     /$$       /$$
   //  | $$__  $$|__/                    | $$      | $$
   //  | $$  \ $$ /$$  /$$$$$$$  /$$$$$$ | $$$$$$$ | $$  /$$$$$$
@@ -494,7 +496,8 @@ namespace ChimeraTK {
   //  | $$$$$$$/| $$ /$$$$$$$/|  $$$$$$$| $$$$$$$/| $$|  $$$$$$$
   //  |_______/ |__/|_______/  \_______/|_______/ |__/ \_______/
   void GenericInterruptControllerHandler::_disableInterruptsFromMask(uint32_t mask) {
-    /* Disables each interrupt corresponding to the 1 bits in mask, and updates _activeInterrupts.
+    /**
+     *  Disables each interrupt corresponding to the 1 bits in mask, and updates _activeInterrupts.
      * Depending on the options, may perform the disable using CIE, IER, or IMaskR.
      */
     _activeInterrupts &= ~mask;
@@ -519,13 +522,12 @@ namespace ChimeraTK {
     catch(ChimeraTK::runtime_error&) { }
   }
 
-  /*****************************************************************************************************************/
-
+  /********************************************************************************************************************/
   inline void GenericInterruptControllerHandler::_disableOneInterrupt(uint32_t ithInterrupt) {
     _disableInterruptsFromMask(i2Mask(ithInterrupt));
   } 
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //   /$$$$$$$$                     /$$       /$$
   //  | $$_____/                    | $$      | $$
   //  | $$       /$$$$$$$   /$$$$$$ | $$$$$$$ | $$  /$$$$$$
@@ -569,13 +571,12 @@ namespace ChimeraTK {
     catch(ChimeraTK::runtime_error&) { }
   } //_enableInterruptFromMask
 
-  /*****************************************************************************************************************/
-
+  /********************************************************************************************************************/
   inline void GenericInterruptControllerHandler::_enableOneInterrupt(uint32_t ithInterrupt) {
     _enableInterruptsFromMask(i2Mask(ithInterrupt));
   } 
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //   /$$   /$$                           /$$           /$$
   //  | $$  | $$                          | $$          | $$
   //  | $$  | $$  /$$$$$$  /$$$$$$$   /$$$$$$$  /$$$$$$ | $$
@@ -585,9 +586,10 @@ namespace ChimeraTK {
   //  | $$  | $$|  $$$$$$$| $$  | $$|  $$$$$$$|  $$$$$$$| $$
   //  |__/  |__/ \_______/|__/  |__/ \_______/ \_______/|__/
   void GenericInterruptControllerHandler::handle(VersionNumber version) {
-    /* When a trigger comes in, handle gets called on the interrupt. 
-    * It implements the handshake with the interrupt controller
-    */
+    /**
+     * When a trigger comes in, handle gets called on the interrupt.
+     * It implements the handshake with the interrupt controller
+     */
 
     try {
       _isr->read(); // retain
@@ -620,7 +622,7 @@ namespace ChimeraTK {
     } 
   }   // handle
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //    /$$$$$$                                  /$$
   //   /$$__  $$                                | $$
   //  | $$  \__/  /$$$$$$   /$$$$$$   /$$$$$$  /$$$$$$    /$$$$$$
@@ -633,7 +635,8 @@ namespace ChimeraTK {
       InterruptControllerHandlerFactory* controllerHandlerFactory, std::vector<uint32_t> const& controllerID,
       [[maybe_unused]] std::string const& description, // THE JSON SNIPPET
       boost::shared_ptr<TriggerDistributor> parent) {
-    /* This is a factory function. It parses the json, and calls the constructor
+    /**
+     *  This is a factory function. It parses the json, and calls the constructor
      *  it returns an initalized GenericInterruptControllerHandler
      */
 
@@ -645,7 +648,7 @@ namespace ChimeraTK {
         controllerHandlerFactory, controllerID, std::move(parent), registerPath, optionRegisterSettings);
   } //create
 
-  /*****************************************************************************************************************/
+  /********************************************************************************************************************/
   //    /$$$$$$              /$$     /$$                       /$$
   //   /$$__  $$            | $$    |__/                      | $$
   //  | $$  \ $$  /$$$$$$$ /$$$$$$   /$$ /$$    /$$ /$$$$$$  /$$$$$$    /$$$$$$
@@ -685,9 +688,16 @@ namespace ChimeraTK {
     
     InterruptControllerHandler::activate(version);
   } //activate
-} // namespace ChimeraTK
 
-/* NOTES
-    ILR is the priority threshold to block low priority interrupts to support nested interrupt handling.
-    There might be another process which is accessing other interrupts on the same (primary) controller.
-*/
+  /********************************************************************************************************************/
+
+} // namespace ChimeraTK
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
+/**
+ *  NOTES
+ *  ILR is the priority threshold to block low priority interrupts to support nested interrupt handling.
+ *  There might be another process which is accessing other interrupts on the same (primary) controller.
+ */
