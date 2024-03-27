@@ -88,7 +88,7 @@ namespace ChimeraTK {
     bool _ierIsReallyImaskr; 
     bool _haveSieAndCie; 
     bool _hasMer;
-    uint32_t _activeInterrupts; // like a local copy of IER
+    uint32_t _activeInterrupts{0}; // like a local copy of IER
 
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _isr;
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _ier; // May point to IER or Imaskr 

@@ -365,7 +365,7 @@ namespace ChimeraTK {
       InterruptControllerHandlerFactory* controllerHandlerFactory, std::vector<uint32_t> const& controllerID,
       boost::shared_ptr<TriggerDistributor> parent, std::string registerPath,
       std::bitset<optionCode::OPTION_CODE_COUNT> optionRegisterSettings)
-  : InterruptControllerHandler(controllerHandlerFactory, controllerID, std::move(parent)), _activeInterrupts(0), _path(registerPath.c_str()) {
+  : InterruptControllerHandler(controllerHandlerFactory, controllerID, std::move(parent)), _path(registerPath.c_str()) {
 
     // Set required registers
     optionRegisterSettings.set(ISR); // Ensure that the required option ISR is always set.
