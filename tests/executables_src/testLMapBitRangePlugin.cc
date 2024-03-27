@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(testSimpleWrite) {
   BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAccessorSanity) {
   ChimeraTK::Device device;
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(testAccessorSanity) {
   // BOOST_CHECK(accMiddle2.dataValidity() == ChimeraTK::DataValidity::faulty);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMathPluginChaining) {
   ChimeraTK::Device device;
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(testMathPluginChaining) {
   BOOST_CHECK(accTarget.dataValidity() == ChimeraTK::DataValidity::ok);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testBitExtraction) {
   ChimeraTK::Device device;
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(testBitExtraction) {
   BOOST_TEST(accRangedHi == 0x11);
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDataDescription) {
   ChimeraTK::Device device;
