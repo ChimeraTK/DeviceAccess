@@ -16,8 +16,8 @@ namespace ChimeraTK {
    */
   class TriggeredPollDistributor : public SourceTypedAsyncAccessorManager<std::nullptr_t> {
    public:
-    TriggeredPollDistributor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<TriggerDistributor> parent,
-        boost::shared_ptr<AsyncDomain> asyncDomain);
+    TriggeredPollDistributor(boost::shared_ptr<DeviceBackend> backend,
+        boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent, boost::shared_ptr<AsyncDomain> asyncDomain);
 
     /** Poll all sync variables. */
     bool prepareIntermediateBuffers() override;
@@ -27,7 +27,7 @@ namespace ChimeraTK {
 
    protected:
     TransferGroup _transferGroup;
-    boost::shared_ptr<TriggerDistributor> _parent;
+    boost::shared_ptr<TriggerDistributor<std::nullptr_t>> _parent;
   };
 
   /********************************************************************************************************************/

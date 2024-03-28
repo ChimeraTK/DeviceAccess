@@ -6,7 +6,7 @@
 namespace ChimeraTK {
 
   UioBackend::UioBackend(std::string deviceName, std::string mapFileName) : NumericAddressedBackend(mapFileName) {
-    _uioAccess = std::shared_ptr<UioAccess>(new UioAccess("/dev/" + deviceName));
+    _uioAccess = std::make_shared<UioAccess>("/dev/" + deviceName);
   }
 
   UioBackend::~UioBackend() {
@@ -15,7 +15,7 @@ namespace ChimeraTK {
 
   boost::shared_ptr<DeviceBackend> UioBackend::createInstance(
       std::string address, std::map<std::string, std::string> parameters) {
-    if(address.size() == 0) {
+    if(address.empty()) {
       throw ChimeraTK::logic_error("UIO: Device name not specified.");
     }
     return boost::shared_ptr<DeviceBackend>(new UioBackend(address, parameters["map"]));
@@ -46,9 +46,7 @@ namespace ChimeraTK {
   }
 
   bool UioBackend::barIndexValid(uint64_t bar) {
-    if(bar != 0) return false;
-
-    return true;
+    return (bar == 0);
   }
 
   void UioBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
@@ -65,7 +63,8 @@ namespace ChimeraTK {
     _uioAccess->write(bar, address, data, sizeInBytes);
   }
 
-  std::future<void> UioBackend::activateSubscription(uint32_t interruptNumber) {
+  std::future<void> UioBackend::activateSubscription(
+      uint32_t interruptNumber, boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain) {
     std::promise<void> subscriptionDonePromise;
 
     if(interruptNumber != 0) {
@@ -79,6 +78,7 @@ namespace ChimeraTK {
     }
 
     _stopInterruptLoop = false;
+    _asyncDomain = asyncDomain;
     auto subscriptionDoneFuture = subscriptionDonePromise.get_future();
     _interruptWaitingThread = std::thread(&UioBackend::waitForInterruptLoop, this, std::move(subscriptionDonePromise));
     return subscriptionDoneFuture;
@@ -135,7 +135,10 @@ namespace ChimeraTK {
           }
           std::cout << "dispatching interrupt " << std::endl;
 #endif
-          dispatchInterrupt(0);
+          auto domain = _asyncDomain.lock();
+          if(domain) {
+            domain->distribute(nullptr);
+          }
         }
       }
       catch(ChimeraTK::runtime_error& ex) {

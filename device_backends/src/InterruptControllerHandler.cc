@@ -25,7 +25,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   boost::shared_ptr<InterruptControllerHandler> InterruptControllerHandlerFactory::createInterruptControllerHandler(
-      std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor> parent) {
+      std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) {
     assert(!controllerID.empty());
     std::string name, description;
     try {
@@ -53,7 +53,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   InterruptControllerHandler::InterruptControllerHandler(InterruptControllerHandlerFactory* controllerHandlerFactory,
-      std::vector<uint32_t> controllerID, boost::shared_ptr<TriggerDistributor> parent)
+      std::vector<uint32_t> controllerID, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent)
   : _backend(controllerHandlerFactory->getBackend()), _controllerHandlerFactory(controllerHandlerFactory),
     _id(std::move(controllerID)), _parent(std::move(parent)), _asyncDomain(_parent->getAsyncDomain()) {}
 
@@ -67,14 +67,14 @@ namespace ChimeraTK {
     qualifiedInterruptId.push_back(interruptID.front());
 
     // we can't use try_emplace because the map contains weak pointers
-    boost::shared_ptr<TriggerDistributor> distributor;
+    boost::shared_ptr<TriggerDistributor<std::nullptr_t>> distributor;
     auto distributorIter = _distributors.find(interruptID.front());
     if(distributorIter != _distributors.end()) {
       distributor = distributorIter->second.lock();
     }
     if(!distributor) {
-      distributor = boost::make_shared<TriggerDistributor>(
-          _backend, _controllerHandlerFactory, qualifiedInterruptId, shared_from_this(), _asyncDomain);
+      distributor = boost::make_shared<TriggerDistributor<std::nullptr_t>>(
+          _backend, qualifiedInterruptId, shared_from_this(), _asyncDomain);
       _distributors[interruptID.front()] = distributor;
       if(_asyncDomain->unsafeGetIsActive()) {
         // Creating a new version here is correct. Nothing has been distributed to any accessor connected to this

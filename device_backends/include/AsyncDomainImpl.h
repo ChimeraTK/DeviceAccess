@@ -4,18 +4,18 @@
 
 #include "AsyncDomain.h"
 #include "AsyncNDRegisterAccessor.h"
+#include "TriggerDistributor.h"
 #include "VersionNumber.h"
 
 #include <functional>
 
 namespace ChimeraTK {
 
-  template<typename DistributorType, typename BackendDataType>
+  template<typename BackendDataType>
   class AsyncDomainImpl : public AsyncDomain {
    public:
-    explicit AsyncDomainImpl(
-        std::function<boost::shared_ptr<DistributorType>(boost::shared_ptr<AsyncDomain>)> creatorFunction)
-    : _creatorFunction(creatorFunction) {}
+    AsyncDomainImpl(boost::shared_ptr<DeviceBackend> backend, size_t asyncDomainId)
+    : _backend(backend), _id(asyncDomainId) {}
 
     /**
      * Distribute the data via the associated distribution tree.
@@ -47,7 +47,8 @@ namespace ChimeraTK {
      *  @ return The version number that has been used for distribution.
      */
     VersionNumber activate(BackendDataType data, VersionNumber version = VersionNumber{nullptr});
-    void deactivate();
+
+    void deactivate() override;
     void sendException(const std::exception_ptr& e) noexcept override;
 
     template<typename UserDataType>
@@ -56,9 +57,10 @@ namespace ChimeraTK {
 
    protected:
     // Everything in this class is protected by the mutex from the AsyncDomain base class.
-    boost::weak_ptr<DistributorType> _distributor;
+    boost::weak_ptr<TriggerDistributor<BackendDataType>> _distributor;
 
-    std::function<boost::shared_ptr<DistributorType>(boost::shared_ptr<AsyncDomain>)> _creatorFunction;
+    boost::shared_ptr<DeviceBackend> _backend;
+    size_t _id;
 
     // Data to resolve a race condition (see distribute and activate)
     BackendDataType _notDistributedData;
@@ -68,9 +70,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename DistributorType, typename BackendDataType>
-  VersionNumber AsyncDomainImpl<DistributorType, BackendDataType>::distribute(
-      BackendDataType data, VersionNumber version) {
+  template<typename BackendDataType>
+  VersionNumber AsyncDomainImpl<BackendDataType>::distribute(BackendDataType data, VersionNumber version) {
     std::lock_guard l(_mutex);
     // everything incl. potential creation of a new version number must happen under the lock
     if(version == VersionNumber(nullptr)) {
@@ -99,9 +100,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename DistributorType, typename BackendDataType>
-  VersionNumber AsyncDomainImpl<DistributorType, BackendDataType>::activate(
-      BackendDataType data, VersionNumber version) {
+  template<typename BackendDataType>
+  VersionNumber AsyncDomainImpl<BackendDataType>::activate(BackendDataType data, VersionNumber version) {
     std::lock_guard l(_mutex);
     // everything incl. potential creation of a new version number must happen under the lock
     if(version == VersionNumber(nullptr)) {
@@ -129,8 +129,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename DistributorType, typename BackendDataType>
-  void AsyncDomainImpl<DistributorType, BackendDataType>::deactivate() {
+  template<typename BackendDataType>
+  void AsyncDomainImpl<BackendDataType>::deactivate() {
     std::lock_guard l(_mutex);
 
     _isActive = false;
@@ -138,8 +138,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename DistributorType, typename BackendDataType>
-  void AsyncDomainImpl<DistributorType, BackendDataType>::sendException(const std::exception_ptr& e) noexcept {
+  template<typename BackendDataType>
+  void AsyncDomainImpl<BackendDataType>::sendException(const std::exception_ptr& e) noexcept {
     std::lock_guard l(_mutex);
 
     if(!_isActive) {
@@ -158,15 +158,16 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename DistributorType, typename BackendDataType>
+  template<typename BackendDataType>
   template<typename UserDataType>
-  boost::shared_ptr<AsyncNDRegisterAccessor<UserDataType>> AsyncDomainImpl<DistributorType, BackendDataType>::subscribe(
+  boost::shared_ptr<AsyncNDRegisterAccessor<UserDataType>> AsyncDomainImpl<BackendDataType>::subscribe(
       RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     std::lock_guard l(_mutex);
 
     auto distributor = _distributor.lock();
     if(!distributor) {
-      distributor = _creatorFunction(shared_from_this());
+      distributor = boost::make_shared<TriggerDistributor<BackendDataType>>(
+          _backend, std::vector<uint32_t>({static_cast<uint32_t>(_id)}), nullptr, shared_from_this());
       _distributor = distributor;
     }
 

@@ -15,6 +15,7 @@
 namespace ChimeraTK {
   class InterruptControllerHandler;
   class TriggeredPollDistributor;
+  template<typename BackendSpecificDataType>
   class TriggerDistributor;
   template<typename UserType>
   class VariableDistributor;
@@ -31,7 +32,7 @@ namespace ChimeraTK {
     explicit InterruptControllerHandlerFactory(DeviceBackend* backend);
 
     boost::shared_ptr<InterruptControllerHandler> createInterruptControllerHandler(
-        std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor> parent);
+        std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent);
     void addControllerDescription(
         std::vector<uint32_t> const& controllerID, std::string const& name, std::string const& description);
 
@@ -49,7 +50,7 @@ namespace ChimeraTK {
      */
     std::map<std::string,
         std::function<std::unique_ptr<InterruptControllerHandler>(InterruptControllerHandlerFactory*,
-            std::vector<uint32_t> const&, std::string, boost::shared_ptr<TriggerDistributor>)>>
+            std::vector<uint32_t> const&, std::string, boost::shared_ptr<TriggerDistributor<std::nullptr_t>>)>>
         _creatorFunctions;
   };
 
@@ -65,7 +66,7 @@ namespace ChimeraTK {
      * which is known to the handler via plain pointer (to avoid shared pointer loops)
      */
     InterruptControllerHandler(InterruptControllerHandlerFactory* controllerHandlerFactory,
-        std::vector<uint32_t> controllerID, boost::shared_ptr<TriggerDistributor> parent);
+        std::vector<uint32_t> controllerID, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent);
     virtual ~InterruptControllerHandler() = default;
 
     /** Needed to get a new accessor for a certain interrupt. The whole chain will be created recursively if it does not
@@ -83,7 +84,7 @@ namespace ChimeraTK {
     virtual void handle(VersionNumber version) = 0;
 
    protected:
-    std::map<uint32_t, boost::weak_ptr<TriggerDistributor>> _distributors;
+    std::map<uint32_t, boost::weak_ptr<TriggerDistributor<std::nullptr_t>>> _distributors;
 
     boost::shared_ptr<DeviceBackend> _backend;
     InterruptControllerHandlerFactory* _controllerHandlerFactory;
@@ -92,7 +93,7 @@ namespace ChimeraTK {
      */
     std::vector<uint32_t> _id;
 
-    boost::shared_ptr<TriggerDistributor> _parent;
+    boost::shared_ptr<TriggerDistributor<std::nullptr_t>> _parent;
     boost::shared_ptr<AsyncDomain> _asyncDomain;
   };
 

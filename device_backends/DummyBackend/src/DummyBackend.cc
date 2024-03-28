@@ -4,7 +4,6 @@
 #include "BackendFactory.h"
 #include "DummyRegisterAccessor.h"
 #include "Exception.h"
-#include "MapFileParser.h"
 #include "parserUtilities.h"
 
 #include <boost/lambda/lambda.hpp>
@@ -185,13 +184,17 @@ namespace ChimeraTK {
   }
 
   VersionNumber DummyBackend::triggerInterrupt(uint32_t interruptNumber) {
-    try {
-      return dispatchInterrupt(interruptNumber);
+    auto asyncDomain = boost::dynamic_pointer_cast<AsyncDomainImpl<std::nullptr_t>>(
+        _asyncDomainsContainer.getAsyncDomain(interruptNumber));
+
+    if(asyncDomain) {
+      return asyncDomain->distribute(nullptr);
     }
-    catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error(
-          "DummyBackend::triggerInterrupt(): Error: Unknown interrupt " + std::to_string(interruptNumber));
-    }
+
+    // If the asyncDomain is not there, the pointer in the _asyncDomainsContainer must be nullptr as well.
+    // Otherwise the dynamic cast failed, which should never happen.
+    assert(!_asyncDomainsContainer.getAsyncDomain(interruptNumber));
+    return VersionNumber{nullptr};
   }
 
 } // namespace ChimeraTK

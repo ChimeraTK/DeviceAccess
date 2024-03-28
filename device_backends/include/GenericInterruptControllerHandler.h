@@ -8,7 +8,7 @@ namespace ChimeraTK {
   class GenericInterruptControllerHandler : public InterruptControllerHandler {
    public:
     explicit GenericInterruptControllerHandler(InterruptControllerHandlerFactory* controllerHandlerFactory,
-        std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor> parent)
+        std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent)
     : InterruptControllerHandler(controllerHandlerFactory, controllerID, std::move(parent)) {}
     ~GenericInterruptControllerHandler() override = default;
 
@@ -16,7 +16,7 @@ namespace ChimeraTK {
 
     static std::unique_ptr<GenericInterruptControllerHandler> create(InterruptControllerHandlerFactory*,
         std::vector<uint32_t> const& controllerID, std::string const& desrciption,
-        boost::shared_ptr<TriggerDistributor> parent);
+        boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent);
   };
 
 } // namespace ChimeraTK

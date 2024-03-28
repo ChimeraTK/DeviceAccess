@@ -11,7 +11,7 @@ namespace ChimeraTK {
 
   void DeviceBackendImpl::setOpenedAndClearException() noexcept {
     // busy-wait until all exceptions have been distributed to the AsyncAccessors
-    while(_asyncDomainsContainer->isSendingExceptions()) {
+    while(_asyncDomainsContainer.isSendingExceptions()) {
       usleep(10000);
     }
 
@@ -42,7 +42,7 @@ namespace ChimeraTK {
     setExceptionImpl();
 
     // finally turn off all async accessors and distribute the exception to them
-    _asyncDomainsContainer->sendExceptions(message);
+    _asyncDomainsContainer.sendExceptions(message);
   }
 
   /********************************************************************************************************************/
@@ -50,6 +50,15 @@ namespace ChimeraTK {
   std::string DeviceBackendImpl::getActiveExceptionMessage() noexcept {
     std::lock_guard<std::mutex> lk(_mx_activeExceptionMessage);
     return _activeExceptionMessage;
+  }
+
+  /********************************************************************************************************************/
+
+  boost::shared_ptr<InterruptControllerHandler> DeviceBackendImpl::createInterruptControllerHandler(
+      [[maybe_unused]] std::vector<uint32_t> const& controllerID,
+      [[maybe_unused]] boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) {
+    assert(false);
+    return {nullptr};
   }
 
   /********************************************************************************************************************/

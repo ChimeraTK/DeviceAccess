@@ -112,7 +112,8 @@ namespace ChimeraTK {
 #endif
   }
 
-  std::future<void> XdmaBackend::activateSubscription(uint32_t interruptNumber) {
+  std::future<void> XdmaBackend::activateSubscription(
+      uint32_t interruptNumber, boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain) {
     std::promise<void> subscriptionDonePromise;
     auto subscriptionDoneFuture = subscriptionDonePromise.get_future();
     if(interruptNumber >= _maxInterrupts) {
@@ -123,8 +124,7 @@ namespace ChimeraTK {
     }
 
     if(!_eventFiles[interruptNumber]) {
-      _eventFiles[interruptNumber] = std::make_unique<EventFile>(
-          _devicePath, interruptNumber, [&]() { XdmaBackend::dispatchInterrupt(interruptNumber); });
+      _eventFiles[interruptNumber] = std::make_unique<EventFile>(_devicePath, interruptNumber, asyncDomain);
       _eventFiles[interruptNumber]->startThread(std::move(subscriptionDonePromise));
     }
     else {

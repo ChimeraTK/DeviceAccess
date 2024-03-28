@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "AsyncDomainImpl.h"
 #include "DeviceFile.h"
 
 #include <boost/asio.hpp>
@@ -13,7 +14,6 @@
 #include <thread>
 
 namespace ChimeraTK {
-  using EventCallback = std::function<void()>;
 
   class EventFile;
   class EventThread {
@@ -40,13 +40,14 @@ namespace ChimeraTK {
   class EventFile {
     friend class EventThread;
     DeviceFile _file;
-    EventCallback _callback;
+    boost::weak_ptr<AsyncDomainImpl<std::nullptr_t>> _asyncDomain;
 
     std::unique_ptr<EventThread> _evtThread;
 
    public:
     EventFile() = delete;
-    EventFile(const std::string& devicePath, size_t interruptIdx, EventCallback callback);
+    EventFile(const std::string& devicePath, size_t interruptIdx,
+        boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain);
     // EventFile(EventFile&& d) = default;
     ~EventFile();
 

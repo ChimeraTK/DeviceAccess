@@ -309,14 +309,18 @@ namespace ChimeraTK {
   }
 
   void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(uint32_t interruptNumber) {
-    try {
-      SharedDummyBackend& backend = _dispatcherInterf->_backend;
-      backend.dispatchInterrupt(interruptNumber);
+    SharedDummyBackend& backend = _dispatcherInterf->_backend;
+    auto asyncDomain = boost::dynamic_pointer_cast<AsyncDomainImpl<std::nullptr_t>>(
+        backend._asyncDomainsContainer.getAsyncDomain(interruptNumber));
+
+    if(!asyncDomain) {
+      // If the asyncDomain is not there, the pointer in the _asyncDomainsContainer must be nullptr as well.
+      // Otherwise the dynamic cast failed, which should never happen.
+      assert(!backend._asyncDomainsContainer.getAsyncDomain(interruptNumber));
+      return;
     }
-    catch(std::out_of_range&) {
-      throw ChimeraTK::logic_error(
-          "InterruptDispatcherThread::triggerInterrupt(): Error: Unknown interrupt " + std::to_string(interruptNumber));
-    }
+
+    asyncDomain->distribute(nullptr);
   }
 
   SharedDummyBackend::ShmForSems::Sem* SharedDummyBackend::ShmForSems::addSem(SemId semId) {
