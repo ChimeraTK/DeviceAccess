@@ -34,7 +34,7 @@ namespace ChimeraTK {
     void doPreWrite(TransferType, VersionNumber) override;
 
     [[nodiscard]] bool isReadOnly() const override { return false; }
-    [[nodiscard]] bool isReadable() const override { return true; }
+    [[nodiscard]] bool isReadable() const override { return false; }
     [[nodiscard]] bool isWriteable() const override { return true; }
 
    protected:
