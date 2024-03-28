@@ -6,7 +6,6 @@
 #include "DeviceBackendImpl.h"
 #include "InterruptControllerHandler.h"
 #include "NumericAddressedRegisterCatalogue.h"
-#include "VersionNumber.h"
 
 #include <boost/pointer_cast.hpp>
 
@@ -120,17 +119,36 @@ namespace ChimeraTK {
 
     /**
      *  Activate/create the subscription for a given interrupt (for instance by starting the according interrupt
-     * handling thread). A future is returned. It becomes ready when the subscription is actually active (e.g. from
-     * inside the an interrupt handling thread after the initialisation sequence with the hardware is done).
+     *  handling thread). A shared pointer to the AsyncDomain is handed as a parameter. The backend has to store
+     *  it together with the subscription (usually as a weak pointer) and use it to distribute the interrupt.
+     *
+     *  A future is returned. It becomes ready when the subscription is actually active (e.g. from
+     *  inside the an interrupt handling thread after the initialisation sequence with the hardware is done).
      *
      *  If the subscription already exists and is active, a ready future is returned.
      *
      *  The function has an empty default implementation which returns a ready future.
      */
-    virtual std::future<void> activateSubscription(uint32_t interruptNumber);
+    virtual std::future<void> activateSubscription(
+        uint32_t interruptNumber, boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain);
 
     /** Turn off the internal variable which remembers that async is active. */
     void setExceptionImpl() noexcept override;
+
+    /** Implementation of createInterruptControllerHandler which is accessing the _interruptControllerHandlerFactory. */
+    boost::shared_ptr<InterruptControllerHandler> createInterruptControllerHandler(
+        std::vector<uint32_t> const& controllerID,
+        boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) override;
+
+    /**
+     *  Get the initial value for a certain AsyncDomain. The return value is the backend specific user type (which can
+     *  vary for different async domains) and the according version number.
+     *  For the NumericAddressedBackend the BackendSpecificUserType is nullptr_t, which does not contain any information
+     *  about the version number. Hence this implementation always returns [nullptr, VersionNumber{nullptr}].
+     *  The code has to be template code because it is called with the template parameter from the AsyncDomainsContainer.
+     */
+    template<typename BackendSpecificUserType>
+    std::pair<BackendSpecificUserType, VersionNumber> getAsyncDomainInitialValue(size_t asyncDomainId);
 
    protected:
     /*
@@ -156,34 +174,7 @@ namespace ChimeraTK {
     template<class UserType, class ConverterType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;
 
-    /**
-     *  Function to be called by implementing backend when an interrupt arrives. It usually is
-     *  called from the interrupt handling thread.
-     *
-     *  Throws std::out_of_range if an invalid interruptNumber is given as parameter.
-     *
-     *   @returns The version number that was send with all data in this interrupt.
-     */
-    VersionNumber dispatchInterrupt(uint32_t interruptNumber);
-
    private:
-    using AsyncDomainPtr_t = boost::weak_ptr<AsyncDomainImpl<TriggerDistributor, std::nullptr_t>>;
-
-    /**
-     *  This variable is private so the map cannot be altered by derriving backends. The only thing the backends have to
-     *  do is trigger an interrupt, and this is done through dispatchInterrupt() which makes sure that the map is not
-     *  modified. This map is filled in the constructor. The rest of the code is accessing it through the const
-     *  _asyncDomainImpls, which is thread safe.
-     */
-    std::map<uint32_t, std::unique_ptr<AsyncDomainPtr_t>> _asyncDomainImplsNonConst;
-
-    /** Access to const members of std::containers is thread safe. So we use a const reference throughout the code.
-     *  As the target is a weak pointer, which cannot be const because we have to lock it and re-assign a value,
-     *  we put a const unique_ptr in between which is holding the weak pointer.
-     *  The constness is only needed to keep iterators valid across multiple threads without holding a lock.
-     */
-    std::map<uint32_t, std::unique_ptr<AsyncDomainPtr_t>> const& _asyncDomainImpls{_asyncDomainImplsNonConst};
-
     InterruptControllerHandlerFactory _interruptControllerHandlerFactory{this};
 
     // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version
@@ -195,5 +186,15 @@ namespace ChimeraTK {
     /** We have to remember this in case a new AsyncDomain is created after calling ActivateAsyncRead. */
     std::atomic_bool _asyncIsActive{false};
   };
+
+  /********************************************************************************************************************/
+
+  template<typename BackendSpecificUserType>
+  std::pair<BackendSpecificUserType, VersionNumber> NumericAddressedBackend::getAsyncDomainInitialValue(
+      [[maybe_unused]] size_t asyncDomainId) {
+    static_assert(std::is_same<BackendSpecificUserType, std::nullptr_t>::value,
+        "NumericAddressedBackend only supports AsyncDomain<nullptr_t>.");
+    return {nullptr, VersionNumber{nullptr}};
+  }
 
 } // namespace ChimeraTK

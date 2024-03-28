@@ -78,14 +78,20 @@ namespace ChimeraTK {
     std::cout << "XDMA: Event " << _owner._file.name() << " received: " << bytes_transferred << " bytes, "
               << numInterrupts << " interrupts\n";
 #endif
-    while(numInterrupts--) {
-      _owner._callback();
+    // Only distribute once. If numInterrupts is > 1 we are discarding missed interrupts here.
+    // FIXME: should we have a variable to report this (accessible via RegisterAccessor)?
+    if(numInterrupts != 0) {
+      auto domain = _owner._asyncDomain.lock();
+      if(domain) {
+        domain->distribute(nullptr);
+      }
     }
     waitForEvent();
   }
 
-  EventFile::EventFile(const std::string& devicePath, size_t interruptIdx, EventCallback callback)
-  : _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _callback{callback} {}
+  EventFile::EventFile(const std::string& devicePath, size_t interruptIdx,
+      boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain)
+  : _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _asyncDomain{asyncDomain} {}
 
   EventFile::~EventFile() {
     _evtThread.reset(nullptr);

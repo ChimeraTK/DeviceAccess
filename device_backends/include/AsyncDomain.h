@@ -25,6 +25,7 @@ namespace ChimeraTK {
   class AsyncDomain : public boost::enable_shared_from_this<AsyncDomain> {
    public:
     virtual void sendException(const std::exception_ptr& e) noexcept = 0;
+    virtual void deactivate() = 0;
     virtual ~AsyncDomain() = default;
 
     std::lock_guard<std::mutex> getDomainLock() { return std::lock_guard<std::mutex>{_mutex}; }
@@ -44,6 +45,7 @@ namespace ChimeraTK {
     // internal variables directly.
     friend class AsyncAccessorManager;
     friend class TriggeredPollDistributor;
+    template<typename BackendSpecificDataType>
     friend class TriggerDistributor;
     friend class InterruptControllerHandler;
 

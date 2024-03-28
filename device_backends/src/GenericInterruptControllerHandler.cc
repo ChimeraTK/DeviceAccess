@@ -23,7 +23,7 @@ namespace ChimeraTK {
 
   std::unique_ptr<GenericInterruptControllerHandler> GenericInterruptControllerHandler::create(
       InterruptControllerHandlerFactory* controllerHandlerFactory, std::vector<uint32_t> const& controllerID,
-      [[maybe_unused]] std::string const& desrciption, boost::shared_ptr<TriggerDistributor> parent) {
+      [[maybe_unused]] std::string const& desrciption, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) {
     return std::make_unique<GenericInterruptControllerHandler>(
         controllerHandlerFactory, controllerID, std::move(parent));
   }

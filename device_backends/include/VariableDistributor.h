@@ -12,13 +12,13 @@ namespace ChimeraTK {
   template<typename SourceType>
   class VariableDistributor : public SourceTypedAsyncAccessorManager<SourceType> {
    public:
-    VariableDistributor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<TriggerDistributor> parent,
-        boost::shared_ptr<AsyncDomain> asyncDomain);
+    VariableDistributor(boost::shared_ptr<DeviceBackend> backend,
+        boost::shared_ptr<TriggerDistributor<SourceType>> parent, boost::shared_ptr<AsyncDomain> asyncDomain);
 
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(AccessorInstanceDescriptor const& descriptor);
 
-    boost::shared_ptr<TriggerDistributor> _parent;
+    boost::shared_ptr<TriggerDistributor<SourceType>> _parent;
   };
 
   /********************************************************************************************************************/
@@ -59,7 +59,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   template<typename SourceType>
   VariableDistributor<SourceType>::VariableDistributor(boost::shared_ptr<DeviceBackend> backend,
-      boost::shared_ptr<TriggerDistributor> parent, boost::shared_ptr<AsyncDomain> asyncDomain)
+      boost::shared_ptr<TriggerDistributor<SourceType>> parent, boost::shared_ptr<AsyncDomain> asyncDomain)
   : SourceTypedAsyncAccessorManager<SourceType>(backend, asyncDomain), _parent(std::move(parent)) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable);
   }

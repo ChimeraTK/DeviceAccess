@@ -10,7 +10,7 @@ namespace ChimeraTK {
 
   DummyInterruptControllerHandler::DummyInterruptControllerHandler(
       InterruptControllerHandlerFactory* controllerHandlerFactory, std::vector<uint32_t> const& controllerID,
-      boost::shared_ptr<TriggerDistributor> parent, ChimeraTK::RegisterPath const& module)
+      boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent, ChimeraTK::RegisterPath const& module)
   : InterruptControllerHandler(controllerHandlerFactory, controllerID, parent), _module(module) {
     _activeInterrupts = _backend->getRegisterAccessor<uint32_t>(_module / "active_ints", 1, 0, {});
     if(!_activeInterrupts->isReadable()) {
@@ -48,7 +48,7 @@ namespace ChimeraTK {
 
   std::unique_ptr<DummyInterruptControllerHandler> DummyInterruptControllerHandler::create(
       InterruptControllerHandlerFactory* controllerHandlerFactory, std::vector<uint32_t> const& controllerID,
-      std::string const& desrciption, boost::shared_ptr<TriggerDistributor> parent) {
+      std::string const& desrciption, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) {
     auto jdescription = nlohmann::json::parse(desrciption);
     auto module = jdescription["module"].get<std::string>();
     return std::make_unique<DummyInterruptControllerHandler>(
