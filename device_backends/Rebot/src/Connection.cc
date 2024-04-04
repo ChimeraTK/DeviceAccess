@@ -19,7 +19,7 @@ namespace ChimeraTK::Rebot {
     disconnectionTimerStart();
     boost::asio::ip::tcp::resolver r(ioService_);
     boost::asio::async_connect(
-        s_, r.resolve({address_, port_}), [=](const Error ec, auto) { this->disconnectionTimerCancel(ec); });
+        s_, r.resolve({address_, port_}), [&](const Error ec, auto) { disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();
@@ -28,7 +28,7 @@ namespace ChimeraTK::Rebot {
   std::vector<uint32_t> Connection::read(uint32_t numWords) {
     std::vector<uint32_t> d(numWords);
     disconnectionTimerStart();
-    boost::asio::async_read(s_, boost::asio::buffer(d), [=](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
+    boost::asio::async_read(s_, boost::asio::buffer(d), [&](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();
@@ -37,7 +37,7 @@ namespace ChimeraTK::Rebot {
 
   void Connection::write(const std::vector<uint32_t>& d) {
     disconnectionTimerStart();
-    boost::asio::async_write(s_, boost::asio::buffer(d), [=](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
+    boost::asio::async_write(s_, boost::asio::buffer(d), [&](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();
@@ -57,7 +57,7 @@ namespace ChimeraTK::Rebot {
 
   void Connection::disconnectionTimerStart() {
     disconnectTimer_.expires_from_now(connectionTimeout_);
-    disconnectTimer_.async_wait([=](const Error& ec) {
+    disconnectTimer_.async_wait([&](const Error& ec) {
       if(ec == boost::asio::error::operation_aborted) {
         // you have this error code when the timer was cancelled before expiry
         return;
