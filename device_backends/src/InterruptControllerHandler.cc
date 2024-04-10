@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "InterruptControllerHandler.h"
 
-#include "Axi4_Intc.h"
-#include "DummyIntc.h"
+#include "DummyInterruptControllerHandler.h"
+#include "GenericInterruptControllerHandler.h"
 #include "TriggerDistributor.h"
 #include "TriggeredPollDistributor.h"
 
@@ -13,8 +13,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   InterruptControllerHandlerFactory::InterruptControllerHandlerFactory(DeviceBackend* backend) : _backend(backend) {
     // we already know about the build-in handlers
-    _creatorFunctions["AXI4_INTC"] = Axi4_Intc::create;
-    _creatorFunctions["dummy"] = DummyIntc::create;
+    _creatorFunctions["INTC"] = GenericInterruptControllerHandler::create;
+    _creatorFunctions["dummy"] = DummyInterruptControllerHandler::create;
   }
 
   /********************************************************************************************************************/
