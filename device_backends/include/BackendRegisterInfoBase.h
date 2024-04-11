@@ -45,6 +45,12 @@ namespace ChimeraTK {
 
     /** Create copy of the object */
     [[nodiscard]] virtual std::unique_ptr<BackendRegisterInfoBase> clone() const = 0;
+
+    /**
+     *  Return the fully qualified async::SubDomain ID.
+     *  The default implementation returns an empty vector.
+     */
+    [[nodiscard]] virtual std::vector<size_t> getQualifiedAsyncId() const { return {}; }
   };
 
   /********************************************************************************************************************/

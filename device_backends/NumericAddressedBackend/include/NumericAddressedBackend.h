@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncDomainImpl.h"
+#include "async/DomainImpl.h"
 #include "DeviceBackendImpl.h"
-#include "InterruptControllerHandler.h"
 #include "NumericAddressedRegisterCatalogue.h"
 
 #include <boost/pointer_cast.hpp>
@@ -119,7 +118,7 @@ namespace ChimeraTK {
 
     /**
      *  Activate/create the subscription for a given interrupt (for instance by starting the according interrupt
-     *  handling thread). A shared pointer to the AsyncDomain is handed as a parameter. The backend has to store
+     *  handling thread). A shared pointer to the async::Domain is handed as a parameter. The backend has to store
      *  it together with the subscription (usually as a weak pointer) and use it to distribute the interrupt.
      *
      *  A future is returned. It becomes ready when the subscription is actually active (e.g. from
@@ -130,22 +129,17 @@ namespace ChimeraTK {
      *  The function has an empty default implementation which returns a ready future.
      */
     virtual std::future<void> activateSubscription(
-        uint32_t interruptNumber, boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain);
+        uint32_t interruptNumber, boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain);
 
     /** Turn off the internal variable which remembers that async is active. */
     void setExceptionImpl() noexcept override;
 
-    /** Implementation of createInterruptControllerHandler which is accessing the _interruptControllerHandlerFactory. */
-    boost::shared_ptr<InterruptControllerHandler> createInterruptControllerHandler(
-        std::vector<uint32_t> const& controllerID,
-        boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) override;
-
     /**
-     *  Get the initial value for a certain AsyncDomain. The return value is the backend specific user type (which can
+     *  Get the initial value for a certain async::Domain. The return value is the backend specific user type (which can
      *  vary for different async domains) and the according version number.
      *  For the NumericAddressedBackend the BackendSpecificUserType is nullptr_t, which does not contain any information
      *  about the version number. Hence this implementation always returns [nullptr, VersionNumber{nullptr}].
-     *  The code has to be template code because it is called with the template parameter from the AsyncDomainsContainer.
+     *  The code has to be template code because it is called with the template parameter from the DomainsContainer.
      */
     template<typename BackendSpecificUserType>
     std::pair<BackendSpecificUserType, VersionNumber> getAsyncDomainInitialValue(size_t asyncDomainId);
@@ -175,15 +169,13 @@ namespace ChimeraTK {
     friend class NumericAddressedBackendMuxedRegisterAccessor;
 
    private:
-    InterruptControllerHandlerFactory _interruptControllerHandlerFactory{this};
-
     // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version
     // internally, but is not given out
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-    /** We have to remember this in case a new AsyncDomain is created after calling ActivateAsyncRead. */
+    /** We have to remember this in case a new async::Domain is created after calling ActivateAsyncRead. */
     std::atomic_bool _asyncIsActive{false};
   };
 
@@ -193,7 +185,7 @@ namespace ChimeraTK {
   std::pair<BackendSpecificUserType, VersionNumber> NumericAddressedBackend::getAsyncDomainInitialValue(
       [[maybe_unused]] size_t asyncDomainId) {
     static_assert(std::is_same<BackendSpecificUserType, std::nullptr_t>::value,
-        "NumericAddressedBackend only supports AsyncDomain<nullptr_t>.");
+        "NumericAddressedBackend only supports async::Domain<nullptr_t>.");
     return {nullptr, VersionNumber{nullptr}};
   }
 

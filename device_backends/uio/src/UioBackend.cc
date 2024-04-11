@@ -64,7 +64,7 @@ namespace ChimeraTK {
   }
 
   std::future<void> UioBackend::activateSubscription(
-      uint32_t interruptNumber, boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain) {
+      uint32_t interruptNumber, boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain) {
     std::promise<void> subscriptionDonePromise;
 
     if(interruptNumber != 0) {

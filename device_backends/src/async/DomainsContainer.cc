@@ -1,15 +1,15 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "AsyncDomainsContainer.h"
+#include "async/DomainsContainer.h"
 
 #include "Exception.h"
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
 
-  void AsyncDomainsContainer::distributeExceptions() {
+  void DomainsContainer::distributeExceptions() {
     std::string exceptionMessage;
     while(true) {
       // block to wait until setException has been called
@@ -24,7 +24,7 @@ namespace ChimeraTK {
 
       {
         std::lock_guard<std::mutex> containerLock(_domainsMutex);
-        for(auto& keyAndDomain : _asyncDomains) {
+        for(auto& keyAndDomain : _domains) {
           auto domain = keyAndDomain.second.lock();
           if(domain) {
             domain->sendException(ex);
@@ -38,7 +38,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  AsyncDomainsContainer::~AsyncDomainsContainer() {
+  DomainsContainer::~DomainsContainer() {
     try {
       auto threadCreationLock = std::lock_guard(_threadCreationMutex);
 
@@ -51,7 +51,7 @@ namespace ChimeraTK {
     catch(std::system_error& e) {
       // Destructors must not throw. All exceptions that can occur here are system errors, which only show up if there
       // is no hope anyway. All we can do is terminate.
-      std::cerr << "Unrecoverable system error in ~AsyncDomainsContainer(): " << e.what() << " !!! TERMINATING !!!"
+      std::cerr << "Unrecoverable system error in ~DomainsContainer(): " << e.what() << " !!! TERMINATING !!!"
                 << std::endl;
       std::terminate();
     }
@@ -62,10 +62,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void AsyncDomainsContainer::sendExceptions(const std::string& exceptionMessage) {
+  void DomainsContainer::sendExceptions(const std::string& exceptionMessage) {
     if(_isSendingExceptions) {
-      throw ChimeraTK::logic_error(
-          "AsyncDomainsContainer::sendExceptions() called before previous distribution was ready.");
+      throw ChimeraTK::logic_error("DomainsContainer::sendExceptions() called before previous distribution was ready.");
     }
 
     if(!_threadIsRunning) {
@@ -80,18 +79,18 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<AsyncDomain> AsyncDomainsContainer::getAsyncDomain(size_t key) {
+  boost::shared_ptr<Domain> DomainsContainer::getDomain(size_t key) {
     std::lock_guard<std::mutex> domainsLock(_domainsMutex);
     // Creates the entry if it is not there. The returned shared pointer is empty in this case.
     // (It might also be empty if the entry exists, but the async domain was deleted.)
-    return _asyncDomains[key].lock();
+    return _domains[key].lock();
   }
 
   /********************************************************************************************************************/
 
-  void AsyncDomainsContainer::forEach(const std::function<void(size_t, boost::shared_ptr<AsyncDomain>&)>& executeMe) {
+  void DomainsContainer::forEach(const std::function<void(size_t, boost::shared_ptr<Domain>&)>& executeMe) {
     std::lock_guard<std::mutex> domainsLock(_domainsMutex);
-    for(auto& keyAndDomain : _asyncDomains) {
+    for(auto& keyAndDomain : _domains) {
       auto domain = keyAndDomain.second.lock();
       if(domain) {
         executeMe(keyAndDomain.first, domain);
@@ -99,4 +98,4 @@ namespace ChimeraTK {
     }
   }
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

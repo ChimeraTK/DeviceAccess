@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncDomain.h"
+#include "async/Domain.h"
 #include "DeviceBackend.h"
 #include "NDRegisterAccessor.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 #include <ChimeraTK/cppext/future_queue.hpp>
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   class AsyncAccessorManager;
 
@@ -29,7 +29,7 @@ namespace ChimeraTK {
      *  the factory for AsyncNDRegisterAccessor, this is only an implementation detail.
      */
     AsyncNDRegisterAccessor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<AsyncAccessorManager> manager,
-        boost::shared_ptr<AsyncDomain> asyncDomain, std::string const& name, size_t nChannels, size_t nElements,
+        boost::shared_ptr<Domain> asyncDomain, std::string const& name, size_t nChannels, size_t nElements,
         AccessModeFlags accessModeFlags, std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string());
 
@@ -99,7 +99,7 @@ namespace ChimeraTK {
    protected:
     boost::shared_ptr<DeviceBackend> _backend;
     boost::shared_ptr<AsyncAccessorManager> _accessorManager;
-    boost::shared_ptr<AsyncDomain> _asyncDomain;
+    boost::shared_ptr<Domain> _asyncDomain;
     using typename NDRegisterAccessor<UserType>::Buffer;
     using NDRegisterAccessor<UserType>::buffer_2D;
     Buffer _receiveBuffer;
@@ -114,4 +114,4 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor);
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

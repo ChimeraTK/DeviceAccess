@@ -48,7 +48,7 @@ namespace ChimeraTK {
       bool signedFlag{true};      /**< Signed/Unsigned flag */
       NumericAddressedRegisterInfo::Access registerAccess{NumericAddressedRegisterInfo::Access::READ_WRITE};
       NumericAddressedRegisterInfo::Type type{NumericAddressedRegisterInfo::Type::FIXED_POINT};
-      std::vector<uint32_t> interruptID;
+      std::vector<size_t> interruptID;
     };
 
     /**
@@ -64,7 +64,7 @@ namespace ChimeraTK {
         const std::string& bitInterpretation, uint32_t width);
 
     // returns an empty vector if the type is not INTERRUPT
-    static std::vector<uint32_t> getInterruptId(std::string accessType);
+    static std::vector<size_t> getInterruptId(std::string accessType);
 
     static void checkFileConsitencyAndThrowIfError(NumericAddressedRegisterInfo::Access registerAccessMode,
         NumericAddressedRegisterInfo::Type registerType, uint32_t nElements, uint64_t address, uint32_t nBytes,

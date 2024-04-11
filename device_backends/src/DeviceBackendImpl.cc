@@ -54,13 +54,4 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<InterruptControllerHandler> DeviceBackendImpl::createInterruptControllerHandler(
-      [[maybe_unused]] std::vector<uint32_t> const& controllerID,
-      [[maybe_unused]] boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) {
-    assert(false);
-    return {nullptr};
-  }
-
-  /********************************************************************************************************************/
-
 } // namespace ChimeraTK

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncDomainsContainer.h"
+#include "async/DomainsContainer.h"
 #include "DeviceBackend.h"
 #include "Exception.h"
 #include <condition_variable>
@@ -52,11 +52,6 @@ namespace ChimeraTK {
 
     std::string getActiveExceptionMessage() noexcept;
 
-    /** The default implementation in has a false assertion, so it always fails in debug builds,  and returns a nullptr. */
-    boost::shared_ptr<InterruptControllerHandler> createInterruptControllerHandler(
-        std::vector<uint32_t> const& controllerID,
-        boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) override;
-
    protected:
     /** Backends should call this function at the end of a (successful) open() call.*/
     void setOpenedAndClearException() noexcept;
@@ -65,10 +60,10 @@ namespace ChimeraTK {
     std::atomic<bool> _opened{false};
 
     /**
-     *  Container for AsyncDomains to support wait_for_new_data.
+     *  Container for async::Domains to support wait_for_new_data.
      *  Used here to handle exception distribution.
      */
-    AsyncDomainsContainer _asyncDomainsContainer;
+    async::DomainsContainer _asyncDomainsContainer;
 
    private:
     /** flag if backend is in an exception state */

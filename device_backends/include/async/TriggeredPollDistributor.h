@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncAccessorManager.h"
-#include "InterruptControllerHandler.h"
+#include "async/AsyncAccessorManager.h"
+#include "async/MuxedInterruptDistributor.h"
 #include "TransferGroup.h"
 
 #include <memory>
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
   /**
    *  The TriggeredPollDistributor has std::nullptr_t source data type and is polling the data for the AsyncVariables
    *  via synchronous accessors in TransferGroup.
@@ -17,7 +17,7 @@ namespace ChimeraTK {
   class TriggeredPollDistributor : public SourceTypedAsyncAccessorManager<std::nullptr_t> {
    public:
     TriggeredPollDistributor(boost::shared_ptr<DeviceBackend> backend,
-        boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent, boost::shared_ptr<AsyncDomain> asyncDomain);
+        boost::shared_ptr<SubDomain<std::nullptr_t>> parent, boost::shared_ptr<Domain> asyncDomain);
 
     /** Poll all sync variables. */
     bool prepareIntermediateBuffers() override;
@@ -27,7 +27,7 @@ namespace ChimeraTK {
 
    protected:
     TransferGroup _transferGroup;
-    boost::shared_ptr<TriggerDistributor<std::nullptr_t>> _parent;
+    boost::shared_ptr<SubDomain<std::nullptr_t>> _parent;
   };
 
   /********************************************************************************************************************/
@@ -92,4 +92,4 @@ namespace ChimeraTK {
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
     syncAccessor(syncAccessor_), _version(v) {}
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

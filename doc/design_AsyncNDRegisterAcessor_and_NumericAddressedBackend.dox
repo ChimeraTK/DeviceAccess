@@ -1,4 +1,4 @@
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 /**
 \page design_AsyncNDRegisterAccessor_NumericAddressed Design: AsyncNDRegisterAccessor
 
@@ -81,7 +81,7 @@ digraph triggered_poll_distributor {
 
 
 #######################################################################################################################
-\subsection design_TriggerDistributor The TriggerDistributor
+\subsection design_SubDomain The SubDomain
 #######################################################################################################################
 
 The reverse ownership scheme in the NumericAddressedBackend
@@ -98,20 +98,20 @@ digraph reverse_ownership_scheme {
   a->b[label="shared_ptr", dir=back]
   
   Backend[color=blue, fontcolor=blue]
-  AsyncDomainsContainer[color=blue, fontcolor=blue]
-  Backend->AsyncDomainsContainer[color=blue, fontcolor=blue]
-  AsyncDomain[label="AsyncDomain\<nullptr_t\>"];
-  AsyncDomain -> TriggerDistributor [ arrowhead="empty", style="dashed"]
-  TriggerDistributor -> AsyncDomain
-  Backend -> AsyncDomain[ arrowhead="empty", style="dashed"]
-  AsyncDomainsContainer -> AsyncDomain [ arrowhead="empty", style="dashed"]
+  DomainsContainer[color=blue, fontcolor=blue]
+  Backend->DomainsContainer[color=blue, fontcolor=blue]
+  Domain[label="Domain\<nullptr_t\>"];
+  Domain -> SubDomain [ arrowhead="empty", style="dashed"]
+  SubDomain -> Domain
+  Backend -> Domain[ arrowhead="empty", style="dashed"]
+  DomainsContainer -> Domain [ arrowhead="empty", style="dashed"]
   
-  secondAsyncDomain[label ="AsyncDomain\<nullptr_t\>", style="dotted"]
-  Backend -> secondAsyncDomain[ arrowhead="empty", style="dashed"]
-  secondPrimaryDistributor[label ="TriggerDistributor", style="dotted"]
-  secondAsyncDomain -> secondPrimaryDistributor [ arrowhead="empty", style="dashed"];
-  secondPrimaryDistributor -> secondAsyncDomain
-  AsyncDomainsContainer -> secondAsyncDomain [ arrowhead="empty", style="dashed"]
+  secondDomain[label ="Domain\<nullptr_t\>", style="dotted"]
+  Backend -> secondDomain[ arrowhead="empty", style="dashed"]
+  secondPrimaryDistributor[label ="SubDomain", style="dotted"]
+  secondDomain -> secondPrimaryDistributor [ arrowhead="empty", style="dashed"];
+  secondPrimaryDistributor -> secondDomain
+  DomainsContainer -> secondDomain [ arrowhead="empty", style="dashed"]
 
 
   subgraph cluster_distributor1{
@@ -119,8 +119,8 @@ digraph reverse_ownership_scheme {
    distrVars1 [ label="<distrVar1>VoidAsyncVariable|<distrVar2>VoidAsyncVariable|<distrVarN>..."];
   }
 
-  TriggerDistributor->distrVars1 [ lhead=cluster_distributor1, arrowhead="empty", style="dashed"  ];
-  TriggerDistributor->distrVars1 [ lhead=cluster_distributor1, dir=back];
+  SubDomain->distrVars1 [ lhead=cluster_distributor1, arrowhead="empty", style="dashed"  ];
+  SubDomain->distrVars1 [ lhead=cluster_distributor1, dir=back];
 
   distr1Acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
   distr1Acc1 ->  distrVars1:distrVar2  [ lhead=cluster_distributor1 ];
@@ -150,23 +150,23 @@ digraph reverse_ownership_scheme {
   NDRegisterAccessor-> vars:var1 [ arrowhead="none", arrowtail="normal", dir = "back"];
   NDRegisterAccessor2-> vars:var2 [ arrowhead="none", arrowtail="normal", dir = "back"]
 ;
-  TriggerDistributor->TransferGroup  [ lhead=cluster_PollDistributor, arrowhead="empty", style="dashed"  ];
-  TriggerDistributor->TransferGroup  [ lhead=cluster_PollDistributor, label=" ", dir=back ];
+  SubDomain->TransferGroup  [ lhead=cluster_PollDistributor, arrowhead="empty", style="dashed"  ];
+  SubDomain->TransferGroup  [ lhead=cluster_PollDistributor, label=" ", dir=back ];
 
   subgraph cluster_interruptCtrlHdl1{
-    label="InterruptControllerHandler" URL="\ref InterruptControllerHandler";
+    label="MuxedInterruptDistributor" URL="\ref MuxedInterruptDistributor";
     hdlAccs1 [ label="<hdlAcc1>NDRegisterAccessor|<hdlAcc2>NDRegisterAccessor|...", color=red, fontcolor=red ];
   }
-  TriggerDistributor->hdlAccs1 [ lhead=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
-  TriggerDistributor->hdlAccs1 [ lhead=cluster_interruptCtrlHdl1, label=" ", dir=back ];
+  SubDomain->hdlAccs1 [ lhead=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
+  SubDomain->hdlAccs1 [ lhead=cluster_interruptCtrlHdl1, label=" ", dir=back ];
 
-  TriggerDistributor2 [label = TriggerDistributor]
-  hdlAccs1->TriggerDistributor2 [ ltail=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
-  hdlAccs1->TriggerDistributor2 [ ltail=cluster_interruptCtrlHdl1, label=" ", dir=back ];
+  SubDomain2 [label = SubDomain]
+  hdlAccs1->SubDomain2 [ ltail=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
+  hdlAccs1->SubDomain2 [ ltail=cluster_interruptCtrlHdl1, label=" ", dir=back ];
 
-  TriggerDistributor3 [label = TriggerDistributor, style="dotted"]
-  hdlAccs1:hdlAcc2->TriggerDistributor3 [ ltail=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
-  hdlAccs1:hdlAcc2->TriggerDistributor3 [ ltail=cluster_interruptCtrlHdl1, label=" ", dir=back ];
+  SubDomain3 [label = SubDomain, style="dotted"]
+  hdlAccs1:hdlAcc2->SubDomain3 [ ltail=cluster_interruptCtrlHdl1, arrowhead="empty", style="dashed"  ];
+  hdlAccs1:hdlAcc2->SubDomain3 [ ltail=cluster_interruptCtrlHdl1, label=" ", dir=back ];
 
   subgraph cluster_PollDistributor2{
     label="TriggeredPollDistributor" URL="\ref TriggeredPollDistributor";
@@ -189,16 +189,16 @@ digraph reverse_ownership_scheme {
   NDRegisterAccessor3->  polledVars2:polledVar3 [ arrowhead="none", arrowtail="normal", dir = "back"];
   NDRegisterAccessor4->  polledVars2:polledVar4  [ arrowhead="none", arrowtail="normal", dir = "back"];
 
-  TriggerDistributor2->TransferGroup2  [ lhead=cluster_PollDistributor2, arrowhead="empty", style="dashed"  ];
-  TransferGroup2->TriggerDistributor2 [ ltail=cluster_PollDistributor2, label=" " ];
+  SubDomain2->TransferGroup2  [ lhead=cluster_PollDistributor2, arrowhead="empty", style="dashed"  ];
+  TransferGroup2->SubDomain2 [ ltail=cluster_PollDistributor2, label=" " ];
 
   subgraph cluster_distributor2{
    label="VariableDistributor<nullptr_t>" URL="\ref VariableDistributor";
    distrVars2 [ label="<distrVar3>VoidAsyncVariable|<distrVar4>VoidAsyncVariable|..."];
   }
 
-  TriggerDistributor2->distrVars2 [ lhead=cluster_distributor2, arrowhead="empty", style="dashed"  ];
-  distrVars2->TriggerDistributor2 [ ltail=cluster_distributor2, label=" "];
+  SubDomain2->distrVars2 [ lhead=cluster_distributor2, arrowhead="empty", style="dashed"  ];
+  distrVars2->SubDomain2 [ ltail=cluster_distributor2, label=" "];
 
   distr2Acc3 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
   distrVars2:distrVar3 -> distr2Acc3 [ ltail=cluster_distributor2 , dir=back ];
@@ -207,28 +207,34 @@ digraph reverse_ownership_scheme {
   distrVars2:distrVar4 -> distr2Acc4 [ ltail=cluster_distributor2 , dir=back  ];
   distrVars2:distrVar4 -> distr2Acc4 [ arrowhead="empty", style="dashed"];
 
-  interruptCtrlHdl2 [label="InterruptControllerHandler\n...", style="dotted"]
+  interruptCtrlHdl2 [label="MuxedInterruptDistributor\n...", style="dotted"]
   
-  TriggerDistributor2->interruptCtrlHdl2 [ arrowhead="empty", style="dashed"]
-  interruptCtrlHdl2->TriggerDistributor2
+  SubDomain2->interruptCtrlHdl2 [ arrowhead="empty", style="dashed"]
+  interruptCtrlHdl2->SubDomain2
 }
 \enddot
 
 - The triggers (resulting from interrupts) are distributed from left to right, mostly through weak pointers (dashed lines and empty arrow head)
-- For each interrupt handler thread there is one AsyncDomain which implements a central lock for the whole tree behind it.
+- For each interrupt handler thread there is one async::Domain which implements a central lock for the whole tree behind it.
   It protects the trigger distribution against concurrent subscriptions of accessors and the sending of exceptions.
-  The AsyncDomain is of the backend data type "nullptr_t" because the triggers are conceptually void.
-  The NumericAddressedBackend is holding weak pointers to the AsyncDomains. The AsyncDomains are created when they are
+  The Domain is of the backend data type "nullptr_t" because the triggers are conceptually void.
+  The NumericAddressedBackend is holding weak pointers to the Domains. The Domains are created when they are
   needed, i.e. when an accessor down the tree is created.
-  Other backends might hold shared pointers to AsyncDomains, depending on the implementation.
-- The single instance of the AsyncDomainsContainter is responsible for distributing exceptions to all AsyncDomains. It is always holding weak pointers to the AsyncDomains.
-- InterruptControllerHandlers and TriggeredPollDistributors are holding accessors to the backend to read data or do handshakes (red), which in turn are holding shared pointers to the backend (shared ownership). The backend must never (also not indirectly) hold a shared pointer to any of these entities because it would introduce a closed ownership circle and the backend could never be deleted properly.
+  Other backends might hold shared pointers to Domains, depending on the implementation.
+- Behind each Domain there is exactly one (primary) SubDomain. The SubDomain basically is an adapter to the connected distrubutors (VariableDistributors, TriggeredPollDistributors and MuxedInterruptDistributors).
+  Further SubDomains are behind the MuxedInterruptDistributors, one for each sub-interrupt.
+- SubDomains are identified by a qualified (i.e. heirarchical) ID (represented as a std::vector<size_t>). The primary SubDomain ID has a length 1, and for each hierarchy level a number is added. The Domain ID is a number, machting the first entry in the
+  qualifiedAsyncSubDomainID.  (qualifiedAsyncSubDomainID is abbeviated as qualifiedSubDomainID or qualifiedAsyncID, depending on the context).
+  Example: The SubDomain [0,4] is responsible for sub-interrupt 4 in the MuxedInterruptDistributor [0] behind the primay SubDomain [0] in Domain 0 (see \ref design_async_canonical_interrupt_name).
+- The single instance of the DomainsContainter is responsible for distributing exceptions to all Domains. It is always holding weak pointers to the Domains.
+- VariableDistributors and TriggeredPollDistributors are derrived from the AsyncAccessorManager and are holding accessors to the backend to read data or do handshakes (red),
+  which in turn are holding shared pointers to the backend (shared ownership). The backend must never (also not indirectly) hold a shared pointer to any of these entities because it would introduce a closed ownership circle and the backend could never be deleted properly.
 - The ownership is depicted via solid line arrows, mostly from right to left. In the end the AsyncNDRegisterAccessors handed out to the user (green) are holding the whole trigger distribution tree.
-  (except for the AsyncDomainsContainer in blue)
-- When an accessor is requested, the request goes through the AsyncDomain to the primary TriggerDistributor, which creates all required InterruptControllerHandlers, TriggerDistributors, VariableDistributors
+  (except for the DomainsContainer in blue)
+- When an accessor is requested, the request goes from the DomainsContainer through the Domain to the primary SubDomain, which creates all required MuxedInterruptDistributors, SubDomains, VariableDistributors
   or TriggeredPollDistributors when needed, and hands out the AsyncNDRegisterAccessor which holds the ownership. It shares the ownership with other AsyncNDRegisterAccessors.
 - When the last owning AsyncNDRegisterAccessors goes out of scope, the according distributors are deleted.
-- If there are no subscribers, i.e. AsyncNDRegisterAccessors being held by the application, the AsyncDomain shared pointers are empty and trigger distribution does nothing.
+- If there are no subscribers, i.e. AsyncNDRegisterAccessors being held by the application, the Domain shared pointers are empty and trigger distribution does nothing.
 
 
 #########################################################################################################################################
@@ -247,19 +253,26 @@ digraph reverse_ownership_scheme {
   rankdir=LR
   
   Backend[color=blue, fontcolor=blue]
-  AsyncDomainsContainer[color=blue, fontcolor=blue]
-  Backend->AsyncDomainsContainer[color=blue, fontcolor=blue]
+  DomainsContainer[color=blue, fontcolor=blue]
+  Backend->DomainsContainer[color=blue, fontcolor=blue]
  
-  AsyncDomain[label="AsyncDomain\<EqData\>", color=blue, fontcolor=blue];
-  AsyncDomainsContainer -> AsyncDomain [ arrowhead="empty", style="dashed"]
+  Domain[label="Domain\<EqData\>", color=blue, fontcolor=blue];
+  DomainsContainer -> Domain [ arrowhead="empty", style="dashed"]
+
+  Backend->Domain[arrowhead="empty", style="dashed"]
   
   subgraph cluster_distributor1{
    label="VariableDistributor<EqData>" URL="\ref VariableDistributor";
    distrVars1 [ label="<distrVar1>DoocsAsyncVariable|<distrVar2>DoocsAsyncVariable|<distrVarN>..."];
   }
 
-  AsyncDomain->distrVars1 [ lhead=cluster_distributor1, arrowhead="empty", style="dashed"  ];
-  AsyncDomain->distrVars1 [ lhead=cluster_distributor1, dir=back];
+  SubDomain[label="SubDomain\<EqData\>"];
+
+  Domain->SubDomain [ arrowhead="empty", style="dashed"  ];
+  Domain->SubDomain [ dir=back];
+
+  SubDomain->distrVars1 [ lhead=cluster_distributor1, arrowhead="empty", style="dashed"  ];
+  SubDomain->distrVars1 [ lhead=cluster_distributor1, dir=back];
 
   distr1Acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
   distr1Acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
@@ -270,16 +283,22 @@ digraph reverse_ownership_scheme {
   distr1Acc2 ->  distrVars1:distrVarN  [ lhead=cluster_distributor1 ];
   distrVars1:distrVar2 -> distr1Acc2 [ arrowhead="empty", style="dashed"];
 
-  secondAsyncDomain[label ="AsyncDomain\<EqData\>", color=blue, fontcolor=blue]
-  AsyncDomainsContainer -> secondAsyncDomain [ arrowhead="empty", style="dashed"]
+  secondDomain[label ="Domain\<EqData\>", color=blue, fontcolor=blue]
+  DomainsContainer -> secondDomain [ arrowhead="empty", style="dashed"]
+  Backend->secondDomain[arrowhead="empty", style="dashed"]
+
+  secondSubDomain[label="SubDomain\<EqData\>"];
 
   subgraph cluster_distributor2{
    label="VariableDistributor<EqData>" URL="\ref VariableDistributor";
    distrVars2 [ label="<distrVar3>DoocsAsyncVariable|<distrVar4>DoocsAsyncVariable|<distrVarN2>..."];
   }
 
-  secondAsyncDomain->distrVars2 [ lhead=cluster_distributor2, arrowhead="empty", style="dashed"  ];
-  secondAsyncDomain->distrVars2 [ lhead=cluster_distributor2, dir=back ];
+  secondDomain->secondSubDomain [ arrowhead="empty", style="dashed"  ];
+  secondDomain->secondSubDomain [ dir=back ];
+
+  secondSubDomain->distrVars2 [ lhead=cluster_distributor2, arrowhead="empty", style="dashed"  ];
+  secondSubDomain->distrVars2 [ lhead=cluster_distributor2, dir=back ];
 
   distr2Acc1 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
   distr2Acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
@@ -289,11 +308,14 @@ digraph reverse_ownership_scheme {
   distr2Acc2 ->  distrVars2:distrVarN2  [ lhead=cluster_distributor2 ];
   distrVars2:distrVar4 -> distr2Acc2 [ arrowhead="empty", style="dashed"];
 
-  thirdAsyncDomain[label ="AsyncDomain\<EqData\>", style="dotted", color=blue, fontcolor=blue]
-  AsyncDomainsContainer -> thirdAsyncDomain [ arrowhead="empty", style="dashed"]
+  thirdDomain[label ="Domain\<EqData\>", style="dotted", color=blue, fontcolor=blue]
+  DomainsContainer -> thirdDomain [ arrowhead="empty", style="dashed"]
 }
 \enddot
 
+- The EqData object, which is send as an asynchonous event, is distributed in the case of DOOCS. It contains all the relevant data.
+- For each ZMQ-subscription there is one Domain with its SubDomain and one VariableDistributor<EqData>. The variable distributor takes care of interpreting the
+  EqData and extracting the information to be filled into the subscribed AsyncNDRegisterAccessors.
 
 #######################################################################################################################
 \section  design_AsyncNDRegisterAccessor The AsyncNDRegisterAccessor and the AsyncAccessorManager
@@ -312,8 +334,8 @@ components
 
 AsyncNDRegisterAccessor are read-only. If you want to write to the register you have to get an Accessor without "wait_for_new_data". (N.B. in NumericAddressedBackends this is not possible, the push-type data is intrinsically read only there. For Doocs-Backends with ZMQ data it is possible to get an Accessor for writing.)
 
-For each primary interrupt or event there is one AsyncDomain. All the distribution tree behind it belongs to that AsyncDomain.
-- For backends with void interrupts, there is always one primary InterruptDistributor associated to the AsyncDomain, followed by a TriggeredPollDistributor, a void-type VariableDistributor and/or an InterruptControllHandler. The latter has one InterruptDistributor per sub interrupt, which again can distribute to a TriggeredPollDistributor, a VariableDistributor and/or an InterruptControllHandler etc.
+For each primary interrupt or event there is one async::Domain. All the distribution tree behind it belongs to that Domain.
+- For backends with void interrupts, there is always one primary InterruptDistributor associated to the Domain, followed by a TriggeredPollDistributor, a void-type VariableDistributor and/or an InterruptControllHandler. The latter has one InterruptDistributor per sub interrupt, which again can distribute to a TriggeredPollDistributor, a VariableDistributor and/or an InterruptControllHandler etc.
 - For push-type data (data events), there is a one distributor of the backend-specific source type, which then distributes further to the subscribed AsyncRegisterAccessors.
   -- Example 1 (envisioned use case, not implemented yet): For Doocs, a VariableDistributor<EqData> is getting an EqData object which contains a double, and the has subsribers of user type doule, int and string. The VariableDistributor<EqData> in combination with the according AsyncVariables takes care of converting the data into the user types and filling the user-type send buffers.
   -- Example 2 (envisioned use case, not implemented yet): EqData with an IFFF is distributed via an IFFFDistributor (also derived from AsyncAccessorManager like VariableDistributor and TriggeredPollDistributor.). You can have individual subscriptions for each component (one integer and three floats).
@@ -350,10 +372,10 @@ The AsyncAccessorManager has three main functions:
 \subsection AsyncNDRegisterAccessor_exceptions Exception handling
 #######################################################################################################################
 
-- Some classes like the TriggeredPollDistributor and the InterruptControllerHandlers need to access the hardware.
+- Some classes like the TriggeredPollDistributor and the MuxedInterruptDistributors need to access the hardware.
 - As this code is called from within a thread, no exceptions must escape. However, in case of an exception
   the  backend's setException() must be called to inform the user application.
-- TriggeredPollDistributor and the InterruptControllerHandlers do HW access via regular, synchrous accessors,
+- TriggeredPollDistributor and the MuxedInterruptDistributors do HW access via regular, synchrous accessors,
   which call the backend's setException() when an exception occurs. They just suppress the exception coming out of the
   accessor.
 - In setException(), the exceptions must be distributed to all async accessors. This is done through the same
@@ -362,40 +384,31 @@ The AsyncAccessorManager has three main functions:
   inevitably there are locks involved. In addition, the backend might use locks internally.
 - As setException() can occur during the regular distribution, this would be a recursive iteration of the tree if it
   happens in the same threads, which can lead to deadlocks or lock order inversions.
-- To avoid lock order inversion, recursive tree iteration is prevented. There is only one lock in the AsyncDomain, which
+- To avoid lock order inversion, recursive tree iteration is prevented. There is only one lock in the Domain, which
   protects the whole tree behind it.
-- To implement the exception distribution, there is a thread in the AsyncDomainsContainer.
+- To implement the exception distribution, there is a thread in the DomainsContainer.
   setException() in informing that thread that exceptions should be distributed and then returns, such that the
-  distribution call which executed setException() can return. The lock in the AsyncDomain is freed, and the
+  distribution call which executed setException() can return. The lock in the Domain is freed, and the
   exception distribution thread can get it.
   
 #######################################################################################################################
 \subsection AsyncNDRegisterAccessor_usage Interface for implementing backends
 #######################################################################################################################
 
-While the AsyncNDRegisterAccessor itself is complete and universal, the AsyncAccessorManager and
-AsyncVariable have pure virtual functions which must be provided by the individual
-backend implementations:
-- AsyncVariable::getNumberOfChannels(), AsyncVariable::getNumberOfSamples(), AsyncVariable::getUnit() and
-  AsyncVariable::getDescription() must be provided by deriving from AsyncVariable or
-  AsyncVariableImpl. The information must directly be provided by the backend.
-  The generating code cannot rely on the catalogue here (which might not even be filled yet when the accessor
-  is being created).\ref asyncAccessor_comment_AsyncVariable2 "(*2)"
-- The 'virtual function template' AsyncAccessorManager::createAsyncVariable() must return an AsyncVariable
-  implementation with the implemented accessor-describing functions from the previous bullet point.
-  When the AsyncVariable object is returned by createAsyncVariable(), its weak pointer to the AsyncNDRegisterAccessor
-  is not set yet.
-  createAsyncVariable() is used internally by the AsyncAccessorManager in the subscription process,
-  which creates the AsyncNDRegisterAccessor by using the shape information from the AsyncVariable,
-  and then adds it to the AsyncVariable.
-
-The backend uses the AsyncNDRegisterAccessor by
-- creating an AsyncDomainsContainer (exaclty one per backend)
-- creating one AsyncDomain<DistributorType, BackendDataType> for each asynchronous signal (interrupt/trigger/event/subscription etc.)
-- FIXME: Add the AsyncDomain to the AsyncDomainsContainer. Not ready yet: AsynDomains are created by the AsyncDomainsContainer.
-- calling AsyncDomain::subscribe() in getRegisterAccessor(), and handing out the created AsyncNDRegisterAccessor.
-- calling AsyncDomain::activate() in activateAsyncRead()
-- calling AsyncDomainsContainer::sendExceptions() in setException()
+Requirement for each backend:
+- Provide (one or more) implementations of a VariableDistributor<BackendSpecificDataType>.
+- Provide a template-function
+<pre>
+  template<typename BackendSpecificUserType>
+  std::pair<BackendSpecificUserType, VersionNumber> getAsyncDomainInitialValue(size_t asyncDomainId);
+</pre>
+- Implement the virtual function (Fixme: This is NumericAddressed only at the moment. Should be generalised)
+<pre>
+  std::future<void> activateSubscription(uint32_t interruptNumber, boost::shared_ptr<async::DomainImpl<BackendSpecificDataType>> asyncDomain);
+</pre>
+  Backends deriving from NumericAddressedBackend create the interrupt handling thread here, and store the asyncDomain to call it from inside the thread.
+- Call DomainsContainer::subscribe() in getRegisterAccessor() to create and hand out AsyncNDRegisterAccesors.
+- Fixme: should move to DeviceBackendImpl: Activate all AsyncDomains in activateAsyncRead, and call activateSubscription() for it.
 
 \anchor asyncAccessor_comment_AsyncVariable2 (*2) The reason to put this into the AsyncVariable is coming from the
   NumericAddressedBackend. It adds a synchronous accessor to the AsyncVariable which is used for reading and
@@ -415,37 +428,13 @@ APP.0.PUSH_DATA           4       12      16    1     32                  8     
 
 The map file has a special access mode INTERRUPTx, in addition to the synchronous modes RW and RO.
 x is the numeric identifyer for a device interrupt. Registers with access mode INTERRUPT are treated as read-only.
-Sub-interrupts (INTERRUPTx:y, INTERRUPTx:y:z, etc.) are supported in combination with InterruptControllerHandlers (see below).
+Sub-interrupts (INTERRUPTx:y, INTERRUPTx:y:z, etc.) are supported in combination with MuxedInterruptDistributors (see below).
 
 For interrupts it is possible to have void-type entries. The width of these "registers" is 0 bits. For consistency all other fields also have to be 0. They don't make sense in this context and have to be 0 to avoid confusion.
 
+\subsubsection design_async_canonical_interrupt_name Canonical interrupt names
+
 For each interrupt and sub-interrupt it is possible to get a void accessor via the canonical interrupt name '!x:y:z:'. For instance for an interrupt with data on INTERRUPT3:9:4, it is possible to get void accessors for '!3', '!3:9' and '!3:9:4'. This is useful to check whether a primary interrupt has arrived, or any interrupt on the controller 3:9.
-
-\subsection design_interrupt_constroller_handlers InterruptControllerHandlers
-
-
-\subsection  async_NumericAddressedBackend_interface Interface to implementing backends base on the NumericAddressedBackend
-
-The list of AsyncDomains is private, and all implementing backends interface with it through two functions.
-
-- NumericAddressedBackend::startInterruptHandlingThread(unsigned int primaryInterruptNumber)
-  is a virtual function which is called each time an accessor for that primary interrupt is requested, and in
-  activateAsyncRead() if the according AsyncDomain is not empty.
-  This allows the lazy start of the interrupt handling threads, which are not started if no accessors are requested.
-  The implementation must assure that the thread is only started once. In general, the NumericAddressedBackend does
-  not take care of interrupt handling threads, except for calling this virtual function. Each backend implementation
-  has to take care that treads are started, terminated and joined correctly.
-  There is an empty default implementation of startInterruptHandlingThread() for backward compatibility
-  (backends that don't support asynchronous data (yet) or that don't need a separate thread like the dummies).
-  - Backends must only allocate the resources for interrupt handling (e.g. event files) when the thread is created.
-  - Backends must free all resources in close(). If they don't stop the thread here, they must prevent it from
-    doing anything before the next call to startInterruptHandlingThread().
-- The interrupt handling threads call NumericAddressedBackend::dispatchInterrupt(unsigned int  primaryInterruptNumber)
-  each time the according interrupt arrives.
-  
-All other functionality for subscription, activation/deactivation and exception handling is already handled in the
-NumericAddressedBackend base class.
-- Backends can decide to stop or deactivate the interrupt handling thread in setExceptionImpl().
 
 */
 

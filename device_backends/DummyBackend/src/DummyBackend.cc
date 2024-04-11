@@ -184,8 +184,8 @@ namespace ChimeraTK {
   }
 
   VersionNumber DummyBackend::triggerInterrupt(uint32_t interruptNumber) {
-    auto asyncDomain = boost::dynamic_pointer_cast<AsyncDomainImpl<std::nullptr_t>>(
-        _asyncDomainsContainer.getAsyncDomain(interruptNumber));
+    auto asyncDomain = boost::dynamic_pointer_cast<async::DomainImpl<std::nullptr_t>>(
+        _asyncDomainsContainer.getDomain(interruptNumber));
 
     if(asyncDomain) {
       return asyncDomain->distribute(nullptr);
@@ -193,7 +193,7 @@ namespace ChimeraTK {
 
     // If the asyncDomain is not there, the pointer in the _asyncDomainsContainer must be nullptr as well.
     // Otherwise the dynamic cast failed, which should never happen.
-    assert(!_asyncDomainsContainer.getAsyncDomain(interruptNumber));
+    assert(!_asyncDomainsContainer.getDomain(interruptNumber));
     return VersionNumber{nullptr};
   }
 

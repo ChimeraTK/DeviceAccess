@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncNDRegisterAccessor.h"
+#include "async/AsyncNDRegisterAccessor.h"
 
 #include <utility>
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   /** Typeless base class. The implementations will have a weak pointer of an AsyncNDRegisterAccessor<UserType>
    *  and will implement the pure virtual functions which act on the accessor.
@@ -68,7 +68,7 @@ namespace ChimeraTK {
    */
   class AsyncAccessorManager : public boost::enable_shared_from_this<AsyncAccessorManager> {
    public:
-    explicit AsyncAccessorManager(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<AsyncDomain> asyncDomain)
+    explicit AsyncAccessorManager(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<Domain> asyncDomain)
     : _backend(std::move(backend)), _asyncDomain(std::move(asyncDomain)) {}
     virtual ~AsyncAccessorManager() = default;
 
@@ -103,7 +103,7 @@ namespace ChimeraTK {
     std::map<TransferElementID, std::unique_ptr<AsyncVariable>> _asyncVariables;
 
     boost::shared_ptr<DeviceBackend> _backend;
-    boost::shared_ptr<AsyncDomain> _asyncDomain;
+    boost::shared_ptr<Domain> _asyncDomain;
 
     /** This virtual function lets derived classes react on subscribe / unsubscribe. */
     virtual void asyncVariableMapChanged(TransferElementID) {}
@@ -275,4 +275,4 @@ namespace ChimeraTK {
     }
   }
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

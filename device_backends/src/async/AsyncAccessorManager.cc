@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "AsyncAccessorManager.h"
+#include "async/AsyncAccessorManager.h"
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   thread_local AsyncAccessorManager* AsyncAccessorManager::_isHoldingDomainLock{nullptr};
 
@@ -40,4 +40,4 @@ namespace ChimeraTK {
     _delayedUnsubscriptions.clear();
   }
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

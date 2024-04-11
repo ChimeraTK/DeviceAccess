@@ -57,14 +57,14 @@ namespace ChimeraTK {
     explicit NumericAddressedRegisterInfo(RegisterPath const& pathName_ = {}, uint32_t nElements_ = 0,
         uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
         int32_t nFractionalBits_ = 0, bool signedFlag_ = true, Access dataAccess_ = Access::READ_WRITE,
-        Type dataType_ = Type::FIXED_POINT, std::vector<uint32_t> interruptId_ = {});
+        Type dataType_ = Type::FIXED_POINT, std::vector<size_t> interruptId_ = {});
 
     /**
      * Constructor to set all data members for 2D registers.
      */
     NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_, uint64_t address_, uint32_t nElements_,
         uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_, Access dataAccess_,
-        std::vector<uint32_t> interruptId_);
+        std::vector<size_t> interruptId_);
 
     NumericAddressedRegisterInfo(const NumericAddressedRegisterInfo&) = default;
 
@@ -114,7 +114,7 @@ namespace ChimeraTK {
     uint64_t address; /**< Lower part of the address relative to BAR, in bytes */
 
     Access registerAccess; /**< Data access direction: Read, write, read and write or interrupt */
-    std::vector<uint32_t> interruptId;
+    std::vector<size_t> interruptId;
 
     /** Define per-channel information (bit interpretation etc.), 1D/scalars have exactly one entry. */
     std::vector<ChannelInfo> channels;
@@ -124,6 +124,8 @@ namespace ChimeraTK {
     [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
       return std::unique_ptr<BackendRegisterInfoBase>(new NumericAddressedRegisterInfo(*this));
     }
+
+    [[nodiscard]] std::vector<size_t> getQualifiedAsyncId() const override;
 
    private:
     void computeDataDescriptor();
@@ -137,7 +139,7 @@ namespace ChimeraTK {
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
 
-    [[nodiscard]] const std::set<std::vector<uint32_t>>& getListOfInterrupts() const;
+    [[nodiscard]] const std::set<std::vector<size_t>>& getListOfInterrupts() const;
 
     void addRegister(const NumericAddressedRegisterInfo& registerInfo);
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
@@ -147,7 +149,7 @@ namespace ChimeraTK {
      *  set of interrupt IDs. Each interrupt ID is a vector of (hierarchical) interrupt numbers.
      *  (Use a vector because it's the easiest container, and set because it ensures that each entry is there only once).
      */
-    std::set<std::vector<uint32_t>> _listOfInterrupts;
+    std::set<std::vector<size_t>> _listOfInterrupts;
 
     /** A canonical interrupt path consists of an
      *  exclamation mark, followed by a numeric interrupt and a colon separated
@@ -158,7 +160,7 @@ namespace ChimeraTK {
      *  For the canonical interrupt `!3:5:9` there are is an interrupt `!3:5` and the
      *  primary interrupt `!3`.
      */
-    std::map<RegisterPath, std::vector<uint32_t>> _canonicalInterrupts;
+    std::map<RegisterPath, std::vector<size_t>> _canonicalInterrupts;
   };
 
   /********************************************************************************************************************/

@@ -2,20 +2,19 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncDomain.h"
-#include "AsyncNDRegisterAccessor.h"
-#include "TriggerDistributor.h"
+#include "async/AsyncNDRegisterAccessor.h"
+#include "async/Domain.h"
+#include "async/SubDomain.h"
 #include "VersionNumber.h"
 
 #include <functional>
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   template<typename BackendDataType>
-  class AsyncDomainImpl : public AsyncDomain {
+  class DomainImpl : public Domain {
    public:
-    AsyncDomainImpl(boost::shared_ptr<DeviceBackend> backend, size_t asyncDomainId)
-    : _backend(backend), _id(asyncDomainId) {}
+    DomainImpl(boost::shared_ptr<DeviceBackend> backend, size_t domainId) : _backend(backend), _id(domainId) {}
 
     /**
      * Distribute the data via the associated distribution tree.
@@ -26,12 +25,14 @@ namespace ChimeraTK {
      * As the asynchronous subscription with its thread has to be started before activate() is called, it can happen
      * that distribute with newer data and a newer version number is called before activate is called with the initial
      * value. In this case, the data is stored and no data is distributed. The data will later be distributed during
-     * activation instead of the older polled initial value. The return value is VersionNumber{nullptr}.
+     * activation instead of the older polled initial value. If data is stored for delayed distribution, the return
+     * value is VersionNumber{nullptr}.
      *
-     * In case distribute is called after activate, with a version number older than the polled initial value, the data
-     * is dropped and not distributed. The return value is VersionNumber{nullptr}.
+     * In case distribute() is called after activate(), with a version number older than the polled initial value, the
+     * data is dropped and not distributed. In this case the return value is VersionNumber{nullptr}.
      *
-     * @ return The version number that has been used for distribution, or VersionNumber{nullptr} if there was no distribution.
+     * @ return The version number that has been used for distribution, or VersionNumber{nullptr} if there was no
+     * distribution.
      */
     VersionNumber distribute(BackendDataType data, VersionNumber version = VersionNumber{nullptr});
 
@@ -56,8 +57,8 @@ namespace ChimeraTK {
         RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
    protected:
-    // Everything in this class is protected by the mutex from the AsyncDomain base class.
-    boost::weak_ptr<TriggerDistributor<BackendDataType>> _distributor;
+    // Everything in this class is protected by the mutex from the Domain base class.
+    boost::weak_ptr<SubDomain<BackendDataType>> _subDomain;
 
     boost::shared_ptr<DeviceBackend> _backend;
     size_t _id;
@@ -71,7 +72,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendDataType>
-  VersionNumber AsyncDomainImpl<BackendDataType>::distribute(BackendDataType data, VersionNumber version) {
+  VersionNumber DomainImpl<BackendDataType>::distribute(BackendDataType data, VersionNumber version) {
     std::lock_guard l(_mutex);
     // everything incl. potential creation of a new version number must happen under the lock
     if(version == VersionNumber(nullptr)) {
@@ -89,19 +90,19 @@ namespace ChimeraTK {
       return VersionNumber{nullptr};
     }
 
-    auto distributor = _distributor.lock();
-    if(!distributor) {
+    auto subDomain = _subDomain.lock();
+    if(!subDomain) {
       return VersionNumber{nullptr};
     }
 
-    distributor->distribute(data, version);
+    subDomain->distribute(data, version);
     return version;
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendDataType>
-  VersionNumber AsyncDomainImpl<BackendDataType>::activate(BackendDataType data, VersionNumber version) {
+  VersionNumber DomainImpl<BackendDataType>::activate(BackendDataType data, VersionNumber version) {
     std::lock_guard l(_mutex);
     // everything incl. potential creation of a new version number must happen under the lock
     if(version == VersionNumber(nullptr)) {
@@ -110,18 +111,18 @@ namespace ChimeraTK {
 
     _isActive = true;
 
-    auto distributor = _distributor.lock();
-    if(!distributor) {
+    auto subDomain = _subDomain.lock();
+    if(!subDomain) {
       return VersionNumber{nullptr};
     }
 
     if(version >= _notDistributedVersion) {
-      distributor->activate(data, version);
+      subDomain->activate(data, version);
       _activationVersion = version;
     }
     else {
       // Due to a race condition, it has been tried to distribute newer data before activate was called.
-      distributor->activate(_notDistributedData, _notDistributedVersion);
+      subDomain->activate(_notDistributedData, _notDistributedVersion);
       _activationVersion = _notDistributedVersion;
     }
     return _activationVersion;
@@ -130,7 +131,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendDataType>
-  void AsyncDomainImpl<BackendDataType>::deactivate() {
+  void DomainImpl<BackendDataType>::deactivate() {
     std::lock_guard l(_mutex);
 
     _isActive = false;
@@ -139,7 +140,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendDataType>
-  void AsyncDomainImpl<BackendDataType>::sendException(const std::exception_ptr& e) noexcept {
+  void DomainImpl<BackendDataType>::sendException(const std::exception_ptr& e) noexcept {
     std::lock_guard l(_mutex);
 
     if(!_isActive) {
@@ -148,30 +149,30 @@ namespace ChimeraTK {
     }
 
     _isActive = false;
-    auto distributor = _distributor.lock();
-    if(!distributor) {
+    auto subDomain = _subDomain.lock();
+    if(!subDomain) {
       return;
     }
 
-    distributor->sendException(e);
+    subDomain->sendException(e);
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendDataType>
   template<typename UserDataType>
-  boost::shared_ptr<AsyncNDRegisterAccessor<UserDataType>> AsyncDomainImpl<BackendDataType>::subscribe(
+  boost::shared_ptr<AsyncNDRegisterAccessor<UserDataType>> DomainImpl<BackendDataType>::subscribe(
       RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     std::lock_guard l(_mutex);
 
-    auto distributor = _distributor.lock();
-    if(!distributor) {
-      distributor = boost::make_shared<TriggerDistributor<BackendDataType>>(
-          _backend, std::vector<uint32_t>({static_cast<uint32_t>(_id)}), nullptr, shared_from_this());
-      _distributor = distributor;
+    auto subDomain = _subDomain.lock();
+    if(!subDomain) {
+      subDomain = boost::make_shared<SubDomain<BackendDataType>>(
+          _backend, std::vector<size_t>({_id}), nullptr, shared_from_this());
+      _subDomain = subDomain;
     }
 
-    return distributor->template subscribe<UserDataType>(name, numberOfWords, wordOffsetInRegister, flags);
+    return subDomain->template subscribe<UserDataType>(name, numberOfWords, wordOffsetInRegister, flags);
   }
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

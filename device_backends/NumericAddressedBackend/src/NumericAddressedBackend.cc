@@ -3,16 +3,14 @@
 
 #include "NumericAddressedBackend.h"
 
-#include "AsyncDomainImpl.h"
-#include "AsyncDomainsContainer.h"
+#include "async/DomainImpl.h"
+#include "async/DomainsContainer.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
 #include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
-#include "TriggerDistributor.h"
-#include <nlohmann/json.hpp>
 
 namespace ChimeraTK {
 
@@ -25,21 +23,6 @@ namespace ChimeraTK {
     if(!mapFileName.empty()) {
       MapFileParser parser;
       std::tie(_registerMap, _metadataCatalogue) = parser.parse(mapFileName);
-
-      // Add information about interrupt controller handlers from the map file meta data to the factory.
-      for(auto const& metaDataEntry : _metadataCatalogue) {
-        auto const& key = metaDataEntry.first;
-        if(key[0] == '!') {
-          auto jkey = nlohmann::json::parse(std::string({++key.begin(), key.end()})); // key without the !
-          auto interruptId = jkey.get<std::vector<uint32_t>>();
-
-          auto jdescriptor = nlohmann::json::parse(metaDataEntry.second);
-          auto controllerType = jdescriptor.begin().key();
-          auto controllerDescription = jdescriptor.front().dump();
-          _interruptControllerHandlerFactory.addControllerDescription(
-              interruptId, controllerType, controllerDescription);
-        }
-      }
     }
   }
 
@@ -127,8 +110,9 @@ namespace ChimeraTK {
       }
 
       return _asyncDomainsContainer.subscribe<NumericAddressedBackend, std::nullptr_t, UserType>(
-          boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerInfo.interruptId.front(),
-          _asyncIsActive, registerPathName, numberOfWords, wordOffsetInRegister, flags);
+          boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
+          registerInfo.getQualifiedAsyncId().front(), _asyncIsActive, registerPathName, numberOfWords,
+          wordOffsetInRegister, flags);
     }
     return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
   }
@@ -206,9 +190,9 @@ namespace ChimeraTK {
   void NumericAddressedBackend::activateAsyncRead() noexcept {
     _asyncIsActive = true;
     // Iterating all async domains must happen under the container lock. We prepare a lambda that is executed via
-    // AsyncDomainsContainer::forEach().
-    auto activateDomain = [this](size_t key, boost::shared_ptr<AsyncDomain>& domain) {
-      auto domainImpl = boost::dynamic_pointer_cast<AsyncDomainImpl<std::nullptr_t>>(domain);
+    // DomainsContainer::forEach().
+    auto activateDomain = [this](size_t key, boost::shared_ptr<async::Domain>& domain) {
+      auto domainImpl = boost::dynamic_pointer_cast<async::DomainImpl<std::nullptr_t>>(domain);
       assert(domainImpl);
       auto subscriptionDone = this->activateSubscription(key, domainImpl);
       // Wait until the backends reports that the subscription is complete (typically set from inside another thread)
@@ -225,7 +209,7 @@ namespace ChimeraTK {
 
   // The default implementation just returns a ready future.
   std::future<void> NumericAddressedBackend::activateSubscription([[maybe_unused]] unsigned int interruptNumber,
-      [[maybe_unused]] boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain) {
+      [[maybe_unused]] boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain) {
     std::promise<void> subscriptionDonePromise;
     subscriptionDonePromise.set_value();
     return subscriptionDonePromise.get_future();
@@ -236,7 +220,7 @@ namespace ChimeraTK {
   void NumericAddressedBackend::close() {
     _asyncIsActive = false;
 
-    _asyncDomainsContainer.forEach([](size_t, boost::shared_ptr<AsyncDomain>& domain) { domain->deactivate(); });
+    _asyncDomainsContainer.forEach([](size_t, boost::shared_ptr<async::Domain>& domain) { domain->deactivate(); });
 
     closeImpl();
   }
@@ -257,13 +241,6 @@ namespace ChimeraTK {
 
   void NumericAddressedBackend::setExceptionImpl() noexcept {
     _asyncIsActive = false;
-  }
-
-  /********************************************************************************************************************/
-
-  boost::shared_ptr<InterruptControllerHandler> NumericAddressedBackend::createInterruptControllerHandler(
-      std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) {
-    return _interruptControllerHandlerFactory.createInterruptControllerHandler(controllerID, parent);
   }
 
   /********************************************************************************************************************/

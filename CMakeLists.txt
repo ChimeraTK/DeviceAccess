@@ -81,9 +81,10 @@ endif()
 
 foreach(subdir ${subdirs})
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/src sources)
+  aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/src/async async_sources)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include)
   file(GLOB_RECURSE headers "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/*")
-  set(SOURCE ${SOURCE} ${sources} ${headers})
+  set(SOURCE ${SOURCE} ${sources}  ${async_sources} ${headers})
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/
     DESTINATION include/ChimeraTK
     PATTERN "internal" EXCLUDE)
