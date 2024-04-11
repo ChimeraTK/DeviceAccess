@@ -17,9 +17,9 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint32_t nElements_,
       uint64_t address_, uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
-      Access dataAccess_, Type dataType_, std::vector<uint32_t> interruptId_)
+      Access dataAccess_, Type dataType_, std::vector<size_t> interruptId_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(nElements_ > 0 ? nBytes_ / nElements_ * 8 : 0),
-    bar(bar_), address(address_), registerAccess(dataAccess_), interruptId(interruptId_),
+    bar(bar_), address(address_), registerAccess(dataAccess_), interruptId(std::move(interruptId_)),
     channels({{0, dataType_, width_, nFractionalBits_, signedFlag_}}) {
     assert(channels.size() == 1);
 
@@ -42,9 +42,9 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_,
       uint64_t address_, uint32_t nElements_, uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_,
-      Access dataAccess_, std::vector<uint32_t> interruptId_)
+      Access dataAccess_, std::vector<size_t> interruptId_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(elementPitchBits_), bar(bar_), address(address_),
-    registerAccess(dataAccess_), interruptId(interruptId_), channels(std::move(channelInfo_)) {
+    registerAccess(dataAccess_), interruptId(std::move(interruptId_)), channels(std::move(channelInfo_)) {
     assert(!channels.empty());
 
     // make sure . and / is treated as similar as possible
@@ -169,10 +169,17 @@ namespace ChimeraTK {
         (registerAccess == rhs.registerAccess) && (getNumberOfDimensions() == rhs.getNumberOfDimensions()) &&
         (interruptId == rhs.interruptId);
   }
+
   /********************************************************************************************************************/
 
   bool NumericAddressedRegisterInfo::operator!=(const ChimeraTK::NumericAddressedRegisterInfo& rhs) const {
     return !operator==(rhs);
+  }
+
+  /********************************************************************************************************************/
+
+  std::vector<size_t> NumericAddressedRegisterInfo::getQualifiedAsyncId() const {
+    return interruptId;
   }
 
   /********************************************************************************************************************/
@@ -253,7 +260,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  const std::set<std::vector<uint32_t>>& NumericAddressedRegisterCatalogue::getListOfInterrupts() const {
+  const std::set<std::vector<size_t>>& NumericAddressedRegisterCatalogue::getListOfInterrupts() const {
     return _listOfInterrupts;
   }
 
@@ -263,7 +270,7 @@ namespace ChimeraTK {
     if(registerInfo.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) {
       _listOfInterrupts.insert(registerInfo.interruptId);
       RegisterPath canonicalName = "!" + std::to_string(registerInfo.interruptId.front());
-      std::vector<uint32_t> canonicalID = {registerInfo.interruptId.front()};
+      std::vector<size_t> canonicalID = {registerInfo.interruptId.front()};
       _canonicalInterrupts[canonicalName] = canonicalID;
       for(auto subId = ++registerInfo.interruptId.begin(); subId != registerInfo.interruptId.end(); ++subId) {
         canonicalName += ":" + std::to_string(*subId);

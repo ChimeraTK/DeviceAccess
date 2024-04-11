@@ -14,9 +14,11 @@
 #include <string>
 
 namespace ChimeraTK {
-  class InterruptControllerHandler;
-  template<typename BackendSpecificDataType>
-  class TriggerDistributor;
+  namespace async {
+    class MuxedInterruptDistributor;
+    template<typename BackendSpecificDataType>
+    class SubDomain;
+  } // namespace async
 
   /** The base class for backends providing IO functionality for the Device class.
    * Note that most backends should actually be based on the DeviceBackendImpl
@@ -99,12 +101,6 @@ namespace ChimeraTK {
      * the appropriate ChimeraTK::runtime_error is thrown by this function.
      */
     virtual void checkActiveException() = 0;
-
-    /**
-     * Create an InterruptControllerHandler for a specific controllerID and a TriggerDistributor as parent.
-     */
-    virtual boost::shared_ptr<InterruptControllerHandler> createInterruptControllerHandler(
-        std::vector<uint32_t> const& controllerID, boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent) = 0;
   };
 
   /********************************************************************************************************************/

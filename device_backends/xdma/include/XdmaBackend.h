@@ -40,7 +40,7 @@ namespace ChimeraTK {
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
     void write(uint64_t bar, uint64_t address, const int32_t* data, size_t sizeInBytes) override;
     std::future<void> activateSubscription(
-        uint32_t interruptNumber, boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain) override;
+        uint32_t interruptNumber, boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain) override;
 
     std::string readDeviceInfo() override;
 

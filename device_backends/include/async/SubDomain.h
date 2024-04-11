@@ -2,70 +2,74 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "async/TriggeredPollDistributor.h"
+#include "async/VariableDistributor.h"
 #include "DeviceBackend.h"
 #include "NumericAddressedRegisterCatalogue.h"
-#include "TriggeredPollDistributor.h"
-#include "VariableDistributor.h"
 #include "VersionNumber.h"
 
 #include <boost/make_shared.hpp>
 
-namespace ChimeraTK {
-  class InterruptControllerHandlerFactory;
-  class InterruptControllerHandler;
-  class AsyncDomain;
+namespace ChimeraTK::async {
+  class MuxedInterruptDistributorFactory;
+  class MuxedInterruptDistributor;
+  class Domain;
 
   template<typename UserType>
   class AsyncNDRegisterAccessor;
 
   namespace detail {
     template<typename UserType, typename BackendSpecificDataType>
-    class AsyncDataAdapterSubscriptionImplementor;
+    class SubDomainSubscriptionImplementor;
   } // namespace detail
 
   /********************************************************************************************************************/
 
-  /** Distribute a typed interrupt signal (trigger) to three possible consumers:
-   *  \li InterruptControllerHandler
+  /** Send backend-specific asynchronous data to different distributors:
+   *  \li MuxedInterruptDistributor
    *  \li TriggeredPollDistributor
    *  \li VariableDistributor<BackendSpecificDataType>
    */
   template<typename BackendSpecificDataType>
-  class TriggerDistributor : public boost::enable_shared_from_this<TriggerDistributor<BackendSpecificDataType>> {
+  class SubDomain : public boost::enable_shared_from_this<SubDomain<BackendSpecificDataType>> {
    public:
-    TriggerDistributor(boost::shared_ptr<DeviceBackend> backend, std::vector<uint32_t> interruptID,
-        boost::shared_ptr<InterruptControllerHandler> parent, boost::shared_ptr<AsyncDomain> asyncDomain);
+    SubDomain(boost::shared_ptr<DeviceBackend> backend, std::vector<size_t> qualifiedAsyncId,
+        boost::shared_ptr<MuxedInterruptDistributor> parent, boost::shared_ptr<Domain> domain);
 
     void activate(BackendSpecificDataType, VersionNumber v);
     void distribute(BackendSpecificDataType, VersionNumber v);
     void sendException(const std::exception_ptr& e);
 
     /**
-     * Common implementation for getting a TriggeredPollDistributor or a VariableDistributor<nullptr_t> to avoid code
-     * duplication. It only works for those two template types. The implementation and the code instantiations are in
-     * the .cc file to  avoid circular header inclusion.
+     * Get an AsyncAccessorManager for a specific SubDomain. The qualified SubDomain ID is relative to (and including)
+     * this SubDomain. If the ID has a length 1, it will return the AsyncAccessorManager for the matching
+     * DistributorType (TriggeredPollDistributor or VariableDistributor<BackendSpecificDataType>). If the ID is longer,
+     * it will get the distributor from the matching SubDomain further down the hierarchy.
+     * The Distributor and intermediate MuxedInterruptDistributors/SubDomains are created if they are not there.
      */
     template<typename DistributorType>
-    boost::shared_ptr<DistributorType> getDistributorRecursive(std::vector<uint32_t> const& interruptID);
+    boost::shared_ptr<AsyncAccessorManager> getAccessorManager(std::vector<size_t> const& qualifiedSubDomainId);
 
-    boost::shared_ptr<AsyncDomain> getAsyncDomain() { return _asyncDomain; }
+    boost::shared_ptr<Domain> getDomain() { return _domain; }
+    std::vector<size_t> getId() { return _id; }
+    boost::shared_ptr<DeviceBackend> getBackend() { return _backend; }
 
     template<typename UserType>
     boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> subscribe(
         RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
    protected:
-    std::vector<uint32_t> _id;
+    std::vector<size_t> _id;
 
     boost::shared_ptr<DeviceBackend> _backend;
-    boost::weak_ptr<InterruptControllerHandler> _interruptControllerHandler;
+    boost::weak_ptr<MuxedInterruptDistributor> _muxedInterruptDistributor;
     boost::weak_ptr<TriggeredPollDistributor> _pollDistributor;
     boost::weak_ptr<VariableDistributor<std::nullptr_t>> _variableDistributor;
-    boost::shared_ptr<InterruptControllerHandler> _parent;
-    boost::shared_ptr<AsyncDomain> _asyncDomain;
+    boost::shared_ptr<MuxedInterruptDistributor> _parent;
+    boost::shared_ptr<Domain> _domain;
 
     template<typename UserType, typename BackendDataType>
-    friend class detail::AsyncDataAdapterSubscriptionImplementor;
+    friend class detail::SubDomainSubscriptionImplementor;
   };
 
   /********************************************************************************************************************/
@@ -75,10 +79,10 @@ namespace ChimeraTK {
     // circular header inclusion, and we cannot write a "for all user types" macro for functions because of the return
     // value and the function signature.
     template<typename UserType, typename BackendSpecificDataType>
-    class AsyncDataAdapterSubscriptionImplementor {
+    class SubDomainSubscriptionImplementor {
      public:
       static boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> subscribeTo(
-          TriggerDistributor<BackendSpecificDataType>& triggerDistributor, RegisterPath name, size_t numberOfWords,
+          SubDomain<BackendSpecificDataType>& subDomain, RegisterPath name, size_t numberOfWords,
           size_t wordOffsetInRegister, AccessModeFlags flags);
     };
 
@@ -87,17 +91,17 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendSpecificDataType>
-  TriggerDistributor<BackendSpecificDataType>::TriggerDistributor(boost::shared_ptr<DeviceBackend> backend,
-      std::vector<uint32_t> interruptID, boost::shared_ptr<InterruptControllerHandler> parent,
-      boost::shared_ptr<AsyncDomain> asyncDomain)
-  : _id(std::move(interruptID)), _backend(backend), _parent(std::move(parent)), _asyncDomain(std::move(asyncDomain)) {}
+  SubDomain<BackendSpecificDataType>::SubDomain(boost::shared_ptr<DeviceBackend> backend,
+      std::vector<size_t> qualifiedAsyncId, boost::shared_ptr<MuxedInterruptDistributor> parent,
+      boost::shared_ptr<Domain> domain)
+  : _id(std::move(qualifiedAsyncId)), _backend(backend), _parent(std::move(parent)), _domain(std::move(domain)) {}
 
   /********************************************************************************************************************/
   template<typename BackendSpecificDataType>
   template<typename UserType>
-  boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> TriggerDistributor<BackendSpecificDataType>::subscribe(
+  boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> SubDomain<BackendSpecificDataType>::subscribe(
       RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    return detail::AsyncDataAdapterSubscriptionImplementor<UserType, BackendSpecificDataType>::subscribeTo(
+    return detail::SubDomainSubscriptionImplementor<UserType, BackendSpecificDataType>::subscribeTo(
         *this, name, numberOfWords, wordOffsetInRegister, flags);
   }
 
@@ -105,10 +109,10 @@ namespace ChimeraTK {
 
   template<typename BackendSpecificDataType>
   template<typename DistributorType>
-  boost::shared_ptr<DistributorType> TriggerDistributor<BackendSpecificDataType>::getDistributorRecursive(
-      std::vector<uint32_t> const& interruptID) {
-    if(interruptID.size() == 1) {
-      // return the distributor from this instance, not a from further down the tree
+  boost::shared_ptr<AsyncAccessorManager> SubDomain<BackendSpecificDataType>::getAccessorManager(
+      std::vector<size_t> const& qualifiedSubDomainId) {
+    if(qualifiedSubDomainId.size() == 1) {
+      // return the distributor from this instance, not a from a SubDomain further down the tree
 
       boost::weak_ptr<DistributorType>* weakDistributor{
           nullptr}; // Cannot create a reference here, but references in the "if constexpr" scope are not seen outside
@@ -120,14 +124,14 @@ namespace ChimeraTK {
         weakDistributor = &_variableDistributor;
       }
       else {
-        throw ChimeraTK::logic_error("TriggerDistributor::getDistributorRecursive(): Wrong template parameter.");
+        throw ChimeraTK::logic_error("SubDomain::getAccessorManager(): Wrong template parameter.");
       }
 
       auto distributor = weakDistributor->lock();
       if(!distributor) {
-        distributor = boost::make_shared<DistributorType>(_backend, this->shared_from_this(), _asyncDomain);
+        distributor = boost::make_shared<DistributorType>(_backend, this->shared_from_this(), _domain);
         *weakDistributor = distributor;
-        if(_asyncDomain->unsafeGetIsActive()) {
+        if(_domain->unsafeGetIsActive()) {
           // Creating a new accessor in an activated domain is only supported if the BackendSpecificDataType is
           // nullptr_t. At the moment there are two use cases we need:
           //
@@ -152,7 +156,7 @@ namespace ChimeraTK {
           }
           else {
             // To put an implementation here, we need a way to get an initial value
-            // (for instance from the AsyncDomain, see https://redmine.msktools.desy.de/issues/13038).
+            // (for instance from the domain, see https://redmine.msktools.desy.de/issues/13038).
             // If you run into this assertion, chances are that you accidentally ran into this code branch because the
             // domain has been activated too early due to a bug.
             assert(false);
@@ -161,30 +165,32 @@ namespace ChimeraTK {
       }
       return distributor;
     }
-    // get a distributor from further down the tree, behind one or more InterruptControllerHandlers
-    auto controllerHandler = _interruptControllerHandler.lock();
-    if(!controllerHandler) {
-      controllerHandler = _backend->createInterruptControllerHandler(_id, this->shared_from_this());
-      _interruptControllerHandler = controllerHandler;
+    // get a distributor from further down the tree, behind one or more MuxedInterruptDistributors
+    auto muxedInterruptDistributor = _muxedInterruptDistributor.lock();
+    if(!muxedInterruptDistributor) {
+      muxedInterruptDistributor =
+          MuxedInterruptDistributorFactory::getInstance().createMuxedInterruptDistributor(this->shared_from_this());
+      _muxedInterruptDistributor = muxedInterruptDistributor;
     }
 
-    return controllerHandler->getDistributorRecursive<DistributorType>({++interruptID.begin(), interruptID.end()});
+    return muxedInterruptDistributor->getAccessorManager<DistributorType>(
+        {++qualifiedSubDomainId.begin(), qualifiedSubDomainId.end()});
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendSpecificDataType>
-  void TriggerDistributor<BackendSpecificDataType>::distribute(BackendSpecificDataType data, VersionNumber version) {
-    if(!_asyncDomain->unsafeGetIsActive()) {
+  void SubDomain<BackendSpecificDataType>::distribute(BackendSpecificDataType data, VersionNumber version) {
+    if(!_domain->unsafeGetIsActive()) {
       return;
     }
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
       pollDistributor->distribute(nullptr, version);
     }
-    auto controllerHandler = _interruptControllerHandler.lock();
-    if(controllerHandler) {
-      controllerHandler->handle(version);
+    auto muxedInterruptDistributor = _muxedInterruptDistributor.lock();
+    if(muxedInterruptDistributor) {
+      muxedInterruptDistributor->handle(version);
     }
     auto variableDistributor = _variableDistributor.lock();
     if(variableDistributor) {
@@ -195,14 +201,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendSpecificDataType>
-  void TriggerDistributor<BackendSpecificDataType>::activate(BackendSpecificDataType data, VersionNumber version) {
+  void SubDomain<BackendSpecificDataType>::activate(BackendSpecificDataType data, VersionNumber version) {
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
       pollDistributor->distribute(nullptr, version);
     }
-    auto controllerHandler = _interruptControllerHandler.lock();
-    if(controllerHandler) {
-      controllerHandler->activate(version);
+    auto muxedInterruptDidstributor = _muxedInterruptDistributor.lock();
+    if(muxedInterruptDidstributor) {
+      muxedInterruptDidstributor->activate(version);
     }
     auto variableDistributor = _variableDistributor.lock();
     if(variableDistributor) {
@@ -213,14 +219,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename BackendSpecificDataType>
-  void TriggerDistributor<BackendSpecificDataType>::sendException(const std::exception_ptr& e) {
+  void SubDomain<BackendSpecificDataType>::sendException(const std::exception_ptr& e) {
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
       pollDistributor->sendException(e);
     }
-    auto controllerHandler = _interruptControllerHandler.lock();
-    if(controllerHandler) {
-      controllerHandler->sendException(e);
+    auto muxedInterruptDistributor = _muxedInterruptDistributor.lock();
+    if(muxedInterruptDistributor) {
+      muxedInterruptDistributor->sendException(e);
     }
     auto variableDistributor = _variableDistributor.lock();
     if(variableDistributor) {
@@ -233,16 +239,10 @@ namespace ChimeraTK {
   namespace detail {
 
     template<typename UserType, typename BackendSpecificDataType>
-    boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> AsyncDataAdapterSubscriptionImplementor<UserType,
-        BackendSpecificDataType>::subscribeTo(TriggerDistributor<BackendSpecificDataType>& triggerDistributor,
-        RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-      auto catalogue = triggerDistributor._backend->getRegisterCatalogue(); // need to store the clone you get
-      const auto& backendCatalogue = catalogue.getImpl();
-      // This code only works for backends which use the NumericAddressedRegisterCatalogue because we need the
-      // interrupt description which is specific for those backends and not in the general catalogue.
-      // If the cast fails, it will throw an exception.
-      const auto& numericCatalogue = dynamic_cast<const NumericAddressedRegisterCatalogue&>(backendCatalogue);
-      auto registerInfo = numericCatalogue.getBackendRegister(name);
+    boost::shared_ptr<AsyncNDRegisterAccessor<UserType>> SubDomainSubscriptionImplementor<UserType,
+        BackendSpecificDataType>::subscribeTo(SubDomain<BackendSpecificDataType>& subDomain, RegisterPath name,
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+      auto registerInfo = subDomain._backend->getRegisterCatalogue().getRegister(name);
 
       // Find the right place in the distribution tree to subscribe
       boost::shared_ptr<AsyncAccessorManager> distributor;
@@ -250,27 +250,27 @@ namespace ChimeraTK {
         // Special implementation for data type nullptr_t: Use a poll distributor if the data is not
         // FundamentalType::nodata itself
         if(registerInfo.getDataDescriptor().fundamentalType() == DataDescriptor::FundamentalType::nodata) {
-          distributor = triggerDistributor.template getDistributorRecursive<VariableDistributor<std::nullptr_t>>(
-              registerInfo.interruptId);
+          distributor = subDomain.template getAccessorManager<VariableDistributor<std::nullptr_t>>(
+              registerInfo.getQualifiedAsyncId());
         }
         else {
           distributor =
-              triggerDistributor.template getDistributorRecursive<TriggeredPollDistributor>(registerInfo.interruptId);
+              subDomain.template getAccessorManager<TriggeredPollDistributor>(registerInfo.getQualifiedAsyncId());
         }
       }
       else {
         // For all other BackendSpecificDataType use the according VariableDistributor.
         // This scheme might need some improvement later.
-        triggerDistributor.template getDistributorRecursive<VariableDistributor<BackendSpecificDataType>>(
-            registerInfo.interruptId);
+        distributor = subDomain.template getAccessorManager<VariableDistributor<BackendSpecificDataType>>(
+            registerInfo.getQualifiedAsyncId());
       }
 
       return distributor->template subscribe<UserType>(name, numberOfWords, wordOffsetInRegister, flags);
     }
 
-    INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncDataAdapterSubscriptionImplementor, std::nullptr_t);
+    INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(SubDomainSubscriptionImplementor, std::nullptr_t);
   } // namespace detail
 
   /********************************************************************************************************************/
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

@@ -46,9 +46,9 @@ static DummyForCleanupCheck::BackendRegisterer gDFCCRegisterer;
  * consistency with the specification (implemented in the unified test).
  * - AsyncNDRegisterAccessor
  * - AsyncVariable (multiple listeners to one logical async variable)
- * - Basic interrupt controller handler functionality (via DummyInterruptControllerHandler)
+ * - Hierarchical interrupts (multiplexed interrupts via DummyMuxedInterruptDistributor)
  * - TriggeredPollDistributor
- * - Instaniation from the map file
+ * - Instantiation from the map file
  *
  * FIXME: Unified test does not support void variables yet.
  * ==============================================================================================*/

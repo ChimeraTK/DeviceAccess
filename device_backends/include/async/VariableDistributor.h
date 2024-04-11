@@ -2,23 +2,23 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncAccessorManager.h"
-#include "InterruptControllerHandler.h"
+#include "async/AsyncAccessorManager.h"
+#include "async/MuxedInterruptDistributor.h"
 
 #include <memory>
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   template<typename SourceType>
   class VariableDistributor : public SourceTypedAsyncAccessorManager<SourceType> {
    public:
-    VariableDistributor(boost::shared_ptr<DeviceBackend> backend,
-        boost::shared_ptr<TriggerDistributor<SourceType>> parent, boost::shared_ptr<AsyncDomain> asyncDomain);
+    VariableDistributor(boost::shared_ptr<DeviceBackend> backend, boost::shared_ptr<SubDomain<SourceType>> parent,
+        boost::shared_ptr<Domain> asyncDomain);
 
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(AccessorInstanceDescriptor const& descriptor);
 
-    boost::shared_ptr<TriggerDistributor<SourceType>> _parent;
+    boost::shared_ptr<SubDomain<SourceType>> _parent;
   };
 
   /********************************************************************************************************************/
@@ -59,7 +59,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   template<typename SourceType>
   VariableDistributor<SourceType>::VariableDistributor(boost::shared_ptr<DeviceBackend> backend,
-      boost::shared_ptr<TriggerDistributor<SourceType>> parent, boost::shared_ptr<AsyncDomain> asyncDomain)
+      boost::shared_ptr<SubDomain<SourceType>> parent, boost::shared_ptr<Domain> asyncDomain)
   : SourceTypedAsyncAccessorManager<SourceType>(backend, asyncDomain), _parent(std::move(parent)) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable);
   }
@@ -85,4 +85,4 @@ namespace ChimeraTK {
     this->_sendBuffer.versionNumber = this->_version;
   }
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

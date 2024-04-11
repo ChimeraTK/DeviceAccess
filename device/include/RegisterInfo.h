@@ -59,6 +59,14 @@ namespace ChimeraTK {
      */
     [[nodiscard]] const BackendRegisterInfoBase& getImpl() const;
 
+    /**
+     *  Get the fully qualified async::SubDomain ID.
+     *  If the register does not support wait_for_new_data it will be empty.
+     *  Note: At the moment using async::Domain and async::SubDomain is not mandatory yet, so the ID might be empty even
+     *  if the register supports wait_for_new_data.
+     */
+    [[nodiscard]] std::vector<size_t> getQualifiedAsyncId() const;
+
    protected:
     std::unique_ptr<BackendRegisterInfoBase> _impl;
   };

@@ -310,13 +310,13 @@ namespace ChimeraTK {
 
   void SharedDummyBackend::InterruptDispatcherThread::handleInterrupt(uint32_t interruptNumber) {
     SharedDummyBackend& backend = _dispatcherInterf->_backend;
-    auto asyncDomain = boost::dynamic_pointer_cast<AsyncDomainImpl<std::nullptr_t>>(
-        backend._asyncDomainsContainer.getAsyncDomain(interruptNumber));
+    auto asyncDomain = boost::dynamic_pointer_cast<async::DomainImpl<std::nullptr_t>>(
+        backend._asyncDomainsContainer.getDomain(interruptNumber));
 
     if(!asyncDomain) {
       // If the asyncDomain is not there, the pointer in the _asyncDomainsContainer must be nullptr as well.
       // Otherwise the dynamic cast failed, which should never happen.
-      assert(!backend._asyncDomainsContainer.getAsyncDomain(interruptNumber));
+      assert(!backend._asyncDomainsContainer.getDomain(interruptNumber));
       return;
     }
 

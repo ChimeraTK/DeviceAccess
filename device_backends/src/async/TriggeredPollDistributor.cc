@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "TriggeredPollDistributor.h"
+#include "async/TriggeredPollDistributor.h"
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   TriggeredPollDistributor::TriggeredPollDistributor(boost::shared_ptr<DeviceBackend> backend,
-      boost::shared_ptr<TriggerDistributor<std::nullptr_t>> parent, boost::shared_ptr<AsyncDomain> asyncDomain)
+      boost::shared_ptr<SubDomain<std::nullptr_t>> parent, boost::shared_ptr<Domain> asyncDomain)
   : SourceTypedAsyncAccessorManager<std::nullptr_t>(std::move(backend), std::move(asyncDomain)),
     _parent(std::move(parent)) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(createAsyncVariable);
@@ -26,4 +26,4 @@ namespace ChimeraTK {
     return true;
   }
 
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

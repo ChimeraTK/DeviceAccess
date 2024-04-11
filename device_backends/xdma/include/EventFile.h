@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "AsyncDomainImpl.h"
+#include "async/DomainImpl.h"
 #include "DeviceFile.h"
 
 #include <boost/asio.hpp>
@@ -40,14 +40,14 @@ namespace ChimeraTK {
   class EventFile {
     friend class EventThread;
     DeviceFile _file;
-    boost::weak_ptr<AsyncDomainImpl<std::nullptr_t>> _asyncDomain;
+    boost::weak_ptr<async::DomainImpl<std::nullptr_t>> _asyncDomain;
 
     std::unique_ptr<EventThread> _evtThread;
 
    public:
     EventFile() = delete;
     EventFile(const std::string& devicePath, size_t interruptIdx,
-        boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain);
+        boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain);
     // EventFile(EventFile&& d) = default;
     ~EventFile();
 

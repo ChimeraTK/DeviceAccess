@@ -108,11 +108,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   // FIXME: This funtion does a lot of string copying. This can be optimised, for instance by using a string_view.
-  std::vector<uint32_t> MapFileParser::getInterruptId(std::string accessTypeStr) {
+  std::vector<size_t> MapFileParser::getInterruptId(std::string accessTypeStr) {
     std::string strToFind("INTERRUPT");
     auto pos = accessTypeStr.find(strToFind);
     if(pos == std::string::npos) return {};
-    std::vector<uint32_t> retVal;
+    std::vector<size_t> retVal;
 
     accessTypeStr.erase(pos, strToFind.length());
 
@@ -120,10 +120,9 @@ namespace ChimeraTK {
     do {
       delimiterPos = accessTypeStr.find(':');
       std::string interruptStr = accessTypeStr.substr(0, delimiterPos);
-      uint32_t interruptNumber = 0;
+      size_t interruptNumber = 0;
       try {
-        interruptNumber =
-            static_cast<uint32_t>(std::stoul(interruptStr, nullptr, 0)); // base 0 = auto, hex or dec or oct
+        interruptNumber = std::stoul(interruptStr, nullptr, 0); // base 0 = auto, hex or dec or oct
       }
       catch(std::exception& e) {
         throw ChimeraTK::logic_error(

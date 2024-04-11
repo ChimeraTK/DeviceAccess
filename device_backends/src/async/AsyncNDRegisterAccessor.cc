@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "AsyncNDRegisterAccessor.h"
+#include "async/AsyncNDRegisterAccessor.h"
 
-#include "AsyncAccessorManager.h"
+#include "async/AsyncAccessorManager.h"
 
-namespace ChimeraTK {
+namespace ChimeraTK::async {
 
   template<typename UserType>
   AsyncNDRegisterAccessor<UserType>::~AsyncNDRegisterAccessor() {
@@ -14,9 +14,9 @@ namespace ChimeraTK {
 
   template<typename UserType>
   AsyncNDRegisterAccessor<UserType>::AsyncNDRegisterAccessor(boost::shared_ptr<DeviceBackend> backend,
-      boost::shared_ptr<AsyncAccessorManager> manager, boost::shared_ptr<AsyncDomain> asyncDomain,
-      std::string const& name, size_t nChannels, size_t nElements, AccessModeFlags accessModeFlags,
-      std::string const& unit, std::string const& description)
+      boost::shared_ptr<AsyncAccessorManager> manager, boost::shared_ptr<Domain> asyncDomain, std::string const& name,
+      size_t nChannels, size_t nElements, AccessModeFlags accessModeFlags, std::string const& unit,
+      std::string const& description)
 
   : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description), _backend(std::move(backend)),
     _accessorManager(std::move(manager)), _asyncDomain(std::move(asyncDomain)), _receiveBuffer(nChannels, nElements) {
@@ -69,4 +69,4 @@ namespace ChimeraTK {
   }
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(AsyncNDRegisterAccessor);
-} // namespace ChimeraTK
+} // namespace ChimeraTK::async

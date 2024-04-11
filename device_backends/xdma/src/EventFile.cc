@@ -90,7 +90,7 @@ namespace ChimeraTK {
   }
 
   EventFile::EventFile(const std::string& devicePath, size_t interruptIdx,
-      boost::shared_ptr<AsyncDomainImpl<std::nullptr_t>> asyncDomain)
+      boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain)
   : _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _asyncDomain{asyncDomain} {}
 
   EventFile::~EventFile() {
