@@ -128,7 +128,35 @@ namespace ChimeraTK {
         distributor = boost::make_shared<DistributorType>(_backend, this->shared_from_this(), _asyncDomain);
         *weakDistributor = distributor;
         if(_asyncDomain->unsafeGetIsActive()) {
-          distributor->distribute(nullptr, {});
+          // Creating a new accessor in an activated domain is only supported if the BackendSpecificDataType is
+          // nullptr_t. At the moment there are two use cases we need:
+          //
+          // 1. BackendSpecificDataType is nullptr_t.
+          //    - There are three distributors (TriggeredPollDistributor, VariableDistributor<nullptr_t> and the
+          //      InterruptControllerHandler) and a hierarchy of TriggerDistributors.
+          //    - You can get an accessor to one of the distributors and receive data (active domain), and then a second
+          //      distributor is created.
+          // 2. The BackendSpecificDataType contains all required data.
+          //    - There is no hierarchy of TriggerDistributors.
+          //    - The VariableDistributor<BackendSpecificDataType> will be the only distributor and if it is not there,
+          //      it means the domain has just been created and is not activated yet. As the VariableDistributor is
+          //      holding the only ownership of the TriggerDistributor, both will go away together.
+          //
+          // At the moment the code does not support a combined option, which would require the option the get the
+          // initial value for the newly created distributor here.
+          if constexpr(std::is_same<BackendSpecificDataType, std::nullptr_t>::value) {
+            // In case the BackendSpecificDataType is nullptr_t, we know
+            // - the initial value is nullptr
+            // - the version number cannot be determined from the data and we have to invent a new version number here
+            distributor->distribute(nullptr, {});
+          }
+          else {
+            // To put an implementation here, we need a way to get an initial value
+            // (for instance from the AsyncDomain, see https://redmine.msktools.desy.de/issues/13038).
+            // If you run into this assertion, chances are that you accidentally ran into this code branch because the
+            // domain has been activated too early due to a bug.
+            assert(false);
+          }
         }
       }
       return distributor;

@@ -45,9 +45,14 @@ namespace ChimeraTK {
     bool isSendingExceptions() { return _isSendingExceptions; }
 
     /**
-     *  Get an existing AsyncDomain for the specific key, or create a new one while holding the container lock.
-     *  The function is templated to the backend type and a BackendSpecificDataType. The BackendSpecificDataType might
-     *  vary for different AsyncDomains in the same backend.
+     *  Get an accessor from a particular domain. At the moment the catalogue does not provide enough information to
+     *  extract the domain ID from the register path. Hence the backend has to do it from its specific catalogue.
+     *
+     *  If the domain does not exist, it is created while holding the container lock.
+     *
+     *  The function is templated to three types. The first two parameters, backend type and a BackendSpecificDataType,
+     * are needed for the domain creation. The BackendSpecificDataType might vary for different AsyncDomains in the same
+     * backend. The UserDataType is the data type of the returned accessor.
      *
      *  The backend has to provide a function to get the initial value for that AsyncDomain.
      *  \code{.cpp}
@@ -60,15 +65,25 @@ namespace ChimeraTK {
      * not create a new version number here!**. This must happen inside the AsyncDomain under the AsyncDomain lock to
      * avoid race conditions.
      *
+     *  Parameters for the async Domain creation:
+     *
      *  @param backend Shared pointer to the exact backend type. As template functions cannot be virtual, we need a
      *  pointer of the type that implements getAsyncDomainInitialValue().
-     *  @param key The AsyncDomainId is the key for the container (map).
+     *  @param domainId The AsyncDomainId is the key for the container (map).
      *  @param activate Flag whether to activate the async domain if it is created.
      *
+     *  Parameters for the actual accessor subscription:
+     *
+     *  @param name The register path of the accessor
+     *  @param numberOfWords Entries in the accessor
+     *  @param wordOffsetInRegister Accessor starts at an offset
+     *  @param flags The access mode flags. They have to include wait_for_new_data.
+     *
      */
-    template<typename BackendType, typename BackendSpecificDataType>
-    boost::shared_ptr<AsyncDomainImpl<BackendSpecificDataType>> getOrCreateAsyncDomain(
-        boost::shared_ptr<BackendType> backend, size_t key, bool activate);
+    template<typename BackendType, typename BackendSpecificDataType, typename UserDataType>
+    boost::shared_ptr<AsyncNDRegisterAccessor<UserDataType>> subscribe(boost::shared_ptr<BackendType> backend,
+        size_t domainId, bool activate, RegisterPath name, size_t numberOfWords, size_t wordOffsetInRegister,
+        AccessModeFlags flags);
 
     /**
      * Return the shared pointer to the AsyncDomain for a key. The shared pointer might be nullptr if locking of the
@@ -103,42 +118,50 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename BackendType, typename BackendSpecificDataType>
-  boost::shared_ptr<AsyncDomainImpl<BackendSpecificDataType>> AsyncDomainsContainer::getOrCreateAsyncDomain(
-      boost::shared_ptr<BackendType> backend, size_t key, bool activate) {
+  template<typename BackendType, typename BackendSpecificDataType, typename UserDataType>
+  boost::shared_ptr<AsyncNDRegisterAccessor<UserDataType>> AsyncDomainsContainer::subscribe(
+      boost::shared_ptr<BackendType> backend, size_t domainId, bool activate, RegisterPath name, size_t numberOfWords,
+      size_t wordOffsetInRegister, AccessModeFlags flags) {
     std::lock_guard<std::mutex> domainsLock(_domainsMutex);
 
-    auto domain = _asyncDomains[key].lock();
+    auto domain = _asyncDomains[domainId].lock();
+    boost::shared_ptr<AsyncDomainImpl<BackendSpecificDataType>> domainImpl;
 
+    bool domainCreated{false};
     if(domain) {
-      auto domainImpl = boost::dynamic_pointer_cast<AsyncDomainImpl<BackendSpecificDataType>>(domain);
+      domainImpl = boost::dynamic_pointer_cast<AsyncDomainImpl<BackendSpecificDataType>>(domain);
       assert(domainImpl);
-      return domainImpl;
+    }
+    else {
+      // The domain does not exist, create it
+      domainCreated = true;
+      domainImpl = boost::make_shared<AsyncDomainImpl<BackendSpecificDataType>>(backend, domainId);
+      // start the thread if not already running
+      { // thread lock scope
+        auto threadCreationLock = std::lock_guard(_threadCreationMutex);
+
+        if(!_distributorThread.joinable()) {
+          _distributorThread = std::thread([&] { distributeExceptions(); });
+          _threadIsRunning = true;
+        }
+      } // end of thread lock scope
+      _asyncDomains[domainId] = domainImpl;
     }
 
-    // The domain does not exist, create it
-    auto domainImpl = boost::make_shared<AsyncDomainImpl<BackendSpecificDataType>>(backend, key);
-    // start the thread if not already running
-    { // thread lock scope
-      auto threadCreationLock = std::lock_guard(_threadCreationMutex);
+    auto newSubscriber = domainImpl->template subscribe<UserDataType>(name, numberOfWords, wordOffsetInRegister, flags);
 
-      if(!_distributorThread.joinable()) {
-        _distributorThread = std::thread([&] { distributeExceptions(); });
-        _threadIsRunning = true;
-      }
-    } // end of thread lock scope
-
-    if(activate) {
-      auto subscriptionDone = backend->activateSubscription(key, domainImpl);
+    // Only activate a newly created domain after the subscription is done. This allows to distribute the intial value
+    // from here, and not from inside the subscription.
+    if(domainCreated && activate) {
+      auto subscriptionDone = backend->activateSubscription(domainId, domainImpl);
       // wait until the backend reports that the subscription is ready before proceeding with the creation of the
       // accessor, which will poll the initial value.
       subscriptionDone.wait();
-      auto [value, version] = backend->template getAsyncDomainInitialValue<BackendSpecificDataType>(key);
+      auto [value, version] = backend->template getAsyncDomainInitialValue<BackendSpecificDataType>(domainId);
       domainImpl->activate(value, version);
     }
 
-    _asyncDomains[key] = domainImpl;
-    return domainImpl;
+    return newSubscriber;
   }
 
 } // namespace ChimeraTK

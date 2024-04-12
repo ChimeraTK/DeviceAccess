@@ -126,14 +126,9 @@ namespace ChimeraTK {
             "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
       }
 
-      auto asyncDomain = _asyncDomainsContainer.getOrCreateAsyncDomain<NumericAddressedBackend, std::nullptr_t>(
+      return _asyncDomainsContainer.subscribe<NumericAddressedBackend, std::nullptr_t, UserType>(
           boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()), registerInfo.interruptId.front(),
-          _asyncIsActive);
-
-      auto newSubscriber =
-          asyncDomain->subscribe<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
-      // The new subscriber might already be activated. Hence the exception backend is already set during creation.
-      return newSubscriber;
+          _asyncIsActive, registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
     return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
   }
