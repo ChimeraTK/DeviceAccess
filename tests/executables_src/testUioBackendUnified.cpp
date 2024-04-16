@@ -129,7 +129,7 @@ RawUioAccess::~RawUioAccess() {
 
 void RawUioAccess::sendInterrupt() const {
   static int enable{1};
-  ::write(_uioProcFd, &enable, sizeof(enable));
+  std::ignore = ::write(_uioProcFd, &enable, sizeof(enable));
 }
 
 /**********************************************************************************************************************/
