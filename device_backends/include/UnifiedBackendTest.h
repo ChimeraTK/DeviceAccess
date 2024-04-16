@@ -3654,15 +3654,6 @@ namespace ChimeraTK {
       auto registerName = x.path();
       std::cout << "... registerName = " << registerName << std::endl;
 
-      // workaround for DUMMY_WRITABLE not having information in the catalogue yet
-      if(std::string(registerName).find("DUMMY_WRITEABLE") != std::string::npos) {
-        return;
-      }
-
-      if(std::string(registerName).find("DUMMY_INTERRUPT_") != std::string::npos) {
-        return;
-      }
-
       auto registerInfo = d.getRegisterCatalogue().getRegister(registerName);
       auto accessor = d.getScalarRegisterAccessor<UserType>(registerName);
 
