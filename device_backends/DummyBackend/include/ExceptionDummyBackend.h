@@ -69,7 +69,7 @@ namespace ChimeraTK {
 
         acc = decorator;
       }
-      else {
+      else if(acc->isReadable()) {
         // decorate all poll-type variable so returned validity of the data can be controlled
         auto decorator = boost::make_shared<ExceptionDummyPollDecorator<UserType>>(
             acc, boost::dynamic_pointer_cast<ExceptionDummy>(this->shared_from_this()));
