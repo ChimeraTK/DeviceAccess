@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
     NDRegisterAccessor<UserType>::buffer_2D.resize(1);
     NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
-    NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(1);
+    NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(0);
   }
 
   /********************************************************************************************************************/
