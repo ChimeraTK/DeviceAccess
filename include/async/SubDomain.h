@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "async/TriggeredPollDistributor.h"
-#include "async/VariableDistributor.h"
-#include "DeviceBackend.h"
-#include "NumericAddressedRegisterCatalogue.h"
-#include "VersionNumber.h"
+#include "../DeviceBackend.h"
+#include "../VersionNumber.h"
+#include "TriggeredPollDistributor.h"
+#include "VariableDistributor.h"
 
 #include <boost/make_shared.hpp>
 

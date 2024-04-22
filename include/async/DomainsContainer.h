@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "async/DomainImpl.h"
+#include "DomainImpl.h"
 
 #include <ChimeraTK/cppext/future_queue.hpp>
 

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "async/AsyncAccessorManager.h"
-#include "async/MuxedInterruptDistributor.h"
-#include "TransferGroup.h"
+#include "../TransferGroup.h"
+#include "AsyncAccessorManager.h"
+#include "MuxedInterruptDistributor.h"
 
 #include <memory>
 
