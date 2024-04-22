@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "async/AsyncNDRegisterAccessor.h"
-#include "async/Domain.h"
-#include "async/SubDomain.h"
-#include "VersionNumber.h"
+#include "../VersionNumber.h"
+#include "AsyncNDRegisterAccessor.h"
+#include "Domain.h"
+#include "SubDomain.h"
 
 #include <functional>
 

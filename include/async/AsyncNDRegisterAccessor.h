@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "async/Domain.h"
-#include "DeviceBackend.h"
-#include "NDRegisterAccessor.h"
+#include "../DeviceBackend.h"
+#include "../NDRegisterAccessor.h"
+#include "Domain.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 #include <ChimeraTK/cppext/future_queue.hpp>
