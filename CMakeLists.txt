@@ -63,20 +63,19 @@ include_directories(${PROJECT_BINARY_DIR}/generated_include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/generated_include/ DESTINATION include/ChimeraTK)
 
 # Add source files and include directories
-set(subdirs device device_backends exception util fileparsers
-  device_backends/NumericAddressedBackend device_backends/DummyBackend device_backends/LogicalNameMapping
-  device_backends/Subdevice device_backends/SharedDummy device_backends/Rebot)
+set(subdirs . backends/DummyBackend backends/LogicalNameMapping
+  backends/Subdevice backends/SharedDummy backends/Rebot)
 
 if(HAVE_PCIE_BACKEND)
-  set(subdirs ${subdirs} device_backends/pcie)
+  set(subdirs ${subdirs} backends/pcie)
 endif()
 
 if(HAVE_XDMA_BACKEND)
-  set(subdirs ${subdirs} device_backends/xdma)
+  set(subdirs ${subdirs} backends/xdma)
 endif()
 
 if(HAVE_UIO_BACKEND)
-  set(subdirs ${subdirs} device_backends/uio)
+  set(subdirs ${subdirs} backends/uio)
 endif()
 
 foreach(subdir ${subdirs})
