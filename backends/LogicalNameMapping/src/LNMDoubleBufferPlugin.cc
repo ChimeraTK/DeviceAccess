@@ -16,22 +16,6 @@ namespace ChimeraTK::LNMBackend {
           "doubleBuffer plugin not supported for redirectedChannel! use it with redirectedRegister instead");
     }
     _targetDeviceName = info.deviceName;
-
-    // We need to share _readerCount state among instances of DoubleBufferPlugin, if they refer
-    // to the same control register.
-    static std::map<std::string, boost::shared_ptr<ReaderCount>> readerCountMap;
-    static std::mutex readerCountMapMutex;
-    std::string id;
-    try {
-      id = _parameters.at("enableDoubleBuffering");
-    }
-    catch(std::out_of_range& ex) { // not relevant here since handled later anyway
-    }
-    std::lock_guard lg(readerCountMapMutex);
-    if(readerCountMap.find(id) == readerCountMap.end()) {
-      readerCountMap[id] = boost::make_shared<ReaderCount>();
-    }
-    _readerCount = readerCountMap[id];
   }
 
   void DoubleBufferPlugin::doRegisterInfoUpdate() {
@@ -45,7 +29,7 @@ namespace ChimeraTK::LNMBackend {
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> DoubleBufferPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
-      const UndecoratedParams& accessorParams) const {
+      const UndecoratedParams& accessorParams) {
     if constexpr(std::is_same<UserType, TargetType>::value) {
       return boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(backend, target, *this, accessorParams);
     }
@@ -56,7 +40,7 @@ namespace ChimeraTK::LNMBackend {
   template<typename UserType>
   DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
-      const DoubleBufferPlugin& plugin, const UndecoratedParams& accessorParams)
+      DoubleBufferPlugin& plugin, const UndecoratedParams& accessorParams)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(target), _plugin(plugin) {
     boost::shared_ptr<DeviceBackend> dev;
     const auto& parameters = plugin._parameters;
@@ -130,8 +114,8 @@ namespace ChimeraTK::LNMBackend {
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
     {
-      std::lock_guard lg{_plugin._readerCount->mutex};
-      _plugin._readerCount->value++;
+      std::lock_guard lg{_plugin._readerCount.mutex};
+      _plugin._readerCount.value++;
 
       // acquire a lock in firmware (disable buffer swapping)
       _enableDoubleBufferReg->accessData(0) = 0;
@@ -176,10 +160,10 @@ namespace ChimeraTK::LNMBackend {
     }
 
     {
-      std::lock_guard lg{_plugin._readerCount->mutex};
-      assert(_plugin._readerCount->value > 0);
-      _plugin._readerCount->value--;
-      if(_plugin._readerCount->value == 0) {
+      std::lock_guard lg{_plugin._readerCount.mutex};
+      assert(_plugin._readerCount.value > 0);
+      _plugin._readerCount.value--;
+      if(_plugin._readerCount.value == 0) {
         if(_testUSleep) {
           // for testing, check safety of handshake
           // FIXME - remove testUSleep feature
