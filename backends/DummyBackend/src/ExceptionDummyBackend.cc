@@ -89,6 +89,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  ExceptionDummy::ExceptionDummy(const std::string& mapFileName) : DummyBackend(mapFileName) {
+    OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl);
+  }
+
+  /********************************************************************************************************************/
+
   boost::shared_ptr<DeviceBackend> ExceptionDummy::createInstance(
       // FIXME #11279 Implement API breaking changes from linter warnings
       // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -154,6 +160,63 @@ namespace ChimeraTK {
       assert(itWriteCounter != _writeCounterMap.end()); // always inserted together
       itWriteCounter->second++;
     }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> ExceptionDummy::getRegisterAccessor_impl(
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    auto path = registerPathName;
+    path.setAltSeparator(".");
+    auto pathComponents = path.getComponents();
+    bool pushRead = false;
+    if(pathComponents[pathComponents.size() - 1] == "PUSH_READ") {
+      if(flags.has(AccessMode::wait_for_new_data)) {
+        pushRead = true;
+        flags.remove(AccessMode::wait_for_new_data);
+      }
+      path--; // remove last component
+    }
+
+    auto acc = CALL_BASE_FUNCTION_TEMPLATE(
+        getRegisterAccessor_impl, UserType, path, numberOfWords, wordOffsetInRegister, flags);
+    if(pushRead) {
+      std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
+
+      auto decorator = boost::make_shared<ExceptionDummyPushDecorator<UserType>>(
+          acc, boost::dynamic_pointer_cast<ExceptionDummy>(this->shared_from_this()));
+
+      _pushDecorators[registerPathName].push_back(decorator);
+
+      if(_activateNewPushAccessors) {
+        decorator->_isActive = true;
+        decorator->trigger(); // initial value
+      }
+
+      acc = decorator;
+    }
+    else if(acc->isReadable()) {
+      // decorate all poll-type variable so returned validity of the data can be controlled
+      auto decorator = boost::make_shared<ExceptionDummyPollDecorator<UserType>>(
+          acc, boost::dynamic_pointer_cast<ExceptionDummy>(this->shared_from_this()));
+      acc = decorator;
+    }
+
+    // create entry in _writeOrderMap and _writeCounterMap if necessary
+    if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE" &&
+        (pathComponents[0].find("DUMMY_INTERRUPT_") != 0)) {
+      auto info = getRegisterInfo(path);
+      auto adrPair = std::make_pair(info.bar, info.address);
+      if(_writeOrderMap.find(adrPair) == _writeOrderMap.end()) {
+        _writeOrderMap[adrPair] = 0;
+        _writeCounterMap[adrPair] = 0;
+      }
+    }
+
+    acc->setExceptionBackend(shared_from_this());
+
+    return acc;
   }
 
   /********************************************************************************************************************/

@@ -2,14 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "SupportedUserTypes.h"
-
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/for_each.hpp>
-
-#include <tuple>
 
 /** Define a virtual function template with the given function name and
  * signature in the base class. The signature must contain the typename template
@@ -30,8 +26,13 @@
  *
  *  In the derived class, the function template must be implemented with the
  * same signature, and the vtable for this virtual function template must be
- * filled using the macros DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER and
- *  FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE.
+ * filled differently depending on whether you want to (be able to) call the base class's
+ * implementation or not:
+ *
+ * <ul> If you do not care about the base implementation, use the macros DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER
+ * and FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE. <ul> If you want to be able to delegate to the base implementation, use
+ * the macros DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE. To chain up to the base
+ * implementation, use the macro CALL_BASE_FUNCTION_TEMPLATE
  *
  *  Note: the signature is passed through the __VA_ARGS__ variable macro
  * arguments, as it may contain commas.
@@ -47,6 +48,14 @@
   };                                                                                                                   \
   TemplateUserTypeMap<functionName##_functionSignature> functionName##_vtable
 
+/** Define an override for a function template with the given function name and
+ * signature in the base class.
+ *
+ * Semantics apply as in DEFINE_VIRTUAL_FUNCTION_TEMPLATE.
+ */
+#define DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(functionName, ...)                                                     \
+  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(functionName##_base, __VA_ARGS__)
+
 /** Execute the virtual function template call using the vtable defined with the
  *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE macro. It is recommended to put this
  * macro into a function template with the same name and signature, so the user
@@ -59,6 +68,14 @@
 #define CALL_VIRTUAL_FUNCTION_TEMPLATE(functionName, templateArgument, ...)                                            \
   boost::fusion::at_key<templateArgument>(functionName##_vtable.table)(__VA_ARGS__)
 
+/** Execute the virtual function template call to the base implementation of the function.
+ *
+ *  The function must have been overriden by DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and
+ *  OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE
+ */
+#define CALL_BASE_FUNCTION_TEMPLATE(functionName, templateArgument, ...)                                               \
+  boost::fusion::at_key<templateArgument>(functionName##_base_vtable.table)(__VA_ARGS__)
+
 /** Fill the vtable of a virtual function template defined with
  * DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro inside the constructor of
  * the derived class. */
@@ -67,6 +84,19 @@
     typedef typename std::remove_reference<decltype(pair)>::type::first_type VTableFillerUserType;                     \
     pair.second = [this](auto... args) { return this->functionName<VTableFillerUserType>(args...); };                  \
   })
+
+/** Save the old vtable to be accessible by CALL_BASE_FUNCTION_TEMPLATE and overwrite it with the
+ *  new implementation.
+ */
+#define OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(functionName)                                                               \
+  do {                                                                                                                 \
+    /* Copy the old vtable into _base before filling it with the new implementation */                                 \
+    ChimeraTK::for_each(functionName##_base_vtable.table, [&](auto& pair) {                                            \
+      typedef typename std::remove_reference<decltype(pair)>::type::first_type VTableFillerUserType;                   \
+      pair.second = (boost::fusion::at_key<VTableFillerUserType>(functionName##_vtable.table));                        \
+    });                                                                                                                \
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(functionName);                                                               \
+  } while(false)
 
 /** Compatibility only, do not use */
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_STANDALONE(functionName, numberOfArguments)                              \

@@ -105,13 +105,13 @@ namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
 
-  template boost::shared_ptr<AsyncAccessorManager> MuxedInterruptDistributor::getAccessorManager<TriggeredPollDistributor>(
-      std::vector<size_t> const& qualififedSubDomainId);
+  template boost::shared_ptr<AsyncAccessorManager> MuxedInterruptDistributor::getAccessorManager<
+      TriggeredPollDistributor>(std::vector<size_t> const& qualififedSubDomainId);
 
   /********************************************************************************************************************/
 
-  template boost::shared_ptr<AsyncAccessorManager> MuxedInterruptDistributor::getAccessorManager<VariableDistributor<std::nullptr_t>>(
-      std::vector<size_t> const& qualififedSubDomainId);
+  template boost::shared_ptr<AsyncAccessorManager> MuxedInterruptDistributor::getAccessorManager<
+      VariableDistributor<std::nullptr_t>>(std::vector<size_t> const& qualififedSubDomainId);
 
   /********************************************************************************************************************/
   void MuxedInterruptDistributor::activate(VersionNumber version) {

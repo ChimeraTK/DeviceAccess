@@ -22,9 +22,10 @@ namespace ChimeraTK {
 
   class ExceptionDummy : public ChimeraTK::DummyBackend {
    public:
-    explicit ExceptionDummy(std::string const& mapFileName) : DummyBackend(mapFileName) {
-      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
-    }
+    explicit ExceptionDummy(std::string const& mapFileName);
+
+    DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(getRegisterAccessor_impl,
+        boost::shared_ptr<NDRegisterAccessor<T>>(const RegisterPath&, size_t, size_t, AccessModeFlags));
 
     static boost::shared_ptr<DeviceBackend> createInstance(
         std::string address, std::map<std::string, std::string> parameters);
@@ -36,61 +37,6 @@ namespace ChimeraTK {
     void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override;
 
     void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override;
-
-    /// Specific override which allows to create push-type accessors
-    template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-      auto path = registerPathName;
-      path.setAltSeparator(".");
-      auto pathComponents = path.getComponents();
-      bool pushRead = false;
-      if(pathComponents[pathComponents.size() - 1] == "PUSH_READ") {
-        if(flags.has(AccessMode::wait_for_new_data)) {
-          pushRead = true;
-          flags.remove(AccessMode::wait_for_new_data);
-        }
-        path--; // remove last component
-      }
-
-      auto acc = DummyBackendBase::getRegisterAccessor_impl<UserType>(path, numberOfWords, wordOffsetInRegister, flags);
-      if(pushRead) {
-        std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
-
-        auto decorator = boost::make_shared<ExceptionDummyPushDecorator<UserType>>(
-            acc, boost::dynamic_pointer_cast<ExceptionDummy>(this->shared_from_this()));
-
-        _pushDecorators[registerPathName].push_back(decorator);
-
-        if(_activateNewPushAccessors) {
-          decorator->_isActive = true;
-          decorator->trigger(); // initial value
-        }
-
-        acc = decorator;
-      }
-      else if(acc->isReadable()) {
-        // decorate all poll-type variable so returned validity of the data can be controlled
-        auto decorator = boost::make_shared<ExceptionDummyPollDecorator<UserType>>(
-            acc, boost::dynamic_pointer_cast<ExceptionDummy>(this->shared_from_this()));
-        acc = decorator;
-      }
-
-      // create entry in _writeOrderMap and _writeCounterMap if necessary
-      if(pathComponents[pathComponents.size() - 1] != "DUMMY_WRITEABLE" &&
-          (pathComponents[0].find("DUMMY_INTERRUPT_") != 0)) {
-        auto info = getRegisterInfo(path);
-        auto adrPair = std::make_pair(info.bar, info.address);
-        if(_writeOrderMap.find(adrPair) == _writeOrderMap.end()) {
-          _writeOrderMap[adrPair] = 0;
-          _writeCounterMap[adrPair] = 0;
-        }
-      }
-
-      acc->setExceptionBackend(shared_from_this());
-
-      return acc;
-    }
 
     /// Function to trigger sending values for push-type variables
     void triggerPush(RegisterPath path, VersionNumber v = {});
@@ -151,6 +97,12 @@ namespace ChimeraTK {
 
     /// Map used allow determining number of writes of a specific register by tests. Map key is pair of bar and address.
     std::map<std::pair<uint64_t, uint64_t>, std::atomic<size_t>> _writeCounterMap;
+
+   private:
+    /// Specific override which allows to create push-type accessors
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
   };
 
   /********************************************************************************************************************/
