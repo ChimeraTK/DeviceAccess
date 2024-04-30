@@ -20,10 +20,11 @@ namespace ChimeraTK::LNMBackend {
         const LNMBackendRegisterInfo& info, size_t pluginIndex, std::map<std::string, std::string> parameters);
 
     void doRegisterInfoUpdate() override;
+
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams) const;
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
 
    private:
     struct ReaderCount {
@@ -33,7 +34,7 @@ namespace ChimeraTK::LNMBackend {
     std::map<std::string, std::string> _parameters;
     std::string _targetDeviceName;
     // number of currently active reader threads
-    boost::shared_ptr<ReaderCount> _readerCount;
+    ReaderCount _readerCount;
   };
 
   template<typename UserType>
@@ -43,7 +44,7 @@ namespace ChimeraTK::LNMBackend {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
     DoubleBufferAccessorDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, const DoubleBufferPlugin& plugin,
+        boost::shared_ptr<NDRegisterAccessor<UserType>>& target, DoubleBufferPlugin& plugin,
         const UndecoratedParams& accessorParams);
 
     void doPreRead(TransferType type) override;
@@ -75,7 +76,7 @@ namespace ChimeraTK::LNMBackend {
    private:
     // we know that plugin exists at least as long as any register (of the catalogue) refers to it,
     // so no shared_ptr required here
-    const DoubleBufferPlugin& _plugin;
+    DoubleBufferPlugin& _plugin;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _secondBufferReg;
 
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
