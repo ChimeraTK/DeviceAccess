@@ -40,7 +40,7 @@ namespace ChimeraTK {
 
     std::string readDeviceInfo() override;
 
-    boost::weak_ptr<async::DomainImpl<std::nullptr_t>> _asyncDomain;
+    boost::shared_ptr<async::DomainImpl<std::nullptr_t>> _asyncDomain;
   };
 
 } // namespace ChimeraTK

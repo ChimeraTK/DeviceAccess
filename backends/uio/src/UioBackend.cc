@@ -39,6 +39,7 @@ namespace ChimeraTK {
         _stopInterruptLoop = true;
         _interruptWaitingThread.join();
       }
+      _asyncDomain.reset();
       _uioAccess->close();
     }
 
@@ -135,10 +136,8 @@ namespace ChimeraTK {
           }
           std::cout << "dispatching interrupt " << std::endl;
 #endif
-          auto domain = _asyncDomain.lock();
-          if(domain) {
-            domain->distribute(nullptr);
-          }
+
+          _asyncDomain->distribute(nullptr);
         }
       }
       catch(ChimeraTK::runtime_error& ex) {
