@@ -6,7 +6,6 @@
 #include "Exception.h"
 
 #include <utility>
-#include <boost/exception/diagnostic_information.hpp> 
 namespace ChimeraTK::Rebot {
 
   using Error = boost::system::error_code;
@@ -16,7 +15,7 @@ namespace ChimeraTK::Rebot {
     connectionTimeout_(boost::posix_time::seconds(connectionTimeout_sec)) {}
 
   void Connection::open() {
-     try{
+    try {
       disconnectionTimerStart();
       boost::asio::ip::tcp::resolver r(ioService_);
       boost::asio::async_connect(
@@ -25,9 +24,8 @@ namespace ChimeraTK::Rebot {
       ioService_.reset();
       ioService_.run();
     }
-    catch (const boost::exception&) {
-        // error handling
-        throw ChimeraTK::runtime_error("RebotBackend exception: Host unreachable:");
+    catch(const boost::exception&) {
+      throw ChimeraTK::runtime_error("RebotBackend exception: Host unreachable:");
     }
   }
 
