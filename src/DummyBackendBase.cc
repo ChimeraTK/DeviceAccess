@@ -64,8 +64,8 @@ namespace ChimeraTK {
     }
 
     // Chain up to to the base class using the previously stored function
-    return CALL_BASE_FUNCTION_TEMPLATE(NumericAddressedBackend,
-        getRegisterAccessor_impl, UserType, registerPathName, numberOfWords, wordOffsetInRegister, flags);
+    return CALL_BASE_FUNCTION_TEMPLATE(NumericAddressedBackend, getRegisterAccessor_impl, UserType, registerPathName,
+        numberOfWords, wordOffsetInRegister, flags);
   }
 
 } // namespace ChimeraTK

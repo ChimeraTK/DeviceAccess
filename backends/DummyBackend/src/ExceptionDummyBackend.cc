@@ -179,8 +179,8 @@ namespace ChimeraTK {
       path--; // remove last component
     }
 
-    auto acc = CALL_BASE_FUNCTION_TEMPLATE(DummyBackendBase,
-        getRegisterAccessor_impl, UserType, path, numberOfWords, wordOffsetInRegister, flags);
+    auto acc = CALL_BASE_FUNCTION_TEMPLATE(
+        DummyBackendBase, getRegisterAccessor_impl, UserType, path, numberOfWords, wordOffsetInRegister, flags);
     if(pushRead) {
       std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);
 

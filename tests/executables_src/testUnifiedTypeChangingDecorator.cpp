@@ -64,8 +64,8 @@ class DecoratorBackend : public ExceptionDummy {
 
     auto [path, type] = getPathAndType(registerPathName);
 
-    return getTypeChangingDecorator<UserType>(
-        CALL_BASE_FUNCTION_TEMPLATE(ExceptionDummy, getRegisterAccessor_impl, float, path, numberOfWords, wordOffsetInRegister, flags),
+    return getTypeChangingDecorator<UserType>(CALL_BASE_FUNCTION_TEMPLATE(ExceptionDummy, getRegisterAccessor_impl,
+                                                  float, path, numberOfWords, wordOffsetInRegister, flags),
         type);
   }
 

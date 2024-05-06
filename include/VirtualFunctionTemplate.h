@@ -29,8 +29,10 @@
  * filled differently depending on whether you want to (be able to) call the base class's
  * implementation or not:
  *
- * <ul> If you do not care about the base implementation, use the macros DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER
- * and FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE. <ul> If you want to be able to delegate to the base implementation, use
+ * <ul> If you do not care about the base implementation, use the macros
+ * DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER
+ * and FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE.
+ * <ul> If you want to be able to delegate to the base implementation, use
  * the macros DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE. To chain up to the base
  * implementation, use the macro CALL_BASE_FUNCTION_TEMPLATE
  *
@@ -74,7 +76,7 @@
  *  OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE
  */
 #define CALL_BASE_FUNCTION_TEMPLATE(BaseClass, functionName, templateArgument, ...)                                    \
-boost::fusion::at_key<templateArgument>(BaseClass##functionName##_vtable.table)(__VA_ARGS__)
+  boost::fusion::at_key<templateArgument>(BaseClass##functionName##_vtable.table)(__VA_ARGS__)
 
 /** Fill the vtable of a virtual function template defined with
  * DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro inside the constructor of
