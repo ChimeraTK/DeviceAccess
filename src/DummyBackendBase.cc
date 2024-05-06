@@ -8,7 +8,7 @@ namespace ChimeraTK {
   DummyBackendBase::DummyBackendBase(std::string const& mapFileName)
   : NumericAddressedBackend(mapFileName, std::make_unique<DummyBackendRegisterCatalogue>()) {
     // Copy the old vtable
-    OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl);
+    OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(NumericAddressedBackend, getRegisterAccessor_impl);
   }
 
   size_t DummyBackendBase::minimumTransferAlignment([[maybe_unused]] uint64_t bar) const {
@@ -64,7 +64,7 @@ namespace ChimeraTK {
     }
 
     // Chain up to to the base class using the previously stored function
-    return CALL_BASE_FUNCTION_TEMPLATE(
+    return CALL_BASE_FUNCTION_TEMPLATE(NumericAddressedBackend,
         getRegisterAccessor_impl, UserType, registerPathName, numberOfWords, wordOffsetInRegister, flags);
   }
 

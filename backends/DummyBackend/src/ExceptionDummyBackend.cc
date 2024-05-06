@@ -90,7 +90,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   ExceptionDummy::ExceptionDummy(const std::string& mapFileName) : DummyBackend(mapFileName) {
-    OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl);
+    OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(DummyBackendBase, getRegisterAccessor_impl);
   }
 
   /********************************************************************************************************************/
@@ -179,7 +179,7 @@ namespace ChimeraTK {
       path--; // remove last component
     }
 
-    auto acc = CALL_BASE_FUNCTION_TEMPLATE(
+    auto acc = CALL_BASE_FUNCTION_TEMPLATE(DummyBackendBase,
         getRegisterAccessor_impl, UserType, path, numberOfWords, wordOffsetInRegister, flags);
     if(pushRead) {
       std::unique_lock<std::mutex> lk(_pushDecoratorsMutex);

@@ -24,7 +24,7 @@ namespace ChimeraTK {
    public:
     explicit ExceptionDummy(std::string const& mapFileName);
 
-    DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(getRegisterAccessor_impl,
+    DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(DummyBackendBase, getRegisterAccessor_impl,
         boost::shared_ptr<NDRegisterAccessor<T>>(const RegisterPath&, size_t, size_t, AccessModeFlags));
 
     static boost::shared_ptr<DeviceBackend> createInstance(

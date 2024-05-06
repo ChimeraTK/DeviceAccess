@@ -53,8 +53,8 @@
  *
  * Semantics apply as in DEFINE_VIRTUAL_FUNCTION_TEMPLATE.
  */
-#define DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(functionName, ...)                                                     \
-  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(functionName##_base, __VA_ARGS__)
+#define DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(BaseClass, functionName, ...)                                          \
+  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(BaseClass##functionName, __VA_ARGS__)
 
 /** Execute the virtual function template call using the vtable defined with the
  *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE macro. It is recommended to put this
@@ -73,8 +73,8 @@
  *  The function must have been overriden by DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and
  *  OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE
  */
-#define CALL_BASE_FUNCTION_TEMPLATE(functionName, templateArgument, ...)                                               \
-  boost::fusion::at_key<templateArgument>(functionName##_base_vtable.table)(__VA_ARGS__)
+#define CALL_BASE_FUNCTION_TEMPLATE(BaseClass, functionName, templateArgument, ...)                                    \
+boost::fusion::at_key<templateArgument>(BaseClass##functionName##_vtable.table)(__VA_ARGS__)
 
 /** Fill the vtable of a virtual function template defined with
  * DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro inside the constructor of
@@ -88,10 +88,10 @@
 /** Save the old vtable to be accessible by CALL_BASE_FUNCTION_TEMPLATE and overwrite it with the
  *  new implementation.
  */
-#define OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(functionName)                                                               \
+#define OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(BaseClass, functionName)                                                    \
   do {                                                                                                                 \
     /* Copy the old vtable into _base before filling it with the new implementation */                                 \
-    ChimeraTK::for_each(functionName##_base_vtable.table, [&](auto& pair) {                                            \
+    ChimeraTK::for_each(BaseClass##functionName##_vtable.table, [&](auto& pair) {                                      \
       typedef typename std::remove_reference<decltype(pair)>::type::first_type VTableFillerUserType;                   \
       pair.second = (boost::fusion::at_key<VTableFillerUserType>(functionName##_vtable.table));                        \
     });                                                                                                                \

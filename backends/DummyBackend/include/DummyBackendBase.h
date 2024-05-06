@@ -37,7 +37,7 @@ namespace ChimeraTK {
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override;
 
     // Declare that we are going to override getRegisterAccessor_impl
-    DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(getRegisterAccessor_impl,
+    DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(NumericAddressedBackend, getRegisterAccessor_impl,
         boost::shared_ptr<NDRegisterAccessor<T>>(const RegisterPath&, size_t, size_t, AccessModeFlags));
 
     /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
