@@ -8,6 +8,8 @@
 #include "async/TriggeredPollDistributor.h"
 #include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
+
 #include <tuple>
 
 namespace ChimeraTK::async {
@@ -35,14 +37,19 @@ namespace ChimeraTK::async {
     for(auto const& metaDataEntry : backend.getMetadataCatalogue()) {
       auto const& key = metaDataEntry.first;
       if(key[0] == '!') {
-        auto jkey = nlohmann::json::parse(std::string({++key.begin(), key.end()})); // key without the !
-        auto interruptId = jkey.get<std::vector<size_t>>();
+        try {
+          auto jkey = nlohmann::json::parse(std::string({++key.begin(), key.end()})); // key without the leading !
+          auto interruptId = jkey.get<std::vector<size_t>>();
 
-        if(interruptId == subdomainID) {
-          auto jdescriptor = nlohmann::json::parse(metaDataEntry.second);
-          auto controllerType = jdescriptor.begin().key();
-          auto controllerDescription = jdescriptor.front().dump();
-          return {controllerType, controllerDescription};
+          if(interruptId == subdomainID) {
+            auto jdescriptor = nlohmann::json::parse(metaDataEntry.second);
+            auto controllerType = jdescriptor.begin().key();
+            auto controllerDescription = jdescriptor.front().dump();
+            return {controllerType, controllerDescription};
+          }
+        }
+        catch(json::parse_error& e) {
+          throw ChimeraTK::logic_error("Json parse error in \"" + key + "\": " + e.what());
         }
       }
     }
@@ -97,7 +104,7 @@ namespace ChimeraTK::async {
       if(_asyncDomain->unsafeGetIsActive()) {
         // Creating a new version here is correct. Nothing has been distributed to any accessor connected to this
         // sub-interrupt yet because we just created this subDomain.
-        subDomain->activate(nullptr, {});
+        activateSubDomain(*subDomain, {});
       }
     }
     return subDomain->getAccessorManager<DistributorType>(qualififedSubDomainId);
@@ -118,7 +125,7 @@ namespace ChimeraTK::async {
     for(auto& subDomainIter : _subDomains) {
       auto subDomain = subDomainIter.second.lock();
       if(subDomain) {
-        subDomain->activate(nullptr, version);
+        activateSubDomain(*subDomain, version);
       }
     }
   }
@@ -131,6 +138,12 @@ namespace ChimeraTK::async {
         subDomain->sendException(e);
       }
     }
+  }
+
+  /********************************************************************************************************************/
+  void MuxedInterruptDistributor::activateSubDomain(
+      SubDomain<std::nullptr_t>& subDomain, VersionNumber const& version) {
+    subDomain.activate(nullptr, version);
   }
 
 } // namespace ChimeraTK::async

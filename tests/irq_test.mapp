@@ -1,0 +1,275 @@
+@![0]   {"INTC" : {"path": "TEST0", "version":1} }
+
+@![1] {"INTC" : {"path": "TEST1", "options": ["IAR"], "version":1} }
+@![2] {"INTC" : {"path": "TEST2", "options": ["ICR"], "version":1} }
+
+@![3] {"INTC" : {"path": "TEST3", "options": ["MER"],  "version":1} }
+@![3,0] {"INTC" : {"path": "TEST3.SUB0"}  "options": []}
+@![3,1] {"INTC" : {"path": "TEST3.SUB1", "options": ["MER"]} }
+
+@![4] {"INTC" : {"path": "TEST4", "options": ["IMR"], "version":1} }
+@![5] {"INTC" : {"path": "TEST5", "options": ["SIE", "CIE"], "version":1} }
+@![6] {"INTC" : {"path": "TEST6", "options": ["GIE","IPR"], "version":1} }
+@![7] {"INTC" : {"path": "TEST7", "options": ["MIE"], "version":1} }
+
+@![10] {"INTC" : {"path": "TEST10", "options": ["UNKNOWN"] }}
+
+# invalid json1 (first parsing step, general structure)
+@![11] {"INTC" : {"path": "TEST11"}
+
+# invalid json2 (second parsing step, controller specific description)
+@![12] {"INTC" : {"path": "TEST12",  "options": {"IER"} }}
+
+# Only SIE, no CIE (must come together)
+@![13] {"INTC" : {"path": "TEST13",  "options": ["SIE"]} }
+
+# Only CIE, no SIE (must come together)
+@![14] {"INTC" : {"path": "TEST14",  "options": ["CIE"]} }
+
+# both ICR and IAR are there
+@![15] {"INTC" : {"path": "TEST15",  "options": ["ICR", "IAR"]} }
+
+# No ISR in the register set
+@![16] {"INTC" : {"path": "TEST16"} }
+
+# No IER in the register set
+@![17] {"INTC" : {"path": "TEST17"} }
+
+# No path
+@![18] {"INTC" : {"options": ["IER"]} }
+
+# Path does not exist
+@![118] {"INTC" : {"path": "TEST118"} }
+
+# Unknown version
+@![19] {"INTC" : {"path": "TEST19", "version":9999999} }
+
+# Unknown primary key 
+@![20] {"INTC" : {"path": "TEST20", "answerToEverything": 42} }
+
+# both MIE and GIE are there
+@![21] {"INTC" : {"path": "TEST21",  "options": ["MIE", "GIE"]} }
+
+# both MIE and MER are there
+@![22] {"INTC" : {"path": "TEST21",  "options": ["MIE", "MER"]} }
+
+# both GIE and MER are there
+@![23] {"INTC" : {"path": "TEST21",  "options": ["GIE", "MER"]} }
+
+# all  MIE, GIE and MER are there
+@![24] {"INTC" : {"path": "TEST21",  "options": ["MIE", "GIE", "MER"]} }
+
+# ISR must be readable
+@![25] {"INTC" : {"path": "TEST25"} }
+
+# ISR must be writeable if there is no ICR/IAR
+@![26] {"INTC" : {"path": "TEST26"} }
+
+# IER must be writeable
+@![27] {"INTC" : {"path": "TEST27"} }
+
+# ICR must be writeable
+@![28] {"INTC" : {"path": "TEST28", "options": ["ICR"]} }
+
+# IAR must be writeable
+@![29] {"INTC" : {"path": "TEST29", "options": ["IAR"]} }
+
+# MIE must be writeable
+@![30] {"INTC" : {"path": "TEST30", "options": ["MIE"]} }
+
+# GIE must be writeable
+@![31] {"INTC" : {"path": "TEST31", "options": ["GIE"]} }
+
+# MER must be writeable
+@![32] {"INTC" : {"path": "TEST32", "options": ["MER"]} }
+
+# SIE must be writeable
+@![33] {"INTC" : {"path": "TEST33", "options": ["SIE", "CIE"]} }
+
+# CIE must be writeable
+@![34] {"INTC" : {"path": "TEST34", "options": ["SIE", "CIE"]} }
+
+TEST0.IER                                                     1  0x0080000C            4    0    7    0    0   RW
+TEST0.ISR                                                     1  0x00800008            4    0    7    0    0   RW
+TEST0.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT0:4
+TEST0.SECOND_INTERRUPT                                        0  0x00000000            0    0    0    0    0   INTERRUPT0:5
+
+TEST1.IER                                                     1  0x00900000            4    0    7    0    0   RW
+TEST1.IAR                                                     1  0x0090000C            4    0    7    0    0   WO
+TEST1.ISR                                                     1  0x00900008            4    0    7    0    0   RO
+TEST1.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT1:4
+TEST1.SECOND_INTERRUPT                                        0  0x00000000            0    0    0    0    0   INTERRUPT1:5
+
+TEST2.IER                                                     1  0x00A00000            4    0    7    0    0   WO
+TEST2.ICR                                                     1  0x00A0000C            4    0    7    0    0   WO
+TEST2.ISR                                                     1  0x00A00008            4    0    7    0    0   RO
+TEST2.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT2:4
+TEST2.SECOND_INTERRUPT                                        0  0x00000000            0    0    0    0    0   INTERRUPT2:5
+
+TEST3.IER                                                     1  0x00B00000            4    0    7    0    0   RW
+TEST3.ISR                                                     1  0x00B00008            4    0    7    0    0   RW
+TEST3.MER                                                     1  0x00B0001C            4    0    2    0    0   WO
+TEST3.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT3:4
+TEST3.SUB0.IER                                                1  0x00B0010C            4    0   32    0    0   RW
+TEST3.SUB0.ISR                                                1  0x00B00108            4    0   32    0    0   RW
+TEST3.SUB0.READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT3:0:2
+TEST3.SUB1.IER                                                1  0x00B00200            4    0   16    0    0   RW
+TEST3.SUB1.ISR                                                1  0x00B00208            4    0   16    0    0   RW
+TEST3.SUB1.MER                                                1  0x00B0020C            4    0   16    0    0   RW
+TEST3.SUB1.READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT3:1:3
+
+TEST4.IMR                                                     1  0x00C0000C            4    0    7    0    0   RW
+TEST4.ISR                                                     1  0x00C00008            4    0    7    0    0   RW
+TEST4.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT4:4
+
+TEST5.SIE                                                     1  0x00D0000C            4    0    7    0    0   WO
+TEST5.CIE                                                     1  0x00D00004            4    0    7    0    0   WO
+TEST5.IER                                                     1  0x00D00000            4    0    7    0    0   RW
+TEST5.ISR                                                     1  0x00D00008            4    0    7    0    0   RW
+TEST5.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT5:4
+TEST5.SECOND_INTERRUPT                                        0  0x00000000            0    0    0    0    0   INTERRUPT5:5
+
+TEST6.GIE                                                     1  0x00E0000C            4    0    7    0    0   WO
+TEST6.IER                                                     1  0x00E00000            4    0    7    0    0   RW
+TEST6.IPR                                                     1  0x00E00004            4    0    7    0    0   RW
+TEST6.ISR                                                     1  0x00E00008            4    0    7    0    0   RW
+TEST6.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT6:4
+
+
+TEST7.MIE                                                     1  0x00F0000C            4    0    7    0    0   WO
+TEST7.IER                                                     1  0x00F00004            4    0    7    0    0   RW
+TEST7.ISR                                                     1  0x00F00008            4    0    7    0    0   RW
+TEST7.DAQ_READY                                               0  0x00000000            0    0    0    0    0   INTERRUPT7:4
+
+TEST10.UNKNOWN                                                1  0x0000100C            4    0    7    0    0   RW
+TEST10.IER                                                    1  0x00001004            4    0    7    0    0   RW
+TEST10.ISR                                                    1  0x00001008            4    0    7    0    0   RW
+TEST10.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT10:4
+
+TEST11.IER                                                    1  0x00002004            4    0    7    0    0   RW
+TEST11.ISR                                                    1  0x00002008            4    0    7    0    0   RW
+TEST11.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT11:4
+
+TEST12.IER                                                    1  0x00003004            4    0    7    0    0   RW
+TEST12.ISR                                                    1  0x00003008            4    0    7    0    0   RW
+TEST12.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT12:4
+
+TEST13.SIE                                                    1  0x0000400C            4    0    7    0    0   RW
+TEST13.IER                                                    1  0x00004004            4    0    7    0    0   RW
+TEST13.ISR                                                    1  0x00004008            4    0    7    0    0   RW
+TEST13.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT13:4
+
+TEST14.CIE                                                    1  0x0000500C            4    0    7    0    0   RW
+TEST14.IER                                                    1  0x00005004            4    0    7    0    0   RW
+TEST14.ISR                                                    1  0x00005008            4    0    7    0    0   RW
+TEST14.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT14:4
+
+TEST15.IAR                                                    1  0x0000600C            4    0    7    0    0   RW
+TEST15.ICR                                                    1  0x00006004            4    0    7    0    0   RW
+TEST15.ISR                                                    1  0x00006008            4    0    7    0    0   RW
+TEST15.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT15:4
+
+TEST16.IER                                                    1  0x00007004            4    0    7    0    0   RW
+TEST16.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT16:4
+
+TEST17.ISR                                                    1  0x00008008            4    0    7    0    0   RW
+TEST17.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT17:4
+
+TEST18.IER                                                    1  0x00009004            4    0    7    0    0   RW
+TEST18.ISR                                                    1  0x00009008            4    0    7    0    0   RW
+TEST18.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT18:4
+
+TEST118.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT118:4
+
+TEST19.IER                                                    1  0x0000A004            4    0    7    0    0   RW
+TEST19.ISR                                                    1  0x0000A008            4    0    7    0    0   RW
+TEST19.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT19:4
+
+TEST20.IER                                                    1  0x0000B004            4    0    7    0    0   RW
+TEST20.ISR                                                    1  0x0000B008            4    0    7    0    0   RW
+TEST20.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT20:4
+
+TEST21.MIE                                                    1  0x0000C000            4    0    7    0    0   RW
+TEST21.GIE                                                    1  0x0000C00C            4    0    7    0    0   RW
+TEST21.IER                                                    1  0x0000C004            4    0    7    0    0   RW
+TEST21.ISR                                                    1  0x0000C008            4    0    7    0    0   RW
+TEST21.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT21:4
+
+TEST22.MIE                                                    1  0x0000D000            4    0    7    0    0   RW
+TEST22.MER                                                    1  0x0000D00C            4    0    7    0    0   RW
+TEST22.IER                                                    1  0x0000D004            4    0    7    0    0   RW
+TEST22.ISR                                                    1  0x0000D008            4    0    7    0    0   RW
+TEST22.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT22:4
+
+TEST23.GIE                                                    1  0x0000E000            4    0    7    0    0   RW
+TEST23.MER                                                    1  0x0000E00C            4    0    7    0    0   RW
+TEST23.IER                                                    1  0x0000E004            4    0    7    0    0   RW
+TEST23.ISR                                                    1  0x0000E008            4    0    7    0    0   RW
+TEST23.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT23:4
+
+TEST24.MIE                                                    1  0x0000F010            4    0    7    0    0   RW
+TEST24.GIE                                                    1  0x0000F000            4    0    7    0    0   RW
+TEST24.MER                                                    1  0x0000F00C            4    0    7    0    0   RW
+TEST24.IER                                                    1  0x0000F004            4    0    7    0    0   RW
+TEST24.ISR                                                    1  0x0000F008            4    0    7    0    0   RW
+TEST24.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT24:4
+
+# isr must be readable
+TEST25.IER                                                    1  0x00010004            4    0    7    0    0   RW
+TEST25.ISR                                                    1  0x00010008            4    0    7    0    0   WO
+TEST25.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT25:4
+
+# isr must be writeable if there is no ICR/IAR
+TEST26.IER                                                    1  0x00011004            4    0    7    0    0   RW
+TEST26.ISR                                                    1  0x00011008            4    0    7    0    0   RO
+TEST26.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT26:4
+
+# ier must be writeable
+TEST27.IER                                                    1  0x00012004            4    0    7    0    0   RO
+TEST27.ISR                                                    1  0x00012008            4    0    7    0    0   RW
+TEST27.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT27:4
+
+# icr must be writeable
+TEST28.ICR                                                    1  0x0001300C            4    0    7    0    0   RO
+TEST28.IER                                                    1  0x00013004            4    0    7    0    0   RW
+TEST28.ISR                                                    1  0x00013008            4    0    7    0    0   RW
+TEST28.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT28:4
+
+# iar must be writeable
+TEST29.IAR                                                    1  0x0001400C            4    0    7    0    0   RO
+TEST29.IER                                                    1  0x00014004            4    0    7    0    0   RW
+TEST29.ISR                                                    1  0x00014008            4    0    7    0    0   RW
+TEST29.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT29:4
+
+# mie must be writeable
+TEST30.MIE                                                    1  0x00015010            4    0    7    0    0   RO
+TEST30.IER                                                    1  0x00015004            4    0    7    0    0   RW
+TEST30.ISR                                                    1  0x00015008            4    0    7    0    0   RW
+TEST30.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT30:4
+
+# gie must be writeable
+TEST31.GIE                                                    1  0x00015000            4    0    7    0    0   RO
+TEST31.IER                                                    1  0x00015004            4    0    7    0    0   RW
+TEST31.ISR                                                    1  0x00015008            4    0    7    0    0   RW
+TEST31.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT31:4
+
+# mer must be writeable
+TEST32.MER                                                    1  0x00016010            4    0    7    0    0   RO
+TEST32.IER                                                    1  0x00016004            4    0    7    0    0   RW
+TEST32.ISR                                                    1  0x00016008            4    0    7    0    0   RW
+TEST32.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT32:4
+
+# sie must be writeable
+TEST33.SIE                                                    1  0x0000F000            4    0    7    0    0   RO
+TEST33.CIE                                                    1  0x0001700C            4    0    7    0    0   RW
+TEST33.IER                                                    1  0x00017004            4    0    7    0    0   RW
+TEST33.ISR                                                    1  0x00017008            4    0    7    0    0   RW
+TEST33.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT33:4
+
+# cie must be writeable
+TEST34.SIE                                                    1  0x00018000            4    0    7    0    0   RW
+TEST34.CIE                                                    1  0x0001800C            4    0    7    0    0   RO
+TEST34.IER                                                    1  0x00018004            4    0    7    0    0   RW
+TEST34.ISR                                                    1  0x00018008            4    0    7    0    0   RW
+TEST34.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT34:4
+

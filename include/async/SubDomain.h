@@ -170,6 +170,11 @@ namespace ChimeraTK::async {
       muxedInterruptDistributor =
           MuxedInterruptDistributorFactory::getInstance().createMuxedInterruptDistributor(this->shared_from_this());
       _muxedInterruptDistributor = muxedInterruptDistributor;
+      if(_domain->unsafeGetIsActive()) {
+        // As for the distributor<nullptr_t> we activate using a new version number, as no version is strictly related
+        // to the "data".
+        muxedInterruptDistributor->activate({});
+      }
     }
 
     return muxedInterruptDistributor->getAccessorManager<DistributorType>(
