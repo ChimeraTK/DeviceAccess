@@ -158,10 +158,6 @@ namespace ChimeraTK {
     /// mutex for protecting unaligned access
     std::mutex _unalignedAccess;
 
-    template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-
     friend NumericAddressedLowLevelTransferElement;
     friend TriggeredPollDistributor;
 
@@ -169,6 +165,10 @@ namespace ChimeraTK {
     friend class NumericAddressedBackendMuxedRegisterAccessor;
 
    private:
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
     // internal helper function to get the a synchronous accessor, which is also needed by the asynchronous version
     // internally, but is not given out
     template<typename UserType>

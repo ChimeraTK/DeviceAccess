@@ -50,8 +50,12 @@ std::pair<RegisterPath, DecoratorType> getPathAndType(RegisterPath path) {
 class DecoratorBackend : public ExceptionDummy {
  public:
   DecoratorBackend(std::string mapFileName) : ExceptionDummy(mapFileName) {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
+    OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(ExceptionDummy, getRegisterAccessor_impl);
   }
+
+  // Declare that we are going to override getRegisterAccessor_impl
+  DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(ExceptionDummy, getRegisterAccessor_impl,
+      boost::shared_ptr<NDRegisterAccessor<T>>(const RegisterPath&, size_t, size_t, AccessModeFlags));
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
@@ -60,8 +64,9 @@ class DecoratorBackend : public ExceptionDummy {
 
     auto [path, type] = getPathAndType(registerPathName);
 
-    return getTypeChangingDecorator<UserType>(
-        ExceptionDummy::getRegisterAccessor_impl<float>(path, numberOfWords, wordOffsetInRegister, flags), type);
+    return getTypeChangingDecorator<UserType>(CALL_BASE_FUNCTION_TEMPLATE(ExceptionDummy, getRegisterAccessor_impl,
+                                                  float, path, numberOfWords, wordOffsetInRegister, flags),
+        type);
   }
 
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {

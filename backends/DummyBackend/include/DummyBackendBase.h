@@ -36,6 +36,10 @@ namespace ChimeraTK {
 
     size_t minimumTransferAlignment([[maybe_unused]] uint64_t bar) const override;
 
+    // Declare that we are going to override getRegisterAccessor_impl
+    DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(NumericAddressedBackend, getRegisterAccessor_impl,
+        boost::shared_ptr<NDRegisterAccessor<T>>(const RegisterPath&, size_t, size_t, AccessModeFlags));
+
     /** Simulate the arrival of an interrupt. For all push-type accessors which have been created
      *  for that particular interrupt number, the data will be read out
      *  through a synchronous accessor and pushed into the data transport queues of the asynchronous
@@ -76,33 +80,8 @@ namespace ChimeraTK {
 
     /// Specific override which allows to create "DUMMY_INTEERRUPT_X" accessors
     template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-      // First check if the request is for one of the special DUMMY_INTEERRUPT_X registers. if so, early return
-      // this special accessor.
-      if(registerPathName.startsWith("DUMMY_INTERRUPT_")) {
-        bool interruptFound;
-        uint32_t interrupt;
-
-        auto* dummyCatalogue = dynamic_cast<DummyBackendRegisterCatalogue*>(_registerMapPointer.get());
-        assert(dummyCatalogue);
-        std::tie(interruptFound, interrupt) = dummyCatalogue->extractControllerInterrupt(registerPathName);
-        if(!interruptFound) {
-          throw ChimeraTK::logic_error("Unknown dummy interrupt " + registerPathName);
-        }
-
-        // Delegate the other parameters down to the accessor which will throw accordingly, to satisfy the specification
-        // Since the accessor will keep a shared pointer to the backend, we can safely capture "this"
-        auto d = new DummyInterruptTriggerAccessor<UserType>(
-            shared_from_this(), [this, interrupt]() { return triggerInterrupt(interrupt); }, registerPathName,
-            numberOfWords, wordOffsetInRegister, flags);
-
-        return boost::shared_ptr<NDRegisterAccessor<UserType>>(d);
-      }
-
-      return NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
-          registerPathName, numberOfWords, wordOffsetInRegister, flags);
-    }
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     /**
      * @brief Backward compatibility: Leftover from the time when the dummy managed it's own map
