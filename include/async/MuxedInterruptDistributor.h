@@ -70,7 +70,7 @@ namespace ChimeraTK::async {
     [[nodiscard]] boost::shared_ptr<AsyncAccessorManager> getAccessorManager(
         std::vector<size_t> const& qualififedSubDomainId);
 
-    void activate(VersionNumber version);
+    virtual void activate(VersionNumber version);
     void sendException(const std::exception_ptr& e);
 
     /** The interrupt handling functions implements the handshake with the interrupt controller. It needs to
@@ -89,6 +89,13 @@ namespace ChimeraTK::async {
 
     boost::shared_ptr<SubDomain<std::nullptr_t>> _parent;
     boost::shared_ptr<Domain> _asyncDomain;
+
+    /**
+     *  Function to activate a (new) single SubDomain if the MuxedInterruptDistributor is already active.
+     *  The default implementation just calls activate on the subDomain. Implementations can overload this function to
+     *  perform additional handshakes.
+     */
+    virtual void activateSubDomain(SubDomain<std::nullptr_t>& subDomain, VersionNumber const& version);
   };
 
   /********************************************************************************************************************/

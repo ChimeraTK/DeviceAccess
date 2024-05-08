@@ -104,6 +104,7 @@ MACRO( COPY_MAPPING_FILES )
     bitRangeReadPlugin.xlmap
     decoratorTest.map
     testMappedImage.dmap testMappedImage.map
+    irq_test.mapp
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.
