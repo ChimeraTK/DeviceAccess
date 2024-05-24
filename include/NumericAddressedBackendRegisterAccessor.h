@@ -158,7 +158,7 @@ namespace ChimeraTK {
       if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
         if(!_registerInfo.isWriteable()) {
           throw ChimeraTK::logic_error(
-              "NumericAddressedBackend: Writeing to a non-writeable register is not allowed (Register name: " +
+              "NumericAddressedBackend: Writing to a non-writeable register is not allowed (Register name: " +
               _registerInfo.getRegisterName() + ").");
         }
         callForRawType(_registerInfo.getDataDescriptor().rawDataType(), [this](auto t) {
@@ -182,6 +182,11 @@ namespace ChimeraTK {
 
     void doPreRead(TransferType type) override {
       if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+      if(!_registerInfo.isReadable()) {
+        throw ChimeraTK::logic_error(
+            "NumericAddressedBackend: Reading from a non-readable register is not allowed (Register name: " +
+            _registerInfo.getRegisterName() + ").");
+      }
       _rawAccessor->preRead(type);
     }
 
