@@ -8,6 +8,7 @@
 namespace ChimeraTK {
 
   constexpr auto DUMMY_WRITEABLE_SUFFIX = "DUMMY_WRITEABLE";
+  constexpr auto DUMMY_READABLE_SUFFIX = "DUMMY_READABLE";
 
   /********************************************************************************************************************/
 
@@ -15,7 +16,7 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName) const {
     auto path = registerPathName;
     path.setAltSeparator(".");
-    if(path.endsWith(DUMMY_WRITEABLE_SUFFIX)) {
+    if(path.endsWith(DUMMY_WRITEABLE_SUFFIX) || path.endsWith(DUMMY_READABLE_SUFFIX)) {
       auto basePath = path;
       basePath--;
       auto info = NumericAddressedRegisterCatalogue::getBackendRegister(basePath);
@@ -36,7 +37,7 @@ namespace ChimeraTK {
   bool DummyBackendRegisterCatalogue::hasRegister(const RegisterPath& registerPathName) const {
     auto path = registerPathName;
     path.setAltSeparator(".");
-    if(path.endsWith(DUMMY_WRITEABLE_SUFFIX)) {
+    if(path.endsWith(DUMMY_WRITEABLE_SUFFIX) || path.endsWith(DUMMY_READABLE_SUFFIX)) {
       auto basePath = path;
       basePath--;
       return NumericAddressedRegisterCatalogue::hasRegister(basePath);
