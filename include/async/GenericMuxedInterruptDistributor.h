@@ -5,6 +5,8 @@
 #include "../RegisterPath.h"
 #include "MuxedInterruptDistributor.h"
 
+#include <bitset>
+
 namespace ChimeraTK::async {
 
   enum GmidOptionCode {
