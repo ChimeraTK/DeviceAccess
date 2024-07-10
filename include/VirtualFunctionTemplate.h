@@ -29,12 +29,12 @@
  * filled differently depending on whether you want to (be able to) call the base class's
  * implementation or not:
  *
- * <ul> If you do not care about the base implementation, use the macros
- * DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER
- * and FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE.
- * <ul> If you want to be able to delegate to the base implementation, use
- * the macros DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE. To chain up to the base
- * implementation, use the macro CALL_BASE_FUNCTION_TEMPLATE
+ * - If you do not care about the base implementation, use the macros
+ *   DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER
+ *   and FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE.
+ * - If you want to be able to delegate to the base implementation, use
+ *   the macros DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE. To chain up to the base
+ *   implementation, use the macro CALL_BASE_FUNCTION_TEMPLATE
  *
  *  Note: the signature is passed through the __VA_ARGS__ variable macro
  * arguments, as it may contain commas.
