@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TEST_RESULT=0
-MAX_PORT_RETRY_COUNT=20
+MAX_PORT_RETRY_COUNT=60
 
 for PROTOCO_VERSION in 0 1; do
     #start the server with the protocol version to test against
@@ -22,7 +22,7 @@ for PROTOCO_VERSION in 0 1; do
     done
 
     if [ -z $PORT ] ; then
-        echo "Failed to spawn RebotDummyServer within 10s. Expect failures below"
+        echo "Failed to spawn RebotDummyServer within 30s. Expect failures below"
     fi
 
     DMAP=`mktemp -p . -t XXXXXXXXX.dmap`
