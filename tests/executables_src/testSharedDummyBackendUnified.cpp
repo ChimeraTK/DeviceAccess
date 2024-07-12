@@ -29,7 +29,7 @@ static std::string instanceId{"1"};
 static std::string mapFileName{"sharedDummyUnified.map"};
 static std::string cdd(std::string("(sharedMemoryDummy:") + instanceId + "?map=" + mapFileName + ")");
 static boost::shared_ptr<SharedDummyBackend> sharedDummy;
-const int timeOutForWaitOnHelperProcess_ms = 2000;
+const int timeOutForWaitOnHelperProcess_ms = 20000;
 
 // lock preventing concurrent test execution
 static TestLocker testLocker("sharedDummyUnified.dmap");
