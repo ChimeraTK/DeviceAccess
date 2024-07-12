@@ -29,14 +29,18 @@
     check_process_termination() {
         PID=$1
         MAX_EVAL_CNT=$2
+        SIGNAL=$3
+        DEBUG_OUT=$4
         TIMEOUT_CNT=0
 
         while [ $TIMEOUT_CNT -lt $MAX_EVAL_CNT ]; do
             sleep .2
             if ps -p $PID > /dev/null ; then
+                # send kill signal again, the app might have missed it
+                kill -s $SIGNAL $PID
                 let TIMEOUT_CNT+=1
                 if [ $TIMEOUT_CNT -eq $MAX_EVAL_CNT ]; then
-                    echo "    Failed to remove process $PID created for testing."
+                    echo "    Failed to remove process $PID created for testing. (${DEBUG_OUT})"
                     echo "    Further results may be corrupted!"
                 fi
             else 
@@ -75,24 +79,26 @@
     # Attempt to start another process, this should fail
     #FIXME Boost 1.60 introduces a change in the command line interface, this call
     #      will issue an warning.
+    echo "!!!!! +++ ATTENTION. We intentionanlly let the following test fail. This is intended and not a failure here!"
     ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite -- KEEP_RUNNING & >/dev/null
     PID_SURPLUS=$!
     BGPIDS+=("$!")
 
-
-    MAX_EVAL_CNT=20
+    MAX_EVAL_CNT=80
     TIMEOUT_CNT=0
     while [ $TIMEOUT_CNT -lt $MAX_EVAL_CNT  ]; do 
         if ps -p $PID_SURPLUS >/dev/null ; # Process still exists
         then
             sleep .5
         else
+            echo "!!!!! --- END of intentionally failing test."
             echo "    Supernumerous process was successfully terminated."
             break
         fi
         let TIMEOUT_CNT+=1
 
         if [ $TIMEOUT_CNT -eq $MAX_EVAL_CNT ]; then
+            echo "!!!!! --- END of intentionally failing test."
             echo "Testing PID Management of SharedDummyBackend failed. Starting a supernumerous process has not been caught."
             ps -p $PID_SURPLUS ; # Show child status before killing it
             kill -s SIGINT $PID_SURPLUS
@@ -105,7 +111,7 @@
     CNT=0
     while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do
         kill -s SIGINT ${PID[$CNT]}
-        check_process_termination ${PID[$CNT]} 20
+        check_process_termination ${PID[$CNT]} 20 SIGINT COUTN${CNT}
         let CNT+=1
     done
 
@@ -121,7 +127,7 @@
     PID_MAKEMESS=$!
     sleep 1
     kill -9 $PID_MAKEMESS
-    check_process_termination $PID_MAKEMESS 5
+    check_process_termination $PID_MAKEMESS 20 SIGKILL MAKEMESS
 
     # Test, if memory has been cleaned up. This should happen, when this test constructs the SharedMemoryManager
     ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
@@ -147,11 +153,11 @@
     sleep .2
     PID_MAKEMESS=$!
     kill -9 $PID_MAKEMESS
-    check_process_termination $PID_MAKEMESS 5
+    check_process_termination $PID_MAKEMESS 20 SIGKILL MAKEMOREMESS
 
     kill -s SIGINT $PID_STILL_RUNNING_PROCESS
 
-    check_process_termination $PID_STILL_RUNNING_PROCESS 20
+    check_process_termination $PID_STILL_RUNNING_PROCESS 20 SIGINT STILLRUNNING
 
     # Test if memory has been deleted.
     ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyMemoryDeleted
