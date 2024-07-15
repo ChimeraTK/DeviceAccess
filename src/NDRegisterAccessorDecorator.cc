@@ -14,17 +14,13 @@ namespace ChimeraTK::detail {
     return boost::make_shared<CopyRegisterDecorator<T>>(target);
   }
 
-} // namespace ChimeraTK::detail
-
-namespace {
-
-  // instantiate all needed implementations of the createCopyDecorator<T>()
-  // function
+  // instantiate all needed implementations of the createCopyDecorator<T>() function
   template<typename T>
   struct CreateCopyDecoratorInstancer {
     CreateCopyDecoratorInstancer<T>() : ptr(&ChimeraTK::detail::createCopyDecorator<T>) {}
 
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> (*ptr)(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>);
   };
-  ChimeraTK::TemplateUserTypeMap<CreateCopyDecoratorInstancer> createCopyDecoratorInstancer;
-} // namespace
+  ChimeraTK::TemplateUserTypeMap<CreateCopyDecoratorInstancer> _createCopyDecorator_instancer;
+
+} // namespace ChimeraTK::detail
