@@ -408,18 +408,14 @@ namespace ChimeraTK {
 
   void SharedDummyBackend::ShmForSems::print() {
     std::cout << "shmem contents: " << std::endl;
-    int i = 0;
     for(auto& entry : semEntries) {
       if(entry.used) std::cout << "sem : " << entry.semId << std::endl;
-      i++;
     }
-    i = 0;
     for(auto& entry : interruptEntries) {
       if(entry.used) {
         std::cout << "interrupt : " << entry._controllerId << "," << entry._intNumber << " count = " << entry._counter
                   << std::endl;
       }
-      i++;
     }
 
     std::cout << std::endl;
