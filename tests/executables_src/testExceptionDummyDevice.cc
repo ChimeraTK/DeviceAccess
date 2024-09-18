@@ -23,6 +23,15 @@ BOOST_AUTO_TEST_CASE(testExceptionsDummyDevice) {
   device.open("(ExceptionDummy:1?map=test3.map)");
   BOOST_CHECK(device.isFunctional());
 
+  // test DataValidity
+  auto devI1 = device.getScalarRegisterAccessor<int>("/dev/i1");
+  auto devI2 = device.getScalarRegisterAccessor<int>("/dev/i2");
+  exceptionDummy->setValidity("/dev/i1", ctk::DataValidity::faulty);
+  devI1.read();
+  devI2.read();
+  BOOST_CHECK(devI1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(devI2.dataValidity() == ctk::DataValidity::ok);
+
   // test throwExceptionRead
   exceptionDummy->throwExceptionRead = true;
   BOOST_CHECK(device.isFunctional());

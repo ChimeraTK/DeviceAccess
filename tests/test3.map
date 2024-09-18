@@ -25,3 +25,9 @@
 
 # These registers are interrupt-backed registers
 /Integers/signed32_async              1  8  4 1 32     0 1 INTERRUPT6
+
+# Registers for data validity tests
+/dev/i1                0x00000001    0x00000000    0x00000004  1    32    0      1     RO
+dev.i2                 0x00000001    0x00000004    0x00000004  1    32    0      1     RO
+/dev/i3                0x00000001    0x00000008    0x00000004  1    32    0      1     RO
+/dev/i4                0x00000001    0x00000004    0x00000004  1    32    0      1     RW
