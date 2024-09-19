@@ -26,8 +26,8 @@ struct RebotServerDetails {
   std::string ip;
   std::string port;
 
-  RebotServerDetails() : ip(), port(0){};
-  RebotServerDetails(std::string& ipAddress, std::string portNumber) : ip(ipAddress), port(portNumber){};
+  RebotServerDetails() = default;
+  RebotServerDetails(std::string& ipAddress, std::string portNumber) : ip(ipAddress), port(portNumber) {};
 };
 
 class RebotTestClass {
