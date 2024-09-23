@@ -735,3 +735,27 @@ BOOST_AUTO_TEST_CASE(testReadAnyException) {
 }
 
 /**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReadAnyInvalid) {
+  std::cout << "testReadAnyInvalid" << std::endl;
+
+  Device device;
+  device.open(cdd);
+  auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(cdd));
+  BOOST_CHECK(backend != nullptr);
+
+  // obtain register accessor with integral type
+  auto a1 = device.getScalarRegisterAccessor<uint8_t>("a1", 0, {AccessMode::wait_for_new_data});
+
+  // Create ReadAnyGroup
+  ReadAnyGroup group{a1};
+
+  {
+    // direct read on accessor in ReadAnyGroup is not allowed and should issue exception.
+    BOOST_CHECK_THROW(a1.read(), ChimeraTK::logic_error);
+  }
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
