@@ -118,6 +118,10 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
             "' which is part of a TransferGroup is not allowed.");
       }
+      if(TransferElement::_isInReadAnyGroup) {
+        throw ChimeraTK::logic_error("Directly calling read() on the TransferElement '" + _name +
+            "' which is part of a ReadAnyGroup is not allowed.");
+      }
       this->readTransactionInProgress = false;
 
       preReadAndHandleExceptions(TransferType::read);
@@ -143,6 +147,10 @@ namespace ChimeraTK {
       if(TransferElement::_isInTransferGroup) {
         throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
             "' which is part of a TransferGroup is not allowed.");
+      }
+      if(TransferElement::_isInReadAnyGroup) {
+        throw ChimeraTK::logic_error("Directly calling readNonBlocking() on the TransferElement '" + _name +
+            "' which is part of a ReadAnyGroup is not allowed.");
       }
       this->readTransactionInProgress = false;
       preReadAndHandleExceptions(TransferType::readNonBlocking);
@@ -819,6 +827,9 @@ namespace ChimeraTK {
     /** Flag whether this TransferElement has been added to a TransferGroup or not
      */
     bool _isInTransferGroup{false};
+
+    /** Flag whether this TransferElement has been added to a ReadAnyGroup or not*/
+    bool _isInReadAnyGroup{false};
 
     /** The access mode flags for this transfer element.*/
     AccessModeFlags _accessModeFlags;

@@ -14,6 +14,9 @@ namespace ChimeraTK {
 
   /**
    * Group several registers (= TransferElement) to allow waiting for an update of any of the registers.
+   *
+   * After the group has been finalised (cf. ReadAnyGroup::finalise), read functions may no longer be called directly on
+   * the participating elements.
    */
   class ReadAnyGroup {
    public:
@@ -142,8 +145,11 @@ namespace ChimeraTK {
      * given register may not yet be part of a ReadAnyGroup or a TransferGroup, otherwise an exception is thrown.
      *
      * The register must be must be readable.
+     * Note, we disallow adding const-refs to TransferElement(Abtractor)s.
+     * TransferElements added to the group change in behaviour, since their underlying future_queues are modified (in
+     * order to notify the ReadAny future queue).
      */
-    void add(const TransferElementAbstractor& element);
+    void add(TransferElementAbstractor& element);
 
     /**
      * See the other signature of add().
@@ -437,7 +443,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::add(const TransferElementAbstractor& element) {
+  inline void ReadAnyGroup::add(TransferElementAbstractor& element) {
     if(isFinalised) {
       throw std::logic_error("ReadAnyGroup has already been finalised, calling "
                              "add() is no longer allowed.");
@@ -452,12 +458,19 @@ namespace ChimeraTK {
     else {
       poll_elements.push_back(element);
     }
+    // set flag on the accessor that it is now in a ReadAnyGroup:
+    // We do this for push-types only, since poll-types technically still allow calling read() without the ReadAnyGroup,
+    // although its documentation states that would not be allowed.
+    if(element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+      element.getHighLevelImplElement()->_isInReadAnyGroup = true;
+    }
   }
 
   /********************************************************************************************************************/
 
   inline void ReadAnyGroup::add(boost::shared_ptr<TransferElement> element) {
-    add(TransferElementAbstractor(std::move(element)));
+    TransferElementAbstractor a(std::move(element));
+    add(a);
   }
 
   /********************************************************************************************************************/
