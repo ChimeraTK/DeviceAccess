@@ -62,9 +62,15 @@
         let CNT+=1
     done
 
-    sleep .5 
+    # Give all processes time to actually open the shared memory
+    sleep 5 
 
     # All of those processes should be running now
+    # Note: Having all processes running does not guarantee that they have already accessed the shared memory.
+    # There is the potential race condition that the 11th process started after this check is getting access to the SHM
+    # first, and one of these ten processes terminates instead, which makes the test fail.
+    # The 5 second sleep should make it unlikely enough so it does occur. If there are still randomly failing tests
+    # we need a proper solution to really get rid of the timing race.
     CNT=0
     while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do
        kill -0 ${PID[$CNT]}
