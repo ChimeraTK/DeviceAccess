@@ -285,17 +285,31 @@ namespace ChimeraTK {
 
   template<typename NUMERIC>
   NUMERIC detail::userTypeToNumeric_impl<std::string, NUMERIC>::impl(const std::string& value) {
+    bool isHexidecimal = value.length() > 1 and (value[1] == 'x' or value[1] == 'X'); // OxABCD form hex
+
     if constexpr(std::is_same<NUMERIC, Boolean>::value) {
       // special treatment for Boolean
-      std::stringstream ss(value);
+      std::stringstream ss;
       Boolean converted;
+      if(isHexidecimal) {
+        ss << std::hex << value;
+      }
+      else {
+        ss.str(value);
+      }
       ss >> converted;
       return converted;
     }
 
     if constexpr(!std::is_same<NUMERIC, int8_t>::value && !std::is_same<NUMERIC, uint8_t>::value) {
       NUMERIC v;
-      std::stringstream ss(value);
+      std::stringstream ss;
+      if(isHexidecimal) {
+        ss << std::hex << value;
+      }
+      else {
+        ss.str(value);
+      }
       ss >> v;
       return v;
     }
@@ -304,7 +318,12 @@ namespace ChimeraTK {
       // wrong thing...
       int temp;
       try {
-        temp = std::stoi(value);
+        if(isHexidecimal) {
+          temp = std::stoi(value, nullptr, 16);
+        }
+        else {
+          temp = std::stoi(value);
+        }
       }
       catch(...) {
         // ignore any parsing errors and just return 0 in that case
