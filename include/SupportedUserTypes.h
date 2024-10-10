@@ -285,26 +285,32 @@ namespace ChimeraTK {
 
   template<typename NUMERIC>
   NUMERIC detail::userTypeToNumeric_impl<std::string, NUMERIC>::impl(const std::string& value) {
-    if constexpr(std::is_same<NUMERIC, Boolean>::value) {
-      // special treatment for Boolean
-      std::stringstream ss(value);
-      Boolean converted;
-      ss >> converted;
-      return converted;
-    }
+    // 0xABCD form hex
+    bool isHexidecimal = (value.length() > 1) and ((value[1] == 'x') or (value[1] == 'X')) and (value[0] == '0'); 
 
     if constexpr(!std::is_same<NUMERIC, int8_t>::value && !std::is_same<NUMERIC, uint8_t>::value) {
       NUMERIC v;
-      std::stringstream ss(value);
+      std::stringstream ss;
+      if(isHexidecimal) {
+        ss << std::hex << value.substr(2);
+      }
+      else {
+        ss.str(value);
+      }
       ss >> v;
       return v;
     }
     else {
       // int8_t and uint8_t are interpreted as char resp. unsigned char, in which case the stream operator does the
       // wrong thing...
-      int temp;
+      int64_t temp;
       try {
-        temp = std::stoi(value);
+        if(isHexidecimal) {
+          temp = std::stoll(value, nullptr, 16);
+        }
+        else {
+          temp = std::stoll(value);
+        }
       }
       catch(...) {
         // ignore any parsing errors and just return 0 in that case

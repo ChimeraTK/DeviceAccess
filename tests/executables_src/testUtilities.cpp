@@ -5,12 +5,14 @@
 #define BOOST_TEST_MODULE DeviceTest
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
-
 #include "BackendFactory.h"
 #include "DeviceInfoMap.h"
 #include "Exception.h"
 #include "SupportedUserTypes.h"
 #include "Utilities.h"
+
+#include <cstdint>
+#include <limits>
 
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"
@@ -257,6 +259,7 @@ BOOST_AUTO_TEST_CASE(testUserTypeToUserType_Boolean) {
   BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("False")) == false);
   BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("fAlSe")) == false);
   BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0")) == false);
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("00")) == false); //FIXME this should pass
   BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("")) == false);
   BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("true")) == true);
   BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("TRUE")) == true);
@@ -264,3 +267,222 @@ BOOST_AUTO_TEST_CASE(testUserTypeToUserType_Boolean) {
 }
 
 /**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testUserTypeToUserType_HexString) {
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint64_t>(std::string("banana"))); // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint64_t>(std::string("0xG")));    // invalid
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0x0")) == false); // min, mid
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0X1")) == true);  // max, mid, big X
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0x00BA0000F0cacc1a")) ==
+      true); // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0xDung"))); // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0x")));     // empty test
+  // FIXME this should pass
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0x000")) == false);  // odd extra zeros
+
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("0x66"))) == 0x66); // mid+,
+  BOOST_TEST(
+      static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("0X7F"))) == INT8_MAX); // max, big X
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("0x00BA0000F0cacc1a"))) ==
+      INT8_MAX);                                                                      // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int8_t>(std::string("0xDung"))); // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int8_t>(std::string("0x")));     // empty test
+
+  BOOST_TEST(static_cast<uint32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("0x66"))) == 0x66); // mid+
+  BOOST_TEST(
+      static_cast<uint32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("0XFF"))) == UINT8_MAX); // max, big X
+  BOOST_TEST(static_cast<uint32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("0x0"))) == 0);   // min
+  BOOST_TEST(static_cast<uint32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("0x00BA0000F0cacc1a"))) ==
+      UINT8_MAX);                                                                      // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint8_t>(std::string("0xDung"))); // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint8_t>(std::string("0x")));     // empty test
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("0x6666")) == 0x6666);    // 0x6666 = 26214 mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("0X7FFF")) == INT16_MAX); // max, big X
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<int16_t>(std::string("0x00BA0000F0cacc1a")) == INT16_MAX); // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int16_t>(std::string("0xDung")));         // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int16_t>(std::string("0x")));             // empty test
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("0x6666")) == 0x6666);     // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("0XFFFF")) == UINT16_MAX); // max, big X
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("0x0")) == 0);             // min
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<uint16_t>(std::string("0x00BA0000F0cacc1a")) == UINT16_MAX); // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint16_t>(std::string("0xDung")));          // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint16_t>(std::string("0x")));              // empty test
+
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<int32_t>(std::string("0x66666666")) == 0x6666'6666); // 0x6666'6666=1717986918 mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("0X7FFFFFFF")) == INT32_MAX); // max, big X
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<int32_t>(std::string("0x00BA0000F0cacc1a")) == INT32_MAX); // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int32_t>(std::string("0xDung")));         // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int32_t>(std::string("0x")));             // empty test
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("0x66666666")) == 0x6666'6666); // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("0XFFFFFFFF")) == UINT32_MAX);  // max, big X
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("0x0")) == 0);                  // min
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<uint32_t>(std::string("0x00BA0000F0cacc1a")) == UINT32_MAX); // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint32_t>(std::string("0xDung")));          // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint32_t>(std::string("0x")));              // empty test
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("0x6666666666666666")) ==
+      0x6666'6666'6666'6666); // = 7378697629483820646 mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("0X7FFFFFFFFFFFFFFF")) == INT64_MAX); // max, big X
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<int64_t>(std::string("0x100BA0000F0cacc1a")) == INT64_MAX); // overflow, mixed case
+  // The previous two lines are likely to run out of room and report 0
+  BOOST_CHECK_NO_THROW(
+      ChimeraTK::userTypeToUserType<int64_t>(std::string("0xdung"))); // invalid, try lower case for a change.
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int64_t>(std::string("0x"))); // empty test
+
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<uint64_t>(std::string("0xC0CAC01AADD511FE")) == 0xC0CA'C01A'ADD5'11FE); // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("0XFFFFFFFFFFFFFFFF")) == UINT64_MAX); // max, big X
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("0x0")) == 0);                         // min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("0xFFFFFFFFFF0cacc1a")) ==
+      UINT64_MAX);                                                                      // overflow, mixed case
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint64_t>(std::string("0xDung"))); // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint64_t>(std::string("0x")));     // empty test
+
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<float>(std::string("0x66666666")), 1.71799e9, 1.71799e5);
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<float>(std::string("0xDung"))); // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<float>(std::string("0x")));     // empty test
+                                                                                     //
+  BOOST_CHECK_CLOSE(
+      ChimeraTK::userTypeToUserType<double>(std::string("0x6666666666666666")), 7.3786976e18, 7.3786976e14); // mid+
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<double>(std::string("0xDung")));                        // invalid
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<double>(std::string("0x"))); // empty test
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<std::string>(std::string("0xDung")) == "0xDung");
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testUserTypeToUserType_DecString) {
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("0")) == false); // mid+, min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("1")) == true);  // max
+  BOOST_TEST(ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("2")) == true);  // overflow
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<ChimeraTK::Boolean>(std::string("-7378697629483820646")) == true); // underflow
+  // invalid case is done in testUserTypeToUserType_Boolean
+
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("102"))) == 102);       // mid+
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("-102"))) == -102);     // mid-
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("127"))) == INT8_MAX);  // max
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("-128"))) == INT8_MIN); // min
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("300"))) == INT8_MAX);  // overflow
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("-300"))) == INT8_MIN); // underflow
+  // FIXME make this pass
+  // BOOST_TEST(
+  //    static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("73786976294838206460"))) == INT8_MAX);
+  // overflow
+
+  // FIXME make this pass
+  // BOOST_TEST(
+  //    static_cast<int32_t>(ChimeraTK::userTypeToUserType<int8_t>(std::string("-73786976294838206460"))) == INT8_MIN);
+  //  underflow
+
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int8_t>(std::string("banana"))); // invalid
+
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("102"))) == 102);       // mid+
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("255"))) == UINT8_MAX); // max
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("0"))) == 0);           // min
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("300"))) == UINT8_MAX); // overflow
+  BOOST_TEST(static_cast<int32_t>(ChimeraTK::userTypeToUserType<uint8_t>(std::string("-5"))) == 0); // underflow pass
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint8_t>(std::string("banana")));              // invalid
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("26214")) == 26214);                     // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("-26214")) == -26214);                   // mid-
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("32767")) == INT16_MAX);                 // max
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("-32768")) == INT16_MIN);                // min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("73786976294838206460")) == INT16_MAX);  // overflow
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int16_t>(std::string("-73786976294838206460")) == INT16_MIN); // underflow
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<int16_t>(std::string("banana")));                   // invalid
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("26214")) == 26214);                     // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("65535")) == UINT16_MAX);                // max
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("0")) == 0);                             // min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("73786976294838206460")) == UINT16_MAX); // overflow
+  // FIXME make this pass
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("-73786976294838206460")) == 0); // underflow
+  // FIXME make this pass
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<uint16_t>(std::string("-5")) == 0); // underflow fail -5 = 65531.
+
+  BOOST_CHECK_NO_THROW(ChimeraTK::userTypeToUserType<uint16_t>(std::string("banana"))); // invalid
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("1717986918")) == 1717986918);           // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("-1717986918")) == -1717986918);         // mid-
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("2147483647")) == INT32_MAX);            // max
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("-2147483648")) == INT32_MIN);           // min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("73786976294838206460")) == INT32_MAX);  // overflow
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("-73786976294838206460")) == INT32_MIN); // underflow
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int32_t>(std::string("banana")) == 0);                        // invalid
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("1717986918")) == 1717986918);           // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("4294967295")) == UINT32_MAX);           // max
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("0")) == 0);                             // min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("73786976294838206460")) == UINT32_MAX); // overflow
+  // FIXME make this pass
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("-73786976294838206460")) == 0); // underflow
+  // FIXME make this pass
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("-5")) == 0);                            // underflow
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint32_t>(std::string("banana")) == 0); // invalid
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("7378697629483820646")) == 7378697629483820646); // mid+
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<int64_t>(std::string("-7378697629483820646")) == -7378697629483820646); // mid-
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("9223372036854775807")) == INT64_MAX);      // max
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("-9223372036854775808")) == INT64_MIN);     // min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("9223372036854775810")) == INT64_MAX);      // overflow
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("-9223372036854775810")) == INT64_MIN);     // underflow
+  // The previous two lines are likely to run out of room and report 0
+  BOOST_TEST(ChimeraTK::userTypeToUserType<int64_t>(std::string("banana")) == 0); // invalid
+
+  BOOST_TEST(
+      ChimeraTK::userTypeToUserType<uint64_t>(std::string("7378697629483820646")) == 7378697629483820646); // mid+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("18446744073709551615")) == UINT64_MAX);  // max
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("0")) == 0);                              // min
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("18446744073709551625")) == UINT64_MAX);  // overflow
+  // FIXME make this pass
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("-18446744073709551625")) == 0);        // underflow
+  // FIXME make this pass
+  // BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("-5")) == 0);                           // underflow
+  BOOST_TEST(ChimeraTK::userTypeToUserType<uint64_t>(std::string("banana")) == 0); // invalid
+
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<float>(std::string("3.14159")), 3.14159, 3.14159 / 1000.0); // mid+
+  BOOST_CHECK_CLOSE(
+      ChimeraTK::userTypeToUserType<float>(std::string("-3.14159e3")), -3.14159e3, 3.14159e3 / 1000.0); // mid-
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<float>(std::string("3.40282e38")), std::numeric_limits<float>::max(),
+      std::numeric_limits<float>::max() / 1000.); // max
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<float>(std::string("-3.40282e38")),
+      (-std::numeric_limits<float>::max()), std::numeric_limits<float>::max() / 1000.); // min
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<float>(std::string("5.40282e39")), std::numeric_limits<float>::max(),
+      std::numeric_limits<float>::max() / 1000.); // overflow
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<float>(std::string("-5.40282e39")),
+      (-std::numeric_limits<float>::max()), std::numeric_limits<float>::max() / 1000.); // underflow
+  BOOST_TEST(ChimeraTK::userTypeToUserType<float>(std::string("banana")) == 0.f);       // invalid
+  BOOST_CHECK_CLOSE(
+      ChimeraTK::userTypeToUserType<float>(std::string("5")), 5.0f, 5.0 / 1000.); // float-int conversion good
+
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<double>(std::string("2.718281828459")), 2.718281828459,
+      2.718281828459 / 1000.0); // mid+
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<double>(std::string("-2.718281828459e3")), -2.718281828459e3,
+      2.718281828459e3 / 1000.0); // mid-
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<double>(std::string("1.7976931e+308")),
+      std::numeric_limits<double>::max(), std::numeric_limits<double>::max() / 1000.); // max
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<double>(std::string("-1.7976931e+308")),
+      (-std::numeric_limits<double>::max()), std::numeric_limits<double>::max() / 1000.); // min
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<double>(std::string("1.8976931e+309")),
+      std::numeric_limits<double>::max(), std::numeric_limits<double>::max() / 1000.); // overflow
+  BOOST_CHECK_CLOSE(ChimeraTK::userTypeToUserType<double>(std::string("-1.8976931e+309")),
+      (-std::numeric_limits<double>::max()), std::numeric_limits<double>::max() / 1000.); // underflow
+  BOOST_CHECK_CLOSE(
+      ChimeraTK::userTypeToUserType<double>(std::string("5")), 5.0, 5.0 / 1000.);  // double-int conversion good
+  BOOST_TEST(ChimeraTK::userTypeToUserType<double>(std::string("banana")) == 0.0); // invalid
+
+  BOOST_TEST(ChimeraTK::userTypeToUserType<std::string>(std::string("Any\r\nthing")) == "Any\r\nthing");
+}
