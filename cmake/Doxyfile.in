@@ -66,3 +66,4 @@ CALLER_GRAPH           = YES
 DOT_IMAGE_FORMAT       = svg
 INTERACTIVE_SVG        = YES
 DOT_GRAPH_MAX_NODES    = 120
+HAVE_DOT               = YES
