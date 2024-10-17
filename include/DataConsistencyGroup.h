@@ -49,8 +49,14 @@ namespace ChimeraTK {
     /** Return the current matching mode. */
     MatchingMode getMatchingMode() const { return mode; };
 
+    /** For inspection of contents */
+    const std::map<TransferElementID, TransferElementAbstractor>& getElements() const { return push_elements; }
+
+    /** returns true if consistent state is reached */
+    bool isConsistent() const { return consistentElements.size() == push_elements.size(); }
+
    private:
-    /// A set of TransferElementID, that were updatet with update();
+    /// A set of TransferElementID, that were updated with update();
     std::unordered_set<TransferElementID> consistentElements;
 
     std::unordered_set<TransferElementID> lasteSateOfConsistentElements;
