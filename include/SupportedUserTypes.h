@@ -286,7 +286,7 @@ namespace ChimeraTK {
   template<typename NUMERIC>
   NUMERIC detail::userTypeToNumeric_impl<std::string, NUMERIC>::impl(const std::string& value) {
     // 0xABCD form hex
-    bool isHexidecimal = (value.length() > 1) and ((value[1] == 'x') or (value[1] == 'X')) and (value[0] == '0'); 
+    bool isHexidecimal = (value.length() > 1) and ((value[1] == 'x') or (value[1] == 'X')) and (value[0] == '0');
 
     if constexpr(!std::is_same<NUMERIC, int8_t>::value && !std::is_same<NUMERIC, uint8_t>::value) {
       NUMERIC v;
