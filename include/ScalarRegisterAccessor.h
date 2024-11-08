@@ -138,6 +138,22 @@ namespace ChimeraTK {
     ScalarRegisterAccessor<std::string>& operator=(std::string rightHandSide);
 
     /**
+     * Get the cooked values in case the accessor is a raw accessor (which does
+     * not do data conversion). This returns the converted data from the user
+     * buffer. It does not do any read or write transfer.
+     */
+    template<typename COOKED_TYPE>
+    COOKED_TYPE getAsCooked();
+
+    /**
+     * Set the cooked values in case the accessor is a raw accessor (which does
+     * not do data conversion). This converts to raw and writes the data to the
+     * user buffer. It does not do any read or write transfer.
+     */
+    template<typename COOKED_TYPE>
+    void setAsCooked(COOKED_TYPE value);
+
+    /**
      * Convenience function to set and write new value if it differes from the current value. The given version number
      * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
      * the write actually takes place.
@@ -305,6 +321,20 @@ namespace ChimeraTK {
       std::string rightHandSide) {
     boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)->accessData(0, 0) = std::move(rightHandSide);
     return *this;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename COOKED_TYPE>
+  COOKED_TYPE ScalarRegisterAccessor<std::string>::getAsCooked() {
+    return get()->template getAsCooked<COOKED_TYPE>(0, 0);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename COOKED_TYPE>
+  void ScalarRegisterAccessor<std::string>::setAsCooked(COOKED_TYPE value) {
+    return get()->template setAsCooked<COOKED_TYPE>(0, 0, value);
   }
 
   /********************************************************************************************************************/
