@@ -48,6 +48,10 @@ namespace ChimeraTK {
      */
     const NDRegisterAccessorAbstractor& operator=(const NDRegisterAccessorAbstractor& rightHandSide) const = delete;
 
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getImpl();
+
+    using value_type = UserType;
+
    protected:
     explicit NDRegisterAccessorAbstractor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl);
 
@@ -92,6 +96,13 @@ namespace ChimeraTK {
   NDRegisterAccessorAbstractor<UserType>::NDRegisterAccessorAbstractor(
       boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
   : TransferElementAbstractor(impl) {}
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorAbstractor<UserType>::getImpl() {
+    return boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(_impl);
+  }
 
   /********************************************************************************************************************/
 
