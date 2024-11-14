@@ -201,6 +201,25 @@ namespace ChimeraTK {
      */
     [[nodiscard]] DataValidity dataValidity() const { return _impl->dataValidity(); }
 
+    /**
+     * Return from a blocking read immediately and throw boost::thread_interrupted.
+     * This function can be used to shutdown a thread waiting on data to arrive,
+     * which might never happen because the sending part of the application is already shut down,
+     * or there is no new data at the moment.
+     *
+     * This function can only be used for TransferElements with AccessMode::wait_for_new_data. Otherwise it
+     * will throw a ChimeraTK::logic_error.
+     *
+     * Note that this function does not stop the sending thread. It just places a boost::thread_interrupted exception on
+     * the _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data is
+     * put into the queue just before the exception, this is received first. Hence it is not guaranteed that the read
+     * call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that it returns
+     * immediately. Also it is guaranteed that eventually the boost::thread_interrupted exception will be received.
+     *
+     * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
+     */
+    void interrupt() { _impl->interrupt(); }
+
    protected:
     /** Untyped pointer to implementation */
     boost::shared_ptr<TransferElement> _impl;
