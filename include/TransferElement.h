@@ -773,7 +773,7 @@ namespace ChimeraTK {
      * the _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data is
      * put into the queue just before the exception, this is received first. Hence it is not guaranteed that the read
      * call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that it returns
-     * immediately. An it is guaranteed that eventually the boost::thread_interrupted exception will be received.
+     * immediately. Also it is guaranteed that eventually the boost::thread_interrupted exception will be received.
      *
      * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      *
