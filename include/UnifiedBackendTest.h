@@ -987,6 +987,7 @@ namespace ChimeraTK {
 
   template<typename VECTOR_OF_REGISTERS_T>
   void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::recoverDevice(ChimeraTK::Device& d) {
+    auto stopTime = std::chrono::steady_clock::now() + std::chrono::seconds(60);
     for(size_t i = 0;; ++i) {
       try {
         d.open();
@@ -994,7 +995,8 @@ namespace ChimeraTK {
       }
       catch(ChimeraTK::runtime_error&) {
         usleep(10000); // 10ms
-        if(i > 6000) {
+        // try minimum 10 times for at least 60 seconds
+        if((i > 10) && (std::chrono::steady_clock::now() > stopTime)) {
           BOOST_FAIL("Device did not recover within 60 seconds after forced ChimeraTK::runtime_error.");
         }
       }
