@@ -57,11 +57,14 @@ namespace ChimeraTK {
         numberOfWords = _registerInfo.getNumberOfElements();
       }
       if(numberOfWords + wordOffsetInRegister > _registerInfo.getNumberOfElements()) {
-        throw ChimeraTK::logic_error(
-            "Requested number of words exceeds the size of the register '" + registerPathName + "'!");
+        throw ChimeraTK::logic_error("Requested number of words (" + std::to_string(numberOfWords) + " + " +
+            std::to_string(wordOffsetInRegister) + ") exceeds the size (" +
+            std::to_string(_registerInfo.getNumberOfElements()) + ") of the register '" + registerPathName + "'!");
       }
       if(wordOffsetInRegister >= _registerInfo.getNumberOfElements()) {
-        throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + registerPathName + "'!");
+        throw ChimeraTK::logic_error("Requested offset (" + std::to_string(wordOffsetInRegister) +
+            ") exceeds the size (" + std::to_string(_registerInfo.getNumberOfElements()) + ") of the register'" +
+            registerPathName + "'!");
       }
 
       // change registerInfo (local copy!) to account for given offset and length override

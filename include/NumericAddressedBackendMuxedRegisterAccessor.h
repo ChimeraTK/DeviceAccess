@@ -161,6 +161,10 @@ namespace ChimeraTK {
 
     // check number of words
     if(numberOfElements + elementsOffset > _registerInfo.nElements) {
+      throw ChimeraTK::logic_error("Requested number of elements (" + std::to_string(numberOfElements) + " + " +
+          std::to_string(elementsOffset) + ") exceeds the size (" + std::to_string(_registerInfo.nElements) +
+          ") of the register '" + registerPathName + "'!");
+
       throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register! Requested end: " +
           std::to_string(numberOfElements + elementsOffset) +
           ", register length: " + std::to_string(_registerInfo.nElements));
