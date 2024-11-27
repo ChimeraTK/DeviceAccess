@@ -48,7 +48,8 @@ namespace ChimeraTK::LNMBackend {
 
     if(!_isWrite) { // reading MathPlugin
       if(_enablePushParameters) {
-        throw ChimeraTK::logic_error("MathPlugin (reading) does not support push_parameters: " + _info.getRegisterName());
+        throw ChimeraTK::logic_error(
+            "MathPlugin (reading) does not support push_parameters: " + _info.getRegisterName());
       }
     }
   }
