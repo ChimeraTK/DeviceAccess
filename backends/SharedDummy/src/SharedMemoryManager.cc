@@ -139,7 +139,7 @@ namespace ChimeraTK {
   }
 
   std::vector<std::string> SharedDummyBackend::SharedMemoryManager::listNamedElements() {
-    std::vector<std::string> list(segment.get_size());
+    std::vector<std::string> list(segment.get_num_named_objects());
 
     for(auto seg = segment.named_begin(); seg != segment.named_end(); ++seg) {
       list.emplace_back(seg->name());
