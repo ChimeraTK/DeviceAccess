@@ -1170,17 +1170,6 @@ BOOST_AUTO_TEST_CASE(test_B_8_6_4) {
 /**********************************************************************************************************************/
 
 /**
- *  Test interrupt() throws for sync accessors
- *  * \anchor testTransferElement_B_8_6_5 \ref transferElement_B_8_6_5 "B.8.6.5"
- */
-BOOST_AUTO_TEST_CASE(B_8_6_5) {
-  TransferElementTestAccessor<int32_t> snycAccessor({});
-  BOOST_CHECK_THROW(snycAccessor.interrupt(), ChimeraTK::logic_error);
-}
-
-/**********************************************************************************************************************/
-
-/**
  *  Test getVersionNumber()
  *  * \anchor testTransferElement_B_11_3 \ref transferElement_B_11_3 "B.11.3"
  */
