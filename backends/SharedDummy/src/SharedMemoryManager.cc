@@ -5,6 +5,42 @@
 
 namespace ChimeraTK {
 
+  namespace {
+    // Proxy class to add try_lock_for() to boost::interprocess::named_mutex::named_mutex, which is not present on older
+    // BOOST versions like on Ubuntu 20.04. This can be removed and replaced with boost::interprocess::named_mutex once
+    // we are fully on Ubuntu 24.04 or newer.
+    class IpcNamedMutex {
+     public:
+      explicit IpcNamedMutex(boost::interprocess::named_mutex& mx) : _mx(mx) {}
+
+      template<typename Duration>
+      // NOLINTNEXTLINE(readability-identifier-naming)
+      bool try_lock_for(const Duration& dur) {
+        auto abs_time = boost::posix_time::microsec_clock::universal_time();
+        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        auto bmillis = boost::posix_time::milliseconds(millis);
+        abs_time += bmillis;
+        return _mx.timed_lock(abs_time);
+      }
+
+      template<typename Duration>
+      // NOLINTNEXTLINE(readability-identifier-naming)
+      bool try_lock_until(const Duration& abs_time) {
+        return _mx.timed_lock(abs_time);
+      }
+
+      void lock() { _mx.lock(); }
+
+      void unlock() { _mx.unlock(); }
+
+      // NOLINTNEXTLINE(readability-identifier-naming)
+      bool try_lock() { return _mx.try_lock(); }
+
+     private:
+      boost::interprocess::named_mutex& _mx;
+    };
+  } // namespace
+
   // Construct/deconstruct
   SharedDummyBackend::SharedMemoryManager::SharedMemoryManager(
       SharedDummyBackend& sharedDummyBackend_, const std::string& instanceId, const std::string& mapFileName)
@@ -15,9 +51,22 @@ namespace ChimeraTK {
     segment(boost::interprocess::open_or_create, name.c_str(), getRequiredMemoryWithOverhead()),
     sharedMemoryIntAllocator(segment.get_segment_manager()),
     interprocessMutex(boost::interprocess::open_or_create, name.c_str()) {
+  retry:
+    // scope for lock guard of the interprocess mutex
     {
-      // lock guard with the interprocess mutex
-      std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
+      IpcNamedMutex proxy(interprocessMutex);
+      std::unique_lock<IpcNamedMutex> lock(proxy, std::defer_lock);
+      auto ok = lock.try_lock_for(std::chrono::milliseconds(2000));
+      if(!ok) {
+        std::cerr << "SharedDummyBackend: stale lock detected, removing mutex... " << std::endl;
+
+        // named_mutex has no (move) assignment operator, so we need to work around here (placement delete and new)
+        boost::interprocess::named_mutex::remove(name.c_str());
+        interprocessMutex.~named_mutex();
+        new(&interprocessMutex) boost::interprocess::named_mutex(boost::interprocess::open_or_create, name.c_str());
+
+        goto retry;
+      }
 
       pidSet = findOrConstructVector(SHARED_MEMORY_PID_SET_NAME, 0);
 
@@ -42,7 +91,7 @@ namespace ChimeraTK {
       InterruptDispatcherInterface::cleanupShm(segment, pidSet);
 
       pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
-    }
+    } // releases the lock
     this->intDispatcherIf = boost::movelib::unique_ptr<InterruptDispatcherInterface>(
         new InterruptDispatcherInterface(sharedDummyBackend, segment, interprocessMutex));
   }
