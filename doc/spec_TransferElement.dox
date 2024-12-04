@@ -104,7 +104,7 @@ This document describes the behaviour of the TransferElement base class, the NDR
   - 2.2 Applications select a data type for the buffer via the UserType template argument of Device::getZzzRegisterAccessor() resp. DeviceBackend::getRegisterAccessor().
   - 2.3 If needed, the register value is converted between the actual register's data type and the application-selected UserType.
     - 2.3.1 Reading from an actual void register into a UserType which is not ChimeraTK::Void fills the user buffer with 0. The user buffer has 1 channel with 1 element.
-    - 2.3.2 Writing from a user buffer with ChimeraTK::Void to an actual non-void value writes 0 to the register. The user buffer matches the register's dimension. 
+    - 2.3.2 Writing from a user buffer with ChimeraTK::Void to an actual non-void value writes 0 to the register. The user buffer matches the register's dimension.
   - 2.4  In read operations, values outside the possible range of the UserType are moved to the nearest possible value (rounding and clamping).
     - 2.4.1 The data is marked with DataValidity::faulty in case of an overflow/underflow.
   - 2.5 In write operations, values outside the possible range of the actual register's data type are moved to the nearest possible value (rounding and clamping).
@@ -187,7 +187,7 @@ This document describes the behaviour of the TransferElement base class, the NDR
     - \anchor transferElement_B_8_6_2 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally. [\ref testTransferElement_B_8_6_2 "T"]
     - \anchor transferElement_B_8_6_3 8.6.3 The operation receiving the boost::thread_interrupted exception will also obey \ref transferElement_B_5 "5", i.e. postRead() is still called. [\ref testTransferElement_B_8_6_3 "T"]
     - \anchor transferElement_B_8_6_4 8.6.4 Calling TransferElement::interrupt() does not disturb the subsequent operation of the TransferElement. [\ref testTransferElement_B_8_6_4 "T"]
-    - \anchor transferElement_B_8_6_5 8.6.5 Calling TransferElement::interrupt() without AccessMode::wait_for_new_data will cause a ChimeraTK::logic_error. [\ref testTransferElement_B_8_6_5 "T"]
+    - \anchor transferElement_B_8_6_5 8.6.5 (removed)
     - \anchor transferElement_B_8_6_6 8.6.6 TransferElement::interrupt() is a virtual function which has to be implemented by all TransferElement implementations \ref transferElement_comment_B_8_6_6 "(*)". [\ref UnifiedTest_TransferElement_B_8_6_6 "U" (via high-level test)]
        - \anchor transferElement_B_8_6_6_1 8.6.6.1 Full implementations must implement it by calling TransferElement::interrupt_impl() with the \ref transferElement_A_8_2 "implementation-specific data transport queue" as argument. \ref transferElement_comment_B_8_6_6_1 "(*)"
        - \anchor transferElement_B_8_6_6_2 8.6.6.2 Decorator-like implementations must delegate the call to their target.\ref transferElement_comment_B_8_6_6_2 "(*)"

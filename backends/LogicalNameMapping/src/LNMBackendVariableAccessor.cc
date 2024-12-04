@@ -254,7 +254,10 @@ namespace ChimeraTK {
 
     callForType(_info.valueType, [&, this](auto arg) {
       auto& vtEntry = boost::fusion::at_key<decltype(arg)>(lnmVariable.valueTable.table);
-      this->interrupt_impl(vtEntry.subscriptions[this->getId()]);
+      auto itsub = vtEntry.subscriptions.find(this->getId());
+      if(itsub != vtEntry.subscriptions.end()) {
+        this->interrupt_impl(itsub->second);
+      }
     });
   }
 

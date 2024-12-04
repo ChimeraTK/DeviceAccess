@@ -366,8 +366,9 @@ namespace ChimeraTK {
      * backend. For the functional description read the documentation of readTransfer().
      *
      *  Implementation notes:
-     *  - This function must return within ~1 second after boost::thread::interrupt() has been called on the thread
-     *    calling this function.
+     *  - This function must return within ~1 second after both boost::thread::interrupt() (on the thread
+     *    calling this function) and TransferElement::interrupt() have been called (reliable termination requires both
+     *    calls; implementation needs to react to one of the call only).
      *  - Decorators must delegate the call to readTransfer() of the decorated target.
      *  - Delegations within the same object should go to the "do" version, e.g. to
      * BaseClass::doReadTransferSynchronously()
@@ -761,44 +762,34 @@ namespace ChimeraTK {
     TransferElementID getId() const { return _id; }
 
     /**
-     * Return from a blocking read immediately and throw boost::thread_interrupted.
-     * This function can be used to shutdown a thread waiting on data to arrive,
-     * which might never happen because the sending part of the application is already shut down,
-     * or there is no new data at the moment.
-     *
-     * This function can only be used for TransferElements with AccessMode::wait_for_new_data. Otherwise it
-     * will throw a ChimeraTK::logic_error.
+     * Return from a blocking read immediately and throw boost::thread_interrupted. This function can be used to
+     * shutdown a thread waiting on data to arrive, which might never happen because the sending part of the
+     * application is already shut down, or there is no new data at the moment.
      *
      * Note that this function does not stop the sending thread. It just places a boost::thread_interrupted exception on
      * the _TransferElement::_readQueue, so a waiting read() has something to receive and returns. If regular data is
      * put into the queue just before the exception, this is received first. Hence it is not guaranteed that the read
      * call that is supposed to be interrupted will actually throw an exception. But it is guaranteed that it returns
-     * immediately. Also it is guaranteed that eventually the boost::thread_interrupted exception will be received.
+     * immediately. Also it is guaranteed that eventually the boost::thread_interrupted exception will be received,
+     * unless more values are written to the queue and the exception is overwritten.
      *
      * See  \ref transferElement_B_8_6 "Technical specification: TransferElement B.8.6"
      *
-     * Implementation notice: This default implementation is always throwing. Each ThransferElement implementation
-     * that supports AccessMode::wait_for_new_data has to override it like this:
+     * Implementation notice: This default implementation is always doing nothing. Each TransferElement implementation
+     * that supports AccessMode::wait_for_new_data (or may need to interrupt synchronous read calls) has to override it
+     * like this (unless the TransferElement has special requirements):
      *   void interrupt() override { this->interrupt_impl(this->_myDataTransportQueue); }
      */
-    virtual void interrupt() {
-      if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-        throw ChimeraTK::logic_error(
-            "TransferElement::interrupt() called on '" + _name + "' but AccessMode::wait_for_new_data is not set.");
-      }
-      throw ChimeraTK::logic_error("TransferElement::interrupt() must be overridden by all implementations with "
-                                   "AccessMode::wait_for_new_data. (TransferElement '" +
-          _name + "')");
-    }
+    virtual void interrupt() {}
 
-    /** Implementation of interrupt() for TransferElements which support AccessMode::wait_for_new_data */
+    /**
+     * Implementation of interrupt()
+     *
+     * This function shall be called by backends in their interrupt() implementation as stated in its implementation
+     * note.
+     */
     template<typename QUEUE_TYPE>
     void interrupt_impl(QUEUE_TYPE& dataTransportQueue) {
-      if(!this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-        throw ChimeraTK::logic_error(
-            "TransferElement::interrupt() called on '" + _name + "' but AccessMode::wait_for_new_data is not set.");
-      }
-
       dataTransportQueue.push_overwrite_exception(std::make_exception_ptr(boost::thread_interrupted()));
     }
 
