@@ -23,10 +23,11 @@ namespace ChimeraTK {
       if(isFunctional()) {
         return;
       }
-      close();
     }
 
     _ctrlIntf.emplace(_devicePath);
+
+    std::for_each(_eventFiles.begin(), _eventFiles.end(), [](auto& eventFile) { eventFile = nullptr; });
 
     // Build vector of DMA channels
     _dmaChannels.clear();
@@ -50,10 +51,11 @@ namespace ChimeraTK {
     std::for_each(_eventFiles.begin(), _eventFiles.end(), [](auto& eventFile) { eventFile = nullptr; });
     _ctrlIntf.reset();
     _dmaChannels.clear();
+    _opened = false;
   }
 
   bool XdmaBackend::isOpen() {
-    return _ctrlIntf.has_value();
+    return _opened;
   }
 
   XdmaIntfAbstract& XdmaBackend::_intfFromBar(uint64_t bar) {
