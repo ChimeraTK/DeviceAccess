@@ -57,6 +57,10 @@ namespace ChimeraTK {
       *buf++ = *rptr++;
       nBytes -= sizeof(int32_t);
     }
+    // with mmap, device error is not automatically noticed, so add explicit check here
+    if(!_file.goodState()) {
+      throw runtime_error("read from bad device node " + _file.name());
+    }
   }
 
   void CtrlIntf::write(uintptr_t address, const int32_t* data, size_t nBytes) {
@@ -65,6 +69,9 @@ namespace ChimeraTK {
     while(nBytes >= sizeof(int32_t)) {
       *wptr++ = *data++;
       nBytes -= sizeof(int32_t);
+    }
+    if(!_file.goodState()) {
+      throw runtime_error("write to bad device node " + _file.name());
     }
   }
 
