@@ -4,6 +4,7 @@
 #include "DeviceFile.h"
 
 #include "Exception.h"
+#include <sys/stat.h>
 
 #include <cstring>
 #include <fcntl.h>
@@ -44,6 +45,20 @@ namespace ChimeraTK {
 
   std::string DeviceFile::name() const {
     return _path;
+  }
+
+  bool DeviceFile::goodState() const {
+    struct stat s {};
+    if(fstat(_fd, &s) != 0) {
+      return false;
+    }
+    // check whether device file was deleted since opened
+    return s.st_nlink > 0;
+    // TODO discuss - what I still don't like about goodState() implementation is that it cannot always capture bad
+    // device state: It is possible that device nodes still exist but open() returns error like "/dev/xdma/slot4/user:
+    // No such device or address" (even though in that case, slot4/event0 can be openend). I do not know to what state
+    // this observeration belongs - I guess board is present but FPGA state bad? Also, I do not know whether trying
+    // open() just to detect the problem would be a good idea, it could have side effects on system in good state.
   }
 
 } // namespace ChimeraTK

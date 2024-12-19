@@ -126,7 +126,7 @@ namespace ChimeraTK {
     }
 
     if(!_eventFiles[interruptNumber]) {
-      _eventFiles[interruptNumber] = std::make_unique<EventFile>(_devicePath, interruptNumber, asyncDomain);
+      _eventFiles[interruptNumber] = std::make_unique<EventFile>(this, _devicePath, interruptNumber, asyncDomain);
       _eventFiles[interruptNumber]->startThread(std::move(subscriptionDonePromise));
     }
     else {

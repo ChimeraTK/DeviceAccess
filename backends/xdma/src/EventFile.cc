@@ -31,7 +31,19 @@ namespace ChimeraTK {
     // This is the time to fulfil the promise that the subscription is done.
     subscriptionDonePromise.set_value();
     waitForEvent();
-    _ctx.run();
+    // We also put timeout handlers for a concurrently running timer into the same context, and check the health
+    // state of our event device from there.
+    timer.expires_after(std::chrono::seconds(timerSleepSec));
+    timer.async_wait([&](auto ec) { timerEvent(ec); });
+
+    try {
+      _ctx.run();
+    }
+    catch(runtime_error& e) {
+      // forward exception to backend client
+      _owner._backend->setException(e.what());
+      // we leave device in non-functional state. next call to open() will reinit and clear exception.
+    }
   }
 
   void EventThread::waitForEvent() {
@@ -86,9 +98,25 @@ namespace ChimeraTK {
     waitForEvent();
   }
 
-  EventFile::EventFile(const std::string& devicePath, size_t interruptIdx,
+  void EventThread::timerEvent(const boost::system::error_code& ec) {
+#ifdef _DEBUG
+    std::cout << "XDMA: timerEvent for " << _owner._file.name() << "\n";
+#endif
+    if(ec) {
+      const std::string msg = "EventThread::timerEvent() I/O error: " + ec.message();
+      throw runtime_error(msg);
+    }
+    if(!_owner._file.goodState()) {
+      throw runtime_error("bad device node " + _owner._file.name());
+    }
+    timer.expires_after(std::chrono::seconds(timerSleepSec));
+    timer.async_wait([&](auto ec_) { timerEvent(ec_); });
+  }
+
+  EventFile::EventFile(DeviceBackend* backend, const std::string& devicePath, size_t interruptIdx,
       boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain)
-  : _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _asyncDomain{asyncDomain} {}
+  : _backend(backend), _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _asyncDomain{
+                                                                                                   asyncDomain} {}
 
   EventFile::~EventFile() {
     _evtThread.reset(nullptr);

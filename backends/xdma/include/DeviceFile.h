@@ -23,6 +23,7 @@ namespace ChimeraTK {
 
     operator int() const;
     std::string name() const;
+    bool goodState() const;
   };
 
 } // namespace ChimeraTK

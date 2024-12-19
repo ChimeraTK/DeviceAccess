@@ -34,11 +34,15 @@ namespace ChimeraTK {
     void waitForEvent();
     void readEvent(const boost::system::error_code& ec);
     void handleEvent(const boost::system::error_code& ec, std::size_t bytes_transferred);
+    void timerEvent(const boost::system::error_code& ec);
+    boost::asio::steady_timer timer{_ctx};
+    const int timerSleepSec = 1;
   };
 
   // Event files are device files that are used to signal interrupt events to userspace
   class EventFile {
     friend class EventThread;
+    DeviceBackend* _backend; // needed for reporting exceptions
     DeviceFile _file;
     boost::shared_ptr<async::DomainImpl<std::nullptr_t>> _asyncDomain;
 
@@ -46,7 +50,7 @@ namespace ChimeraTK {
 
    public:
     EventFile() = delete;
-    EventFile(const std::string& devicePath, size_t interruptIdx,
+    EventFile(DeviceBackend* backend, const std::string& devicePath, size_t interruptIdx,
         boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain);
     // EventFile(EventFile&& d) = default;
     ~EventFile();

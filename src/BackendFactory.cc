@@ -262,20 +262,7 @@ namespace ChimeraTK {
           << "Using the device node in a dmap file is deprecated. Please change to CDD (ChimeraTK device descriptor)."
           << std::endl;
     }
-#ifdef _DEBUG
-    std::cout << "sdm._Host:" << sdm._Host << std::endl;
-    std::cout << "sdm.Interface:" << sdm._Interface << std::endl;
-    std::cout << "sdm.Instance:" << sdm._Instance << std::endl;
-    std::cout << "sdm._Protocol:" << sdm._Protocol << std::endl;
-    std::cout << "sdm.parameter:" << sdm._Parameters.size() << std::endl;
-    for(std::list<std::string>::iterator it = sdm._Parameters.begin(); it != sdm._Parameters.end(); ++it) {
-      std::cout << *it << std::endl;
-    }
-#endif
     for(auto& iter : creatorMap_compat) {
-#ifdef _DEBUG
-      std::cout << "Pair:" << iter->first.first << "+" << iter->first.second << std::endl;
-#endif
       if((iter.first.first == sdm.interface)) {
         auto backend = (iter.second)(sdm.host, sdm.instance, sdm.parameters, deviceInfo.mapFileName);
         boost::weak_ptr<DeviceBackend> weakBackend = backend;
