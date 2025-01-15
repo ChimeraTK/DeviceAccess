@@ -56,7 +56,7 @@ namespace ChimeraTK {
     {
       IpcNamedMutex proxy(interprocessMutex);
       std::unique_lock<IpcNamedMutex> lock(proxy, std::defer_lock);
-      auto ok = lock.try_lock_for(std::chrono::milliseconds(2000));
+      bool ok = lock.try_lock_for(std::chrono::milliseconds(2000));
       if(!ok) {
         std::cerr << "SharedDummyBackend: stale lock detected, removing mutex... " << std::endl;
 
