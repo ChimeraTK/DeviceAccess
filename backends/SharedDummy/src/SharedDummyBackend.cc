@@ -20,14 +20,29 @@
 namespace ChimeraTK {
 
   SharedDummyBackend::SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName)
-  : DummyBackendBase(mapFileName), _mapFile(mapFileName), _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
-    sharedMemoryManager(*this, instanceId, mapFileName) {
+  : DummyBackendBase(mapFileName), _mapFile(mapFileName), _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()) {
+  retry:
+    try {
+      sharedMemoryManager = std::make_unique<SharedMemoryManager>(*this, instanceId, mapFileName);
+    }
+    catch(boost::interprocess::lock_exception&) {
+      std::cerr << "SharedDummyBackend: boost::interprocess error, clearing shared memory segment." << std::endl;
+      // remove shared memory and mutex
+      std::string userHash(std::to_string(std::hash<std::string>{}(getUserName())));
+      std::string mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName)));
+      std::string instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId)));
+      std::string name("ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash);
+      boost::interprocess::shared_memory_object::remove(name.c_str());
+      boost::interprocess::named_mutex::remove(name.c_str());
+      goto retry;
+    }
+
     setupBarContents();
   }
 
   SharedDummyBackend::~SharedDummyBackend() {
     // Destroy the InterruptDispatcherInterface first because it keeps a reference to this backend.
-    sharedMemoryManager.intDispatcherIf.reset();
+    sharedMemoryManager->intDispatcherIf.reset();
     // all other objects clean up for themselves when they go out of scope.
   }
 
@@ -39,12 +54,12 @@ namespace ChimeraTK {
       size_t barSizeInWords = (_barSizesInByte.second + sizeof(int32_t) - 1) / sizeof(int32_t);
 
       try {
-        std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
-        _barContents[_barSizesInByte.first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
+        std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
+        _barContents[_barSizesInByte.first] = sharedMemoryManager->findOrConstructVector(barName, barSizeInWords);
       }
       catch(boost::interprocess::bad_alloc&) {
         // Clean up
-        sharedMemoryManager.~SharedMemoryManager();
+        sharedMemoryManager.reset();
 
         std::string errMsg{"Could not allocate shared memory while constructing registers. "
                            "Please file a bug report at "
@@ -70,7 +85,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     uint64_t wordBaseIndex = address / sizeof(int32_t);
 
-    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
+    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
     for(uint64_t wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
       TRY_REGISTER_ACCESS(data[wordIndex] = _barContents[bar]->at(wordBaseIndex + wordIndex););
     }
@@ -84,7 +99,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     uint64_t wordBaseIndex = address / sizeof(int32_t);
 
-    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
+    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
 
     for(uint64_t wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
       TRY_REGISTER_ACCESS(_barContents[bar]->at(wordBaseIndex + wordIndex) = data[wordIndex];);
@@ -137,7 +152,7 @@ namespace ChimeraTK {
   }
 
   VersionNumber SharedDummyBackend::triggerInterrupt(uint32_t interruptNumber) {
-    this->sharedMemoryManager.intDispatcherIf->triggerInterrupt(interruptNumber);
+    this->sharedMemoryManager->intDispatcherIf->triggerInterrupt(interruptNumber);
 
     // Since VersionNumber consistency is defined only per process, we generate a new one here
     // and also in the triggered process

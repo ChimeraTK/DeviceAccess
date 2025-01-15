@@ -155,7 +155,7 @@ namespace ChimeraTK {
     }; /* class SharedMemoryManager */
 
     // Managed shared memory object
-    SharedMemoryManager sharedMemoryManager;
+    std::unique_ptr<SharedMemoryManager> sharedMemoryManager;
 
     // Setup register bars in shared memory
     void setupBarContents();
