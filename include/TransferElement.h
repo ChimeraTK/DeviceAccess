@@ -532,8 +532,9 @@ namespace ChimeraTK {
 
       _activeException = {};
       if(versionNumber < getVersionNumber()) {
-        throw ChimeraTK::logic_error("The version number passed to write() of TransferElement '" + _name +
-            "' is less than the last version number used.");
+        throw ChimeraTK::logic_error("The version number " + std::string(versionNumber) +
+            " passed to write() of TransferElement '" + _name + "' is less than the last version number used " +
+            std::string(getVersionNumber()) + ".");
       }
       writeTransactionInProgress = true; // must not be set, if the logic_error is thrown above due to the old version
       doPreWrite(type, versionNumber);
