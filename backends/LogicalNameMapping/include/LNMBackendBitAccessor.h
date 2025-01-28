@@ -43,7 +43,8 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("LNMBackendBitAccessors cannot have a word offset.");
       }
       if(numberOfWords > 1) {
-        throw ChimeraTK::logic_error("LNMBackendBitAccessors must have size 1.");
+        throw ChimeraTK::logic_error("LNMBackendBitAccessors must have size 1, but " + registerPathName + " has size " +
+            std::to_string(numberOfWords) + ".");
         // The case that the target size actually is 1 if numberOfWords == 0 cannot be checked here.
         // 0 is allowed. It is tested after the target has created the accessor with 0 as length parameter.
       }
