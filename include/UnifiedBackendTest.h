@@ -50,7 +50,8 @@ namespace ChimeraTK {
       TestCapability _testWriteOnly = TestCapability::disabled, TestCapability _testReadOnly = TestCapability::disabled,
       TestCapability _testRawTransfer = TestCapability::unspecified,
       TestCapability _testCatalogue = TestCapability::enabled,
-      TestCapability _setRemoteValueIncrementsVersion = TestCapability::enabled>
+      TestCapability _setRemoteValueIncrementsVersion = TestCapability::enabled,
+      TestCapability _testPartialWrite = TestCapability::enabled>
   struct TestCapabilities {
     constexpr TestCapabilities() = default;
 
@@ -61,7 +62,7 @@ namespace ChimeraTK {
     /// backend tests.
     constexpr TestCapabilities<TestCapability::disabled, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableSyncRead() const {
       return {};
     }
@@ -69,7 +70,7 @@ namespace ChimeraTK {
     /// See setForceDataLossWrite() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, TestCapability::enabled, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableForceDataLossWrite() const {
       static_assert(_writeNeverLosesData != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutually exclusive.");
@@ -77,7 +78,7 @@ namespace ChimeraTK {
     }
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableForceDataLossWrite() const {
       return {};
     }
@@ -85,13 +86,13 @@ namespace ChimeraTK {
     /// See forceAsyncReadInconsistency() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::enabled, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableAsyncReadInconsistency() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, TestCapability::disabled, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableAsyncReadInconsistency() const {
       return {};
     }
@@ -99,13 +100,13 @@ namespace ChimeraTK {
     /// See switchReadOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::enabled,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableSwitchReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, TestCapability::disabled,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableSwitchReadOnly() const {
       return {};
     }
@@ -113,13 +114,13 @@ namespace ChimeraTK {
     /// See switchWriteOnly() function in the register descriptor.
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         TestCapability::enabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableSwitchWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         TestCapability::disabled, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableSwitchWriteOnly() const {
       return {};
     }
@@ -129,7 +130,7 @@ namespace ChimeraTK {
     /// Mutually exclusive with enableForceDataLossWrite().
     constexpr TestCapabilities<_syncRead, TestCapability::disabled, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, TestCapability::enabled, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableTestWriteNeverLosesData() const {
       static_assert(_forceDataLossWrite != TestCapability::enabled,
           "enableTestWriteNeverLosesData() and enableForceDataLossWrite() are mutualy exclusive.");
@@ -137,7 +138,7 @@ namespace ChimeraTK {
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, TestCapability::disabled, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableTestWriteNeverLosesData() const {
       return {};
     }
@@ -145,13 +146,13 @@ namespace ChimeraTK {
     /// Enable/disable testing only write operations, even if the register is readable
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, TestCapability::enabled, _testReadOnly, _testRawTransfer,
-        _testCatalogue, _setRemoteValueIncrementsVersion>
+        _testCatalogue, _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableTestWriteOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, TestCapability::disabled, _testReadOnly, _testRawTransfer,
-        _testCatalogue, _setRemoteValueIncrementsVersion>
+        _testCatalogue, _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableTestWriteOnly() const {
       return {};
     }
@@ -159,13 +160,13 @@ namespace ChimeraTK {
     /// Enable/disable testing only read operations, even if the register is readable
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::enabled, _testRawTransfer,
-        _testCatalogue, _setRemoteValueIncrementsVersion>
+        _testCatalogue, _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableTestReadOnly() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, TestCapability::disabled, _testRawTransfer,
-        _testCatalogue, _setRemoteValueIncrementsVersion>
+        _testCatalogue, _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableTestReadOnly() const {
       return {};
     }
@@ -173,13 +174,13 @@ namespace ChimeraTK {
     /// Enable/disable testing the raw accessors
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, TestCapability::disabled, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableTestRawTransfer() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, TestCapability::enabled, _testCatalogue,
-        _setRemoteValueIncrementsVersion>
+        _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableTestRawTransfer() const {
       return {};
     }
@@ -187,13 +188,13 @@ namespace ChimeraTK {
     /// Enable/disable testing of catalogue content
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer,
-        TestCapability::disabled, _setRemoteValueIncrementsVersion>
+        TestCapability::disabled, _setRemoteValueIncrementsVersion, _testPartialWrite>
         disableTestCatalogue() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer,
-        TestCapability::enabled, _setRemoteValueIncrementsVersion>
+        TestCapability::enabled, _setRemoteValueIncrementsVersion, _testPartialWrite>
         enableTestCatalogue() const {
       return {};
     }
@@ -201,14 +202,28 @@ namespace ChimeraTK {
     /// Enable/disable testing of version number increment in read operations after setRemoteValue
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        TestCapability::disabled>
+        TestCapability::disabled, _testPartialWrite>
         disableSetRemoteValueIncrementsVersion() const {
       return {};
     }
     constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
         _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
-        TestCapability::enabled>
+        TestCapability::enabled, _testPartialWrite>
         enableSetRemoteValueIncrementsVersion() const {
+      return {};
+    }
+
+    /// Enable/disable testing for writing with a partial accessor
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
+        _setRemoteValueIncrementsVersion, TestCapability::disabled>
+        disableTestPartialWrite() const {
+      return {};
+    }
+    constexpr TestCapabilities<_syncRead, _forceDataLossWrite, _asyncReadInconsistency, _switchReadOnly,
+        _switchWriteOnly, _writeNeverLosesData, _testWriteOnly, _testReadOnly, _testRawTransfer, _testCatalogue,
+        _setRemoteValueIncrementsVersion, TestCapability::enabled>
+        enableTestPartialWrite() const {
       return {};
     }
 
@@ -223,6 +238,7 @@ namespace ChimeraTK {
     static constexpr TestCapability testRawTransfer{_testRawTransfer};
     static constexpr TestCapability testCatalogue{_testCatalogue};
     static constexpr TestCapability setRemoteValueIncrementsVersion{_setRemoteValueIncrementsVersion};
+    static constexpr TestCapability testPartialWrite{_testPartialWrite};
   };
 
   /**
@@ -383,7 +399,9 @@ namespace ChimeraTK {
 
    protected:
     void test_B_3_1_2_1();
+    void test_NOSPEC_partial_read();
     void test_NOSPEC_write();
+    void test_NOSPEC_partial_write();
     void test_B_3_2_1_2();
     void test_B_3_2_2();
     void test_B_4_2_4();
@@ -874,6 +892,8 @@ namespace ChimeraTK {
     size_t nRawRegisters = 0;
     size_t nReadOnlyRegisters = 0;
     size_t nWriteOnlyRegisters = 0;
+    size_t nPartialReadRegisters = 0; // need at least 4 elements for partial read test
+    size_t nPartialWriteRegisters = 0;
     boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
       if(this->isAsyncRead(x)) ++nAsyncReadRegisters;
       if(this->isSyncRead(x)) ++nSyncReadRegisters;
@@ -881,6 +901,12 @@ namespace ChimeraTK {
       if(this->isWrite(x) && !this->isRead(x)) ++nWriteOnlyRegisters;
       if(!this->isWrite(x) && this->isRead(x)) ++nReadOnlyRegisters;
       if(this->isRaw(x)) ++nRawRegisters;
+      if(this->isRead(x) && x.nElementsPerChannel() > 4) ++nPartialReadRegisters;
+      if(this->isWrite(x) && (x.nElementsPerChannel() > 4) &&
+          (x.capabilities.testPartialWrite == TestCapability::enabled)) {
+        ++nPartialWriteRegisters;
+      }
+
       if(x.capabilities.forceDataLossWrite == TestCapability::unspecified) {
         std::cout << "WARNING: Register " << x.path() << " has unspecified capability forceDataLossWrite!" << std::endl;
       }
@@ -939,10 +965,18 @@ namespace ChimeraTK {
     if(nWriteOnlyRegisters == 0) {
       std::cout << "WARNING: No write-only registers specified." << std::endl;
     }
-
+    if(nPartialReadRegisters == 0) {
+      std::cout << "WARNING: No read registers large enough to test partial reading (>= 4 elements)." << std::endl;
+    }
+    if(nPartialWriteRegisters == 0) {
+      std::cout << "WARNING: No partial write registers defined. This is acceptable only if the backend does not "
+                << "support partial write." << std::endl;
+    }
     // run the tests
     test_B_3_1_2_1();
+    test_NOSPEC_partial_read();
     test_NOSPEC_write();
+    test_NOSPEC_partial_write();
     test_B_3_2_1_2();
     test_B_3_2_2();
     test_B_4_2_4();
@@ -1068,6 +1102,67 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /**
+   *  Partial accessor read.
+   *  * Missing spec
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_partial_read() {
+    std::cout << "--- test_NOSPEC_partial_read" << std::endl;
+    Device d(cdd);
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x)) return;
+      if(x.nElementsPerChannel() < 4) return;
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+      // partial accessor with two elements and offset 1
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 2, 1);
+
+      // open the device
+      d.open();
+
+      // Set an intermediate remote value to be overwritten next
+      x.setRemoteValue();
+      usleep(100000); // give potential race conditions a chance to pop up more easily...
+
+      std::vector<std::vector<UserType>> partialV1;
+      for(size_t iter = 0; iter < this->nValuesToTest(x); ++iter) {
+        // Set another remote value to be read.
+        x.setRemoteValue();
+
+        partialV1 = x.template getRemoteValue<UserType>();
+        for(auto& chan : partialV1) {
+          auto val1 = chan[1]; // cache the two entries we need
+          auto val2 = chan[2];
+          chan.resize(2); // resize to two elements
+          chan[0] = val1; // put back the cached elements
+          chan[1] = val2;
+        }
+
+        // Read second value
+        reg.read();
+
+        // Check application buffer
+        CHECK_EQUALITY(reg, partialV1);
+        BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+      }
+
+      // Reading again without changing remote value does not block and gives the same value
+      reg.read();
+
+      // Check application buffer
+      CHECK_EQUALITY(reg, partialV1);
+      BOOST_CHECK(reg.dataValidity() == DataValidity::ok);
+
+      // close device again
+      d.close();
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
    *  Test write.
    *  * MISSING SPEC
    */
@@ -1095,6 +1190,63 @@ namespace ChimeraTK {
         reg.write();
 
         // check remote value (with timeout, because the write might complete asynchronously)
+        CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
+      }
+    });
+
+    // close device again
+    d.close();
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test partial write.
+   *  * MISSING SPEC
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_NOSPEC_partial_write() {
+    std::cout << "--- test_NOSPEC_partial_write" << std::endl;
+    Device d(cdd);
+
+    // open the device
+    d.open();
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isWrite(x)) return;
+      if(x.nElementsPerChannel() < 4) return;
+      if(x.capabilities.testPartialWrite != TestCapability::enabled) return;
+
+      typedef typename decltype(x)::minimumUserType UserType;
+      auto registerName = x.path();
+
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 2, 1);
+
+      // write some value
+      for(size_t iter = 0; iter < this->nValuesToTest(x); ++iter) {
+        // set a remote value and get it. It will be partially modified.
+        x.setRemoteValue();
+        auto theValue = x.template getRemoteValue<UserType>();
+        //
+        auto partialValue = x.template generateValue<UserType>();
+        for(size_t i = 0; i < partialValue.size(); ++i) {
+          auto& chan = partialValue[i];
+          auto val1 = chan[1];
+          auto val2 = chan[2];
+          chan.resize(2);
+          chan[0] = val1;
+          chan[1] = val2;
+          // the partial replacement of the expected value
+          theValue[i][1] = val1;
+          theValue[i][2] = val2;
+        }
+
+        reg = partialValue;
+        reg.write();
+
+        // Check remote value (with timeout, because the write might complete asynchronously).
+        // We compare the complete value including the values that must not have changed.
         CHECK_EQUALITY_VECTOR_TIMEOUT(x.template getRemoteValue<UserType>(), theValue, 10000);
       }
     });
