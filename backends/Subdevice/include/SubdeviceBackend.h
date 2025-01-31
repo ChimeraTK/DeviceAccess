@@ -118,7 +118,7 @@ namespace ChimeraTK {
 
     /// Check consistency of the passed sizes and offsets against the information in the map file
     /// Will adjust numberOfWords to the default value if 0
-    static void verifyRegisterAccessorSize(const NumericAddressedRegisterInfo& info, size_t& numberOfWords,
+    void verifyRegisterAccessorSize(const NumericAddressedRegisterInfo& info, size_t& numberOfWords,
         size_t wordOffsetInRegister, bool enforceAlignment);
 
     template<typename UserType>
