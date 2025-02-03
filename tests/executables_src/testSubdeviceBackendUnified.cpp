@@ -129,8 +129,11 @@ struct Regs3Type : Register {
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 1; }
 
-  static constexpr auto capabilities =
-      TestCapabilities<>().disableForceDataLossWrite().disableAsyncReadInconsistency().enableTestRawTransfer();
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .enableTestRawTransfer()
+                                           .disableTestPartialAccessor();
 
   template<typename Type>
   std::vector<std::vector<Type>> generateValue(bool raw = false) {

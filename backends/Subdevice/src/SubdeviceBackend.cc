@@ -343,6 +343,22 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("SubdeviceBackend: 2D multiplexed registers are not yet supported.");
     }
 
+    // Partial accessors are not implemented correctly yet. Better throw than getting something that seems to work but
+    // does the wrong thing.
+    if(type == Type::threeRegisters || type == Type::twoRegisters) {
+      if(wordOffsetInRegister != 0) {
+        throw ChimeraTK::logic_error("SubdeviceBackend: Partial accessors are not supported yet for type "
+                                     "threeRegisters and twoRegisters. Register " +
+            info.pathName + " has requested offset " + std::to_string(wordOffsetInRegister));
+      }
+      if((numberOfWords != 0) && (numberOfWords != info.nElements)) {
+        throw ChimeraTK::logic_error("SubdeviceBackend: Partial accessors are not supported yet for type "
+                                     "threeRegisters and twoRegisters. Register " +
+            info.pathName + " has requested nElements " + std::to_string(numberOfWords) + " of " +
+            std::to_string(info.nElements));
+      }
+    }
+
     // compute full offset (from map file and function arguments)
     size_t byteOffset = info.address + sizeof(int32_t) * wordOffsetInRegister;
     if(forceAlignment && (byteOffset % 4 != 0)) {
