@@ -53,7 +53,14 @@ namespace ChimeraTK {
     /** Return end iterator for iterating through the registers in the catalogue */
     [[nodiscard]] virtual std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorEnd() const = 0;
 
-    /** Create deep copy of the catalogue */
+    /**
+     * Create deep copy of the catalogue.
+     *
+     * Note for implementations: The actual implementation of clone() should merely create the object of the
+     * right type and then defer to its own fillFromThis() function to actually copy the data. No data shall
+     * be copied directly inside an implementation of clone(), since further derived implementations cannot
+     * use that and would have to duplicate code.
+     */
     [[nodiscard]] virtual std::unique_ptr<BackendRegisterCatalogueBase> clone() const = 0;
   };
 
@@ -139,8 +146,14 @@ namespace ChimeraTK {
     }
 
    protected:
-    /** Helper function for clone functions. It copies/clones the content of the private variables of the
-     *  BackendRegisterCatalogue into the target catalogue. See implementation of the clone() function.
+    /**
+     * Helper function for clone functions. It copies/clones the content of the private variables of the
+     * BackendRegisterCatalogue into the target catalogue. See implementation of the clone() function.
+     *
+     * A function like this shall be defined for each BackendRegisterCatalogue implementation, so its clone()
+     * implementation can defer the data member copying to it, and each fillFromThis() function can defer
+     * to its base class fillFromThis() to fill the base class data members. Define such function even if no
+     * data members are actually added, and just defer to the base class implementation there.
      */
     void fillFromThis(BackendRegisterCatalogue<BackendRegisterInfo>* target) const;
 
