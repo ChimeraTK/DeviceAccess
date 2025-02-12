@@ -21,6 +21,9 @@ namespace ChimeraTK {
     [[nodiscard]] std::pair<bool, int> extractControllerInterrupt(const RegisterPath& registerPathName) const;
 
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
+
+   protected:
+    void fillFromThis(DummyBackendRegisterCatalogue* target) const;
   };
 
   /********************************************************************************************************************/

@@ -142,6 +142,7 @@ namespace ChimeraTK {
     [[nodiscard]] const std::set<std::vector<size_t>>& getListOfInterrupts() const;
 
     void addRegister(const NumericAddressedRegisterInfo& registerInfo);
+
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
    protected:
