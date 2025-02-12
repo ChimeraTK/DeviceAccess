@@ -83,9 +83,13 @@ namespace ChimeraTK {
     std::unique_ptr<BackendRegisterCatalogueBase> c = std::make_unique<DummyBackendRegisterCatalogue>();
     auto* c_impl = dynamic_cast<DummyBackendRegisterCatalogue*>(c.get());
     fillFromThis(c_impl);
-    c_impl->_listOfInterrupts = _listOfInterrupts;
-    c_impl->_canonicalInterrupts = _canonicalInterrupts;
     return c;
+  }
+
+  /********************************************************************************************************************/
+
+  void DummyBackendRegisterCatalogue::fillFromThis(DummyBackendRegisterCatalogue* target) const {
+    NumericAddressedRegisterCatalogue ::fillFromThis(target);
   }
 
   /********************************************************************************************************************/
