@@ -62,14 +62,14 @@ digraph triggered_poll_distributor {
   acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor"];
   acc2 -> vars:var2 [ lhead=cluster_PollDistributor ];
   vars:var2 ->  acc2 [ arrowhead="empty", style="dashed"];
-  
+
   TransferGroup -> NDRegisterAccessor;
   TransferGroup -> NDRegisterAccessor2;
 
   NDRegisterAccessor-> vars:var1 [ arrowhead="none", arrowtail="normal", dir = "back"];
   NDRegisterAccessor2-> vars:var2 [ arrowhead="none", arrowtail="normal", dir = "back"];
-  
-  
+
+
 }
 \enddot
 
@@ -96,7 +96,7 @@ digraph reverse_ownership_scheme {
   b[label=" "]
   a->b[label="weak_ptr", arrowhead="empty", style="dashed"]
   a->b[label="shared_ptr", dir=back]
-  
+
   Backend[color=blue, fontcolor=blue]
   DomainsContainer[color=blue, fontcolor=blue]
   Backend->DomainsContainer[color=blue, fontcolor=blue]
@@ -105,7 +105,7 @@ digraph reverse_ownership_scheme {
   SubDomain -> Domain
   Backend -> Domain[ arrowhead="empty", style="dashed"]
   DomainsContainer -> Domain [ arrowhead="empty", style="dashed"]
-  
+
   secondDomain[label ="Domain\<nullptr_t\>", style="dotted"]
   Backend -> secondDomain[ arrowhead="empty", style="dashed"]
   secondPrimaryDistributor[label ="SubDomain", style="dotted"]
@@ -143,7 +143,7 @@ digraph reverse_ownership_scheme {
   acc2 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
   acc2 -> vars:var2 [ lhead=cluster_PollDistributor ];
   vars:var2 ->  acc2 [ arrowhead="empty", style="dashed"];
-  
+
   TransferGroup -> NDRegisterAccessor;
   TransferGroup -> NDRegisterAccessor2;
 
@@ -182,7 +182,7 @@ digraph reverse_ownership_scheme {
   polledAcc4 [ label="AsyncNDRegisterAccessor" URL="\ref AsyncNDRegisterAccessor", color=green, fontcolor=green];
   polledVars2:polledVar4 -> polledAcc4 [arrowhead="empty", style="dashed"];
   polledVars2:polledVar4 -> polledAcc4 [ label=" ", ltail=cluster_PollDistributor2, dir = "back"];
-  
+
   TransferGroup2 -> NDRegisterAccessor3
   TransferGroup2 -> NDRegisterAccessor4;
 
@@ -208,7 +208,7 @@ digraph reverse_ownership_scheme {
   distrVars2:distrVar4 -> distr2Acc4 [ arrowhead="empty", style="dashed"];
 
   interruptCtrlHdl2 [label="MuxedInterruptDistributor\n...", style="dotted"]
-  
+
   SubDomain2->interruptCtrlHdl2 [ arrowhead="empty", style="dashed"]
   interruptCtrlHdl2->SubDomain2
 }
@@ -224,7 +224,7 @@ digraph reverse_ownership_scheme {
 - Behind each Domain there is exactly one (primary) SubDomain. The SubDomain basically is an adapter to the connected distrubutors (VariableDistributors, TriggeredPollDistributors and MuxedInterruptDistributors).
   Further SubDomains are behind the MuxedInterruptDistributors, one for each sub-interrupt.
 - SubDomains are identified by a qualified (i.e. heirarchical) ID (represented as a std::vector<size_t>). The primary SubDomain ID has a length 1, and for each hierarchy level a number is added. The Domain ID is a number, machting the first entry in the
-  qualifiedAsyncSubDomainID.  (qualifiedAsyncSubDomainID is abbeviated as qualifiedSubDomainID or qualifiedAsyncID, depending on the context).
+  \anchor AsyncNDRegisterAccessor_qualifiedAsyncSubDomainID qualifiedAsyncSubDomainID.  (qualifiedAsyncSubDomainID is abbeviated as qualifiedSubDomainID or qualifiedAsyncID, depending on the context).
   Example: The SubDomain [0,4] is responsible for sub-interrupt 4 in the MuxedInterruptDistributor [0] behind the primay SubDomain [0] in Domain 0 (see \ref design_async_canonical_interrupt_name).
 - The single instance of the DomainsContainter is responsible for distributing exceptions to all Domains. It is always holding weak pointers to the Domains.
 - VariableDistributors and TriggeredPollDistributors are derrived from the AsyncAccessorManager and are holding accessors to the backend to read data or do handshakes (red),
@@ -251,16 +251,16 @@ digraph reverse_ownership_scheme {
   compound=true;
   node [shape=record, fontname=Helvetica, fontsize=10];
   rankdir=LR
-  
+
   Backend[color=blue, fontcolor=blue]
   DomainsContainer[color=blue, fontcolor=blue]
   Backend->DomainsContainer[color=blue, fontcolor=blue]
- 
+
   Domain[label="Domain\<EqData\>", color=blue, fontcolor=blue];
   DomainsContainer -> Domain [ arrowhead="empty", style="dashed"]
 
   Backend->Domain[arrowhead="empty", style="dashed"]
-  
+
   subgraph cluster_distributor1{
    label="VariableDistributor<EqData>" URL="\ref VariableDistributor";
    distrVars1 [ label="<distrVar1>DoocsAsyncVariable|<distrVar2>DoocsAsyncVariable|<distrVarN>..."];
@@ -390,7 +390,7 @@ The AsyncAccessorManager has three main functions:
   setException() in informing that thread that exceptions should be distributed and then returns, such that the
   distribution call which executed setException() can return. The lock in the Domain is freed, and the
   exception distribution thread can get it.
-  
+
 #######################################################################################################################
 \subsection AsyncNDRegisterAccessor_usage Interface for implementing backends
 #######################################################################################################################

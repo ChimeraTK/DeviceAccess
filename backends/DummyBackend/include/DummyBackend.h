@@ -44,7 +44,7 @@ namespace ChimeraTK {
    */
   class DummyBackend : public DummyBackendBase {
    public:
-    explicit DummyBackend(const std::string& mapFileName);
+    explicit DummyBackend(const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor = "");
     ~DummyBackend() override = default;
 
     void open() override;

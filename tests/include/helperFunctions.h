@@ -3,7 +3,6 @@
 #pragma once
 
 #include "DeviceInfoMap.h"
-#include "NumericAddressedRegisterCatalogue.h"
 
 void populateDummyDeviceInfo(ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo, std::string dmapFileName,
     std::string deviceName = "card", std::string dev_file = "/dev/dummy_device_identifier",

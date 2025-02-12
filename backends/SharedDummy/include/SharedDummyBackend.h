@@ -46,7 +46,8 @@ namespace ChimeraTK {
    */
   class SharedDummyBackend : public DummyBackendBase {
    public:
-    SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName);
+    SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName,
+        const std::string& dataConsistencyKeyDescriptor = "");
     ~SharedDummyBackend() override;
 
     void open() override;

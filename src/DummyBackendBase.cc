@@ -5,8 +5,9 @@
 
 namespace ChimeraTK {
 
-  DummyBackendBase::DummyBackendBase(std::string const& mapFileName)
-  : NumericAddressedBackend(mapFileName, std::make_unique<DummyBackendRegisterCatalogue>()) {
+  DummyBackendBase::DummyBackendBase(std::string const& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+  : NumericAddressedBackend(
+        mapFileName, std::make_unique<DummyBackendRegisterCatalogue>(), dataConsistencyKeyDescriptor) {
     // Copy the old vtable
     OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(NumericAddressedBackend, getRegisterAccessor_impl);
   }

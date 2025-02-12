@@ -30,7 +30,7 @@ namespace ChimeraTK {
    */
   class DummyBackendBase : public NumericAddressedBackend {
    public:
-    explicit DummyBackendBase(std::string const& mapFileName);
+    explicit DummyBackendBase(std::string const& mapFileName, const std::string& dataConsistencyKeyDescriptor = "");
 
     ~DummyBackendBase() override = default;
 

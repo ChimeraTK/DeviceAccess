@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "../VersionNumber.h"
 #include "AsyncNDRegisterAccessor.h"
 
 #include <utility>
@@ -135,7 +136,15 @@ namespace ChimeraTK::async {
   class SourceTypedAsyncAccessorManager : public AsyncAccessorManager {
    public:
     using AsyncAccessorManager::AsyncAccessorManager;
-    void distribute(SourceType, VersionNumber version);
+
+    /**
+     * Distribute the given data to the subsribers. Called by the SubDomain in its distribute() and activate()
+     *
+     * The given VersionNumber shall be attached to the data, except in the case of a TriggeredPollDistributor which
+     * might use a DataConsistencyRealm to obtain a different VersionNumber, which it will return in that case. In all
+     * other cases, the same VersionNumber as passed will be returned.
+     */
+    VersionNumber distribute(SourceType, VersionNumber version);
 
     /**
      * Implement this function in case there is a step between setting the source buffer and filling the user buffers.
@@ -177,6 +186,8 @@ namespace ChimeraTK::async {
     // This weak pointer is private so the user cannot bypass correct locking and nullptr-checking.
     boost::weak_ptr<AsyncNDRegisterAccessor<UserType>> _asyncAccessor;
     friend AsyncAccessorManager; // is allowed to set the _asyncAccessor
+
+    VersionNumber _lastSentVersion{nullptr};
   };
 
   /********************************************************************************************************************/
@@ -216,6 +227,13 @@ namespace ChimeraTK::async {
   template<typename UserType>
   void AsyncVariableImpl<UserType>::send() {
     auto subscriber = _asyncAccessor.lock();
+
+    if(_lastSentVersion > _sendBuffer.versionNumber) {
+      throw ChimeraTK::logic_error(std::format("Trying to send decreased version {} < {} on AsyncVariable {}.",
+          _sendBuffer.versionNumber, _lastSentVersion, subscriber->getName()));
+    }
+    _lastSentVersion = _sendBuffer.versionNumber;
+
     if(subscriber.get() != nullptr) { // Solves possible race condition: The subscriber is being destructed.
       subscriber->sendDestructively(_sendBuffer);
     }
@@ -252,9 +270,9 @@ namespace ChimeraTK::async {
   }
   /********************************************************************************************************************/
   template<typename SourceType>
-  void SourceTypedAsyncAccessorManager<SourceType>::distribute(SourceType data, VersionNumber version) {
+  VersionNumber SourceTypedAsyncAccessorManager<SourceType>::distribute(SourceType data, VersionNumber version) {
     if(!_asyncDomain->unsafeGetIsActive()) {
-      return;
+      return version;
     }
 
     _sourceBuffer = data;
@@ -273,6 +291,8 @@ namespace ChimeraTK::async {
       }
       _delayedUnsubscriptions.clear();
     }
+
+    return _version;
   }
 
 } // namespace ChimeraTK::async

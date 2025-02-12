@@ -19,8 +19,10 @@
 
 namespace ChimeraTK {
 
-  SharedDummyBackend::SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName)
-  : DummyBackendBase(mapFileName), _mapFile(mapFileName), _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()) {
+  SharedDummyBackend::SharedDummyBackend(
+      const std::string& instanceId, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName),
+    _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()) {
   retry:
     try {
       sharedMemoryManager = std::make_unique<SharedMemoryManager>(*this, instanceId, mapFileName);
@@ -137,7 +139,8 @@ namespace ChimeraTK {
     // dmap file is relative to the dmap file location. Converting the relative
     // mapFile path to an absolute path avoids issues when the dmap file is not
     // in the working directory of the application.
-    return returnInstance<SharedDummyBackend>(address, address, convertPathRelativeToDmapToAbs(mapFileName));
+    return returnInstance<SharedDummyBackend>(
+        address, address, convertPathRelativeToDmapToAbs(mapFileName), parameters["DataConsistencyKey"]);
   }
 
   std::string SharedDummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
