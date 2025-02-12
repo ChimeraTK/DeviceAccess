@@ -4,7 +4,9 @@
 
 #include "../TransferGroup.h"
 #include "AsyncAccessorManager.h"
+#include "DataConsistencyRealm.h"
 #include "MuxedInterruptDistributor.h"
+#include "../ScalarRegisterAccessor.h"
 
 #include <memory>
 
@@ -25,9 +27,17 @@ namespace ChimeraTK::async {
     template<typename UserType>
     std::unique_ptr<AsyncVariable> createAsyncVariable(AccessorInstanceDescriptor const& descriptor);
 
+    VersionNumber getVersion() const { return _version; }
+
+    bool getForceFaulty() const { return _forceFaulty; }
+
    protected:
     TransferGroup _transferGroup;
     boost::shared_ptr<SubDomain<std::nullptr_t>> _parent;
+    std::shared_ptr<DataConsistencyRealm> _dataConsistencyRealm;
+    ScalarRegisterAccessor<DataConsistencyKey::BaseType> _dataConsistencyKeyAccessor;
+    bool _forceFaulty{false};
+    VersionNumber _lastVersion{nullptr};
   };
 
   /********************************************************************************************************************/
@@ -38,17 +48,19 @@ namespace ChimeraTK::async {
   struct PolledAsyncVariable : public AsyncVariableImpl<UserType> {
     void fillSendBuffer() final;
 
-    /** The constructor takes an already created synchronous accessor and a reference to the version variable.
-     */
-    explicit PolledAsyncVariable(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, VersionNumber& v);
+    /// The constructor takes an already created synchronous accessor and a reference to the owing distributor
+    explicit PolledAsyncVariable(
+        boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, TriggeredPollDistributor& owner);
 
-    boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor;
-    VersionNumber& _version;
+    unsigned int getNumberOfChannels() override { return _syncAccessor->getNumberOfChannels(); }
+    unsigned int getNumberOfSamples() override { return _syncAccessor->getNumberOfSamples(); }
+    const std::string& getUnit() override { return _syncAccessor->getUnit(); }
+    const std::string& getDescription() override { return _syncAccessor->getDescription(); }
 
-    unsigned int getNumberOfChannels() override { return syncAccessor->getNumberOfChannels(); }
-    unsigned int getNumberOfSamples() override { return syncAccessor->getNumberOfSamples(); }
-    const std::string& getUnit() override { return syncAccessor->getUnit(); }
-    const std::string& getDescription() override { return syncAccessor->getDescription(); }
+   protected:
+    boost::shared_ptr<NDRegisterAccessor<UserType>> _syncAccessor;
+
+    TriggeredPollDistributor& _owner;
   };
 
   /********************************************************************************************************************/
@@ -74,22 +86,22 @@ namespace ChimeraTK::async {
     }
 
     _transferGroup.addAccessor(syncAccessor);
-    return std::make_unique<PolledAsyncVariable<UserType>>(syncAccessor, _version);
+    return std::make_unique<PolledAsyncVariable<UserType>>(syncAccessor, *this);
   }
 
   /********************************************************************************************************************/
   template<typename UserType>
   void PolledAsyncVariable<UserType>::fillSendBuffer() {
-    this->_sendBuffer.versionNumber = _version;
-    this->_sendBuffer.dataValidity = syncAccessor->dataValidity();
-    this->_sendBuffer.value.swap(syncAccessor->accessChannels());
+    this->_sendBuffer.versionNumber = _owner.getVersion();
+    this->_sendBuffer.dataValidity = !_owner.getForceFaulty() ? _syncAccessor->dataValidity() : DataValidity::faulty;
+    this->_sendBuffer.value.swap(_syncAccessor->accessChannels());
   }
 
   /********************************************************************************************************************/
   template<typename UserType>
   PolledAsyncVariable<UserType>::PolledAsyncVariable(
-      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, VersionNumber& v)
+      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, TriggeredPollDistributor& owner)
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
-    syncAccessor(syncAccessor_), _version(v) {}
+    _syncAccessor(syncAccessor_), _owner(owner) {}
 
 } // namespace ChimeraTK::async

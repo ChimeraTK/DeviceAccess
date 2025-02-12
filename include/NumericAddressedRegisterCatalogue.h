@@ -145,7 +145,17 @@ namespace ChimeraTK {
 
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
+    [[nodiscard]] std::shared_ptr<async::DataConsistencyRealm> getDataConsistencyRealm(
+        const std::vector<size_t>& qualifiedAsyncDomainId) const override;
+
+    [[nodiscard]] RegisterPath getDataConsistencyKeyRegisterPath(
+        const std::vector<size_t>& qualifiedAsyncDomainId) const override;
+
+    void addDataConsistencyRealm(const RegisterPath& registerPath, const std::string& realmName);
+
    protected:
+    void fillFromThis(NumericAddressedRegisterCatalogue* target) const;
+
     /**
      *  set of interrupt IDs. Each interrupt ID is a vector of (hierarchical) interrupt numbers.
      *  (Use a vector because it's the easiest container, and set because it ensures that each entry is there only once).
@@ -162,6 +172,11 @@ namespace ChimeraTK {
      *  primary interrupt `!3`.
      */
     std::map<RegisterPath, std::vector<size_t>> _canonicalInterrupts;
+
+    /**
+     * Map of data consistency key register paths to realm names
+     */
+    std::map<RegisterPath, std::string> _dataConsistencyRealms;
   };
 
   /********************************************************************************************************************/

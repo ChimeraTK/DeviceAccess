@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "NumericAddressedRegisterCatalogue.h"
+
+#include "async/DataConsistencyRealmStore.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
@@ -296,6 +299,49 @@ namespace ChimeraTK {
     BackendRegisterCatalogue<NumericAddressedRegisterInfo>::fillFromThis(target);
     target->_listOfInterrupts = _listOfInterrupts;
     target->_canonicalInterrupts = _canonicalInterrupts;
+    target->_dataConsistencyRealms = _dataConsistencyRealms;
+  }
+
+  /********************************************************************************************************************/
+
+  void NumericAddressedRegisterCatalogue::addDataConsistencyRealm(
+      const RegisterPath& registerPath, const std::string& realmName) {
+    _dataConsistencyRealms[registerPath] = realmName;
+  }
+
+  /********************************************************************************************************************/
+
+  std::shared_ptr<async::DataConsistencyRealm> NumericAddressedRegisterCatalogue::getDataConsistencyRealm(
+      const std::vector<size_t>& qualifiedAsyncDomainId) const {
+    if(qualifiedAsyncDomainId.empty()) {
+      return {};
+    }
+
+    // iterate _dataConsistencyRealms and check if the registerPath matches the qualifiedAsyncDomainId
+    for(auto const& [registerPath, realmName] : _dataConsistencyRealms) {
+      if(getBackendRegister(registerPath).getQualifiedAsyncId() == qualifiedAsyncDomainId) {
+        auto& store = async::DataConsistencyRealmStore::getInstance();
+        return store.getRealm(realmName);
+      }
+    }
+    return {};
+  }
+
+  /********************************************************************************************************************/
+
+  RegisterPath NumericAddressedRegisterCatalogue::getDataConsistencyKeyRegisterPath(
+      const std::vector<size_t>& qualifiedAsyncDomainId) const {
+    if(qualifiedAsyncDomainId.empty()) {
+      return {};
+    }
+
+    // iterate _dataConsistencyRealms and check if the registerPath matches the qualifiedAsyncDomainId
+    for(auto const& [registerPath, realmName] : _dataConsistencyRealms) {
+      if(getBackendRegister(registerPath).getQualifiedAsyncId() == qualifiedAsyncDomainId) {
+        return registerPath;
+      }
+    }
+    return {};
   }
 
   /********************************************************************************************************************/

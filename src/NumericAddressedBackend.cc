@@ -11,18 +11,35 @@
 #include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  NumericAddressedBackend::NumericAddressedBackend(
-      const std::string& mapFileName, std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer)
+  NumericAddressedBackend::NumericAddressedBackend(const std::string& mapFileName,
+      std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer,
+      const std::string& dataConsistencyKeyDescriptor)
   : _registerMapPointer(std::move(registerMapPointer)), _registerMap(*_registerMapPointer) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(!mapFileName.empty()) {
       MapFileParser parser;
       std::tie(_registerMap, _metadataCatalogue) = parser.parse(mapFileName);
+    }
+    if(!dataConsistencyKeyDescriptor.empty()) {
+      // parse as JSON
+      try {
+        auto jdescr = nlohmann::json::parse(dataConsistencyKeyDescriptor);
+        for(const auto& el : jdescr.items()) {
+          _registerMap.addDataConsistencyRealm(el.key(), el.value());
+        }
+      }
+      catch(json::parse_error& e) {
+        throw ChimeraTK::logic_error(std::format("Parsing DataConsistencyKeys parameter '{}' results in JSON error: {}",
+            dataConsistencyKeyDescriptor, e.what()));
+      }
     }
   }
 

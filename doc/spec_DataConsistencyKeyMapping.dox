@@ -1,0 +1,429 @@
+namespace ChimeraTK { namespace async {
+/**
+\page spec_DataConsistencyKeyMapping Technical specification: Mapping of DataConsistencyKeys to VersionNumbers V0.0WIP
+
+## A. Introduction ##
+
+The DataConsistencyGroup allows to ensure consistency of the values read through different accessors. For this matching, the VersionNumber is used as a key. The VersionNumber is only valid within the same ChimeraTK application process, so when transporting data via a DeviceBackend, the VersionNumbers have to be mapped to/from some other key, such as the DOOCS Event ID or a timestamp. This key can either be shipped as metadata attached to the payload data, if this is foreseen in the protocol (as e.g. in the case of DOOCS), or it may be shipped in a separate register (as e.g. in case of an XDMA device with an interrupt).
+
+In this document, the exact behaviour of this mapping is specified and the architecture of the implementation is laid out. Please note, only the read direction is for now covered by the implementation and this specification.
+
+Note: Albeit gramatically incorrect, plural forms of class names are written with apostrophes throughout this document, so the class name is properly highlighted by Doxygen and linked to the class documentation.
+
+## B. Behavioural specification ##
+
+- 1. The DataConsistencyRealm is a mapping of DataConsistencyKey to VersionNumber
+  - 1.2 It has a name used to identify the DataConsistencyRealm, which may consist of alphanumeric characters only.
+  - 1.3. Each entity (backend, accessor etc.) which needs to map an incoming DataConsistencyKey to a VersionNumber needs to get the appropriate DataConsistencyRealm from the DataConsistencyRealmStore singleton.
+  - 1.4. All entities whose incoming DataConsistencyKey's have values which are comparable to each other (c.f. \ref dataConsistencyKeyMapping_B_2 "B.2") shall use the same DataConsistencyRealm to ensure consistency across entities.
+
+- 2. \anchor dataConsistencyKeyMapping_B_2  The DataConsistencyKey is a uint64_t value which is used as a key value.
+  - 2.2. The value is a key for sorting incoming data, also across different registers and even devices using the same DataConsistencyRealm, in time.
+    - 2.2.1 Older data has smaller DataConsistencyKey's and will be attached with a smaller VersionNumber.
+    - 2.2.2 Newer data has greater DataConsistencyKey's and will be attached with a greater VersionNumber.
+    - 2.2.3 Data with identical DataConsistencyKey's is considered to be consistent and will be attached with the same VersionNumber.
+    - 2.3.4 DataConsistencyKey's need to be approximately consecutive, with no big gaps between consecutivly incoming data.
+
+- 3. DataConsistencyKey <=> ChimeraTK::VersionNumber mapping (in the DataConsistencyRealm)
+
+  - Requirements from other specifications:
+    - No VersionNumber{nullptr} is given out after the first successful transfer. (FIXME Reference)
+    - All version numbers must not be older than the global version number at the time DeviceBackend::open() was called. (FIXME Reference)
+    - VersionNumber's are never decreasing in the same TransferElement. (FIXME Reference)
+
+  - 3.1 A DataConsistencyRealm is used across all backend instances to allow consistent VersionNumbers across backends
+   - 3.1.1 \anchor DataConsistencyKeyMapping_B_3_1_1  The VersionNumber for \c DataConsistencyKey=0 is always VersionNumber{nullptr}. It is not added to the map.
+   - 3.1.2 If a DataConsistencyKey is in the map, the according VersionNumber is returned by the realm.
+   - 3.1.3 If a DataConsistencyKey is newer than the newest entry in the map, a new VersionNumber is generated and it is added to the map.
+     - 3.1.3.1 \anchor DataConsistencyKeyMapping_B_3_1_3_1  The size of the map is limited to avoid infitely increasing memory for long-running servers
+       - 3.1.3.1.1 If the map has reached the maximum size, the oldest entries are removed
+       - 3.1.3.1.2 \anchor DataConsistencyKeyMapping_B_3_1_3_1_2  If a DataConsistencyKey is older that the oldest entry in the map, VersionNumber{nullptr} is returned
+       - 3.1.3.1.3 Optional extension: The size can be configured via the CDD. TBD: How to deal with conflicting sizes? Take the maximum?
+     - 3.1.3.2 \anchor DataConsistencyKeyMapping_B_3_1_3_2  Whenever a new DataConsistencyKey is added to the map, all DataConsistencyKey's between the newest DataConsistencyKey in the map and the incoming DataConsistencyKey are added to the map as well. This guarantees that a larger DataConsistencyKey always has a larger VersionNumber, even if DataConsistencyKey's are not created in increasing order. \ref DataConsistencyKeyMapping_comment_B_3_1_3_2 "(*)"
+     - 3.1.3.3 If the first DataConsistencyKey is added to the still-empty map, the map is filled with keys before the incoming key, up to the maximum size of the map acording to \ref DataConsistencyKeyMapping_B_3_1_3_1 "3.1.3.1".
+ 3.1.4 \anchor DataConsistencyKeyMapping_B_3_1_4 As described in \ref DataConsistencyKeyMapping_B_3_1_1 "3.1.1" and \ref DataConsistencyKeyMapping_B_3_1_3_1_2 "3.1.3.1.2", the realm may hand out VersionNumber{nullptr}, which must never be written to a TransferElement. \ref DataConsistencyKeyMapping_B_3_3_3_1 "3.3.3.1" and \ref DataConsistencyKeyMapping_B_3_3_3_2 "3.3.3.2" describe how this is ensured. For these data matching via the DataConsistencyGroup may not be possible or lead to false matches.
+
+  - 3.2 \anchor DataConsistencyKeyMapping_B_3_2  When DeviceBackend::open() is called, a startVersionNumber is created.
+    - 3.2.1 \anchor DataConsistencyKeyMapping_B_3_2_1  No version number smaller than the startVersionNumber is handed out from this point in time.
+    - 3.2.2 It is the responsibility of each backend implementation to do this correct. The NumericAddressedBackend will already take care of this.
+
+  - 3.3 RegisterAccessors get the VersionNumber from the DataConsistencyRealm, according to the incoming DataConsistencyKey
+    - 3.3.1 Each TransferElement implementation needs to store the last used VersionNumber.
+    - 3.3.2 If the incoming DataConsistencyKey results in a smaller VersionNumber than last used:
+      - the last used VersionNumber is attached to the data
+      - DataValidity is set to DataValidity::faulty
+    - 3.3.3 If the incoming DataConsistencyKey results in a VersionNumber larger or equal to the last used VersionNumber:
+      - 3.3.3.1 \anchor DataConsistencyKeyMapping_B_3_3_3_1  If that incoming VersionNumber is smaller than the startVersionNumber (see \ref DataConsistencyKeyMapping_B_3_2 "3.2"), the startVersionNumber is used instead (c.f. \ref DataConsistencyKeyMapping_B_3_2_1 "3.2.1"). This does not set the DataValidity to DataValidity::faulty. \ref DataConsistencyKeyMapping_comment_B_3_3_3_1 "(*)"
+      - 3.3.3.2 \anchor DataConsistencyKeyMapping_B_3_3_3_2  If the \c max(incomingVersionNumber,startVersionNumber) is smaller than the last used VersionNumber:
+        - the last used VersionNumber is attached to the data
+        - DataValidity is set to DataValidity::faulty
+
+
+### Comments ###
+
+- \anchor DataConsistencyKeyMapping_comment_B_3_1_3_2 \ref DataConsistencyKeyMapping_B_3_1_3_2 "3.1.3.2"  This can happen since the first time a particular key is encountered may happen on different variables and even backends each time.
+- \anchor DataConsistencyKeyMapping_comment_B_3_1_4 \ref DataConsistencyKeyMapping_B_3_1_4 "3.1.4" Giving out a VersionNumber{nullptr} would violate the DeviceAccess TransferElement specification.
+- \anchor DataConsistencyKeyMapping_comment_B_3_3_3_1 \ref DataConsistencyKeyMapping_B_3_3_3_1 "3.3.3.1" This is the case for VersionNumber{nullptr} and valid VersionNumber's which have been created before calling open() of the backend.
+
+
+
+## C. Implementation for the AsyncNDRegisterAccessor ##
+
+The following diagram shows the integration of the DataConsistencyRealm with the AsyncNDRegisterAccessor and AsyncAccessorManager concept. The diagram is not complete and shows only the relevant parts. New classes and new or modified class members are shown in red.
+
+(Hint: Hover the mouse cursor over edge labels "see tooltip" to show the description.)
+
+
+\dot
+  //
+  // Legend
+  //
+  digraph Legend {
+
+    label = "Legend"
+    fontname = "sans"
+    fontsize = 8
+    splines = false
+
+    node [
+      fontname = "sans"
+      fontsize = 8
+      shape = "rect"
+    ]
+
+    edge [
+      fontname = "sans"
+      fontsize = 8
+    ]
+
+    child1 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+    child2 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+    child3 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+    child4 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+    parent1 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+    parent2 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+    parent3 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+    parent4 [ label="", fixedsize=true, width=0.2, height=0.2 ]
+
+    { rank="same"; child1 ; child2 ; child3 ; child4 ; parent1 ; parent2 ; parent3 ; parent4 }
+
+    child1 -> parent1 [arrowhead=diamond, taillabel="shared_ptr", labelangle=12, labeldistance=3, minlen=4]
+    child2 -> parent2 [arrowhead=odiamond, taillabel="weak_ptr", labelangle=12, labeldistance=3, minlen=4]
+    child3 -> parent3 [arrowhead=empty, taillabel="inheritance", labelangle=12, labeldistance=3, minlen=4]
+    child4 -> parent4 [style=dashed, arrowhead=open, taillabel="use", labelangle=12, labeldistance=3, minlen=4]
+
+    parent1 -> child2 [style=invis]
+    parent2 -> child3 [style=invis]
+    parent3 -> child4 [style=invis]
+  }
+\enddot
+
+\dot
+digraph "DataConsistencyRealm design" {
+
+  fontname = "sans"
+  fontsize = 8
+  //splines = false
+
+  node [
+    fontname = "sans"
+    fontsize = 8
+    shape = "plaintext"
+  ]
+
+  edge [
+    fontname = "sans"
+    fontsize = 8
+  ]
+
+  // define nodes
+
+  DataConsistencyRealmStore [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>DataConsistencyRealmStore</td></tr>
+              <tr><td align="left">-realms : map&lt;string, weak_ptr&lt;DataConsistencyRealm&gt;&gt;</td></tr>
+              <tr><td align="left">+getInstance() : DataConsistencyRealmStore&amp;<br align="left"/>+getRealmById(string realmName) : shared_ptr&lt;DataConsistencyRealm&gt;<br align="left"/></td></tr>
+            </table>>,
+    URL = "class_chimera_t_k_1_1async_1_1_data_consistency_realm_store.html",
+    color = "red", fontcolor = "red"
+  ]
+
+  SomeNonNumericAddressedBackend [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>SomeNonNumericAddressedBackend</td></tr>
+              <tr><td align="left"><font color="red">-TimestampToDataConsistencyKeyConverter configuration, coming from CDD?</font></td></tr>
+              <tr><td align="left"><font color="red">-handleEvent() &lt;&lt;exact structure depends on backend&gt;&gt;<br align="left"/>~getTimestampToDataConsistencyKeyConverter() : TimestampToDataConsistencyKeyConverter&amp;<br align="left"/></font></td></tr>
+            </table>>
+  ]
+
+  DataConsistencyKey [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>DataConsistencyKey</td></tr>
+              <tr><td align="left">-key : uint64_t</td></tr>
+              <tr><td align="left">&lt;&lt;implicit conversion to/from uint64_t&gt;&gt;</td></tr>
+            </table>>,
+    URL = "class_chimera_t_k_1_1async_1_1_data_consistency_key.html",
+    color = "red", fontcolor = "red"
+  ]
+
+  DataConsistencyRealm [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>DataConsistencyRealm</td></tr>
+              <tr><td align="left">-map : std::map&lt;uint64_t, VersionNumber&gt;</td></tr>
+              <tr><td align="left">+getVersion(DataConsistencyKey dataConsistencyKey) : VersionNumber</td></tr>
+            </table>>,
+    URL = "class_chimera_t_k_1_1async_1_1_data_consistency_realm.html",
+    color = "red", fontcolor = "red"
+  ]
+
+  NumericAddressedBackend [ shape=rect,
+    label = "NumericAddressedBackend & friends",
+    URL = "class_chimera_t_k_1_1_numeric_addressed_backend.html"
+  ]
+
+  TimestampToDataConsistencyKeyConverter [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>TimestampToDataConsistencyKeyConverter</td></tr>
+              <tr><td align="left">configuration, to be defined</td></tr>
+              <tr><td align="left">+convert(const std::chrono::time_point&lt;???&gt; &amp;timeStamp) : DataConsistencyKey</td></tr>
+            </table>>,
+    color = "red", fontcolor = "red"
+  ]
+
+  BackendSpecificNonVoidAsyncVariable [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>BackendSpecificNonVoidAsyncVariable&lt;SourceType&gt;</td></tr>
+              <tr><td align="left"> </td></tr>
+              <tr><td align="left">+fillSendBuffer &lt;&lt;override&gt;&gt;</td></tr>
+            </table>>
+  ]
+
+  DataConsistencyRealmToAsyncVariable [ style=invis, width=0.01, fixedsize=true, label="" ]
+
+  PolledAsyncVariable [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>PolledAsyncVariable</td></tr>
+              <tr><td align="left"> </td></tr>
+              <tr><td align="left">+fillSendBuffer &lt;&lt;override&gt;&gt;</td></tr>
+            </table>>,
+    URL = "class_chimera_t_k_1_1async_1_1_polled_async_variable.html"
+  ]
+
+  NumericAddressedRegisterCatalogue [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>NumericAddressedRegisterCatalogue</td></tr>
+              <tr><td align="left"><font color="red">-dataConsistencyRealmIdMap : map&lt;vector&lt;size_t&gt;, string&gt; // QualifiedAsyncDomainId -&gt; DataConsistencyRealmName</font></td></tr>
+              <tr><td align="left"><font color="red">+getDataConsistencyRealm(vector&lt;size_t&gt;  qualifiedAsyncDomainId) : shared_ptr&lt;DataConsistencyRealm&gt; &lt;&lt;override&gt;&gt;<br align="left"/>+getDataConsistencyKeyRegisterPath(vector&lt;size_t&gt;  qualifiedAsyncDomainId) : RegisterPath &lt;&lt;override&gt;&gt;<br align="left"/></font></td></tr>
+            </table>>,
+    URL = "class_chimera_t_k_1_1_backend_register_catalogue_base.html"
+  ]
+
+  BackendRegisterCatalogueBase [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>BackendRegisterCatalogueBase / BackendRegisterCatalogue&lt;...&gt;</td></tr>
+              <tr><td align="left"></td></tr>
+              <tr><td align="left"><font color="red">+getDataConsistencyRealm(vector&lt;size_t&gt;  qualifiedAsyncDomainId) : shared_ptr&lt;DataConsistencyRealm&gt;<br align="left"/>+getDataConsistencyKeyRegisterPath(vector&lt;size_t&gt;  qualifiedAsyncDomainId) : RegisterPath<br align="left"/></font></td></tr>
+            </table>>,
+    URL = "class_chimera_t_k_1_1_backend_register_catalogue_base.html"
+  ]
+
+  AsyncNDRegisterAccessor [ shape=rect, label = "AsyncNDRegisterAccessor" ]
+
+  AsyncVariable [ shape=rect, label = "AsyncVariable" ]
+
+  VariableDistributor [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>VariableDistributor&lt;SourceType&gt;</td></tr>
+              <tr><td align="left"> </td></tr>
+              <tr><td align="left">+createAsyncVariable&lt;UserType&gt;(AccessorInstanceDescriptor descriptor) : unique_ptr&lt;AsyncVariable&gt;</td></tr>
+            </table>>
+  ]
+
+  AsyncVariableToAsyncAccessorManager [ style=invis, width=0.01, fixedsize=true, label="" ]
+
+  TriggeredPollDistributor [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>TriggeredPollDistributor</td></tr>
+              <tr><td align="left">-qualifiedAsyncDomainId : vector&lt;size_t&gt; &lt;&lt;queried from owning async::SubDomain&gt;&gt;</td></tr>
+              <tr><td align="left">+createAsyncVariable&lt;UserType&gt;(AccessorInstanceDescriptor descriptor) : unique_ptr&lt;AsyncVariable&gt;<br align="left"/><font color="red">+prepareIntermediateBuffers() &lt;&lt;override&gt;&gt;</font><br align="left"/></td></tr>
+            </table>>
+  ]
+
+  AsyncAccessorManager [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>AsyncAccessorManager / SourceTypedAsyncAccessorManager</td></tr>
+              <tr><td align="left">-asyncVariables : map&lt;TransferElementId, AsyncVariable&gt;</td></tr>
+              <tr><td align="left">+subscribe(...) : ...<br align="left"/><font color="red">+distribute(SourceType data) : VersionNumber</font><br align="left"/>+prepareIntermediateBuffers() &lt;&lt;abstract&gt;&gt;<br align="left"/></td></tr>
+            </table>>
+  ]
+
+  SubDomain [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>SubDomain&lt;SourceType&gt;</td></tr>
+              <tr><td align="left"> </td></tr>
+              <tr><td align="left"><font color="red">+distribute(SourceType, VersionNumber v)</font></td></tr>
+            </table>>
+  ]
+
+  Domain [ margin=0,
+    label = <<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td>Domain / DomainImpl</td></tr>
+              <tr><td align="left"> </td></tr>
+              <tr><td align="left">+distribute(SourceType data, VersionNumber version={nullptr}) : VersionNumber</td></tr>
+            </table>>
+  ]
+
+
+  //
+  // Force ranks and order within rank
+  //
+
+  { rank="same"; DataConsistencyRealmStore ; NumericAddressedBackend }
+  DataConsistencyRealmStore -> NumericAddressedBackend [style=invis]
+
+  { rank="same" ; SomeNonNumericAddressedBackend ; DataConsistencyKey ; DataConsistencyRealm ; NumericAddressedRegisterCatalogue }
+  SomeNonNumericAddressedBackend->DataConsistencyKey->DataConsistencyRealm->NumericAddressedRegisterCatalogue [style=invis]
+
+  { rank="same" ; TimestampToDataConsistencyKeyConverter ; BackendSpecificNonVoidAsyncVariable ; DataConsistencyRealmToAsyncVariable ; PolledAsyncVariable ; BackendRegisterCatalogueBase }
+  TimestampToDataConsistencyKeyConverter->BackendSpecificNonVoidAsyncVariable->DataConsistencyRealmToAsyncVariable->PolledAsyncVariable->BackendRegisterCatalogueBase [style=invis]
+
+  invisD1[style=invis, width=0.01, fixedsize=true, label=""]
+  invisD2[style=invis, width=0.01, fixedsize=true, label=""]
+
+  { rank="same" ; AsyncNDRegisterAccessor ; invisD1 ; invisD2 ; AsyncVariable }
+  AsyncNDRegisterAccessor -> invisD1 -> invisD2 -> AsyncVariable [style=invis]
+
+  { rank="same" ; VariableDistributor ; AsyncVariableToAsyncAccessorManager ; TriggeredPollDistributor }
+  VariableDistributor -> AsyncVariableToAsyncAccessorManager -> TriggeredPollDistributor [style=invis]
+
+
+  //
+  // Invisible edges for layout purposes
+  //
+  DataConsistencyRealmStore -> SomeNonNumericAddressedBackend [style=invis]
+  DataConsistencyRealmStore -> DataConsistencyKey [style=invis]
+  DataConsistencyRealmStore -> DataConsistencyRealm [style=invis]
+  DataConsistencyRealm -> DataConsistencyKey [style=invis]
+  DataConsistencyRealmStore -> SomeNonNumericAddressedBackend [style=invis]
+
+  SubDomain -> Domain [style=invis]
+  AsyncAccessorManager -> SubDomain [style=invis]
+  AsyncVariable -> AsyncVariableToAsyncAccessorManager [style=invis, weight=10]
+  AsyncVariableToAsyncAccessorManager -> AsyncAccessorManager [style=invis, weight=10]
+  AsyncVariable -> VariableDistributor [style=invis]
+  AsyncVariable -> TriggeredPollDistributor [style=invis]
+  BackendSpecificNonVoidAsyncVariable -> AsyncVariable [style=invis]
+  PolledAsyncVariable -> AsyncVariable [style=invis]
+  DataConsistencyRealmToAsyncVariable -> AsyncVariable [style=invis]
+  DataConsistencyRealm ->   DataConsistencyRealmToAsyncVariable [style=invis]
+  DataConsistencyKey -> BackendSpecificNonVoidAsyncVariable [style=invis]
+  DataConsistencyRealm -> BackendSpecificNonVoidAsyncVariable [style=invis]
+  DataConsistencyRealm -> PolledAsyncVariable [style=invis]
+
+  NumericAddressedBackend -> BackendRegisterCatalogueBase [style=invis]
+  BackendRegisterCatalogueBase -> TriggeredPollDistributor [style=invis]
+
+  AsyncNDRegisterAccessor -> VariableDistributor [style=invis]
+  AsyncNDRegisterAccessor -> TriggeredPollDistributor [style=invis]
+  SomeNonNumericAddressedBackend -> AsyncNDRegisterAccessor [style=invis]
+  SomeNonNumericAddressedBackend -> TimestampToDataConsistencyKeyConverter [style=invis]
+  SomeNonNumericAddressedBackend -> BackendSpecificNonVoidAsyncVariable [style=invis]
+  TimestampToDataConsistencyKeyConverter -> AsyncNDRegisterAccessor [style=invis, weight=20]
+
+  //
+  // define ownership (shared_ptr, data member etc.) and references (weak_ptr, plain pointer/reference etc.)
+  //
+  SubDomain -> Domain [arrowhead=odiamond]
+  AsyncAccessorManager -> SubDomain [arrowhead=odiamond]
+
+  AsyncAccessorManager -> AsyncVariable [dir=back, arrowtail=diamond]
+
+  TriggeredPollDistributor -> DataConsistencyRealm [dir=back, arrowtail=diamond]
+  TriggeredPollDistributor -> SubDomain [dir=back, arrowtail=diamond]
+
+  AsyncVariable -> AsyncNDRegisterAccessor [arrowhead=diamond]
+  AsyncNDRegisterAccessor -> AsyncAccessorManager [dir=back, arrowtail=diamond]
+  AsyncNDRegisterAccessor -> Domain [dir=back, arrowtail=diamond]
+  SomeNonNumericAddressedBackend -> Domain [dir=back, arrowtail=diamond]
+  Domain -> NumericAddressedBackend [arrowhead=diamond]
+
+  DataConsistencyRealm -> DataConsistencyRealmStore [arrowhead=odiamond]
+
+
+  //
+  // define inheritance
+  //
+  BackendSpecificNonVoidAsyncVariable -> AsyncVariable [arrowhead=empty]
+  PolledAsyncVariable -> AsyncVariable [arrowhead=empty]
+
+  VariableDistributor -> AsyncAccessorManager [arrowhead=empty, weight=5]
+  TriggeredPollDistributor -> AsyncAccessorManager [arrowhead=empty, weight=5]
+
+  NumericAddressedRegisterCatalogue -> BackendRegisterCatalogueBase [dir=back, arrowtail=empty]
+
+  //
+  // define use
+  //
+  DataConsistencyRealm -> DataConsistencyKey [style=dashed, arrowhead=open]
+
+  NumericAddressedBackend -> NumericAddressedRegisterCatalogue [style=dashed, arrowhead=open, label="see tooltip", labeltooltip="writes realm information from map file and CDD"]
+
+  DataConsistencyRealmStore -> NumericAddressedRegisterCatalogue [dir=back, style=dashed, arrowtail=open]
+
+  VariableDistributor -> BackendSpecificNonVoidAsyncVariable [style=dashed, arrowhead=open, label="creates instances"]
+
+  BackendRegisterCatalogueBase -> TriggeredPollDistributor [dir=back, style=dashed, arrowtail=open]
+
+  TriggeredPollDistributor -> DataConsistencyRealm [style=dashed, arrowhead=open, label="see tooltip", labeltooltip="calls getVersion() in prepareIntermediateBuffers()"]
+
+  TriggeredPollDistributor -> PolledAsyncVariable [style=dashed, arrowhead=open, label="creates instances"]
+
+  SubDomain -> TriggeredPollDistributor [style=dashed, arrowhead=open, label="see tooltip", labeltooltip="distribute(), returns VersionNumber\nfrom DataConsistencyRealm::getVersion()"]
+
+  SubDomain -> Domain [dir=back, style=dashed, arrowtail=open, headlabel="distribute()", labeldistance=3.0, labelangle=-60]
+
+  SomeNonNumericAddressedBackend -> Domain [style=dashed, arrowhead=open, label="see tooltip", labeltooltip="calls distribute() in handleEvent() etc.\npass VersionNumber from DataConsistencyRealm::getVersion()"]
+
+  SomeNonNumericAddressedBackend -> DataConsistencyRealm [style=dashed, arrowhead=open, label="see tooltip", labeltooltip="calls getVersion() in handleEvent()"]
+
+  SomeNonNumericAddressedBackend -> TimestampToDataConsistencyKeyConverter [style=dashed, arrowhead=open, label="see tooltip", labeltooltip="(optional)"]
+
+
+}
+\enddot
+
+
+
+- 1. The global singleton DataConsistencyRealmStore is the factory for the DataConsistencyRealm's.
+  - 1.1. The DataConsistencyRealmStore will keep track of the created DataConsistencyRealm's internally, so it hands out the same DataConsistencyRealm for the same realmName, as long as the realm still exists.
+  - 1.2. The DataConsistencyRealmStore stores only weak_ptr of the realm objects. If a realm is no longer used, it will be cleaned up (so the VersionNumber mapping is forgotten).
+
+- 2. Backends, like the DoocsBackend (called "SomeNonNumericAddressedBackend" in the above graph), which have their DataConsistencyKey value shipped together with the payload data in their protocol, need to obey the following rules in their event handler (called `handleEvent()` in the above graph, although the naming and structure may be vastly different for actual implementations):
+  - 2.1. Such backends will typically use a fixed realm name, which should clearly refer to the protocol (e.g. "DoocsEventId" in case of the DoocsBackend).
+    - 2.1.1. The realm name should be overrideable through a CDD parameter.
+  - 2.2. The event handler needs to extract the DataConsistencyKey from incoming data when an event is received.
+  - 2.3. It shall then translate the key into the corresponding VersionNumber through the DataConsistencyRealm, and pass the VersionNumber to async::DomainImpl::distribute().
+
+- 3. Backends, like the NumericAddressedBackend, which are using the poll mechanism of the \ref design_AsyncNDRegisterAccessor_NumericAddressed "AsyncNDRegisterAccessor concept" (i.e. the TriggeredPollDistributor), need to provide the necessary information through the catalogue and can otherwise rely on the framework implementation:
+  - 3.1. The BackendRegisterCatalogueBase contains a map of \ref AsyncNDRegisterAccessor_qualifiedAsyncSubDomainID "qualifiedAsyncSubDomainID" to DataConsistencyRealm names.
+  - 3.2. The CDD can contain a parameter "DataConsistencyKey" to define the registers with the DataConsistencyKey values.
+    - 3.2.1. These registers need to be triggered each by a different interrupt.
+    - 3.2.2. The CDD parameter "DataConsistencyKey" contains a JSON object, where each JSON key is interpreted as the register path and each value as the corresponding realm name.
+    - 3.2.3. Based on this information, the NumericAddressedBackend will fill the BackendRegisterCatalogueBase::_dataConsistencyRealmIdMap
+  - 3.3. Future map file formats will also allow specifying such pairs of key registers and realm names.
+  - 3.4. The TriggeredPollDistributor
+    - 3.4.1. obtains the DataConsistencyRealm and the key register path from the BackendRegisterCatalogue in its constructor, based on its owners subdomain ID,
+    - 3.4.2. adds the accessor for the key register path to its TransferGroup,
+    - 3.4.3. fetches the key valye in TriggeredPollDistributor::prepareIntermediateBuffers() (via TransferGroup::read()), and translates it into a VersionNumber using the DataConsistencyRealm,
+    - 3.4.4. keeps track of the last VersionNumber it has sent out:
+      - 3.4.4.1. Only if the VersionNumber matching the incoming key value is greater or equal the last sent VersionNumber, the new VersionNumber will be used.
+      - 3.4.4.2. If the new VersionNumber is smaller then the last one, the last VersionNumber is sent out and the DataValidity is forced to DataValidity::faulty.
+      - 3.4.4.3. "Using" the new VersionNumber in this context means to set SourceTypedAsyncAccessorManager::_version to the new version, so the subsequent distribution of values to the AsyncVariable's uses this VersionNumber.
+  - 3.5. SourceTypedAsyncAccessorManager::distribute() will return its SourceTypedAsyncAccessorManager::_version (after it has potentially been modified in TriggeredPollDistributor::prepareIntermediateBuffers()) to the calling SubDomain::distribute().
+  - 3.6. SubDomain::distribute() calls TriggeredPollDistributor::distribute() first and update its local VersionNumber, so a potential following VariableDistributor::distribute() will use the same VersionNumber as the TriggeredPollDistributor.
+  - 3.6.1. This ensures that a register which is polled by an interrupt will have a matching VersionNumber as the void-typed interrupt itself.
+
+
+*/
+
+}} // end of namespace ChimeraTK::async

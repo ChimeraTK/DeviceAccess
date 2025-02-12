@@ -190,7 +190,10 @@ namespace ChimeraTK::async {
     }
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
-      pollDistributor->distribute(nullptr, version);
+      // Distribute to pollDistributor first, as it may modify the VersionNumber if a DataConsistencyRealm is used,
+      // and the variableDistributor should use the same VersionNumber so a directly subscribed (void) interrupt has
+      // the same VersionNumber as data polled with the same interrupt.
+      version = pollDistributor->distribute(nullptr, version);
     }
     auto muxedInterruptDistributor = _muxedInterruptDistributor.lock();
     if(muxedInterruptDistributor) {
@@ -208,7 +211,7 @@ namespace ChimeraTK::async {
   void SubDomain<BackendSpecificDataType>::activate(BackendSpecificDataType data, VersionNumber version) {
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
-      pollDistributor->distribute(nullptr, version);
+      version = pollDistributor->distribute(nullptr, version);
     }
     auto muxedInterruptDidstributor = _muxedInterruptDistributor.lock();
     if(muxedInterruptDidstributor) {

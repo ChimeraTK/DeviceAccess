@@ -1,0 +1,10 @@
+# name                    nelems  address size  bar width fracbits  signed    mode
+/interrupt6               0       0       0     0   0     0         0         INTERRUPT6
+/theKey                   1       0       4     0   32    0         0         INTERRUPT6
+/dataA                    1       4       4     0   32    0         1         INTERRUPT6
+/dataB                    1       4       4     0   32    0         1         INTERRUPT6
+
+
+/interrupt123             0       0       0     0   0     0         0         INTERRUPT1
+/anotherKey               1       8       4     0   32    0         0         INTERRUPT1
+/dataC                    1       12      4     0   32    0         1         INTERRUPT1

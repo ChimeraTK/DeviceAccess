@@ -14,7 +14,8 @@
 
 namespace ChimeraTK {
 
-  DummyBackend::DummyBackend(const std::string& mapFileName) : DummyBackendBase(mapFileName), _mapFile(mapFileName) {
+  DummyBackend::DummyBackend(const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName) {
     resizeBarContents();
   }
 
@@ -168,7 +169,8 @@ namespace ChimeraTK {
     // dmap file is relative to the dmap file location. Converting the relative
     // mapFile path to an absolute path avoids issues when the dmap file is not
     // in the working directory of the application.
-    return returnInstance<DummyBackend>(address, convertPathRelativeToDmapToAbs(parameters["map"]));
+    return returnInstance<DummyBackend>(
+        address, convertPathRelativeToDmapToAbs(parameters["map"]), parameters["DataConsistencyKeys"]);
   }
 
   std::string DummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {

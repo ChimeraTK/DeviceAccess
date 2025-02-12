@@ -89,7 +89,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  ExceptionDummy::ExceptionDummy(const std::string& mapFileName) : DummyBackend(mapFileName) {
+  ExceptionDummy::ExceptionDummy(const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+  : DummyBackend(mapFileName, dataConsistencyKeyDescriptor) {
     OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE(DummyBackendBase, getRegisterAccessor_impl);
   }
 

@@ -29,7 +29,7 @@ namespace ChimeraTK::async {
     GenericAsyncVariable(SourceType& dataBuffer, VersionNumber& v, unsigned int nChannels, unsigned int nElements)
     : AsyncVariableImpl<UserType>(nChannels, nElements), _dataBuffer(dataBuffer), _version(v) {}
 
-    // implement fillSendBuffer() in a derrived class for template specialisation
+    // implement fillSendBuffer() in a derived class for template specialisation
 
     /** Make template specialisations on the SourceType in case the source data contains a unit.
      */
@@ -40,7 +40,7 @@ namespace ChimeraTK::async {
     const std::string& getDescription() override { return _emptyString; }
 
    protected:
-    std::string _emptyString{};
+    std::string _emptyString;
     SourceType& _dataBuffer;
     VersionNumber& _version;
   };
