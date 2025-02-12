@@ -13,7 +13,7 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-BOOST_AUTO_TEST_SUITE(LMapForceReadOnlyPluginTestSuite)
+BOOST_AUTO_TEST_SUITE(LMapTypeHintModifierPluginTestSuite)
 
 /**********************************************************************************************************************/
 

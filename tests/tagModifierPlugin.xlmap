@@ -1,0 +1,12 @@
+<logicalNameMap>
+
+  <redirectedRegister name="test">
+    <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
+    <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="add">status-output, no-recover   ,   mountain,   rumpelstiltzchen, main, secondary, test, flower</parameter>
+      <parameter name="remove">main, secondary, test</parameter>
+    </plugin>
+  </redirectedRegister>
+
+</logicalNameMap>

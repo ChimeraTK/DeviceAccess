@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "LNMBackendRegisterInfo.h"
 #include "LogicalNameMappingBackend.h"
 #include "VirtualFunctionTemplate.h"
 
@@ -260,6 +261,20 @@ namespace ChimeraTK::LNMBackend {
     bool _writeable{true};
     uint32_t dataInterpretationFractionalBits{0};
     bool dataInterpretationIsSigned{false};
+  };
+
+  /** TagModifier Plugin: Manipulate the tags in the register catalogue. Can add and remove tags */
+  class TagModifierPlugin : public AccessorPlugin<TagModifierPlugin> {
+   public:
+    TagModifierPlugin(
+        const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters);
+
+    void doRegisterInfoUpdate() override;
+
+   private:
+    std::set<std::string> _tagsToAdd;
+    std::set<std::string> _tagsToRemove;
+    std::set<std::string> _tagsToSet;
   };
 
   /********************************************************************************************************************/

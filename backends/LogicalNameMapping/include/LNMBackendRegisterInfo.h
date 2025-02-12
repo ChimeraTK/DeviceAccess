@@ -43,7 +43,9 @@ namespace ChimeraTK {
 
     [[nodiscard]] AccessModeFlags getSupportedAccessModes() const override { return supportedFlags; }
 
-    /** Name of the registrer */
+    [[nodiscard]] std::set<std::string> getTags() const override { return tags; }
+
+    /** Name of the register */
     RegisterPath name;
 
     /** Type of the target */
@@ -109,6 +111,8 @@ namespace ChimeraTK {
     std::vector<boost::shared_ptr<LNMBackend::AccessorPluginBase>> plugins;
 
     DataDescriptor _dataDescriptor;
+
+    std::set<std::string> tags;
 
     [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
       return std::make_unique<LNMBackendRegisterInfo>(*this);
