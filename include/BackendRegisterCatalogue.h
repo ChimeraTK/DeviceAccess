@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "async/DataConsistencyRealm.h"
 #include "RegisterCatalogue.h"
 
 #include <boost/make_shared.hpp>
@@ -62,6 +63,21 @@ namespace ChimeraTK {
      * use that and would have to duplicate code.
      */
     [[nodiscard]] virtual std::unique_ptr<BackendRegisterCatalogueBase> clone() const = 0;
+
+    /**
+     * Return DataConsistencyRealm for the given qualified AsyncDomainId. If no realm exists for the given ID, a
+     * nullptr is returned. The default implementation always returns nullptr.
+     */
+    [[nodiscard]] virtual std::shared_ptr<async::DataConsistencyRealm> getDataConsistencyRealm(
+        const std::vector<size_t>& qualifiedAsyncDomainId) const;
+
+    /**
+     * Return RegisterPath for the register containing the DataConsistencyKey value for the given qualified
+     * AsyncDomainId. If no register exists for the given ID, an empty RegisterPath() is returned. The default
+     * implementation always returns an empty RegisterPath.
+     */
+    [[nodiscard]] virtual RegisterPath getDataConsistencyKeyRegisterPath(
+        const std::vector<size_t>& qualifiedAsyncDomainId) const;
   };
 
   /********************************************************************************************************************/

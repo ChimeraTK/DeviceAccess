@@ -16,13 +16,24 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  NumericAddressedBackend::NumericAddressedBackend(
-      const std::string& mapFileName, std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer)
+  NumericAddressedBackend::NumericAddressedBackend(const std::string& mapFileName,
+      std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer,
+      const std::string& dataConsistencyKeyDescriptor)
   : _registerMapPointer(std::move(registerMapPointer)), _registerMap(*_registerMapPointer) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(!mapFileName.empty()) {
       MapFileParser parser;
       std::tie(_registerMap, _metadataCatalogue) = parser.parse(mapFileName);
+    }
+    if(!dataConsistencyKeyDescriptor.empty()) {
+      // split dataConsistencyKeyDescriptor by colon into register path and realm name
+      auto pos = dataConsistencyKeyDescriptor.find(':');
+      if(pos == std::string::npos) {
+        throw ChimeraTK::logic_error("Invalid data consistency key descriptor: " + dataConsistencyKeyDescriptor);
+      }
+      auto registerPath = RegisterPath(dataConsistencyKeyDescriptor.substr(0, pos));
+      auto realmName = dataConsistencyKeyDescriptor.substr(pos + 1);
+      _registerMap.addDataConsistencyRealm(registerPath, realmName);
     }
   }
 

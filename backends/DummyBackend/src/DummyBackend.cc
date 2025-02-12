@@ -14,7 +14,8 @@
 
 namespace ChimeraTK {
 
-  DummyBackend::DummyBackend(const std::string& mapFileName) : DummyBackendBase(mapFileName), _mapFile(mapFileName) {
+  DummyBackend::DummyBackend(const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName) {
     resizeBarContents();
   }
 
@@ -54,7 +55,7 @@ namespace ChimeraTK {
       checkSizeIsMultipleOfWordSize(sizeInBytes);
       unsigned int wordBaseIndex = address / sizeof(int32_t);
       TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
-                              ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
+          ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
     }
   }
 
@@ -168,7 +169,8 @@ namespace ChimeraTK {
     // dmap file is relative to the dmap file location. Converting the relative
     // mapFile path to an absolute path avoids issues when the dmap file is not
     // in the working directory of the application.
-    return returnInstance<DummyBackend>(address, convertPathRelativeToDmapToAbs(parameters["map"]));
+    return returnInstance<DummyBackend>(
+        address, convertPathRelativeToDmapToAbs(parameters["map"]), parameters["DataConsistencyKey"]);
   }
 
   std::string DummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {

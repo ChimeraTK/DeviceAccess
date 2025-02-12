@@ -22,7 +22,7 @@ namespace ChimeraTK {
 
   class ExceptionDummy : public ChimeraTK::DummyBackend {
    public:
-    explicit ExceptionDummy(std::string const& mapFileName);
+    explicit ExceptionDummy(std::string const& mapFileName, const std::string& dataConsistencyKeyDescriptor = "");
 
     DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE(DummyBackendBase, getRegisterAccessor_impl,
         boost::shared_ptr<NDRegisterAccessor<T>>(const RegisterPath&, size_t, size_t, AccessModeFlags));

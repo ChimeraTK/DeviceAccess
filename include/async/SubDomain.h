@@ -190,7 +190,7 @@ namespace ChimeraTK::async {
     }
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
-      pollDistributor->distribute(nullptr, version);
+      version = pollDistributor->distribute(nullptr, version);
     }
     auto muxedInterruptDistributor = _muxedInterruptDistributor.lock();
     if(muxedInterruptDistributor) {
@@ -208,7 +208,7 @@ namespace ChimeraTK::async {
   void SubDomain<BackendSpecificDataType>::activate(BackendSpecificDataType data, VersionNumber version) {
     auto pollDistributor = _pollDistributor.lock();
     if(pollDistributor) {
-      pollDistributor->distribute(nullptr, version);
+      version = pollDistributor->distribute(nullptr, version);
     }
     auto muxedInterruptDidstributor = _muxedInterruptDistributor.lock();
     if(muxedInterruptDidstributor) {

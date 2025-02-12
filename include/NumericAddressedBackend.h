@@ -21,7 +21,8 @@ namespace ChimeraTK {
    public:
     explicit NumericAddressedBackend(const std::string& mapFileName = "",
         std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer =
-            std::make_unique<NumericAddressedRegisterCatalogue>());
+            std::make_unique<NumericAddressedRegisterCatalogue>(),
+        const std::string& dataConsistencyKeyDescriptor = "");
 
     ~NumericAddressedBackend() override = default;
 
