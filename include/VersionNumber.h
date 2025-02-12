@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <format>
 #include <string>
 
 namespace ChimeraTK {
@@ -92,6 +93,9 @@ namespace ChimeraTK {
     static std::atomic<uint64_t> _lastGeneratedVersionNumber;
 
     friend std::ostream& operator<<(std::ostream& stream, const VersionNumber& version);
+
+    template<class T, class CharT>
+    friend struct std::formatter;
   };
 
   /********************************************************************************************************************/
@@ -108,3 +112,50 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
+
+/**********************************************************************************************************************/
+
+/** Formatter for C++20 std::format etc. */
+template<class CharT>
+struct std::formatter<ChimeraTK::VersionNumber, CharT> {
+  bool printVersion{false};
+  bool printTime{false};
+
+  template<class ParseContext>
+  constexpr ParseContext::iterator parse(ParseContext& ctx) {
+    auto it = ctx.begin();
+    if(it == ctx.end()) {
+      return it;
+    }
+    if(*it == 'v') {
+      printVersion = true;
+      ++it;
+    }
+    if(*it == 't') {
+      printTime = true;
+      ++it;
+    }
+    if(it != ctx.end() && *it != '}') {
+      throw std::format_error("Invalid format args for ChimeraTK::VersionNumber.");
+    }
+    if(!printVersion && !printTime) {
+      // print version by default
+      printVersion = true;
+    }
+    return it;
+  }
+
+  template<typename FormatContext>
+  auto format(const ChimeraTK::VersionNumber& v, FormatContext& ctx) const {
+    std::string fmt;
+    if(printVersion) {
+      fmt = "v{0}";
+    }
+    if(printTime) {
+      fmt += "@{1}";
+    }
+    return std::vformat_to(ctx.out(), fmt, std::make_format_args(v._value, v._time));
+  }
+};
+
+/**********************************************************************************************************************/
