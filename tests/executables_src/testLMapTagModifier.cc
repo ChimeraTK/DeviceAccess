@@ -13,8 +13,8 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-BOOST_AUTO_TEST_CASE(testParameters) {
-  std::cout << "testParameters" << std::endl;
+BOOST_AUTO_TEST_CASE(testNoParameters) {
+  std::cout << "testNoParameters" << std::endl;
 
   ChimeraTK::Device device;
   BOOST_CHECK_THROW(device.open("(logicalNameMap?map=tagModifierPluginNoParameters.xlmap)"), ChimeraTK::logic_error);
@@ -27,12 +27,15 @@ BOOST_AUTO_TEST_CASE(testAddRemove) {
 
   device.open("(logicalNameMap?map=tagModifierPlugin.xlmap)");
   auto cat = device.getRegisterCatalogue();
-  auto info = cat.getRegister("test");
+  auto baseInfo = cat.getRegister("plain");
+  BOOST_TEST(baseInfo.getTags().empty());
+
+  auto info = cat.getRegister("addRemove");
   auto tags = info.getTags();
 
-  std::set<std::string> reference = {"flower", "mountain", "no-recover", "rumpelstiltzchen", "status-output"};
+  std::set<std::string> reference = {"flower", "mountain", "no-recover", "rumpelstilzchen", "status-output"};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(tags.begin(), tags.end(), reference.begin(), reference.end());
+  BOOST_TEST(tags == reference, boost::test_tools::per_element());
 }
 
 BOOST_AUTO_TEST_CASE(testSet) {
@@ -42,11 +45,14 @@ BOOST_AUTO_TEST_CASE(testSet) {
 
   device.open("(logicalNameMap?map=tagModifierPlugin.xlmap)");
   auto cat = device.getRegisterCatalogue();
+  auto baseInfo = cat.getRegister("plain");
+  BOOST_TEST(baseInfo.getTags().empty());
+
   auto info = cat.getRegister("set");
   auto tags = info.getTags();
 
-  std::set<std::string> reference = {"no-recover", "status-output", "random", "triggered", "main", "test", "none"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(tags.begin(), tags.end(), reference.begin(), reference.end());
+  std::set<std::string> reference = {"no-recover", "status-output", "main", "test"};
+  BOOST_TEST(tags == reference, boost::test_tools::per_element());
 }
 
 BOOST_AUTO_TEST_CASE(testAdd) {
@@ -56,12 +62,16 @@ BOOST_AUTO_TEST_CASE(testAdd) {
 
   device.open("(logicalNameMap?map=tagModifierPlugin.xlmap)");
   auto cat = device.getRegisterCatalogue();
+  auto baseInfo = cat.getRegister("set");
+  auto baseTagsReference = std::set<std::string>({"no-recover", "status-output", "main", "test"});
+  BOOST_TEST(baseInfo.getTags() == baseTagsReference, boost::test_tools::per_element());
+
   auto info = cat.getRegister("add");
   auto tags = info.getTags();
 
   std::set<std::string> reference = {
-      "no-recover", "status-output", "random", "triggered", "main", "test", "none", "self-service", "shower"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(tags.begin(), tags.end(), reference.begin(), reference.end());
+      "no-recover", "status-output", "main", "test", "do-something", "update-request", "interrupted", "other"};
+  BOOST_TEST(info.getTags() == reference, boost::test_tools::per_element());
 }
 
 BOOST_AUTO_TEST_CASE(testRemove) {
@@ -71,9 +81,13 @@ BOOST_AUTO_TEST_CASE(testRemove) {
 
   device.open("(logicalNameMap?map=tagModifierPlugin.xlmap)");
   auto cat = device.getRegisterCatalogue();
+  auto baseInfo = cat.getRegister("set");
+  auto baseTagsReference = std::set<std::string>({"no-recover", "status-output", "main", "test"});
+  BOOST_TEST(baseInfo.getTags() == baseTagsReference, boost::test_tools::per_element());
+
   auto info = cat.getRegister("remove");
   auto tags = info.getTags();
 
-  std::set<std::string> reference = {"no-recover", "status-output", "random", "triggered", "test"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(tags.begin(), tags.end(), reference.begin(), reference.end());
+  std::set<std::string> reference = {"main", "test"};
+  BOOST_TEST(info.getTags() == reference, boost::test_tools::per_element());
 }

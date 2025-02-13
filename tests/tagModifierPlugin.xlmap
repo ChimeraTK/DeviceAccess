@@ -1,10 +1,40 @@
 <logicalNameMap>
 
-  <redirectedRegister name="test">
+  <redirectedRegister name="plain">
     <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
     <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+  </redirectedRegister>
+
+  <redirectedRegister name="set">
+    <targetDevice>this</targetDevice>
+    <targetRegister>plain</targetRegister>
     <plugin name="tagModifier">
-      <parameter name="add">status-output, no-recover   ,   mountain,   rumpelstiltzchen, main, secondary, test, flower</parameter>
+      <parameter name="set">status-output,no-recover,main,test</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="add">
+    <targetDevice>this</targetDevice>
+    <targetRegister>set</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="add">do-something, update-request, interrupted , other</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="remove">
+    <targetDevice>this</targetDevice>
+    <targetRegister>set</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="remove">no-recover,status-output</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="addRemove">
+    <targetDevice>this</targetDevice>
+    <targetRegister>plain</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="add">status-output, no-recover , mountain, rumpelstilzchen, main, secondary,
+        test, flower</parameter>
       <parameter name="remove">main, secondary, test</parameter>
     </plugin>
   </redirectedRegister>
