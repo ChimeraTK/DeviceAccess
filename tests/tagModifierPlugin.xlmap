@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <logicalNameMap>
 
   <redirectedRegister name="plain">
@@ -5,9 +6,17 @@
     <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
   </redirectedRegister>
 
-  <redirectedRegister name="set">
+  <redirectedRegister name="baseline">
     <targetDevice>this</targetDevice>
     <targetRegister>plain</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="set">one,two,three</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="set">
+    <targetDevice>this</targetDevice>
+    <targetRegister>baseline</targetRegister>
     <plugin name="tagModifier">
       <parameter name="set">status-output,no-recover,main,test</parameter>
     </plugin>

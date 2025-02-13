@@ -45,8 +45,9 @@ BOOST_AUTO_TEST_CASE(testSet) {
 
   device.open("(logicalNameMap?map=tagModifierPlugin.xlmap)");
   auto cat = device.getRegisterCatalogue();
-  auto baseInfo = cat.getRegister("plain");
-  BOOST_TEST(baseInfo.getTags().empty());
+  auto baseInfo = cat.getRegister("baseline");
+  std::set<std::string> baseReference = {"one", "two", "three"};
+  BOOST_TEST(baseInfo.getTags() == baseReference, boost::test_tools::per_element());
 
   auto info = cat.getRegister("set");
   auto tags = info.getTags();
