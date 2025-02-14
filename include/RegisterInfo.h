@@ -70,7 +70,7 @@ namespace ChimeraTK {
     /**
      * Get the list of tags that are associated with this register.
      *
-     * @TODO Point to a list of well-known tags.
+     * @see ChimeraTK::SystemTags for a list of pre-defined tags.
      */
     [[nodiscard]] std::set<std::string> getTags() const;
 

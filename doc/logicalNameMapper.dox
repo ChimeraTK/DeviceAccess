@@ -326,4 +326,5 @@ Parameters
 Notes:
 - The plugin accepts either <code>add</code> and <code>remove</code> or <code>set</code>, but not a mix.
 - The order of application is first <code>add</code>, then <code>remove</code>.
+- See ChimeraTK::SystemTags for a list of pre-defined tags.
 */
