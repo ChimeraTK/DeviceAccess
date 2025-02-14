@@ -20,6 +20,24 @@ BOOST_AUTO_TEST_CASE(testNoParameters) {
   BOOST_CHECK_THROW(device.open("(logicalNameMap?map=tagModifierPluginNoParameters.xlmap)"), ChimeraTK::logic_error);
 }
 
+BOOST_AUTO_TEST_CASE(testAddRemove) {
+  std::cout << "testAddRemove" << std::endl;
+
+  ChimeraTK::Device device;
+
+  device.open("(logicalNameMap?map=tagModifierPlugin.xlmap)");
+  auto cat = device.getRegisterCatalogue();
+  auto baseInfo = cat.getRegister("plain");
+  BOOST_TEST(baseInfo.getTags().empty());
+
+  auto info = cat.getRegister("addRemove");
+  auto tags = info.getTags();
+
+  std::set<std::string> reference = {"flower", "mountain", "no-recover", "rumpelstilzchen", "status-output"};
+
+  BOOST_TEST(tags == reference, boost::test_tools::per_element());
+}
+
 BOOST_AUTO_TEST_CASE(testSet) {
   std::cout << "testSet" << std::endl;
 
