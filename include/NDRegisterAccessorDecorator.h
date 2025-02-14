@@ -287,6 +287,16 @@ namespace ChimeraTK {
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       buffer_2D[i].resize(_target->getNumberOfSamples());
     }
+
+    if(target->isReadTransactionInProgress()) {
+      // In case accessor was already used from ReadAnyGroup, it has readTransactionInProgress set. We must copy
+      // state over to decorator, otherwise postRead will be ignored. We do this simply by calling preRead.
+      // It will set the flag and delegate to target->preRead which does nothing.
+      this->preRead(TransferType::read);
+    }
+    if(target->isWriteTransactionInProgress()) {
+      this->preWrite(TransferType::write, this->_versionNumber);
+    }
   }
 
   /********************************************************************************************************************/
