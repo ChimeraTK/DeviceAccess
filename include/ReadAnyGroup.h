@@ -12,6 +12,10 @@
 
 namespace ChimeraTK {
 
+  namespace DataConsistencyGroupDetail {
+    class HistorizedMatcher;
+  } // namespace DataConsistencyGroupDetail
+
   /**
    * Group several registers (= TransferElement) to allow waiting for an update of any of the registers.
    *
@@ -19,6 +23,9 @@ namespace ChimeraTK {
    * the participating elements.
    */
   class ReadAnyGroup {
+    // friend because it needs to decorate our push_elements
+    friend class ChimeraTK::DataConsistencyGroupDetail::HistorizedMatcher;
+
    public:
     /**
      * Notification object returned by waitAny(). A notification can be accepted immediately or retained to be accepted

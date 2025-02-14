@@ -54,7 +54,11 @@ BOOST_AUTO_TEST_CASE(testDataConsistencyGroup) {
   boost::shared_ptr<Accessor<int>> acc_1 = boost::make_shared<Accessor<int>>();
   boost::shared_ptr<Accessor<int>> acc_2 = boost::make_shared<Accessor<int>>();
 
+  // test the deprecated syntax without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   DataConsistencyGroup dcgroup({acc_1, acc_2});
+#pragma GCC diagnostic pop
 
   // until now all versions are {nullptr}
   //  prepare the version numbers in the dcgroup by writing (which set new version numbers)
@@ -81,7 +85,11 @@ BOOST_AUTO_TEST_CASE(testMoreDataConsistencyGroup) {
   boost::shared_ptr<Accessor<int>> acc_3 = boost::make_shared<Accessor<int>>();
   boost::shared_ptr<Accessor<int>> acc_4 = boost::make_shared<Accessor<int>>();
 
+  // test the deprecated syntax without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   DataConsistencyGroup dcgroup({acc_1, acc_2, acc_3, acc_4});
+#pragma GCC diagnostic pop
   // 4 different version numbers
   acc_1->write();
   acc_2->write();
@@ -130,8 +138,12 @@ BOOST_AUTO_TEST_CASE(testMultipleDataConsistencyGroup) {
   boost::shared_ptr<Accessor<int>> acc_2 = boost::make_shared<Accessor<int>>();
   boost::shared_ptr<Accessor<int>> acc_3 = boost::make_shared<Accessor<int>>();
   boost::shared_ptr<Accessor<int>> acc_4 = boost::make_shared<Accessor<int>>();
+  // test the deprecated syntax without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   DataConsistencyGroup dcgroup_1({acc_1, acc_2, acc_3});
   DataConsistencyGroup dcgroup_2({acc_1, acc_3, acc_4});
+#pragma GCC diagnostic pop
   VersionNumber v;
   acc_1->write(v);
   acc_2->write(v);
@@ -155,7 +167,11 @@ BOOST_AUTO_TEST_CASE(testVersionNumberChange) {
   boost::shared_ptr<Accessor<int>> acc_1 = boost::make_shared<Accessor<int>>();
   boost::shared_ptr<Accessor<int>> acc_2 = boost::make_shared<Accessor<int>>();
 
+  // test the deprecated syntax without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   DataConsistencyGroup dcgroup_1({acc_1, acc_2});
+#pragma GCC diagnostic pop
 
   acc_2->write(v2);
   BOOST_CHECK_EQUAL(dcgroup_1.update(acc_2->getId()), false);
@@ -178,6 +194,7 @@ BOOST_AUTO_TEST_CASE(testException) {
   auto acc = dev.getScalarRegisterAccessor<int>("BOARD.WORD_FIRMWARE");
   DataConsistencyGroup dcgroup;
   // accessors without wait_for_new_data cannot be added.
+  // test the deprecated syntax without warning about it...
   BOOST_CHECK_THROW(dcgroup.add(acc), ChimeraTK::logic_error);
 }
 
