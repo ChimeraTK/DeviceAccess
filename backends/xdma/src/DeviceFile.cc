@@ -48,7 +48,7 @@ namespace ChimeraTK {
   }
 
   bool DeviceFile::goodState() const {
-    struct stat s {};
+    struct stat s{};
     if(fstat(_fd, &s) != 0) {
       return false;
     }

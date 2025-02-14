@@ -62,8 +62,8 @@ namespace ChimeraTK::LNMBackend {
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift),
-      _numberOfBits(numberOfBits), _writeable{_target->isWriteable()},
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
+      _writeable{_target->isWriteable()},
       fixedPointConverter(name, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
