@@ -30,7 +30,7 @@ namespace ChimeraTK {
     /** Return number of dimensions of this register */
     [[nodiscard]] unsigned int getNumberOfDimensions() const;
 
-    /** Return desciption of the actual payload data for this register. See the
+    /** Return description of the actual payload data for this register. See the
      * description of DataDescriptor for more information. */
     [[nodiscard]] virtual const DataDescriptor& getDataDescriptor() const = 0;
 
@@ -51,6 +51,13 @@ namespace ChimeraTK {
      *  The default implementation returns an empty vector.
      */
     [[nodiscard]] virtual std::vector<size_t> getQualifiedAsyncId() const { return {}; }
+
+    /**
+     * Get the list of tags associated with this register.
+     *
+     * The default implementation returns an empty list.
+     */
+    [[nodiscard]] virtual std::set<std::string> getTags() const { return {}; };
   };
 
   /********************************************************************************************************************/

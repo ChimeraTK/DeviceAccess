@@ -7,8 +7,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <map>
-
 namespace ChimeraTK {
 
   class BackendRegisterCatalogueBase;

@@ -67,6 +67,13 @@ namespace ChimeraTK {
      */
     [[nodiscard]] std::vector<size_t> getQualifiedAsyncId() const;
 
+    /**
+     * Get the list of tags that are associated with this register.
+     *
+     * @TODO Point to a list of well-known tags.
+     */
+    [[nodiscard]] std::set<std::string> getTags() const;
+
    protected:
     std::unique_ptr<BackendRegisterInfoBase> _impl;
   };

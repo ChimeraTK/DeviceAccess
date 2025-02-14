@@ -37,6 +37,9 @@ namespace ChimeraTK::LNMBackend {
     if(name == "bitRange") {
       return boost::make_shared<BitRangeAccessPlugin>(info, pluginIndex, parameters);
     }
+    if(name == "tagModifier") {
+      return boost::make_shared<TagModifierPlugin>(info, pluginIndex, parameters);
+    }
     throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
   }
 

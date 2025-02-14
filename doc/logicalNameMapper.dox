@@ -78,6 +78,13 @@ Example with most features:
         <parameter name="numberOfBits">16</parameter>
       </plugin>
     </redirectedRegister>
+    <redirectRegister name="Tagged">
+      <targetDevice>PCIE2</targetDevice>
+      <targetRegister>BOARD.WORD_BOOT_STATUS</targetRegister>
+      <plugin name="tagModifier">
+        <parameter name="set">status-output</parameter>
+      </plugin>
+    </redirectRegister>
 </logicalNameMap>
 \endcode
 
@@ -306,4 +313,17 @@ Notes and CAVEATS:
 - When overlapping bit ranges are used in a TransferGroup, the TransferGroup will become read-only since write order
   of overlapping registers cannot be guaranteed
 - If the target register is writeable, the plugin does read-modify-write if the target register is also readable.
+
+\subsection plugins_reference_tag_modifier tagModifier
+
+<code>tagModifier</code> can be used to modifiy the tags that are associated with a register. All parameters are a list of comma-separated string.
+
+Parameters
+- <code>set</code>: Completly override the tags from the target register.
+- <code>add</code>: Adds the list of tags to the target register's tags.
+- <code>remove</code>: Remove the passed list of tags from the target register's tags.
+
+Notes:
+- The plugin accepts either <code>add</code> and <code>remove</code> or <code>set</code>, but not a mix.
+- The order of application is first <code>add</code>, then <code>remove</code>.
 */

@@ -265,6 +265,8 @@ namespace ChimeraTK {
       }
       if(lnmInfo.length == 0) lnmInfo.length = target_info.getNumberOfElements();
 
+      lnmInfo.tags = target_info.getTags();
+
       _catalogue_mutable.modifyRegister(lnmInfo);
     }
 
