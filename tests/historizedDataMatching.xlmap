@@ -1,0 +1,10 @@
+<logicalNameMap>
+    <variable name="A">
+        <type>int32</type>
+        <value>-1</value>
+    </variable>
+    <variable name="B">
+        <type>int32</type>
+        <value>-1</value>
+    </variable>
+</logicalNameMap>
