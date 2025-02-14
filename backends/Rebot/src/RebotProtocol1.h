@@ -10,7 +10,7 @@ namespace ChimeraTK {
 
   struct RebotProtocol1 : public RebotProtocol0 {
     explicit RebotProtocol1(boost::shared_ptr<Rebot::Connection>& tcpCommunicator);
-    virtual ~RebotProtocol1(){};
+    virtual ~RebotProtocol1() {};
 
     virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
     virtual void write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;

@@ -9,11 +9,11 @@
 using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
-//#include "Device.h"
+// #include "Device.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
-//#include "TransferGroup.h"
+// #include "TransferGroup.h"
 #include "UnifiedBackendTest.h"
 
 using namespace ChimeraTK;

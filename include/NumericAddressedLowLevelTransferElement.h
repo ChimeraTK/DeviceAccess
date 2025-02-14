@@ -134,7 +134,7 @@ namespace ChimeraTK {
     boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override { // LCOV_EXCL_LINE
       throw ChimeraTK::logic_error("NumericAddressedLowLevelTransferElement::makeCopyRegisterDecorator() "
                                    "is not implemented"); // LCOV_EXCL_LINE
-    }                                                     // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
 
    protected:
     /** Set the start address (inside the bar given in the constructor) and number

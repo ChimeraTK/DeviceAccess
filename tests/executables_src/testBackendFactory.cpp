@@ -19,8 +19,8 @@ namespace ChimeraTK {
 }
 using namespace ChimeraTK;
 
-//#undef TEST_DMAP_FILE_PATH
-//#define TEST_DMAP_FILE_PATH "/testDummies.dmap"
+// #undef TEST_DMAP_FILE_PATH
+// #define TEST_DMAP_FILE_PATH "/testDummies.dmap"
 
 struct NewBackend : public DummyBackend {
   using DummyBackend::DummyBackend;

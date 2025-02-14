@@ -54,7 +54,7 @@ namespace ChimeraTK {
       checkSizeIsMultipleOfWordSize(sizeInBytes);
       unsigned int wordBaseIndex = address / sizeof(int32_t);
       TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
-                              ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
+          ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
     }
   }
 

@@ -11,8 +11,8 @@ namespace io = boost::asio;
 
 namespace ChimeraTK {
   EventThread::EventThread(EventFile& owner, std::promise<void> subscriptionDonePromise)
-  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file}, _thread{
-                                                       &EventThread::start, this, std::move(subscriptionDonePromise)} {
+  : _owner{owner}, _ctx{}, _sd{_ctx, owner._file},
+    _thread{&EventThread::start, this, std::move(subscriptionDonePromise)} {
 #ifdef _DEBUG
     std::cout << "XDMA: EventThread " << _owner._file.name() << " ctor\n";
 #endif
@@ -115,8 +115,8 @@ namespace ChimeraTK {
 
   EventFile::EventFile(DeviceBackend* backend, const std::string& devicePath, size_t interruptIdx,
       boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain)
-  : _backend(backend), _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY}, _asyncDomain{
-                                                                                                   asyncDomain} {}
+  : _backend(backend), _file{devicePath + "/events" + std::to_string(interruptIdx), O_RDONLY},
+    _asyncDomain{asyncDomain} {}
 
   EventFile::~EventFile() {
     _evtThread.reset(nullptr);

@@ -23,13 +23,13 @@ using namespace ChimeraTK;
 // we need to access some private data of the low level transfer element
 // FIXME: redesign test so this is not necessary!
 struct NumericAddressedLowLevelTransferElement_startAddress {
-  typedef uint64_t NumericAddressedLowLevelTransferElement::*type;
+  typedef uint64_t NumericAddressedLowLevelTransferElement::* type;
 };
 template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_startAddress,
     &ChimeraTK::NumericAddressedLowLevelTransferElement::_startAddress>;
 
 struct NumericAddressedLowLevelTransferElement_numberOfBytes {
-  typedef size_t NumericAddressedLowLevelTransferElement::*type;
+  typedef size_t NumericAddressedLowLevelTransferElement::* type;
 };
 template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_numberOfBytes,
     &ChimeraTK::NumericAddressedLowLevelTransferElement::_numberOfBytes>;
