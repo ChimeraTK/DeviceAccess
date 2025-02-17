@@ -799,6 +799,9 @@ namespace ChimeraTK {
     /** Check whether a write transaction is in progress, i.e. preWrite() has been called but not yet postWrite(). */
     bool isWriteTransactionInProgress() const { return writeTransactionInProgress; }
 
+    /** Check whether accessor is in a ReadAnyGroup. */
+    bool isInReadAnyGroup() const { return _isInReadAnyGroup; }
+
    protected:
     /** Identifier uniquely identifying the TransferElement */
     std::string _name;

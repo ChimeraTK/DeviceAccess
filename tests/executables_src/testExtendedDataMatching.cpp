@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "ChimeraTK/ReadAnyGroup.h"
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE DataConsistencyGroupTest
 #include <boost/test/unit_test.hpp>
@@ -9,6 +8,7 @@ using namespace boost::unit_test_framework;
 
 #include "DataConsistencyDecorator.h"
 #include "Device.h"
+#include "ReadAnyGroup.h"
 
 using namespace ChimeraTK;
 
