@@ -5,7 +5,7 @@
 namespace ChimeraTK {
   /**
    * A list of pre-defined tags that can be used to mark registers.
-   * Other components in the framework can make use of these tags to change
+   * Other components (e.g. ApplicationCore) in the framework can make use of these tags to change
    * behavior towards those registers depending on presence of those tags.
    *
    * The structure of a system tag consists of three parts separated by "_":
