@@ -9,15 +9,18 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  class ReadAnyGroup;
+
   class HDataConsistencyGroup : public DataConsistencyGroup {
    public:
-    HDataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list);
+    HDataConsistencyGroup(std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list);
     // TODO check - would we also need constructor from TransferElements?
     // to me it seems not, since then cannot decorate them for the outside.
 
     // TODO also add function? Maybe not, comes from base class
 
-    void replacementMagic();
+    void decorateAccessors();
+    void decorateAccessors(ReadAnyGroup* rag);
 
     bool update(const TransferElementID& transferElementID);
 
