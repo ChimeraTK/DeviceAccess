@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(test1) {
     unsigned nUpdates = 0;
     unsigned nConsistentUpdates = 0;
     const unsigned nLoops = 4;
-    const unsigned delay = 2;
+    const unsigned delay = 0;
     std::thread updaterThread1(updaterLoop, nLoops, delay);
     // test loop consuming data
     try {
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(test1) {
     unsigned nUpdates = 0;
     unsigned nConsistentUpdates = 0;
     const unsigned nLoops = 4;
-    const unsigned delay = 2;
+    const unsigned delay = 0;
     std::thread updaterThread1(updaterLoop, nLoops, delay);
     // test loop consuming data
     try {

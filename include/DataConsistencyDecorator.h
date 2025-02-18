@@ -19,7 +19,9 @@ namespace ChimeraTK {
 
     // TODO also add function? Maybe not, comes from base class
 
-    void decorateAccessors();
+    /// decorate accessor by replacing its target => DataConsistencyDecorator(target)
+    void decorateAccessor(TransferElementAbstractor& acc);
+    /// use known already decorated accessors as replacement for ReadAnyGroup's content
     void decorateAccessors(ReadAnyGroup* rag);
 
     bool update(const TransferElementID& transferElementID);
