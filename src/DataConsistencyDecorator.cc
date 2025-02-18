@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "DataConsistencyDecorator.h"
 
+#include "ReadAnyGroup.h"
+
 #include <boost/pointer_cast.hpp>
 
 namespace ChimeraTK {
@@ -42,6 +44,7 @@ namespace ChimeraTK {
   template<typename T>
   void DataConsistencyDecorator<T>::readCallback() {
     // TODO check -Probably will not be called on exception in target
+    // so we should test a situation where target throws an exception
 
     // we know that target->preRead was already called.
     // Differently from usual decorator behavior, we call target->postRead already here,
@@ -54,20 +57,21 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  HDataConsistencyGroup::HDataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list) {
+  HDataConsistencyGroup::HDataConsistencyGroup(
+      std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list) {
     for(const auto& element : list) add(element);
-    replacementMagic();
+    decorateAccessors();
   }
 
-  void HDataConsistencyGroup::replacementMagic() {
+  void HDataConsistencyGroup::decorateAccessors() {
     // TODO decoration magic: we need a function that replaces target of
     // TransferElementAbstractor by DataConsistencyDecorator(target)
     // replacement must happen below (i.e. for target of) MetaDataPropagatingRegisterDecorator
 
-    std::map<TransferElementID, TransferElementAbstractor> elements = getElements();
+    std::map<TransferElementID, TransferElementAbstractor>& elements = getElements();
 
-    for(auto e : elements) {
-      auto acc = e.second;
+    for(auto& e : elements) {
+      auto& acc = e.second;
       callForType(acc.getValueType(), [&](auto t) {
         using UserType = decltype(t);
 
@@ -77,9 +81,21 @@ namespace ChimeraTK {
         if(!alreadyDecorated) {
           // TODO discuss/check - is it clear that cast to NDRegisterAccessor will work?
           auto accImpl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(acc.getHighLevelImplElement());
-          boost::make_shared<DataConsistencyDecorator<UserType>>(accImpl, this);
+          assert(accImpl);
+          acc.replace(boost::make_shared<DataConsistencyDecorator<UserType>>(accImpl, this));
         }
       });
+    }
+  }
+  void HDataConsistencyGroup::decorateAccessors(ReadAnyGroup* rag) {
+    std::map<TransferElementID, TransferElementAbstractor>& elements = getElements();
+    // replace accessors stored in ReadAnyGroup by our decorated versions, if applicable
+    for(auto& acc : rag->push_elements) {
+      // id of the target accessor = id of decorator
+      auto id = acc.getId();
+      if(elements.find(id) != elements.end()) {
+        acc.replace(elements.at(id));
+      }
     }
   }
 
@@ -93,9 +109,12 @@ namespace ChimeraTK {
       throw detail::DiscardValueException();
     }
 
-    // TODO update other buffers, call postRead on the other involved decorators
+    // to update other user buffers, call postRead on the other involved decorators
     for(TransferElementID id : decoratorsNeedingPostRead) {
       auto acc = getElements().at(id);
+      // TODO here we should check for exceptions:
+      // it is allowed for postRead to throw exceptions; what would be our expectation then?
+      // shoule we remove single items from decoratorsNeedingPostRead ?
       acc.getHighLevelImplElement()->postRead(TransferType::read, true);
     }
     // our own postRead will be called by ReadAnyGroup

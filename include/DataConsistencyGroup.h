@@ -51,6 +51,7 @@ namespace ChimeraTK {
 
     /** For inspection of contents */
     const std::map<TransferElementID, TransferElementAbstractor>& getElements() const { return push_elements; }
+    std::map<TransferElementID, TransferElementAbstractor>& getElements() { return push_elements; }
 
     /** returns true if consistent state is reached */
     bool isConsistent() const { return consistentElements.size() == push_elements.size(); }

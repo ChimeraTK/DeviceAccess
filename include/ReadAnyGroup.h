@@ -19,6 +19,9 @@ namespace ChimeraTK {
    * the participating elements.
    */
   class ReadAnyGroup {
+    // friend because it needs to decorate our push_elements
+    friend class HDataConsistencyGroup;
+
    public:
     /**
      * Notification object returned by waitAny(). A notification can be accepted immediately or retained to be accepted
