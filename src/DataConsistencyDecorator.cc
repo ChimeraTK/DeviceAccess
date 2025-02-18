@@ -27,9 +27,13 @@ namespace ChimeraTK {
     // problem is, we want target buffer update earlier!
 
     // TODO discuss exception handling - I'm currently pretty lost
-    _target->setActiveException(this->_activeException);
-    // we leave out target->postRead since it was done earlier
-    //_target->postRead(type, updateDataBuffer);
+    // We leave out target->postRead since it was done earlier.
+    // However, it can happen that an exception originates from target->queue; in that case readCallback is not
+    // called and we need to call postRead here.
+    if(this->_activeException) {
+      _target->setActiveException(this->_activeException);
+      _target->postRead(type, updateDataBuffer);
+    }
 
     // Decorators have to copy meta data even if updateDataBuffer is false
     this->_dataValidity = _target->dataValidity();
@@ -59,36 +63,34 @@ namespace ChimeraTK {
 
   HDataConsistencyGroup::HDataConsistencyGroup(
       std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list) {
-    for(const auto& element : list) add(element);
-    decorateAccessors();
-  }
-
-  void HDataConsistencyGroup::decorateAccessors() {
-    // TODO decoration magic: we need a function that replaces target of
-    // TransferElementAbstractor by DataConsistencyDecorator(target)
-    // replacement must happen below (i.e. for target of) MetaDataPropagatingRegisterDecorator
-
-    std::map<TransferElementID, TransferElementAbstractor>& elements = getElements();
-
-    for(auto& e : elements) {
-      auto& acc = e.second;
-      callForType(acc.getValueType(), [&](auto t) {
-        using UserType = decltype(t);
-
-        // let's not replace if the target is already a DataConsistencyDecorator
-        auto alreadyDecorated =
-            boost::dynamic_pointer_cast<DataConsistencyDecorator<UserType>>(acc.getHighLevelImplElement());
-        if(!alreadyDecorated) {
-          // TODO discuss/check - is it clear that cast to NDRegisterAccessor will work?
-          auto accImpl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(acc.getHighLevelImplElement());
-          assert(accImpl);
-          acc.replace(boost::make_shared<DataConsistencyDecorator<UserType>>(accImpl, this));
-        }
-      });
+    for(auto& acc : list) {
+      decorateAccessor(acc);
+      add(acc);
     }
   }
+
+  void HDataConsistencyGroup::decorateAccessor(TransferElementAbstractor& acc) {
+    callForType(acc.getValueType(), [&](auto t) {
+      using UserType = decltype(t);
+
+      // let's not replace if the target is already a DataConsistencyDecorator
+      auto alreadyDecorated =
+          boost::dynamic_pointer_cast<DataConsistencyDecorator<UserType>>(acc.getHighLevelImplElement());
+      if(!alreadyDecorated) {
+        // TODO discuss/check - is it clear that cast to NDRegisterAccessor will work?
+        auto accImpl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(acc.getHighLevelImplElement());
+        assert(accImpl);
+        acc.replace(boost::make_shared<DataConsistencyDecorator<UserType>>(accImpl, this));
+      }
+    });
+    // TODO decoration magic for MetaDataPropagatingRegisterDecorator
+    //  we need a function that replaces target of
+    // TransferElementAbstractor by DataConsistencyDecorator(target)
+    // replacement must happen below (i.e. for target of) MetaDataPropagatingRegisterDecorator
+  }
+
   void HDataConsistencyGroup::decorateAccessors(ReadAnyGroup* rag) {
-    std::map<TransferElementID, TransferElementAbstractor>& elements = getElements();
+    const std::map<TransferElementID, TransferElementAbstractor>& elements = getElements();
     // replace accessors stored in ReadAnyGroup by our decorated versions, if applicable
     for(auto& acc : rag->push_elements) {
       // id of the target accessor = id of decorator
