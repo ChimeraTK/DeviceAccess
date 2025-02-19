@@ -27,15 +27,20 @@ BOOST_AUTO_TEST_CASE(test1) {
   dev.activateAsyncRead();
   auto readAccA = dev.getScalarRegisterAccessor<int32_t>("/A", 0, {AccessMode::wait_for_new_data});
   auto readAccB = dev.getScalarRegisterAccessor<int32_t>("/B", 0, {AccessMode::wait_for_new_data});
-  // discard initial values
-  readAccA.read();
-  readAccB.read();
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
+
+  auto emptyQueue = [&rag]() {
+    // empty read queue before start of next test.
+    // this also gets rid of initial values
+    while(rag.readAnyNonBlocking().isValid()) {
+    }
+  };
 
   // we use a semaphore to acknowlegde data received; like that we avoid future_queue overruns
   sem_t sem;
   sem_init(&sem, 0, 0);
   auto waitOnReceiveAck = [&]() {
+    // we need a timeout since with HDataConsistencyGroup, we only get a chance to acknowledge consistent data updates
     timespec timeout{};
     timeval now{};
     gettimeofday(&now, nullptr);
@@ -52,10 +57,10 @@ BOOST_AUTO_TEST_CASE(test1) {
     auto accB = dev.getScalarRegisterAccessor<int32_t>("/B");
     std::vector<ChimeraTK::VersionNumber> vs(nLoops);
     for(unsigned loopCount = 0; loopCount < nLoops; loopCount++) {
-      accA = loopCount;
+      accA = (int32_t)loopCount;
       accA.write(vs[loopCount]);
       if(loopCount >= delay) {
-        accB = loopCount - delay;
+        accB = (int32_t)(loopCount - delay);
         accB.write(vs[loopCount - delay]);
       }
       // wait on data receive before writing next
@@ -66,17 +71,21 @@ BOOST_AUTO_TEST_CASE(test1) {
     readAccA.interrupt();
   };
 
-  {
-    // without HDataConsistencyGroup, check that we never get consistent updates
+  const unsigned nLoops = 4;
+  for(unsigned delay = 0; delay <= 2; delay++) {
+    // without HDataConsistencyGroup, check that we get consistent updates only if delay is 0
+    emptyQueue();
     unsigned nUpdates = 0;
     unsigned nConsistentUpdates = 0;
-    const unsigned nLoops = 4;
-    const unsigned delay = 0;
     std::thread updaterThread1(updaterLoop, nLoops, delay);
     // test loop consuming data
     try {
       while(true) {
         auto id = rag.readAny();
+        auto& acc = id == readAccA.getId() ? readAccA : readAccB;
+        std::cout << "readAny: seeing update for target " << acc.getName() << " vs " << acc.getVersionNumber()
+                  << std::endl;
+
         nUpdates++;
         if(readAccA.getVersionNumber() == readAccB.getVersionNumber()) {
           nConsistentUpdates++;
@@ -91,25 +100,22 @@ BOOST_AUTO_TEST_CASE(test1) {
     }
     updaterThread1.join();
 
-    BOOST_TEST(nConsistentUpdates == 0);
+    unsigned nExpectedConsistentUpdates = (delay == 0) ? nUpdates / 2 : 0;
+    BOOST_TEST(nConsistentUpdates == nExpectedConsistentUpdates);
     BOOST_TEST(nUpdates == nLoops + nLoops - delay);
   }
 
-  // empty read queue before start of next test
-  while(rag.readAnyNonBlocking().isValid());
-
-  // TODO fix / discuss :
-  // ReadAnyGroup holds copy of acessors(abstractors), so I need to decorate first, by putting them
-  // into HDataConsistencyGroup - but that means, I cannot check that accessors are in ReadAnyGroup?!
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
+  // TODO discuss API:
+  // ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
   dg.decorateAccessors(&rag);
-  {
+
+  for(unsigned delay = 0; delay <= 2; delay++) {
     // With HDataConsistencyGroup, check that we get N-delay consistent updates.
     // Also check that we have consistent data (e.g. data=versionnumber counter)
+    emptyQueue();
     unsigned nUpdates = 0;
     unsigned nConsistentUpdates = 0;
-    const unsigned nLoops = 4;
-    const unsigned delay = 0;
     std::thread updaterThread1(updaterLoop, nLoops, delay);
     // test loop consuming data
     try {
@@ -135,6 +141,9 @@ BOOST_AUTO_TEST_CASE(test1) {
     BOOST_TEST(nConsistentUpdates == nUpdates);
   }
 }
+
+// TODO - we should extend test, for case exceptions are thrown from backend:
+// use ExceptionDummy & interrupts
 
 // TODO - how can we check things related to MetaDataPropagatingRegisterDecorator?
 // maybe only in ApplicationCore, since that's were it's defined?
