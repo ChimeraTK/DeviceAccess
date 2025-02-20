@@ -16,7 +16,7 @@ namespace ChimeraTK {
     if(!target->isInReadAnyGroup()) {
       throw logic_error(
           "Attempt to use DataConsistencyDecorator on TransferElement not in ReadAnyGroup: " + target->getName());
-      // TODO take over flag isInReadAnyGroup in this.
+      this->_isInReadAnyGroup = true;
     }
     if(target->isReadTransactionInProgress()) {
       // In case accessor was already used from ReadAnyGroup, it has readTransactionInProgress set. We must copy
