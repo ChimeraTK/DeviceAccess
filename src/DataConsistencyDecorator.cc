@@ -16,12 +16,15 @@ namespace ChimeraTK {
     if(!target->isInReadAnyGroup()) {
       throw logic_error(
           "Attempt to use DataConsistencyDecorator on TransferElement not in ReadAnyGroup: " + target->getName());
+      // TODO take over flag isInReadAnyGroup in this.
     }
     if(target->isReadTransactionInProgress()) {
       // In case accessor was already used from ReadAnyGroup, it has readTransactionInProgress set. We must copy
       // state over to decorator, otherwise postRead will be ignored. We do this simply by calling preRead.
       // It will set the flag and delegate to target->preRead which does nothing.
       this->preRead(TransferType::read);
+      // TODO this kind of handling state isReadTransactionInProgress and isWriteTransactionInProgress should move to
+      // NDRegisterAccessorDecorator
     }
 
     this->_readQueue = target->getReadQueue().template then<void>([this]() { readCallback(); }, std::launch::deferred);
@@ -105,7 +108,16 @@ namespace ChimeraTK {
   }
 
   bool HDataConsistencyGroup::update(const TransferElementID& transferElementID) {
-    bool consistent = DataConsistencyGroup::update(transferElementID);
+    auto vnFromElement = getElements().at(transferElementID).getVersionNumber();
+    bool consistent;
+    if(vnFromElement == VersionNumber{nullptr}) {
+      // special case target versionNumber=0 can happen with initial values; these are considered not consistent
+      // but dGroup->update() must not be called
+      consistent = false;
+    }
+    else {
+      consistent = DataConsistencyGroup::update(transferElementID);
+    }
 
     if(!consistent) {
       // if not consistent, delay call to postRead (called from ReadAnyGroup), by throwing DiscardValueException.
