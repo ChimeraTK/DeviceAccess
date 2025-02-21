@@ -76,6 +76,28 @@ namespace ChimeraTK {
     boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override;
 
     /**
+     * @brief Decorate the innermost TransferElement of the stack of decorators or decorator-like accessors.
+     *
+     * Decorators (and certain decorator-like accessors which shall allow this type of "inside" decoration) shall
+     * first attempt to delegate a call to decorateDeepInside() to their target. Accessors which cannot decorate an
+     * internal target simply do not implement this function, so the default implementation returns a nulled shared_ptr.
+     * Only if a decorator (or decorator-like accessor) sees that the delegated call returns a nulled shared_ptr, it
+     * shall use the factory to decorate its target, and then return its new (now decorated) target. If the delegated
+     * call returned a non-nulled shared_ptr, that shared_ptr must be passed through unaltered.
+     *
+     * @param[in] factory Functor object to create the decorator. The functor takes one argument, which is the target
+     * accessor to be decorated. The functor may return a nulled pointer if the target is not suitable for decoration,
+     * in which case it will be retired on level further out, if applicable.
+     *
+     * @return {nullptr} if no decoration can be done inside, otherwise the decorator created by the factory function.
+     */
+    [[nodiscard]] virtual boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
+        [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+            const boost::shared_ptr<NDRegisterAccessor<UserType>>&)> factory) {
+      return {};
+    }
+
+    /**
      * Data type to create individual buffers. They are mainly used in asynchronous
      * implementation. Each buffer stores a vector, the version
      * number and the time stamp. The type is swappable by the default

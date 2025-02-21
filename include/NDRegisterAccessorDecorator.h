@@ -66,6 +66,11 @@ namespace ChimeraTK {
       template<typename COOKED_TYPE>
       void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
 
+      boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
+          [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+              const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+              factory) override;
+
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
@@ -239,6 +244,23 @@ namespace ChimeraTK {
       this->buffer_2D[channel].swap(_target->accessChannel(channel));
       _target->template setAsCooked<COOKED_TYPE>(channel, sample, value);
       this->buffer_2D[channel].swap(_target->accessChannel(channel));
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorDecoratorImpl<UserType, UserType>::
+        decorateDeepInside([[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+                const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+                factory) {
+      auto res = _target->decorateDeepInside(factory);
+      if(!res) {
+        res = factory(_target);
+        if(res) {
+          _target = res;
+        }
+      }
+      return res;
     }
 
     /******************************************************************************************************************/
