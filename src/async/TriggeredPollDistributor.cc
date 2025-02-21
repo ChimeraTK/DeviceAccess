@@ -7,8 +7,6 @@
 #include "async/SubDomain.h"
 #include "BackendRegisterCatalogue.h"
 
-#include <ChimeraTK/cppext/print.hpp>
-
 namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
