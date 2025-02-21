@@ -51,13 +51,25 @@ struct Fixture {
   void updaterLoop(unsigned nLoops, unsigned delay) {
     auto accA = dev.getScalarRegisterAccessor<int32_t>("/A");
     auto accB = dev.getScalarRegisterAccessor<int32_t>("/B");
+    // note, the default-constructed VersionNumbers in here will not be used
     std::vector<ChimeraTK::VersionNumber> vs(nLoops);
     for(unsigned loopCount = 0; loopCount < nLoops; loopCount++) {
+      std::cout << "updaterLoop: writing value " << loopCount << std::endl;
       accA = (int32_t)loopCount;
-      accA.write(vs[loopCount]);
-      if(loopCount >= delay) {
-        accB = (int32_t)(loopCount - delay);
-        accB.write(vs[loopCount - delay]);
+    retryWrite:
+      // device might be in error state so write can throw
+      try {
+        vs[loopCount] = {};
+        accA.write(vs[loopCount]);
+        if(loopCount >= delay) {
+          accB = (int32_t)(loopCount - delay);
+          accB.write(vs[loopCount - delay]);
+        }
+      }
+      catch(ChimeraTK::runtime_error& e) {
+        std::cout << "updaterLoop: exception, wait and retry write.." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds{500});
+        goto retryWrite;
       }
       // wait on data receive before writing next
       waitOnReceiveAck();
@@ -159,8 +171,8 @@ BOOST_FIXTURE_TEST_CASE(testExceptions, Fixture) {
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
 
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
-  //  TODO discuss API:
-  //  ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
+  //   TODO discuss API:
+  //   ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
   dg.decorateAccessors(&rag);
 
   const unsigned nLoops = 6;
@@ -211,7 +223,9 @@ BOOST_FIXTURE_TEST_CASE(testExceptions, Fixture) {
     }
 
     updaterThread1.join();
-    BOOST_TEST(nConsistentUpdates == nLoops - delay);
+    // TODO discuss. Are initial values considered consistent?
+    // one more update since after exception, open, activateAsyncRead, we get another initial value
+    BOOST_TEST(nConsistentUpdates == nLoops - delay + 1);
     BOOST_TEST(nConsistentUpdates == nUpdates);
   }
 }

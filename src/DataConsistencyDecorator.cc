@@ -49,6 +49,8 @@ namespace ChimeraTK {
     // We know that target->preRead was already called.
     // Differently from usual decorator behavior, we call target->postRead already here,
     // because we need user buffer content to judge data consistency.
+    std::cout << "readCallback0: seeing update for target " << _target->getName() << " vs "
+              << _target->getVersionNumber() << std::endl;
     _target->postRead(TransferType::read, true);
 
     std::cout << "readCallback: seeing update for target " << _target->getName() << " vs "
