@@ -288,7 +288,8 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
  *  FIXME: The test is done on a very high level and tests many other things as well, which are already tested else
  *         where.
  */
-BOOST_AUTO_TEST_CASE(testExceptionHandling) {
+BOOST_AUTO_TEST_CASE(TestExceptionHandling) {
+  std::cout << "TestExceptionHandling" << std::endl;
   auto targetAccessor = boost::make_shared<DecoratorTestAccessor<int32_t>>(AccessModeFlags({}));
   // an empty decorator is sufficient for the test we want to make with TransferElement.
   ChimeraTK::NDRegisterAccessorDecorator<int32_t> accessor(targetAccessor);
@@ -359,6 +360,49 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   targetAccessor->resetCounters();
   targetAccessor->_throwThreadInterruptedInTransfer = true;
   BOOST_CHECK_THROW(accessor.writeDestructively(), boost::thread_interrupted);
+}
+
+/**********************************************************************************************************************/
+
+template<typename UserType>
+class TestNDRegisterAccessorDecorator : public NDRegisterAccessorDecorator<UserType, UserType> {
+ public:
+  using NDRegisterAccessorDecorator<UserType, UserType>::NDRegisterAccessorDecorator;
+  using NDRegisterAccessorDecorator<UserType, UserType>::_target;
+};
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestDecorateDeepInside) {
+  std::cout << "TestDecorateDeepInside" << std::endl;
+  auto target = boost::make_shared<DecoratorTestAccessor<int32_t>>(AccessModeFlags({}));
+  auto deco1 = boost::make_shared<TestNDRegisterAccessorDecorator<int32_t>>(target);
+  auto deco2 = boost::make_shared<TestNDRegisterAccessorDecorator<int32_t>>(deco1);
+  auto deco3 = boost::make_shared<TestNDRegisterAccessorDecorator<int32_t>>(deco2);
+
+  // first rest with a factory which never actually decorates, to see if the factory is called in the right sequence
+  std::vector<boost::shared_ptr<NDRegisterAccessor<int32_t>>> paramsSeen;
+  auto deco0 = deco3->decorateDeepInside(
+      [&](const boost::shared_ptr<NDRegisterAccessor<int32_t>>& t) -> boost::shared_ptr<NDRegisterAccessor<int32_t>> {
+        paramsSeen.push_back(t);
+        return {};
+      });
+  BOOST_TEST(paramsSeen.size() == 3);
+  BOOST_TEST(paramsSeen[0] == target);
+  BOOST_TEST(paramsSeen[1] == deco1);
+  BOOST_TEST(paramsSeen[2] == deco2);
+  BOOST_TEST(!deco0);
+
+  // test the actual decoration
+  boost::shared_ptr<TestNDRegisterAccessorDecorator<int32_t>> decoCreated;
+  auto decoReturned = deco3->decorateDeepInside(
+      [&](const boost::shared_ptr<NDRegisterAccessor<int32_t>>& t) -> boost::shared_ptr<NDRegisterAccessor<int32_t>> {
+        decoCreated = boost::make_shared<TestNDRegisterAccessorDecorator<int32_t>>(t);
+        return decoCreated;
+      });
+  BOOST_TEST(decoReturned == decoCreated);
+  BOOST_TEST(decoCreated->_target == target);
+  BOOST_TEST(deco1->_target == decoCreated);
 }
 
 /**********************************************************************************************************************/

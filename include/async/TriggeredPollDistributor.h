@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "../ScalarRegisterAccessor.h"
 #include "../TransferGroup.h"
 #include "AsyncAccessorManager.h"
 #include "DataConsistencyRealm.h"
 #include "MuxedInterruptDistributor.h"
-#include "../ScalarRegisterAccessor.h"
 
 #include <memory>
 
