@@ -2,42 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "DataConsistencyGroup.h"
+#include "HDataConsistencyGroup.h"
 #include "NDRegisterAccessorDecorator.h"
 
 namespace ChimeraTK {
-
-  /********************************************************************************************************************/
-
-  class ReadAnyGroup;
-
-  class HDataConsistencyGroup : public DataConsistencyGroup {
-   public:
-    /**
-     * Construct HDataConsistencyGroup from a set of TransferElementAbstractors. These will be decorated
-     * with DataConsistencyDecorator.
-     * Note, constructor for set of TransferElements is not provided since we could not decorate them for the caller.
-     */
-    HDataConsistencyGroup(std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list);
-
-    /// decorate accessor by replacing its target => DataConsistencyDecorator(target)
-    void decorateAccessor(TransferElementAbstractor& acc);
-    /// use known already decorated accessors as replacement for ReadAnyGroup's content
-    void decorateAccessors(ReadAnyGroup* rag);
-
-    /**
-     * Note, differently from DataConsistencyGroup, explicit call to this function is no longer required,
-     * since already done by DataConsistencyDecorator.
-     */
-    bool update(const TransferElementID& transferElementID);
-
-   protected:
-    // user may no longer directly call add from base class
-    using DataConsistencyGroup::add;
-
-    std::set<TransferElementID> decoratorsNeedingPostRead;
-    std::map<TransferElementID, TransferElementAbstractor> decoratedElements;
-  };
 
   /********************************************************************************************************************/
 
