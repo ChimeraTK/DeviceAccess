@@ -46,11 +46,16 @@ namespace ChimeraTK {
 
   template<typename T>
   void DataConsistencyDecorator<T>::readCallback() {
-    // We know that target->preRead was already called.
+    // While ReadAnyGroup.waitAny() already calls preRead, waitAnyNonBlocking() does not,
+    // but when it peeks into the readQueue, readCallback() is allready exectued!
+    // We call target->preRead just to be sure; if called twice no harm done.
+    // TODO discuss - Using TransferType::read is fine even in non-block case, since
+    // readCallback is only executed when we know something is in target's readQueue.
+    this->preRead(TransferType::read);
+    // TODO discuss - preRead also needs to be called for decorator! is it fine to do it from here?
+
     // Differently from usual decorator behavior, we call target->postRead already here,
     // because we need user buffer content to judge data consistency.
-    std::cout << "readCallback0: seeing update for target " << _target->getName() << " vs "
-              << _target->getVersionNumber() << std::endl;
     _target->postRead(TransferType::read, true);
 
     std::cout << "readCallback: seeing update for target " << _target->getName() << " vs "
@@ -102,16 +107,7 @@ namespace ChimeraTK {
   }
 
   bool HDataConsistencyGroup::update(const TransferElementID& transferElementID) {
-    auto vnFromElement = getElements().at(transferElementID).getVersionNumber();
-    bool consistent;
-    if(vnFromElement == VersionNumber{nullptr}) {
-      // special case target versionNumber=0 can happen with initial values; these are considered not consistent
-      // but dGroup->update() must not be called
-      consistent = false;
-    }
-    else {
-      consistent = DataConsistencyGroup::update(transferElementID);
-    }
+    bool consistent = DataConsistencyGroup::update(transferElementID);
 
     if(!consistent) {
       // if not consistent, delay call to postRead (called from ReadAnyGroup), by throwing DiscardValueException.

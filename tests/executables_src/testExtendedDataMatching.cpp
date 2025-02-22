@@ -22,8 +22,11 @@ BOOST_AUTO_TEST_SUITE(ExtendedDataMatchingTestSuite)
 auto emptyQueues(ReadAnyGroup& rag) {
   // empty read queue before start of next test.
   // this also gets rid of initial values
+  unsigned numDiscarded = 0;
   while(rag.readAnyNonBlocking().isValid()) {
+    numDiscarded++;
   }
+  return numDiscarded;
 };
 
 struct Fixture {
@@ -42,7 +45,7 @@ struct Fixture {
     timeval now{};
     gettimeofday(&now, nullptr);
     timeout.tv_sec = now.tv_sec + 1;
-    timeout.tv_nsec = now.tv_usec * 500;
+    timeout.tv_nsec = now.tv_usec * 300;
     sem_timedwait(&sem, &timeout);
   };
 
@@ -223,11 +226,30 @@ BOOST_FIXTURE_TEST_CASE(testExceptions, Fixture) {
     }
 
     updaterThread1.join();
-    // TODO discuss. Are initial values considered consistent?
     // one more update since after exception, open, activateAsyncRead, we get another initial value
     BOOST_TEST(nConsistentUpdates == nLoops - delay + 1);
     BOOST_TEST(nConsistentUpdates == nUpdates);
   }
+}
+
+BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
+  std::cout << "testInitialValues" << std::endl;
+  // at start VersionNum(A)=0, since no read has yet occurred
+
+  ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
+
+  ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
+  //    TODO discuss API:
+  //    ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
+  dg.decorateAccessors(&rag);
+
+  unsigned nDiscarded = emptyQueues(rag);
+  // after read, VersionNumbers must be non-zero.
+  // Note, initial values here count as one consistent set.
+  BOOST_TEST(nDiscarded == 1);
+
+  BOOST_TEST(readAccA.getVersionNumber() != VersionNumber(0));
+  BOOST_TEST(readAccB.getVersionNumber() != VersionNumber(0));
 }
 
 // TODO - how can we check things related to MetaDataPropagatingRegisterDecorator?
