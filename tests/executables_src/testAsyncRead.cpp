@@ -199,7 +199,9 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
 
   // Create ReadAnyGroup
   ReadAnyGroup group;
+  BOOST_TEST(a1.getReadAnyGroup() == nullptr);
   group.add(a1);
+  BOOST_TEST(a1.getReadAnyGroup() == &group);
   group.add(a2);
   group.add(a3);
   group.add(a4);
