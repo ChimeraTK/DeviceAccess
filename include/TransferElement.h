@@ -28,6 +28,7 @@
 namespace ChimeraTK {
   class PersistentDataStorage;
   class TransferGroup;
+  class ReadAnyGroup;
 
   /**
    * @brief The current state of the data
@@ -118,7 +119,7 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
             "' which is part of a TransferGroup is not allowed.");
       }
-      if(TransferElement::_isInReadAnyGroup) {
+      if(TransferElement::_inReadAnyGroup) {
         throw ChimeraTK::logic_error("Directly calling read() on the TransferElement '" + _name +
             "' which is part of a ReadAnyGroup is not allowed.");
       }
@@ -148,7 +149,7 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Calling read() or write() on the TransferElement '" + _name +
             "' which is part of a TransferGroup is not allowed.");
       }
-      if(TransferElement::_isInReadAnyGroup) {
+      if(TransferElement::_inReadAnyGroup) {
         throw ChimeraTK::logic_error("Directly calling readNonBlocking() on the TransferElement '" + _name +
             "' which is part of a ReadAnyGroup is not allowed.");
       }
@@ -800,6 +801,9 @@ namespace ChimeraTK {
     /** Check whether a write transaction is in progress, i.e. preWrite() has been called but not yet postWrite(). */
     bool isWriteTransactionInProgress() const { return writeTransactionInProgress; }
 
+    /** Obtain the ReadAnyGroup this TransferElement is part of, or nullptr if not in a ReadAnyGroup. */
+    [[nodiscard]] ReadAnyGroup* getReadAnyGroup() const { return _inReadAnyGroup; }
+
    protected:
     /** Identifier uniquely identifying the TransferElement */
     std::string _name;
@@ -820,8 +824,12 @@ namespace ChimeraTK {
      */
     bool _isInTransferGroup{false};
 
-    /** Flag whether this TransferElement has been added to a ReadAnyGroup or not*/
-    bool _isInReadAnyGroup{false};
+    /**
+     * ReadAnyGroup this TransferElement has been added to, nullptr if not in a ReadAnyGroup.
+     * Note: The ReadAnyGroup has an owning pointer to its member TransferElements, so using a non-owning pointer
+     * here s ok.
+     */
+    ReadAnyGroup* _inReadAnyGroup{nullptr};
 
     /** The access mode flags for this transfer element.*/
     AccessModeFlags _accessModeFlags;

@@ -220,6 +220,9 @@ namespace ChimeraTK {
      */
     void interrupt() { _impl->interrupt(); }
 
+    /** Obtain the ReadAnyGroup this TransferElement is part of, or nullptr if not in a ReadAnyGroup. */
+    [[nodiscard]] ReadAnyGroup* getReadAnyGroup() const { return _impl->getReadAnyGroup(); }
+
    protected:
     /** Untyped pointer to implementation */
     boost::shared_ptr<TransferElement> _impl;

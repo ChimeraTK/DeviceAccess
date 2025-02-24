@@ -462,7 +462,7 @@ namespace ChimeraTK {
     // We do this for push-types only, since poll-types technically still allow calling read() without the ReadAnyGroup,
     // although its documentation states that would not be allowed.
     if(element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-      element.getHighLevelImplElement()->_isInReadAnyGroup = true;
+      element.getHighLevelImplElement()->_inReadAnyGroup = this;
     }
   }
 
