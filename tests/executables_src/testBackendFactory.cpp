@@ -14,13 +14,7 @@ using namespace boost::unit_test_framework;
 #include <boost/make_shared.hpp>
 
 #include <cstdio>
-namespace ChimeraTK {
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
-
-// #undef TEST_DMAP_FILE_PATH
-// #define TEST_DMAP_FILE_PATH "/testDummies.dmap"
 
 struct NewBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
@@ -39,9 +33,9 @@ BOOST_AUTO_TEST_CASE(testCreateBackend) {
   BackendFactory::getInstance().setDMapFilePath("");
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"), ChimeraTK::logic_error);
 
-  std::string testFilePath = TEST_DMAP_FILE_PATH;
-  std::string oldtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "Old";
-  std::string invalidtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "disabled";
+  std::string testFilePath = "./dummies.dmap";
+  std::string oldtestFilePath = "./oldFileFormat.dmap";
+  std::string invalidtestFilePath = "./nonExistingDmapFile.dmap";
   BOOST_CHECK_THROW(BackendFactory::getInstance().setDMapFilePath(invalidtestFilePath), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),
       ChimeraTK::logic_error); // dmap file not found
