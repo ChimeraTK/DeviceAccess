@@ -11,13 +11,19 @@ namespace ChimeraTK {
 
   HDataConsistencyGroup::HDataConsistencyGroup(
       std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list) {
+    ReadAnyGroup* rag = nullptr;
     for(TransferElementAbstractor& acc : list) {
       // add target accessor to DataConsistencyGroup
       add(acc);
       decorateAccessor(acc);
       // add decorated access to our elements map (key = Id remains unchanged by decoration)
       decoratedElements[acc.getId()] = acc;
+      if(acc.getReadAnyGroup() == nullptr || (rag != nullptr && acc.getReadAnyGroup() != rag)) {
+        throw ChimeraTK::logic_error("all elements of the HDataConsistencyGroup must point to the same ReadAnyGroup!");
+      }
+      rag = acc.getReadAnyGroup();
     }
+    decorateAccessors(rag);
   }
 
   void HDataConsistencyGroup::decorateAccessor(TransferElementAbstractor& acc) {

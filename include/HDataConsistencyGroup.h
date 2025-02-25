@@ -59,8 +59,10 @@ namespace ChimeraTK {
      */
     void add(ChimeraTK::TransferElementAbstractor& acc, unsigned histLen = 0);
 
+    // TODO discuss - should this be public or not?
     /// decorate accessor by replacing its target => DataConsistencyDecorator(target)
     void decorateAccessor(TransferElementAbstractor& acc);
+    // TODO discuss - should this be public or not?
     /// use known already decorated accessors as replacement for ReadAnyGroup's content
     void decorateAccessors(ReadAnyGroup* rag);
 

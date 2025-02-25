@@ -137,9 +137,6 @@ BOOST_FIXTURE_TEST_CASE(test1, Fixture) {
   }
 
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
-  // TODO discuss API:
-  // ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
-  dg.decorateAccessors(&rag);
 
   for(unsigned delay = 0; delay <= 2; delay++) {
     // With HDataConsistencyGroup, check that we get N-delay consistent updates.
@@ -179,8 +176,6 @@ BOOST_FIXTURE_TEST_CASE(testDuplicateVns, Fixture) {
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
 
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
-  // TODO discuss API:
-  // ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
   dg.decorateAccessors(&rag);
 
   const unsigned nLoops = 4;
@@ -221,11 +216,7 @@ BOOST_FIXTURE_TEST_CASE(testExceptions, Fixture) {
   std::cout << "testExceptions" << std::endl;
 
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
-
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
-  //   TODO discuss API:
-  //   ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
-  dg.decorateAccessors(&rag);
 
   const unsigned nLoops = 6;
   const unsigned delay = 0;
@@ -286,11 +277,7 @@ BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
   // at start VersionNum(A)=0, since no read has yet occurred
 
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
-
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
-  //    TODO discuss API:
-  //    ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
-  dg.decorateAccessors(&rag);
 
   unsigned nDiscarded = emptyQueues(rag);
   // after read, VersionNumbers must be non-zero.
