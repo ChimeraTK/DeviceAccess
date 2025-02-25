@@ -29,7 +29,21 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
 
   BOOST_TEST(regs.hasRegister("/SomeTopLevelRegister"));
+  auto reg = regs.getBackendRegister("/SomeTopLevelRegister");
+  BOOST_TEST(reg.pathName == "/SomeTopLevelRegister");
+  BOOST_TEST(reg.nElements == 1);
+  // BOOST_TEST(reg.elementPitchBits == 1);
+  BOOST_TEST(reg.bar == 2);
+  BOOST_TEST(reg.address == 1234);
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+  BOOST_REQUIRE(reg.channels.size() == 1);
+  BOOST_TEST(reg.channels[0].bitOffset == 0);
+  BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+  BOOST_TEST(reg.channels[0].width == 32);
+  BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+  BOOST_TEST(reg.channels[0].signedFlag == true);
 }
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
