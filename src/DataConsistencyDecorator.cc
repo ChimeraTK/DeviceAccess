@@ -54,6 +54,11 @@ namespace ChimeraTK {
     this->preRead(TransferType::read);
     // TODO discuss - preRead also needs to be called for decorator! is it fine to do it from here?
 
+    // Before we update target buffer, we swap it into history. If history buffers = {h1, h2}, then switch h1<->h2,
+    // target<->h1, so target oldest data (h2) which may be overwritten next. In match search (after
+    // postRead), the three buffers {target, h1, h2} should be searched.
+    _dGroup->updateHistory(_target->getId());
+
     // Differently from usual decorator behavior, we call target->postRead already here,
     // because we need user buffer content to judge data consistency.
     _target->postRead(TransferType::read, true);

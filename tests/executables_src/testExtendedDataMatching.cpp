@@ -1,16 +1,14 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "ExceptionDummyBackend.h"
-
 #include <thread>
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE DataConsistencyGroupTest
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "DataConsistencyDecorator.h"
 #include "Device.h"
+#include "HDataConsistencyGroup.h"
 #include "ReadAnyGroup.h"
 
 using namespace ChimeraTK;
@@ -51,7 +49,7 @@ struct Fixture {
 
   // loop for updater thread: option to delay updates on A and B
   // e.g. B has delay=2: A=v1, A=v2, A=v3, B=v1, A=v4, B=v2, ...
-  void updaterLoop(unsigned nLoops, unsigned delay) {
+  void updaterLoop(unsigned nLoops, unsigned delay, unsigned duplicateVns = 0) {
     auto accA = dev.getScalarRegisterAccessor<int32_t>("/A");
     auto accB = dev.getScalarRegisterAccessor<int32_t>("/B");
     // note, the default-constructed VersionNumbers in here will not be used
@@ -62,7 +60,13 @@ struct Fixture {
     retryWrite:
       // device might be in error state so write can throw
       try {
-        vs[loopCount] = {};
+        if(loopCount > 0 && duplicateVns > 0) {
+          vs[loopCount] = vs[loopCount - 1]; // use last VersionNumber another time
+          duplicateVns--;
+        }
+        else {
+          vs[loopCount] = {}; // new VersionNumber
+        }
         accA.write(vs[loopCount]);
         if(loopCount >= delay) {
           accB = (int32_t)(loopCount - delay);
@@ -91,6 +95,7 @@ struct Fixture {
 };
 
 BOOST_FIXTURE_TEST_CASE(test1, Fixture) {
+  std::cout << "test1" << std::endl;
   // minimal test code: we create two read accessors on variables defined in xlmap, put them into a ReadAnyGroup and a
   // HDataConsistencyGroup. We provide data from another thread, as in real use case. Then using different delay
   // settings for updates of A and B, check expected number of consistent data updates.
@@ -164,6 +169,51 @@ BOOST_FIXTURE_TEST_CASE(test1, Fixture) {
     }
     updaterThread1.join();
     BOOST_TEST(nConsistentUpdates == nLoops - delay);
+    BOOST_TEST(nConsistentUpdates == nUpdates);
+  }
+}
+
+BOOST_FIXTURE_TEST_CASE(testDuplicateVns, Fixture) {
+  std::cout << "testDuplicateVns" << std::endl;
+
+  ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
+
+  ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
+  // TODO discuss API:
+  // ReadAnyGroup holds copy of acessors(abstractors), so these also need to become decorated.
+  dg.decorateAccessors(&rag);
+
+  const unsigned nLoops = 4;
+  const unsigned nDuplicateVns = 1;
+
+  for(unsigned delay = 0; delay <= 2; delay++) {
+    // With HDataConsistencyGroup, check that we get N-delay consistent updates.
+    // Also check that we have consistent data (e.g. data=versionnumber counter)
+    emptyQueues(rag);
+    unsigned nUpdates = 0;
+    unsigned nConsistentUpdates = 0;
+    std::thread updaterThread1([&]() { updaterLoop(nLoops, delay, nDuplicateVns); });
+    // test loop consuming data
+    try {
+      while(true) {
+        rag.readAny();
+        nUpdates++;
+        if(readAccA.getVersionNumber() == readAccB.getVersionNumber()) {
+          nConsistentUpdates++;
+        }
+        // check data consistency via VersionNumber and content
+        BOOST_TEST(readAccA.getVersionNumber() == readAccB.getVersionNumber());
+        BOOST_TEST(readAccA == readAccB);
+        // acknowledge data received: here updated id is irrelevant
+        sem_post(&sem);
+      }
+    }
+    catch(boost::thread_interrupted& e) {
+      std::cout << "thread interrupted" << std::endl;
+    }
+    updaterThread1.join();
+    // for each VersionNumber that is repeated for A, we should get one extra consistent update
+    BOOST_TEST(nConsistentUpdates == nLoops - delay + nDuplicateVns);
     BOOST_TEST(nConsistentUpdates == nUpdates);
   }
 }
@@ -248,8 +298,8 @@ BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
   // Note, initial values here count as one consistent set.
   BOOST_TEST(nDiscarded == 1);
 
-  BOOST_TEST(readAccA.getVersionNumber() != VersionNumber(0));
-  BOOST_TEST(readAccB.getVersionNumber() != VersionNumber(0));
+  BOOST_TEST(readAccA.getVersionNumber() != VersionNumber(nullptr));
+  BOOST_TEST(readAccB.getVersionNumber() != VersionNumber(nullptr));
 }
 
 // TODO - how can we check things related to MetaDataPropagatingRegisterDecorator?

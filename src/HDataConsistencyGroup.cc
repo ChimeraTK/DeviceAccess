@@ -59,18 +59,27 @@ namespace ChimeraTK {
       throw detail::DiscardValueException();
     }
 
-    // to update other user buffers, call postRead on the other involved decorators
-    // Note, in case of an exception thrown by some postRead, it might happen that postRead is
-    // called more than once in a row, for the other elements. This is allowed.
-    for(TransferElementID id : decoratorsNeedingPostRead) {
-      auto& acc = decoratedElements.at(id);
-      acc.getHighLevelImplElement()->postRead(TransferType::read, true);
-      // just as in ReadAnyGroup, we immediately follow-up with preRead
-      acc.getHighLevelImplElement()->preRead(TransferType::read);
+    // In special case that we have consistent state with unchanged version number, we do not update other
+    // decorator buffers.
+    // E.g. all decorators in consistent state, say v3.
+    // Now A gets a new update, v4. this is put into history, and since no value yet for matching B,
+    // we throw DiscardValueException. But then, we get another value for B, with version v3.
+    // In this case, decorator(A) must not be swapped again, but decorator(B) should be swapped with target(B)=v3
+    auto currentVn = _pushElements.at(transferElementID).acc.getVersionNumber();
+    if(currentVn > _lastMatchingVersionNumber) {
+      // To update other user buffers, call postRead on the other involved decorators.
+      // Note, in case of an exception thrown by some postRead, it might happen that postRead is
+      // called more than once in a row, for the other elements. This is allowed.
+      for(TransferElementID id : decoratorsNeedingPostRead) {
+        auto& acc = decoratedElements.at(id);
+        acc.getHighLevelImplElement()->postRead(TransferType::read, true);
+        // just as in ReadAnyGroup, we immediately follow-up with preRead
+        acc.getHighLevelImplElement()->preRead(TransferType::read);
+      }
+      decoratorsNeedingPostRead.clear();
     }
     // our own postRead will be called by ReadAnyGroup
-    decoratorsNeedingPostRead.clear();
-    return consistent;
+    return true;
   }
 
   /********************************************************************************************************************/
@@ -144,61 +153,60 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool HDataConsistencyGroup::hUpdate(const ChimeraTK::TransferElementID& transferElementID) {
-    /*
-     * update logic:
-     * - version number to match is that of the given transferElement
-     * - try to find a match using history of all push elements
-     * - if match not found, store value and meta data of this transferElement in history
-     * - if match found, swap back values of all except this transferElement into user buffers
-     */
-
     auto it = _pushElements.find(transferElementID);
     if(it == _pushElements.end()) {
-      // ignore unknown transfer elements
+      // ignore unkown element
       return false;
+    }
+    auto& pElem = it->second;
+    auto vn = pElem.acc.getVersionNumber();
+    if(pElem.histLen > 0 && vn == pElem.versionNumbers[0]) {
+      // take special care for duplicate VersionNumbers. We want VersionNumbers only once in history.
+      // So in case of a duplicate VersionNumber, we mark the previous historized value as invalid
+      pElem.versionNumbers[0] = VersionNumber(nullptr);
     }
 
     if(findMatch(transferElementID)) {
+      // match found, swap back values of all except this transferElement into target(i.e. not decorator) buffers
       for(const auto& pair : _pushElements) {
         if(pair.first == transferElementID) {
           continue;
         }
         updateUserBuffer(pair.first);
-        // TODO handle special case: repeated versionnumber for this transferElement:
-        // we must not swap back data again
       }
+      _lastMatchingVersionNumber = vn;
+      return true;
     }
-    else {
-      // we may only update history of the transfer element with new data; otherwise we could run into a conflict
-      // with data pulled back from history.
-      updateHistory(transferElementID);
-    }
+    return false;
   }
 
   /********************************************************************************************************************/
 
   bool HDataConsistencyGroup::findMatch(TransferElementID transferElementID) {
-    auto vn = _pushElements.at(transferElementID).acc.getVersionNumber();
+    auto it = _pushElements.find(transferElementID);
+    if(it == _pushElements.end()) {
+      // ignore unknown transfer elements
+      return false;
+    }
+    auto vn = it->second.acc.getVersionNumber();
 
     for(auto& pair : _pushElements) {
       if(pair.first == transferElementID) {
         continue;
       }
       PushElement& element = pair.second;
-      if(element.histLen > 0) {
+      // first consider accessor's user buffer and version number
+      if(element.acc.getVersionNumber() == vn) {
+        element.lastMatchingIndex = 0;
+      }
+      else if(element.histLen > 0) {
         auto versionNumVector = element.versionNumbers;
 
         auto pos = std::find(versionNumVector.begin(), versionNumVector.end(), vn);
         if(pos == versionNumVector.end()) {
           return false;
         }
-        element.lastMatchingIndex = pos - versionNumVector.begin();
-      }
-      else {
-        // no history: consider only accessor's user buffer and version number
-        if(element.acc.getVersionNumber() != vn) {
-          return false;
-        }
+        element.lastMatchingIndex = pos - versionNumVector.begin() + 1;
       }
     }
     return true;
@@ -214,15 +222,17 @@ namespace ChimeraTK {
       auto& bufferVector = *getBufferVector<UserBufferType>(transferElementID);
 
       // update user buffer from history
-      // here we use copy instead of swap, since it is allowed that same version number is repeated for some other
-      // transfer element of the historized group. So it might happen we need the history value again.
-      getUserBuffer<UserType>(transferElementID) = bufferVector[element.lastMatchingIndex];
-      auto savedDv = element.dataValidities[element.lastMatchingIndex];
+      UserBufferType& userBuffer = getUserBuffer<UserType>(transferElementID);
+      UserBufferType& matchingBuffer = bufferVector[element.lastMatchingIndex - 1];
+      for(size_t i = 0; i < userBuffer.size(); ++i) {
+        userBuffer[i].swap(matchingBuffer[i]);
+      }
+      auto savedDv = element.dataValidities[element.lastMatchingIndex - 1];
       element.acc.setDataValidity(savedDv);
     };
 
-    // user buffer update applies only if history available
-    if(element.histLen > 0) {
+    // user buffer update applies only lastMatchingIndex points to history
+    if(element.lastMatchingIndex > 0) {
       ChimeraTK::callForType(element.histBufferType, f);
     }
   }
@@ -250,11 +260,15 @@ namespace ChimeraTK {
       auto& versionNumVector = element.versionNumbers;
       auto& datavalidityVector = element.dataValidities;
 
-      // copy or swap data into history
-      for(unsigned i = histLen - 1; i > 0; i--) {
-        bufferVector[i].swap(bufferVector[i - 1]);
-        versionNumVector[i] = versionNumVector[i - 1];
-        datavalidityVector[i] = datavalidityVector[i - 1];
+      // swap data into history
+      // after all swaps, to be erased data is in user buffer. Usually this is the oldest data element,
+      // except in special case where first history element is invalid.
+      if(versionNumVector[0] > VersionNumber(nullptr)) {
+        for(unsigned i = histLen - 1; i > 0; i--) {
+          bufferVector[i].swap(bufferVector[i - 1]);
+          versionNumVector[i] = versionNumVector[i - 1];
+          datavalidityVector[i] = datavalidityVector[i - 1];
+        }
       }
       bufferVector[0].swap(buf);
       versionNumVector[0] = vn;

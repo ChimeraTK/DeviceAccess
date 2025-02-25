@@ -80,24 +80,29 @@ namespace ChimeraTK {
     [[nodiscard]] const auto& getPushElements() const { return _pushElements; }
     virtual ~HDataConsistencyGroup();
 
+    void updateHistory(const ChimeraTK::TransferElementID& transferElementID);
+
    protected:
     std::set<TransferElementID> decoratorsNeedingPostRead;
     std::map<TransferElementID, TransferElementAbstractor> decoratedElements;
 
     void setupHistory(const ChimeraTK::TransferElementAbstractor& element, unsigned histLen);
 
+    /**
+     * update logic:
+     * - version number to match is that of the given transferElement
+     * - try to find a match including histories of all push elements
+     * - if match found, swap back values of all except this transferElement into user buffers
+     */
     bool hUpdate(const TransferElementID& transferElementID);
     // TODO make mostly compatible as a drop-in replacement for DataConsistencyGroup: add some methods
 
-    /// Find a match for all participating TransferElements with given VersionNumber.
-    /// If found, copy matching values into user buffers and return true.
     bool findMatch(TransferElementID transferElementID);
 
     /// return reference to user buffer of transfer element of this group
     template<typename UserType>
     std::vector<std::vector<UserType>>& getUserBuffer(const ChimeraTK::TransferElementID& transferElementID);
 
-    void updateHistory(const ChimeraTK::TransferElementID& transferElementID);
     void updateUserBuffer(const ChimeraTK::TransferElementID& transferElementID);
 
     template<typename UserBufferType>
@@ -107,17 +112,19 @@ namespace ChimeraTK {
     }
 
     struct PushElement {
+      // target of DataConsistencyDecorator
       ChimeraTK::TransferElementAbstractor acc;
       unsigned histLen = 0;
       void* histBuffer = nullptr;
       const std::type_info& histBufferType;
       std::vector<ChimeraTK::VersionNumber> versionNumbers;
       std::vector<ChimeraTK::DataValidity> dataValidities;
-      /// 0 means most recent value is used.
+      /// index=0 is most recent value = accessor's user buffer, index>=1 is history buffers
       unsigned lastMatchingIndex = 0;
     };
 
     std::map<ChimeraTK::TransferElementID, PushElement> _pushElements;
+    VersionNumber _lastMatchingVersionNumber{nullptr};
   };
 
   /*************************************************************************************************/
