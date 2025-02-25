@@ -1,0 +1,561 @@
+{
+  "_comment": "Any unknown keys will be ignored. By convention, comments shall use keys starting with an underscore.",
+  "_blubb": "This is also a comment",
+  "foo": "This is ignored as well, but shouldn't be used for comments",
+  "mapFormatVersion": "0.0.1",
+  "metadata": {
+    "_comment": "Suggested naming convention: camelcase for property names",
+    "mapfileRevision": "1.8.3-0-gdeadbeef",
+    "someRandomEntry": "some random value"
+  },
+  "interruptHandler": {
+    "0": {
+      "INTC": {
+        "path": "DAQ",
+        "version": 1,
+        "_comment": "This is exactly the current JSON snippet from the metadata"
+      }
+    },
+    "3": {
+      "INTC": {
+        "path": "MY_INTC",
+        "options": [
+          "MER"
+        ],
+        "version": 1
+      },
+      "subhandler": {
+        "0": {
+          "INTC": {
+            "path": "MY_INTC.SUB0",
+            "options": []
+          }
+        },
+        "1": {
+          "INTC": {
+            "path": "MY_INTC.SUB1",
+            "options": [
+              "MER"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "addressSpace": [
+    {
+      "name": "SomeTopLevelRegister",
+      "engineeringUnit": "mV",
+      "description": "This is an example register",
+      "access": "RW",
+      "cacheable": true,
+      "_": "cacheable: Software may assume value never changed from remote side - unused in the beginning. Default: true",
+      "numberOfElements": 1,
+      "bytesPerElement": 4,
+      "address": {
+        "type": "I/O",
+        "channel": 0,
+        "offset": 32,
+        "_comment": "'type' can be 'I/O' (default), or 'DMA'. 'channel' is optional and defaults to 0."
+      },
+      "representation": {
+        "type": "fixedPoint",
+        "width": 32,
+        "fractionalBits": 8,
+        "isSigned": true,
+        "_comment": "type might be fixedPoint (default), IEEE754, bitField, string, or void",
+        "validRange": [
+          -0.5,
+          12.345
+        ]
+      },
+      "initialValue": 3.5,
+      "__": "Unclear how to implement, must be written only during initialisation, not upon every open. Maybe remove."
+    },
+    {
+      "name": "BSP",
+      "address": {
+        "channel": 0,
+        "offset": 0
+      },
+      "numberOfElements": 19201,
+      "bytesPerElement": 4,
+      "_comment": "omitting 'representation': width = bytesPerElement * 8 bits, unsigned integer",
+      "_comment2": "This is the equivalent of 'ch0_top.BSP', with the BSP.* registers defined as 'children'",
+      "children": [
+        {
+          "name": "VERSION",
+          "access": "RO",
+          "numberOfElements": 1,
+          "bytesPerElement": 4,
+          "address": {
+            "channel": 0,
+            "offset": 4
+          },
+          "representation": {
+            "type": "fixedPoint",
+            "width": 32,
+            "fractionalBits": 0,
+            "isSigned": false
+          },
+          "constant": "0x01080300",
+          "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
+        },
+        {
+          "name": "SOME_INFO",
+          "access": "RO",
+          "numberOfElements": 1,
+          "bytesPerElement": 40,
+          "address": {
+            "channel": 0,
+            "offset": 8
+          },
+          "representation": {
+            "type": "string"
+          },
+          "constant": "0x01080300",
+          "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
+        },
+        {
+          "name": "VOID_INTERRUPT_0",
+          "triggeredByInterrupt": [
+            0
+          ],
+          "representation": {
+            "type": "void"
+          }
+        },
+        {
+          "name": "VOID_INTERRUPT_3_0_1",
+          "triggeredByInterrupt": [
+            3,
+            0,
+            1
+          ],
+          "representation": {
+            "type": "void"
+          }
+        }
+      ]
+    },
+    {
+      "name": "APP",
+      "children": [
+        {
+          "name": "STATUS",
+          "description": "application status",
+          "access": "RO",
+          "address": {
+            "type": "I/O",
+            "channel": 2,
+            "offset": "0x8000"
+          },
+          "bytesPerElement": 4,
+          "representation": {
+            "type": "bitField",
+            "width": 32,
+            "elements": [
+              {
+                "name": "ProbeLimiter",
+                "bitShift": 0,
+                "representation": {
+                  "width": 1
+                }
+              },
+              {
+                "name": "ExternalInterlock",
+                "bitShift": 1,
+                "representation": {
+                  "width": 1
+                }
+              },
+              {
+                "name": "ErrorCounter",
+                "bitShift": 2,
+                "representation": {
+                  "type": "fixedPoint",
+                  "width": 3,
+                  "fractionalBits": 0,
+                  "isSigned": false
+                },
+                "_comment": "Will be unsupported at first"
+              }
+            ]
+          }
+        },
+        {
+          "name": "SomeTable",
+          "access": "WO",
+          "numberOfElements": 16384,
+          "bytesPerElement": 2,
+          "address": {
+            "channel": 0,
+            "offset": 2048
+          },
+          "representation": {
+            "type": "fixedPoint",
+            "width": 14,
+            "fractionalBits": 10,
+            "isSigned": true
+          }
+        },
+        {
+          "name": "SomeFloat",
+          "access": "RW",
+          "numberOfElements": 1,
+          "bytesPerElement": 4,
+          "address": {
+            "channel": 0,
+            "offset": 4096
+          },
+          "representation": {
+            "type": "IEEE754",
+            "width": 32
+          }
+        }
+      ]
+    },
+    {
+      "name": "DAQ",
+      "children": [
+        {
+          "name": "CTRL",
+          "description": "Controller DAQ",
+          "triggeredByInterrupt": [
+            3,
+            0,
+            1
+          ],
+          "_": "^^^ this implies 'access: RO', do not specify both",
+          "_comment": "pitch is the number of bytes between two elements in the same channel",
+          "address": {
+            "type": "DMA",
+            "offset": "0x80000000"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "offset": "0x80200000"
+            },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 0,
+            "_": "Index inside control registers"
+          },
+          "__": "There is an extra level in 'channels', which is only really useful with multiple DAQ tabs. See example below with a defined 'tabSelectRegister'.",
+          "channelTabs": [
+            {
+              "numberOfElements": 16384,
+              "pitch": 64,
+              "channels": [
+                {
+                  "name": "errorI",
+                  "bytesPerElement": 2,
+                  "offset": 0,
+                  "description": "Error signal in I",
+                  "engineeringUnit": "bits",
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16,
+                    "fractionalBits": -2,
+                    "isSigned": true
+                  }
+                },
+                {
+                  "name": "errorQ",
+                  "bytesPerElement": 2,
+                  "offset": 2,
+                  "description": "Error signal in Q",
+                  "engineeringUnit": "bits",
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16,
+                    "fractionalBits": -2,
+                    "isSigned": true
+                  }
+                },
+                {
+                  "name": "status",
+                  "bytesPerElement": 4,
+                  "offset": 4,
+                  "representation": {
+                    "type": "bitField",
+                    "width": 32,
+                    "elements": [
+                      {
+                        "name": "ProbeLimiter",
+                        "bitShift": 0,
+                        "representation": {
+                          "width": 1
+                        }
+                      },
+                      {
+                        "name": "ExternalInterlock",
+                        "bitShift": 1,
+                        "representation": {
+                          "width": 1
+                        }
+                      },
+                      {
+                        "name": "ErrorCounter",
+                        "bitShift": 2,
+                        "representation": {
+                          "type": "fixedPoint",
+                          "width": 3,
+                          "fractionalBits": 0,
+                          "isSigned": false
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "VectorSum",
+                  "bytesPerElement": 4,
+                  "offset": 8,
+                  "representation": {
+                    "type": "bitField",
+                    "width": 32,
+                    "elements": [
+                      {
+                        "name": "I",
+                        "bitShift": 0,
+                        "representation": {
+                          "width": 18
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "VectorSum",
+                  "bytesPerElement": 4,
+                  "offset": 10,
+                  "representation": {
+                    "type": "bitField",
+                    "width": 32,
+                    "elements": [
+                      {
+                        "name": "Q",
+                        "bitShift": 2,
+                        "representation": {
+                          "width": 18
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "FD",
+          "description": "Field detection DAQ",
+          "triggeredByInterrupt": [
+            0
+          ],
+          "address": {
+            "type": "DMA",
+            "offset": "0x81000000"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "offset": "0x81200000"
+            },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 1
+          },
+          "tabSelectRegister": "DAQ.MUX_SEL",
+          "_": "Value of the tabSelectRegister determines the used set of channels (index of muxedChannels array)",
+          "channelTabs": [
+            {
+              "numberOfElements": 16384,
+              "pitch": 64,
+              "channels": [
+                {
+                  "name": "AmplitudeCh0",
+                  "bytesPerElement": 2,
+                  "offset": 0,
+                  "description": "Amplitude of channel 0",
+                  "engineeringUnit": "bits",
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16,
+                    "fractionalBits": -2,
+                    "isSigned": true
+                  }
+                },
+                {
+                  "name": "PhaseCh0",
+                  "bytesPerElement": 2,
+                  "offset": 2,
+                  "description": "Phase of channel 0",
+                  "engineeringUnit": "bits",
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16,
+                    "fractionalBits": -2,
+                    "isSigned": true
+                  }
+                }
+              ]
+            },
+            {
+              "numberOfElements": 16384,
+              "pitch": 64,
+              "channels": [
+                {
+                  "name": "RawCh0",
+                  "bytesPerElement": 4,
+                  "offset": 0,
+                  "description": "Raw signal for channel 0",
+                  "engineeringUnit": "bits",
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 32,
+                    "fractionalBits": 0,
+                    "isSigned": true
+                  }
+                },
+                {
+                  "name": "RawCh1",
+                  "bytesPerElement": 4,
+                  "offset": 4,
+                  "description": "Phase of channel 1",
+                  "engineeringUnit": "bits",
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 32,
+                    "fractionalBits": 0,
+                    "isSigned": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "DOUBLE_BUF",
+          "children": [
+            {
+              "name": "ENA",
+              "bytesPerElement": 4,
+              "numberOfElements": 3,
+              "address": {
+                "channel": 0,
+                "offset": 1234
+              },
+              "representation": {
+                "width": 1
+              }
+            },
+            {
+              "name": "INACTIVE_BUF_ID",
+              "bytesPerElement": 4,
+              "numberOfElements": 3,
+              "address": {
+                "channel": 0,
+                "offset": 1238
+              },
+              "representation": {
+                "width": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "MUX_SEL",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 0,
+            "offset": 1242
+          },
+          "representation": {
+            "width": 2
+          }
+        },
+        {
+          "name": "MACRO_PULSE_NUMBER",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "_": "First element of last channel in DAQ.FD area",
+          "address": {
+            "type": "DMA",
+            "offset": "0x8100003C"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "offset": "0x8120003C"
+            },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 1
+          },
+          "representation": {
+            "width": 32
+          }
+        }
+      ]
+    },
+    {
+      "name": "MY_INTC",
+      "children": [
+        {
+          "name": "ISR",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 4,
+            "offset": 0
+          }
+        },
+        {
+          "name": "IER",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 4,
+            "offset": 0
+          }
+        },
+        {
+          "name": "MER",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 4,
+            "offset": 0
+          }
+        },
+        {
+          "name": "SUB0",
+          "children": [
+            {
+              "name": "ISR",
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 4,
+                "offset": 0
+              }
+            },
+            {
+              "name": "IER",
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 4,
+                "offset": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 @![2] {"INTC" : {"path": "TEST2", "options": ["ICR"], "version":1} }
 
 @![3] {"INTC" : {"path": "TEST3", "options": ["MER"],  "version":1} }
-@![3,0] {"INTC" : {"path": "TEST3.SUB0"}  "options": []}
+@![3,0] {"INTC" : {"path": "TEST3.SUB0"}, "options": []}
 @![3,1] {"INTC" : {"path": "TEST3.SUB1", "options": ["MER"]} }
 
 @![4] {"INTC" : {"path": "TEST4", "options": ["IMR"], "version":1} }
@@ -44,7 +44,7 @@
 # Unknown version
 @![19] {"INTC" : {"path": "TEST19", "version":9999999} }
 
-# Unknown primary key 
+# Unknown primary key
 @![20] {"INTC" : {"path": "TEST20", "answerToEverything": 42} }
 
 # both MIE and GIE are there
@@ -272,4 +272,3 @@ TEST34.CIE                                                    1  0x0001800C     
 TEST34.IER                                                    1  0x00018004            4    0    7    0    0   RW
 TEST34.ISR                                                    1  0x00018008            4    0    7    0    0   RW
 TEST34.DAQ_READY                                              0  0x00000000            0    0    0    0    0   INTERRUPT34:4
-
