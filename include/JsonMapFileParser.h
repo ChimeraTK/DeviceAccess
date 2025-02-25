@@ -31,8 +31,14 @@ namespace ChimeraTK::detail {
 
    private:
     std::string _fileName;
+    NumericAddressedRegisterCatalogue _catalogue;
+    MetadataCatalogue _metadata;
 
-    void requireKey(const json& data, const std::string& key, const std::string& errorMessage);
+    /// Recursive parsing
+    void parseChildren(const json& data);
+
+    /// Returns channel and offset as a pair
+    std::pair<uint64_t, uint64_t> parseAddress(const json& data);
   };
 
 } // namespace ChimeraTK::detail
