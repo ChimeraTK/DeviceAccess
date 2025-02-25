@@ -78,7 +78,7 @@ TestableDummyBackend::BackendRegisterer TestableDummyBackend::backendRegisterer;
 class Fixture_t {
  public:
   Fixture_t() : a(0), b(0), c(0), _backendInstance() {
-    BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
+    BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
     std::list<std::string> parameters;
     parameters.push_back(std::string(TEST_MAPPING_FILE));
     _dummyBackend = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE));
