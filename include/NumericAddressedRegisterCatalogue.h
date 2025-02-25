@@ -21,7 +21,7 @@ namespace ChimeraTK {
      * \li read-write
      * \li interrupt (implies read-only)
      */
-    enum class Access { READ_ONLY, WRITE_ONLY, READ_WRITE, INTERRUPT };
+    enum class Access { READ_ONLY = 0, WRITE_ONLY = 1, READ_WRITE = 2, INTERRUPT = 3 };
 
     /**
      *  Enum descibing the data interpretation:
@@ -127,7 +127,6 @@ namespace ChimeraTK {
 
     [[nodiscard]] std::vector<size_t> getQualifiedAsyncId() const override;
 
-   private:
     void computeDataDescriptor();
   };
 

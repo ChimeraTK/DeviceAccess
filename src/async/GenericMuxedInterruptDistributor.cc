@@ -3,7 +3,6 @@
 #include "async/GenericMuxedInterruptDistributor.h"
 
 #include "async/SubDomain.h"
-#include <nlohmann/json.hpp> // https://json.nlohmann.me/features/element_access/
 #include <unordered_map>
 #include <unordered_set>
 
@@ -12,6 +11,8 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
+
+#include <nlohmann/json.hpp> // https://json.nlohmann.me/features/element_access/
 
 namespace ChimeraTK::async {
   struct JsonDescriptorKeysV1 {

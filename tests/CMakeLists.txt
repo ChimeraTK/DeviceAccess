@@ -73,7 +73,7 @@ COPY_CONTENT_TO_BUILD_DIR("${CMAKE_CURRENT_SOURCE_DIR}/manualTests")
 
 MACRO(COPY_MAPPING_FILES)
   # run_performance_test.sh is not a map file but should be copied also into the tests directory
-  FILE(GLOB testConfigFiles *.map *.mapp *.dmap *.xlmap)
+  FILE(GLOB testConfigFiles *.map *.mapp *.dmap *.xlmap *.jmap)
   FILE(COPY ${testConfigFiles} DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
   # The valid dmap file has an absolute path which has to be configured by cmake
