@@ -13,11 +13,11 @@ namespace ChimeraTK {
       const boost::shared_ptr<NDRegisterAccessor<T>>& target, HDataConsistencyGroup* dGroup)
   : NDRegisterAccessorDecorator<T, T>(target), _dGroup(dGroup) {
     // check TransferElement is in ReadAnyGroup, direct reads do not make sense with HDataConsistencyGroup
-    if(!target->isInReadAnyGroup()) {
+    if(!target->getReadAnyGroup()) {
       throw logic_error(
           "Attempt to use DataConsistencyDecorator on TransferElement not in ReadAnyGroup: " + target->getName());
-      this->_isInReadAnyGroup = true;
     }
+    this->_inReadAnyGroup = target->getReadAnyGroup();
 
     this->_readQueue = target->getReadQueue().template then<void>([this]() { readCallback(); }, std::launch::deferred);
   }
