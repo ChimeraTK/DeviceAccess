@@ -51,6 +51,7 @@ namespace ChimeraTK {
     bool isFunctional() const noexcept final;
 
     std::string getActiveExceptionMessage() noexcept;
+    std::set<DeviceBackend::BackendID> getInvolvedBackendIDs() override;
 
    protected:
     /** Backends should call this function at the end of a (successful) open() call.*/

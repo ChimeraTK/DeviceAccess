@@ -73,6 +73,8 @@ namespace ChimeraTK {
 
     MetadataCatalogue getMetadataCatalogue() const override;
 
+    std::set<DeviceBackend::BackendID> getInvolvedBackendIDs() override;
+
    protected:
     friend class SubdeviceRegisterAccessor;
 

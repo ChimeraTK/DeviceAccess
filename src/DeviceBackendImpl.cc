@@ -54,4 +54,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  std::set<DeviceBackend::BackendID> DeviceBackendImpl::getInvolvedBackendIDs() {
+    return {getBackendID()};
+  }
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK
