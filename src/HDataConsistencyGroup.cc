@@ -30,17 +30,24 @@ namespace ChimeraTK {
     callForType(acc.getValueType(), [&](auto t) {
       using UserType = decltype(t);
 
-      // let's not replace if the target is already a DataConsistencyDecorator
-      auto alreadyDecorated =
-          boost::dynamic_pointer_cast<DataConsistencyDecorator<UserType>>(acc.getHighLevelImplElement());
-      if(!alreadyDecorated) {
-        auto accImpl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(acc.getHighLevelImplElement());
-        assert(accImpl);
-        acc.replace(boost::make_shared<DataConsistencyDecorator<UserType>>(accImpl, this));
+      auto accImpl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(acc.getHighLevelImplElement());
+      assert(accImpl);
+      // factory function which creates our DataConsistencyDecorator
+      auto factoryF = [&](const boost::shared_ptr<NDRegisterAccessor<UserType>>& toBeDecorated) {
+        // let's not replace if toBeDecorated is already a DataConsistencyDecorator
+        auto alreadyDecorated = boost::dynamic_pointer_cast<DataConsistencyDecorator<UserType>>(toBeDecorated);
+        if(alreadyDecorated) {
+          return alreadyDecorated;
+        }
+        return boost::make_shared<DataConsistencyDecorator<UserType>>(toBeDecorated, this);
+      };
+      // in case accImpl is ApplicationCore's MetaDataPropagatingRegisterDecorator we need to "go inside" and
+      // replace its target by our DataConsistencyDecorator
+      if(!accImpl->decorateDeepInside(factoryF)) {
+        // accImpl is not itself a decorator, so decorateDeepInside did not do anything.
+        acc.replace(factoryF(accImpl));
       }
     });
-    // TODO decoration magic for MetaDataPropagatingRegisterDecorator:
-    // replacement must happen below (i.e. for target of) MetaDataPropagatingRegisterDecorator
   }
 
   void HDataConsistencyGroup::decorateAccessors(ReadAnyGroup* rag) {

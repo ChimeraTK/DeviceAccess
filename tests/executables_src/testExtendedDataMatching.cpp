@@ -288,7 +288,7 @@ BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
   BOOST_TEST(readAccB.getVersionNumber() != VersionNumber(nullptr));
 }
 
-// TODO - how can we check things related to MetaDataPropagatingRegisterDecorator?
+// TODO - test things related to MetaDataPropagatingRegisterDecorator!
 // maybe only in ApplicationCore, since that's were it's defined?
 
 BOOST_AUTO_TEST_SUITE_END()
