@@ -42,13 +42,34 @@ namespace ChimeraTK::detail {
         NumericAddressedRegisterInfo info;
         info.pathName = name;
 
-        std::tie(info.bar, info.address) = parseAddress(entry.at("address"));
+        std::tie(info.bar, info.address) = parseAddress(entry["address"]);
+
+        if(entry.contains("access") && entry.contains("triggeredByInterrupt")) {
+        }
+        std::string access = entry.at("access");
+        if(access == "RW") {
+          info.registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
+        }
+        else if(access == "RO") {
+          info.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+        }
+        else if(access == "WO") {
+          info.registerAccess = NumericAddressedRegisterInfo::Access::WRITE_ONLY;
+        }
+        else {
+          throw ChimeraTK::logic_error(
+              std::format("Error parsing JSON map file '{}': Illegal access type '{}'", _fileName, access));
+        }
+
+        if(entry.contains("triggeredByInterrupt")) {
+          info.flags.add(AccessMode::wait_for_new_data);
+        }
 
         _catalogue.addRegister(info);
       }
 
       if(entry.contains("children")) {
-        parseChildren(name, entry.at("children"));
+        parseChildren(name, entry["children"]);
       }
     }
   }

@@ -163,8 +163,8 @@
         {
           "name": "CTRL",
           "description": "Controller DAQ",
-          "access": "RO",
           "triggeredByInterrupt": "0",
+          "_": "^^^ this implies 'access: RO', do not specify both",
           "nrOfElements": 16384,
           "pitch": 64,
           "_comment": "pitch is the number of bytes between two elements in the same channel",
