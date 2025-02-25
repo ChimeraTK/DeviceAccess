@@ -1,0 +1,200 @@
+{
+  "metadata": {
+    "_comment": "Suggested naming convention: camelcase for property names",
+    "mapfileRevivsion": "1.2.4-0-g0d752ade",
+    "hwVersion": 1.4,
+    "fwVersion": 2.5,
+    "mapFormatVersion": "0.0.1"
+  },
+  "interrupts": [
+    {
+      "interruptController": {
+        "_comment": "see LLRF interrupt controller for example content"
+      }
+    }
+  ],
+  "addressSpace": [
+    {
+      "type": "directory",
+      "_comment": "with \"subregisters\" if the node has an address",
+      "name": "boardA",
+      "modules": [
+        {
+          "type": "register",
+          "name": "int16Register",
+          "description": "a 16-bit register",
+          "engineeringUnits": "mV",
+          "access": "RO",
+          "triggeredBy": "3.7.2",
+          "_comment": "triggeredBy is a reference to the inerrupt defined in the interrupt controller",
+          "nrOfElements": 1,
+          "address": {
+            "type": "I/O",
+            "channel": 2,
+            "offset": "0x123A",
+            "_comment": "type might be I/O, or DMA for PCI devices"
+          },
+          "bytesPerElement": 0,
+          "representation": {
+            "type": "fixedPoint",
+            "width": 0,
+            "fractionalBits": 0,
+            "signed": true
+          }
+        },
+        {
+          "type": "register",
+          "name": "stringArrayRegister",
+          "access": "RO",
+          "nrOfElements": 3,
+          "address": 0,
+          "bytesPerElement": 8,
+          "bar": 0,
+          "representation": {
+            "type": "string",
+            "encoding": "ASCII"
+          }
+        },
+        {
+          "type": "2DRegister",
+          "access": "RW",
+          "name": "int32_2DRegister",
+          "nElementsPerChannel": 16384,
+          "pitch": 8,
+          "_comment": "pitch is the number of bytes between two elements in the same channel",
+          "address": {
+            "type": "I/O",
+            "channel": 20000,
+            "offset": "0x123A"
+          },
+          "channels": [
+            {
+              "name": "channel0",
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "signed": true,
+                "_comment": "type might be I/O, or DMA for PCI devices, but also bitField, string, or IEEE754"
+              }
+            },
+            {
+              "name": "channel1",
+              "bytesPerElement": 2,
+              "offset": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "signed": true
+              }
+            },
+            {
+              "name": "channel2",
+              "bytesPerElement": 4,
+              "offset": 4,
+              "representation": {
+                "type": "bitField",
+                "width": 32,
+                "elements": [
+                  {
+                    "name": "upper",
+                    "bitShift": 0,
+                    "_comment": "example to show that channels can be bitfields"
+                  },
+                  {
+                    "name": "lower",
+                    "bitShift": 16
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "type": "register",
+          "name": "uint32Register",
+          "description": "an unsigned 32-bit register",
+          "engineeringUnits": "V",
+          "access": "RW",
+          "address": {
+            "type": "I/O",
+            "channel": 2,
+            "offset": "0x8000"
+          },
+          "bytesPerElement": 1,
+          "representation": {
+            "type": "bitField",
+            "width": 32,
+            "elements": [
+              {
+                "name": "latch1Enable",
+                "bitShift": 0,
+                "representation": {
+                  "width": 1
+                }
+              },
+              {
+                "name": "latch2Enable",
+                "bitShift": 1,
+                "representation": {
+                  "width": 1,
+                  "_comment": "a representation will have have defaults for type = fixed, fractionalBits = 0, signed = false"
+                }
+              },
+              {
+                "name": "ErrorCounter",
+                "bitShift": 2,
+                "representation": {
+                  "type": "fixedPoint",
+                  "width": 3,
+                  "fractionalBits": 0,
+                  "signed": false
+                },
+                "_comment": "drops the three least significant bits and read the resulting three least significant bits"
+              }
+            ]
+          }
+        },
+        {
+          "type": "Register",
+          "access": "RW",
+          "name": "1DArray",
+          "numberOfElements": 10,
+          "_comment": "example for a 1D array register, details left out for brevity"
+        }
+      ]
+    },
+    {
+      "type": "directory",
+      "name": "boardB/subBoardA",
+      "_comment": "skipping the nested structure with backslash in the name property value, would contain registers but left out for brevity"
+    },
+    {
+      "type": "register",
+      "name": "module3/submoduleC/aStringRegister",
+      "_comment": "example for a direct register statement with module hierarchy, rest same as above, shortened here for example, but still mandatory"
+    },
+    {
+      "type": "register",
+      "name": "SomeTopLevelRegister",
+      "engineeringUnits": "mV",
+      "access": "RO",
+      "nrOfElements": 1,
+      "bytesPerElement": 4,
+      "address": {
+        "type": "I/O",
+        "channel": 2,
+        "offset": 1234
+      },
+      "representation": {
+        "type": "fixedPoint",
+        "width": 32,
+        "fractionalBits": 0,
+        "signed": true
+      }
+    }
+  ]
+}
