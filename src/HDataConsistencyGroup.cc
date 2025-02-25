@@ -49,6 +49,7 @@ namespace ChimeraTK {
   }
 
   bool HDataConsistencyGroup::update(const TransferElementID& transferElementID) {
+    auto lastMatchingVersionNumber = _lastMatchingVersionNumber; // store value before update
     bool consistent = hUpdate(transferElementID);
 
     if(!consistent) {
@@ -65,8 +66,7 @@ namespace ChimeraTK {
     // Now A gets a new update, v4. this is put into history, and since no value yet for matching B,
     // we throw DiscardValueException. But then, we get another value for B, with version v3.
     // In this case, decorator(A) must not be swapped again, but decorator(B) should be swapped with target(B)=v3
-    auto currentVn = _pushElements.at(transferElementID).acc.getVersionNumber();
-    if(currentVn > _lastMatchingVersionNumber) {
+    if(_lastMatchingVersionNumber > lastMatchingVersionNumber) {
       // To update other user buffers, call postRead on the other involved decorators.
       // Note, in case of an exception thrown by some postRead, it might happen that postRead is
       // called more than once in a row, for the other elements. This is allowed.
@@ -207,6 +207,10 @@ namespace ChimeraTK {
           return false;
         }
         element.lastMatchingIndex = pos - versionNumVector.begin() + 1;
+      }
+      else {
+        // no direct match and no history
+        return false;
       }
     }
     return true;
