@@ -54,4 +54,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  std::set<DeviceBackend::BackendID> DeviceBackendImpl::getInvolvedBackendIDs() {
+    return {reinterpret_cast<DeviceBackend::BackendID>(this)}; // NOLINT cppcoreguidelines-pro-type-reinterpret-cast
+  }
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK

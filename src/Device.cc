@@ -114,4 +114,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  std::set<DeviceBackend::BackendID> Device::getInvolvedBackendIDs() {
+    checkPointersAreNotNull();
+    return _deviceBackendPointer->getInvolvedBackendIDs();
+  }
+
+  /*******************************************************************************************************************/
+
 } // namespace ChimeraTK

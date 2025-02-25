@@ -546,5 +546,15 @@ namespace ChimeraTK {
     obtainTargetBackend();
     targetDevice->activateAsyncRead();
   }
+  /********************************************************************************************************************/
+
+  std::set<DeviceBackend::BackendID> SubdeviceBackend::getInvolvedBackendIDs() {
+    obtainTargetBackend();
+    std::set<DeviceBackend::BackendID> retVal{
+        reinterpret_cast<DeviceBackend::BackendID>(this) // NOLINT cppcoreguidelines-pro-type-reinterpret-cast
+    };
+    retVal.merge(targetDevice->getInvolvedBackendIDs());
+    return retVal;
+  }
 
 } // namespace ChimeraTK

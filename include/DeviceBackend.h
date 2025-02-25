@@ -11,6 +11,7 @@
 
 #include <boost/enable_shared_from_this.hpp>
 
+#include <cstdint>
 #include <string>
 
 namespace ChimeraTK {
@@ -101,6 +102,9 @@ namespace ChimeraTK {
      * the appropriate ChimeraTK::runtime_error is thrown by this function.
      */
     virtual void checkActiveException() = 0;
+
+    using BackendID = std::uintptr_t;
+    virtual std::set<BackendID> getInvolvedBackendIDs() = 0;
   };
 
   /********************************************************************************************************************/
