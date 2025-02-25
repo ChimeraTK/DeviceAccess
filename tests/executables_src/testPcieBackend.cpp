@@ -150,7 +150,7 @@ class PcieBackendTest {
 class PcieBackendTestSuite : public test_suite {
  public:
   PcieBackendTestSuite(std::string const& deviceFileName, unsigned int slot) : test_suite("PcieBackend test suite") {
-    BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
+    BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
     // add member function test cases to a test suite
     boost::shared_ptr<PcieBackendTest> pcieBackendTest(new PcieBackendTest(deviceFileName, slot));
 

@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(testIsSdm) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAliasLookUp) {
-  std::string testFilePath = TEST_DMAP_FILE_PATH;
+  std::string testFilePath = "./dummies.dmap";
   BOOST_CHECK_THROW(Utilities::aliasLookUp("test", testFilePath), ChimeraTK::logic_error);
   auto deviceInfo = Utilities::aliasLookUp("DUMMYD0", testFilePath);
   BOOST_CHECK(deviceInfo.deviceName == "DUMMYD0");

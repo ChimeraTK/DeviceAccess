@@ -11,13 +11,6 @@
 #include <map>
 #include <mutex>
 
-/* For test purposes; if a dummies.dmap file is found in the folder from where
- * the program is being executed it would be used as dmap file. The default dmap
- * file would be DMAP_FILE_PATH.
- */
-#define TEST_DMAP_FILE_PATH "./dummies.dmap" // FIXME remove
-#define ENV_VAR_DMAP_FILE "DMAP_PATH_ENV"    // FIXME remove
-
 namespace ChimeraTK {
 
   /** BackendFactory is a the factory class to create devices.

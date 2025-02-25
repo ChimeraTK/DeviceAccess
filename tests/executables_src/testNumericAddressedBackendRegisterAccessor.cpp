@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_SUITE(NumericAddressedBackendRegisterAccessorTestSuite)
 // Test the creation by using all possible options in Device
 BOOST_AUTO_TEST_CASE(testCreation) {
   // it is always a 1D-type register (for scalar it's just 1x1)
-  BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
+  BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
   Device device;
   device.open("DUMMYD1");
 
