@@ -46,22 +46,28 @@
       "name": "SomeTopLevelRegister",
       "engineeringUnits": "mV",
       "description": "This is an example register",
-      "access": "RO",
+      "access": "RW",
+      "cacheable": true, "_": "Software may assume value never changed from remote side - unused in the beginning",
       "nrOfElements": 1,
       "bytesPerElement": 4,
-      "address": {
-        "type": "I/O",
-        "channel": 0,
-        "offset": 32,
-        "_comment": "'type' can be 'I/O' (default), or 'DMA'. 'channel' is optional and defaults to 0."
-      },
+      "address": [
+        "xdma": {
+          "type": "I/O",
+          "channel": 0,
+          "offset": 32,
+          "_comment": "'type' can be 'I/O' (default), or 'DMA'. 'channel' is optional and defaults to 0."
+        },
+        "ReboT": {"offset": 32}
+      ],
       "representation": {
         "type": "fixedPoint",
         "width": 32,
-        "fractionalBits": 0,
+        "fractionalBits": 8,
         "signed": true,
-        "_comment": "type might be fixedPoint (default), IEEE754, bitField, or string"
-      }
+        "_comment": "type might be fixedPoint (default), IEEE754, bitField, or string",
+        "validRange": [-0.5, 12.345]
+      },
+      "initialValue": 3.5,
     },
     {
       "name": "BSP",
@@ -106,7 +112,7 @@
             "channel": 2,
             "offset": "0x8000"
           },
-          "bytesPerElement": 1,
+          "bytesPerElement": 4,
           "representation": {
             "type": "bitField",
             "width": 32,
@@ -172,6 +178,7 @@
             "type": "DMA",
             "offset": "0x80000000"
           },
+          "___": "What about DAQ MUXes??",
           "doubleBuffering": {
             "secondaryBufferAddress": {
               "type": "DMA",
