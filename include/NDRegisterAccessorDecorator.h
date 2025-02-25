@@ -10,7 +10,11 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   namespace detail {
+
+    /******************************************************************************************************************/
 
     /** Do not use directly, use NDRegisterAccessorDecorator instead!
      *
@@ -39,67 +43,33 @@ namespace ChimeraTK {
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> _target;
     };
 
+    /******************************************************************************************************************/
+
     template<typename UserType>
     class NDRegisterAccessorDecoratorImpl<UserType, UserType> : public NDRegisterAccessor<UserType> {
      public:
       NDRegisterAccessorDecoratorImpl(std::string const& name, AccessModeFlags accessModeFlags,
           std::string const& unit = std::string(TransferElement::unitNotSet),
-          std::string const& description = std::string())
-      : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description) {
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
-      }
+          std::string const& description = std::string());
 
-      void doPreRead(TransferType type) override { _target->preRead(type); }
+      void doPreRead(TransferType type) override;
 
-      void doPostRead(TransferType type, bool updateDataBuffer) override {
-        _target->setActiveException(this->_activeException);
-        _target->postRead(type, updateDataBuffer);
+      void doPostRead(TransferType type, bool updateDataBuffer) override;
 
-        // Decorators have to copy meta data even if updateDataBuffer is false
-        this->_dataValidity = _target->dataValidity();
-        this->_versionNumber = _target->getVersionNumber();
+      void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
-        if(!updateDataBuffer) return;
-        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
-      }
-
-      void doPreWrite(TransferType type, VersionNumber versionNumber) override {
-        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
-        _target->setDataValidity(this->_dataValidity);
-        _target->preWrite(type, versionNumber);
-      }
-
-      void doPostWrite(TransferType type, VersionNumber versionNumber) override {
-        // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
-        auto _ = cppext::finally([&] {
-          for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
-        });
-        _target->setActiveException(this->_activeException);
-        _target->postWrite(type, versionNumber);
-      }
+      void doPostWrite(TransferType type, VersionNumber versionNumber) override;
 
       template<typename COOKED_TYPE>
-      COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample) {
-        // Swap the user buffer back into the target, so we can call the target's getAsCooked()
-        // Channels might cached. Just swap the channel content.
-        this->buffer_2D[channel].swap(_target->accessChannel(channel));
-        auto retVal = _target->template getAsCooked<COOKED_TYPE>(channel, sample);
-        // Swap the buffer back
-        this->buffer_2D[channel].swap(_target->accessChannel(channel));
-
-        return retVal;
-      }
+      COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample);
 
       template<typename COOKED_TYPE>
-      void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value) {
-        // Swap the user buffer back into the target, so the target's setAsCooked() puts it in,
-        // then swap the buffer back out of the target.
-        // Channels might cached. Just swap the channel content.
-        this->buffer_2D[channel].swap(_target->accessChannel(channel));
-        _target->template setAsCooked<COOKED_TYPE>(channel, sample, value);
-        this->buffer_2D[channel].swap(_target->accessChannel(channel));
-      }
+      void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
+
+      boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
+          [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+              const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+              factory) override;
 
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
@@ -110,7 +80,11 @@ namespace ChimeraTK {
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(NDRegisterAccessorDecorator_impl<UserType>, setAsCooked_impl, 3);
     };
 
+    /******************************************************************************************************************/
+
   } // namespace detail
+
+  /********************************************************************************************************************/
 
   /** Base class for decorators of the NDRegisterAccessor. This is basically an
    * empty decorator, so implementations can easily extend by overriding only
@@ -119,65 +93,34 @@ namespace ChimeraTK {
   template<typename UserType, typename TargetUserType = UserType>
   class NDRegisterAccessorDecorator : public detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType> {
    public:
-    explicit NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
-    : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
-          target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
-      _target = target;
-      this->_readQueue = _target->getReadQueue();
-      this->_exceptionBackend = _target->getExceptionBackend();
+    explicit NDRegisterAccessorDecorator(
+        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target);
 
-      // set ID to match the decorated accessor
-      this->_id = _target->getId();
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
 
-      // Initialise buffer meta data from target
-      this->_dataValidity = _target->dataValidity();
-      this->_versionNumber = _target->getVersionNumber();
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override;
 
-      // initialise buffers
-      buffer_2D.resize(_target->getNumberOfChannels());
-      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i].resize(_target->getNumberOfSamples());
-    }
+    void doReadTransferSynchronously() override;
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
-      return _target->writeTransfer(versionNumber);
-    }
+    void doPreRead(TransferType type) override;
 
-    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
-      return _target->writeTransferDestructively(versionNumber);
-    }
+    [[nodiscard]] bool isReadOnly() const override;
 
-    void doReadTransferSynchronously() override { _target->readTransfer(); }
+    [[nodiscard]] bool isReadable() const override;
 
-    void doPreRead(TransferType type) override { _target->preRead(type); }
+    [[nodiscard]] bool isWriteable() const override;
 
-    [[nodiscard]] bool isReadOnly() const override { return _target->isReadOnly(); }
+    std::vector<boost::shared_ptr<ChimeraTK::TransferElement>> getHardwareAccessingElements() override;
 
-    [[nodiscard]] bool isReadable() const override { return _target->isReadable(); }
+    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override;
 
-    [[nodiscard]] bool isWriteable() const override { return _target->isWriteable(); }
-
-    std::vector<boost::shared_ptr<ChimeraTK::TransferElement>> getHardwareAccessingElements() override {
-      return _target->getHardwareAccessingElements();
-    }
-
-    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override {
-      auto result = _target->getInternalElements();
-      result.push_front(_target);
-      return result;
-    }
-
-    void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override {
-      _target->setPersistentDataStorage(storage);
-    }
+    void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override;
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
 
-    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override {
-      this->_exceptionBackend = exceptionBackend;
-      _target->setExceptionBackend(exceptionBackend);
-    }
+    void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override;
 
-    void interrupt() override { _target->interrupt(); }
+    void interrupt() override;
 
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
@@ -185,7 +128,10 @@ namespace ChimeraTK {
     using detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>::_target;
   };
 
+  /********************************************************************************************************************/
   namespace detail {
+
+    /******************************************************************************************************************/
 
     /** Factory to create an instance of the CopyRegisterDecorator. This factory is
      * required to break a circular dependency between this include file and
@@ -195,21 +141,268 @@ namespace ChimeraTK {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> createCopyDecorator(
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> target);
 
+    /******************************************************************************************************************/
+
   } // namespace detail
 
-} // namespace ChimeraTK
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /** Implementations */
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
-template<typename UserType, typename TargetUserType>
-void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTransferElement(
-    boost::shared_ptr<ChimeraTK::TransferElement> newElement) {
-  auto casted = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<TargetUserType>>(newElement);
-  if(casted && newElement->mayReplaceOther(_target)) {
-    if(_target != newElement) {
-      _target = detail::createCopyDecorator<TargetUserType>(casted);
+  namespace detail {
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    NDRegisterAccessorDecoratorImpl<UserType, UserType>::NDRegisterAccessorDecoratorImpl(std::string const& name,
+        AccessModeFlags accessModeFlags, std::string const& unit, std::string const& description)
+    : NDRegisterAccessor<UserType>(name, accessModeFlags, unit, description) {
+      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
+      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    void NDRegisterAccessorDecoratorImpl<UserType, UserType>::doPreRead(TransferType type) {
+      _target->preRead(type);
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    void NDRegisterAccessorDecoratorImpl<UserType, UserType>::doPostRead(TransferType type, bool updateDataBuffer) {
+      _target->setActiveException(this->_activeException);
+      _target->postRead(type, updateDataBuffer);
+
+      // Decorators have to copy meta data even if updateDataBuffer is false
+      this->_dataValidity = _target->dataValidity();
+      this->_versionNumber = _target->getVersionNumber();
+
+      if(!updateDataBuffer) {
+        return;
+      }
+      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+        buffer_2D[i].swap(_target->accessChannel(i));
+      }
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    void NDRegisterAccessorDecoratorImpl<UserType, UserType>::doPreWrite(
+        TransferType type, VersionNumber versionNumber) {
+      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+        buffer_2D[i].swap(_target->accessChannel(i));
+      }
+      _target->setDataValidity(this->_dataValidity);
+      _target->preWrite(type, versionNumber);
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    void NDRegisterAccessorDecoratorImpl<UserType, UserType>::doPostWrite(
+        TransferType type, VersionNumber versionNumber) {
+      // swap back buffers unconditionally (even if postWrite() throws) at the end of this function
+      auto _ = cppext::finally([&] {
+        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+          buffer_2D[i].swap(_target->accessChannel(i));
+        }
+      });
+      _target->setActiveException(this->_activeException);
+      _target->postWrite(type, versionNumber);
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    template<typename COOKED_TYPE>
+    COOKED_TYPE NDRegisterAccessorDecoratorImpl<UserType, UserType>::getAsCooked_impl(
+        unsigned int channel, unsigned int sample) {
+      // Swap the user buffer back into the target, so we can call the target's getAsCooked()
+      // Channels might cached. Just swap the channel content.
+      this->buffer_2D[channel].swap(_target->accessChannel(channel));
+      auto retVal = _target->template getAsCooked<COOKED_TYPE>(channel, sample);
+      // Swap the buffer back
+      this->buffer_2D[channel].swap(_target->accessChannel(channel));
+
+      return retVal;
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    template<typename COOKED_TYPE>
+    void NDRegisterAccessorDecoratorImpl<UserType, UserType>::setAsCooked_impl(
+        unsigned int channel, unsigned int sample, COOKED_TYPE value) {
+      // Swap the user buffer back into the target, so the target's setAsCooked() puts it in,
+      // then swap the buffer back out of the target.
+      // Channels might cached. Just swap the channel content.
+      this->buffer_2D[channel].swap(_target->accessChannel(channel));
+      _target->template setAsCooked<COOKED_TYPE>(channel, sample, value);
+      this->buffer_2D[channel].swap(_target->accessChannel(channel));
+    }
+
+    /******************************************************************************************************************/
+
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorDecoratorImpl<UserType, UserType>::
+        decorateDeepInside([[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+                const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+                factory) {
+      auto res = _target->decorateDeepInside(factory);
+      if(!res) {
+        res = factory(_target);
+        if(res) {
+          _target = res;
+        }
+      }
+      return res;
+    }
+
+    /******************************************************************************************************************/
+
+  } // namespace detail
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  NDRegisterAccessorDecorator<UserType, TargetUserType>::NDRegisterAccessorDecorator(
+      const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
+  : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
+        target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
+    _target = target;
+    this->_readQueue = _target->getReadQueue();
+    this->_exceptionBackend = _target->getExceptionBackend();
+
+    // set ID to match the decorated accessor
+    this->_id = _target->getId();
+
+    // Initialise buffer meta data from target
+    this->_dataValidity = _target->dataValidity();
+    this->_versionNumber = _target->getVersionNumber();
+
+    // initialise buffers
+    buffer_2D.resize(_target->getNumberOfChannels());
+    for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+      buffer_2D[i].resize(_target->getNumberOfSamples());
     }
   }
-  else {
-    _target->replaceTransferElement(newElement);
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  bool NDRegisterAccessorDecorator<UserType, TargetUserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+    return _target->writeTransfer(versionNumber);
   }
-  _target->setExceptionBackend(this->_exceptionBackend);
-}
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  bool NDRegisterAccessorDecorator<UserType, TargetUserType>::doWriteTransferDestructively(
+      ChimeraTK::VersionNumber versionNumber) {
+    return _target->writeTransferDestructively(versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::doReadTransferSynchronously() {
+    _target->readTransfer();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::doPreRead(TransferType type) {
+    _target->preRead(type);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  bool NDRegisterAccessorDecorator<UserType, TargetUserType>::isReadOnly() const {
+    return _target->isReadOnly();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  bool NDRegisterAccessorDecorator<UserType, TargetUserType>::isReadable() const {
+    return _target->isReadable();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  bool NDRegisterAccessorDecorator<UserType, TargetUserType>::isWriteable() const {
+    return _target->isWriteable();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  std::vector<boost::shared_ptr<ChimeraTK::TransferElement>> NDRegisterAccessorDecorator<UserType,
+      TargetUserType>::getHardwareAccessingElements() {
+    return _target->getHardwareAccessingElements();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  std::list<boost::shared_ptr<TransferElement>> NDRegisterAccessorDecorator<UserType,
+      TargetUserType>::getInternalElements() {
+    auto result = _target->getInternalElements();
+    result.push_front(_target);
+    return result;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::setPersistentDataStorage(
+      boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) {
+    _target->setPersistentDataStorage(storage);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTransferElement(
+      boost::shared_ptr<ChimeraTK::TransferElement> newElement) {
+    auto casted = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<TargetUserType>>(newElement);
+    if(casted && newElement->mayReplaceOther(_target)) {
+      if(_target != newElement) {
+        _target = detail::createCopyDecorator<TargetUserType>(casted);
+      }
+    }
+    else {
+      _target->replaceTransferElement(newElement);
+    }
+    _target->setExceptionBackend(this->_exceptionBackend);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::setExceptionBackend(
+      boost::shared_ptr<DeviceBackend> exceptionBackend) {
+    this->_exceptionBackend = exceptionBackend;
+    _target->setExceptionBackend(exceptionBackend);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::interrupt() {
+    _target->interrupt();
+  }
+
+  /********************************************************************************************************************/
+
+} // namespace ChimeraTK
