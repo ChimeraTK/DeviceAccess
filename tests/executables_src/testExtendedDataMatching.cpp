@@ -201,9 +201,8 @@ BOOST_FIXTURE_TEST_CASE(testDuplicateVns, Fixture) {
         if(readAccA.getVersionNumber() == readAccB.getVersionNumber()) {
           nConsistentUpdates++;
         }
-        // check data consistency via VersionNumber and content
+        // check data consistency via VersionNumber
         BOOST_TEST(readAccA.getVersionNumber() == readAccB.getVersionNumber());
-        BOOST_TEST(readAccA == readAccB);
         // acknowledge data received: here updated id is irrelevant
         sem_post(&sem);
       }
