@@ -35,7 +35,7 @@ namespace ChimeraTK::detail {
     MetadataCatalogue _metadata;
 
     /// Recursive parsing
-    void parseChildren(const json& data);
+    void parseChildren(const RegisterPath& namePrefix, const json& data);
 
     /// Returns channel and offset as a pair
     std::pair<uint64_t, uint64_t> parseAddress(const json& data);

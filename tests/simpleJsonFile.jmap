@@ -2,10 +2,10 @@
   "_comment": "Any unknown keys will be ignored. By convention, comments shall use keys starting with an underscore.",
   "_blubb": "This is also a comment",
   "foo": "This is ignored as well, but shouldn't be used for comments",
+  "mapFormatVersion": "0.0.1",
   "metadata": {
     "_comment": "Suggested naming convention: camelcase for property names",
-    "mapfileRevivsion": "1.8.3-0-gdeadbeef",
-    "mapFormatVersion": "0.0.1"
+    "mapfileRevivsion": "1.8.3-0-gdeadbeef"
   },
   "interrupts": [
     {

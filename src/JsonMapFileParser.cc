@@ -24,7 +24,7 @@ namespace ChimeraTK::detail {
     }
 
     try {
-      parseChildren(data.at("addressSpace"));
+      parseChildren("/", data.at("addressSpace"));
       return {std::move(_catalogue), std::move(_metadata)};
     }
     catch(json::out_of_range& e) {
@@ -35,11 +35,12 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
-  void JsonMapFileParser::parseChildren(const json& data) {
+  void JsonMapFileParser::parseChildren(const RegisterPath& namePrefix, const json& data) {
     for(const auto& entry : data) {
+      RegisterPath name = namePrefix / entry.at("name");
       if(entry.contains("address")) {
         NumericAddressedRegisterInfo info;
-        info.pathName = std::string(entry.at("name"));
+        info.pathName = name;
 
         std::tie(info.bar, info.address) = parseAddress(entry.at("address"));
 
@@ -47,7 +48,7 @@ namespace ChimeraTK::detail {
       }
 
       if(entry.contains("children")) {
-        parseChildren(entry.at("children"));
+        parseChildren(name, entry.at("children"));
       }
     }
   }
@@ -57,12 +58,12 @@ namespace ChimeraTK::detail {
   std::pair<uint64_t, uint64_t> JsonMapFileParser::parseAddress(const json& data) {
     uint64_t channel;
 
-    std::string adrType = data.at("type");
+    std::string adrType = data.value("type", "I/O");
     if(adrType == "I/O") {
-      channel = data.at("channel");
+      channel = data.value("channel", 0);
     }
     else if(adrType == "DMA") {
-      channel = 13UL + uint64_t(data.at("channel"));
+      channel = 13UL + uint64_t(data.value("channel", 0));
     }
     else {
       throw ChimeraTK::logic_error(
