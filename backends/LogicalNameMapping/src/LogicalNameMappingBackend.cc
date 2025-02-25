@@ -406,4 +406,16 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  std::set<DeviceBackend::BackendID> LogicalNameMappingBackend::getInvolvedBackendIDs() {
+    parse();
+    std::set<DeviceBackend::BackendID> retVal{getBackendID()};
+    for(auto& devIter : _devices) {
+      auto& dev = devIter.second;
+      retVal.merge(dev->getInvolvedBackendIDs());
+    }
+    return retVal;
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK

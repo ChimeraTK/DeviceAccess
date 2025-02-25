@@ -1119,4 +1119,26 @@ BOOST_AUTO_TEST_CASE(testWithTransferGroup) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(TestInvolvedBackendIDs) {
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  ChimeraTK::Device device("LMAP0");
+  ChimeraTK::Device target1("PCIE2");
+  ChimeraTK::Device target2("PCIE3");
+
+  // This actually is a test for the default implementation in DeviceBackendImpl,
+  // which does not have it's own tests as it cannot be instantiated.
+  auto ids1 = target1.getInvolvedBackendIDs();
+  BOOST_TEST(ids1.size() == 1);
+  BOOST_TEST(ids1.contains(target1.getBackend()->getBackendID()));
+
+  // The real test for the LMapBackend
+  auto deviceIDs = device.getInvolvedBackendIDs();
+  BOOST_TEST(deviceIDs.size() == 3);
+  BOOST_TEST(deviceIDs.contains(target1.getBackend()->getBackendID()));
+  BOOST_TEST(deviceIDs.contains(target2.getBackend()->getBackendID()));
+  BOOST_TEST(deviceIDs.contains(device.getBackend()->getBackendID()));
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

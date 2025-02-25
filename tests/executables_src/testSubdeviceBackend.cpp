@@ -702,4 +702,18 @@ BOOST_AUTO_TEST_CASE(testIsFunctional) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(TestInvolvedBackendIDs) {
+  setDMapFilePath("subdeviceTest.dmap");
+
+  ChimeraTK::Device device("SUBDEV1");
+  ChimeraTK::Device target1("TARGET1");
+
+  auto deviceIDs = device.getInvolvedBackendIDs();
+  BOOST_TEST(deviceIDs.size() == 2);
+  BOOST_TEST(deviceIDs.contains(target1.getBackend()->getBackendID()));
+  BOOST_TEST(deviceIDs.contains(device.getBackend()->getBackendID()));
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

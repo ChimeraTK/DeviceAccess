@@ -200,6 +200,9 @@ namespace ChimeraTK {
      */
     [[nodiscard]] boost::shared_ptr<DeviceBackend> getBackend();
 
+    /** Recursively obtain the set of all backend IDs that are used withing the device.*/
+    [[nodiscard]] std::set<DeviceBackend::BackendID> getInvolvedBackendIDs();
+
     /**
      * <b>Inefficient convenience function</b> to read a single-word register without obtaining an accessor.
      *
