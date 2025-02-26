@@ -208,8 +208,12 @@ BOOST_FIXTURE_TEST_CASE(testDuplicateVns, Fixture) {
       std::cout << "thread interrupted" << std::endl;
     }
     updaterThread1.join();
-    // for each VersionNumber that is repeated for A, we should get one extra consistent update
-    BOOST_TEST(nConsistentUpdates == nLoops - delay + nDuplicateVns);
+    unsigned nExpectedUpdates = nLoops - delay;
+    if(delay == 0) {
+      // for each VersionNumber that is repeated for A, we should get one extra consistent update
+      nExpectedUpdates++;
+    }
+    BOOST_TEST(nConsistentUpdates == nExpectedUpdates);
     BOOST_TEST(nConsistentUpdates == nUpdates);
   }
 }
