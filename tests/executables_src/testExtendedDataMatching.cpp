@@ -50,6 +50,7 @@ struct Fixture {
   // loop for updater thread: option to delay updates on A and B
   // e.g. B has delay=2: A=v1, A=v2, A=v3, B=v1, A=v4, B=v2, ...
   void updaterLoop(unsigned nLoops, unsigned delay, unsigned duplicateVns = 0) {
+    std::cout << "updaterLoop: delay=" << delay << ", duplicateVns=" << duplicateVns << std::endl;
     auto accA = dev.getScalarRegisterAccessor<int32_t>("/A");
     auto accB = dev.getScalarRegisterAccessor<int32_t>("/B");
     // note, the default-constructed VersionNumbers in here will not be used

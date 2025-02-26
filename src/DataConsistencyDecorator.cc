@@ -8,10 +8,10 @@
 
 namespace ChimeraTK {
 
-  template<typename T>
-  DataConsistencyDecorator<T>::DataConsistencyDecorator(
-      const boost::shared_ptr<NDRegisterAccessor<T>>& target, HDataConsistencyGroup* dGroup)
-  : NDRegisterAccessorDecorator<T, T>(target), _dGroup(dGroup) {
+  template<typename UserType>
+  DataConsistencyDecorator<UserType>::DataConsistencyDecorator(
+      const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HDataConsistencyGroup* dGroup)
+  : NDRegisterAccessorDecorator<UserType, UserType>(target), _dGroup(dGroup) {
     // check TransferElement is in ReadAnyGroup, direct reads do not make sense with HDataConsistencyGroup
     if(!target->getReadAnyGroup()) {
       throw logic_error(
@@ -22,8 +22,8 @@ namespace ChimeraTK {
     this->_readQueue = target->getReadQueue().template then<void>([this]() { readCallback(); }, std::launch::deferred);
   }
 
-  template<typename T>
-  void DataConsistencyDecorator<T>::doPostRead(TransferType type, bool updateDataBuffer) {
+  template<typename UserType>
+  void DataConsistencyDecorator<UserType>::doPostRead(TransferType type, bool updateDataBuffer) {
     // we overwrite implementation of base class NDRegisterAccessorDecorator because we
     // update target user buffer already in readCallback, and then must not call target->postRead again here,
     // unless an exception originates from target->queue or its continuation(readCallback).
@@ -33,19 +33,39 @@ namespace ChimeraTK {
     }
 
     // Decorators have to copy meta data even if updateDataBuffer is false
-    this->_dataValidity = _target->dataValidity();
-    this->_versionNumber = _target->getVersionNumber();
+    auto transferElementId = this->getId();
+    auto& pe = this->_dGroup->getPushElements().at(transferElementId);
+
+    if(pe.lastMatchingIndex > 0) {
+      this->_dataValidity = pe.dataValidities[pe.lastMatchingIndex - 1];
+      this->_versionNumber = pe.versionNumbers[pe.lastMatchingIndex - 1];
+    }
+    else {
+      this->_dataValidity = _target->dataValidity();
+      this->_versionNumber = _target->getVersionNumber();
+    }
 
     if(!updateDataBuffer) {
       return;
     }
-    for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
-      buffer_2D[i].swap(_target->accessChannel(i));
+    if(pe.lastMatchingIndex > 0) {
+      using UserBufferType = std::vector<std::vector<UserType>>;
+      auto& bufferVector = *(this->_dGroup->template getBufferVector<UserBufferType>(transferElementId));
+      auto& matchingBuffer = bufferVector[pe.lastMatchingIndex - 1];
+
+      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+        buffer_2D[i].swap(matchingBuffer[i]);
+      }
+    }
+    else {
+      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+        buffer_2D[i].swap(_target->accessChannel(i));
+      }
     }
   }
 
-  template<typename T>
-  void DataConsistencyDecorator<T>::readCallback() {
+  template<typename UserType>
+  void DataConsistencyDecorator<UserType>::readCallback() {
     // While ReadAnyGroup.waitAny() already calls preRead, waitAnyNonBlocking() does not,
     // but when it peeks into the readQueue, readCallback() is allready exectued!
     // We call target->preRead just to be sure; if called twice no harm done.
@@ -62,9 +82,11 @@ namespace ChimeraTK {
     // Differently from usual decorator behavior, we call target->postRead already here,
     // because we need user buffer content to judge data consistency.
     _target->postRead(TransferType::read, true);
-
     std::cout << "readCallback: seeing update for target " << _target->getName() << " vs "
               << _target->getVersionNumber() << std::endl;
+    // Since we do not hand out all updates, we cannot rely on readAny() calling our preRead after
+    // postRead. So we explicitly call preRead here, for the target.
+    _target->preRead(TransferType::read);
 
     // check data consistency, including history, and update user buffers if necessary
     _dGroup->update(_target->getId());

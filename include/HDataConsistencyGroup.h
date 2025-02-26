@@ -70,12 +70,10 @@ namespace ChimeraTK {
      * Note, differently from DataConsistencyGroup, explicit call to this function is no longer required,
      * since already done by DataConsistencyDecorator.
      * behaves similar to DataConsistencyGroup::update.
-     * The given transferElement dictates the VersionNumber to match. If a match with other transferElements of the
-     * group can be found by looking through their history of values, their user buffer is updated to the matching
-     * value.
-     * Ttheir  VersionNumber is NOT updated, this is the job of the DataConsistencyDecorator)
-     *  - returns true if a consistent user buffer state could be arranged
-     *  - returns false if given transferElement does not belong to group
+     * The given transferElement dictates the VersionNumber to match.
+     * Returns true if a match with other transferElements of group can be found by looking through their
+     * history of values
+     * Returns false if given transferElement does not belong to group.
      */
     bool update(const TransferElementID& transferElementID);
 
@@ -90,17 +88,11 @@ namespace ChimeraTK {
 
     void setupHistory(const ChimeraTK::TransferElementAbstractor& element, unsigned histLen);
 
-    /**
-     * update logic:
-     * - version number to match is that of the given transferElement
-     * - try to find a match including histories of all push elements
-     * - if match found, swap back values of all except this transferElement into user buffers
-     */
-    bool hUpdate(const TransferElementID& transferElementID);
     // TODO make mostly compatible as a drop-in replacement for DataConsistencyGroup: add some methods
 
     bool findMatch(TransferElementID transferElementID);
 
+   public:
     /// return reference to user buffer of transfer element of this group
     template<typename UserType>
     std::vector<std::vector<UserType>>& getUserBuffer(const ChimeraTK::TransferElementID& transferElementID);
@@ -113,6 +105,7 @@ namespace ChimeraTK {
       return static_cast<std::vector<UserBufferType>*>(buf);
     }
 
+   protected:
     struct PushElement {
       // target of DataConsistencyDecorator
       ChimeraTK::TransferElementAbstractor acc;
@@ -121,12 +114,16 @@ namespace ChimeraTK {
       const std::type_info& histBufferType;
       std::vector<ChimeraTK::VersionNumber> versionNumbers;
       std::vector<ChimeraTK::DataValidity> dataValidities;
+      /// match indices set by findMatch() in case it returns true.
       /// index=0 is most recent value = accessor's user buffer, index>=1 is history buffers
       unsigned lastMatchingIndex = 0;
     };
 
     std::map<ChimeraTK::TransferElementID, PushElement> _pushElements;
     VersionNumber _lastMatchingVersionNumber{nullptr};
+
+   public:
+    std::map<ChimeraTK::TransferElementID, PushElement>& getPushElements() { return _pushElements; }
   };
 
   /*************************************************************************************************/

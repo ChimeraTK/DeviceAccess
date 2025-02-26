@@ -16,10 +16,11 @@ namespace ChimeraTK {
    * DataConsistencyDecorator internally historizes data updates including meta data, and looks for matches in the
    * history. It shall be used together with a ReadAnyGroup containing at least all decorated elements.
    */
-  template<typename T>
-  class DataConsistencyDecorator : public NDRegisterAccessorDecorator<T, T> {
+  template<typename UserType>
+  class DataConsistencyDecorator : public NDRegisterAccessorDecorator<UserType, UserType> {
    public:
-    DataConsistencyDecorator(const boost::shared_ptr<NDRegisterAccessor<T>>& target, HDataConsistencyGroup* dGroup);
+    DataConsistencyDecorator(
+        const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HDataConsistencyGroup* dGroup);
 
     void doPostRead(TransferType type, bool updateDataBuffer) override;
     // continuation / callback for future_queue
@@ -28,8 +29,8 @@ namespace ChimeraTK {
    protected:
     HDataConsistencyGroup* _dGroup;
 
-    using NDRegisterAccessorDecorator<T>::_target;
-    using NDRegisterAccessorDecorator<T>::buffer_2D;
+    using NDRegisterAccessorDecorator<UserType>::_target;
+    using NDRegisterAccessorDecorator<UserType>::buffer_2D;
   };
 
   /********************************************************************************************************************/

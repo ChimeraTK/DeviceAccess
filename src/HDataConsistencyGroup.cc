@@ -62,8 +62,22 @@ namespace ChimeraTK {
   }
 
   bool HDataConsistencyGroup::update(const TransferElementID& transferElementID) {
+    auto it = _pushElements.find(transferElementID);
+    if(it == _pushElements.end()) {
+      // ignore unkown element
+      return false;
+    }
+
+    auto& pElem = it->second;
+    auto vn = pElem.acc.getVersionNumber();
+    if(pElem.histLen > 0 && vn == pElem.versionNumbers[0]) {
+      // take special care for duplicate VersionNumbers. We want VersionNumbers only once in history.
+      // So in case of a duplicate VersionNumber, we mark the previous historized value as invalid
+      pElem.versionNumbers[0] = VersionNumber(nullptr);
+    }
+
     auto lastMatchingVersionNumber = _lastMatchingVersionNumber; // store value before update
-    bool consistent = hUpdate(transferElementID);
+    bool consistent = findMatch(transferElementID);
 
     if(!consistent) {
       // if not consistent, delay call to postRead (called from ReadAnyGroup), by throwing DiscardValueException.
@@ -165,43 +179,14 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool HDataConsistencyGroup::hUpdate(const ChimeraTK::TransferElementID& transferElementID) {
-    auto it = _pushElements.find(transferElementID);
-    if(it == _pushElements.end()) {
-      // ignore unkown element
-      return false;
-    }
-    auto& pElem = it->second;
-    auto vn = pElem.acc.getVersionNumber();
-    if(pElem.histLen > 0 && vn == pElem.versionNumbers[0]) {
-      // take special care for duplicate VersionNumbers. We want VersionNumbers only once in history.
-      // So in case of a duplicate VersionNumber, we mark the previous historized value as invalid
-      pElem.versionNumbers[0] = VersionNumber(nullptr);
-    }
-
-    if(findMatch(transferElementID)) {
-      // match found, swap back values of all except this transferElement into target(i.e. not decorator) buffers
-      for(const auto& pair : _pushElements) {
-        if(pair.first == transferElementID) {
-          continue;
-        }
-        updateUserBuffer(pair.first);
-      }
-      _lastMatchingVersionNumber = vn;
-      return true;
-    }
-    return false;
-  }
-
-  /********************************************************************************************************************/
-
   bool HDataConsistencyGroup::findMatch(TransferElementID transferElementID) {
     auto it = _pushElements.find(transferElementID);
     if(it == _pushElements.end()) {
       // ignore unknown transfer elements
       return false;
     }
-    auto vn = it->second.acc.getVersionNumber();
+    PushElement& theElement = it->second;
+    auto vn = theElement.acc.getVersionNumber();
 
     for(auto& pair : _pushElements) {
       if(pair.first == transferElementID) {
@@ -226,33 +211,11 @@ namespace ChimeraTK {
         return false;
       }
     }
+    theElement.lastMatchingIndex = 0;
+    _lastMatchingVersionNumber = vn;
     return true;
   }
 
-  /********************************************************************************************************************/
-
-  void HDataConsistencyGroup::updateUserBuffer(const ChimeraTK::TransferElementID& transferElementID) {
-    PushElement& element = _pushElements.at(transferElementID);
-    auto f = [&](auto argForType) {
-      using UserType = decltype(argForType);
-      using UserBufferType = std::vector<std::vector<UserType>>;
-      auto& bufferVector = *getBufferVector<UserBufferType>(transferElementID);
-
-      // update user buffer from history
-      UserBufferType& userBuffer = getUserBuffer<UserType>(transferElementID);
-      UserBufferType& matchingBuffer = bufferVector[element.lastMatchingIndex - 1];
-      for(size_t i = 0; i < userBuffer.size(); ++i) {
-        userBuffer[i].swap(matchingBuffer[i]);
-      }
-      auto savedDv = element.dataValidities[element.lastMatchingIndex - 1];
-      element.acc.setDataValidity(savedDv);
-    };
-
-    // user buffer update applies only lastMatchingIndex points to history
-    if(element.lastMatchingIndex > 0) {
-      ChimeraTK::callForType(element.histBufferType, f);
-    }
-  }
 
   /********************************************************************************************************************/
 
