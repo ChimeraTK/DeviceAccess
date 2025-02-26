@@ -34,33 +34,15 @@ namespace ChimeraTK {
 
     // Decorators have to copy meta data even if updateDataBuffer is false
     auto transferElementId = this->getId();
-    auto& pe = this->_dGroup->getPushElements().at(transferElementId);
-
-    if(pe.lastMatchingIndex > 0) {
-      this->_dataValidity = pe.dataValidities[pe.lastMatchingIndex - 1];
-      this->_versionNumber = pe.versionNumbers[pe.lastMatchingIndex - 1];
-    }
-    else {
-      this->_dataValidity = _target->dataValidity();
-      this->_versionNumber = _target->getVersionNumber();
-    }
+    this->_dGroup->getMatchingInfo(transferElementId, this->_versionNumber, this->_dataValidity);
 
     if(!updateDataBuffer) {
       return;
     }
-    if(pe.lastMatchingIndex > 0) {
-      using UserBufferType = std::vector<std::vector<UserType>>;
-      auto& bufferVector = *(this->_dGroup->template getBufferVector<UserBufferType>(transferElementId));
-      auto& matchingBuffer = bufferVector[pe.lastMatchingIndex - 1];
 
-      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
-        buffer_2D[i].swap(matchingBuffer[i]);
-      }
-    }
-    else {
-      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
-        buffer_2D[i].swap(_target->accessChannel(i));
-      }
+    auto& matchingBuffer = this->_dGroup->template getMatchingBuffer<UserType>(transferElementId);
+    for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+      buffer_2D[i].swap(matchingBuffer[i]);
     }
   }
 

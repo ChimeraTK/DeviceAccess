@@ -178,7 +178,6 @@ BOOST_FIXTURE_TEST_CASE(testDuplicateVns, Fixture) {
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
 
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
-  dg.decorateAccessors(&rag);
 
   const unsigned nLoops = 4;
   const unsigned nDuplicateVns = 1;

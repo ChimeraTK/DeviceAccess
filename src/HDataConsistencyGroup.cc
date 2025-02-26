@@ -9,22 +9,16 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   HDataConsistencyGroup::HDataConsistencyGroup(
-      std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list) {
-    ReadAnyGroup* rag = nullptr;
+      std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list, unsigned histLen) {
     for(TransferElementAbstractor& acc : list) {
-      // add target accessor to DataConsistencyGroup
-      add(acc);
-      decorateAccessor(acc);
-      // add decorated access to our elements map (key = Id remains unchanged by decoration)
-      decoratedElements[acc.getId()] = acc;
-      if(acc.getReadAnyGroup() == nullptr || (rag != nullptr && acc.getReadAnyGroup() != rag)) {
-        throw ChimeraTK::logic_error("all elements of the HDataConsistencyGroup must point to the same ReadAnyGroup!");
-      }
-      rag = acc.getReadAnyGroup();
+      add(acc, histLen);
     }
-    decorateAccessors(rag);
   }
+
+  /********************************************************************************************************************/
 
   void HDataConsistencyGroup::decorateAccessor(TransferElementAbstractor& acc) {
     callForType(acc.getValueType(), [&](auto t) {
@@ -50,16 +44,7 @@ namespace ChimeraTK {
     });
   }
 
-  void HDataConsistencyGroup::decorateAccessors(ReadAnyGroup* rag) {
-    // replace accessors stored in ReadAnyGroup by our decorated versions, if applicable
-    for(auto& acc : rag->push_elements) {
-      // id of the target accessor = id of decorator
-      auto id = acc.getId();
-      if(decoratedElements.find(id) != decoratedElements.end()) {
-        acc.replace(decoratedElements.at(id));
-      }
-    }
-  }
+  /********************************************************************************************************************/
 
   bool HDataConsistencyGroup::update(const TransferElementID& transferElementID) {
     auto it = _pushElements.find(transferElementID);
@@ -83,7 +68,7 @@ namespace ChimeraTK {
       // if not consistent, delay call to postRead (called from ReadAnyGroup), by throwing DiscardValueException.
       // Then, ReadAnyGroup leaves out postRead and next preRead.
       // Add to set of decorators needing call to postRead later.
-      decoratorsNeedingPostRead.insert(transferElementID);
+      _decoratorsNeedingPostRead.insert(transferElementID);
       throw detail::DiscardValueException();
     }
 
@@ -97,13 +82,13 @@ namespace ChimeraTK {
       // To update other user buffers, call postRead on the other involved decorators.
       // Note, in case of an exception thrown by some postRead, it might happen that postRead is
       // called more than once in a row, for the other elements. This is allowed.
-      for(TransferElementID id : decoratorsNeedingPostRead) {
-        auto& acc = decoratedElements.at(id);
+      for(TransferElementID id : _decoratorsNeedingPostRead) {
+        auto& acc = _decoratedElements.at(id);
         acc.getHighLevelImplElement()->postRead(TransferType::read, true);
         // just as in ReadAnyGroup, we immediately follow-up with preRead
         acc.getHighLevelImplElement()->preRead(TransferType::read);
       }
-      decoratorsNeedingPostRead.clear();
+      _decoratorsNeedingPostRead.clear();
     }
     // our own postRead will be called by ReadAnyGroup
     return true;
@@ -111,21 +96,36 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void HDataConsistencyGroup::add(ChimeraTK::TransferElementAbstractor& acc, unsigned histLen) {
-    // TODO - either add should not be public or change behavior
+  void HDataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned histLen) {
+    if(acc.getReadAnyGroup() == nullptr || (_rag != nullptr && acc.getReadAnyGroup() != _rag)) {
+      throw ChimeraTK::logic_error("all elements of the HDataConsistencyGroup must point to the same ReadAnyGroup!");
+    }
+    _rag = acc.getReadAnyGroup();
+
+    // call setupHistory before decorateAccessor because acc must be target of DataConsistencyDecorator
     setupHistory(acc, histLen);
+
+    decorateAccessor(acc);
+    // add decorated access to our elements map (key = Id remains unchanged by decoration)
+    _decoratedElements[acc.getId()] = acc;
+    // also find the copy of accessor abstractor in ReadAnyGroup and decorate it in there
+    for(auto& pe : _rag->push_elements) {
+      if(pe.getId() == acc.getId()) {
+        pe.replace(acc);
+      }
+    }
   }
 
   /********************************************************************************************************************/
 
-  void HDataConsistencyGroup::setupHistory(const ChimeraTK::TransferElementAbstractor& acc, unsigned histLen) {
-    ChimeraTK::TransferElementID id = acc.getId();
+  void HDataConsistencyGroup::setupHistory(TransferElementAbstractor& acc, unsigned histLen) {
+    TransferElementID id = acc.getId();
     if(_pushElements.find(id) != _pushElements.end()) {
       // was alread set up
       return;
     }
 
-    ChimeraTK::callForType(acc.getValueType(), [&](auto argForType) {
+    callForType(acc.getValueType(), [&](auto argForType) {
       // set up ring buffer for element's user type
       using UserType = decltype(argForType);
       using UserBufferType = std::vector<std::vector<UserType>>;
@@ -149,7 +149,7 @@ namespace ChimeraTK {
         PushElement& element = _pushElements.at(id);
         element.histBuffer = mem;
         element.versionNumbers.resize(histLen);
-        std::fill(element.versionNumbers.begin(), element.versionNumbers.end(), ChimeraTK::VersionNumber{0});
+        std::fill(element.versionNumbers.begin(), element.versionNumbers.end(), VersionNumber{0});
         element.dataValidities.resize(histLen);
       }
     });
@@ -159,11 +159,11 @@ namespace ChimeraTK {
 
   HDataConsistencyGroup::~HDataConsistencyGroup() {
     for(auto& x : _pushElements) {
-      ChimeraTK::TransferElementID id = x.first;
+      TransferElementID id = x.first;
       PushElement& element = x.second;
       if(element.histLen > 0) {
         try {
-          ChimeraTK::callForType(element.histBufferType, [&](auto arg) {
+          callForType(element.histBufferType, [&](auto arg) {
             using UserType = decltype(arg);
             using UserBufferType = std::vector<std::vector<UserType>>;
             delete getBufferVector<UserBufferType>(id);
@@ -219,17 +219,17 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void HDataConsistencyGroup::updateHistory(const ChimeraTK::TransferElementID& transferElementID) {
+  void HDataConsistencyGroup::updateHistory(TransferElementID transferElementID) {
     PushElement& element = _pushElements.at(transferElementID);
     if(element.histLen == 0) {
       // exit early if history not availabe for this element
       return;
     }
 
-    ChimeraTK::VersionNumber vn = element.acc.getVersionNumber();
-    ChimeraTK::DataValidity dv = element.acc.dataValidity();
+    VersionNumber vn = element.acc.getVersionNumber();
+    DataValidity dv = element.acc.dataValidity();
 
-    ChimeraTK::callForType(element.histBufferType, [&](auto arg) {
+    callForType(element.histBufferType, [&](auto arg) {
       using UserType = decltype(arg);
       using UserBufferType = std::vector<std::vector<UserType>>;
       auto& buf = getUserBuffer<UserType>(transferElementID);
@@ -254,6 +254,18 @@ namespace ChimeraTK {
       versionNumVector[0] = vn;
       datavalidityVector[0] = dv;
     });
+  }
+
+  void HDataConsistencyGroup::getMatchingInfo(TransferElementID id, VersionNumber& vs, DataValidity& dv) {
+    PushElement& pe = _pushElements.at(id);
+
+    if(pe.lastMatchingIndex > 0) {
+      vs = pe.versionNumbers[pe.lastMatchingIndex - 1];
+      dv = pe.dataValidities[pe.lastMatchingIndex - 1];
+      return;
+    }
+    vs = pe.acc.getVersionNumber();
+    dv = pe.acc.dataValidity();
   }
 
   /********************************************************************************************************************/
