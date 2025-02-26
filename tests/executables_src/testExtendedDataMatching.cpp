@@ -95,7 +95,7 @@ struct Fixture {
 };
 
 BOOST_FIXTURE_TEST_CASE(test1, Fixture) {
-  std::cout << "test1" << std::endl;
+  std::cout << "test1: no history" << std::endl;
   // minimal test code: we create two read accessors on variables defined in xlmap, put them into a ReadAnyGroup and a
   // HDataConsistencyGroup. We provide data from another thread, as in real use case. Then using different delay
   // settings for updates of A and B, check expected number of consistent data updates.
@@ -136,6 +136,7 @@ BOOST_FIXTURE_TEST_CASE(test1, Fixture) {
     BOOST_TEST(nUpdates == nLoops + nLoops - delay);
   }
 
+  std::cout << "test1: with history" << std::endl;
   ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
 
   for(unsigned delay = 0; delay <= 2; delay++) {

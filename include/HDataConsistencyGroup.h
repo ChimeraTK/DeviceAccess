@@ -57,7 +57,7 @@ namespace ChimeraTK {
     /**
      * Add a push element.
      */
-    void add(ChimeraTK::TransferElementAbstractor& acc, unsigned histLen = 0);
+    void add(ChimeraTK::TransferElementAbstractor& acc, unsigned histLen = 2);
 
     // TODO discuss - should this be public or not?
     /// decorate accessor by replacing its target => DataConsistencyDecorator(target)
