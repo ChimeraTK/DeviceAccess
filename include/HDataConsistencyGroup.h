@@ -61,7 +61,7 @@ namespace ChimeraTK {
     bool update(const TransferElementID& transferElementID);
 
     /// can be used for diagnostics
-    [[nodiscard]] const auto& getPushElements() const { return _pushElements; }
+    [[nodiscard]] const auto& getPushElements() const { return _targetElements; }
 
     // functions needed by DataConsistencyDecorator:
     void updateHistory(TransferElementID transferElementID);
@@ -84,11 +84,11 @@ namespace ChimeraTK {
 
     template<typename UserBufferType>
     std::vector<UserBufferType>* getBufferVector(TransferElementID id) {
-      void* buf = _pushElements.at(id).histBuffer;
+      void* buf = _targetElements.at(id).histBuffer;
       return static_cast<std::vector<UserBufferType>*>(buf);
     }
 
-    struct PushElement {
+    struct TargetElement {
       /// target of DataConsistencyDecorator
       TransferElementAbstractor acc;
       unsigned histLen = 0;
@@ -102,10 +102,10 @@ namespace ChimeraTK {
     };
 
     std::set<TransferElementID> _decoratorsNeedingPostRead;
-    std::map<TransferElementID, TransferElementAbstractor> _decoratedElements;
+    std::map<TransferElementID, TransferElementAbstractor> _pushElements;
 
     ReadAnyGroup* _rag = nullptr;
-    std::map<TransferElementID, PushElement> _pushElements;
+    std::map<TransferElementID, TargetElement> _targetElements;
     VersionNumber _lastMatchingVersionNumber{nullptr};
   };
 
@@ -113,7 +113,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   std::vector<std::vector<UserType>>& HDataConsistencyGroup::getMatchingBuffer(TransferElementID id) {
-    PushElement& pe = _pushElements.at(id);
+    TargetElement& pe = _targetElements.at(id);
     using UserBufferType = std::vector<std::vector<UserType>>;
 
     if(pe.lastMatchingIndex > 0) {
@@ -130,7 +130,7 @@ namespace ChimeraTK {
     // TODO try using ChimeraTK::TemplateUserTypeMapNoVoid, see e.g. ConfigReader.cc how to use it; this should
     // eliminiate casting (also where I store void* pointer)
 
-    const auto& impl = _pushElements.at(transferElementID).acc.getHighLevelImplElement();
+    const auto& impl = _targetElements.at(transferElementID).acc.getHighLevelImplElement();
     auto acc0 = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(impl);
     assert(acc0);
     return acc0->accessChannels();

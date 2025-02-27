@@ -47,8 +47,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool HDataConsistencyGroup::update(const TransferElementID& transferElementID) {
-    auto it = _pushElements.find(transferElementID);
-    if(it == _pushElements.end()) {
+    auto it = _targetElements.find(transferElementID);
+    if(it == _targetElements.end()) {
       // ignore unkown element
       return false;
     }
@@ -83,7 +83,7 @@ namespace ChimeraTK {
       // Note, in case of an exception thrown by some postRead, it might happen that postRead is
       // called more than once in a row, for the other elements. This is allowed.
       for(TransferElementID id : _decoratorsNeedingPostRead) {
-        auto& acc = _decoratedElements.at(id);
+        auto& acc = _pushElements.at(id);
         acc.getHighLevelImplElement()->postRead(TransferType::read, true);
         // just as in ReadAnyGroup, we immediately follow-up with preRead
         acc.getHighLevelImplElement()->preRead(TransferType::read);
@@ -107,7 +107,7 @@ namespace ChimeraTK {
 
     decorateAccessor(acc);
     // add decorated access to our elements map (key = Id remains unchanged by decoration)
-    _decoratedElements[acc.getId()] = acc;
+    _pushElements[acc.getId()] = acc;
     // also find the copy of accessor abstractor in ReadAnyGroup and decorate it in there
     for(auto& pe : _rag->push_elements) {
       if(pe.getId() == acc.getId()) {
@@ -120,7 +120,7 @@ namespace ChimeraTK {
 
   void HDataConsistencyGroup::setupHistory(TransferElementAbstractor& acc, unsigned histLen) {
     TransferElementID id = acc.getId();
-    if(_pushElements.find(id) != _pushElements.end()) {
+    if(_targetElements.find(id) != _targetElements.end()) {
       // was alread set up
       return;
     }
@@ -130,8 +130,8 @@ namespace ChimeraTK {
       using UserType = decltype(argForType);
       using UserBufferType = std::vector<std::vector<UserType>>;
       // prepare and insert PushElement not yet having memory (because getUserBuffer requires registered accessor)
-      PushElement element0 = {acc, histLen, nullptr, typeid(UserType), {}, {}};
-      _pushElements.insert({id, element0});
+      TargetElement element0 = {acc, histLen, nullptr, typeid(UserType), {}, {}};
+      _targetElements.insert({id, element0});
       if(histLen > 0) {
         auto* mem = new std::vector<UserBufferType>(histLen);
         // get user buffer just to find out it's shape
@@ -147,7 +147,7 @@ namespace ChimeraTK {
           }
         }
         // continue setup: make buffer known
-        PushElement& element = _pushElements.at(id);
+        TargetElement& element = _targetElements.at(id);
         element.histBuffer = mem;
         element.versionNumbers.resize(histLen);
         std::fill(element.versionNumbers.begin(), element.versionNumbers.end(), VersionNumber{nullptr});
@@ -159,9 +159,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   HDataConsistencyGroup::~HDataConsistencyGroup() {
-    for(auto& x : _pushElements) {
+    for(auto& x : _targetElements) {
       TransferElementID id = x.first;
-      PushElement& element = x.second;
+      TargetElement& element = x.second;
       if(element.histLen > 0) {
         try {
           callForType(element.histBufferType, [&](auto arg) {
@@ -181,19 +181,19 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool HDataConsistencyGroup::findMatch(TransferElementID transferElementID) {
-    auto it = _pushElements.find(transferElementID);
-    if(it == _pushElements.end()) {
+    auto it = _targetElements.find(transferElementID);
+    if(it == _targetElements.end()) {
       // ignore unknown transfer elements
       return false;
     }
-    PushElement& theElement = it->second;
+    TargetElement& theElement = it->second;
     auto vn = theElement.acc.getVersionNumber();
 
-    for(auto& pair : _pushElements) {
+    for(auto& pair : _targetElements) {
       if(pair.first == transferElementID) {
         continue;
       }
-      PushElement& element = pair.second;
+      TargetElement& element = pair.second;
       // first consider accessor's user buffer and version number
       if(element.acc.getVersionNumber() == vn) {
         element.lastMatchingIndex = 0;
@@ -221,7 +221,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void HDataConsistencyGroup::updateHistory(TransferElementID transferElementID) {
-    PushElement& element = _pushElements.at(transferElementID);
+    TargetElement& element = _targetElements.at(transferElementID);
     if(element.histLen == 0) {
       // exit early if history not availabe for this element
       return;
@@ -258,7 +258,7 @@ namespace ChimeraTK {
   }
 
   void HDataConsistencyGroup::getMatchingInfo(TransferElementID id, VersionNumber& vs, DataValidity& dv) {
-    PushElement& pe = _pushElements.at(id);
+    TargetElement& pe = _targetElements.at(id);
 
     if(pe.lastMatchingIndex > 0) {
       vs = pe.versionNumbers[pe.lastMatchingIndex - 1];

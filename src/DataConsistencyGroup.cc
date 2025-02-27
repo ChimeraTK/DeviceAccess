@@ -7,18 +7,25 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  DataConsistencyGroup::DataConsistencyGroup() = default;
+  DataConsistencyGroup::DataConsistencyGroup() {
+    // TODO replace by smart pointer, or pointer to base matcher?
+    sImpl = new SimpleMatcher(this);
+  };
 
   /********************************************************************************************************************/
 
   DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list) {
-    for(const auto& element : list) add(element);
+    for(const auto& element : list) {
+      add(element);
+    }
   }
 
   /********************************************************************************************************************/
 
   DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list) {
-    for(const auto& element : list) add(element);
+    for(const auto& element : list) {
+      add(element);
+    }
   }
 
   /********************************************************************************************************************/
@@ -32,13 +39,51 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error(
           "Cannot add poll type accessor for register " + element.getName() + " to DataConsistencyGroup.");
     }
-    push_elements[element.getId()] = element;
+    _pushElements[element.getId()] = element;
   }
 
   /********************************************************************************************************************/
 
   void DataConsistencyGroup::add(boost::shared_ptr<TransferElement> element) {
     add(TransferElementAbstractor(std::move(element)));
+  }
+
+  /********************************************************************************************************************/
+
+  bool DataConsistencyGroup::update(const TransferElementID& transferElementID) {
+    // ignore transferElementID does not belong to DataConsistencyGroup
+    if(_pushElements.find(transferElementID) == _pushElements.end()) {
+      return false;
+    }
+    // if matching mode is none, always return true
+    if(_mode == MatchingMode::none) {
+      return true;
+    }
+
+    return sImpl->update(transferElementID);
+  }
+
+  /********************************************************************************************************************/
+
+  bool SimpleMatcher::update(const TransferElementID& transferElementID) {
+    using MatchingMode = DataConsistencyGroup::MatchingMode;
+    assert(_dg->_mode == MatchingMode::exact);
+
+    auto getVNFromElement = _dg->_pushElements[transferElementID].getVersionNumber();
+    assert(getVNFromElement != VersionNumber{nullptr});
+    if(getVNFromElement < _dg->versionNumberToBeConsistentTo) {
+      return false;
+    }
+    if(_dg->versionNumberToBeConsistentTo != getVNFromElement) {
+      _dg->versionNumberToBeConsistentTo = getVNFromElement;
+      _consistentElements.clear();
+    }
+    _consistentElements.insert(transferElementID);
+    return _consistentElements.size() == _dg->_pushElements.size();
+  }
+
+  bool SimpleMatcher::isConsistent() const {
+    return _consistentElements.size() == _dg->_pushElements.size();
   }
 
   /********************************************************************************************************************/
