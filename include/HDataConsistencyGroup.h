@@ -40,21 +40,31 @@ namespace ChimeraTK {
      */
     void add(TransferElementAbstractor& acc, unsigned histLen);
 
+    // TODO discuss API
+    // we want to create a drop-in replacement for DataConsistencyGroup: add some methods
+    // Do we need iterator constructor?
+    // Is it fine to call update() like in DataConsistencyGroup?
+    // It should be fine since it does nothing, but also useless! We could as well define empty function update()...
+    //
+    // should we define isConsistent()? It would always return true!
+    // can we introduce/extend MatchingMode?
+
     /**
      * Note, differently from DataConsistencyGroup, explicit call to this function is no longer required,
-     * since already done by DataConsistencyDecorator.
-     * behaves similar to DataConsistencyGroup::update.
+     * since already called by DataConsistencyDecorator.
+     * It behaves similar to DataConsistencyGroup::update.
      * The given transferElement dictates the VersionNumber to match.
-     * Returns true if a match with other transferElements of group can be found by looking through their
+     * It returns true if a match with other transferElements of group can be found by looking through their
      * history of values.
-     * Returns false if given transferElement does not belong to group.
+     * Returns false otherwise, or if the given transferElement does not belong to group.
      */
     bool update(const TransferElementID& transferElementID);
 
+    /// can be used for diagnostics
     [[nodiscard]] const auto& getPushElements() const { return _pushElements; }
 
+    // functions needed by DataConsistencyDecorator:
     void updateHistory(TransferElementID transferElementID);
-
     void getMatchingInfo(TransferElementID id, VersionNumber& vs, DataValidity& dv);
     template<typename UserType>
     std::vector<std::vector<UserType>>& getMatchingBuffer(TransferElementID id);
@@ -65,8 +75,6 @@ namespace ChimeraTK {
 
     /// element must be target, i.e. not DataConsistencyDecorator
     void setupHistory(TransferElementAbstractor& element, unsigned histLen);
-
-    // TODO make mostly compatible as a drop-in replacement for DataConsistencyGroup: add some methods
 
     bool findMatch(TransferElementID transferElementID);
 

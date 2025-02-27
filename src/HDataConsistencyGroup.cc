@@ -74,9 +74,9 @@ namespace ChimeraTK {
 
     // In special case that we have consistent state with unchanged version number, we do not update other
     // decorator buffers.
-    // E.g. all decorators in consistent state, say v3.
-    // Now A gets a new update, v4. this is put into history, and since no value yet for matching B,
-    // we throw DiscardValueException. But then, we get another value for B, with version v3.
+    // E.g. assume that all decorators are in consistent state, say v3.
+    // Now A gets a new update, v4. This is put into history, and since there is no value yet for matching B,
+    // we throw DiscardValueException. Assume then, we get another value for B, with version v3.
     // In this case, decorator(A) must not be swapped again, but decorator(B) should be swapped with target(B)=v3
     if(_lastMatchingVersionNumber > lastMatchingVersionNumber) {
       // To update other user buffers, call postRead on the other involved decorators.
@@ -138,6 +138,7 @@ namespace ChimeraTK {
         auto& buf = getUserBuffer<UserType>(id);
         unsigned nChannels = buf.size();
         assert(nChannels > 0);
+        // TODO discuss - is it relevant to support ChimeraTK::Void?
         unsigned nSamples = buf[0].size(); // note, this may not work with type Void
         for(UserBufferType& historyElement : *mem) {
           historyElement.resize(nChannels);
@@ -149,7 +150,7 @@ namespace ChimeraTK {
         PushElement& element = _pushElements.at(id);
         element.histBuffer = mem;
         element.versionNumbers.resize(histLen);
-        std::fill(element.versionNumbers.begin(), element.versionNumbers.end(), VersionNumber{0});
+        std::fill(element.versionNumbers.begin(), element.versionNumbers.end(), VersionNumber{nullptr});
         element.dataValidities.resize(histLen);
       }
     });
