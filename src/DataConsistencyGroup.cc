@@ -3,11 +3,14 @@
 
 #include "DataConsistencyGroup.h"
 
+#include "HistorizedMatcher.h"
+#include "SimpleMatcher.h"
+
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  DataConsistencyGroup::DataConsistencyGroup() {
+  DataConsistencyGroup::DataConsistencyGroup(MatchingMode mode) : _mode(mode) {
     // TODO replace by smart pointer, or pointer to base matcher?
     sImpl = new SimpleMatcher(this);
   };
@@ -25,6 +28,17 @@ namespace ChimeraTK {
   DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list) {
     for(const auto& element : list) {
       add(element);
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  DataConsistencyGroup::DataConsistencyGroup(
+      std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list, MatchingMode mode,
+      unsigned histLen) {
+    setMatchingMode(mode); // must be called before add since otherwise decoration won't apply
+    for(const auto& element : list) {
+      add(element, histLen);
     }
   }
 
@@ -48,42 +62,54 @@ namespace ChimeraTK {
     add(TransferElementAbstractor(std::move(element)));
   }
 
+  void DataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned int histLen) {
+    // TODO instantiate hImpl
+    if(_mode == MatchingMode::historized) {
+      hImpl->add(acc, histLen);
+    }
+  }
+
   /********************************************************************************************************************/
 
   bool DataConsistencyGroup::update(const TransferElementID& transferElementID) {
-    // ignore transferElementID does not belong to DataConsistencyGroup
+    // ignore transferElementID not in DataConsistencyGroup
     if(_pushElements.find(transferElementID) == _pushElements.end()) {
       return false;
     }
-    // if matching mode is none, always return true
-    if(_mode == MatchingMode::none) {
-      return true;
+    switch(_mode) {
+      case MatchingMode::none:
+        // if matching mode is none, always return true
+        return true;
+      case MatchingMode::exact:
+        return sImpl->update(transferElementID);
+      case MatchingMode::historized:
+        // no need to call HistorizedMatcher::update; it would return true
+        return true;
     }
-
-    return sImpl->update(transferElementID);
   }
 
   /********************************************************************************************************************/
 
-  bool SimpleMatcher::update(const TransferElementID& transferElementID) {
-    using MatchingMode = DataConsistencyGroup::MatchingMode;
-    assert(_dg->_mode == MatchingMode::exact);
-
-    auto getVNFromElement = _dg->_pushElements[transferElementID].getVersionNumber();
-    assert(getVNFromElement != VersionNumber{nullptr});
-    if(getVNFromElement < _dg->versionNumberToBeConsistentTo) {
-      return false;
-    }
-    if(_dg->versionNumberToBeConsistentTo != getVNFromElement) {
-      _dg->versionNumberToBeConsistentTo = getVNFromElement;
-      _consistentElements.clear();
-    }
-    _consistentElements.insert(transferElementID);
-    return _consistentElements.size() == _dg->_pushElements.size();
+  void DataConsistencyGroup::setMatchingMode(MatchingMode newMode) {
+    // TODO add checks and apply decoration for historized?
+    // I'm not sure that we switch to historized at all - problem being the
+    // abstractors not saved by us!
+    _mode = newMode;
   }
 
-  bool SimpleMatcher::isConsistent() const {
-    return _consistentElements.size() == _dg->_pushElements.size();
+  /********************************************************************************************************************/
+
+  bool DataConsistencyGroup::isConsistent() const {
+    switch(_mode) {
+      case MatchingMode::none:
+        // if matching mode is none, always return true
+        return true;
+      case MatchingMode::exact:
+        return sImpl->isConsistent();
+      case MatchingMode::historized:
+        // no need to call HistorizedMatcher::findMatch; it would return true
+        return true;
+    }
   }
 
   /********************************************************************************************************************/

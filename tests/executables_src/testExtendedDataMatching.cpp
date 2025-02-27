@@ -7,8 +7,8 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include "DataConsistencyGroup.h"
 #include "Device.h"
-#include "HDataConsistencyGroup.h"
 #include "ReadAnyGroup.h"
 
 using namespace ChimeraTK;
@@ -138,7 +138,7 @@ BOOST_FIXTURE_TEST_CASE(test1, Fixture) {
   }
 
   std::cout << "test1: with history" << std::endl;
-  ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
+  DataConsistencyGroup dg({readAccA, readAccB}, DataConsistencyGroup::MatchingMode::historized);
 
   for(unsigned delay = 0; delay <= 2; delay++) {
     // With HDataConsistencyGroup, check that we get N-delay consistent updates.
@@ -177,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE(testDuplicateVns, Fixture) {
 
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
 
-  ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
+  DataConsistencyGroup dg({readAccA, readAccB}, DataConsistencyGroup::MatchingMode::historized);
 
   const unsigned nLoops = 4;
   const unsigned nDuplicateVns = 1;
@@ -221,7 +221,7 @@ BOOST_FIXTURE_TEST_CASE(testExceptions, Fixture) {
   std::cout << "testExceptions" << std::endl;
 
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
-  ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
+  DataConsistencyGroup dg({readAccA, readAccB}, DataConsistencyGroup::MatchingMode::historized);
 
   const unsigned nLoops = 6;
   const unsigned delay = 0;
@@ -282,7 +282,7 @@ BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
   // at start VersionNum(A)=0, since no read has yet occurred
 
   ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
-  ChimeraTK::HDataConsistencyGroup dg{readAccA, readAccB};
+  DataConsistencyGroup dg({readAccA, readAccB}, DataConsistencyGroup::MatchingMode::historized);
 
   unsigned nDiscarded = emptyQueues(rag);
   // after read, VersionNumbers must be non-zero.

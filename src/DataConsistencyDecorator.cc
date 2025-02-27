@@ -10,8 +10,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   DataConsistencyDecorator<UserType>::DataConsistencyDecorator(
-      const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HDataConsistencyGroup* dGroup)
-  : NDRegisterAccessorDecorator<UserType, UserType>(target), _dGroup(dGroup) {
+      const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HistorizedMatcher* dGroup)
+  : NDRegisterAccessorDecorator<UserType, UserType>(target), _hGroup(dGroup) {
     // check TransferElement is in ReadAnyGroup, direct reads do not make sense with HDataConsistencyGroup
     if(!target->getReadAnyGroup()) {
       throw logic_error(
@@ -34,13 +34,13 @@ namespace ChimeraTK {
 
     // Decorators have to copy meta data even if updateDataBuffer is false
     auto transferElementId = this->getId();
-    this->_dGroup->getMatchingInfo(transferElementId, this->_versionNumber, this->_dataValidity);
+    this->_hGroup->getMatchingInfo(transferElementId, this->_versionNumber, this->_dataValidity);
 
     if(!updateDataBuffer) {
       return;
     }
 
-    auto& matchingBuffer = this->_dGroup->template getMatchingBuffer<UserType>(transferElementId);
+    auto& matchingBuffer = this->_hGroup->template getMatchingBuffer<UserType>(transferElementId);
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       buffer_2D[i].swap(matchingBuffer[i]);
     }
@@ -59,7 +59,7 @@ namespace ChimeraTK {
     // Before we update target buffer, we swap it into history. If history buffers = {h1, h2}, then switch h1<->h2,
     // target<->h1, so target oldest data (h2) which may be overwritten next. In match search (after
     // postRead), the three buffers {target, h1, h2} should be searched.
-    _dGroup->updateHistory(_target->getId());
+    _hGroup->updateHistory(_target->getId());
 
     // Differently from usual decorator behavior, we call target->postRead already here,
     // because we need user buffer content to judge data consistency.
@@ -71,7 +71,7 @@ namespace ChimeraTK {
     _target->preRead(TransferType::read);
 
     // check data consistency, including history, and update user buffers if necessary
-    _dGroup->update(_target->getId());
+    _hGroup->update(_target->getId());
   }
 
   /********************************************************************************************************************/

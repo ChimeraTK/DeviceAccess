@@ -20,7 +20,7 @@ namespace ChimeraTK {
    */
   class ReadAnyGroup {
     // friend because it needs to decorate our push_elements
-    friend class HDataConsistencyGroup;
+    friend class HistorizedMatcher;
 
    public:
     /**

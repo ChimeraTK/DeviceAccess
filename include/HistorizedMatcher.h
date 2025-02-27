@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "DataConsistencyGroup.h"
 #include "TransferElementAbstractor.h"
 
 namespace ChimeraTK {
@@ -24,30 +25,16 @@ namespace ChimeraTK {
   /**
    * Data consistency matching via history of available data.
    */
-  class HDataConsistencyGroup {
+  class HistorizedMatcher {
    public:
-    /**
-     * Construct HDataConsistencyGroup from a set of TransferElementAbstractors. These will be decorated
-     * with DataConsistencyDecorator.
-     * Note, constructor for set of TransferElements is not provided since we could not decorate them for the caller.
-     */
-    HDataConsistencyGroup(
-        std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list, unsigned histLen = 2);
-    virtual ~HDataConsistencyGroup();
+    explicit HistorizedMatcher(DataConsistencyGroup* dg) : _dg(dg) {}
+    virtual ~HistorizedMatcher();
 
     /**
-     * Add a push element. Same as constructor from list; acc will be decorated.
+     * Add a push element. acc will be decorated by replacing its target -> DataConsistencyDecorator(target). For this
+     * reason, we do not provide add function with TransferElement.
      */
     void add(TransferElementAbstractor& acc, unsigned histLen);
-
-    // TODO discuss API
-    // we want to create a drop-in replacement for DataConsistencyGroup: add some methods
-    // Do we need iterator constructor?
-    // Is it fine to call update() like in DataConsistencyGroup?
-    // It should be fine since it does nothing, but also useless! We could as well define empty function update()...
-    //
-    // should we define isConsistent()? It would always return true!
-    // can we introduce/extend MatchingMode?
 
     /**
      * Note, differently from DataConsistencyGroup, explicit call to this function is no longer required,
@@ -61,7 +48,7 @@ namespace ChimeraTK {
     bool update(const TransferElementID& transferElementID);
 
     /// can be used for diagnostics
-    [[nodiscard]] const auto& getPushElements() const { return _targetElements; }
+    [[nodiscard]] const auto& getTargetElements() const { return _targetElements; }
 
     // functions needed by DataConsistencyDecorator:
     void updateHistory(TransferElementID transferElementID);
@@ -101,8 +88,9 @@ namespace ChimeraTK {
       unsigned lastMatchingIndex = 0;
     };
 
+    DataConsistencyGroup* _dg;
+
     std::set<TransferElementID> _decoratorsNeedingPostRead;
-    std::map<TransferElementID, TransferElementAbstractor> _pushElements;
 
     ReadAnyGroup* _rag = nullptr;
     std::map<TransferElementID, TargetElement> _targetElements;
@@ -112,7 +100,7 @@ namespace ChimeraTK {
   /*************************************************************************************************/
 
   template<typename UserType>
-  std::vector<std::vector<UserType>>& HDataConsistencyGroup::getMatchingBuffer(TransferElementID id) {
+  std::vector<std::vector<UserType>>& HistorizedMatcher::getMatchingBuffer(TransferElementID id) {
     TargetElement& pe = _targetElements.at(id);
     using UserBufferType = std::vector<std::vector<UserType>>;
 
@@ -126,7 +114,7 @@ namespace ChimeraTK {
   /*************************************************************************************************/
 
   template<typename UserType>
-  std::vector<std::vector<UserType>>& HDataConsistencyGroup::getUserBuffer(TransferElementID transferElementID) {
+  std::vector<std::vector<UserType>>& HistorizedMatcher::getUserBuffer(TransferElementID transferElementID) {
     // TODO try using ChimeraTK::TemplateUserTypeMapNoVoid, see e.g. ConfigReader.cc how to use it; this should
     // eliminiate casting (also where I store void* pointer)
 

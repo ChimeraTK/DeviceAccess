@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "HDataConsistencyGroup.h"
+#include "HistorizedMatcher.h"
 #include "NDRegisterAccessorDecorator.h"
 
 namespace ChimeraTK {
@@ -20,14 +20,14 @@ namespace ChimeraTK {
   class DataConsistencyDecorator : public NDRegisterAccessorDecorator<UserType, UserType> {
    public:
     DataConsistencyDecorator(
-        const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HDataConsistencyGroup* dGroup);
+        const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HistorizedMatcher* dGroup);
 
     void doPostRead(TransferType type, bool updateDataBuffer) override;
     // continuation / callback for future_queue
     void readCallback();
 
    protected:
-    HDataConsistencyGroup* _dGroup;
+    HistorizedMatcher* _hGroup;
 
     using NDRegisterAccessorDecorator<UserType>::_target;
     using NDRegisterAccessorDecorator<UserType>::buffer_2D;

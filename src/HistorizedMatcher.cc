@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "HDataConsistencyGroup.h"
+#include "HistorizedMatcher.h"
 
 #include "DataConsistencyDecorator.h"
 #include "ReadAnyGroup.h"
@@ -11,16 +11,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  HDataConsistencyGroup::HDataConsistencyGroup(
-      std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list, unsigned histLen) {
-    for(TransferElementAbstractor& acc : list) {
-      add(acc, histLen);
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  void HDataConsistencyGroup::decorateAccessor(TransferElementAbstractor& acc) {
+  void HistorizedMatcher::decorateAccessor(TransferElementAbstractor& acc) {
     callForType(acc.getValueType(), [&](auto t) {
       using UserType = decltype(t);
 
@@ -46,7 +37,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool HDataConsistencyGroup::update(const TransferElementID& transferElementID) {
+  bool HistorizedMatcher::update(const TransferElementID& transferElementID) {
     auto it = _targetElements.find(transferElementID);
     if(it == _targetElements.end()) {
       // ignore unkown element
@@ -83,7 +74,7 @@ namespace ChimeraTK {
       // Note, in case of an exception thrown by some postRead, it might happen that postRead is
       // called more than once in a row, for the other elements. This is allowed.
       for(TransferElementID id : _decoratorsNeedingPostRead) {
-        auto& acc = _pushElements.at(id);
+        auto& acc = _dg->_pushElements.at(id);
         acc.getHighLevelImplElement()->postRead(TransferType::read, true);
         // just as in ReadAnyGroup, we immediately follow-up with preRead
         acc.getHighLevelImplElement()->preRead(TransferType::read);
@@ -96,7 +87,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void HDataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned histLen) {
+  void HistorizedMatcher::add(TransferElementAbstractor& acc, unsigned histLen) {
     if(acc.getReadAnyGroup() == nullptr || (_rag != nullptr && acc.getReadAnyGroup() != _rag)) {
       throw ChimeraTK::logic_error("all elements of the HDataConsistencyGroup must point to the same ReadAnyGroup!");
     }
@@ -107,7 +98,7 @@ namespace ChimeraTK {
 
     decorateAccessor(acc);
     // add decorated access to our elements map (key = Id remains unchanged by decoration)
-    _pushElements[acc.getId()] = acc;
+    _dg->_pushElements[acc.getId()] = acc;
     // also find the copy of accessor abstractor in ReadAnyGroup and decorate it in there
     for(auto& pe : _rag->push_elements) {
       if(pe.getId() == acc.getId()) {
@@ -118,7 +109,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void HDataConsistencyGroup::setupHistory(TransferElementAbstractor& acc, unsigned histLen) {
+  void HistorizedMatcher::setupHistory(TransferElementAbstractor& acc, unsigned histLen) {
     TransferElementID id = acc.getId();
     if(_targetElements.find(id) != _targetElements.end()) {
       // was alread set up
@@ -158,7 +149,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  HDataConsistencyGroup::~HDataConsistencyGroup() {
+  HistorizedMatcher::~HistorizedMatcher() {
     for(auto& x : _targetElements) {
       TransferElementID id = x.first;
       TargetElement& element = x.second;
@@ -180,7 +171,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool HDataConsistencyGroup::findMatch(TransferElementID transferElementID) {
+  bool HistorizedMatcher::findMatch(TransferElementID transferElementID) {
     auto it = _targetElements.find(transferElementID);
     if(it == _targetElements.end()) {
       // ignore unknown transfer elements
@@ -217,10 +208,9 @@ namespace ChimeraTK {
     return true;
   }
 
-
   /********************************************************************************************************************/
 
-  void HDataConsistencyGroup::updateHistory(TransferElementID transferElementID) {
+  void HistorizedMatcher::updateHistory(TransferElementID transferElementID) {
     TargetElement& element = _targetElements.at(transferElementID);
     if(element.histLen == 0) {
       // exit early if history not availabe for this element
@@ -257,7 +247,9 @@ namespace ChimeraTK {
     });
   }
 
-  void HDataConsistencyGroup::getMatchingInfo(TransferElementID id, VersionNumber& vs, DataValidity& dv) {
+  /********************************************************************************************************************/
+
+  void HistorizedMatcher::getMatchingInfo(TransferElementID id, VersionNumber& vs, DataValidity& dv) {
     TargetElement& pe = _targetElements.at(id);
 
     if(pe.lastMatchingIndex > 0) {

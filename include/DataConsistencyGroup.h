@@ -25,33 +25,8 @@ namespace ChimeraTK {
   // allow changing MatchingMode non/exact->historized but not back.
   // but also provide constructor with MatchingMode
 
-  class DataConsistencyGroup;
-
-  /// not for direct use - maybe hide it?
-  /**
-   * Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
-   * algorithm which matches the VersionNumber. This group does not read on its own. It should work together with a
-   * ReadAnyGroup. You should wait for changed variable and transfer it to this group by calling
-   * ChimeraTK::DataConsistencyGroup::update. If a consistent state is reached, this function returns true.
-   */
-  class SimpleMatcher {
-   public:
-    /** Construct empty group. Elements can later be added using the add() function. */
-    explicit SimpleMatcher(DataConsistencyGroup* dg) : _dg(dg) {}
-
-    /** This function updates consistentElements, a set of TransferElementID. It returns true, if a consistent state is
-     *  reached. It returns false if an TransferElementID was updated, that was not added to this Group. */
-    bool update(const TransferElementID& transferElementID);
-
-    /** returns true if consistent state is reached */
-    bool isConsistent() const;
-
-   private:
-    /// A set of TransferElementID, that were updated with update();
-    std::unordered_set<TransferElementID> _consistentElements;
-
-    DataConsistencyGroup* _dg;
-  };
+  class SimpleMatcher;
+  class HistorizedMatcher;
 
   /**
    * Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
@@ -61,35 +36,50 @@ namespace ChimeraTK {
    */
   class DataConsistencyGroup {
     friend class SimpleMatcher;
+    friend class HistorizedMatcher;
 
    public:
+    /** Enum describing the matching mode of a DataConsistencyGroup. */
+    enum class MatchingMode {
+      none,  ///< No matching, effectively disable the DataConsitencyGroup. update() will always return true.
+      exact, ///< Require an exact match of the VersionNumber of all current values of the group's members.
+      historized ///< Require an exact match of the VersionNumber of all current or historized values of the group's members.
+    };
+
     /** Construct empty group. Elements can later be added using the add() function. */
-    DataConsistencyGroup();
+    explicit DataConsistencyGroup(MatchingMode mode = MatchingMode::exact);
 
     /** Construct this group with elements from the list using the add() function. */
+    [[deprecated("use list constructor with MatchingMode instead")]]
     DataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list);
+    [[deprecated("use list constructor with MatchingMode instead")]]
     DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list);
+    DataConsistencyGroup(std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list,
+        MatchingMode mode, unsigned int histLen = 2);
 
     template<typename ITERATOR>
     DataConsistencyGroup(ITERATOR first, ITERATOR last);
 
     /** Add register to group. The same TransferElement can be part of multiple DataConsistencyGroups. The register
      *  must be must be readable, and it must have AccessMode::wait_for_new_data. */
+    [[deprecated("use add function with histLen instead")]]
     void add(const TransferElementAbstractor& element);
+    [[deprecated("use add function with histLen instead")]]
     void add(boost::shared_ptr<TransferElement> element);
+    // TODO may we supply default histLen without making signatures ambiguous?
+    void add(TransferElementAbstractor& acc, unsigned histLen);
 
     /** This function updates consistentElements, a set of TransferElementID. It returns true, if a consistent state is
-     *  reached. It returns false if an TransferElementID was updated, that was not added to this Group. */
+     *  reached.
+     *  It returns false if an TransferElementID was updated, that was not added to this Group.
+     *  For MatchingMode::historized, readAny will only let through consistent updates, so then update always returns true.
+     */
     bool update(const TransferElementID& transferElementID);
 
-    /** Enum describing the matching mode of a DataConsistencyGroup. */
-    enum class MatchingMode {
-      none, ///< No matching, effectively disable the DataConsitencyGroup. update() will always return true.
-      exact ///< Require an exact match of the VersionNumber of all current values of the group's members.
-    };
-
-    /** Change the matching mode. The default mode is MatchingMode::exact. */
-    void setMatchingMode(MatchingMode newMode) { _mode = newMode; }
+    /** Change the matching mode. The default mode is MatchingMode::exact, if not set differently in constructor. You
+     * may change it to MatchingMode::historized but not back (since accessor decoration cannot be undone).
+     */
+    void setMatchingMode(MatchingMode newMode);
 
     /** Return the current matching mode. */
     [[nodiscard]] MatchingMode getMatchingMode() const { return _mode; };
@@ -100,7 +90,7 @@ namespace ChimeraTK {
     }
 
     /** returns true if consistent state is reached */
-    [[nodiscard]] bool isConsistent() const { return sImpl->isConsistent(); }
+    [[nodiscard]] bool isConsistent() const;
 
    private:
     /// Holds the version number this group elements should be consistent to
@@ -113,13 +103,16 @@ namespace ChimeraTK {
     MatchingMode _mode{MatchingMode::exact};
 
     SimpleMatcher* sImpl = nullptr;
+    HistorizedMatcher* hImpl = nullptr;
   };
 
   /********************************************************************************************************************/
 
   template<typename ITERATOR>
   DataConsistencyGroup::DataConsistencyGroup(ITERATOR first, ITERATOR last) {
-    for(auto it = first; it != last; ++it) add(*it);
+    for(auto it = first; it != last; ++it) {
+      add(*it);
+    }
   }
 
   /********************************************************************************************************************/
