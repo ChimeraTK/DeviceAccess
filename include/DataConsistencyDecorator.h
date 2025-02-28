@@ -19,8 +19,7 @@ namespace ChimeraTK {
   template<typename UserType>
   class DataConsistencyDecorator : public NDRegisterAccessorDecorator<UserType, UserType> {
    public:
-    DataConsistencyDecorator(
-        const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HistorizedMatcher* dGroup);
+    DataConsistencyDecorator(const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, HistorizedMatcher* dGroup);
 
     void doPostRead(TransferType type, bool updateDataBuffer) override;
     // continuation / callback for future_queue
