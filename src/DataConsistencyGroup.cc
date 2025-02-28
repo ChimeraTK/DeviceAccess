@@ -91,8 +91,9 @@ namespace ChimeraTK {
 #pragma GCC diagnostic pop
   }
 
+  /********************************************************************************************************************/
+
   void DataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned int histLen) {
-    // TODO instantiate hImpl
     if(_mode == MatchingMode::historized) {
       _hImpl->add(acc, histLen);
     }

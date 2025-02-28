@@ -42,7 +42,8 @@ namespace ChimeraTK {
     enum class MatchingMode {
       none,  ///< No matching, effectively disable the DataConsitencyGroup. update() will always return true.
       exact, ///< Require an exact match of the VersionNumber of all current values of the group's members.
-      historized ///< Require an exact match of the VersionNumber of all current or historized values of the group's members.
+             ///< Require an exact match of the VersionNumber of all current or historized values of the group's members
+      historized
     };
 
     /** Construct empty group. Elements can later be added using the add() function. */
@@ -58,7 +59,7 @@ namespace ChimeraTK {
         MatchingMode mode, unsigned int histLen = 2);
 
     template<typename ITERATOR>
-    DataConsistencyGroup(ITERATOR first, ITERATOR last);
+    DataConsistencyGroup(ITERATOR first, ITERATOR last, MatchingMode mode, unsigned int histLen = 2);
 
     /** Add register to group. The same TransferElement can be part of multiple DataConsistencyGroups. The register
      *  must be must be readable, and it must have AccessMode::wait_for_new_data. */
@@ -112,9 +113,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename ITERATOR>
-  DataConsistencyGroup::DataConsistencyGroup(ITERATOR first, ITERATOR last) {
+  DataConsistencyGroup::DataConsistencyGroup(ITERATOR first, ITERATOR last, MatchingMode mode, unsigned int histLen)
+  : _mode(mode) {
+    initMatcher();
     for(auto it = first; it != last; ++it) {
-      add(*it);
+      add(*it, histLen);
     }
   }
 
