@@ -71,14 +71,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void DataConsistencyGroup::add(const TransferElementAbstractor& element) {
-    if(!element.isReadable()) {
-      throw ChimeraTK::logic_error(
-          "Cannot add non-readable accessor for register " + element.getName() + " to DataConsistencyGroup.");
-    }
-    if(!element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-      throw ChimeraTK::logic_error(
-          "Cannot add poll type accessor for register " + element.getName() + " to DataConsistencyGroup.");
-    }
+    checkAccess(element);
     _pushElements[element.getId()] = element;
   }
 
@@ -93,9 +86,26 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void DataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned histLen) {
+  void DataConsistencyGroup::checkAccess(const TransferElementAbstractor& element) {
+    if(!element.isReadable()) {
+      throw ChimeraTK::logic_error(
+          "Cannot add non-readable accessor for register " + element.getName() + " to DataConsistencyGroup.");
+    }
+    if(!element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+      throw ChimeraTK::logic_error(
+          "Cannot add poll type accessor for register " + element.getName() + " to DataConsistencyGroup.");
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  void DataConsistencyGroup::add(TransferElementAbstractor& element, unsigned histLen) {
+    checkAccess(element);
     if(_mode == MatchingMode::historized) {
-      _hImpl->add(acc, histLen);
+      _hImpl->add(element, histLen);
+    }
+    else {
+      _pushElements[element.getId()] = element;
     }
   }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "TransferElementID.h"
+#include "VersionNumber.h"
 #include <unordered_set>
 
 namespace ChimeraTK {
@@ -33,6 +34,8 @@ namespace ChimeraTK {
    private:
     /// A set of TransferElementID, that were updated with update();
     std::unordered_set<TransferElementID> _consistentElements;
+    /// Holds the version number this group elements should be consistent to
+    VersionNumber _versionNumberToBeConsistentTo{nullptr};
 
     DataConsistencyGroup* _dg;
   };

@@ -3,26 +3,10 @@
 #pragma once
 
 #include "TransferElementAbstractor.h"
-#include "VersionNumber.h"
 
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
-
-  // TODO API merge of DataConsistencyGroup and HDataConsistencyGroup.
-  // plan:
-  // keep all constructors.
-  // but mark some of the constructors/ add functions as deprecated, since they will be incompatible with new implementation
-  // keep both implementations under the hood.
-  // new add function has non-const TransferElementAbstractor. default histLen = 2.
-  //
-  // get rid of setMatchingMode; instlead, MatchingMode must be set in constructor. default=exact.
-  // if MatchingMode = historized, use new implementation, otherwise use old one.
-  // with MatchingMode = historized, update() always returns true.
-  // TODO - first check whether it would be a problem to remove setMatchingMode in DoocsAdapter
-  // result: if we get rid of setMatchingMode, we will need a lot of (stupid) changes. Maybe easier way:
-  // allow changing MatchingMode non/exact->historized but not back.
-  // but also provide constructor with MatchingMode
 
   class SimpleMatcher;
   class HistorizedMatcher;
@@ -30,13 +14,16 @@ namespace ChimeraTK {
   /**
    * Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
    * algorithm which matches the VersionNumber. This group does not read on its own. It should work together with a
-   * ReadAnyGroup. You should wait for changed variable and transfer it to this group by calling
-   * ChimeraTK::DataConsistencyGroup::update. If a consistent state is reached, this function returns true.
+   * ReadAnyGroup.
+   * This is a proxy class, which delegates to two different implementations.
+   * MatchingMode=exact is handled by SimpleMatcher (the legacy DataConsistencyGroup implementation).
+   * For this, you should wait for changed variable and transfer it to this group by calling
+   * DataConsistencyGroup::update. If a consistent state is reached, this function returns true.
+   * MatchingMode=historized is handled by HistorizedMatcher. In this case, the provided accessors are decorated
+   * with DataConsistencyDecorators, with the effect that the readAny() returns only on consistent inputs.
+   * In this mode, it is unnecessary but still allowed to call DataConsistencyGroup::update and it simply returns true.
    */
   class DataConsistencyGroup {
-    friend class SimpleMatcher;
-    friend class HistorizedMatcher;
-
    public:
     /** Enum describing the matching mode of a DataConsistencyGroup. */
     enum class MatchingMode {
@@ -67,8 +54,7 @@ namespace ChimeraTK {
     void add(const TransferElementAbstractor& element);
     [[deprecated("use add function with histLen instead")]]
     void add(boost::shared_ptr<TransferElement> element);
-    // TODO may we supply default histLen without making signatures ambiguous?
-    void add(TransferElementAbstractor& acc, unsigned histLen);
+    void add(TransferElementAbstractor& acc, unsigned histLen = 2);
 
     /** This function updates consistentElements, a set of TransferElementID. It returns true, if a consistent state is
      *  reached.
@@ -90,15 +76,14 @@ namespace ChimeraTK {
     [[nodiscard]] const std::map<TransferElementID, TransferElementAbstractor>& getElements() const {
       return _pushElements;
     }
+    [[nodiscard]] std::map<TransferElementID, TransferElementAbstractor>& getElements() { return _pushElements; }
 
     /** returns true if consistent state is reached */
     [[nodiscard]] bool isConsistent() const;
 
    private:
     void initMatcher();
-
-    /// Holds the version number this group elements should be consistent to
-    VersionNumber _versionNumberToBeConsistentTo{nullptr}; // TODO check whether needed in outer class
+    void checkAccess(const TransferElementAbstractor& element);
 
     /// map of push-type elements in this group, there are only push type elemenst, like in ReadAnyGroup
     std::map<TransferElementID, TransferElementAbstractor> _pushElements;

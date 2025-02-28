@@ -78,10 +78,10 @@ namespace ChimeraTK {
     };
 
     DataConsistencyGroup* _dg;
+    ReadAnyGroup* _rag = nullptr;
 
     std::set<TransferElementID> _decoratorsNeedingPostRead;
 
-    ReadAnyGroup* _rag = nullptr;
     std::map<TransferElementID, TargetElement> _targetElements;
     VersionNumber _lastMatchingVersionNumber{nullptr};
   };

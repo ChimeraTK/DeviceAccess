@@ -75,7 +75,7 @@ namespace ChimeraTK {
       // Note, in case of an exception thrown by some postRead, it might happen that postRead is
       // called more than once in a row, for the other elements. This is allowed.
       for(TransferElementID id : _decoratorsNeedingPostRead) {
-        auto& acc = _dg->_pushElements.at(id);
+        auto& acc = _dg->getElements().at(id);
         acc.getHighLevelImplElement()->postRead(TransferType::read, true);
         // just as in ReadAnyGroup, we immediately follow-up with preRead
         acc.getHighLevelImplElement()->preRead(TransferType::read);
@@ -90,7 +90,7 @@ namespace ChimeraTK {
 
   void HistorizedMatcher::add(TransferElementAbstractor& acc, unsigned histLen) {
     if(acc.getReadAnyGroup() == nullptr || (_rag != nullptr && acc.getReadAnyGroup() != _rag)) {
-      throw ChimeraTK::logic_error("all elements of the HDataConsistencyGroup must point to the same ReadAnyGroup!");
+      throw ChimeraTK::logic_error("all elements of the DataConsistencyGroup must point to the same ReadAnyGroup!");
     }
     _rag = acc.getReadAnyGroup();
 
@@ -99,7 +99,7 @@ namespace ChimeraTK {
 
     decorateAccessor(acc);
     // add decorated access to our elements map (key = Id remains unchanged by decoration)
-    _dg->_pushElements[acc.getId()] = acc;
+    _dg->getElements()[acc.getId()] = acc;
     // also find the copy of accessor abstractor in ReadAnyGroup and decorate it in there
     for(auto& pe : _rag->push_elements) {
       if(pe.getId() == acc.getId()) {

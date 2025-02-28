@@ -11,23 +11,23 @@ namespace ChimeraTK {
 
   bool SimpleMatcher::update(const TransferElementID& transferElementID) {
     using MatchingMode = DataConsistencyGroup::MatchingMode;
-    assert(_dg->_mode == MatchingMode::exact);
+    assert(_dg->getMatchingMode() == MatchingMode::exact);
 
-    auto getVNFromElement = _dg->_pushElements[transferElementID].getVersionNumber();
+    auto getVNFromElement = _dg->getElements().at(transferElementID).getVersionNumber();
     assert(getVNFromElement != VersionNumber{nullptr});
-    if(getVNFromElement < _dg->_versionNumberToBeConsistentTo) {
+    if(getVNFromElement < _versionNumberToBeConsistentTo) {
       return false;
     }
-    if(_dg->_versionNumberToBeConsistentTo != getVNFromElement) {
-      _dg->_versionNumberToBeConsistentTo = getVNFromElement;
+    if(_versionNumberToBeConsistentTo != getVNFromElement) {
+      _versionNumberToBeConsistentTo = getVNFromElement;
       _consistentElements.clear();
     }
     _consistentElements.insert(transferElementID);
-    return _consistentElements.size() == _dg->_pushElements.size();
+    return _consistentElements.size() == _dg->getElements().size();
   }
 
   bool SimpleMatcher::isConsistent() const {
-    return _consistentElements.size() == _dg->_pushElements.size();
+    return _consistentElements.size() == _dg->getElements().size();
   }
 
   /********************************************************************************************************************/

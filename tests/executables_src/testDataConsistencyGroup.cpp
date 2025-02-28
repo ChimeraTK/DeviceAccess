@@ -195,10 +195,7 @@ BOOST_AUTO_TEST_CASE(testException) {
   DataConsistencyGroup dcgroup;
   // accessors without wait_for_new_data cannot be added.
   // test the deprecated syntax without warning about it...
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   BOOST_CHECK_THROW(dcgroup.add(acc), ChimeraTK::logic_error);
-#pragma GCC diagnostic pop
 }
 
 BOOST_AUTO_TEST_SUITE_END()
