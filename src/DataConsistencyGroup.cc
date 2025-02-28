@@ -139,6 +139,8 @@ namespace ChimeraTK {
         // no need to call HistorizedMatcher::findMatch; it would return true
         return true;
     }
+    assert(false);
+    return false;
   }
 
   /********************************************************************************************************************/

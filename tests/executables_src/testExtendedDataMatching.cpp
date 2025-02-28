@@ -150,8 +150,7 @@ BOOST_FIXTURE_TEST_CASE(test1, Fixture) {
     // test loop consuming data
     try {
       while(true) {
-        auto id = rag.readAny();
-        // bool isConsistent = dg.update(id);
+        rag.readAny();
         nUpdates++;
         if(readAccA.getVersionNumber() == readAccB.getVersionNumber()) {
           nConsistentUpdates++;
