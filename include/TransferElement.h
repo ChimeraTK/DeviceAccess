@@ -869,24 +869,3 @@ namespace ChimeraTK {
   }; // namespace ChimeraTK
 
 } /* namespace ChimeraTK */
-namespace std {
-
-  /********************************************************************************************************************/
-
-  /** Hash function for putting TransferElementID e.g. into an std::unordered_map
-   */
-  template<>
-  struct hash<ChimeraTK::TransferElementID> {
-    std::size_t operator()(const ChimeraTK::TransferElementID& f) const { return std::hash<size_t>{}(f._id); }
-  };
-
-  /********************************************************************************************************************/
-
-  /** Comparison for putting TransferElementID e.g. into an std::map */
-  template<>
-  struct less<ChimeraTK::TransferElementID> {
-    bool operator()(const ChimeraTK::TransferElementID& a, const ChimeraTK::TransferElementID& b) const {
-      return a._id < b._id;
-    }
-  };
-} // namespace std
