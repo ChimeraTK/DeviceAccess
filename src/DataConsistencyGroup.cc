@@ -93,7 +93,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void DataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned int histLen) {
+  void DataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned histLen) {
     if(_mode == MatchingMode::historized) {
       _hImpl->add(acc, histLen);
     }

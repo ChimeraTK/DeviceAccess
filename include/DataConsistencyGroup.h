@@ -56,7 +56,7 @@ namespace ChimeraTK {
     [[deprecated("use list constructor with MatchingMode instead")]]
     DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list);
     DataConsistencyGroup(std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list,
-        MatchingMode mode, unsigned int histLen = 2);
+        MatchingMode mode, unsigned histLen = 2);
 
     template<typename ITERATOR>
     DataConsistencyGroup(ITERATOR first, ITERATOR last, MatchingMode mode, unsigned int histLen = 2);
