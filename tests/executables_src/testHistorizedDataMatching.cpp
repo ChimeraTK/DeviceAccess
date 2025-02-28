@@ -13,7 +13,7 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-BOOST_AUTO_TEST_SUITE(ExtendedDataMatchingTestSuite)
+BOOST_AUTO_TEST_SUITE(HistorizedDataMatchingTestSuite)
 // Note, test code testDataConsistencyGroup is unsuitable for testing extended data matching,
 // since it is based on explicitly provided changes in user-buffers.
 
@@ -31,7 +31,7 @@ struct Fixture {
   Fixture() {
     sem_init(&sem, 0, 0);
 
-    dev.open("(logicalNameMap?map=extendedDataMatching.xlmap)");
+    dev.open("(logicalNameMap?map=historizedDataMatching.xlmap)");
     dev.activateAsyncRead();
     readAccA.replace(dev.getScalarRegisterAccessor<int32_t>("/A", 0, {AccessMode::wait_for_new_data}));
     readAccB.replace(dev.getScalarRegisterAccessor<int32_t>("/B", 0, {AccessMode::wait_for_new_data}));
