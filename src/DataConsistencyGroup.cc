@@ -25,6 +25,9 @@ namespace ChimeraTK {
     initMatcher();
   }
 
+  // move constructor required from ApplicationCore
+  DataConsistencyGroup::DataConsistencyGroup(DataConsistencyGroup&& other) noexcept = default;
+
   // this line is required since otherwise compiler fails to generate destructor for std::unique_ptr<X> where X
   // is incomplete type xxxMatcher
   DataConsistencyGroup::~DataConsistencyGroup() = default;
@@ -72,6 +75,10 @@ namespace ChimeraTK {
 
   void DataConsistencyGroup::add(const TransferElementAbstractor& element) {
     checkAccess(element);
+    if(_mode == MatchingMode::historized) {
+      throw ChimeraTK::logic_error(
+          "Add function with const-abstractor is deprecated and unsuitable for MatchingMode::historized");
+    }
     _pushElements[element.getId()] = element;
   }
 
