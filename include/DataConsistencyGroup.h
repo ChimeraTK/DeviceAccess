@@ -48,7 +48,8 @@ namespace ChimeraTK {
         MatchingMode mode, unsigned histLen = 2);
 
     template<typename ITERATOR>
-    DataConsistencyGroup(ITERATOR first, ITERATOR last, MatchingMode mode, unsigned int histLen = 2);
+    DataConsistencyGroup(
+        ITERATOR first, ITERATOR last, MatchingMode mode = MatchingMode::exact, unsigned int histLen = 2);
 
     /** Add register to group. The same TransferElement can be part of multiple DataConsistencyGroups. The register
      *  must be must be readable, and it must have AccessMode::wait_for_new_data. */
