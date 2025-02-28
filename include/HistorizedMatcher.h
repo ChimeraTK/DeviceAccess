@@ -2,25 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "DataConsistencyGroup.h"
 #include "TransferElementAbstractor.h"
 
 namespace ChimeraTK {
 
-  /*
-   *  Conceptual discussions
-   *  - ControlSystemAdapters, in particular DoocsAdapter, should also support HistorizedDataConsistencyGroup in places
-   *    where it now uses DataConsistencyGroup, e.g. for correlating with macropulse number. Otherwise, data loss
-   *    which was prevented by using HistorizedDataConsistencyGroup instead of DataConsistencyGroup in application
-   * module, can reappear in DoocsAdapter.
-   *
-   *  - We might merge functionality of HDataConsistencyGroup into DataConsistencyGroup and introduce
-   *    MatchingMode::historized there.
-   */
-
   /********************************************************************************************************************/
 
   class ReadAnyGroup;
+  class DataConsistencyGroup;
 
   /**
    * Data consistency matching via history of available data.

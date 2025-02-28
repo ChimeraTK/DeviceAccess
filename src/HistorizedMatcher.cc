@@ -4,6 +4,7 @@
 #include "HistorizedMatcher.h"
 
 #include "DataConsistencyDecorator.h"
+#include "DataConsistencyGroup.h"
 #include "ReadAnyGroup.h"
 #include "SupportedUserTypes.h"
 

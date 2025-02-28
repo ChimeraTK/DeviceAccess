@@ -2,28 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "TransferElementAbstractor.h"
-#include "VersionNumber.h"
+#include "TransferElementID.h"
 #include <unordered_set>
 
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
-
-  // TODO API merge of DataConsistencyGroup and HDataConsistencyGroup.
-  // plan:
-  // keep all constructors.
-  // but mark some of the constructors/ add functions as deprecated, since they will be incompatible with new implementation
-  // keep both implementations under the hood.
-  // new add function has non-const TransferElementAbstractor. default histLen = 2.
-  //
-  // get rid of setMatchingMode; instlead, MatchingMode must be set in constructor. default=exact.
-  // if MatchingMode = historized, use new implementation, otherwise use old one.
-  // with MatchingMode = historized, update() always returns true.
-  // TODO - first check whether it would be a problem to remove setMatchingMode in DoocsAdapter
-  // result: if we get rid of setMatchingMode, we will need a lot of (stupid) changes. Maybe easier way:
-  // allow changing MatchingMode non/exact->historized but not back.
-  // but also provide constructor with MatchingMode
 
   class DataConsistencyGroup;
 

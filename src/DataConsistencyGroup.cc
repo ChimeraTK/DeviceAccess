@@ -10,14 +10,26 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  DataConsistencyGroup::DataConsistencyGroup(MatchingMode mode) : _mode(mode) {
-    // TODO replace by smart pointer, or pointer to base matcher?
-    sImpl = new SimpleMatcher(this);
+  void DataConsistencyGroup::initMatcher() {
+    if(_mode == MatchingMode::historized) {
+      _hImpl = std::make_unique<HistorizedMatcher>(this);
+    }
+    else {
+      _sImpl = std::make_unique<SimpleMatcher>(this);
+    }
   };
 
   /********************************************************************************************************************/
 
+  DataConsistencyGroup::DataConsistencyGroup(MatchingMode mode) : _mode(mode) {
+    initMatcher();
+  }
+
+  /********************************************************************************************************************/
+
   DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list) {
+    initMatcher();
+
     for(const auto& element : list) {
       add(element);
     }
@@ -26,6 +38,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list) {
+    initMatcher();
+
     for(const auto& element : list) {
       add(element);
     }
@@ -35,8 +49,10 @@ namespace ChimeraTK {
 
   DataConsistencyGroup::DataConsistencyGroup(
       std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list, MatchingMode mode,
-      unsigned histLen) {
-    setMatchingMode(mode); // must be called before add since otherwise decoration won't apply
+      unsigned histLen)
+  : _mode(mode) {
+    initMatcher();
+
     for(const auto& element : list) {
       add(element, histLen);
     }
@@ -65,7 +81,7 @@ namespace ChimeraTK {
   void DataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned int histLen) {
     // TODO instantiate hImpl
     if(_mode == MatchingMode::historized) {
-      hImpl->add(acc, histLen);
+      _hImpl->add(acc, histLen);
     }
   }
 
@@ -78,22 +94,26 @@ namespace ChimeraTK {
     }
     switch(_mode) {
       case MatchingMode::none:
-        // if matching mode is none, always return true
         return true;
       case MatchingMode::exact:
-        return sImpl->update(transferElementID);
+        return _sImpl->update(transferElementID);
       case MatchingMode::historized:
-        // no need to call HistorizedMatcher::update; it would return true
+        // no need to call HistorizedMatcher::update; it would return true always
         return true;
     }
+    assert(false);
+    return false;
   }
 
   /********************************************************************************************************************/
 
   void DataConsistencyGroup::setMatchingMode(MatchingMode newMode) {
-    // TODO add checks and apply decoration for historized?
-    // I'm not sure that we switch to historized at all - problem being the
-    // abstractors not saved by us!
+    // we keep the method for compatibility but allow it only for SimpleMatcher
+    // With HistorizedMatcher, it won't work since we have no chance finding all accessors that would need to be
+    // decorated.
+    if(_mode == MatchingMode::historized) {
+      throw ChimeraTK::logic_error("setMatchingMode is disallowed once MatchingMode::historized is set");
+    }
     _mode = newMode;
   }
 
@@ -105,7 +125,7 @@ namespace ChimeraTK {
         // if matching mode is none, always return true
         return true;
       case MatchingMode::exact:
-        return sImpl->isConsistent();
+        return _sImpl->isConsistent();
       case MatchingMode::historized:
         // no need to call HistorizedMatcher::findMatch; it would return true
         return true;

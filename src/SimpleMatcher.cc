@@ -15,11 +15,11 @@ namespace ChimeraTK {
 
     auto getVNFromElement = _dg->_pushElements[transferElementID].getVersionNumber();
     assert(getVNFromElement != VersionNumber{nullptr});
-    if(getVNFromElement < _dg->versionNumberToBeConsistentTo) {
+    if(getVNFromElement < _dg->_versionNumberToBeConsistentTo) {
       return false;
     }
-    if(_dg->versionNumberToBeConsistentTo != getVNFromElement) {
-      _dg->versionNumberToBeConsistentTo = getVNFromElement;
+    if(_dg->_versionNumberToBeConsistentTo != getVNFromElement) {
+      _dg->_versionNumberToBeConsistentTo = getVNFromElement;
       _consistentElements.clear();
     }
     _consistentElements.insert(transferElementID);

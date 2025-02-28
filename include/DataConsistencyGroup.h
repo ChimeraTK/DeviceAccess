@@ -4,7 +4,6 @@
 
 #include "TransferElementAbstractor.h"
 #include "VersionNumber.h"
-#include <unordered_set>
 
 namespace ChimeraTK {
 
@@ -76,9 +75,10 @@ namespace ChimeraTK {
      */
     bool update(const TransferElementID& transferElementID);
 
-    /** Change the matching mode. The default mode is MatchingMode::exact, if not set differently in constructor. You
-     * may change it to MatchingMode::historized but not back (since accessor decoration cannot be undone).
+    /** Change the matching mode. The default mode is MatchingMode::exact, if not set differently in constructor.
+     *  This method is deprecated since it's not possible to set MatchingMode::historized like this.
      */
+    [[deprecated("set MatchingMode in constructor instead")]]
     void setMatchingMode(MatchingMode newMode);
 
     /** Return the current matching mode. */
@@ -93,8 +93,10 @@ namespace ChimeraTK {
     [[nodiscard]] bool isConsistent() const;
 
    private:
+    void initMatcher();
+
     /// Holds the version number this group elements should be consistent to
-    VersionNumber versionNumberToBeConsistentTo{nullptr}; // TODO check whether needed in outer class
+    VersionNumber _versionNumberToBeConsistentTo{nullptr}; // TODO check whether needed in outer class
 
     /// map of push-type elements in this group, there are only push type elemenst, like in ReadAnyGroup
     std::map<TransferElementID, TransferElementAbstractor> _pushElements;
@@ -102,8 +104,8 @@ namespace ChimeraTK {
     /// the matching mode used in update()
     MatchingMode _mode{MatchingMode::exact};
 
-    SimpleMatcher* sImpl = nullptr;
-    HistorizedMatcher* hImpl = nullptr;
+    std::unique_ptr<SimpleMatcher> _sImpl;
+    std::unique_ptr<HistorizedMatcher> _hImpl;
   };
 
   /********************************************************************************************************************/
