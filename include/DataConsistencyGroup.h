@@ -32,6 +32,7 @@ namespace ChimeraTK {
              ///< Require an exact match of the VersionNumber of all current or historized values of the group's members
       historized
     };
+    static const unsigned defaultHistLen = 2;
 
     /** Construct empty group. Elements can later be added using the add() function. */
     explicit DataConsistencyGroup(MatchingMode mode = MatchingMode::exact);
@@ -45,11 +46,11 @@ namespace ChimeraTK {
     [[deprecated("use list constructor with MatchingMode instead")]]
     DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list);
     DataConsistencyGroup(std::initializer_list<std::reference_wrapper<TransferElementAbstractor>> list,
-        MatchingMode mode, unsigned histLen = 2);
+        MatchingMode mode, unsigned histLen = defaultHistLen);
 
     template<typename ITERATOR>
     DataConsistencyGroup(
-        ITERATOR first, ITERATOR last, MatchingMode mode = MatchingMode::exact, unsigned int histLen = 2);
+        ITERATOR first, ITERATOR last, MatchingMode mode = MatchingMode::exact, unsigned int histLen = defaultHistLen);
 
     /** Add register to group. The same TransferElement can be part of multiple DataConsistencyGroups. The register
      *  must be must be readable, and it must have AccessMode::wait_for_new_data. */
@@ -57,7 +58,7 @@ namespace ChimeraTK {
     void add(const TransferElementAbstractor& element);
     [[deprecated("use add function with histLen instead")]]
     void add(boost::shared_ptr<TransferElement> element);
-    void add(TransferElementAbstractor& acc, unsigned histLen = 2);
+    void add(TransferElementAbstractor& acc, unsigned histLen = defaultHistLen);
 
     /** This function updates consistentElements, a set of TransferElementID. It returns true, if a consistent state is
      *  reached.
