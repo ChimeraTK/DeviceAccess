@@ -25,6 +25,10 @@ namespace ChimeraTK {
     initMatcher();
   }
 
+  // this line is required since otherwise compiler fails to generate destructor for std::unique_ptr<X> where X
+  // is incomplete type xxxMatcher
+  DataConsistencyGroup::~DataConsistencyGroup() = default;
+
   /********************************************************************************************************************/
 
   DataConsistencyGroup::DataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list) {

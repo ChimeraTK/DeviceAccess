@@ -47,6 +47,7 @@ namespace ChimeraTK {
 
     /** Construct empty group. Elements can later be added using the add() function. */
     explicit DataConsistencyGroup(MatchingMode mode = MatchingMode::exact);
+    ~DataConsistencyGroup();
 
     /** Construct this group with elements from the list using the add() function. */
     [[deprecated("use list constructor with MatchingMode instead")]]
