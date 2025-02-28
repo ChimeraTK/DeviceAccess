@@ -31,7 +31,10 @@ namespace ChimeraTK {
     initMatcher();
 
     for(const auto& element : list) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       add(element);
+#pragma GCC diagnostic pop
     }
   }
 
@@ -41,7 +44,10 @@ namespace ChimeraTK {
     initMatcher();
 
     for(const auto& element : list) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       add(element);
+#pragma GCC diagnostic pop
     }
   }
 
@@ -75,7 +81,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void DataConsistencyGroup::add(boost::shared_ptr<TransferElement> element) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     add(TransferElementAbstractor(std::move(element)));
+#pragma GCC diagnostic pop
   }
 
   void DataConsistencyGroup::add(TransferElementAbstractor& acc, unsigned int histLen) {
