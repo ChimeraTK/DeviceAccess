@@ -167,19 +167,19 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 
   auto acc1 = device.getOneDRegisterAccessor<double>("WrongReturnSizeInArray");
   BOOST_CHECK_THROW(acc1.read(), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(acc1.write(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc1.write(), ChimeraTK::runtime_error);
 
   auto acc2 = device.getOneDRegisterAccessor<double>("ReturnScalarDespiteArray");
   BOOST_CHECK_THROW(acc2.read(), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(acc2.write(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc2.write(), ChimeraTK::runtime_error);
 
   auto acc3 = device.getOneDRegisterAccessor<double>("ReturnString");
   BOOST_CHECK_THROW(acc3.read(), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(acc3.write(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc3.write(), ChimeraTK::runtime_error);
 
   auto acc4 = device.getOneDRegisterAccessor<double>("ReturnMultipleValues");
   BOOST_CHECK_THROW(acc4.read(), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(acc4.write(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc4.write(), ChimeraTK::runtime_error);
 }
 
 /**********************************************************************************************************************/
