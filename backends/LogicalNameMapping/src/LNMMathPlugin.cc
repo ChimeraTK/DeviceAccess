@@ -539,7 +539,7 @@ namespace ChimeraTK::LNMBackend {
     if(results.count() == 0) {
       // if results.count() is 0, the return statement presumably has not been used
       if(resultBuffer.size() != 1) {
-        throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + varName +
+        throw ChimeraTK::runtime_error("LogicalNameMapping MathPlugin for register '" + varName +
             "': The expression returns a scalar but " + std::to_string(resultBuffer.size()) + " expected.");
       }
       resultBuffer[0] = numericToUserType<T>(valueWhenNotUsingReturn);
@@ -550,14 +550,14 @@ namespace ChimeraTK::LNMBackend {
 
       // make sure we got a numeric result
       if(result.type != exprtk::type_store<double>::e_scalar && result.type != exprtk::type_store<double>::e_vector) {
-        throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + varName +
+        throw ChimeraTK::runtime_error("LogicalNameMapping MathPlugin for register '" + varName +
             "': The expression did not return a numeric result.");
       }
 
       // create vector view and check that its size matches
       exprtk::type_store<double>::type_view<double> view(result);
       if(view.size() != resultBuffer.size()) {
-        throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + varName +
+        throw ChimeraTK::runtime_error("LogicalNameMapping MathPlugin for register '" + varName +
             "': The expression returns " + std::to_string(view.size()) + " elements but " +
             std::to_string(resultBuffer.size()) + " expected.");
       }
@@ -569,7 +569,7 @@ namespace ChimeraTK::LNMBackend {
     }
     else {
       // multiple results in return statement are unexpected
-      throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + varName +
+      throw ChimeraTK::runtime_error("LogicalNameMapping MathPlugin for register '" + varName +
           "': The expression returned " + std::to_string(results.count()) + " results, expect exactly one result.");
     }
   }
