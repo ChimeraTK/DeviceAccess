@@ -34,7 +34,9 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
 FIND_PACKAGE(ChimeraTK-cppext 01.05 REQUIRED)
 FIND_PACKAGE(exprtk 01.04 REQUIRED)
-FIND_PACKAGE(nlohmann_json 03.07 REQUIRED)
+
+FIND_PACKAGE(nlohmann_json 03.11 REQUIRED)
+add_compile_definitions(JSON_DIAGNOSTICS=1)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
@@ -83,7 +85,7 @@ foreach(subdir ${subdirs})
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/src/async async_sources)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include)
   file(GLOB_RECURSE headers "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/*")
-  set(SOURCE ${SOURCE} ${sources}  ${async_sources} ${headers})
+  set(SOURCE ${SOURCE} ${sources} ${async_sources} ${headers})
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/
     DESTINATION include/ChimeraTK
     PATTERN "internal" EXCLUDE)
