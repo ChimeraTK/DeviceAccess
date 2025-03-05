@@ -4,7 +4,6 @@
 #include "async/DummyMuxedInterruptDistributor.h"
 
 #include "async/SubDomain.h"
-
 #include <nlohmann/json.hpp>
 
 namespace ChimeraTK::async {
