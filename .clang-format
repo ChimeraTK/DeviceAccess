@@ -64,18 +64,18 @@ IncludeBlocks: 'Regroup'
 IncludeCategories:
   - Regex:           '^<ChimeraTK/'
     Priority:        2
-    SortPriority:    2
     CaseSensitive:   true
   - Regex:           '^<boost/'
-    Priority:        3
-    SortPriority:    3
-    CaseSensitive:   true
-  - Regex:           '<[[:alnum:].]+>'
     Priority:        4
-    SortPriority:        4
-  - Regex:           '.*'
+    CaseSensitive:   true
+  - Regex:           '^<.*/'
+    Priority:        3
+  - Regex:           '^".*"'
     Priority:        1
-    SortPriority:    0
+  - Regex:           '^<[[:alnum:]_]+>'
+    Priority:        6
+  - Regex:           '^<.*>'
+    Priority:        5
 SortUsingDeclarations: 'false'
 SpaceAfterCStyleCast: 'false'
 SpaceAfterTemplateKeyword: 'false'
