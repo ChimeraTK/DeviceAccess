@@ -96,7 +96,7 @@ namespace ChimeraTK::detail {
     }
 
     // NOLINTNEXTLINE(readability-identifier-naming)
-    friend void to_json(json& j, const HexValue& hv) { to_json(j, hv.v); }
+    friend void to_json(json& j, const HexValue& hv) { j = hv.v; }
   };
 
   /********************************************************************************************************************/
@@ -260,9 +260,9 @@ namespace ChimeraTK::detail {
     void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata) const {
       if(!intId.empty()) {
         json jsonIntId;
-        to_json(jsonIntId, intId);
+        jsonIntId = intId;
         json jsonController;
-        to_json(jsonController, INTC);
+        jsonController = INTC;
         metadata.addMetadata("!" + jsonIntId.dump(), R"({"INTC":)" + jsonController.dump() + "}");
       }
 
