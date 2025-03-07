@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include <ChimeraTK/Device.h>
 #define BOOST_TEST_DYN_LINK
 
 #define BOOST_TEST_MODULE JsonMapFileParser
 
+#include "Device.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 
