@@ -88,13 +88,13 @@ namespace ChimeraTK {
     bool is_running();
     unsigned int port() const { return _connectionAcceptor.local_endpoint().port(); }
 
-    boost::asio::io_service& service() { return _io; }
+    boost::asio::io_context& service() { return _io; }
     std::shared_ptr<RebotDummySession> session() { return _currentSession.lock(); }
 
    private:
     void do_accept();
     unsigned int _protocolVersion;
-    boost::asio::io_service _io;
+    boost::asio::io_context _io;
     ip::tcp::acceptor _connectionAcceptor;
     std::weak_ptr<RebotDummySession> _currentSession;
     ip::tcp::socket _socket;
