@@ -105,6 +105,10 @@ namespace ChimeraTK::async {
   VersionNumber DomainImpl<BackendDataType>::activate(BackendDataType data, VersionNumber version) {
     std::lock_guard l(_mutex);
     // everything incl. potential creation of a new version number must happen under the lock
+    if(_isActive) {
+      return VersionNumber(nullptr);
+    }
+
     if(version == VersionNumber(nullptr)) {
       version = {};
     }
