@@ -415,6 +415,7 @@ namespace ChimeraTK {
     void test_B_8_5_1();
     void test_B_8_5_2();
     void test_B_8_5_3();
+    void test_B_8_5_4_3();
     void test_B_8_6_6();
     void test_B_9_1();
     void test_B_9_2_2();
@@ -993,6 +994,7 @@ namespace ChimeraTK {
     test_B_8_5_1();
     test_B_8_5_2();
     test_B_8_5_3();
+    test_B_8_5_4_3();
     test_B_8_6_6();
     test_B_9_1();
     test_B_9_2_2();
@@ -2245,6 +2247,45 @@ namespace ChimeraTK {
 
       // Initial value should arrive
       CHECK_TIMEOUT(reg.readNonBlocking() == true, 30000);
+    });
+
+    // close device again
+    d.close();
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Calling activateAsyncRead() when already active has no effect.
+   *  * \anchor UnifiedTest_TransferElement_B_8_5_4_3 \ref transferElement_B_8_5_4_3 "B.8.5.4.3"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_8_5_4_3() {
+    std::cout << "--- test_B_8_5_4_3 - calling activateAsyncRead() when already active has no effect" << std::endl;
+    Device d(cdd);
+
+    // open the device and activate async read
+    d.open();
+    d.activateAsyncRead();
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isAsyncRead(x)) {
+        return;
+      }
+      using UserType = typename decltype(x)::minimumUserType;
+      auto registerName = x.path();
+
+      std::cout << "... registerName = " << registerName << " (activated async read)" << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName, 0, 0, {AccessMode::wait_for_new_data});
+
+      // Read the initial value to empty the queue. We use CHECK_TIMEOUT here so the test does not block in case this
+      // does not happen. This is not the actual test here (see B_8_5_3).
+      CHECK_TIMEOUT(reg.readNonBlocking(), 30000);
+
+      // The actual test: calling activateAsyncRead again does not produce new "initial" values
+      d.activateAsyncRead();
+      usleep(100000); // Sleep a bit (100 ms) to wait for data to arrive, which it should not. So don't wait too long.
+      BOOST_CHECK(reg.readNonBlocking() == false); // no new data
     });
 
     // close device again

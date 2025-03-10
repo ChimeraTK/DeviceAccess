@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_TransferElement Technical specification: TransferElement V1.1
+\page spec_TransferElement Technical specification: TransferElement V1.2
 
 > **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
@@ -179,9 +179,13 @@ This document describes the behaviour of the TransferElement base class, the NDR
         - 8.5.1.2 Meta-backends like the LogicalNameMappingBackend delegate Device::activateAsyncRead() to all of their target backends, as they also delegate the creation of the TransferElements to their targets.
       - \anchor transferElement_B_8_5_2 8.5.2 In case the device does not send an initial value after the subscription, the accessor implementation must get an initial value synchronously and treat it as if it would have been received, i.e. push it to the queue. This must happen after the actual asynchronous sending has been turned on to make sure no update is missed. (*) [\ref UnifiedTest_TransferElement_B_8_5_2 "U"]
       - \anchor transferElement_B_8_5_3 8.5.3 If a transfer element is created while the device is opened, functional and  Device::activateAsyncRead() has been called, the asynchronous read is activated immediately (incl. sending of the initial value). This ensures that either all or none of the transfer elements are receiving asyncronously send data. [\ref UnifiedTest_TransferElement_B_8_5_3 "Needs to be changed, most probably testing the wrong thing. U"]
-      - 8.5.4 If Device::activateAsyncRead() is called while the device is not opened or has an error, this call has no effect. If it is called when no deactivated transfer element exists, this call also has no effect.
+      - \anchor transferElement_B_8_5_4 8.5.4 A Device::activateAsyncRead() call has no effect if
+         - 8.5.4.1 the device is not opened
+         - 8.5.4.2 the device has an error
+         - \anchor transferElement_B_8_5_4_3 8.5.4.3 asynchronous read is already active [\ref UnifiedTest_TransferElement_B_8_5_4_3 "U"]
       - 8.5.5 Device::activateAsyncRead() does not throw any exceptions.
       - 8.5.6 When Device::activateAsyncRead() returns, it is not guaranteed that all initial values have been received already.
+      - 8.5.7 Device::activateAsyncRead() is thread safe against other calls of activateAsyncRead(), the creation/destuction of accessors, read/write operations and calls of Device::setException().
   - \anchor transferElement_B_8_6 8.6 Blocking TransferElement::read() calls can be interrupted by the application via TransferElement::interrupt().
     - \anchor transferElement_B_8_6_1 8.6.1 TransferElement::interrupt() places a boost::thread_interrupted exception into the \ref transferElement_A_8_2 "implementation-specific data transport queue". [\ref testTransferElement_B_8_6_1 "T"]
     - \anchor transferElement_B_8_6_2 8.6.2 This casues any read operation to complete immediately and throw the boost::thread_interrupted exception, after any unread data on the queue before the exception has been read normally. [\ref testTransferElement_B_8_6_2 "T"]
