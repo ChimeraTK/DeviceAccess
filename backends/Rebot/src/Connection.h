@@ -40,7 +40,7 @@ namespace ChimeraTK::Rebot {
    private:
     std::string address_;
     const std::string port_;
-    boost::asio::io_service ioService_;
+    boost::asio::io_context ioContext_;
     boost::asio::ip::tcp::socket s_;
     boost::asio::deadline_timer disconnectTimer_;
     boost::asio::deadline_timer::duration_type connectionTimeout_;

@@ -11,18 +11,18 @@ namespace ChimeraTK::Rebot {
   using Error = boost::system::error_code;
 
   Connection::Connection(std::string address, std::string port, uint32_t connectionTimeout_sec)
-  : address_(std::move(address)), port_(std::move(port)), s_(ioService_), disconnectTimer_(ioService_),
+  : address_(std::move(address)), port_(std::move(port)), s_(ioContext_), disconnectTimer_(ioContext_),
     connectionTimeout_(boost::posix_time::seconds(connectionTimeout_sec)) {}
 
   void Connection::open() {
     try {
       disconnectionTimerStart();
-      boost::asio::ip::tcp::resolver r(ioService_);
+      boost::asio::ip::tcp::resolver r(ioContext_);
       boost::asio::async_connect(
-          s_, r.resolve({address_, port_}), [&](const Error ec, auto) { disconnectionTimerCancel(ec); });
+          s_, r.resolve(address_, port_), [&](const Error ec, auto) { disconnectionTimerCancel(ec); });
 
-      ioService_.reset();
-      ioService_.run();
+      ioContext_.restart();
+      ioContext_.run();
     }
     catch(const boost::exception&) {
       throw ChimeraTK::runtime_error("RebotBackend exception: Host unreachable:");
@@ -34,8 +34,8 @@ namespace ChimeraTK::Rebot {
     disconnectionTimerStart();
     boost::asio::async_read(s_, boost::asio::buffer(d), [&](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
 
-    ioService_.reset();
-    ioService_.run();
+    ioContext_.restart();
+    ioContext_.run();
     return d;
   }
 
@@ -43,8 +43,8 @@ namespace ChimeraTK::Rebot {
     disconnectionTimerStart();
     boost::asio::async_write(s_, boost::asio::buffer(d), [&](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
 
-    ioService_.reset();
-    ioService_.run();
+    ioContext_.restart();
+    ioContext_.run();
   }
 
   void Connection::close() {
