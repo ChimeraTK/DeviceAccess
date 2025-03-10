@@ -346,8 +346,13 @@ namespace ChimeraTK {
   void LogicalNameMappingBackend::activateAsyncRead() noexcept {
     if(!isFunctional()) return;
 
-    // store information locally, as variable accessors have async read
-    _asyncReadActive = true;
+    // Store information locally, as variable accessors have async read.
+    // Atomically exchange with the existing value (for thread safety against concurrent activateAsyncRead calls), and
+    // check the old state. If async read was already active, don't send the "initial" values again.
+    auto asyncWasActive = _asyncReadActive.exchange(true);
+    if(asyncWasActive) {
+      return;
+    }
 
     // delegate to target devices
     for(auto& d : _devices) {
