@@ -66,11 +66,6 @@ namespace ChimeraTK {
       template<typename COOKED_TYPE>
       void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
 
-      boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
-          [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
-              const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
-              factory) override;
-
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
@@ -118,11 +113,18 @@ namespace ChimeraTK {
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
 
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
+        [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+            const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+            factory) override;
+
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override;
 
     void interrupt() override;
 
    protected:
+    void initFromTarget(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target);
+
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
     using detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>::_target;
@@ -248,23 +250,6 @@ namespace ChimeraTK {
 
     /******************************************************************************************************************/
 
-    template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorDecoratorImpl<UserType, UserType>::
-        decorateDeepInside([[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
-                const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
-                factory) {
-      auto res = _target->decorateDeepInside(factory);
-      if(!res) {
-        res = factory(_target);
-        if(res) {
-          _target = res;
-        }
-      }
-      return res;
-    }
-
-    /******************************************************************************************************************/
-
   } // namespace detail
 
   /********************************************************************************************************************/
@@ -276,6 +261,14 @@ namespace ChimeraTK {
       const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
   : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
         target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
+    initFromTarget(target);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::initFromTarget(
+      const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target) {
     _target = target;
     this->_readQueue = _target->getReadQueue();
     this->_exceptionBackend = _target->getExceptionBackend();
@@ -401,6 +394,34 @@ namespace ChimeraTK {
   template<typename UserType, typename TargetUserType>
   void NDRegisterAccessorDecorator<UserType, TargetUserType>::interrupt() {
     _target->interrupt();
+  }
+
+  /******************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorDecorator<UserType, TargetUserType>::
+      decorateDeepInside([[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+              const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+              factory) {
+    if constexpr(std::is_same_v<UserType, TargetUserType>) {
+      auto res = _target->decorateDeepInside(factory);
+      if(!res) {
+        res = factory(_target);
+        if(res) {
+          initFromTarget(res);
+        }
+      }
+      else {
+        // target was modified. propagate modified state upwards
+        // (e.g. state of future_queue modified by DataConsistencyDecorator)
+        initFromTarget(_target);
+      }
+      return res;
+    }
+    else {
+      // for TargetUserType != UserType the 'inside' decoration makes no sense, so disallow it
+      return {};
+    }
   }
 
   /********************************************************************************************************************/
