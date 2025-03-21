@@ -469,6 +469,13 @@ namespace ChimeraTK {
       throw std::logic_error(
           "Cannot add non-readable accessor for register " + element.getName() + " to ReadAnyGroup.");
     }
+    if(element.getReadAnyGroup() == this) {
+      return;
+    }
+    if(element.getReadAnyGroup() != nullptr) {
+      // TODO discuss - why are above error cases coded as std::logic_error and not ChimeraTK::logic_error?
+      throw ChimeraTK::logic_error(element.getName() + " is already in a different ReadAnyGroup");
+    }
     if(element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
       push_elements.push_back(element);
     }
