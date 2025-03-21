@@ -111,6 +111,8 @@ namespace ChimeraTK {
 
     void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override;
 
+    void setInReadAnyGroup(ReadAnyGroup* rag) override;
+
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
 
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
@@ -361,6 +363,14 @@ namespace ChimeraTK {
   void NDRegisterAccessorDecorator<UserType, TargetUserType>::setPersistentDataStorage(
       boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) {
     _target->setPersistentDataStorage(storage);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::setInReadAnyGroup(ReadAnyGroup* rag) {
+    _target->setInReadAnyGroup(rag);
+    NDRegisterAccessor<UserType>::setInReadAnyGroup(rag);
   }
 
   /********************************************************************************************************************/
