@@ -804,6 +804,9 @@ namespace ChimeraTK {
     /** Obtain the ReadAnyGroup this TransferElement is part of, or nullptr if not in a ReadAnyGroup. */
     [[nodiscard]] ReadAnyGroup* getReadAnyGroup() const { return _inReadAnyGroup; }
 
+    /** Set the ReadAnyGroup of which this TransferElement is part of. */
+    virtual void setInReadAnyGroup(ReadAnyGroup* rag) { _inReadAnyGroup = rag; }
+
    protected:
     /** Identifier uniquely identifying the TransferElement */
     std::string _name;
