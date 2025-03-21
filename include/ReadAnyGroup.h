@@ -151,6 +151,10 @@ namespace ChimeraTK {
      */
     void add(TransferElementAbstractor& element);
 
+    ReadAnyGroup(const ReadAnyGroup&) = delete;
+    ReadAnyGroup(ReadAnyGroup&& other) noexcept { operator=(std::move(other)); }
+    ReadAnyGroup& operator=(ReadAnyGroup&& other) noexcept;
+
     /**
      * See the other signature of add().
      */
@@ -443,6 +447,21 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  inline ReadAnyGroup& ReadAnyGroup::operator=(ReadAnyGroup&& other) noexcept {
+    // we need non-default implementation because we have to move pointers to ReadAnyGroup
+    this->isFinalised = other.isFinalised;
+    this->push_elements = std::move(other.push_elements);
+    this->poll_elements = std::move(other.poll_elements);
+    this->_lastOperationIndex = other._lastOperationIndex;
+    this->notification_queue = std::move(other.notification_queue);
+    for(auto& e : push_elements) {
+      e.getHighLevelImplElement()->setInReadAnyGroup(this);
+    }
+    return *this;
+  }
+
+  /********************************************************************************************************************/
+
   inline void ReadAnyGroup::add(TransferElementAbstractor& element) {
     if(isFinalised) {
       throw std::logic_error("ReadAnyGroup has already been finalised, calling "
@@ -462,7 +481,7 @@ namespace ChimeraTK {
     // We do this for push-types only, since poll-types technically still allow calling read() without the ReadAnyGroup,
     // although its documentation states that would not be allowed.
     if(element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-      element.getHighLevelImplElement()->_inReadAnyGroup = this;
+      element.getHighLevelImplElement()->setInReadAnyGroup(this);
     }
   }
 
