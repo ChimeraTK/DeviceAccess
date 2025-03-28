@@ -66,11 +66,6 @@ namespace ChimeraTK {
       template<typename COOKED_TYPE>
       void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
 
-      boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
-          [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
-              const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
-              factory) override;
-
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
@@ -116,13 +111,22 @@ namespace ChimeraTK {
 
     void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override;
 
+    void setInReadAnyGroup(ReadAnyGroup* rag) override;
+
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
+
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
+        [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+            const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+            factory) override;
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override;
 
     void interrupt() override;
 
    protected:
+    void initFromTarget(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target);
+
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
     using detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>::_target;
@@ -248,23 +252,6 @@ namespace ChimeraTK {
 
     /******************************************************************************************************************/
 
-    template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorDecoratorImpl<UserType, UserType>::
-        decorateDeepInside([[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
-                const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
-                factory) {
-      auto res = _target->decorateDeepInside(factory);
-      if(!res) {
-        res = factory(_target);
-        if(res) {
-          _target = res;
-        }
-      }
-      return res;
-    }
-
-    /******************************************************************************************************************/
-
   } // namespace detail
 
   /********************************************************************************************************************/
@@ -276,6 +263,14 @@ namespace ChimeraTK {
       const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
   : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
         target->getName(), target->getAccessModeFlags(), target->getUnit(), target->getDescription()) {
+    initFromTarget(target);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::initFromTarget(
+      const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target) {
     _target = target;
     this->_readQueue = _target->getReadQueue();
     this->_exceptionBackend = _target->getExceptionBackend();
@@ -291,6 +286,16 @@ namespace ChimeraTK {
     buffer_2D.resize(_target->getNumberOfChannels());
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       buffer_2D[i].resize(_target->getNumberOfSamples());
+    }
+
+    if(target->isReadTransactionInProgress()) {
+      // In case accessor was already used from ReadAnyGroup, it has readTransactionInProgress set. We must copy
+      // state over to decorator, otherwise postRead will be ignored. We do this simply by calling preRead.
+      // It will set the flag and delegate to target->preRead which does nothing.
+      this->preRead(TransferType::read);
+    }
+    if(target->isWriteTransactionInProgress()) {
+      this->preWrite(TransferType::write, this->_versionNumber);
     }
   }
 
@@ -373,6 +378,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType, typename TargetUserType>
+  void NDRegisterAccessorDecorator<UserType, TargetUserType>::setInReadAnyGroup(ReadAnyGroup* rag) {
+    _target->setInReadAnyGroup(rag);
+    NDRegisterAccessor<UserType>::setInReadAnyGroup(rag);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
   void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTransferElement(
       boost::shared_ptr<ChimeraTK::TransferElement> newElement) {
     auto casted = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<TargetUserType>>(newElement);
@@ -401,6 +414,34 @@ namespace ChimeraTK {
   template<typename UserType, typename TargetUserType>
   void NDRegisterAccessorDecorator<UserType, TargetUserType>::interrupt() {
     _target->interrupt();
+  }
+
+  /******************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorDecorator<UserType, TargetUserType>::
+      decorateDeepInside([[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+              const boost::shared_ptr<NDRegisterAccessor<UserType>>&)>
+              factory) {
+    if constexpr(std::is_same_v<UserType, TargetUserType>) {
+      auto res = _target->decorateDeepInside(factory);
+      if(!res) {
+        res = factory(_target);
+        if(res) {
+          initFromTarget(res);
+        }
+      }
+      else {
+        // target was modified. propagate modified state upwards
+        // (e.g. state of future_queue modified by DataConsistencyDecorator)
+        initFromTarget(_target);
+      }
+      return res;
+    }
+    else {
+      // for TargetUserType != UserType the 'inside' decoration makes no sense, so disallow it
+      return {};
+    }
   }
 
   /********************************************************************************************************************/
