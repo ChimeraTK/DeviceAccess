@@ -61,15 +61,15 @@ namespace ChimeraTK {
        * actually available. In these cases, this method returns false and the transfer element is not updated with a
        * new value. In all other cases, this method returns true.
        *
-       * This method throws an std::logic_error if this method is called on an invalid notification or a notification
-       * that has already been accepted.
+       * This method throws an ChimeraTK::logic_error if this method is called on an invalid notification or a
+       * notification that has already been accepted.
        */
       bool accept();
 
       /**
        * Return the ID of the transfer element for which this notification has been generated.
        *
-       * This method throws an std::logic_error if this method is called on an invalid notification.
+       * This method throws an ChimeraTK::logic_error if this method is called on an invalid notification.
        */
       [[nodiscard]] TransferElementID getId();
 
@@ -77,14 +77,14 @@ namespace ChimeraTK {
        * Return the index of the transfer element for which this notifiaction has been generated. The index is the
        * offset into the list of transfer elements that was specified when creating the ReadAnyGroup.
        *
-       * This method throws an std::logic_error if this method is called on an invalid notification.
+       * This method throws an ChimeraTK::logic_error if this method is called on an invalid notification.
        */
       [[nodiscard]] std::size_t getIndex() const;
 
       /**
        * Return the transfer element for which this notification has been generated.
        *
-       * This method throws an std::logic_error if this method is called on an invalid notification.
+       * This method throws an ChimeraTK::logic_error if this method is called on an invalid notification.
        */
       [[nodiscard]] TransferElementAbstractor getTransferElement();
 
@@ -354,10 +354,10 @@ namespace ChimeraTK {
 
   inline bool ReadAnyGroup::Notification::accept() {
     if(!this->valid) {
-      throw std::logic_error("This notification object is invalid.");
+      throw ChimeraTK::logic_error("This notification object is invalid.");
     }
     if(this->accepted) {
-      throw std::logic_error("This notification has already been accepted.");
+      throw ChimeraTK::logic_error("This notification has already been accepted.");
     }
     this->accepted = true;
     try {
@@ -383,7 +383,7 @@ namespace ChimeraTK {
 
   inline TransferElementID ReadAnyGroup::Notification::getId() {
     if(!this->valid) {
-      throw std::logic_error("This notification object is invalid.");
+      throw ChimeraTK::logic_error("This notification object is invalid.");
     }
     return _owner->push_elements[index].getId();
   }
@@ -392,7 +392,7 @@ namespace ChimeraTK {
 
   inline std::size_t ReadAnyGroup::Notification::getIndex() const {
     if(!this->valid) {
-      throw std::logic_error("This notification object is invalid.");
+      throw ChimeraTK::logic_error("This notification object is invalid.");
     }
     return this->index;
   }
@@ -401,7 +401,7 @@ namespace ChimeraTK {
 
   inline TransferElementAbstractor ReadAnyGroup::Notification::getTransferElement() {
     if(!this->valid) {
-      throw std::logic_error("This notification object is invalid.");
+      throw ChimeraTK::logic_error("This notification object is invalid.");
     }
     return _owner->push_elements[index];
   }
@@ -464,12 +464,18 @@ namespace ChimeraTK {
 
   inline void ReadAnyGroup::add(TransferElementAbstractor& element) {
     if(isFinalised) {
-      throw std::logic_error("ReadAnyGroup has already been finalised, calling "
-                             "add() is no longer allowed.");
+      throw ChimeraTK::logic_error("ReadAnyGroup has already been finalised, calling "
+                                   "add() is no longer allowed.");
     }
     if(!element.isReadable()) {
-      throw std::logic_error(
+      throw ChimeraTK::logic_error(
           "Cannot add non-readable accessor for register " + element.getName() + " to ReadAnyGroup.");
+    }
+    if(element.getReadAnyGroup() == this) {
+      return;
+    }
+    if(element.getReadAnyGroup() != nullptr) {
+      throw ChimeraTK::logic_error(element.getName() + " is already in a different ReadAnyGroup");
     }
     if(element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
       push_elements.push_back(element);
@@ -496,8 +502,8 @@ namespace ChimeraTK {
 
   inline void ReadAnyGroup::finalise() {
     if(isFinalised) {
-      throw std::logic_error("ReadAnyGroup has already been finalised, calling "
-                             "finalise() is no longer allowed.");
+      throw ChimeraTK::logic_error("ReadAnyGroup has already been finalised, calling "
+                                   "finalise() is no longer allowed.");
     }
     std::vector<cppext::future_queue<void>> queueList;
     bool groupEmpty = true;
@@ -506,7 +512,7 @@ namespace ChimeraTK {
       groupEmpty = false;
     }
     if(groupEmpty) {
-      throw std::logic_error("ReadAnyGroup has no element with AccessMode::wait_for_new_data.");
+      throw ChimeraTK::logic_error("ReadAnyGroup has no element with AccessMode::wait_for_new_data.");
     }
     notification_queue = cppext::when_any(queueList.begin(), queueList.end());
     isFinalised = true;
