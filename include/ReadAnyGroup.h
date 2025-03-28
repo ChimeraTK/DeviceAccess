@@ -155,7 +155,8 @@ namespace ChimeraTK {
     void add(TransferElementAbstractor& element);
 
     ReadAnyGroup(const ReadAnyGroup&) = delete;
-    ReadAnyGroup(ReadAnyGroup&& other) noexcept;
+    ReadAnyGroup(ReadAnyGroup&& other) noexcept { operator=(std::move(other)); }
+    ReadAnyGroup& operator=(ReadAnyGroup&& other) noexcept;
 
     /**
      * See the other signature of add().
@@ -449,7 +450,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline ReadAnyGroup::ReadAnyGroup(ReadAnyGroup&& other) noexcept {
+  inline ReadAnyGroup& ReadAnyGroup::operator=(ReadAnyGroup&& other) noexcept {
     // we need non-default implementation because we have to move pointers to ReadAnyGroup
     this->isFinalised = other.isFinalised;
     this->push_elements = std::move(other.push_elements);
@@ -459,6 +460,7 @@ namespace ChimeraTK {
     for(auto& e : push_elements) {
       e.getHighLevelImplElement()->setInReadAnyGroup(this);
     }
+    return *this;
   }
 
   /********************************************************************************************************************/
