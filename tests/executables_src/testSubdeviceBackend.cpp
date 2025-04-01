@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
     accS = 0;
     accS.write();
   }
-  BOOST_CHECK(countStatusResets == 8);
+  BOOST_TEST(countStatusResets == 8);
   t.join();
   accArea.read();
   BOOST_CHECK(accArea[0] == 1897);
