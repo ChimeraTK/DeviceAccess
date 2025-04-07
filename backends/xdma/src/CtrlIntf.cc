@@ -5,10 +5,12 @@
 
 #include "DeviceFile.h"
 #include "Exception.h"
+
 #include <sys/mman.h>
 
-#include <cstring>
 #include <fcntl.h>
+
+#include <cstring>
 #include <iostream>
 #include <sstream>
 

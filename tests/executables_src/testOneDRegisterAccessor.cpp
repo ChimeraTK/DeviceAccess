@@ -18,8 +18,9 @@ using namespace boost::unit_test_framework;
 #include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
 
-#include <algorithm>
 #include <math.h>
+
+#include <algorithm>
 
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;

@@ -4,7 +4,6 @@
 
 #include "Exception.h"
 #include "SupportedUserTypes.h"
-#include <type_traits>
 
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container.hpp>
@@ -19,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 namespace ChimeraTK {
 

@@ -4,13 +4,15 @@
 #include "UioAccess.h"
 
 #include "Exception.h"
+
 #include <sys/mman.h>
 
-#include <cerrno>
 #include <fcntl.h>
+#include <poll.h>
+
+#include <cerrno>
 #include <fstream>
 #include <limits>
-#include <poll.h>
 
 namespace ChimeraTK {
 

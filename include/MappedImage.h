@@ -3,11 +3,11 @@
 #pragma once
 
 #include "OneDRegisterAccessor.h"
-#include <type_traits>
 
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <type_traits>
 #include <typeindex>
 #include <typeinfo>
 #include <vector>

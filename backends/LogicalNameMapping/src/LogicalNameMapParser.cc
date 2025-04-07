@@ -6,6 +6,7 @@
 #include "DeviceBackend.h"
 #include "Exception.h"
 #include "LNMBackendRegisterInfo.h"
+
 #include <libxml++/libxml++.h>
 
 #include <stdexcept>

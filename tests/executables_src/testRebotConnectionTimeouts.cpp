@@ -9,9 +9,9 @@ using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "RebotDummyServer.h"
-#include <condition_variable>
 
 #include <chrono>
+#include <condition_variable>
 #include <thread>
 
 using namespace ChimeraTK;

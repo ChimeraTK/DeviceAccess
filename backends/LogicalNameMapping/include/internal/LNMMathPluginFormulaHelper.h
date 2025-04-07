@@ -11,6 +11,7 @@
 #include <boost/make_shared.hpp>
 
 #include <exprtk.hpp>
+
 #include <utility>
 
 namespace ChimeraTK::LNMBackend {
