@@ -12,15 +12,16 @@ using namespace boost::unit_test_framework;
 #include "DummyRegisterAccessor.h"
 #include "ScalarRegisterAccessor.h"
 #include "WriteCountingBackend.h"
-#include <unordered_map>
 
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
 
-#include <algorithm>
 #include <math.h>
+
+#include <algorithm>
+#include <unordered_map>
 
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;

@@ -14,12 +14,13 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include <unistd.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <string>
 #include <thread>
-#include <unistd.h>
 #include <utility>
 #include <vector>
 

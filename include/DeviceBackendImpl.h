@@ -5,14 +5,14 @@
 #include "async/DomainsContainer.h"
 #include "DeviceBackend.h"
 #include "Exception.h"
-#include <condition_variable>
-#include <shared_mutex>
 
 #include <ChimeraTK/cppext/finally.hpp>
 
 #include <atomic>
+#include <condition_variable>
 #include <list>
 #include <mutex>
+#include <shared_mutex>
 
 namespace ChimeraTK {
 

@@ -7,18 +7,20 @@
 #include "llrfdrv_io_compat.h"
 #include "pciedev_io_compat.h"
 #include "pcieuni_io_compat.h"
+
 #include <sys/ioctl.h>
 
 #include <boost/bind/bind.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
-#include <fcntl.h>
 #include <iostream>
 #include <sstream>
-#include <unistd.h>
 #include <utility>
 
 namespace ChimeraTK {

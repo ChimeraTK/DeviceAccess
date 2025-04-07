@@ -4,6 +4,7 @@
 
 #include "TransferElementAbstractor.h"
 #include "VersionNumber.h"
+
 #include <unordered_set>
 
 namespace ChimeraTK {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "NDRegisterAccessorAbstractor.h"
+
 #include <type_traits>
 
 namespace ChimeraTK {

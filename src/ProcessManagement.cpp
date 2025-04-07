@@ -5,13 +5,14 @@
 
 #include <sys/types.h>
 
+#include <pwd.h>
+#include <unistd.h>
+
 #include <cerrno>
 #include <csignal>
 #include <cstring>
 #include <iostream>
-#include <pwd.h>
 #include <string>
-#include <unistd.h>
 
 bool processExists(unsigned pid) {
   return !kill((pid_t)pid, 0);

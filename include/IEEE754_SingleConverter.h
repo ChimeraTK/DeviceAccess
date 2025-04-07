@@ -6,8 +6,9 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <cfloat> // for float limits
 #include <memory.h>
+
+#include <cfloat> // for float limits
 
 namespace ChimeraTK {
 

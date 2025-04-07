@@ -3,10 +3,11 @@
 
 #include "parserUtilities.h"
 
+#include <unistd.h>
+
 #include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
-#include <unistd.h>
 
 namespace ChimeraTK::parserUtilities {
 

@@ -9,14 +9,16 @@ using namespace boost::unit_test_framework;
 
 #include "MapFileParser.h"
 #include "UnifiedBackendTest.h"
+
 #include <sys/file.h>
 #include <sys/mman.h>
 
 #include <fcntl.h>
-#include <fstream>
-#include <iostream>
 #include <poll.h>
 #include <unistd.h>
+
+#include <fstream>
+#include <iostream>
 
 using namespace ChimeraTK;
 

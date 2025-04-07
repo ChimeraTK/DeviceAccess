@@ -4,11 +4,11 @@
 
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
-#include <initializer_list>
 
 #include <ChimeraTK/cppext/future_queue.hpp>
 
 #include <functional>
+#include <initializer_list>
 
 namespace ChimeraTK {
 
