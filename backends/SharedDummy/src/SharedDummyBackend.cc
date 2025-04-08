@@ -140,7 +140,7 @@ namespace ChimeraTK {
     // mapFile path to an absolute path avoids issues when the dmap file is not
     // in the working directory of the application.
     return returnInstance<SharedDummyBackend>(
-        address, address, convertPathRelativeToDmapToAbs(mapFileName), parameters["DataConsistencyKey"]);
+        address, address, convertPathRelativeToDmapToAbs(mapFileName), parameters["DataConsistencyKeys"]);
   }
 
   std::string SharedDummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
