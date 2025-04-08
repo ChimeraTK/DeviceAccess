@@ -399,16 +399,16 @@ digraph "DataConsistencyRealm design" {
   - 1.2. The DataConsistencyRealmStore stores only weak_ptr of the realm objects. If a realm is no longer used, it will be cleaned up (so the VersionNumber mapping is forgotten).
 
 - 2. Backends, like the DoocsBackend (called "SomeNonNumericAddressedBackend" in the above graph), which have their DataConsistencyKey value shipped together with the payload data in their protocol, need to obey the following rules in their event handler (called `handleEvent()` in the above graph, although the naming and structure may be vastly different for actual implementations):
-  - 2.1. Such backends will typically use a fixed realm name, which should clearly refer to the protocol (e.g. "DoocsEventId" in case of the DoocsBackend).
+  - 2.1. Such backends will typically use a fixed realm name, which should clearly refer to the protocol (e.g. "doocsEventId" in case of the DoocsBackend).
     - 2.1.1. The realm name should be overrideable through a CDD parameter.
   - 2.2. The event handler needs to extract the DataConsistencyKey from incoming data when an event is received.
   - 2.3. It shall then translate the key into the corresponding VersionNumber through the DataConsistencyRealm, and pass the VersionNumber to async::DomainImpl::distribute().
 
 - 3. Backends, like the NumericAddressedBackend, which are using the poll mechanism of the \ref design_AsyncNDRegisterAccessor_NumericAddressed "AsyncNDRegisterAccessor concept" (i.e. the TriggeredPollDistributor), need to provide the necessary information through the catalogue and can otherwise rely on the framework implementation:
   - 3.1. The BackendRegisterCatalogueBase contains a map of \ref AsyncNDRegisterAccessor_qualifiedAsyncSubDomainID "qualifiedAsyncSubDomainID" to DataConsistencyRealm names.
-  - 3.2. The CDD can contain a parameter "DataConsistencyKey" to define the registers with the DataConsistencyKey values.
+  - 3.2. The CDD can contain a parameter "DataConsistencyKeys" to define the registers with the DataConsistencyKey values.
     - 3.2.1. These registers need to be triggered each by a different interrupt.
-    - 3.2.2. The CDD parameter "DataConsistencyKey" contains a JSON object, where each JSON key is interpreted as the register path and each value as the corresponding realm name.
+    - 3.2.2. The CDD parameter "DataConsistencyKeys" contains a JSON object, where each JSON key is interpreted as the register path and each value as the corresponding realm name.
     - 3.2.3. Based on this information, the NumericAddressedBackend will fill the BackendRegisterCatalogueBase::_dataConsistencyRealmIdMap
   - 3.3. Future map file formats will also allow specifying such pairs of key registers and realm names.
   - 3.4. The TriggeredPollDistributor
