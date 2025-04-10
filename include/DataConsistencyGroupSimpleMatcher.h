@@ -5,9 +5,9 @@
 #include "TransferElementAbstractor.h"
 #include "TransferElementID.h"
 #include "VersionNumber.h"
-#include <unordered_set>
 
 #include <map>
+#include <unordered_set>
 
 namespace ChimeraTK::DataConsistencyGroupDetail {
 
