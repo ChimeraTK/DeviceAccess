@@ -53,7 +53,7 @@ struct Fixture {
 
   // loop for updater thread: option to delay updates on A and B
   // e.g. B has delay=2: A=v1, A=v2, A=v3, B=v1, A=v4, B=v2, ...
-  void updaterLoop(unsigned nLoops, unsigned delay, unsigned duplicateVns = 0) {
+  void updaterLoop(unsigned nLoops, unsigned delay, unsigned duplicateVns = 0, bool catchUp = false) {
     std::cout << "updaterLoop: delay=" << delay << ", duplicateVns=" << duplicateVns << std::endl;
     auto accA = dev.getScalarRegisterAccessor<int32_t>("/A");
     auto accB = dev.getScalarRegisterAccessor<int32_t>("/B");
@@ -76,6 +76,13 @@ struct Fixture {
         if(loopCount >= delay) {
           accB = (int32_t)(loopCount - delay);
           accB.write(vs[loopCount - delay]);
+        }
+        if(loopCount == nLoops - 1 && delay > 0 && catchUp) {
+          // let variable B catch up with A
+          for(unsigned i = loopCount - delay + 1; i < nLoops; i++) {
+            accB = (int32_t)(i);
+            accB.write(vs[i]);
+          }
         }
       }
       catch(ChimeraTK::runtime_error& e) {
@@ -283,6 +290,53 @@ BOOST_FIXTURE_TEST_CASE(testExceptions, Fixture) {
     BOOST_TEST(nConsistentUpdates == nLoops - delay + 1);
     BOOST_TEST(nConsistentUpdates == nUpdates);
   }
+}
+
+BOOST_FIXTURE_TEST_CASE(testCatchUp, Fixture) {
+  std::cout << "testCatchUp" << std::endl;
+
+  ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
+  DataConsistencyGroup dg({readAccA, readAccB}, DataConsistencyGroup::MatchingMode::historized);
+
+  const unsigned nLoops = 6;
+  const unsigned delay = 2;
+
+  // With HDataConsistencyGroup, check that we get N consistent updates, even when we
+  // have update delay on second variable that appears and vanishes again.
+  emptyQueues(rag, &dg);
+  unsigned nUpdates = 0;
+  unsigned nConsistentUpdates = 0;
+  std::thread updaterThread1([&]() { updaterLoop(nLoops, delay, false, true); });
+
+  // test loop consuming data
+  try {
+    while(true) {
+      auto id = rag.readAny();
+      auto& acc = id == readAccA.getId() ? readAccA : readAccB;
+      std::cout << "readAny: seeing update for target " << acc.getName() << " vs " << acc.getVersionNumber()
+                << " values " << readAccA << "," << readAccB << std::endl;
+
+      bool isConsistent = dg.update(id);
+      nUpdates++;
+      if(readAccA.getVersionNumber() == readAccB.getVersionNumber()) {
+        nConsistentUpdates++;
+      }
+      // check data consistency via VersionNumber and content
+      BOOST_TEST(isConsistent);
+      BOOST_TEST(readAccA.getVersionNumber() == readAccB.getVersionNumber());
+      BOOST_TEST(readAccA == readAccB);
+
+      // acknowledge data received: here updated id is irrelevant
+      sem_post(&sem);
+    }
+  }
+  catch(boost::thread_interrupted& e) {
+    std::cout << "thread interrupted" << std::endl;
+  }
+
+  updaterThread1.join();
+  BOOST_TEST(nConsistentUpdates == nLoops);
+  BOOST_TEST(nConsistentUpdates == nUpdates);
 }
 
 BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
