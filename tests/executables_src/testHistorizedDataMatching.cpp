@@ -355,4 +355,14 @@ BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
   BOOST_TEST(readAccB.getVersionNumber() != VersionNumber(nullptr));
 }
 
+BOOST_FIXTURE_TEST_CASE(testIllegalUse, Fixture) {
+  std::cout << "testIllegalUse" << std::endl;
+
+  ChimeraTK::ReadAnyGroup rag{readAccA, readAccB};
+  DataConsistencyGroup dg({readAccA, readAccB}, DataConsistencyGroup::MatchingMode::historized);
+
+  BOOST_CHECK_THROW(
+      DataConsistencyGroup({readAccA}, DataConsistencyGroup::MatchingMode::historized), ChimeraTK::logic_error);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
