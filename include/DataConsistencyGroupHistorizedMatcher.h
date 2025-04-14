@@ -45,7 +45,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     /// since after DiscardValueException, ReadAnyGroup does not call preRead at following operation,
     /// DataConsistencyDecorator must 'catch up' on preReads by calling this
     void handleMissingPreReads(TransferElementID callerId);
-    void handleMissingPostReads();
+    void handleMissingPostReads(TransferElementID callerId);
 
     /// swap data of target buffer into history
     void updateHistory(TransferElementID transferElementID);
@@ -67,7 +67,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
 
     bool findMatch(TransferElementID transferElementID);
 
-    /// return reference to user buffer of transfer element of this group
+    /// return reference to target's user buffer of transfer element of this group
     template<typename UserType>
     std::vector<std::vector<UserType>>& getUserBuffer(TransferElementID transferElementID);
 
@@ -90,8 +90,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
       unsigned lastMatchingIndex = 0;
     };
 
-    std::set<TransferElementID> _decoratorsNeedingPreRead;
-    std::set<TransferElementID> _decoratorsNeedingPostRead;
+    bool _decoratorsNeedPreRead = false;
     bool _handleMissingPreReadsCalled = false;
     bool _handleMissingPostReadsCalled = false;
 

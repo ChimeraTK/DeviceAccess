@@ -54,12 +54,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     }
 
     bool consistent = findMatch(transferElementID);
-    if(!consistent) {
-      // Add to set of decorators needing call to postRead later.
-      _decoratorsNeedingPostRead.insert(transferElementID);
-      return false;
-    }
-    return true;
+    return consistent;
   }
 
   /********************************************************************************************************************/
@@ -73,23 +68,25 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     auto resetFlag = cppext::finally([this] { _handleMissingPreReadsCalled = false; });
 
     // just a check for right usage: check that DataConsistencyGroup::update was called on updates from ReadAnyGroup.
-    if(!_decoratorsNeedingPreRead.empty()) {
+    if(_decoratorsNeedPreRead) {
       // we know there was already a consistent data update handed out from ReadAnyGroup
       if(lastUpdateCall() != callerId) {
         throw ChimeraTK::logic_error("updates from ReadAnyGroup must be processed by DataConsistencyGroup::update");
       }
     }
 
-    for(TransferElementID id : _decoratorsNeedingPreRead) {
-      auto& acc = _pushElements.at(id);
-      acc.getHighLevelImplElement()->preRead(TransferType::read);
+    for(auto& e : _pushElements) {
+      if(e.first != callerId) {
+        auto& acc = e.second;
+        acc.getHighLevelImplElement()->preRead(TransferType::read);
+      }
     }
-    _decoratorsNeedingPreRead.clear();
+    _decoratorsNeedPreRead = false;
   }
 
   /********************************************************************************************************************/
 
-  void HistorizedMatcher::handleMissingPostReads() {
+  void HistorizedMatcher::handleMissingPostReads(TransferElementID callerId) {
     // prevent recursion by setting flag
     if(_handleMissingPostReadsCalled) {
       return;
@@ -98,13 +95,17 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     auto resetFlag = cppext::finally([this] { _handleMissingPostReadsCalled = false; });
 
     // To update other user buffers, call postRead on the other involved decorators.
+    // This concerns all pushElements, except when a push element was already on right version num and received
+    // another update, which can only happen if the new datum has the same version number (handled as special case).
     // Note, in case of an exception thrown by some postRead, it might happen that postRead is
     // called more than once in a row, for the other elements. This is allowed.
-    for(TransferElementID id : _decoratorsNeedingPostRead) {
-      auto& acc = _pushElements.at(id);
-      acc.getHighLevelImplElement()->postRead(TransferType::read, true);
+    for(auto& e : _pushElements) {
+      if(e.first != callerId) {
+        auto& acc = e.second;
+        acc.getHighLevelImplElement()->postRead(TransferType::read, true);
+      }
     }
-    _decoratorsNeedingPreRead = std::move(_decoratorsNeedingPostRead);
+    _decoratorsNeedPreRead = true;
   }
 
   /********************************************************************************************************************/
