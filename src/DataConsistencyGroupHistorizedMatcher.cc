@@ -16,15 +16,18 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     callForType(acc.getValueType(), [&](auto t) {
       using UserType = decltype(t);
 
+      // check if accessor already is in another DataConsistencyGroup
+      for(auto& e : acc.getInternalElements()) {
+        auto dec = boost::dynamic_pointer_cast<DataConsistencyDecorator<UserType>>(e);
+        if(dec) {
+          throw ChimeraTK::logic_error(
+              "accessor is already in historized DataConsistencyGroup, cannot add it to another one: " + acc.getName());
+        }
+      }
       auto accImpl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(acc.getHighLevelImplElement());
       assert(accImpl);
       // factory function which creates our DataConsistencyDecorator
       auto factoryF = [&](const boost::shared_ptr<NDRegisterAccessor<UserType>>& toBeDecorated) {
-        // let's not replace if toBeDecorated is already a DataConsistencyDecorator
-        auto alreadyDecorated = boost::dynamic_pointer_cast<DataConsistencyDecorator<UserType>>(toBeDecorated);
-        if(alreadyDecorated) {
-          return alreadyDecorated;
-        }
         return boost::make_shared<DataConsistencyDecorator<UserType>>(toBeDecorated, this);
       };
       // in case accImpl is ApplicationCore's MetaDataPropagatingRegisterDecorator we need to "go inside" and
