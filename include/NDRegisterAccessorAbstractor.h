@@ -50,6 +50,8 @@ namespace ChimeraTK {
 
     boost::shared_ptr<NDRegisterAccessor<UserType>> getImpl();
 
+    using value_type = UserType;
+
    protected:
     explicit NDRegisterAccessorAbstractor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl);
 
