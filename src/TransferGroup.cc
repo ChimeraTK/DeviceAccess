@@ -15,7 +15,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void TransferGroup::runPostReads(const std::set<boost::shared_ptr<TransferElement>>& elements,
-      const std::exception_ptr& firstDetectedRuntimeError) noexcept {
+      const std::exception_ptr& firstDetectedRuntimeError) {
     for(const auto& elem : elements) {
       // check for exceptions on any of the element's low level elements
       for(const auto& lowLevelElem : elem->getHardwareAccessingElements()) {
@@ -45,16 +45,6 @@ namespace ChimeraTK {
     // reset exception flags
     for(auto& it : _lowLevelElementsAndExceptionFlags) {
       it.second = false;
-    }
-
-    // check pre-conditions so preRead() does not throw logic errors
-    for(const auto& backend : _exceptionBackends) {
-      if(backend && !backend->isOpen()) {
-        throw ChimeraTK::logic_error("DeviceBackend " + backend->readDeviceInfo() + "is not opened!");
-      }
-    }
-    if(!isReadable()) {
-      throw ChimeraTK::logic_error("TransferGroup::read() called, but not all elements are readable.");
     }
 
     std::exception_ptr firstDetectedRuntimeError{nullptr};
@@ -121,16 +111,6 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void TransferGroup::write(VersionNumber versionNumber) {
-    // check pre-conditions so preRead() does not throw logic errors
-    for(const auto& backend : _exceptionBackends) {
-      if(backend && !backend->isOpen()) {
-        throw ChimeraTK::logic_error("DeviceBackend " + backend->readDeviceInfo() + "is not opened!");
-      }
-    }
-    if(!isWriteable()) {
-      throw ChimeraTK::logic_error("TransferGroup::write() called, but not all elements are writeable.");
-    }
-
     for(auto& it : _lowLevelElementsAndExceptionFlags) {
       it.second = false;
     }
@@ -222,8 +202,6 @@ namespace ChimeraTK {
 
     // set flag on the accessors that it is now in a transfer group
     accessor.getHighLevelImplElement()->_isInTransferGroup = true;
-
-    _exceptionBackends.insert(accessor.getHighLevelImplElement()->getExceptionBackend());
 
     auto highLevelElementsWithNewAccessor = _highLevelElements;
     highLevelElementsWithNewAccessor.insert(accessor.getHighLevelImplElement());

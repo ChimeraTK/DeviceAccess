@@ -79,12 +79,6 @@ namespace ChimeraTK {
     /** List of high-level TransferElements in this group which are directly used by the user */
     std::set<boost::shared_ptr<TransferElement>> _highLevelElements;
 
-    /**
-     * List of all exception backends. We check on them whether they are opened, and we want to do it for all accessors
-     * of the same backend just once.
-     */
-    std::set<boost::shared_ptr<DeviceBackend>> _exceptionBackends;
-
     /** Cached value whether all elements are readable. */
     bool _isReadable{false};
 
@@ -99,7 +93,7 @@ namespace ChimeraTK {
 
     // Helper function to avoid code duplication. Needs to be run for two lists.
     void runPostReads(const std::set<boost::shared_ptr<TransferElement>>& elements,
-        const std::exception_ptr& firstDetectedRuntimeError) noexcept;
+        const std::exception_ptr& firstDetectedRuntimeError);
 
     // Counter how many runtime errors have been thrown.
     size_t _nRuntimeErrors;

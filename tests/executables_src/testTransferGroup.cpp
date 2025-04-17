@@ -290,68 +290,6 @@ BOOST_AUTO_TEST_CASE(test_B_12_9) {
   CHECK_COUNTERS_LOW_LEVEL(B->_internalElements[0], false, 2, 4);
   CHECK_COUNTERS_LOW_LEVEL(B->_internalElements[1], false, 2, 4);
 }
-/**********************************************************************************************************************/
-
-/**
- *  Test runtime_error in precondition check
- *  * \anchor testTransferElement_B_12_10_1_1 \ref transferElement_B_12_10_1_1 "B.12.10.1.1"
- */
-BOOST_AUTO_TEST_CASE(test_B_12_10_1_1) {
-  std::cout << "test_B_12_10_1_1" << std::endl;
-  auto A = makeTETA();
-  A->_throwRuntimeErrInPreconditions = true;
-  TransferGroup group;
-  group.addAccessor(A);
-  BOOST_CHECK_THROW(group.read(), ChimeraTK::runtime_error);
-  BOOST_CHECK_THROW(group.write(), ChimeraTK::runtime_error);
-  BOOST_CHECK_EQUAL(A->_preRead_counter, 0);
-  BOOST_CHECK_EQUAL(A->_preWrite_counter, 0);
-  BOOST_CHECK_EQUAL(A->_readTransfer_counter, 0);
-  BOOST_CHECK_EQUAL(A->_writeTransfer_counter, 0);
-  BOOST_CHECK_EQUAL(A->_writeTransferDestructively_counter, 0);
-  BOOST_CHECK_EQUAL(A->_postRead_counter, 0);
-  BOOST_CHECK_EQUAL(A->_postWrite_counter, 0);
-}
-
-/**********************************************************************************************************************/
-
-/**
- *  Test that operation throws if precondition not met
- *  * \anchor testTransferElement_B_12_10_1_2 \ref transferElement_B_12_10_1_2 "B.12.10.1.2"
- */
-BOOST_AUTO_TEST_CASE(test_B_12_10_1_2) {
-  std::cout << "test_B_12_10_1_2" << std::endl;
-  {
-    auto A = makeTETA();
-    A->_readable = false;
-    TransferGroup group;
-    group.addAccessor(A);
-    BOOST_CHECK_THROW(group.read(), ChimeraTK::logic_error);
-    BOOST_CHECK_EQUAL(A->_preRead_counter, 0);
-    BOOST_CHECK_EQUAL(A->_preWrite_counter, 0);
-    BOOST_CHECK_EQUAL(A->_readTransfer_counter, 0);
-    BOOST_CHECK_EQUAL(A->_writeTransfer_counter, 0);
-    BOOST_CHECK_EQUAL(A->_writeTransferDestructively_counter, 0);
-    BOOST_CHECK_EQUAL(A->_postRead_counter, 0);
-    BOOST_CHECK_EQUAL(A->_postWrite_counter, 0);
-    BOOST_CHECK_NO_THROW(group.write());
-  }
-  {
-    auto A = makeTETA();
-    A->_writeable = false;
-    TransferGroup group;
-    group.addAccessor(A);
-    BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
-    BOOST_CHECK_EQUAL(A->_preRead_counter, 0);
-    BOOST_CHECK_EQUAL(A->_preWrite_counter, 0);
-    BOOST_CHECK_EQUAL(A->_readTransfer_counter, 0);
-    BOOST_CHECK_EQUAL(A->_writeTransfer_counter, 0);
-    BOOST_CHECK_EQUAL(A->_writeTransferDestructively_counter, 0);
-    BOOST_CHECK_EQUAL(A->_postRead_counter, 0);
-    BOOST_CHECK_EQUAL(A->_postWrite_counter, 0);
-    BOOST_CHECK_NO_THROW(group.read());
-  }
-}
 
 /**********************************************************************************************************************/
 
