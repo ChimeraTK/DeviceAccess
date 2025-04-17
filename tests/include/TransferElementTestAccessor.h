@@ -27,6 +27,9 @@ namespace ChimeraTK {
       try {
         if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
         if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
+        if(!_readable) {
+          throw ChimeraTK::logic_error("Not readable!");
+        }
       }
       catch(...) {
         _thrownException = std::current_exception();
@@ -44,6 +47,9 @@ namespace ChimeraTK {
         if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
         if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
         if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
+        if(!_writeable) {
+          throw ChimeraTK::logic_error("Not writeable!");
+        }
       }
       catch(...) {
         _thrownException = std::current_exception();
@@ -148,20 +154,11 @@ namespace ChimeraTK {
       _listReplacementElements.push_back(newElement->getId());
     }
 
-    bool isReadOnly() const override {
-      if(_throwRuntimeErrInPreconditions) throw ChimeraTK::runtime_error("Test");
-      return !_writeable && _readable;
-    }
+    bool isReadOnly() const override { return !_writeable && _readable; }
 
-    bool isReadable() const override {
-      if(_throwRuntimeErrInPreconditions) throw ChimeraTK::runtime_error("Test");
-      return _readable;
-    }
+    bool isReadable() const override { return _readable; }
 
-    bool isWriteable() const override {
-      if(_throwRuntimeErrInPreconditions) throw ChimeraTK::runtime_error("Test");
-      return _writeable;
-    }
+    bool isWriteable() const override { return _writeable; }
 
     void interrupt() override { this->interrupt_impl(this->_readQueue); }
 
@@ -195,10 +192,9 @@ namespace ChimeraTK {
     bool _throwLogicErr{false};    // always in doPreXxx()
     bool _throwRuntimeErrInTransfer{false};
     bool _throwRuntimeErrInPre{false};
-    bool _throwRuntimeErrInPreconditions{false}; // throw in isReadable/isWriteable/isReadOnly
-    bool _throwNumericCast{false};               // in doPreWrite() or doPreRead() depending on operation
-    VersionNumber _setPostReadVersion{nullptr};  // if nullptr, a new version will be generated
-    UserType _setPostReadData{UserType()};       // data to be copied into the user buffer in postRead
+    bool _throwNumericCast{false};              // in doPreWrite() or doPreRead() depending on operation
+    VersionNumber _setPostReadVersion{nullptr}; // if nullptr, a new version will be generated
+    UserType _setPostReadData{UserType()};      // data to be copied into the user buffer in postRead
 
     // lists, counters etc. used for the TransferGroup tests
     std::list<TransferElementID> _listReplacementElements; // list of all arguments of replaceTransferElement()
