@@ -89,7 +89,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
 
   /********************************************************************************************************************/
 
-  void HistorizedMatcher::handleMissingPostReads(TransferElementID callerId) {
+  void HistorizedMatcher::handleMissingPostReads(TransferElementID callerId, bool updateBuffer) {
     // prevent recursion by setting flag
     if(_handleMissingPostReadsCalled) {
       return;
@@ -105,7 +105,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     for(auto& e : _pushElements) {
       if(e.first != callerId) {
         auto& acc = e.second;
-        acc.getHighLevelImplElement()->postRead(TransferType::read, true);
+        acc.getHighLevelImplElement()->postRead(TransferType::read, updateBuffer);
       }
     }
     _decoratorsNeedPreRead = true;

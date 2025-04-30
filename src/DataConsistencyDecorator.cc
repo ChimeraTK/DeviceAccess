@@ -34,7 +34,7 @@ namespace ChimeraTK {
     // we throw DiscardValueException. Assume then, we get another value for B, with version v3.
     // In this case, decorator(A) must not be swapped again, but decorator(B) should be swapped with target(B)=v3
     if(_hGroup->lastMatchingVersionNumber() > this->_versionNumber) {
-      _hGroup->handleMissingPostReads(this->getId());
+      _hGroup->handleMissingPostReads(this->getId(), updateDataBuffer);
     }
 
     // we overwrite implementation of base class NDRegisterAccessorDecorator because we
@@ -42,7 +42,7 @@ namespace ChimeraTK {
     // unless an exception originates from target->queue or its continuation(readCallback).
     if(this->_activeException) {
       _target->setActiveException(this->_activeException);
-      _target->postRead(type, updateDataBuffer);
+      _target->postRead(type, false);
     }
 
     // Decorators have to copy meta data even if updateDataBuffer is false
