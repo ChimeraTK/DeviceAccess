@@ -3,7 +3,6 @@
 
 #include "LogicalNameMappingBackend.h"
 
-#include "internal/LNMMathPluginFormulaHelper.h"
 #include "LNMBackendBitAccessor.h"
 #include "LNMBackendChannelAccessor.h"
 #include "LNMBackendVariableAccessor.h"
@@ -21,7 +20,9 @@ namespace ChimeraTK {
 
   void LogicalNameMappingBackend::parse() const {
     // don't run, if already parsed
-    if(hasParsed) return;
+    if(hasParsed) {
+      return;
+    }
     hasParsed = true;
 
     // parse the map file
@@ -44,7 +45,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMappingBackend::open() {
-    if(isFunctional()) return;
+    if(isFunctional()) {
+      return;
+    }
     parse();
 
     // open all referenced devices (unconditionally, open() is also used for recovery)
@@ -83,7 +86,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMappingBackend::close() {
-    if(!_opened) return;
+    if(!_opened) {
+      return;
+    }
 
     // call the closeHook for all plugins
     for(auto& reg : _catalogue_mutable) {
@@ -94,7 +99,9 @@ namespace ChimeraTK {
 
     // close all referenced devices
     for(const auto& device : _devices) {
-      if(device.second->isOpen()) device.second->close();
+      if(device.second->isOpen()) {
+        device.second->close();
+      }
     }
     // flag as closed
     _opened = false;
@@ -155,7 +162,9 @@ namespace ChimeraTK {
     // let the target do the check. It might be a sub-register of a much larger one and for the target it is fine.
     if(info.length != 0) {
       // If info->length is 0 we let the target device do the checking. Nothing we can decide here.
-      if(numberOfWords == 0) numberOfWords = info.length;
+      if(numberOfWords == 0) {
+        numberOfWords = info.length;
+      }
       if((numberOfWords + wordOffsetInRegister) > info.length) {
         throw ChimeraTK::logic_error(
             std::string(
@@ -213,7 +222,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   RegisterCatalogue LogicalNameMappingBackend::getRegisterCatalogue() const {
-    if(catalogueCompleted) return RegisterCatalogue(_catalogue_mutable.clone());
+    if(catalogueCompleted) {
+      return RegisterCatalogue(_catalogue_mutable.clone());
+    }
     parse();
 
     // fill in information to the catalogue from the target devices
@@ -231,7 +242,9 @@ namespace ChimeraTK {
       // In case the device is not "this" replace it with the real target register info
       if(devName != "this") {
         auto cat = _devices.at(devName)->getRegisterCatalogue();
-        if(!cat.hasRegister(lnmInfo.registerName)) continue;
+        if(!cat.hasRegister(lnmInfo.registerName)) {
+          continue;
+        }
         target_info = cat.getRegister(lnmInfo.registerName);
       }
       else {
@@ -263,7 +276,9 @@ namespace ChimeraTK {
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
         lnmInfo.nChannels = target_info.getNumberOfChannels();
       }
-      if(lnmInfo.length == 0) lnmInfo.length = target_info.getNumberOfElements();
+      if(lnmInfo.length == 0) {
+        lnmInfo.length = target_info.getNumberOfElements();
+      }
 
       lnmInfo.tags = target_info.getTags();
 
@@ -286,16 +301,20 @@ namespace ChimeraTK {
 
   template<typename UserType>
   class InstantiateLogicalNameMappingBackendFunctions {
-    LogicalNameMappingBackend* p{nullptr};
+    LogicalNameMappingBackend* _p{nullptr};
 
+    // NOLINTNEXTLINE(readability-identifier-naming)
     void getRegisterAccessor_impl(const RegisterPath& registerPathName, size_t numberOfWords,
         size_t wordOffsetInRegister, AccessModeFlags flags, size_t omitPlugins) {
-      p->getRegisterAccessor_impl<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags, omitPlugins);
+      _p->getRegisterAccessor_impl<UserType>(
+          registerPathName, numberOfWords, wordOffsetInRegister, std::move(flags), omitPlugins);
     }
 
+    // NOLINTNEXTLINE(readability-identifier-naming)
     void getRegisterAccessor_internal(const RegisterPath& registerPathName, size_t numberOfWords,
         size_t wordOffsetInRegister, AccessModeFlags flags) {
-      p->getRegisterAccessor_internal<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+      _p->getRegisterAccessor_internal<UserType>(
+          registerPathName, numberOfWords, wordOffsetInRegister, std::move(flags));
     }
   };
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(InstantiateLogicalNameMappingBackendFunctions);
@@ -344,7 +363,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMappingBackend::activateAsyncRead() noexcept {
-    if(!isFunctional()) return;
+    if(!isFunctional()) {
+      return;
+    }
 
     // Store information locally, as variable accessors have async read.
     // Atomically exchange with the existing value (for thread safety against concurrent activateAsyncRead calls), and
@@ -398,7 +419,9 @@ namespace ChimeraTK {
   std::unordered_set<std::string> LogicalNameMappingBackend::getTargetDevices() const {
     std::unordered_set<std::string> ret;
     for(const auto& info : _catalogue_mutable) {
-      if(info.deviceName != "this" && !info.deviceName.empty()) ret.insert(info.deviceName);
+      if(info.deviceName != "this" && !info.deviceName.empty()) {
+        ret.insert(info.deviceName);
+      }
     }
     return ret;
   }
