@@ -227,6 +227,12 @@ namespace ChimeraTK {
     }
     parse();
 
+    // map of register catalogues for all target devices
+    std::map<std::string, RegisterCatalogue> catalogueMap;
+    for(const auto& [name, device] : _devices) {
+      catalogueMap.emplace(name, device->getRegisterCatalogue());
+    }
+
     // fill in information to the catalogue from the target devices
     for(auto& lnmInfo : _catalogue_mutable) {
       auto targetType = lnmInfo.targetType;
@@ -241,7 +247,7 @@ namespace ChimeraTK {
       RegisterInfo target_info(lnmInfo.clone()); // Start with a clone of this info as there is not default constructor
       // In case the device is not "this" replace it with the real target register info
       if(devName != "this") {
-        auto cat = _devices.at(devName)->getRegisterCatalogue();
+        const auto& cat = catalogueMap.at(devName);
         if(!cat.hasRegister(lnmInfo.registerName)) {
           continue;
         }
