@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
 import os
 import sys
@@ -6,50 +8,92 @@ import re
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-#import xml.etree.ElementTree as ET
+from PyQt5.QtCore import Qt
 import lxml.etree as ET
 
 #######################################################################################################################
 #######################################################################################################################
+# TreeView that reacts on more keypresses
+
+
+class RegisterTreeView(QTreeWidget):
+    ####################################################################################################################
+    # Handle Del for removing items
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Delete:
+            self.deleteSelection()
+        return super().keyPressEvent(event)
+
+    ####################################################################################################################
+    # Remove currently selected items, with asking the user
+    def deleteSelection(self):
+        selected = self.selectedItems()
+
+        if len(selected) > 1:
+            msg = f"Are you sure you want to delete the selected {len(selected)} items"
+            reply = QMessageBox.question(self, 'Delete Items', msg, QMessageBox.Yes, QMessageBox.No)
+            if reply != QMessageBox.Yes:
+                return
+
+            for item in selected:
+                if item.parent():
+                    item.parent().removeChild(item)
+        else:
+            # if module, ask first
+            if self.itemWidget(self.listWidget.currentItem(), 1) is None:
+                msg = "Are you sure you want to delete the selected module with all registers and sub-modules inside?"
+                reply = QMessageBox.question(self, 'Delete Item', msg, QMessageBox.Yes, QMessageBox.No)
+                if reply != QMessageBox.Yes:
+                    return
+
+            if item.parent():
+                self.currentItem().parent().removeChild(self.listWidget.currentItem())
+
+#######################################################################################################################
+#######################################################################################################################
 # event filter to disable the mouse wheel on combo boxes
+
+
 class NoWheelFilter(QObject):
     def eventFilter(self,  obj,  event):
-      if event.type() == QEvent.Wheel:
-        return True
-      return False
+        if event.type() == QEvent.Wheel:
+            return True
+        return False
 
 #######################################################################################################################
 #######################################################################################################################
 # Main application class
+
+
 class MainWindow(QMainWindow):
 
-#######################################################################################################################
-# constructor: create main window
+    #######################################################################################################################
+    # constructor: create main window
     def __init__(self):
         super(MainWindow, self).__init__()
 
         # initialise current file name
         self.fileName = ""
-        
+
         # create the mouse wheel filter for the combo boxes
         self.noWheelFilter = NoWheelFilter()
 
-        # create grid layout    
+        # create grid layout
         self.grid = QGridLayout()
 
         # create main tree widget
-        self.listWidget = QTreeWidget()
-        header = QTreeWidgetItem(["Name","Target Type","Target Device","Target Register", "First Index", "Length", "Channel", "Value"])
+        self.listWidget = RegisterTreeView()
+        header = QTreeWidgetItem(["Name", "Target Type", "Target Device", "Target Register",
+                                 "First Index", "Length", "Channel", "Value"])
         self.listWidget.setHeaderItem(header)
         self.listWidget.currentItemChanged.connect(self.selectListItem)
         self.listWidget.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.listWidget.setAutoScroll(True)
         self.listWidget.setAutoScrollMargin(10)
         self.listWidget.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self.grid.addWidget(self.listWidget,1,1,1,3)
+        self.grid.addWidget(self.listWidget, 1, 1, 1, 3)
         self.listWidget.model().rowsInserted.connect(self.onInsertRows)
 
-        
         # enable drag&drop, but not on the top-level
         self.listWidget.setDragDropMode(QAbstractItemView.InternalMove)
         self.listWidget.invisibleRootItem().setFlags(Qt.ItemIsEnabled)
@@ -63,23 +107,23 @@ class MainWindow(QMainWindow):
         self.listWidget.setColumnWidth(5, 70)
         self.listWidget.setColumnWidth(6, 70)
         self.listWidget.setColumnWidth(7, 70)
-        
+
         # add top level element
-        toplevelItem = QTreeWidgetItem(self.listWidget, ["logicalNameMap"] )
+        toplevelItem = QTreeWidgetItem(self.listWidget, ["logicalNameMap"])
         toplevelItem.setExpanded(True)
-        
+
         # buttons for adding and deleting items
         self.buttonAddReg = QPushButton()
         self.buttonAddReg.setText('Add Register')
-        self.grid.addWidget(self.buttonAddReg,2,1,1,1)
+        self.grid.addWidget(self.buttonAddReg, 2, 1, 1, 1)
         self.buttonAddReg.clicked.connect(self.addRegister)
         self.buttonAddMod = QPushButton()
         self.buttonAddMod.setText('Add Module')
-        self.grid.addWidget(self.buttonAddMod,2,2,1,1)
+        self.grid.addWidget(self.buttonAddMod, 2, 2, 1, 1)
         self.buttonAddMod.clicked.connect(self.addModule)
         self.buttonDel = QPushButton()
         self.buttonDel.setText('Delete Item')
-        self.grid.addWidget(self.buttonDel,2,3,1,1)
+        self.grid.addWidget(self.buttonDel, 2, 3, 1, 1)
         self.buttonDel.clicked.connect(self.deleteItem)
 
         # add the menu
@@ -102,16 +146,18 @@ class MainWindow(QMainWindow):
 #######################################################################################################################
 # insert a row in the tree view (e.g. on drag&drop)
     def onInsertRows(self, modelIndex, row1, row2):
-        item = self.listWidget.itemFromIndex(modelIndex.child(row1,0))
-        if(item is not None and item.text(1) != "") :
-          self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox(modelIndex.child(row1,0), item) )
-          # update geometries to prevent misaligned combo boxes (only if visible, to speed up application start)
-          if self.listWidget.isVisible():
-            self.listWidget.updateGeometries()
-        
+        item = self.listWidget.itemFromIndex(modelIndex.child(row1, 0))
+        if (item is not None and item.text(1) != ""):
+            self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox(modelIndex.child(row1, 0), item))
+            # update geometries to prevent misaligned combo boxes (only if visible, to speed up application start)
+            if self.listWidget.isVisible():
+                self.listWidget.updateGeometries()
+
 
 #######################################################################################################################
 # create the menu
+
+
     def makeMenu(self):
 
         menuBar = self.menuBar()
@@ -159,22 +205,14 @@ class MainWindow(QMainWindow):
 #######################################################################################################################
 # delete item from the tree
     def deleteItem(self):
-    
-        # if module, ask first
-        if self.listWidget.itemWidget(self.listWidget.currentItem(), 1) is None:
-          msg = "Are you sure you want to delete the selected module with all registers and sub-modules inside?"
-          reply = QMessageBox.question(self, 'Delete Item', msg, QMessageBox.Yes, QMessageBox.No)
-          if reply != QMessageBox.Yes:
-            return
-
-        self.listWidget.currentItem().parent().removeChild(self.listWidget.currentItem())
+        self.listWidget.deleteSelection()
 
 #######################################################################################################################
 # create a combo box to select the target type
 
     def updateComboBox(self, index, text):
-        item =  self.listWidget.itemFromIndex(index)
-        item.setText(1,text)
+        item = self.listWidget.itemFromIndex(index)
+        item.setText(1, text)
 
 #######################################################################################################################
 # create a combo box to select the target type
@@ -182,11 +220,11 @@ class MainWindow(QMainWindow):
         box = QComboBox()
         box.setEditable(False)
         box.addItem("redirected register", "redirectedRegister")
-        box.addItem("channel of 2D register","redirectedChannel")
-        box.addItem("constant","constant")
-        box.addItem("variable","variable")
-        box.setCurrentIndex( box.findData(item.text(1)) )
-        box.setFocusPolicy( Qt.ClickFocus )
+        box.addItem("channel of 2D register", "redirectedChannel")
+        box.addItem("constant", "constant")
+        box.addItem("variable", "variable")
+        box.setCurrentIndex(box.findData(item.text(1)))
+        box.setFocusPolicy(Qt.ClickFocus)
         box.installEventFilter(self.noWheelFilter)
         box.currentIndexChanged.connect(lambda _: self.updateComboBox(index, box.currentData()))
         return box
@@ -194,25 +232,27 @@ class MainWindow(QMainWindow):
 
 #######################################################################################################################
 # select a different list item
+
+
     def selectListItem(self):
         if self.listWidget.itemWidget(self.listWidget.currentItem(), 1) is None:
-          self.buttonAddReg.setEnabled(True)
-          self.buttonAddMod.setEnabled(True)
+            self.buttonAddReg.setEnabled(True)
+            self.buttonAddMod.setEnabled(True)
         else:
-          self.buttonAddReg.setEnabled(False)
-          self.buttonAddMod.setEnabled(False)
-          
+            self.buttonAddReg.setEnabled(False)
+            self.buttonAddMod.setEnabled(False)
+
         if self.listWidget.currentItem() == self.listWidget.topLevelItem(0):
-          self.buttonDel.setEnabled(False)
+            self.buttonDel.setEnabled(False)
         else:
-          self.buttonDel.setEnabled(True)
+            self.buttonDel.setEnabled(True)
 
 #######################################################################################################################
 # recusively populate the list widget with entries from the XML tree
     def updateList(self, theData):
         # clear the list first and create the top-level element
         self.listWidget.clear()
-        toplevelItem = QTreeWidgetItem(self.listWidget, ["logicalNameMap"] )
+        toplevelItem = QTreeWidgetItem(self.listWidget, ["logicalNameMap"])
         toplevelItem.setExpanded(True)
         # start with the root element, iterate through the entire tree
         self.updateListInternal(toplevelItem, theData)
@@ -223,48 +263,48 @@ class MainWindow(QMainWindow):
         for child in entry:
 
             # create entry for module
-            if(child.tag == "module"):
-              item = self._create_module_node(parentItem, child.get("name"))
+            if (child.tag == "module"):
+                item = self._create_module_node(parentItem, child.get("name"))
 
-               # recures into module
-              self.updateListInternal(item, child)
+                # recures into module
+                self.updateListInternal(item, child)
 
             # create entry for register
             else:
 
-              # collect item data        
-              data = [ child.get("name"), child.tag, "", "", "", "", "", "" ]
-              if child.find("targetDevice") is not None:
-                data[2] = child.find("targetDevice").text
-              if child.find("targetRegister") is not None:
-                data[3] = child.find("targetRegister").text
-              if child.find("targetStartIndex") is not None:
-                data[4] = child.find("targetStartIndex").text
-              if child.find("numberOfElements") is not None:
-                data[5] = child.find("numberOfElements").text
-              if child.find("targetChannel") is not None:
-                data[6] = child.find("targetChannel").text
-              if child.find("value") is not None:
-                data[7] = child.find("value").text
+                # collect item data
+                data = [child.get("name"), child.tag, "", "", "", "", "", ""]
+                if child.find("targetDevice") is not None:
+                    data[2] = child.find("targetDevice").text
+                if child.find("targetRegister") is not None:
+                    data[3] = child.find("targetRegister").text
+                if child.find("targetStartIndex") is not None:
+                    data[4] = child.find("targetStartIndex").text
+                if child.find("numberOfElements") is not None:
+                    data[5] = child.find("numberOfElements").text
+                if child.find("targetChannel") is not None:
+                    data[6] = child.find("targetChannel").text
+                if child.find("value") is not None:
+                    data[7] = child.find("value").text
 
-              self._create_node(parentItem, data)
+                self._create_node(parentItem, data)
 
 #######################################################################################################################
 # show open lmap file dialogue
     def openFileDialog(self):
-        
+
         # create open device dialog
         dlg = QFileDialog(self)
         dlg.setAcceptMode(QFileDialog.AcceptOpen)
         dlg.setWindowTitle('Open XML logical map file')
-        dlg.setViewMode( QFileDialog.Detail )
-        dlg.setNameFilters( [self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')] )
+        dlg.setViewMode(QFileDialog.Detail)
+        dlg.setNameFilters([self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')])
         dlg.setDefaultSuffix('xlmap')
         if self.fileName != "":
-            dlg.setDirectory( os.path.dirname(self.fileName) )
-        
+            dlg.setDirectory(os.path.dirname(self.fileName))
+
         # show dialog, open only if user did not cancel
-        if dlg.exec_() :
+        if dlg.exec_():
             # file name must be converted into standard python string
             name = str(dlg.selectedFiles()[0])
             # open the file
@@ -275,63 +315,65 @@ class MainWindow(QMainWindow):
     def openFile(self, fileName):
         # parse xml file
         theData = ET.parse(fileName).getroot()
-        
+
         # populate list (recusively through all modules)
         self.updateList(theData)
-            
+
         # store file name and change window title
         self.fileName = os.path.abspath(fileName)
-        self.setWindowTitle(os.path.basename(self.fileName)+" ("+os.path.dirname(self.fileName)+") - ChimeraTK Logical Name Mapping editor")
+        self.setWindowTitle(os.path.basename(self.fileName) +
+                            " ("+os.path.dirname(self.fileName)+") - ChimeraTK Logical Name Mapping editor")
         self._fileSaveAgainAction.setEnabled(True)
 
 #######################################################################################################################
 # show open lmap file dialogue
     def createXmlData(self):
-             
+
         # create root element
         theData = ET.Element("logicalNameMap")
-        
+
         # recursively iterate through the tree
         self.createXmlDataInternal(theData, self.listWidget.topLevelItem(0))
-        
+
         return theData
 
 #######################################################################################################################
 # internally called by createXmlData
     def createXmlDataInternal(self, xmlElement, treeElement):
-             
-        for index in range(0,treeElement.childCount()):
-          child = treeElement.child(index)
-          
-          # registers
-          if(child.childCount() == 0):
-            wg = self.listWidget.itemWidget(child, 1)
-            targetType = str(wg.itemData(wg.currentIndex()))
-            if targetType == "redirectedRegister":
-              xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
-              ET.SubElement(xmlChild, "targetDevice").text = str(child.text(2))
-              ET.SubElement(xmlChild, "targetRegister").text = str(child.text(3))
-              if str(child.text(4)) != "":
-                ET.SubElement(xmlChild, "targetStartIndex").text = str(child.text(4))
-              if str(child.text(5)) != "":
-                ET.SubElement(xmlChild, "numberOfElements").text = str(child.text(5))
-            elif targetType == "redirectedChannel":
-              xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
-              ET.SubElement(xmlChild, "targetDevice").text = str(child.text(2))
-              ET.SubElement(xmlChild, "targetRegister").text = str(child.text(3))
-              ET.SubElement(xmlChild, "targetChannel").text = str(child.text(6))
-            elif targetType == "constant" or targetType == "variable":
-              xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
-              ET.SubElement(xmlChild, "value").text = str(child.text(7))
-              ET.SubElement(xmlChild, "type").text = "integer"
-            else:
-              QMessageBox.information(self, 'Error', 'Unknown target type: "'+targetType+'".')
 
-          # modules
-          else:
-              xmlChild = ET.SubElement(xmlElement, "module", name=str(child.text(0)))
-              self.createXmlDataInternal(xmlChild, child)
-        
+        for index in range(0, treeElement.childCount()):
+            child = treeElement.child(index)
+
+            # registers
+
+            wg = self.listWidget.itemWidget(child, 1)
+            if (child.childCount() == 0 and wg):
+                targetType = str(wg.itemData(wg.currentIndex()))
+                if targetType == "redirectedRegister":
+                    xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
+                    ET.SubElement(xmlChild, "targetDevice").text = str(child.text(2))
+                    ET.SubElement(xmlChild, "targetRegister").text = str(child.text(3))
+                    if str(child.text(4)) != "":
+                        ET.SubElement(xmlChild, "targetStartIndex").text = str(child.text(4))
+                    if str(child.text(5)) != "":
+                        ET.SubElement(xmlChild, "numberOfElements").text = str(child.text(5))
+                elif targetType == "redirectedChannel":
+                    xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
+                    ET.SubElement(xmlChild, "targetDevice").text = str(child.text(2))
+                    ET.SubElement(xmlChild, "targetRegister").text = str(child.text(3))
+                    ET.SubElement(xmlChild, "targetChannel").text = str(child.text(6))
+                elif targetType == "constant" or targetType == "variable":
+                    xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
+                    ET.SubElement(xmlChild, "value").text = str(child.text(7))
+                    ET.SubElement(xmlChild, "type").text = "integer"
+                else:
+                    QMessageBox.information(self, 'Error', 'Unknown target type: "'+targetType+'".')
+
+            # modules
+            else:
+                xmlChild = ET.SubElement(xmlElement, "module", name=str(child.text(0)))
+                self.createXmlDataInternal(xmlChild, child)
+
 #######################################################################################################################
 # show save lmap file dialogue
     def saveFileDialog(self):
@@ -339,14 +381,14 @@ class MainWindow(QMainWindow):
         dlg = QFileDialog(self)
         dlg.setAcceptMode(QFileDialog.AcceptSave)
         dlg.setWindowTitle('Save XML logical map file')
-        dlg.setViewMode( QFileDialog.Detail )
-        dlg.setNameFilters( [self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')] )
+        dlg.setViewMode(QFileDialog.Detail)
+        dlg.setNameFilters([self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')])
         dlg.setDefaultSuffix('xlmap')
         if self.fileName != "":
-            dlg.setDirectory( os.path.dirname(self.fileName) )
-        
+            dlg.setDirectory(os.path.dirname(self.fileName))
+
         # show dialog, save only if user did not cancel
-        if dlg.exec_() :
+        if dlg.exec_():
             # file name must be converted into standard python string
             name = str(dlg.selectedFiles()[0])
             # save the file
@@ -355,27 +397,28 @@ class MainWindow(QMainWindow):
 #########################################################################################
 # save lmap file
     def saveFile(self, fileName):
-        
+
         # iterate through tree data
         theData = self.createXmlData()
-        
+
         # format XML properly (with indentation, but without adding spaces and new lines to the text nodes)
         tree = ET.ElementTree()
         tree._setroot(theData)
-        uglyXml = ET.tounicode(tree, pretty_print = True)
-        text_re = re.compile('>\n\s+([^<>\s].*?)\n\s+</', re.DOTALL)    
-        prettyXml = text_re.sub('>\g<1></', uglyXml)
-        
+        uglyXml = ET.tounicode(tree, pretty_print=True)
+        text_re = re.compile(r'>\n\s+([^<>\s].*?)\n\s+</', re.DOTALL)
+        prettyXml = text_re.sub(r'>\g<1></', uglyXml)
+
         # safe to file
         with open(fileName, "w") as text_file:
-          text_file.write(prettyXml)
+            text_file.write(prettyXml)
 
         # show message of success
         QMessageBox.information(self, 'Map saved', 'Logical name mapping has been saved to file "'+fileName+'".')
-        
+
         # store file name and change window title
         self.fileName = os.path.abspath(fileName)
-        self.setWindowTitle(os.path.basename(self.fileName)+" ("+os.path.dirname(self.fileName)+") - ChimeraTK Logical Name Mapping editor")
+        self.setWindowTitle(os.path.basename(self.fileName) +
+                            " ("+os.path.dirname(self.fileName)+") - ChimeraTK Logical Name Mapping editor")
         self._fileSaveAgainAction.setEnabled(True)
 
 #########################################################################################
@@ -386,24 +429,24 @@ class MainWindow(QMainWindow):
 #######################################################################################################################
 # show import map file dialogue
     def importMapFileDialog(self):
-        
+
         # create open device dialog
         dlg = QFileDialog(self)
         dlg.setOption(QFileDialog.DontUseNativeDialog, True)
-        dlg.layout().addWidget(QLabel("Device alias:"),4,0,1,1)
+        dlg.layout().addWidget(QLabel("Device alias:"), 4, 0, 1, 1)
         deviceAliasWidged = QLineEdit()
         deviceAliasWidged.setText("DEV0")
-        dlg.layout().addWidget(deviceAliasWidged,4,1,1,1)
+        dlg.layout().addWidget(deviceAliasWidged, 4, 1, 1, 1)
         dlg.setAcceptMode(QFileDialog.AcceptOpen)
         dlg.setWindowTitle('Import MAP file')
-        dlg.setViewMode( QFileDialog.Detail )
-        dlg.setNameFilters( [self.tr('Map Files (*.map *.mapp)'), self.tr('All Files (*)')] )
+        dlg.setViewMode(QFileDialog.Detail)
+        dlg.setNameFilters([self.tr('Map Files (*.map *.mapp)'), self.tr('All Files (*)')])
         dlg.setDefaultSuffix('map')
         if self.fileName != "":
-            dlg.setDirectory( os.path.dirname(self.fileName) )
-        
+            dlg.setDirectory(os.path.dirname(self.fileName))
+
         # show dialog, open only if user did not cancel
-        if dlg.exec_() :
+        if dlg.exec_():
             # file name must be converted into standard python string
             name = str(dlg.selectedFiles()[0])
             # open the file
@@ -445,66 +488,79 @@ class MainWindow(QMainWindow):
     def importMapFile(self, fileName, deviceAlias):
         # read file
         with open(fileName) as f:
-          mapFileContent = f.readlines()
+            mapFileContent = f.readlines()
 
         # create module in the tree for the file
         modules = {"/": self._create_module_node(self.listWidget.topLevelItem(0), "importedFromMapFile")}
 
         # parse line by line
         for line in mapFileContent:
-          line = line.strip()
-          
-          # ignore comment, empty lines and version tags
-          if line[0:1] == "#" or line == "" or line[0:1] == "@":
-            continue
-            
-          # extract name
-          [fullName,x] = line.split(" ",1)
-          
-          # split name by components (modules and register name)
-          names = fullName.split(".")
-          registerName = names[len(names)-1]
-          
-          # merge module name, add empty item to force trailing /
-          moduleName = '/'.join(names[:-1])
-          moduleItem = self._ensure_module(modules, moduleName)
+            line = line.strip()
 
-          # check for special cases: 2D registers and their sequences
-          isChannel = False
-          channelIndex = ""
-          if registerName[0:len("AREA_MULTIPLEXED_SEQUENCE_")] == "AREA_MULTIPLEXED_SEQUENCE_":
-            registerName = registerName[len("AREA_MULTIPLEXED_SEQUENCE_"):]
-          elif registerName[0:len("SEQUENCE_")] == "SEQUENCE_":
-            isChannel = True
-            [ registerName, channelIndex] = registerName[len("SEQUENCE_"):].rsplit("_",1)
-            
-          # add item to tree
-          if not isChannel:
-            data = [ registerName, "redirectedRegister" , deviceAlias, moduleName+ "/" + registerName, "", "", "", "" ]
-          else:
-            data = [ registerName, "redirectedChannel" , deviceAlias, moduleName+ "/" + registerName, "", "", channelIndex, "" ]
+            # ignore comment, empty lines and version tags
+            if line[0:1] == "#" or line == "" or line[0:1] == "@":
+                continue
 
-          self._create_node(moduleItem, data)
+            # extract name
+            [fullName, x] = line.split(" ", 1)
+
+            # split name by components (modules and register name)
+            names = fullName.split(".")
+            registerName = names[-1]
+
+            # merge module name, add empty item to force trailing /
+            if registerName.startswith("SEQUENCE_") and names[-2].startswith("MEM_MULTIPLEXED_"):
+                moduleName = '/'.join(names[:-2])
+            else:
+                moduleName = '/'.join(names[:-1])
+
+            moduleItem = self._ensure_module(modules, moduleName)
+
+            # check for special cases: 2D registers and their sequences
+            isChannel = False
+            channelIndex = ""
+            if registerName.startswith("AREA_MULTIPLEXED_SEQUENCE_"):
+                registerName = registerName.replace("AREA_MULTIPLEXED_SEQUENCE_", "")
+            elif registerName.startswith("SEQUENCE_"):
+                isChannel = True
+                try:
+                    [registerName, channelIndex] = registerName[len("SEQUENCE_"):].rsplit("_", 1)
+                except ValueError:
+                    # this is a new-style sequence register
+                    channelIndex = registerName.replace("SEQUENCE_", "")
+                    registerName = names[-2].replace("MEM_MULTIPLEXED_", "") + "_" + channelIndex
+            elif registerName.startswith("MEM_MULTIPLEXED_"):
+                registerName = registerName.replace("MEM_MULTIPLEXED_", "")
+
+            # add item to tree
+            if not isChannel:
+                data = [registerName, "redirectedRegister", deviceAlias,
+                        moduleName + "/" + registerName, "", "", "", ""]
+            else:
+                data = [registerName, "redirectedChannel", deviceAlias,
+                        moduleName + "/" + registerName, "", "", channelIndex, ""]
+
+            self._create_node(moduleItem, data)
 
 
 #######################################################################################################################
 # close the editor
+
+
     def exit(self):
-        msg = "Are you sure you want to close the editor?"
-        reply = QMessageBox.question(self, 'ChimeraTK Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
-        if reply != QMessageBox.Yes:
-          return
         self.close()
 
 #######################################################################################################################
 # close the editor
     def closeEvent(self, event):
         msg = "Are you sure you want to close the editor?"
-        reply = QMessageBox.question(self, 'ChimeraTK Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
+        reply = QMessageBox.question(self, 'ChimeraTK Logical Name Mapping editor',
+                                     msg, QMessageBox.Yes, QMessageBox.No)
         if reply != QMessageBox.Yes:
-          event.ignore()
+            event.ignore()
         else:
-          event.accept()
+            event.accept()
+
 
 #######################################################################################################################
 # main function: initialise app
