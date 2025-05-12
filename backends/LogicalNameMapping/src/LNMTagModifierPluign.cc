@@ -11,7 +11,7 @@ namespace ChimeraTK::LNMBackend {
   TagModifierPlugin::TagModifierPlugin(
       const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
   : AccessorPlugin<TagModifierPlugin>(info, pluginIndex) {
-    std::regex re(R"(\s*,\s*)");
+    const static std::regex re(R"(\s*,\s*)");
 
     if(parameters.contains("add")) {
       auto str = parameters.at("add");

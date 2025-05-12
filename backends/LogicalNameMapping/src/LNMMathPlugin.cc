@@ -58,7 +58,7 @@ namespace ChimeraTK::LNMBackend {
 
   void MathPlugin::openHook(const boost::shared_ptr<LogicalNameMappingBackend>& backend) {
     // make sure backend catalogue is updated with target backend information
-    auto catalogue = backend->getRegisterCatalogue();
+    const auto& catalogue = backend->_catalogue_mutable;
 
     // produce logic_error if MathPlugin has insufficient access rights to parameters
     if(_isWrite && !_info.isWriteable()) {

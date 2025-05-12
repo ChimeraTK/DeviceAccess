@@ -55,7 +55,7 @@ namespace ChimeraTK {
     static const std::string DUMMY_INTERRUPT_REGISTER_NAME{"^/DUMMY_INTERRUPT_([0-9]+)$"};
 
     const std::string regPathNameStr{registerPathName};
-    const std::regex dummyInterruptRegex{DUMMY_INTERRUPT_REGISTER_NAME};
+    const static std::regex dummyInterruptRegex{DUMMY_INTERRUPT_REGISTER_NAME};
     std::smatch match;
     std::regex_search(regPathNameStr, match, dummyInterruptRegex);
 
