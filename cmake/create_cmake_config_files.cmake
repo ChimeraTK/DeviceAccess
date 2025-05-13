@@ -1,19 +1,11 @@
 # ######################################################################################################################
 # create_cmake_config_files.cmake
 #
-# Create the Find${PROJECT_NAME}.cmake cmake macro and the ${PROJECT_NAME}-config shell script and installs them.
+# Create the Find${PROJECT_NAME}.cmake cmake macro and the ${PROJECT_NAME}.pc package config and installs them.
 #
 # Expects the following input variables:
 # ${PROJECT_NAME}_SOVERSION - version of the .so library file (or just MAJOR.MINOR without the patch level)
 # ${PROJECT_NAME}_MEXFLAGS - (optional) mex compiler flags
-#
-# and only required, if project does not yet provide cmake-export:
-# ${PROJECT_NAME}_INCLUDE_DIRS - list include directories needed when compiling against this project
-# ${PROJECT_NAME}_LIBRARY_DIRS - list of library directories needed when linking against this project
-# ${PROJECT_NAME}_LIBRARIES - list of additional libraries needed when linking against this project. The library
-# provided by the project will be added automatically
-# ${PROJECT_NAME}_CXX_FLAGS - list of additional C++ compiler flags needed when compiling against this project
-# ${PROJECT_NAME}_LINKER_FLAGS - list of additional linker flags needed when linking against this project
 #
 # ######################################################################################################################
 
@@ -309,16 +301,9 @@ endif()
 configure_file(cmake/PROJECT_NAMEConfigVersion.cmake.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in" @ONLY)
 configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
 
-# create the shell script for standard make files
-configure_file(cmake/PROJECT_NAME-config.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
-
 # create the pkgconfig file
 configure_file(cmake/PROJECT_NAME.pc.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}.pc.in" @ONLY)
 configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}.pc.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" @ONLY)
-
-# install script for Makefiles
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config DESTINATION bin COMPONENT dev)
 
 # install configuration file for pkgconfig
 install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION share/pkgconfig COMPONENT dev)
