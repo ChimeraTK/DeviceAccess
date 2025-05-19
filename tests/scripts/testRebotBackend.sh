@@ -32,20 +32,20 @@ for PROTOCO_VERSION in 0 1; do
     sed -e "s|=5001|=$PORT|g" dummies.dmap > "$DMAP"
 
     # run the test now; mskrebot uses ip address of the server in the dmap file
-    ./testRebotBackend mskrebot "$DMAP" "$PORT"
+    ./testRebotBackend -- mskrebot "$DMAP" "$PORT"
     if [ $? -ne 0 ] ; then # The above test failed;
         echo "Testing backed using the IP addess with protocol version ${PROTOCO_VERSION} failed!"
         TEST_RESULT=$(( ( $TEST_RESULT  + 1 ) + ( ${PROTOCO_VERSION} *10 ) ))
     fi
 
     # mskrebot1 uses hostname of the server in the dmap file
-    ./testRebotBackend mskrebot1 "$DMAP" "$PORT"
+    ./testRebotBackend -- mskrebot1 "$DMAP" "$PORT"
     if [ $? -ne 0 ] ; then # The above test failed;
         echo "Testing backed using the hostname with protocol version ${PROTOCO_VERSION} failed!"
         TEST_RESULT=$(( ( $TEST_RESULT  + 2 ) + ( ${PROTOCO_VERSION} *10 ) ))
     fi
 
-    ./testRebotBackendCreation "$DMAP" "$PORT"
+    ./testRebotBackendCreation -- "$DMAP" "$PORT"
     if [ $? -ne 0 ] ; then # The above test failed;
         echo "Testing RebotBackend creation failed!"
         TEST_RESULT=$(( $TEST_RESULT  + 4 ))
