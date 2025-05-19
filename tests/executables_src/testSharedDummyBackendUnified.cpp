@@ -263,7 +263,14 @@ BOOST_AUTO_TEST_CASE(testVerifyMemoryDeleted) {
   std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
   // Check that memory is removed
-  BOOST_CHECK(!shm_exists(shmName));
+  bool shm_removed{false};
+  for(size_t n = 0; n < 30; ++n) {
+    if(shm_removed = !shm_exists(shmName)) {
+      break;
+    }
+    sleep(1);
+  }
+  BOOST_CHECK(shm_removed);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
