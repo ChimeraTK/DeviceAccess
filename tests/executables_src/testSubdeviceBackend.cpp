@@ -609,7 +609,7 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
   BOOST_CHECK_THROW(acc1.read(), ChimeraTK::logic_error);
   std::vector<int> vec = {1, 2, 3, 4, 5, 6};
 
-  accS = 1;
+  accS = 0;
   accS.write();
   done = false;
   t = std::thread([&] {
@@ -621,7 +621,6 @@ BOOST_AUTO_TEST_CASE(testAreaHandshake1) {
     acc3.write();
     done = true;
   });
-  usleep(10000);
   BOOST_CHECK(done == false);
   int countStatusResets = 0;
   // the dummyForAreaHandshake backend which we use for this test does not set back the status register. we do it
