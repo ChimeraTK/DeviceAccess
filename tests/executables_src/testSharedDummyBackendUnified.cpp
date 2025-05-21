@@ -9,12 +9,9 @@
 using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
-#include "Device.h"
 #include "DummyBackend.h"
-#include "DummyRegisterAccessor.h"
 #include "SharedDummyBackend.h"
 #include "sharedDummyHelpers.h"
-#include "TransferGroup.h"
 #include "UnifiedBackendTest.h"
 
 using namespace ChimeraTK;
@@ -58,7 +55,7 @@ struct HelperProcess {
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> triggerInterrupt;
   } mirrorRequest;
 
-  void requestMirroring(MirrorRequestType reqType, bool triggerDataInterrupt = false) {
+  void requestMirroring(MirrorRequestType reqType, bool triggerDataInterrupt = false) const {
     sharedDummy->open();
     // trigger mirror operation by helper thread and wait on completion
     mirrorRequest.triggerInterrupt->accessData(0) = triggerDataInterrupt ? 1 : 0;
@@ -76,7 +73,7 @@ struct HelperProcess {
     BOOST_CHECK(timeoutCnt >= 0);
   }
 
-  void start() {
+  static void start() {
     // start second accessing application in background
     BOOST_CHECK(!std::system("./testSharedDummyBackendUnifiedExt "
                              "--run_test=SharedDummyBackendUnifiedTestSuite/testRegisterAccessor > /dev/null"
@@ -87,8 +84,8 @@ struct HelperProcess {
         "FATAL: background application \'testSharedDummyBackendUnifiedExt\' not running!");
   }
   // request helper to stop gracefully - this includes a handshake waiting on it's termination
-  void stopGracefully() { requestMirroring(MirrorRequestType::stop); }
-  void kill() {
+  void stopGracefully() const { requestMirroring(MirrorRequestType::stop); }
+  static void kill() {
     auto ret = std::system("pidfile=./testSharedDummyBackendUnifiedExt.pid; if [ -f $pidfile ]; "
                            "then kill $(cat $pidfile); rm $pidfile; fi ");
     if(ret == -1) {
@@ -102,21 +99,29 @@ struct HelperProcess {
     mirrorRequest.updated.reset();
     mirrorRequest.triggerInterrupt.reset();
   }
-  ~HelperProcess() { kill(); }
+  ~HelperProcess() {
+    try {
+      kill();
+    }
+    catch(std::exception& e) {
+      // Try-catch to make the linter happy. We in the process of killing a global instance, so at the end of the test, anyway.
+      std::cerr << "Caught exception when killing helper process: " << e.what() << std::endl;
+    }
+  }
 } gHelperProcess;
 
 /**********************************************************************************************************************/
 
 template<typename Derived>
-struct Integers_base {
+struct IntegersBase {
   Derived* derived{static_cast<Derived*>(this)};
   ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
   size_t nChannels() { return 1; }
   size_t nElementsPerChannel() { return 1; }
   size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
   size_t nRuntimeErrorCases() { return 0; }
-  typedef int32_t minimumUserType;
-  typedef minimumUserType rawUserType;
+  using minimumUserType = int32_t;
+  using rawUserType = minimumUserType;
 
   static constexpr auto capabilities = TestCapabilities<>()
                                            .disableForceDataLossWrite()
@@ -184,33 +189,33 @@ struct Integers_base {
   void setForceRuntimeError(bool /*enable*/, size_t) {}
 };
 
-struct Integers_signed32 : public Integers_base<Integers_signed32> {
-  std::string path() { return "INTC_RW"; }
-  bool isWriteable() { return true; }
-  bool isReadable() { return true; }
+struct IntegersSigned32 : public IntegersBase<IntegersSigned32> {
+  static std::string path() { return "INTC_RW"; }
+  static bool isWriteable() { return true; }
+  static bool isReadable() { return true; }
 };
-struct Integers_signed32_RO : public Integers_base<Integers_signed32_RO> {
-  std::string path() { return "INTA_RO"; }
-  bool isWriteable() { return false; }
-  bool isReadable() { return true; }
+struct IntegersSigned32RO : public IntegersBase<IntegersSigned32RO> {
+  static std::string path() { return "INTA_RO"; }
+  static bool isWriteable() { return false; }
+  static bool isReadable() { return true; }
 };
-struct Integers_signed32_WO : public Integers_base<Integers_signed32_WO> {
-  std::string path() { return "INTB_WO"; }
-  bool isWriteable() { return true; }
-  bool isReadable() { return false; }
+struct IntegersSigned32WO : public IntegersBase<IntegersSigned32WO> {
+  static std::string path() { return "INTB_WO"; }
+  static bool isWriteable() { return true; }
+  static bool isReadable() { return false; }
 };
-struct Integers_signed32_DummyWritable : public Integers_base<Integers_signed32_DummyWritable> {
-  std::string path() { return "INTA_RO/DUMMY_WRITEABLE"; }
-  bool isWriteable() { return true; }
-  bool isReadable() { return true; }
+struct IntegersSigned32DummyWritable : public IntegersBase<IntegersSigned32DummyWritable> {
+  static std::string path() { return "INTA_RO/DUMMY_WRITEABLE"; }
+  static bool isWriteable() { return true; }
+  static bool isReadable() { return true; }
 };
 
-struct Integers_signed32_async : public Integers_base<Integers_signed32_async> {
+struct IntegersSigned32Async : public IntegersBase<IntegersSigned32Async> {
   static int value;
-  std::string path() { return "INTD_ASYNC"; }
-  bool isWriteable() { return false; }
-  bool isReadable() { return true; }
-  ChimeraTK::AccessModeFlags supportedFlags() {
+  static std::string path() { return "INTD_ASYNC"; }
+  static bool isWriteable() { return false; }
+  static bool isReadable() { return true; }
+  static ChimeraTK::AccessModeFlags supportedFlags() {
     return {ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
   }
 
@@ -228,30 +233,30 @@ struct Integers_signed32_async : public Integers_base<Integers_signed32_async> {
   }
 };
 
-int Integers_signed32_async::value = 12;
+int IntegersSigned32Async::value = 12;
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
-  gHelperProcess.start();
+BOOST_AUTO_TEST_CASE(TestRegisterAccessor) {
+  SharedDummyBackendUnifiedTestSuite::HelperProcess::start();
 
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
-      .addRegister<Integers_signed32>()
-      .addRegister<Integers_signed32_RO>()
-      .addRegister<Integers_signed32_WO>()
-      .addRegister<Integers_signed32_DummyWritable>()
-      .addRegister<Integers_signed32_async>()
+      .addRegister<IntegersSigned32>()
+      .addRegister<IntegersSigned32RO>()
+      .addRegister<IntegersSigned32WO>()
+      .addRegister<IntegersSigned32DummyWritable>()
+      .addRegister<IntegersSigned32Async>()
       .runTests(cdd);
 
-  gHelperProcess.kill();
+  SharedDummyBackendUnifiedTestSuite::HelperProcess::kill();
 }
 
 /**
  * Checks that shared memory has been removed, after all backend instances (including background process) are gone
  */
-BOOST_AUTO_TEST_CASE(testVerifyMemoryDeleted) {
-  gHelperProcess.start();
+BOOST_AUTO_TEST_CASE(TestVerifyMemoryDeleted) {
+  SharedDummyBackendUnifiedTestSuite::HelperProcess::start();
   gHelperProcess.stopGracefully();
   gHelperProcess.reset();
 
