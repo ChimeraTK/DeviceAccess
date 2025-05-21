@@ -265,7 +265,8 @@ BOOST_AUTO_TEST_CASE(testVerifyMemoryDeleted) {
   // Check that memory is removed
   bool shm_removed{false};
   for(size_t n = 0; n < 30; ++n) {
-    if(shm_removed = !shm_exists(shmName)) {
+    shm_removed = !shm_exists(shmName);
+    if(shm_removed) {
       break;
     }
     sleep(1);
