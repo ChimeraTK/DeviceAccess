@@ -1,4 +1,13 @@
 # First check for python executable
+if(Python_EXECUTABLE)
+    set(PYTHON_EXECUTABLE ${Python_EXECUTABLE})
+endif()
+
+if(Python3_EXECUTABLE)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+endif()
+
+
 if(NOT PYTHON_EXECUTABLE)
   find_program(PYTHON_EXECUTABLE python)
   if(NOT PYTHON_EXECUTABLE)
