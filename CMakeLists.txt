@@ -18,6 +18,7 @@ include(cmake/set_default_build_to_release.cmake)
 # modifies ${PROJECT_NAME}_CXX_FLAGS
 include(cmake/set_default_flags.cmake)
 include(cmake/enable_code_coverage_report.cmake)
+include(cmake/add_linter_target.cmake)
 
 include(cmake/CheckFileOffsetBits.cmake)
 CHECK_FILE_OFFSET_BITS()
