@@ -28,7 +28,7 @@ namespace ChimeraTK {
       flags.checkForUnknownFlags({AccessMode::raw});
       // check for illegal parameter combinations
       if(flags.has(AccessMode::raw)) {
-        throw ChimeraTK::logic_error("LNMBackendBitAccessor: raw access not supported!");
+        throw ChimeraTK::logic_error("LNMBackendBitAccessor: raw access not supported: " + registerPathName);
       }
       _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
       // copy the register info and create the internal accessors, if needed
@@ -40,7 +40,7 @@ namespace ChimeraTK {
                                                                                              // (impossible to test...)
       }
       if(wordOffsetInRegister != 0) {
-        throw ChimeraTK::logic_error("LNMBackendBitAccessors cannot have a word offset.");
+        throw ChimeraTK::logic_error("LNMBackendBitAccessors cannot have a word offset: " + registerPathName);
       }
       if(numberOfWords > 1) {
         throw ChimeraTK::logic_error("LNMBackendBitAccessors must have size 1, but " + registerPathName + " has size " +
@@ -73,7 +73,8 @@ namespace ChimeraTK {
         if(it == map.end() || (_accessor = map[key].accessor.lock()) == nullptr) {
           _accessor = targetDevice->getRegisterAccessor<uint64_t>(key.second, numberOfWords, wordOffsetInRegister, {});
           if(_accessor->getNumberOfSamples() != 1) {
-            throw ChimeraTK::logic_error("LNMBackendBitAccessors only work with registers of size 1");
+            throw ChimeraTK::logic_error(
+                "LNMBackendBitAccessors only work with target registers of size 1: " + registerPathName);
           }
           map[key].accessor = _accessor;
         }
