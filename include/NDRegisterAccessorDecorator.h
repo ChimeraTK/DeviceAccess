@@ -416,7 +416,7 @@ namespace ChimeraTK {
     _target->interrupt();
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, typename TargetUserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorDecorator<UserType, TargetUserType>::

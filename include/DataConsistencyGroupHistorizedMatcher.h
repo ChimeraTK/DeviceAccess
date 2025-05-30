@@ -99,7 +99,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     TransferElementID _updateCalled; // only for checking usage
   };
 
-  /*************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   std::vector<std::vector<UserType>>& HistorizedMatcher::getMatchingBuffer(TransferElementID id) {
@@ -113,7 +113,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     return getUserBuffer<UserType>(id);
   }
 
-  /*************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   std::vector<std::vector<UserType>>& HistorizedMatcher::getUserBuffer(TransferElementID transferElementID) {
@@ -126,6 +126,6 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     return acc0->accessChannels();
   }
 
-  /*************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK::DataConsistencyGroupDetail

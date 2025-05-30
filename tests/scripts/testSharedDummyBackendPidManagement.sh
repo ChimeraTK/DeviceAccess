@@ -125,7 +125,7 @@
 
 
 
-    ###### Test removal of processes, which were terminated but still have an entry in the PID list. #####
+    ####################################################################################################################
     printf "\n#####Test removal of dead processes from the PID list on construction.\n"
 
     # Start process writing some values, kill it
