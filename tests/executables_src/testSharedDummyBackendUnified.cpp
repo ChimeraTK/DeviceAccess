@@ -24,6 +24,9 @@ BOOST_AUTO_TEST_SUITE(SharedDummyBackendUnifiedTestSuite)
 //  Use hardcoded information from the dmap-file
 static std::string instanceId{"1"};
 static std::string mapFileName{"sharedDummyUnified.map"};
+static std::size_t instanceIdHash = Utilities::shmDummyInstanceIdHash(instanceId, {{"map", mapFileName}});
+static std::string shmName{Utilities::createShmName(instanceIdHash, mapFileName, getUserName())};
+
 static std::string cdd(std::string("(sharedMemoryDummy:") + instanceId + "?map=" + mapFileName + ")");
 static boost::shared_ptr<SharedDummyBackend> sharedDummy;
 const int timeOutForWaitOnHelperProcess_ms = 20000;
@@ -263,9 +266,6 @@ BOOST_AUTO_TEST_CASE(TestVerifyMemoryDeleted) {
   // also clear our backend instance. This should also remove allocated SHM segments and semaphores
   // - note, this only works if the global instance map uses weak pointers
   sharedDummy.reset();
-
-  boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
-  std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
   // Check that memory is removed
   bool shm_removed{false};

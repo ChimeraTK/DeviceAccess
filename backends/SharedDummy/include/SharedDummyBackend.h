@@ -46,8 +46,8 @@ namespace ChimeraTK {
    */
   class SharedDummyBackend : public DummyBackendBase {
    public:
-    SharedDummyBackend(const std::string& instanceId, const std::string& mapFileName,
-        const std::string& dataConsistencyKeyDescriptor = "");
+    SharedDummyBackend(
+        size_t instanceIdHash, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor = "");
     ~SharedDummyBackend() override;
 
     void open() override;
@@ -87,7 +87,7 @@ namespace ChimeraTK {
       friend class SharedDummyBackend;
 
      public:
-      SharedMemoryManager(SharedDummyBackend&, const std::string&, const std::string&);
+      SharedMemoryManager(SharedDummyBackend&, std::size_t instanceIdHash, const std::string&);
       ~SharedMemoryManager();
 
       /**
@@ -113,11 +113,6 @@ namespace ChimeraTK {
       const char* SHARED_MEMORY_REQUIRED_VERSION_NAME = "RequiredVersion";
 
       SharedDummyBackend& sharedDummyBackend;
-
-      // Hashes to assure match of shared memory accessing processes
-      std::string userHash;
-      std::string mapFileHash;
-      std::string instanceIdHash;
 
       // the name of the segment
       std::string name;

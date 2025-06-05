@@ -12,15 +12,6 @@
 
 enum class MirrorRequestType : int { from = 1, to, stop };
 
-// Static helper functions
-std::string createExpectedShmName(std::string instanceId_, std::string mapFileName_, std::string userName) {
-  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName_))};
-  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId_))};
-  std::string userHash{std::to_string(std::hash<std::string>{}(userName))};
-
-  return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
-}
-
 bool shm_exists(std::string shmName) {
   bool result;
 

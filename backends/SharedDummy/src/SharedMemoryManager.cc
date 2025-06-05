@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "SharedDummyBackend.h"
+#include "Utilities.h"
 
 namespace ChimeraTK {
 
@@ -43,11 +44,8 @@ namespace ChimeraTK {
 
   // Construct/deconstruct
   SharedDummyBackend::SharedMemoryManager::SharedMemoryManager(
-      SharedDummyBackend& sharedDummyBackend_, const std::string& instanceId, const std::string& mapFileName)
-  : sharedDummyBackend(sharedDummyBackend_), userHash(std::to_string(std::hash<std::string>{}(getUserName()))),
-    mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName))),
-    instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId))),
-    name("ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash),
+      SharedDummyBackend& sharedDummyBackend_, std::size_t instanceIdHash, const std::string& mapFileName)
+  : sharedDummyBackend(sharedDummyBackend_), name(Utilities::createShmName(instanceIdHash, mapFileName, getUserName())),
     segment(boost::interprocess::open_or_create, name.c_str(), getRequiredMemoryWithOverhead()),
     sharedMemoryIntAllocator(segment.get_segment_manager()),
     interprocessMutex(boost::interprocess::open_or_create, name.c_str()) {

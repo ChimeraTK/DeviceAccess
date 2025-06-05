@@ -64,6 +64,14 @@ namespace ChimeraTK {
      * name for dummies) */
     Sdm parseDeviceString(const std::string& deviceString);
 
+    /** Generates shm dummy instanceId hash from address and parameter map,
+     *  Intended for use with parseDeviceDesciptor return value. */
+    std::size_t shmDummyInstanceIdHash(
+        const std::string& address, const std::map<std::string, std::string>& parameters);
+
+    /** Generates shm dummy name from parameter hashes */
+    std::string createShmName(std::size_t instanceIdHash, const std::string& mapFileName, const std::string& userName);
+
     /** Check wehter the given string seems to be an SDM. There is no guarantee
      * that the SDM is well-formed, the finction just looks for the signatore of
      * an SDM. */

@@ -14,9 +14,7 @@
 
 #include <unistd.h>
 
-#include <algorithm>
 #include <string>
-#include <thread>
 
 namespace {
 
@@ -24,10 +22,10 @@ namespace {
   using namespace boost::unit_test_framework;
 
   // Static variables
-  //  Use hardcoded information from the dmap-file to
-  //  only use public interface here
-  static std::string instanceId{"1"};
-  static std::string mapFileName{"sharedDummyUnified.map"};
+  //  Use hardcoded information from sharedDummyUnified.dmap to only use public interface here.
+  std::string mapFileName{"sharedDummyUnified.map"};
+  std::size_t instanceIdHash = Utilities::shmDummyInstanceIdHash("1", {{"map", mapFileName}});
+  std::string shmName{Utilities::createShmName(instanceIdHash, mapFileName, getUserName())};
 
   BOOST_AUTO_TEST_SUITE(SharedDummyBackendUnifiedTestSuite)
 
@@ -59,9 +57,6 @@ namespace {
     bool keepRunning = true;
 
     setDMapFilePath("sharedDummyUnified.dmap");
-
-    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
-    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
     {
       Device dev;
