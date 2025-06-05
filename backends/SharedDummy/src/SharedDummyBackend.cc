@@ -7,6 +7,7 @@
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "parserUtilities.h"
+#include "Utilities.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -20,20 +21,17 @@
 namespace ChimeraTK {
 
   SharedDummyBackend::SharedDummyBackend(
-      const std::string& instanceId, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+      size_t instanceIdHash, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
   : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName),
     _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()) {
   retry:
     try {
-      sharedMemoryManager = std::make_unique<SharedMemoryManager>(*this, instanceId, mapFileName);
+      sharedMemoryManager = std::make_unique<SharedMemoryManager>(*this, instanceIdHash, mapFileName);
     }
     catch(boost::interprocess::lock_exception&) {
       std::cerr << "SharedDummyBackend: boost::interprocess error, clearing shared memory segment." << std::endl;
       // remove shared memory and mutex
-      std::string userHash(std::to_string(std::hash<std::string>{}(getUserName())));
-      std::string mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName)));
-      std::string instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId)));
-      std::string name("ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash);
+      std::string name = Utilities::createShmName(instanceIdHash, mapFileName, getUserName());
       boost::interprocess::shared_memory_object::remove(name.c_str());
       boost::interprocess::named_mutex::remove(name.c_str());
       goto retry;
@@ -130,6 +128,13 @@ namespace ChimeraTK {
 
   boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(
       std::string address, std::map<std::string, std::string> parameters) {
+    // create instanceId from address and parameters.
+    // note, this approach is not perfect: in case two different device URIs are created by reordering their parameters
+    // and URIs are used from same process, the BackendFactory will create two SharedDummyBackend instances (since it uses
+    // the URI string as a key). The order of parameters is lost in the parameters map, so we will here assume the same
+    // instanceIdHash. That will lead further down to some error, since we will try to access the same shared memory segment
+    // twice in the same process.
+    size_t instanceIdHash = Utilities::shmDummyInstanceIdHash(address, parameters);
     std::string mapFileName = parameters["map"];
     if(mapFileName.empty()) {
       throw ChimeraTK::logic_error("No map file name given.");
@@ -140,7 +145,7 @@ namespace ChimeraTK {
     // mapFile path to an absolute path avoids issues when the dmap file is not
     // in the working directory of the application.
     return returnInstance<SharedDummyBackend>(
-        address, address, convertPathRelativeToDmapToAbs(mapFileName), parameters["DataConsistencyKeys"]);
+        address, instanceIdHash, convertPathRelativeToDmapToAbs(mapFileName), parameters["DataConsistencyKeys"]);
   }
 
   std::string SharedDummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {

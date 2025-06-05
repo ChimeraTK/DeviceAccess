@@ -20,7 +20,6 @@
 #include <cstdlib>
 #include <string>
 #include <thread>
-#include <utility>
 #include <vector>
 
 namespace {
@@ -32,12 +31,12 @@ namespace {
   static void interrupt_handler(int);
 
   // Static variables
-  //  Use hardcoded information from the dmap-file to
-  //  only use public interface here
-  static std::string instanceId{"1"};
-  static std::string mapFileName{"shareddummy.map"};
+  //  Use hardcoded information from the shareddummyTest.dmap to only use public interface here.
+  std::string mapFileName{"shareddummy.map"};
+  std::size_t instanceIdHash = Utilities::shmDummyInstanceIdHash("1", {{"map", mapFileName}});
+  std::string shmName{Utilities::createShmName(instanceIdHash, mapFileName, getUserName())};
 
-  static bool terminationCaught = false;
+  bool terminationCaught = false;
 
   BOOST_AUTO_TEST_SUITE(SharedDummyBackendTestSuite)
 
@@ -143,10 +142,6 @@ namespace {
     }
 
     setDMapFilePath("shareddummyTest.dmap");
-
-    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
-
-    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
     {
       Device dev;
@@ -254,10 +249,6 @@ namespace {
    */
   BOOST_AUTO_TEST_CASE(testVerifyMemoryDeleted) {
     setDMapFilePath("shareddummyTest.dmap");
-
-    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
-
-    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string(), getUserName())};
 
     // Test if memory is removed
     BOOST_CHECK(!shm_exists(shmName));

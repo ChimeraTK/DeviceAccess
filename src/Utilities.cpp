@@ -8,6 +8,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cxxabi.h>
 #include <execinfo.h>
@@ -346,6 +347,31 @@ namespace ChimeraTK {
       std::string functionName = boost::core::demangle(msg.substr(a + 1, b - a - 1).c_str());
       std::cout << "[bt] #" << i << " " << functionName << std::endl;
     }
+  }
+
+/********************************************************************************************************************/
+
+  std::size_t Utilities::shmDummyInstanceIdHash(
+      const std::string& address, const std::map<std::string, std::string>& parameters) {
+    // To find hash, concatenate in ordered way, address and parameters
+    std::string str = address;
+    for(const auto& e : parameters) {
+      str += e.first + "=" + e.second + ";";
+    }
+    return std::hash<std::string>{}(str);
+  }
+
+/********************************************************************************************************************/
+
+  std::string Utilities::createShmName(
+      std::size_t instanceIdHash, const std::string& mapFileName, const std::string& userName) {
+    // always use absolute mapFileName
+    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
+
+    std::string mapFileHash{std::to_string(std::hash<std::string>{}(absPathToMapFile.string()))};
+    std::string userHash{std::to_string(std::hash<std::string>{}(userName))};
+
+    return "ChimeraTK_SharedDummy_" + std::to_string(instanceIdHash) + "_" + mapFileHash + "_" + userHash;
   }
 
   /********************************************************************************************************************/
