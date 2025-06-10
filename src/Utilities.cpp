@@ -349,7 +349,7 @@ namespace ChimeraTK {
     }
   }
 
-/********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::size_t Utilities::shmDummyInstanceIdHash(
       const std::string& address, const std::map<std::string, std::string>& parameters) {
@@ -361,7 +361,7 @@ namespace ChimeraTK {
     return std::hash<std::string>{}(str);
   }
 
-/********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::string Utilities::createShmName(
       std::size_t instanceIdHash, const std::string& mapFileName, const std::string& userName) {

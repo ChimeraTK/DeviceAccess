@@ -130,10 +130,10 @@ namespace ChimeraTK {
       std::string address, std::map<std::string, std::string> parameters) {
     // create instanceId from address and parameters.
     // note, this approach is not perfect: in case two different device URIs are created by reordering their parameters
-    // and URIs are used from same process, the BackendFactory will create two SharedDummyBackend instances (since it uses
-    // the URI string as a key). The order of parameters is lost in the parameters map, so we will here assume the same
-    // instanceIdHash. That will lead further down to some error, since we will try to access the same shared memory segment
-    // twice in the same process.
+    // and URIs are used from same process, the BackendFactory will create two SharedDummyBackend instances (since it
+    // uses the URI string as a key). The order of parameters is lost in the parameters map, so we will here assume the
+    // same instanceIdHash. That will lead further down to some error, since we will try to access the same shared
+    // memory segment twice in the same process.
     size_t instanceIdHash = Utilities::shmDummyInstanceIdHash(address, parameters);
     std::string mapFileName = parameters["map"];
     if(mapFileName.empty()) {
