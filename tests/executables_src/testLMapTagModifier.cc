@@ -8,6 +8,7 @@
 using namespace boost::unit_test_framework;
 
 #include "Device.h"
+#include "SystemTags.h"
 
 #include <iostream>
 
@@ -91,4 +92,20 @@ BOOST_AUTO_TEST_CASE(testRemove) {
 
   std::set<std::string> reference = {"main", "test"};
   BOOST_TEST(info.getTags() == reference, boost::test_tools::per_element());
+}
+
+BOOST_AUTO_TEST_CASE(testConvenienceTags) {
+  std::cout << "testConveniencePlugins" << std::endl;
+
+  ChimeraTK::Device device;
+
+  device.open("(logicalNameMap?map=tagModifierPlugin.xlmap)");
+  auto cat = device.getRegisterCatalogue();
+  auto baseInfo = cat.getRegister("convenienceReverse");
+  auto baseTagsReference = std::set<std::string>({ChimeraTK::SystemTags::reverseRecovery});
+  BOOST_TEST(baseInfo.getTags() == baseTagsReference, boost::test_tools::per_element());
+
+  baseInfo = cat.getRegister("convenienceStatusOutput");
+  baseTagsReference = std::set<std::string>({ChimeraTK::SystemTags::statusOutput});
+  BOOST_TEST(baseInfo.getTags() == baseTagsReference, boost::test_tools::per_element());
 }

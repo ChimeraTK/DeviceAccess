@@ -4,6 +4,7 @@
 #include "Exception.h"
 #include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
+#include "SystemTags.h"
 
 #include <regex>
 
@@ -49,4 +50,5 @@ namespace ChimeraTK::LNMBackend {
       _info.tags = _tagsToSet;
     }
   }
+
 } // namespace ChimeraTK::LNMBackend
