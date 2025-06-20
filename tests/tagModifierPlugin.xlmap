@@ -48,4 +48,16 @@
     </plugin>
   </redirectedRegister>
 
+  <redirectedRegister name="convenienceReverse">
+    <targetDevice>this</targetDevice>
+    <targetRegister>plain</targetRegister>
+    <plugin name="hasReverseRecovery" />
+  </redirectedRegister>
+
+  <redirectedRegister name="convenienceStatusOutput">
+    <targetDevice>this</targetDevice>
+    <targetRegister>plain</targetRegister>
+    <plugin name="isStatusOutput" />
+  </redirectedRegister>
+
 </logicalNameMap>

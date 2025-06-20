@@ -4,6 +4,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "LNMDoubleBufferPlugin.h"
 #include "LNMMathPlugin.h"
+#include "SystemTags.h"
 
 #include <boost/make_shared.hpp>
 
@@ -39,6 +40,14 @@ namespace ChimeraTK::LNMBackend {
     }
     if(name == "tagModifier") {
       return boost::make_shared<TagModifierPlugin>(info, pluginIndex, parameters);
+    }
+    if(name == "isStatusOutput") {
+      return boost::make_shared<FixedTagModifierPlugin<ChimeraTK::SystemTags::statusOutput>>(
+          info, pluginIndex, parameters);
+    }
+    if(name == "hasReverseRecovery") {
+      return boost::make_shared<FixedTagModifierPlugin<ChimeraTK::SystemTags::reverseRecovery>>(
+          info, pluginIndex, parameters);
     }
     throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
   }

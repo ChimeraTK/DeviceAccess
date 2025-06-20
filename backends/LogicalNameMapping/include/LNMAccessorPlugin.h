@@ -277,6 +277,18 @@ namespace ChimeraTK::LNMBackend {
     std::set<std::string> _tagsToSet;
   };
 
+  template<auto Tag>
+  class FixedTagModifierPlugin : public TagModifierPlugin {
+   public:
+    FixedTagModifierPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex,
+        [[maybe_unused]] const std::map<std::string, std::string>& parameters)
+    : TagModifierPlugin(info, pluginIndex, {{"add", Tag}}) {}
+
+    using TagModifierPlugin::doRegisterInfoUpdate;
+  };
+
+  /********************************************************************************************************************/
+
   /********************************************************************************************************************/
   /* Implementations follow here                                                                                      */
   /********************************************************************************************************************/

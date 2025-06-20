@@ -17,13 +17,15 @@ namespace ChimeraTK {
    */
   struct SystemTags {
     /// Used to mark something as aggregable by ApplicationCore's status aggregator.
-    static constexpr auto statusOutput{"_ChimeraTK_StatusOutput_statusOutput"};
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+    static constexpr char statusOutput[]{"_ChimeraTK_StatusOutput_statusOutput"};
 
     /**
      * Used to flag a register as "reverse recovery". ApplicationCore can use this
      * information to not write into this register on device recovery, but pull the
      * latest value from it instead. Can also be used on write-only registers.
      */
-    static constexpr auto reverseRecovery{"_ChimeraTK_DeviceRegister_reverseRecovery"};
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+    static constexpr char reverseRecovery[]{"_ChimeraTK_DeviceRegister_reverseRecovery"};
   };
 } // namespace ChimeraTK

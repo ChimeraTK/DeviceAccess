@@ -85,6 +85,16 @@ Example with most features:
         <parameter name="set">status-output</parameter>
       </plugin>
     </redirectRegister>
+    <redirectedRegister name="StatusOutput">
+      <targetDevice>PCIE2</targetDevice>
+      <targetRegister>BOARD.WORD_STATUS</targetRegister>
+      <plugin name="isStatusOutput" />
+    </redirectedRegister>
+    <redirectedRegister name="PositionSetpoint">
+      <targetDevice>PCIE2</targetDevice>
+      <targetRegister>BOARD.POSITION_SETPOINT</targetRegister>
+      <plugin name="hasReverseRecovery" />
+    </redirectedRegister>
 </logicalNameMap>
 \endcode
 
@@ -327,4 +337,13 @@ Notes:
 - The plugin accepts either <code>add</code> and <code>remove</code> or <code>set</code>, but not a mix.
 - The order of application is first <code>add</code>, then <code>remove</code>.
 - See ChimeraTK::SystemTags for a list of pre-defined tags.
+
+\subsection plugins_reference_is_status_output isStatusOutput
+
+<code>isStatusOutput</code> is a plugin that will mark a register as being compatible with the StatusOutput expectations from ApplicationCore.
+
+\subsection plugins_reference_is_reverse_recovery hasReverseRecovery
+
+<code>hasReverseRecovery</code> is a plugin that will mark a register as not being written to on device start-up,
+ and potentially will be read instead.
 */
