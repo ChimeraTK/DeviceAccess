@@ -1177,6 +1177,54 @@ struct Reg9BitsInChar : RegBitRangeDescriptor<Reg9BitsInChar> {
   BitRangeAccessorTarget target;
 };
 
+/// Test for fanOut plugin - define 3 registers to check, one for each target of the fan out
+struct RegWithFanOutMainTarget : ScalarRegisterDescriptorBase<RegWithFanOutMainTarget> {
+  static std::string path() { return "/WithFanOut"; }
+  static bool isWriteable() { return true; }
+  static bool isReadable() { return false; }
+  static bool isPush() { return false; }
+  static ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  static constexpr auto capabilities = RegWithFanOutMainTarget::capabilities.disableTestRawTransfer();
+
+  const uint32_t increment = 17;
+
+  using minimumUserType = uint32_t;
+  using rawUserType = int32_t;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC/WORD_CLK_MUX_0"};
+};
+
+/// Test for fanOut plugin - define 3 registers to check, one for each target of the fan out
+struct RegWithFanOutTarget2 : ScalarRegisterDescriptorBase<RegWithFanOutTarget2> {
+  static std::string path() { return "/WithFanOut"; }
+  static bool isWriteable() { return true; }
+  static bool isReadable() { return false; }
+  static bool isPush() { return false; }
+  static ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  static constexpr auto capabilities = RegWithFanOutMainTarget::capabilities.disableTestRawTransfer();
+
+  const uint32_t increment = 13;
+
+  using minimumUserType = uint32_t;
+  using rawUserType = int32_t;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC/WORD_CLK_MUX_1"};
+};
+
+/// Test for fanOut plugin - define 3 registers to check, one for each target of the fan out
+struct RegWithFanOutTarget3 : ScalarRegisterDescriptorBase<RegWithFanOutTarget3> {
+  static std::string path() { return "/WithFanOut"; }
+  static bool isWriteable() { return true; }
+  static bool isReadable() { return false; }
+  static bool isPush() { return false; }
+  static ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  static constexpr auto capabilities = RegWithFanOutMainTarget::capabilities.disableTestRawTransfer();
+
+  const uint32_t increment = 19;
+
+  using minimumUserType = uint32_t;
+  using rawUserType = int32_t;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyLikeMtcadummy.get(), "", "/ADC/WORD_CLK_MUX_2"};
+};
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
@@ -1236,6 +1284,9 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegLowerHalfOfFirmware>()
       .addRegister<RegUpperHalfOfFirmware>()
       .addRegister<Reg9BitsInChar>()
+      .addRegister<RegWithFanOutMainTarget>()
+      .addRegister<RegWithFanOutTarget2>()
+      .addRegister<RegWithFanOutTarget3>()
       .runTests(lmapCdd);
 }
 

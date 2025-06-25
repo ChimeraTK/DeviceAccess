@@ -346,4 +346,9 @@ Notes:
 
 <code>hasReverseRecovery</code> is a plugin that will mark a register as not being written to on device start-up,
  and potentially will be read instead.
+
+\subsection plugins_reference_fanout fanOut
+
+<code>fanOut</code> is a plugin that allows writing to multiple target registers in a single write operation. Any parameter starting with "target" will be taken as a register name for an additional target register (within the same logical name mapping device). All write operations to the main register will be directed to the main register itself as well as all specified targets.
+
 */

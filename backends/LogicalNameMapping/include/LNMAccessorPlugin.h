@@ -287,6 +287,22 @@ namespace ChimeraTK::LNMBackend {
     using TagModifierPlugin::doRegisterInfoUpdate;
   };
 
+  class FanOutPlugin : public AccessorPlugin<FanOutPlugin> {
+   public:
+    FanOutPlugin(
+        const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters);
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
+
+    void doRegisterInfoUpdate() override;
+
+   private:
+    std::list<std::string> _targets;
+  };
+
   /********************************************************************************************************************/
 
   /********************************************************************************************************************/

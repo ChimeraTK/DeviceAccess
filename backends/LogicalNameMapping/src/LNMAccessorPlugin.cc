@@ -49,6 +49,9 @@ namespace ChimeraTK::LNMBackend {
       return boost::make_shared<FixedTagModifierPlugin<ChimeraTK::SystemTags::reverseRecovery>>(
           info, pluginIndex, parameters);
     }
+    if(name == "fanOut") {
+      return boost::make_shared<FanOutPlugin>(info, pluginIndex, parameters);
+    }
     throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
   }
 
