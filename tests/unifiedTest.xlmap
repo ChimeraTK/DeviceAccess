@@ -237,9 +237,29 @@
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>BOARD/WORD_FIRMWARE</targetRegister>
       <plugin name ="bitRange">
-      <parameter name="shift">4</parameter>
-      <parameter name="numberOfBits">8</parameter>
+        <parameter name="shift">4</parameter>
+        <parameter name="numberOfBits">8</parameter>
         <parameter name="signed">true</parameter>
       </plugin>
     </redirectedRegister>
+
+    <redirectedRegister name="WithFanOut">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>ADC/WORD_CLK_MUX_0</targetRegister>
+      <plugin name ="fanOut">
+        <parameter name="target2">/WithFanOut_target2</parameter>
+        <parameter name="targetYetAnother">/withFanOut_yetAnotherTarget</parameter>
+      </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="WithFanOut_target2">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>ADC/WORD_CLK_MUX_1</targetRegister>
+    </redirectedRegister>
+
+    <redirectedRegister name="withFanOut_yetAnotherTarget">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>ADC/WORD_CLK_MUX_2</targetRegister>
+    </redirectedRegister>
+
 </logicalNameMap>
