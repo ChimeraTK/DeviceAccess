@@ -367,14 +367,17 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("This notification has already been accepted.");
     }
     this->accepted = true;
+    bool hasSeenException = false;
     try {
       _owner->push_elements[index].getHighLevelImplElement()->_readQueue.pop_wait();
     }
     catch(ChimeraTK::runtime_error&) {
       _owner->push_elements[index].getHighLevelImplElement()->_activeException = std::current_exception();
+      hasSeenException = true;
     }
     catch(boost::thread_interrupted&) {
       _owner->push_elements[index].getHighLevelImplElement()->_activeException = std::current_exception();
+      hasSeenException = true;
     }
     catch(detail::DiscardValueException&) {
       // we must not call postRead() in this case, hence we do not call preRead()
@@ -382,7 +385,7 @@ namespace ChimeraTK {
       return false;
     }
     _owner->_lastOperationIndex = index;
-    _owner->push_elements[index].getHighLevelImplElement()->postRead(TransferType::read, true);
+    _owner->push_elements[index].getHighLevelImplElement()->postRead(TransferType::read, !hasSeenException);
     return true;
   }
 
