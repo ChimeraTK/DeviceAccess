@@ -685,6 +685,7 @@ BOOST_AUTO_TEST_CASE(testReadAnyException) {
   // ChimeraTK::runtime_error
   {
     auto nPostReadCalledReference = a1_casted->nPostReadCalled;
+    auto versionNumReference = a1.getVersionNumber();
 
     // launch the readAny in a background thread
     bool exceptionFound{false};
@@ -707,11 +708,13 @@ BOOST_AUTO_TEST_CASE(testReadAnyException) {
     thread.join();
     BOOST_TEST(exceptionFound == true);
     BOOST_TEST(a1_casted->nPostReadCalled == nPostReadCalledReference + 1);
+    BOOST_TEST(a1.getVersionNumber() == versionNumReference);
   }
 
   // boost::thread_interrupted
   {
     auto nPostReadCalledReference = a1_casted->nPostReadCalled;
+    auto versionNumReference = a1.getVersionNumber();
 
     // launch the readAny in a background thread
     bool exceptionFound{false};
@@ -731,6 +734,7 @@ BOOST_AUTO_TEST_CASE(testReadAnyException) {
     thread.join();
     BOOST_TEST(exceptionFound == true);
     BOOST_TEST(a1_casted->nPostReadCalled == nPostReadCalledReference + 1);
+    BOOST_TEST(a1.getVersionNumber() == versionNumReference);
   }
 
   device.close();
