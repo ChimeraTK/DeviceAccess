@@ -13,7 +13,7 @@ namespace ChimeraTK {
   /**
    * Accessor class to read and write 2D registers.
    */
-  template<class UserType>
+  template<user_type UserType>
   class TwoDRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
    public:
     /** Do not use this constructor directly. Instead call Device::getTwoDRegisterAccessor(). */
@@ -65,7 +65,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
-  template<class UserType>
+  template<user_type UserType>
   TwoDRegisterAccessor<UserType>::TwoDRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> _accessor)
   : NDRegisterAccessorAbstractor<UserType>(_accessor) {
     static_assert(!std::is_same<UserType, Void>::value,
@@ -74,7 +74,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
+  template<user_type UserType>
   TwoDRegisterAccessor<UserType>::TwoDRegisterAccessor() {
     static_assert(!std::is_same<UserType, Void>::value,
         "You cannot create TwoDRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
@@ -82,7 +82,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
+  template<user_type UserType>
   TwoDRegisterAccessor<UserType>& TwoDRegisterAccessor<UserType>::operator=(
       const std::vector<std::vector<UserType>>& other) {
     get()->accessChannels() = other;
@@ -91,7 +91,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   COOKED_TYPE TwoDRegisterAccessor<UserType>::getAsCooked(unsigned int channel, unsigned int sample) const {
     return get()->template getAsCooked<COOKED_TYPE>(channel, sample);
@@ -99,7 +99,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<class UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   void TwoDRegisterAccessor<UserType>::setAsCooked(unsigned int channel, unsigned int sample, COOKED_TYPE value) {
     return get()->template setAsCooked<COOKED_TYPE>(channel, sample, value);

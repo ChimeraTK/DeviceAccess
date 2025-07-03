@@ -7,12 +7,13 @@
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <algorithm>
-#include <iterator>
+#include <concepts>
 #include <sstream>
 #include <utility>
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   /**
@@ -88,6 +89,19 @@ namespace ChimeraTK {
     return os;
   }
 
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  /**
+   * Concept requiring a type to be one of the supported ChimeraTK UserTypes.
+   */
+  template<typename T>
+  concept user_type = std::same_as<T, int8_t> || std::same_as<T, uint8_t> || std::same_as<T, int16_t> ||
+      std::same_as<T, uint16_t> || std::same_as<T, int32_t> || std::same_as<T, uint32_t> || std::same_as<T, int64_t> ||
+      std::same_as<T, uint64_t> || std::same_as<T, float> || std::same_as<T, double> || std::same_as<T, std::string> ||
+      std::same_as<T, ChimeraTK::Boolean> || std::same_as<T, ChimeraTK::Void>;
+
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
   /** Helper classes for the conversion functions below */
   namespace detail {
@@ -586,6 +600,9 @@ namespace ChimeraTK {
   template class TemplateClass<double, __VA_ARGS__>;                                                                   \
   template class TemplateClass<std::string, __VA_ARGS__>;                                                              \
   template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__> // the last semicolon is added by the user
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** A class to describe which of the supported data types is used.
    *  There is the additional type 'none' to indicate that the data type is not

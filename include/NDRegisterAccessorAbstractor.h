@@ -15,7 +15,7 @@ namespace ChimeraTK {
    * TwoDRegisterAccessor). Provides a private implementation of the TransferElement interface to allow the bridges to
    * be added to a TransferGroup. Also stores the shared pointer to the NDRegisterAccessor implementation.
    */
-  template<typename UserType>
+  template<user_type UserType>
   class NDRegisterAccessorAbstractor : public TransferElementAbstractor {
    public:
     /**
@@ -65,45 +65,59 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   void NDRegisterAccessorAbstractor<UserType>::replace(const NDRegisterAccessorAbstractor<UserType>& newAccessor) {
     _impl = newAccessor._impl;
   }
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   void NDRegisterAccessorAbstractor<UserType>::replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
     _impl = boost::static_pointer_cast<TransferElement>(newImpl);
   }
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   NDRegisterAccessor<UserType>* NDRegisterAccessorAbstractor<UserType>::get() {
     return static_cast<NDRegisterAccessor<UserType>*>(TransferElementAbstractor::_impl.get());
   }
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   const NDRegisterAccessor<UserType>* NDRegisterAccessorAbstractor<UserType>::get() const {
     return static_cast<NDRegisterAccessor<UserType>*>(TransferElementAbstractor::_impl.get());
   }
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   NDRegisterAccessorAbstractor<UserType>::NDRegisterAccessorAbstractor(
       boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
   : TransferElementAbstractor(impl) {}
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> NDRegisterAccessorAbstractor<UserType>::getImpl() {
     return boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(_impl);
   }
 
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  /**
+   * Concept requiring a type to be an NDRegisterAccessorAbstractor-derived type
+   */
+  template<typename T>
+  concept accessor_abstractor = requires {
+    typename T::value_type;
+    requires std::is_base_of<NDRegisterAccessorAbstractor<typename T::value_type>, T>::value;
+    requires user_type<typename T::value_type>;
+  };
+
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   // Do not declare the template for all user types as extern here.

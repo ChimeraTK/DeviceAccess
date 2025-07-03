@@ -25,7 +25,7 @@ namespace ChimeraTK {
    * Note that most backends should actually be based on the DeviceBackendImpl
    * class (unless it is a decorator backend). The actual IO is always performed
    * through register accessors, which is obtained through the
-   *  getBufferingRegisterAccessor() member function. */
+   *  getRegisterAccessor() member function. */
   class DeviceBackend : public boost::enable_shared_from_this<DeviceBackend> {
    public:
     /** Every virtual class needs a virtual desctructor. */

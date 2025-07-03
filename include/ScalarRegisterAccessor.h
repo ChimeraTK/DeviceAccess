@@ -21,7 +21,7 @@ namespace ChimeraTK {
    * The second template argument TAG is only used to implement the template specialisation for ChimeraTK::Boolean
    * without duplicating all code.
    */
-  template<typename UserType, typename TAG = std::nullptr_t>
+  template<user_type UserType, typename TAG = std::nullptr_t>
   class ScalarRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
    public:
     /**
@@ -205,7 +205,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   ScalarRegisterAccessor<UserType, TAG>::ScalarRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
   : NDRegisterAccessorAbstractor<UserType>(impl) {
     static_assert(!std::is_same<UserType, Void>::value,
@@ -214,7 +214,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   ScalarRegisterAccessor<UserType, TAG>::ScalarRegisterAccessor() {
     static_assert(!std::is_same<UserType, Void>::value,
         "You cannot create ScalarRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
@@ -222,7 +222,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   template<typename OTHER_TAG>
   // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
   ScalarRegisterAccessor<UserType, TAG>::operator ScalarRegisterAccessor<UserType, OTHER_TAG>&() {
@@ -231,7 +231,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   ScalarRegisterAccessor<UserType, TAG>& ScalarRegisterAccessor<UserType, TAG>::operator=(UserType rightHandSide) {
     get()->accessData(0, 0) = rightHandSide;
     return *this;
@@ -239,7 +239,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   UserType ScalarRegisterAccessor<UserType, TAG>::operator++(int) {
     UserType v = get()->accessData(0, 0);
     operator=(v + 1);
@@ -248,7 +248,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   UserType ScalarRegisterAccessor<UserType, TAG>::operator--(int) {
     UserType v = get()->accessData(0, 0);
     operator=(v - 1);
@@ -257,7 +257,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   template<typename COOKED_TYPE>
   COOKED_TYPE ScalarRegisterAccessor<UserType, TAG>::getAsCooked() {
     return get()->template getAsCooked<COOKED_TYPE>(0, 0);
@@ -265,7 +265,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   template<typename COOKED_TYPE>
   void ScalarRegisterAccessor<UserType, TAG>::setAsCooked(COOKED_TYPE value) {
     return get()->template setAsCooked<COOKED_TYPE>(0, 0, value);
@@ -273,7 +273,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   void ScalarRegisterAccessor<UserType, TAG>::writeIfDifferent(
       UserType newValue, VersionNumber versionNumber, DataValidity validity) {
     if(get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr) ||
@@ -289,7 +289,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   void ScalarRegisterAccessor<UserType, TAG>::setAndWrite(UserType newValue, VersionNumber versionNumber) {
     operator=(newValue);
     this->write(versionNumber);
@@ -297,7 +297,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TAG>
+  template<user_type UserType, typename TAG>
   UserType ScalarRegisterAccessor<UserType, TAG>::readAndGet() {
     this->read();
     return get()->accessData(0, 0);
