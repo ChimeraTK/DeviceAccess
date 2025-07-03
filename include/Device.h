@@ -131,7 +131,7 @@ namespace ChimeraTK {
 
     /**
      * Get a TwoDRegisterAccessor object for the given register. This allows to read and write transparently
-     * 2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
+     * 2-dimensional registers.
      *
      * The optional arguments allow to restrict the accessor to a region of interest in the 2D register:
      * numberOfElements specifies the number of elements per channel to read from the register. elementsOffset is the

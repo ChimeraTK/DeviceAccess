@@ -7,7 +7,7 @@
 
 namespace ChimeraTK {
 
-  template<typename UserType>
+  template<user_type UserType>
   boost::shared_ptr<TransferElement> NDRegisterAccessor<UserType>::makeCopyRegisterDecorator() {
     auto casted = boost::static_pointer_cast<NDRegisterAccessor<UserType>>(enable_shared_from_this::shared_from_this());
     return boost::make_shared<CopyRegisterDecorator<UserType>>(casted);

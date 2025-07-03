@@ -12,11 +12,12 @@
 
 namespace ChimeraTK {
 
-  /** N-dimensional register accessor. Base class for all register accessor
-   * implementations. The user frontend classes BufferingRegisterAccessor and
-   * TwoDRegisterAccessor are using implementations based on this class to perform
-   *  the actual IO. */
-  template<typename UserType>
+  /**
+   * N-dimensional register accessor. Base class for all register accessor implementations. The user frontend classes
+   * ScalarRegisterAccessor, OneDRegisterAccessor, TwoDRegisterAccessor and VoidRegisterAccessor are using
+   * implementations based on this class to perform the actual IO.
+   */
+  template<user_type UserType>
   class NDRegisterAccessor : public TransferElement {
    public:
     /** Creates an NDRegisterAccessor with the specified name (passed on to the
@@ -146,32 +147,31 @@ namespace ChimeraTK {
     // boost::container::vector<boost::container::vector<UserType>> buffer_2D;
 
     /// the compatibility layers need access to the buffer_2D
-    friend class MultiplexedDataAccessor<UserType>;
     friend class RegisterAccessor;
 
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(NDRegisterAccessor<UserType>, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(NDRegisterAccessor<UserType>, setAsCooked_impl, 3);
   };
 
-  template<typename UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   COOKED_TYPE NDRegisterAccessor<UserType>::getAsCooked(unsigned int channel, unsigned int sample) const {
     return CALL_VIRTUAL_FUNCTION_TEMPLATE(getAsCooked_impl, COOKED_TYPE, channel, sample);
   }
 
-  template<typename UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   COOKED_TYPE NDRegisterAccessor<UserType>::getAsCooked_impl(unsigned int /*channel*/, unsigned int /*sample*/) const {
     throw ChimeraTK::logic_error("Reading as cooked is not available for this accessor");
   }
 
-  template<typename UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   void NDRegisterAccessor<UserType>::setAsCooked(unsigned int channel, unsigned int sample, COOKED_TYPE value) {
     CALL_VIRTUAL_FUNCTION_TEMPLATE(setAsCooked_impl, COOKED_TYPE, channel, sample, value);
   }
 
-  template<typename UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   void NDRegisterAccessor<UserType>::setAsCooked_impl(
       unsigned int /*channel*/, unsigned int /*sample*/, COOKED_TYPE /*value*/) {

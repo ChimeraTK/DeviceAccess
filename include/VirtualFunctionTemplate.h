@@ -7,37 +7,31 @@
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/for_each.hpp>
 
-/** Define a virtual function template with the given function name and
- * signature in the base class. The signature must contain the typename template
- * argument called "T". So if you e.g. would want to define a function like
- * this:
+/**
+ * Define a virtual function template with the given function name and signature in the base class. The signature must
+ * contain the typename template argument called "T". So if you e.g. would want to define a function like this:
  *
  *    template<typename UserType>
- *    virtual BufferingRegisterAccessor<UserType>
- * getRegisterAccessor(std::string name);
+ *    virtual NDRegisterAccessor<UserType> getRegisterAccessor(std::string name);
  *
- *  you should call this macro in the base class like this:
+ * you should call this macro in the base class like this:
  *
  *    DEFINE_VIRTUAL_FUNCTION_TEMPLATE( getRegisterAccessor, T(std::string) );
  *
- *  The virtual function can be called using the CALL_VIRTUAL_FUNCTION_TEMPLATE
- * macro. It is recommended to define the function template in the base class
- * (without the virtual keyword of course) and implement it by using this macro.
+ * The virtual function can be called using the CALL_VIRTUAL_FUNCTION_TEMPLATE macro. It is recommended to define the
+ * function template in the base class (without the virtual keyword of course) and implement it by using this macro.
  *
- *  In the derived class, the function template must be implemented with the
- * same signature, and the vtable for this virtual function template must be
- * filled differently depending on whether you want to (be able to) call the base class's
- * implementation or not:
+ * In the derived class, the function template must be implemented with the same signature, and the vtable for this
+ * virtual function template must be filled differently depending on whether you want to (be able to) call the base
+ * class's implementation or not:
  *
- * - If you do not care about the base implementation, use the macros
- *   DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER
+ * - If you do not care about the base implementation, use the macros DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER
  *   and FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE.
- * - If you want to be able to delegate to the base implementation, use
- *   the macros DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE. To chain up to the base
+ * - If you want to be able to delegate to the base implementation, use the macros
+ *   DEFINE_VIRTUAL_FUNCTION_OVERRIDE_VTABLE and OVERRIDE_VIRTUAL_FUNCTION_TEMPLATE. To chain up to the base
  *   implementation, use the macro CALL_BASE_FUNCTION_TEMPLATE
  *
- *  Note: the signature is passed through the __VA_ARGS__ variable macro
- * arguments, as it may contain commas.
+ * Note: the signature is passed through the __VA_ARGS__ variable macro arguments, as it may contain commas.
  */
 #define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(functionName, ...)                                                     \
   template<typename T>                                                                                                 \

@@ -11,12 +11,12 @@ namespace ChimeraTK {
   /**
    * Accessor class to read and write registers transparently by using the accessor object like a vector of the type
    * UserType. Conversion to and from the UserType will be handled by a data converter matching the register description
-   * in the map (if applicable). Obtain the accessor using the Device::getBufferingRegisterAccessor() function.
+   * in the map (if applicable). Obtain the accessor using the Device::getOneDRegisterAccessor() function.
    *
    * Note: Transfers between the device and the internal buffer need to be triggered using the read() and write()
    * functions before reading from resp. after writing to the buffer using the operators.
    */
-  template<typename UserType>
+  template<user_type UserType>
   class OneDRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
    public:
     /**
@@ -125,7 +125,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   OneDRegisterAccessor<UserType>::OneDRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
   : NDRegisterAccessorAbstractor<UserType>(impl) {
     static_assert(!std::is_same<UserType, Void>::value,
@@ -139,7 +139,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<user_type UserType>
   OneDRegisterAccessor<UserType>::OneDRegisterAccessor() {
     static_assert(!std::is_same<UserType, Void>::value,
         "You cannot create OneDRegisterAccessor<ChimeraTK::Void>! Use VoidRegisterAccessor instead.");
@@ -150,7 +150,7 @@ namespace ChimeraTK {
   /**
    * Swap content of (cooked) buffer with std::vector
    */
-  template<typename UserType>
+  template<user_type UserType>
   void OneDRegisterAccessor<UserType>::swap(std::vector<UserType>& x) noexcept {
     if(x.size() != get()->accessChannel(0).size()) {
       // Do not throw in swap() and rather terminated. See CPP core guidlines C.85
@@ -166,7 +166,7 @@ namespace ChimeraTK {
   /**
    * Copy content of (cooked) buffer from std::vector
    */
-  template<typename UserType>
+  template<user_type UserType>
   OneDRegisterAccessor<UserType>& OneDRegisterAccessor<UserType>::operator=(const std::vector<UserType>& x) {
     if(x.size() != get()->accessChannel(0).size()) {
       throw ChimeraTK::logic_error("Copying in a buffer of a different size is not allowed.");
@@ -181,7 +181,7 @@ namespace ChimeraTK {
    * Get the cooked values in case the accessor is a raw accessor (which does not do data conversion). This returns
    * the converted data from the use buffer. It does not do any read or write transfer.
    */
-  template<typename UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   COOKED_TYPE OneDRegisterAccessor<UserType>::getAsCooked(unsigned int sample) {
     return get()->template getAsCooked<COOKED_TYPE>(0, sample);
@@ -193,7 +193,7 @@ namespace ChimeraTK {
    * Set the cooked values in case the accessor is a raw accessor (which does not do data conversion). This converts
    * to raw and writes the data to the user buffer. It does not do any read or write transfer.
    */
-  template<typename UserType>
+  template<user_type UserType>
   template<typename COOKED_TYPE>
   void OneDRegisterAccessor<UserType>::setAsCooked(unsigned int sample, COOKED_TYPE value) {
     return get()->template setAsCooked<COOKED_TYPE>(0, sample, value);
@@ -206,7 +206,7 @@ namespace ChimeraTK {
    * is only used in case the value differs. If versionNumber == {nullptr}, a new version number is generated only if
    * the write actually takes place.
    */
-  template<typename UserType>
+  template<user_type UserType>
   void OneDRegisterAccessor<UserType>::writeIfDifferent(
       const std::vector<UserType>& newValue, VersionNumber versionNumber, DataValidity validity) {
     if(!std::equal(newValue.begin(), newValue.end(), get()->accessChannel(0).begin()) ||
