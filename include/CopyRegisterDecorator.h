@@ -30,6 +30,11 @@ namespace ChimeraTK {
       }
     }
 
+    void doPreRead(TransferType) override {
+      // Do nothing. This should only ever be called from the TransferGroup which has already handled
+      // the preRead differently
+    }
+
     void doPreWrite(TransferType, VersionNumber) override {
       throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.");
     }
@@ -39,6 +44,11 @@ namespace ChimeraTK {
       if(hasNewData) {
         for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
       }
+    }
+
+    void doReadTransferSynchronously() {
+      std::cerr << "CopyRegisterDecorator::doReadTransferSynchronously: Must not be called" << std::endl;
+      assert(false);
     }
 
     [[nodiscard]] bool isReadOnly() const override { return true; }

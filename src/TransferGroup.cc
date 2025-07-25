@@ -56,6 +56,9 @@ namespace ChimeraTK {
       }
     }
 
+    // Call preRead on the copy decorators so that we can call postRead later with
+    // readTransactionInProgress flag set to true and do the actual copying in the
+    // decorator's doPostRead
     for(const auto& elem : _copyDecorators) {
       elem->preReadAndHandleExceptions(TransferType::read);
       if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
