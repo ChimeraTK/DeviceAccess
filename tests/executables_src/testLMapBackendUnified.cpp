@@ -1184,7 +1184,8 @@ struct RegWithFanOutMainTarget : ScalarRegisterDescriptorBase<RegWithFanOutMainT
   static bool isReadable() { return false; }
   static bool isPush() { return false; }
   static ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  static constexpr auto capabilities = RegWithFanOutMainTarget::capabilities.disableTestRawTransfer();
+  static constexpr auto capabilities =
+      ScalarRegisterDescriptorBase<RegWithFanOutMainTarget>::capabilities.disableTestRawTransfer();
 
   const uint32_t increment = 17;
 
@@ -1200,7 +1201,8 @@ struct RegWithFanOutTarget2 : ScalarRegisterDescriptorBase<RegWithFanOutTarget2>
   static bool isReadable() { return false; }
   static bool isPush() { return false; }
   static ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  static constexpr auto capabilities = RegWithFanOutMainTarget::capabilities.disableTestRawTransfer();
+  static constexpr auto capabilities =
+      ScalarRegisterDescriptorBase<RegWithFanOutTarget2>::capabilities.disableTestRawTransfer();
 
   const uint32_t increment = 13;
 
@@ -1216,7 +1218,8 @@ struct RegWithFanOutTarget3 : ScalarRegisterDescriptorBase<RegWithFanOutTarget3>
   static bool isReadable() { return false; }
   static bool isPush() { return false; }
   static ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
-  static constexpr auto capabilities = RegWithFanOutMainTarget::capabilities.disableTestRawTransfer();
+  static constexpr auto capabilities =
+      ScalarRegisterDescriptorBase<RegWithFanOutTarget3>::capabilities.disableTestRawTransfer();
 
   const uint32_t increment = 19;
 
