@@ -39,13 +39,12 @@ def main():
     files = None
 
     try:
-      database = json.load(open(args.compile_db))
-      files = set([make_absolute(entry['file'], entry['directory']) for entry in database])
+        database = json.load(open(args.compile_db))
+        files = set([make_absolute(entry['file'], entry['directory']) for entry in database])
     except FileNotFoundError:
         print(f"Failed to open {args.compile_db}: Not found")
     except json.decoder.JSONDecodeError:
         print(f"Failed to open {args.compile_db}: Not valid json")
-
 
     if not files:
         sys.exit(1)
