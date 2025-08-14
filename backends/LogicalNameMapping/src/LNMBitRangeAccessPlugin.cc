@@ -13,29 +13,34 @@
 
 namespace ChimeraTK::LNMBackend {
 
-  struct ReferenceCountedUniqueLock {
-    ReferenceCountedUniqueLock() = default;
+  struct RecursiveOwnerCountingMutex {
+    RecursiveOwnerCountingMutex() = default;
 
-    ReferenceCountedUniqueLock(std::recursive_mutex& mutex, int* useCounter)
-    : _lock(mutex, std::defer_lock), _targetUseCount(useCounter) {}
+    RecursiveOwnerCountingMutex(std::recursive_mutex* theMutex, int* useCounter)
+    : mutex(theMutex), targetUseCount(useCounter) {}
 
     void lock() {
-      _lock.lock();
-      *_targetUseCount = *_targetUseCount + 1;
+      assert(mutex != nullptr);
+      mutex->lock();
+      *targetUseCount = *targetUseCount + 1;
+      ownsLock = true;
     }
 
     void unlock() {
-      *_targetUseCount = *_targetUseCount - 1;
-      _lock.unlock();
+      assert(mutex != nullptr);
+      *targetUseCount = *targetUseCount - 1;
+      ownsLock = *targetUseCount > 0;
+      mutex->lock();
     }
 
     [[nodiscard]] int useCount() const {
-      assert(_lock.owns_lock());
-      return *_targetUseCount;
+      assert(ownsLock);
+      return *targetUseCount;
     }
 
-    std::unique_lock<std::recursive_mutex> _lock;
-    int* _targetUseCount{nullptr};
+    std::recursive_mutex* mutex{nullptr};
+    int* targetUseCount{nullptr};
+    bool ownsLock{false};
   };
 
   /********************************************************************************************************************/
@@ -77,7 +82,7 @@ namespace ChimeraTK::LNMBackend {
 
       auto it = map.find(key);
       if(it != map.end()) {
-        _lock = {it->second.mutex, &(it->second.useCount)};
+        _lock = {&(it->second.mutex), &(it->second.useCount)};
       }
       else {
         assert(false);
@@ -168,7 +173,7 @@ namespace ChimeraTK::LNMBackend {
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
       auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType, TargetType>>(newElement);
 
-      // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
+      // In a transfer group, we are trying to be replaced with an accessor. Check if this accessor is for the
       // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
       // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write order
       // for overlapping bit ranges
@@ -190,7 +195,7 @@ namespace ChimeraTK::LNMBackend {
     uint64_t _targetTypeMask{getMaskForNBits(sizeof(TargetType) * CHAR_BIT)};
     uint64_t _baseBitMask;
 
-    ReferenceCountedUniqueLock _lock;
+    RecursiveOwnerCountingMutex _lock;
     VersionNumber _temporaryVersion;
     bool _writeable{false};
     FixedPointConverter fixedPointConverter;
