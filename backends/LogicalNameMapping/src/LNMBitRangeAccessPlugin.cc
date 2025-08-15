@@ -69,23 +69,26 @@ namespace ChimeraTK::LNMBackend {
         uint64_t dataInterpretationIsSigned)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
       _writeable{_target->isWriteable()},
-      fixedPointConverter(name, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned) {
+      fixedPointConverter(name, _numberOfBits, int(dataInterpretationFractionalBits), dataInterpretationIsSigned) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
             TransferElement::getName() + ": Cannot target non-scalar registers.");
       }
 
-      auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
-      RegisterPath path{name};
-      path.setAltSeparator(".");
-      LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
+      {
+        std::unique_lock<std::mutex> l{backend->sharedAccessorMap_mutex};
+        auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
+        RegisterPath path{name};
+        path.setAltSeparator(".");
+        LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
 
-      auto it = map.find(key);
-      if(it != map.end()) {
-        _lock = {&(it->second.mutex), &(it->second.useCount)};
-      }
-      else {
-        assert(false);
+        auto it = map.find(key);
+        if(it != map.end()) {
+          _lock = {&(it->second.mutex), &(it->second.useCount)};
+        }
+        else {
+          assert(false);
+        }
       }
 
       _baseBitMask = getMaskForNBits(_numberOfBits);
