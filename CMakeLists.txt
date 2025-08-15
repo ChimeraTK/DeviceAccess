@@ -40,8 +40,13 @@ FIND_PACKAGE(nlohmann_json 03.11 REQUIRED)
 add_compile_definitions(JSON_DIAGNOSTICS=1)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
-set(LIBXML++_VERSION "libxml++-2.6")
-PKG_CHECK_MODULES(LibXML++ REQUIRED IMPORTED_TARGET ${LIBXML++_VERSION})
+set(LIBXML++_VERSION "libxml++-5.0")
+PKG_CHECK_MODULES(LibXML++ IMPORTED_TARGET ${LIBXML++_VERSION})
+
+if (NOT DEFINED LIBXML++_FOUND)
+  set(LIBXML++_VERSION "libxml++-2.6")
+  PKG_CHECK_MODULES(LibXML++ REQUIRED IMPORTED_TARGET ${LIBXML++_VERSION})
+endif ()
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
