@@ -13,6 +13,22 @@
 
 namespace ChimeraTK::LNMBackend {
 
+  // Helper to wind down a mutex on if the thread dies without the mutex completely unlocked
+  // This might be neccessary if the accessor was used in an async fashion and the read queue
+  // was terminated; there might be a chance that the postRead of the accessor was not called
+  // then
+  struct ThreadGuard {
+    explicit ThreadGuard(std::recursive_mutex* mtx) : m(mtx) {};
+    ~ThreadGuard() {
+      for(size_t i = 0; i < useCount; i++) {
+        m->unlock();
+      }
+    };
+
+    size_t useCount{0};
+    std::recursive_mutex* m;
+  };
+
   struct RecursiveOwnerCountingMutex {
     RecursiveOwnerCountingMutex() = default;
 
@@ -22,26 +38,31 @@ namespace ChimeraTK::LNMBackend {
     void lock() {
       assert(mutex != nullptr);
       mutex->lock();
+      if(!guard) {
+        guard = std::make_unique<ThreadGuard>(mutex);
+      }
       *targetUseCount = *targetUseCount + 1;
-      ownsLock = true;
+      guard->useCount++;
     }
 
     void unlock() {
       assert(mutex != nullptr);
       *targetUseCount = *targetUseCount - 1;
-      ownsLock = *targetUseCount > 0;
-      mutex->lock();
+      guard->useCount--;
+      mutex->unlock();
     }
 
     [[nodiscard]] int useCount() const {
-      assert(ownsLock);
+      assert(guard->useCount > 0);
       return *targetUseCount;
     }
 
     std::recursive_mutex* mutex{nullptr};
     int* targetUseCount{nullptr};
-    bool ownsLock{false};
+    static thread_local std::unique_ptr<ThreadGuard> guard;
   };
+
+  thread_local std::unique_ptr<ThreadGuard> RecursiveOwnerCountingMutex::guard = nullptr;
 
   /********************************************************************************************************************/
 
@@ -93,6 +114,14 @@ namespace ChimeraTK::LNMBackend {
 
       _baseBitMask = getMaskForNBits(_numberOfBits);
       _maskOnTarget = _baseBitMask << _shift;
+    }
+
+    /******************************************************************************************************************/
+
+    void interrupt() override {
+      _lock.unlock();
+
+      _target->interrupt();
     }
 
     /******************************************************************************************************************/
@@ -152,6 +181,10 @@ namespace ChimeraTK::LNMBackend {
 
       // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
       // Otherwise it will overwrite the
+      // FIXME: Check boolean condition
+      std::cerr << std::format("doPreWrite t{} tfg {} uc {}", _target->isReadable(),
+                       TransferElement::_isInTransferGroup, _lock.useCount())
+                << std::endl;
       if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.useCount() == 1)) {
         _target->read();
       }
@@ -178,8 +211,8 @@ namespace ChimeraTK::LNMBackend {
 
       // In a transfer group, we are trying to be replaced with an accessor. Check if this accessor is for the
       // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
-      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write order
-      // for overlapping bit ranges
+      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write
+      // order for overlapping bit ranges
       if(casted && casted.get() != this && casted->_target == _target) {
         if((casted->_maskOnTarget & _maskOnTarget) != 0) {
           casted->_writeable = false;
