@@ -405,6 +405,7 @@ namespace ChimeraTK {
     void test_B_3_2_1_2();
     void test_B_3_2_2();
     void test_B_4_2_4();
+    void test_B_4_2_5();
     void test_B_6_4();
     void test_B_7_2();
     void test_B_8_2();
@@ -984,6 +985,7 @@ namespace ChimeraTK {
     test_B_3_2_1_2();
     test_B_3_2_2();
     test_B_4_2_4();
+    test_B_4_2_5();
     test_B_6_4();
     test_B_7_2();
     test_B_8_2();
@@ -1352,22 +1354,30 @@ namespace ChimeraTK {
 // and clutter the readability for variable names.
 // NOLINTBEGIN(bugprone-macro-parentheses)
 
-/// Helper macros for test_B_4_2_4
-#define ALTER_AND_STORE_APPLICATION_BUFFER(UserType, accessor)                                                         \
+/// Helper macros for test_B_4_2_4 and test_B_4_2_5
+#define STORE_APPLICATION_DATA_BUFFER(UserType, accessor)                                                              \
   std::vector<std::vector<UserType>> STORE_APPLICATION_BUFFER_data;                                                    \
-  VersionNumber STORE_APPLICATION_BUFFER_version;                                                                      \
-  DataValidity STORE_APPLICATION_BUFFER_validity;                                                                      \
+  for(size_t i = 0; i < accessor.getNChannels(); ++i) {                                                                \
+    STORE_APPLICATION_BUFFER_data.push_back(accessor[i]);                                                              \
+  }                                                                                                                    \
+  (void)0
+
+#define ALTER_AND_STORE_APPLICATION_BUFFER(UserType, accessor)                                                         \
   for(size_t i = 0; i < accessor.getNChannels(); ++i) {                                                                \
     if constexpr(std::is_arithmetic_v<UserType>)                                                                       \
       std::iota(accessor[i].begin(), accessor[i].end(), std::numeric_limits<UserType>::min() + 1);                     \
     if constexpr(std::is_same_v<std::string, UserType>) std::fill(accessor[i].begin(), accessor[i].end(), "FACECAFE"); \
-    STORE_APPLICATION_BUFFER_data.push_back(accessor[i]);                                                              \
   }                                                                                                                    \
+  STORE_APPLICATION_DATA_BUFFER(UserType, accessor);                                                                   \
+  VersionNumber STORE_APPLICATION_BUFFER_version;                                                                      \
+  DataValidity STORE_APPLICATION_BUFFER_validity;                                                                      \
   STORE_APPLICATION_BUFFER_version = accessor.getVersionNumber();                                                      \
   STORE_APPLICATION_BUFFER_validity = accessor.dataValidity()
 
+#define CHECK_APPLICATION_DATA_BUFFER(UserType, accessor) CHECK_EQUALITY(accessor, STORE_APPLICATION_BUFFER_data)
+
 #define CHECK_APPLICATION_BUFFER(UserType, accessor)                                                                   \
-  CHECK_EQUALITY(accessor, STORE_APPLICATION_BUFFER_data);                                                             \
+  CHECK_APPLICATION_DATA_BUFFER(UserType, accessor);                                                                   \
   BOOST_CHECK(STORE_APPLICATION_BUFFER_version == accessor.getVersionNumber());                                        \
   BOOST_CHECK(STORE_APPLICATION_BUFFER_validity == accessor.dataValidity())
 
@@ -1444,6 +1454,86 @@ namespace ChimeraTK {
       te->readTransfer();
       CHECK_APPLICATION_BUFFER(UserType, reg);
       te->postRead(TransferType::read, true);
+    });
+
+    // close device again
+    d.close();
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Test that xxxTransferYyy() can be skipped between preXxx() and postXxx()
+   *  * \anchor UnifiedTest_TransferElement_B_4_2_5 \ref transferElement_B_4_2_4 "B.4.2.5"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_4_2_5() {
+    std::cout << "--- test_B_4_2_5 - xxxTransferYyy() can be skipped between preXxx() and postXxx()" << std::endl;
+    Device d(cdd);
+
+    // open the device
+    d.open();
+
+    std::cout << "... writeTransfer()" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isWrite(x)) {
+        return;
+      }
+      using UserType = typename decltype(x)::minimumUserType;
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto te = reg.getHighLevelImplElement();
+
+      // write some value, calling the stages manually
+      auto theValue = x.template generateValue<UserType>();
+      reg = theValue;
+      VersionNumber ver;
+      STORE_APPLICATION_DATA_BUFFER(UserType, reg);
+      te->preWrite(TransferType::write, ver);
+      te->postWrite(TransferType::write, ver);
+      CHECK_APPLICATION_DATA_BUFFER(UserType, reg);
+    });
+
+    std::cout << "... writeTransferDestructively()" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isWrite(x)) {
+        return;
+      }
+      using UserType = typename decltype(x)::minimumUserType;
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto te = reg.getHighLevelImplElement();
+
+      // write some value, calling the stages manually
+      auto theValue = x.template generateValue<UserType>();
+      reg = theValue;
+      VersionNumber ver;
+      STORE_APPLICATION_DATA_BUFFER(UserType, reg);
+      te->preWrite(TransferType::writeDestructively, ver);
+      te->postWrite(TransferType::writeDestructively, ver);
+      CHECK_APPLICATION_DATA_BUFFER(UserType, reg);
+    });
+
+    std::cout << "... readTransferSynchronously()" << std::endl;
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      if(!this->isRead(x)) {
+        return;
+      }
+      using UserType = typename decltype(x)::minimumUserType;
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+      auto reg = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto te = reg.getHighLevelImplElement();
+
+      // read some value, calling the stages manually
+      auto theValue = x.template generateValue<UserType>();
+      reg = theValue;
+      STORE_APPLICATION_DATA_BUFFER(UserType, reg);
+      te->preRead(TransferType::read);
+      te->postRead(TransferType::read, false);
+      CHECK_APPLICATION_DATA_BUFFER(UserType, reg);
     });
 
     // close device again
