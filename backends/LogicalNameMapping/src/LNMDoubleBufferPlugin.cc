@@ -186,7 +186,11 @@ namespace ChimeraTK::LNMBackend {
       this->_dataValidity = _secondBufferReg->dataValidity();
     }
 
-    if(!hasNewData) return;
+    // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
+    // check.
+    if(!hasNewData) {
+      return;
+    }
 
     if(_currentBuffer) {
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
