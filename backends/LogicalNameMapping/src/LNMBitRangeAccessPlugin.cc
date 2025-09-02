@@ -13,31 +13,54 @@
 
 namespace ChimeraTK::LNMBackend {
 
-  struct ReferenceCountedUniqueLock {
+  /**
+   Helper class that keeps track of how many locks were taken on the recursive mutex in the current thread.
+
+   It is used by the BitRange accessor to determine whether or not it can safely call read() on the target in
+   preWrite for read-modify-write operations
+  */
+  class ReferenceCountedUniqueLock {
+   public:
     ReferenceCountedUniqueLock() = default;
 
-    ReferenceCountedUniqueLock(std::recursive_mutex& mutex, int* useCounter)
-    : _lock(mutex, std::defer_lock), _targetUseCount(useCounter) {}
+    explicit ReferenceCountedUniqueLock(std::recursive_mutex& mutex) : _lock(mutex, std::defer_lock) {}
 
-    void lock() {
-      _lock.lock();
-      *_targetUseCount = *_targetUseCount + 1;
-    }
+    void lock();
+    void unlock();
+    [[nodiscard]] size_t useCount() const;
 
-    void unlock() {
-      *_targetUseCount = *_targetUseCount - 1;
-      _lock.unlock();
-    }
-
-    [[nodiscard]] int useCount() const {
-      assert(_lock.owns_lock());
-      return *_targetUseCount;
-    }
-
+   private:
+    thread_local static size_t targetUseCount;
     std::unique_lock<std::recursive_mutex> _lock;
-    int* _targetUseCount{nullptr};
   };
 
+  /********************************************************************************************************************/
+
+  thread_local size_t ReferenceCountedUniqueLock::targetUseCount;
+
+  /********************************************************************************************************************/
+
+  size_t ReferenceCountedUniqueLock::useCount() const {
+    assert(_lock.owns_lock());
+    return targetUseCount;
+  }
+
+  /********************************************************************************************************************/
+
+  void ReferenceCountedUniqueLock::unlock() {
+    assert(targetUseCount > 0);
+    targetUseCount--;
+    _lock.unlock();
+  }
+  /********************************************************************************************************************/
+
+  void ReferenceCountedUniqueLock::lock() {
+    _lock.lock();
+    targetUseCount++;
+  }
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
@@ -77,7 +100,7 @@ namespace ChimeraTK::LNMBackend {
 
       auto it = map.find(key);
       if(it != map.end()) {
-        _lock = {it->second.mutex, &(it->second.useCount)};
+        _lock = ReferenceCountedUniqueLock(it->second.mutex);
       }
       else {
         assert(false);
@@ -173,6 +196,7 @@ namespace ChimeraTK::LNMBackend {
       // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write order
       // for overlapping bit ranges
       if(casted && casted.get() != this && casted->_target == _target) {
+        // anding the two masks will yield 0 iff there is no overlap
         if((casted->_maskOnTarget & _maskOnTarget) != 0) {
           casted->_writeable = false;
           _writeable = false;
