@@ -23,7 +23,7 @@ namespace ChimeraTK {
         // ChimeraTK::runtime_errors and the first detected runtime error, which is re-thrown, has already been
         // determined by previously.
         if(lowLevelElem->_activeException) {
-          // copy the runtime error from low level element into the high level element so it is processed in  post-read
+          // copy the runtime error from low level element into the high-level element so it is processed in  post-read
           elem->_activeException = lowLevelElem->_activeException;
         }
       }
@@ -88,21 +88,17 @@ namespace ChimeraTK {
 
     // re-throw exceptions in the order of occurrence
 
-    // The runtime error which was seen as _activeException in the pre or transfer phase might
-    // have been handled in postRead, and thus become invalid (for instance because it
-    // is suppressed by the ApplicationCore::ExceptionHandlingDecorator).
-    // Only re-throw here if an exception has been re-thrown in the postRead step.
-    // FIXME(?): If the firstDetectedRuntimeError has been handled, but another runtime_error
-    // has been thrown, this logic will throw the wrong exception here. It could be
-    // prevented with a complicated logic that loops all lowLevelElements in the order
-    // that was used to execute the transfer, for each of them it loops all its associated high
-    // level element, and for each high level element it loops all the low level elements again
-    // because some might and others might not have exceptions, and if there was an exception for
-    // that high level element on any of its low level elements, postRead must be called with
-    // an exception set each time. (I guess this sentence in close to not understandable, that's
-    // why I am not trying to implement it).
-    // In practice this will not happen because either all elements will have an ExceptionHandlingDecorator, or none.
-
+    // The runtime error which was seen as _activeException in the pre or transfer phase might have been handled in
+    // postRead, and thus become invalid (for instance because it is suppressed by the
+    // ApplicationCore::ExceptionHandlingDecorator). Only re-throw here if an exception has been re-thrown in the
+    // postRead step. FIXME(?): If the firstDetectedRuntimeError has been handled, but another runtime_error has been
+    // thrown, this logic will throw the wrong exception here. It could be prevented with a complicated logic that loops
+    // all lowLevelElements in the order that was used to execute the transfer, for each of them it loops all its
+    // associated high- level element, and for each high-level element it loops all the low level elements again because
+    // some might and others might not have exceptions, and if there was an exception for that high-level element on any
+    // of its low level elements, postRead must be called with an exception set each time. (I guess this sentence in
+    // close to not understandable, that's why I am not trying to implement it). In practice this will not happen
+    // because either all elements will have an ExceptionHandlingDecorator, or none.
     if(_nRuntimeErrors != 0) {
       assert(firstDetectedRuntimeError != nullptr); // postRead must only rethrow, so there must be a detected
                                                     // runtime_error
@@ -144,7 +140,7 @@ namespace ChimeraTK {
         // ChimeraTK::runtime_errors and the first detected runtime error, which is re-thrown, has already been
         // determined by previously.
         if(lowLevelElem->_activeException) {
-          // copy the runtime error from low level element into the high level element so it is processed in  post-read
+          // copy the runtime error from low level element into the high-level element so it is processed in  post-read
           elem->_activeException = lowLevelElem->_activeException;
         }
       }
@@ -206,6 +202,27 @@ namespace ChimeraTK {
     // set flag on the accessors that it is now in a transfer group
     accessor.getHighLevelImplElement()->_isInTransferGroup = true;
 
+    // Apply possible replacements by calling replaceTransferElement() in all possible combinations, i.e. pass all
+    // internal elements in this group to replaceTransferElement() called on all high-level elements in the group. Keep
+    // in mind that replaceTransferElement() is supposed to pass the call down to internal implementations, so this will
+    // effectively try all combinations.
+    //
+    // Start with the abstractor, to make sure we replace at the highest level if possible, but only if this isn't a
+    // temporary abstractor. We need to do this in a separate loop first, so we are not using deeper levels inside the
+    // abstractor as a replacement somewhere else after the implementation in the abstractor might have been replaced.
+    if(not isTemporary) {
+      for(const auto& hlElem1 : _highLevelElements) {
+        auto list = hlElem1->getInternalElements();
+        list.push_front(hlElem1);
+
+        for(const auto& replacement : list) {
+          accessor.replaceTransferElement(replacement);
+        }
+      }
+    }
+
+    // Now build a list of all high-level elements to consider, including the implementation in the abstactor which
+    // might have been replaced above.
     auto highLevelElementsWithNewAccessor = _highLevelElements;
     highLevelElementsWithNewAccessor.insert(accessor.getHighLevelImplElement());
 
@@ -215,11 +232,9 @@ namespace ChimeraTK {
       list.push_front(hlElem1);
 
       for(const auto& replacement : list) {
-        // try on the abstractor first, to make sure we replace at the highest
-        // level if possible, but only if this isn't a temporary abstractor
-        if(not isTemporary) accessor.replaceTransferElement(replacement);
         // try on all high-level elements already stored in the list
-        for(const auto& hlElem : highLevelElementsWithNewAccessor) {
+        accessor.getHighLevelImplElement()->replaceTransferElement(replacement);
+        for(const auto& hlElem : _highLevelElements) {
           hlElem->replaceTransferElement(replacement); // note: this does nothing, if the replacement cannot
                                                        // be used by the hlElem!
         }
