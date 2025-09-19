@@ -16,25 +16,28 @@ using namespace ChimeraTK;
 class myRegisterInfo : public BackendRegisterInfoBase {
  public:
   myRegisterInfo(std::string path, unsigned int nbOfElements, unsigned int nbOfChannels, unsigned int nbOfDimensions,
-      DataDescriptor dataDescriptor, bool readable, bool writeable, AccessModeFlags supportedFlags)
+      DataDescriptor dataDescriptor, bool readable, bool writeable, AccessModeFlags supportedFlags, bool hidden = false)
   : _path(path), _nbOfElements(nbOfElements), _nbOfChannels(nbOfChannels), _nbOfDimensions(nbOfDimensions),
-    _dataDescriptor(dataDescriptor), _readable(readable), _writeable(writeable), _supportedFlags(supportedFlags) {}
+    _dataDescriptor(dataDescriptor), _readable(readable), _writeable(writeable), _supportedFlags(supportedFlags),
+    _hidden(hidden) {}
 
   myRegisterInfo() = default;
 
-  RegisterPath getRegisterName() const override { return _path; }
+  [[nodiscard]] RegisterPath getRegisterName() const override { return _path; }
 
-  unsigned int getNumberOfElements() const override { return _nbOfElements; }
+  [[nodiscard]] unsigned int getNumberOfElements() const override { return _nbOfElements; }
 
-  unsigned int getNumberOfChannels() const override { return _nbOfChannels; }
+  [[nodiscard]] unsigned int getNumberOfChannels() const override { return _nbOfChannels; }
 
-  const DataDescriptor& getDataDescriptor() const override { return _dataDescriptor; }
+  [[nodiscard]] const DataDescriptor& getDataDescriptor() const override { return _dataDescriptor; }
 
-  bool isReadable() const override { return _readable; }
+  [[nodiscard]] bool isReadable() const override { return _readable; }
 
-  bool isWriteable() const override { return _writeable; }
+  [[nodiscard]] bool isWriteable() const override { return _writeable; }
 
-  AccessModeFlags getSupportedAccessModes() const override { return _supportedFlags; }
+  [[nodiscard]] AccessModeFlags getSupportedAccessModes() const override { return _supportedFlags; }
+
+  [[nodiscard]] bool isHidden() const override { return _hidden; }
 
   [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
     auto* info = new myRegisterInfo(*this);
@@ -53,6 +56,7 @@ class myRegisterInfo : public BackendRegisterInfoBase {
   DataDescriptor _dataDescriptor;
   bool _readable, _writeable;
   AccessModeFlags _supportedFlags;
+  bool _hidden;
 };
 
 /**********************************************************************************************************************/
@@ -65,6 +69,7 @@ class CatalogueGenerator {
     catalogue.addRegister(theInfo);
     catalogue.addRegister(theInfo2);
     catalogue.addRegister(theInfo3);
+    catalogue.addRegister(theInfo4);
 
     return catalogue;
   }
@@ -78,6 +83,8 @@ class CatalogueGenerator {
 
   DataDescriptor dataDescriptor3{DataDescriptor::FundamentalType::string};
   myRegisterInfo theInfo3{"/justAName", 1, 1, 0, dataDescriptor3, false, false, {}};
+
+  myRegisterInfo theInfo4{"/some/hidden/register", 42, 3, 2, dataDescriptor, true, false, {AccessMode::raw}, true};
 };
 
 /**********************************************************************************************************************/
@@ -227,6 +234,22 @@ BOOST_AUTO_TEST_CASE(testRangeBasedLoopFrontend) {
   BOOST_TEST(seenObjects[0].getRegisterName() == generator.theInfo.getRegisterName());
   BOOST_TEST(seenObjects[1].getRegisterName() == generator.theInfo2.getRegisterName());
   BOOST_TEST(seenObjects[2].getRegisterName() == generator.theInfo3.getRegisterName());
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestHiddenRegisters) {
+  CatalogueGenerator generator;
+  auto backend_catalogue = generator.generateCatalogue();
+  RegisterCatalogue catalogue(backend_catalogue.clone());
+
+  std::vector<RegisterInfo> seenObjects;
+  for(const auto& elem : catalogue.hiddenRegisters()) {
+    seenObjects.emplace_back(elem.clone());
+  }
+
+  BOOST_TEST(seenObjects.size() == 1);
+  BOOST_TEST(seenObjects[0].getRegisterName() == generator.theInfo4.getRegisterName());
 }
 
 /**********************************************************************************************************************/

@@ -58,6 +58,13 @@ namespace ChimeraTK {
      * The default implementation returns an empty list.
      */
     [[nodiscard]] virtual std::set<std::string> getTags() const { return {}; };
+
+    /**
+     * Returns whether the register is "hidden", meaning it won't be listed when iterating the catalogue.
+     *
+     * Hidden registers can be explicitly iterated, but the ordinary iterators will not show them.
+     */
+    [[nodiscard]] virtual bool isHidden() const { return false; }
   };
 
   /********************************************************************************************************************/

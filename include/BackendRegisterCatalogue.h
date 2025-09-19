@@ -6,6 +6,7 @@
 #include "RegisterCatalogue.h"
 
 #include <boost/make_shared.hpp>
+#include <boost/range/adaptors.hpp>
 
 namespace ChimeraTK {
 
@@ -78,13 +79,15 @@ namespace ChimeraTK {
      */
     [[nodiscard]] virtual RegisterPath getDataConsistencyKeyRegisterPath(
         const std::vector<size_t>& qualifiedAsyncDomainId) const;
+
+    [[nodiscard]] virtual HiddenRange hiddenRegisters() const = 0;
   };
 
   /********************************************************************************************************************/
 
   /**
-   * Interface for backends to the register catalogue. In addition to the functionality offered by the RegisterCatalogue
-   * class, the content of the catalogue can be modified through this interface.
+   * Interface for backends to the register catalogue. In addition to the functionality offered by the
+   * RegisterCatalogue class, the content of the catalogue can be modified through this interface.
    *
    * Backend implementations should instantiate this class with their backend-specific implementation of the
    * RegisterInfoImpl class.
@@ -101,6 +104,7 @@ namespace ChimeraTK {
     /// Note: Implementation internally uses getBackendRegister(), so no need to override
     [[nodiscard]] RegisterInfo getRegister(const RegisterPath& registerPathName) const final;
 
+    // Return the number of registers in the catalogue, excluding hidden registers.
     [[nodiscard]] size_t getNumberOfRegisters() const override;
 
     [[nodiscard]] std::unique_ptr<const_RegisterCatalogueImplIterator> getConstIteratorBegin() const override;
@@ -133,32 +137,42 @@ namespace ChimeraTK {
 
     /** Return begin iterator for iterating through the registers in the catalogue */
     [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.begin()};
+      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{_iteratedCatalogue.begin()};
     }
 
     /** Return end iterator for iterating through the registers in the catalogue */
     [[nodiscard]] BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() {
-      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.end()};
+      return BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{_iteratedCatalogue.end()};
     }
 
     /** Return const begin iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> begin() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.begin()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{_iteratedCatalogue.begin()};
     }
 
     /** Return const end iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> end() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.end()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{_iteratedCatalogue.end()};
     }
 
     /** Return const begin iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cbegin() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.begin()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{_iteratedCatalogue.begin()};
     }
 
     /** Return const end iterators for iterating through the registers in the catalogue */
     [[nodiscard]] const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo> cend() const {
-      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{insertionOrderedCatalogue.end()};
+      return const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>{_iteratedCatalogue.end()};
+    }
+
+    /**
+     * Returns non-owning range of all hidden registers in the catalogue.
+     */
+    [[nodiscard]] HiddenRange hiddenRegisters() const override {
+      auto filtered = _catalogue | boost::adaptors::filtered([](auto const& kv) { return kv.second.isHidden(); }) |
+          boost::adaptors::transformed([](const auto& kv) -> const BackendRegisterInfoBase& { return kv.second; });
+
+      return HiddenRange(filtered.begin(), filtered.end());
     }
 
    protected:
@@ -176,8 +190,14 @@ namespace ChimeraTK {
    private:
     // Always access the catalogue through the member functions. Modifications need special care to keep the two
     // containers synchronised, hence these members are made private.
-    std::map<RegisterPath, BackendRegisterInfo> catalogue;
-    std::vector<BackendRegisterInfo*> insertionOrderedCatalogue;
+    // The map _catalogue should contain all registers, including "hidden" ones. An exception might be "dynamic"
+    // registers which only exist when someone is looking for them (potentially with time-dependent behaviour). Also
+    // some backends might still implement "hidden" registers without filling them here.
+    std::map<RegisterPath, BackendRegisterInfo> _catalogue;
+
+    // The _iteratedCatalogue is used to the present the user the registers in a nice way, excluding "hidden" registers.
+    // It will be ordered by insertion (call to addRegister()), so e.g. the ordering in the map file can be kept.
+    std::vector<BackendRegisterInfo*> _iteratedCatalogue;
   };
 
   /********************************************************************************************************************/
@@ -290,7 +310,7 @@ namespace ChimeraTK {
   BackendRegisterInfo BackendRegisterCatalogue<BackendRegisterInfo>::getBackendRegister(
       const RegisterPath& name) const {
     try {
-      return catalogue.at(name);
+      return _catalogue.at(name);
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("BackendRegisterCatalogue::getRegister(): Register '" + name + "' does not exist.");
@@ -301,14 +321,14 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   bool BackendRegisterCatalogue<BackendRegisterInfo>::hasRegister(const RegisterPath& registerPathName) const {
-    return catalogue.find(registerPathName) != catalogue.end();
+    return _catalogue.find(registerPathName) != _catalogue.end();
   }
 
   /********************************************************************************************************************/
 
   template<typename BackendRegisterInfo>
   size_t BackendRegisterCatalogue<BackendRegisterInfo>::getNumberOfRegisters() const {
-    return catalogue.size();
+    return _iteratedCatalogue.size();
   }
 
   /********************************************************************************************************************/
@@ -316,8 +336,8 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorBegin() const {
-    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(
-        insertionOrderedCatalogue.cbegin());
+    auto it =
+        std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(_iteratedCatalogue.cbegin());
     return it;
   }
 
@@ -326,8 +346,8 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   std::unique_ptr<const_RegisterCatalogueImplIterator> BackendRegisterCatalogue<
       BackendRegisterInfo>::getConstIteratorEnd() const {
-    auto it = std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(
-        insertionOrderedCatalogue.cend());
+    auto it =
+        std::make_unique<const_BackendRegisterCatalogueImplIterator<BackendRegisterInfo>>(_iteratedCatalogue.cend());
     return it;
   }
 
@@ -335,8 +355,8 @@ namespace ChimeraTK {
 
   template<typename BackendRegisterInfo>
   std::unique_ptr<BackendRegisterCatalogueBase> BackendRegisterCatalogue<BackendRegisterInfo>::clone() const {
-    // FIXME: Change BackendRegisterCatalogue to CRTP, i.e. it has the DERRIVED class as template parameter.
-    // Like this the correct catalogue type is already created here and inherriting backends can call this clone,
+    // FIXME: Change BackendRegisterCatalogue to CRTP, i.e. it has the DERIVED class as template parameter.
+    // Like this the correct catalogue type is already created here and inheriting backends can call this clone,
     // then cast to the actual type and fill the rest of it's properties. Would get rid of the "fillFromThis()"
     // workaround and safe clone() implementations in case no data members are added.
 
@@ -346,7 +366,7 @@ namespace ChimeraTK {
     // Fill the contents of the BackendRegisterCatalogue base class into the target c. This is accessing the
     // private variables and ensures consistency.
     fillFromThis(dynamic_cast<BackendRegisterCatalogue<BackendRegisterInfo>*>(c.get()));
-    // Derrived backends will copy/clone their additional data members here, before
+    // Derived backends will copy/clone their additional data members here, before
     // returning the unique_ptr. The compiler will return it via copy elision.
     return c;
   }
@@ -356,12 +376,13 @@ namespace ChimeraTK {
   template<typename BackendRegisterInfo>
   void BackendRegisterCatalogue<BackendRegisterInfo>::fillFromThis(
       BackendRegisterCatalogue<BackendRegisterInfo>* target) const {
-    // FIXME: change this to a single loop which is just filling the new catalogue through the public API
-    for(auto& p : catalogue) {
-      target->catalogue[p.first] = getBackendRegister(p.first);
+    // copy all registers, including hidden registers
+    for(auto& p : _catalogue) {
+      target->_catalogue[p.first] = getBackendRegister(p.first);
     }
-    for(auto& ptr : insertionOrderedCatalogue) {
-      target->insertionOrderedCatalogue.push_back(&target->catalogue[ptr->getRegisterName()]);
+    // create insertion-order-correct vector of non-hidden registers, pointing to the new RegisterInfo copies
+    for(auto& ptr : _iteratedCatalogue) {
+      target->_iteratedCatalogue.push_back(&target->_catalogue[ptr->getRegisterName()]);
     }
   }
 
@@ -373,8 +394,10 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("BackendRegisterCatalogue::addRegister(): Register with the name " +
           registerInfo.getRegisterName() + " already exists!");
     }
-    catalogue[registerInfo.getRegisterName()] = registerInfo;
-    insertionOrderedCatalogue.push_back(&catalogue[registerInfo.getRegisterName()]);
+    _catalogue[registerInfo.getRegisterName()] = registerInfo;
+    if(!registerInfo.isHidden()) {
+      _iteratedCatalogue.push_back(&_catalogue[registerInfo.getRegisterName()]);
+    }
   }
 
   /********************************************************************************************************************/
@@ -388,13 +411,13 @@ namespace ChimeraTK {
     }
 
     // remove from insertion-ordered vector
-    auto it = std::find_if(insertionOrderedCatalogue.begin(), insertionOrderedCatalogue.end(),
-        [&](auto reg) { return reg->getRegisterName() == name; });
-    assert(it != insertionOrderedCatalogue.end());
-    insertionOrderedCatalogue.erase(it);
+    auto it = std::find_if(
+        _iteratedCatalogue.begin(), _iteratedCatalogue.end(), [&](auto reg) { return reg->getRegisterName() == name; });
+    assert(it != _iteratedCatalogue.end());
+    _iteratedCatalogue.erase(it);
 
     // remove from catalogue map
-    auto removed = catalogue.erase(name);
+    auto removed = _catalogue.erase(name);
     assert(removed == 1);
   }
 
@@ -406,7 +429,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("BackendRegisterCatalogue::modifyRegister(): Register '" +
           registerInfo.getRegisterName() + "' cannot be modified because it does not exist!");
     }
-    catalogue[registerInfo.getRegisterName()] = registerInfo;
+    _catalogue[registerInfo.getRegisterName()] = registerInfo;
     // We don't have to touch the insertionOrderedCatalogue because is stores references, and this has not changed.
   }
 
