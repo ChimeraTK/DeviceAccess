@@ -3,7 +3,6 @@
 #pragma once
 
 #include "async/AsyncNDRegisterAccessor.h"
-#include "DummyBackendRegisterCatalogue.h"
 #include "DummyInterruptTriggerAccessor.h"
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
@@ -103,6 +102,12 @@ namespace ChimeraTK {
         [[maybe_unused]] const std::string& instanceId, Args&&... arguments) {
       return boost::make_shared<T>(std::forward<Args>(arguments)...);
     }
+
+    // Helper function to get x from DUMMY_INTERRUPT_x.
+    // The first element of the returned pair is "true" if an according interrupt is in the catalogue. If the
+    // registerPathName is not DUMMY_INTERRUPT_x or the interrupt is not in the catalogue, the first element is
+    // "false", and the second/ parameter is invalid.
+    std::pair<bool, int> extractControllerInterrupt(const RegisterPath& registerPathName) const;
 
   }; // class DummyBackendBase
 
