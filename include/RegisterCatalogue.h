@@ -5,12 +5,21 @@
 #include "RegisterInfo.h"
 #include "RegisterPath.h"
 
+#include <boost/range/any_range.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace ChimeraTK {
 
   class BackendRegisterCatalogueBase;
   class const_RegisterCatalogueImplIterator;
+
+  /********************************************************************************************************************/
+
+  /**
+   * Forward range with type-erasure, used to get a range of hidden registers
+   */
+  using HiddenRange = boost::any_range<BackendRegisterInfoBase, boost::forward_traversal_tag,
+      const BackendRegisterInfoBase&, std::ptrdiff_t>;
 
   /********************************************************************************************************************/
 
@@ -44,6 +53,11 @@ namespace ChimeraTK {
      * shall be written.
      */
     [[nodiscard]] const BackendRegisterCatalogueBase& getImpl() const;
+
+    /**
+     * Returns non-owning range of all hidden registers in the catalogue.
+     */
+    [[nodiscard]] HiddenRange hiddenRegisters() const;
 
     /** Const iterator for iterating through the registers in the catalogue */
     class const_iterator {
