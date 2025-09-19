@@ -137,7 +137,7 @@ struct IntegersBase {
   boost::shared_ptr<NDRegisterAccessor<minimumUserType>> acc{
       sharedDummy->getRegisterAccessor<minimumUserType>(derived->path(), 1, 0, AccessModeFlags{})};
   boost::shared_ptr<NDRegisterAccessor<rawUserType>> accBackdoor{sharedDummy->getRegisterAccessor<rawUserType>(
-      std::string("MIRRORED/") + derived->path(), 1, 0, {AccessMode::raw})};
+      std::string("MIRRORED/") + derived->path(true), 1, 0, {AccessMode::raw})};
 
   void ensureOpen() {
     // since the front-door and back-door access goes over the same SharedDummyBackend instance, the spec tests
@@ -193,29 +193,29 @@ struct IntegersBase {
 };
 
 struct IntegersSigned32 : public IntegersBase<IntegersSigned32> {
-  static std::string path() { return "INTC_RW"; }
+  static std::string path([[maybe_unused]] bool mirrored = false) { return "INTC_RW"; }
   static bool isWriteable() { return true; }
   static bool isReadable() { return true; }
 };
 struct IntegersSigned32RO : public IntegersBase<IntegersSigned32RO> {
-  static std::string path() { return "INTA_RO"; }
+  static std::string path([[maybe_unused]] bool mirrored = false) { return "INTA_RO"; }
   static bool isWriteable() { return false; }
   static bool isReadable() { return true; }
 };
 struct IntegersSigned32WO : public IntegersBase<IntegersSigned32WO> {
-  static std::string path() { return "INTB_WO"; }
+  static std::string path([[maybe_unused]] bool mirrored = false) { return "INTB_WO"; }
   static bool isWriteable() { return true; }
   static bool isReadable() { return false; }
 };
 struct IntegersSigned32DummyWritable : public IntegersBase<IntegersSigned32DummyWritable> {
-  static std::string path() { return "INTA_RO/DUMMY_WRITEABLE"; }
+  static std::string path(bool mirrored = false) { return !mirrored ? "INTA_RO/DUMMY_WRITEABLE" : "INTA_RO"; }
   static bool isWriteable() { return true; }
   static bool isReadable() { return true; }
 };
 
 struct IntegersSigned32Async : public IntegersBase<IntegersSigned32Async> {
   static int value;
-  static std::string path() { return "INTD_ASYNC"; }
+  static std::string path([[maybe_unused]] bool mirrored = false) { return "INTD_ASYNC"; }
   static bool isWriteable() { return false; }
   static bool isReadable() { return true; }
   static ChimeraTK::AccessModeFlags supportedFlags() {

@@ -121,6 +121,8 @@ namespace ChimeraTK {
 
     DataDescriptor dataDescriptor;
 
+    bool hidden{false};
+
     [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
       return std::unique_ptr<BackendRegisterInfoBase>(new NumericAddressedRegisterInfo(*this));
     }
@@ -128,6 +130,8 @@ namespace ChimeraTK {
     [[nodiscard]] std::vector<size_t> getQualifiedAsyncId() const override;
 
     void computeDataDescriptor();
+
+    [[nodiscard]] bool isHidden() const override { return hidden; }
   };
 
   /********************************************************************************************************************/

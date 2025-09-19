@@ -99,8 +99,14 @@ struct TestFixture {
     accInterrupt.replace(device.getVoidRegisterAccessor(
         "!" + std::to_string(interrupt) + ":4", {ChimeraTK::AccessMode::wait_for_new_data}));
     dummyInterrupt.replace(device.getVoidRegisterAccessor("DUMMY_INTERRUPT_" + std::to_string(interrupt)));
-    isr.replace(
-        device.getScalarRegisterAccessor<uint32_t>("TEST" + std::to_string(interrupt) + "/ISR/DUMMY_WRITEABLE"));
+
+    // Note: we simulate firmware write access to the ISR register here, but in some situations the register is also
+    // software-side writeable, in which case there is no DUMMY_WRITEABLE version of the register.
+    ChimeraTK::RegisterPath isrName = "TEST" + std::to_string(interrupt) + "/ISR";
+    if(!device.getRegisterCatalogue().getRegister(isrName).isWriteable()) {
+      isrName /= "DUMMY_WRITEABLE";
+    }
+    isr.replace(device.getScalarRegisterAccessor<uint32_t>(isrName));
 
     if(activateAsyncFirst) {
       // only if asyncRead is active we will get an initial value. Pop it here for convenience.
