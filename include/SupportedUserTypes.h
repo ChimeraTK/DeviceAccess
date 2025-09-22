@@ -303,7 +303,7 @@ namespace ChimeraTK {
     bool isHexidecimal = (value.length() > 1) and ((value[1] == 'x') or (value[1] == 'X')) and (value[0] == '0');
 
     if constexpr(!std::is_same<NUMERIC, int8_t>::value && !std::is_same<NUMERIC, uint8_t>::value) {
-      NUMERIC v;
+      NUMERIC v = 0;
       std::stringstream ss;
       if(isHexidecimal) {
         ss << std::hex << value.substr(2);
