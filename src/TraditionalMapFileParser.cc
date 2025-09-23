@@ -200,7 +200,6 @@ namespace ChimeraTK::detail {
     is >> name;
     pl.pathName = name;
     pl.pathName.setAltSeparator(".");
-
     // extract mandatory address information
     is >> std::setbase(0) >> pl.nElements >> std::setbase(0) >> pl.address >> std::setbase(0) >> pl.nBytes;
     if(!is) {
@@ -208,14 +207,13 @@ namespace ChimeraTK::detail {
     }
 
     // Note: default values for optional information are set in ParsedLine declaration
-
     // extract bar
     is >> std::setbase(0) >> pl.bar;
 
     // extract width
     if(!is.fail()) {
       is >> std::setbase(0) >> pl.width;
-      if(pl.width > 32) {
+      if((pl.nElements > 0) && (pl.width > pl.nBytes * 8 / pl.nElements)) {
         throw ChimeraTK::logic_error("Parsing error in map file '" + _fileName + "' on line " +
             std::to_string(_lineNo) + ": register width too big");
       }
@@ -353,7 +351,6 @@ namespace ChimeraTK::detail {
     if(channelLines.empty()) {
       throw ChimeraTK::logic_error("No sequences found for register " + pl.pathName);
     }
-
     std::vector<NumericAddressedRegisterInfo::ChannelInfo> channels;
     size_t bytesPerBlock = 0;
 
@@ -361,7 +358,8 @@ namespace ChimeraTK::detail {
       channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{uint32_t(channel.address - pl.address) * 8,
           channel.type, channel.width, channel.nFractionalBits, channel.signedFlag});
       bytesPerBlock += channel.nBytes;
-      if(channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4) {
+
+      if(channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4 && channel.nBytes != 8) {
         throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
       }
     }
@@ -391,10 +389,19 @@ namespace ChimeraTK::detail {
     _pmap.addRegister(registerInfo);
 
     // create 1D entry for reading the multiplexed raw data
+    if(!pl.nBytes || !pl.nElements) {
+      throw ChimeraTK::logic_error(pl.pathName + ": nBytes and nElements cannot be zero");
+    }
     assert(pl.nBytes % 4 == 0);
+    auto regSize = 4;
+    auto width = 32;
+    if(pl.nBytes / pl.nElements == 8) {
+      regSize = 8;
+      width = 64;
+    }
     auto registerInfoMuxedRaw =
-        NumericAddressedRegisterInfo(name2D + ".MULTIPLEXED_RAW", pl.nBytes / 4, pl.address, pl.nBytes, pl.bar, 32, 0,
-            true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT, pl.interruptID);
+        NumericAddressedRegisterInfo(name2D + ".MULTIPLEXED_RAW", pl.nBytes / regSize, pl.address, pl.nBytes, pl.bar,
+            width, 0, true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT, pl.interruptID);
     _pmap.addRegister(registerInfoMuxedRaw);
   }
 

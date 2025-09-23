@@ -1,0 +1,4 @@
+AREA_MULTIPLEXED_SEQUENCE_INT642D            6             0            48             0       64         0         0
+SEQUENCE_INT642D_0                           1             0             8             0       64         0         0
+SEQUENCE_INT642D_1                           1             8             8             0       64         0         0
+SEQUENCE_INT642D_2                           1             16            8             0       64         0         0
