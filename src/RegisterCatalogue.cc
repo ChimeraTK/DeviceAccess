@@ -22,7 +22,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   RegisterCatalogue& RegisterCatalogue::operator=(const RegisterCatalogue& other) {
-    _impl = other._impl->clone();
+    if(this != &other) {
+      _impl = other._impl->clone();
+    }
     return *this;
   }
 
@@ -69,9 +71,32 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   RegisterCatalogue::const_iterator::const_iterator(std::unique_ptr<const_RegisterCatalogueImplIterator> it)
   : _impl(std::move(it)) {}
+
+  /********************************************************************************************************************/
+
+  RegisterCatalogue::const_iterator::const_iterator(const const_iterator& other) : _impl(other._impl->clone()) {}
+
+  /********************************************************************************************************************/
+
+  RegisterCatalogue::const_iterator::const_iterator(const_iterator&& other) noexcept = default;
+
+  /********************************************************************************************************************/
+
+  RegisterCatalogue::const_iterator& RegisterCatalogue::const_iterator::operator=(const const_iterator& other) {
+    if(this != &other) {
+      _impl = other._impl->clone();
+    }
+    return *this;
+  }
+
+  /********************************************************************************************************************/
+
+  RegisterCatalogue::const_iterator& RegisterCatalogue::const_iterator::operator=(
+      const_iterator&& other) noexcept = default;
 
   /********************************************************************************************************************/
 
