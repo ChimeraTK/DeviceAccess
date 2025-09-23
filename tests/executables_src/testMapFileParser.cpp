@@ -129,7 +129,6 @@ BOOST_AUTO_TEST_CASE(testGoodMapFileParse) {
   RegisterInfoents.emplace_back(
       ChimeraTK::NumericAddressedRegisterInfo("INT2D.MULTIPLEXED_RAW", 0x0f, 0x0, 0x3c, 0x0, 32, 0, true,
           NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {}));
-
   compareCatalogue(regcat, RegisterInfoents);
 }
 
@@ -139,7 +138,7 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   ChimeraTK::MapFileParser map_file_parser;
   auto [regcat, mdcat] = map_file_parser.parse("goodMapFile.map");
 
-  BOOST_CHECK_EQUAL(regcat.getNumberOfRegisters(), 22);
+  BOOST_CHECK_EQUAL(regcat.getNumberOfRegisters(), 23);
 
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
@@ -152,7 +151,7 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   retrievedValue = mdcat.getMetadata(metaDataNameToRetrieve);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(22);
+  std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(23);
 
   RegisterInfoents[0] =
       ChimeraTK::NumericAddressedRegisterInfo("BOARD.WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true);
@@ -196,6 +195,8 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
       false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {2});
   RegisterInfoents[21] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5,
       false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {6});
+  RegisterInfoents[22] =
+      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.TEST_AREA2", 0x01, 0x070, 0x08, 0x01, 32, 0, false);
 
   compareCatalogue(regcat, RegisterInfoents);
 }

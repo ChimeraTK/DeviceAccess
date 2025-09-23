@@ -141,7 +141,7 @@ namespace ChimeraTK::detail {
 
   void TraditionalMapFileParser::checkFileConsitencyAndThrowIfError(
       NumericAddressedRegisterInfo::Access registerAccessMode, NumericAddressedRegisterInfo::Type registerType,
-      uint32_t nElements, uint64_t address, uint32_t nBytes, uint64_t bar, uint32_t width, int32_t nFractionalBits,
+      uint32_t nElements, uint64_t address, uint32_t nBytes, uint64_t bar, uint64_t width, int32_t nFractionalBits,
       bool signedFlag) {
     //
     // if type is VOID, access mode cannot me read only
@@ -215,7 +215,7 @@ namespace ChimeraTK::detail {
     // extract width
     if(!is.fail()) {
       is >> std::setbase(0) >> pl.width;
-      if(pl.width > 32) {
+      if(pl.width > 64) {
         throw ChimeraTK::logic_error("Parsing error in map file '" + _fileName + "' on line " +
             std::to_string(_lineNo) + ": register width too big");
       }
@@ -361,7 +361,7 @@ namespace ChimeraTK::detail {
       channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{uint32_t(channel.address - pl.address) * 8,
           channel.type, channel.width, channel.nFractionalBits, channel.signedFlag});
       bytesPerBlock += channel.nBytes;
-      if(channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4) {
+      if(channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4 && channel.nBytes != 8) {
         throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
       }
     }
