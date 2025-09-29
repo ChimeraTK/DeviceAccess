@@ -7,7 +7,9 @@ The API documentation and tutorial examples for all versions are available under
 
 ## Dependencies
 
-To build this library from source, following libraries have to be built / installed first:
+To build this library from source, following libraries have to be built / installed first (for details check CMakeLists.txt and check `FIND_PACKAGE` statements):
 
+* `Boost` components `thread`, `system`, `chrono` and `filesystem` (e.g. Ubuntu/Debian: `apt install libboost-thread-dev libboost-system-dev libboost-chrono-dev libboost-filesystem-dev`)
+* [nlohmann_json](https://github.com/nlohmann/json)
 * [cppext](https://github.com/ChimeraTK/cppext)
 * [exprtk](https://github.com/ChimeraTK/exprtk) via [exprtk-interface](https://github.com/ChimeraTK/exprtk-interface) (use `git clone --recurse-submodules`)
