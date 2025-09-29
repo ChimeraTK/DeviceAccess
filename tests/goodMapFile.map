@@ -39,4 +39,3 @@ LARGE_BAR.NUMBER                  0x00000001    0x00000000    0x00000004    0x10
 MODULE0.INTERRUPT_VOID1               0x00000000    0x00000000    0x00000000    0x00000000       0         0        0 INTERRUPT3 
 MODULE0.INTERRUPT_VOID2               0             0             0             0                0         0        0 INTERRUPT2 
 MODULE0.INTERRUPT_TYPE                0x00000001    0x00000068    0x00000004    0x00000001       18        5        0 INTERRUPT6  
-MODULE1.TEST_AREA2                    0x00000001    0x00000070    0x00000008    0x00000001       32        0        0

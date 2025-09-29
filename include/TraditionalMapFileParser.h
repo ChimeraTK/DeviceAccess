@@ -62,7 +62,7 @@ namespace ChimeraTK::detail {
 
     static void checkFileConsitencyAndThrowIfError(NumericAddressedRegisterInfo::Access registerAccessMode,
         NumericAddressedRegisterInfo::Type registerType, uint32_t nElements, uint64_t address, uint32_t nBytes,
-        uint64_t bar, uint64_t width, int32_t nFractionalBits, bool signedFlag);
+        uint64_t bar, uint32_t width, int32_t nFractionalBits, bool signedFlag);
 
     void parseMetaData(std::string line);
 

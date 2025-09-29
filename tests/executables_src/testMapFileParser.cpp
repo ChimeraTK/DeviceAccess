@@ -82,6 +82,9 @@ BOOST_AUTO_TEST_CASE(testMandatoryRegisterFieldMissing) {
 BOOST_AUTO_TEST_CASE(testIncorrectRegisterWidth) {
   ChimeraTK::MapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth2.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth3.map"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth4.map"), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
@@ -91,6 +94,25 @@ BOOST_AUTO_TEST_CASE(testFracBits) {
   ChimeraTK::MapFileParser map_file_parser2;
   BOOST_CHECK_THROW(map_file_parser1.parse("IncorrectFracBits1.map"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(map_file_parser2.parse("IncorrectFracBits2.map"), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+BOOST_AUTO_TEST_CASE(test64BitSequence) {
+  ChimeraTK::MapFileParser map_file_parser;
+  auto [regcat, mdcat] = map_file_parser.parse("64BitSequence.map");
+
+  std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents;
+  RegisterInfoents.emplace_back(ChimeraTK::NumericAddressedRegisterInfo("INT642D", 0x0, 0x0, 0x02, 192,
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false},
+          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false}},
+      NumericAddressedRegisterInfo::Access::READ_WRITE, {}));
+
+  RegisterInfoents.emplace_back(
+      ChimeraTK::NumericAddressedRegisterInfo("INT642D.MULTIPLEXED_RAW", 0x06, 0x0, 0x30, 0x0, 64, 0, true,
+          NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {}));
+
+  compareCatalogue(regcat, RegisterInfoents);
 }
 
 /**********************************************************************************************************************/
@@ -134,11 +156,23 @@ BOOST_AUTO_TEST_CASE(testGoodMapFileParse) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(test64BitScalar) {
+  ChimeraTK::MapFileParser map_file_parser;
+  auto [regcat, mdcat] = map_file_parser.parse("64BitScalar.map");
+  BOOST_CHECK_EQUAL(regcat.getNumberOfRegisters(), 1);
+  std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(1);
+  RegisterInfoents[0] =
+      ChimeraTK::NumericAddressedRegisterInfo("WORD_64BitScalar", 0x01, 0x00, 0x08, 0x00, 64, 0, false);
+
+  compareCatalogue(regcat, RegisterInfoents);
+}
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   ChimeraTK::MapFileParser map_file_parser;
   auto [regcat, mdcat] = map_file_parser.parse("goodMapFile.map");
 
-  BOOST_CHECK_EQUAL(regcat.getNumberOfRegisters(), 23);
+  BOOST_CHECK_EQUAL(regcat.getNumberOfRegisters(), 22);
 
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
@@ -151,7 +185,7 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   retrievedValue = mdcat.getMetadata(metaDataNameToRetrieve);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(23);
+  std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(22);
 
   RegisterInfoents[0] =
       ChimeraTK::NumericAddressedRegisterInfo("BOARD.WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0, 32, 0, true);
@@ -195,8 +229,6 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
       false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {2});
   RegisterInfoents[21] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5,
       false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {6});
-  RegisterInfoents[22] =
-      ChimeraTK::NumericAddressedRegisterInfo("MODULE1.TEST_AREA2", 0x01, 0x070, 0x08, 0x01, 32, 0, false);
 
   compareCatalogue(regcat, RegisterInfoents);
 }

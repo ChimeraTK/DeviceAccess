@@ -12,14 +12,14 @@ TEST.SEQUENCE_INT_2 1 8 4 0
 # Multiplexed registers still cannot handle this.
 # https://redmine.msktools.desy.de/issues/9660
 TEST.AREA_MULTIPLEXED_SEQUENCE_CHAR       4           0x40            16          0
-TEST.SEQUENCE_CHAR_0                      1           0x40            1           0
-TEST.SEQUENCE_CHAR_1                      1           0x41            1           0
-TEST.SEQUENCE_CHAR_2                      1           0x42            1           0
+TEST.SEQUENCE_CHAR_0                      1           0x40            1           0  8
+TEST.SEQUENCE_CHAR_1                      1           0x41            1           0  8
+TEST.SEQUENCE_CHAR_2                      1           0x42            1           0  8
 
 TEST.AREA_MULTIPLEXED_SEQUENCE_SHORT      8           0x50            32          0
-TEST.SEQUENCE_SHORT_0                     1           0x50            2           0
-TEST.SEQUENCE_SHORT_1                     1           0x52            2           0
-TEST.SEQUENCE_SHORT_2                     1           0x54            2           0
+TEST.SEQUENCE_SHORT_0                     1           0x50            2           0  16
+TEST.SEQUENCE_SHORT_1                     1           0x52            2           0  16
+TEST.SEQUENCE_SHORT_2                     1           0x54            2           0  16
 
 # The sequences with one, two and three fractional bits, signed 8 bit
 TEST.AREA_MULTIPLEXED_SEQUENCE_FRAC_INT 15 0 60 1
@@ -58,9 +58,9 @@ TEST.SEQUENCE_DMA_15 1 0x1E 2 0xD 16 -2 1
 
 # mixed word sizes
 TEST.AREA_MULTIPLEXED_SEQUENCE_MIXED 6 0 24 0x3
-TEST.SEQUENCE_MIXED_0 1 0x00 1 0x3
-TEST.SEQUENCE_MIXED_1 1 0x01 2 0x3
-TEST.SEQUENCE_MIXED_2 1 0x03 4 0x3
+TEST.SEQUENCE_MIXED_0 1 0x00 1 0x3  8
+TEST.SEQUENCE_MIXED_1 1 0x01 2 0x3  16
+TEST.SEQUENCE_MIXED_2 1 0x03 4 0x3  32
 
 # real-life mixed word sizes
 APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM                  4096            0        16384      2     32      0    0
