@@ -42,7 +42,7 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/ConfigGenerator_configureThisHost.sh.
 # install server types (scripts are installed by upstream config generator project)
 foreach(servertype ${servertypes})
   install(DIRECTORY "${servertype}/settings" DESTINATION "${DESTDIR}/${servertype}")
-  install(DIRECTORY "${servertype}/templates" DESTINATION "${DESTDIR}/${servertype}")
+  install(DIRECTORY "${servertype}/templates" DESTINATION "${DESTDIR}/${servertype}" USE_SOURCE_PERMISSIONS)
   file(GLOB thefiles LIST_DIRECTORIES no "${servertype}/*")
   install(FILES ${thefiles} DESTINATION "${DESTDIR}/${servertype}")
 endforeach()
