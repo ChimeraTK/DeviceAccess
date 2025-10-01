@@ -8,7 +8,7 @@ WORD_STATUS                       0x00000001    0x00000008    0x00000004    0x00
 WORD_USER1                        0x00000001    0x0000000C    0x00000004    0x00000000       32         0         
 WORD_USER2                        0x00000001    0x00000010    0x00000004    0x00000000       32         0         0
 
-AREA_MULTIPLEXED_SEQUENCE_INT2D           15             0            60             0       16         0         0
+AREA_MULTIPLEXED_SEQUENCE_INT2D           15             0            60             0       32         0         0
 SEQUENCE_INT2D_0                           1             0             4             0       16         0         0
 SEQUENCE_INT2D_1                           1             4             4             0       16         0         0
 SEQUENCE_INT2D_2                           1             8             4             0       16         0         0
