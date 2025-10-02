@@ -474,14 +474,15 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
   RegisterInfoents[13] = ChimeraTK::NumericAddressedRegisterInfo("TEST.DMA.MULTIPLEXED_RAW", 0x20, 0x00, 0x80, 0x0d, 32,
       0, true, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
-  RegisterInfoents[14] = ChimeraTK::NumericAddressedRegisterInfo("TEST.MIXED", 0x3, 0x00, 0x03, 56,
+  RegisterInfoents[14] = ChimeraTK::NumericAddressedRegisterInfo("TEST.MIXED", 0x3, 0x00, 0x03, 120,
       {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true},
           {8, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true},
-          {24, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true}},
+          {24, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true},
+          {56, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, true}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[15] =
-      ChimeraTK::NumericAddressedRegisterInfo("TEST.MIXED.MULTIPLEXED_RAW", 0x06, 0x00, 0x18, 0x03, 32, 0, true,
+      ChimeraTK::NumericAddressedRegisterInfo("TEST.MIXED.MULTIPLEXED_RAW", 0x06, 0x00, 0x30, 0x03, 64, 0, true,
           NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[16] = ChimeraTK::NumericAddressedRegisterInfo("APP0.DAQ0_BAM", 0x02, 0x0, 372, 352,

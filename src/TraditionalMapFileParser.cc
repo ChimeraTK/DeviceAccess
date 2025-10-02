@@ -213,7 +213,7 @@ namespace ChimeraTK::detail {
     // extract width
     if(!is.fail()) {
       is >> std::setbase(0) >> pl.width;
-      if(pl.nElements > 0 && pl.width > pl.nBytes * 8 / pl.nElements) {
+      if((pl.nElements > 0) && (pl.width > pl.nBytes * 8 / pl.nElements)) {
         throw ChimeraTK::logic_error("Parsing error in map file '" + _fileName + "' on line " +
             std::to_string(_lineNo) + ": register width too big");
       }
@@ -383,22 +383,25 @@ namespace ChimeraTK::detail {
 
     // compute number of blocks (= samples per channel)
     auto nBlocks = static_cast<uint32_t>(std::floor(pl.nBytes / bytesPerBlock));
-
     auto name2D = make2DName(pl.pathName, prefix);
     auto registerInfo = NumericAddressedRegisterInfo(
         name2D, pl.bar, pl.address, nBlocks, bytesPerBlock * 8, channels, pl.registerAccess, pl.interruptID);
     _pmap.addRegister(registerInfo);
 
     // create 1D entry for reading the multiplexed raw data
-
+    if(!pl.nBytes || !pl.nElements) {
+      throw ChimeraTK::logic_error(pl.pathName + ": nBytes and nElements cannot be zero");
+    }
     assert(pl.nBytes % 4 == 0);
     auto regSize = 4;
-    if(pl.width == 64) {
+    auto width = 32;
+    if(pl.nBytes / pl.nElements == 8) {
       regSize = 8;
+      width = 64;
     }
     auto registerInfoMuxedRaw =
         NumericAddressedRegisterInfo(name2D + ".MULTIPLEXED_RAW", pl.nBytes / regSize, pl.address, pl.nBytes, pl.bar,
-            pl.width, 0, true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT, pl.interruptID);
+            width, 0, true, pl.registerAccess, NumericAddressedRegisterInfo::Type::FIXED_POINT, pl.interruptID);
     _pmap.addRegister(registerInfoMuxedRaw);
   }
 
