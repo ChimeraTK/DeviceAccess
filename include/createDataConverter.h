@@ -13,7 +13,8 @@ namespace ChimeraTK::detail {
   ConverterT createDataConverter(const NumericAddressedRegisterInfo& registerInfo, size_t channelIndex = 0);
 
   template<>
-  FixedPointConverter createDataConverter<FixedPointConverter>(
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> createDataConverter<
+      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>>(
       const NumericAddressedRegisterInfo& registerInfo, size_t channelIndex);
 
   template<>
