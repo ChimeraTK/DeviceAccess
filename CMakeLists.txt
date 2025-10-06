@@ -152,6 +152,7 @@ include(cmake/enable_code_style_check.cmake)
 # Keep the testing section at the end. It will include boost test, which will modify the Boost_LIBRARIES variable.
 # We don't want to link client applications to the boost testing library. This might give trouble.
 option(BUILD_TESTS "Build test programs" ON)
+option(ENABLE_MTCA_DUMMY_TEST "Enable mtcadummy based test" ON)
 
 if(BUILD_TESTS)
   enable_testing()

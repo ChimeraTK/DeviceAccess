@@ -19,7 +19,8 @@ foreach(testExecutableSrcFile ${testExecutables})
   # NAME_WE means the base name without path and (longest) extension
   get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
 
-  if(HAVE_PCIE_BACKEND OR NOT(executableName STREQUAL "testDevice" OR executableName STREQUAL "testMtca4uDeviceAccess" OR executableName STREQUAL "testPcieBackend" OR executableName STREQUAL "testRegisterAccess"))
+# Only add testPcieBackend and testRegisterAccess if both HAVE_PCIE_BACKEND and ENABLE_MTCA_DUMMY_TEST are true
+  if( (HAVE_PCIE_BACKEND AND ENABLE_MTCA_DUMMY_TEST) OR NOT(executableName STREQUAL "testPcieBackend" OR executableName STREQUAL "testRegisterAccess"))
     add_executable(${executableName} ${testExecutableSrcFile})
     target_link_libraries(${executableName}
       PRIVATE ${Boost_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
