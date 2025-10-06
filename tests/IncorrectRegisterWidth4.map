@@ -1,2 +1,4 @@
 # name                    number of elements       address          size           bar    width   fracbits    signed
-ONE_EELEMENT_ILLEGAL_WIDTH      0x00000001    0x00000000    0x00000004    0x00000000       33         0         0
+TWO_EELEMENT_ILLEGAL_WIDTH      0x00000002    0x00000000    0x00000008    0x00000000       64         0         0
+
+

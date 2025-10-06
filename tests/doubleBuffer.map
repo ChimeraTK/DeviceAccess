@@ -6,8 +6,8 @@ APP.0.STATUS              1                        8                4           
 APP.0.WORD_DUB_BUF_ENA    1                        12               4              1      32      0         0
 APP.0.WORD_DUB_BUF_CURR   1                        24               4              1      32      0         0
 APP.0.WORD_DUB_BUF_PNUM   1                        28               4              1      32      0         0
-APP.0.DAQ0_BUF0           10                       1024             20             3      32      0         0
-APP.0.DAQ0_BUF1           10                       1224             20             3      32      0         0
+APP.0.DAQ0_BUF0           10                       1024             20             3      16      0         0
+APP.0.DAQ0_BUF1           10                       1224             20             3      16      0         0
 
 # example for accessing extracted channels via double buffering
 DAQ0.WORD_DUB_BUF_ENA                                                 3        32832           12      1      1      0    0   RW
