@@ -50,6 +50,14 @@ namespace ChimeraTK {
       [[nodiscard]] DataType getRawType() const; /**< Return raw type matching the given width */
     };
 
+    struct DoubleBufferInfo {
+      uint64_t address;
+      uint32_t bitOffset;
+      RegisterPath enableRegisterPath;
+      RegisterPath inactiveBufferRegisterPath;
+      uint32_t index;
+    };
+
     /**
      * Constructor to set all data members for scalar/1D registers. They all have default values, so this also acts as
      * default constructor.
@@ -57,14 +65,15 @@ namespace ChimeraTK {
     explicit NumericAddressedRegisterInfo(RegisterPath const& pathName_ = {}, uint32_t nElements_ = 0,
         uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
         int32_t nFractionalBits_ = 0, bool signedFlag_ = true, Access dataAccess_ = Access::READ_WRITE,
-        Type dataType_ = Type::FIXED_POINT, std::vector<size_t> interruptId_ = {});
+        Type dataType_ = Type::FIXED_POINT, std::vector<size_t> interruptId_ = {},
+        std::vector<DoubleBufferInfo> doubleBufferInfo_ = {});
 
     /**
      * Constructor to set all data members for 2D registers.
      */
     NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_, uint64_t address_, uint32_t nElements_,
         uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_, Access dataAccess_,
-        std::vector<size_t> interruptId_);
+        std::vector<size_t> interruptId_, std::vector<DoubleBufferInfo> doubleBufferInfo_ = {});
 
     NumericAddressedRegisterInfo(const NumericAddressedRegisterInfo&) = default;
 
@@ -115,6 +124,7 @@ namespace ChimeraTK {
 
     Access registerAccess; /**< Data access direction: Read, write, read and write or interrupt */
     std::vector<size_t> interruptId;
+    std::vector<DoubleBufferInfo> doubleBuffers;
 
     /** Define per-channel information (bit interpretation etc.), 1D/scalars have exactly one entry. */
     std::vector<ChannelInfo> channels;
