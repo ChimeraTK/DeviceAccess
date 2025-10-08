@@ -5,6 +5,7 @@
 
 #include "async/DomainImpl.h"
 #include "async/DomainsContainer.h"
+#include "DoubleBufferAccessor.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
@@ -143,61 +144,74 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
     // obtain register info
     auto registerInfo = getRegisterInfo(registerPathName);
-
-    // 1D or scalar register
-    if(registerInfo.getNumberOfDimensions() <= 1) {
-      if((registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) ||
-          (registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID)) {
-        if(flags.has(AccessMode::raw)) {
-          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-              new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>,
-                  true>(shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+    if(registerInfo.doubleBuffer == std::nullopt) {
+      // 1D or scalar register
+      if(registerInfo.getNumberOfDimensions() <= 1) {
+        if((registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT) ||
+            (registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID)) {
+          if(flags.has(AccessMode::raw)) {
+            accessor =
+                boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendRegisterAccessor<UserType,
+                    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>, true>(
+                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          }
+          else {
+            accessor =
+                boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendRegisterAccessor<UserType,
+                    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>, false>(
+                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          }
+        }
+        else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
+          if(flags.has(AccessMode::raw)) {
+            accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+                new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(
+                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          }
+          else {
+            accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+                new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>(
+                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          }
+        }
+        else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {
+          if constexpr(!std::is_same<UserType, std::string>::value) {
+            throw ChimeraTK::logic_error("NumericAddressedBackend: ASCII data must be read with std::string UserType.");
+          }
+          else {
+            accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendASCIIAccessor(
+                shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          }
         }
         else {
-          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-              new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>,
-                  false>(shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          throw ChimeraTK::logic_error("NumericAddressedBackend: trying to get accessor for unsupported data type");
         }
       }
-      else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
-        if(flags.has(AccessMode::raw)) {
-          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-              new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(
-                  shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
-        }
-        else {
-          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-              new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>(
-                  shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
-        }
-      }
-      else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {
-        if constexpr(!std::is_same<UserType, std::string>::value) {
-          throw ChimeraTK::logic_error("NumericAddressedBackend: ASCII data must be read with std::string UserType.");
-        }
-        else {
-          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendASCIIAccessor(
-              shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
-        }
-      }
+      // 2D multiplexed register
       else {
-        throw ChimeraTK::logic_error("NumericAddressedBackend: trying to get accessor for unsupported data type");
+        flags.checkForUnknownFlags({});
+        if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
+          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+              new NumericAddressedBackendMuxedRegisterAccessor<UserType, IEEE754_SingleConverter>(
+                  registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+        }
+        else {
+          accessor =
+              boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendMuxedRegisterAccessor<UserType,
+                  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>>(
+                  registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+        }
       }
     }
-    // 2D multiplexed register
+    // double buffer register
     else {
-      flags.checkForUnknownFlags({});
-      if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
-        accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-            new NumericAddressedBackendMuxedRegisterAccessor<UserType, IEEE754_SingleConverter>(
-                registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+      const auto& enableRegPath = registerInfo.doubleBuffer->enableRegisterPath;
+      auto& controlState = _doubleBufferMutexMap[enableRegPath];
+      if(!controlState) {
+        controlState = std::make_shared<detail::CountedRecursiveMutex>();
       }
-      else {
-        accessor =
-            boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendMuxedRegisterAccessor<UserType,
-                FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>>(
-                registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
-      }
+      accessor = boost::make_shared<DoubleBufferAccessor<UserType>>(*registerInfo.doubleBuffer, shared_from_this(),
+          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
 
     accessor->setExceptionBackend(shared_from_this());

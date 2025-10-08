@@ -3,6 +3,7 @@
 #pragma once
 
 #include "async/DomainImpl.h"
+#include "CountedRecursiveMutex.h"
 #include "DeviceBackendImpl.h"
 #include "NumericAddressedRegisterCatalogue.h"
 
@@ -178,6 +179,8 @@ namespace ChimeraTK {
 
     /** We have to remember this in case a new async::Domain is created after calling ActivateAsyncRead. */
     std::atomic_bool _asyncIsActive{false};
+
+    std::unordered_map<std::string, std::shared_ptr<detail::CountedRecursiveMutex>> _doubleBufferMutexMap;
   };
 
   /********************************************************************************************************************/

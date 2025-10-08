@@ -230,12 +230,12 @@
           "_comment": "pitch is the number of bytes between two elements in the same channel",
           "address": {
             "type": "DMA",
-            "offset": "0x80000000"
+            "offset": "0x40000"
           },
           "doubleBuffering": {
             "secondaryBufferAddress": {
               "type": "DMA",
-              "offset": "0x80200000"
+              "offset": "0x40200"
             },
             "enableRegister": "DAQ.DOUBLE_BUF.ENA",
             "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
