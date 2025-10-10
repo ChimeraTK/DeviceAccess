@@ -3,6 +3,8 @@
 
 #include "JsonMapFileParser.h"
 
+#include "JsonExtensions.h"
+
 #include <nlohmann/json.hpp>
 
 #include <boost/algorithm/string.hpp>
@@ -136,8 +138,7 @@ namespace ChimeraTK::detail {
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
           DoubleBufferingInfo, secondaryBufferAddress, enableRegister, readBufferRegister, index)
     };
-    DoubleBufferingInfo doubleBuffering;
-    // std::optional<DoubleBufferingInfo> doubleBuffering;
+    std::optional<DoubleBufferingInfo> doubleBuffering;
 
     struct Address {
       AddressType type{AddressType::IO};
@@ -249,7 +250,15 @@ namespace ChimeraTK::detail {
       if(!info.doubleBuffer) {
         info.doubleBuffer = NumericAddressedRegisterInfo::DoubleBufferInfo{};
       }
-      doubleBuffering.fill(info);
+      if(doubleBuffering.has_value()) {
+        if(!info.doubleBuffer) {
+          info.doubleBuffer = NumericAddressedRegisterInfo::DoubleBufferInfo{};
+        }
+        doubleBuffering->fill(info);
+      }
+      else {
+        info.doubleBuffer.reset();
+      }
     }
 
     std::vector<JsonAddressSpaceEntry> children;
