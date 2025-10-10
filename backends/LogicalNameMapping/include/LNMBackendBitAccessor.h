@@ -209,7 +209,9 @@ namespace ChimeraTK {
       std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       auto casted = boost::dynamic_pointer_cast<NDRegisterAccessor<uint64_t>>(newElement);
       if(casted && _accessor->mayReplaceOther(newElement)) {
-        _accessor = detail::createCopyDecorator<uint64_t>(casted);
+        if(_accessor != newElement) {
+          _accessor = detail::createCopyDecorator<uint64_t>(casted);
+        }
       }
       else {
         _accessor->replaceTransferElement(newElement);
