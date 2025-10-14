@@ -33,9 +33,9 @@ namespace ChimeraTK::detail {
     /** Hold parsed content of a single line */
     struct ParsedLine {
       RegisterPath pathName;      /**< Name of register */
-      uint32_t nElements{0};      /**< Number of elements in register */
+      uint64_t nElements{0};      /**< Number of elements in register */
       uint64_t address{0};        /**< Relative address in bytes from beginning of the bar (Base Address Range) */
-      uint32_t nBytes{0};         /**< Size of register expressed in bytes */
+      uint64_t nBytes{0};         /**< Size of register expressed in bytes */
       uint64_t bar{0};            /**< Number of bar with register */
       uint32_t width{32};         /**< Number of significant bits in the register */
       int32_t nFractionalBits{0}; /**< Number of fractional bits */
