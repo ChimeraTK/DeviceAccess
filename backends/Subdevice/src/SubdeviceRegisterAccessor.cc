@@ -176,6 +176,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   std::list<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor::getInternalElements() {
+    if(_backend->type == SubdeviceBackend::Type::twoRegisters) {
+      // _accStatus is nullptr for twoReg
+      return {_accAddress, _accDataArea};
+    }
     return {_accAddress, _accDataArea, _accStatus};
   }
 

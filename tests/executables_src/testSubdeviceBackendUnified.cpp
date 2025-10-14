@@ -255,21 +255,33 @@ struct MuxedArea2 {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testUnified) {
+BOOST_AUTO_TEST_CASE(TestUnifiedSimple) {
   // test area type
   ChimeraTK::UnifiedBackendTest<>().addRegister<AreaType<MyRegister1>>().addRegister<AreaType<MyArea1>>().runTests(
       "(subdevice?type=area&device=" + cdd + "&area=APP.0.THE_AREA&map=Subdevice.map)");
+}
 
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestUnified3Reg) {
   // test 3regs type
   ChimeraTK::UnifiedBackendTest<>().addRegister<Regs3Type<MyRegister1>>().addRegister<Regs3Type<MyArea1>>().runTests(
       "(subdevice?type=3regs&device=" + cdd +
       "&address=APP.1.ADDRESS&data=APP.1.DATA&status=APP.1.STATUS&map=Subdevice.map)");
+}
 
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestUnified2Reg) {
   // test 2regs type
   core.useStatus = false;
   ChimeraTK::UnifiedBackendTest<>().addRegister<Regs3Type<MyRegister1>>().addRegister<Regs3Type<MyArea1>>().runTests(
       "(subdevice?type=2regs&device=" + cdd + "&address=APP.1.ADDRESS&data=APP.1.DATA&sleep=1000&map=Subdevice.map)");
+}
 
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestUnifiedMuxed3Reg) {
   // test different use case of 3regs mode: multiplexing of an area
   core.useStatus = true;
   core.useArea = true;
