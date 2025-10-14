@@ -213,7 +213,7 @@ namespace ChimeraTK::detail {
     // extract width
     if(!is.fail()) {
       is >> std::setbase(0) >> pl.width;
-      if((pl.nElements > 0) && (pl.width > pl.nBytes * 8 / pl.nElements)) {
+      if((pl.nElements > 0) && (pl.width > pl.nBytes / pl.nElements * 8)) {
         throw ChimeraTK::logic_error("Parsing error in map file '" + _fileName + "' on line " +
             std::to_string(_lineNo) + ": register width too big");
       }
