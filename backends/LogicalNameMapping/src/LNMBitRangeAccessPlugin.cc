@@ -217,7 +217,7 @@ namespace ChimeraTK::LNMBackend {
     ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
     bool _writeable{false};
-    FixedPointConverter fixedPointConverter;
+    FixedPointConverter<uint32_t> fixedPointConverter;
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::_target;
   };

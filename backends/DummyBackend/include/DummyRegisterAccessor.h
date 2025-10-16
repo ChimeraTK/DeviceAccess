@@ -19,7 +19,7 @@ namespace ChimeraTK {
     template<typename T>
     class DummyRegisterElement {
      public:
-      DummyRegisterElement(FixedPointConverter* _fpc, int _nbytes, int32_t* _buffer)
+      DummyRegisterElement(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpc, int _nbytes, int32_t* _buffer)
       : fpcptr(_fpc), nbytes(_nbytes), buffer(_buffer) {}
 
       /// Implicit type conversion to user type T.
@@ -65,7 +65,7 @@ namespace ChimeraTK {
       DummyRegisterElement() : fpcptr(nullptr), nbytes(0), buffer(nullptr) {}
 
       /// fixed point converter to be used for this element
-      FixedPointConverter* fpcptr;
+      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpcptr;
 
       /// number of bytes per word
       int nbytes;
@@ -80,7 +80,8 @@ namespace ChimeraTK {
     template<typename T>
     class DummyRegisterSequence {
      public:
-      DummyRegisterSequence(FixedPointConverter* _fpc, int _nbytes, int _pitch, int32_t* _buffer)
+      DummyRegisterSequence(
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpc, int _nbytes, int _pitch, int32_t* _buffer)
       : fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer) {}
 
       /// Get or set register content by [] operator.
@@ -99,7 +100,7 @@ namespace ChimeraTK {
 
      protected:
       /// fixed point converter to be used for this sequence
-      FixedPointConverter* fpcptr;
+      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpcptr;
 
       /// number of bytes per word
       int nbytes;
@@ -138,7 +139,7 @@ namespace ChimeraTK {
     DummyRegisterAccessor(DummyBackend* dev, std::string const& module, std::string const& name)
     : _dev(dev), _path(module + "/" + name), fpc(module + "/" + name) {
       registerInfo = _dev->_registerMap.getBackendRegister(_path);
-      fpc = FixedPointConverter(module + "/" + name, registerInfo.channels.front().width,
+      fpc = FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(module + "/" + name, registerInfo.channels.front().width,
           registerInfo.channels.front().nFractionalBits, registerInfo.channels.front().signedFlag);
       // initialise the base DummyRegisterElement
       proxies::DummyRegisterElement<T>::fpcptr = &fpc;
@@ -193,7 +194,7 @@ namespace ChimeraTK {
     RegisterPath _path;
 
     /// fixed point converter
-    FixedPointConverter fpc;
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fpc;
 
     /// return element
     inline int32_t* getElement(unsigned int index) {
@@ -296,7 +297,7 @@ namespace ChimeraTK {
     RegisterPath _path;
 
     /// pointer to fixed point converter
-    std::vector<FixedPointConverter> fpc;
+    std::vector<FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>> fpc;
 
     /// offsets in bytes for sequences
     std::vector<uint32_t> offsets;
