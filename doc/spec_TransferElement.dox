@@ -259,6 +259,7 @@ This document describes the behaviour of the TransferElement base class, the NDR
       - 12.1.4.3 If such replacement takes place, the behaviour visible to the application of the TransferElement does not change (exception: VersionNumbers in read opertions can reveal now-consistent data, see 12.1.1).
       - 12.1.4.4 If no such optimisation is possible, the function simply does nothing.
     - \anchor transferElement_B_12_1_5 12.1.5 TransferElement::mayReplaceOther() returns true, if the given TransferElement behaves identical to the one it is called on in every aspect, i.e. it accesses the same data on the same device, has the same UserType and the same AccessModeFlags, and (if applicable) uses the same data transformations (like fixed point conversion). It returns false otherwise. This is used by implementations of \ref transferElement_B_12_1_4_1 "12.1.4.1".
+      - - \anchor transferElement_B_12_1_5_1 12.1.5.1 If the element that is passed to TransferElement::mayReplaceOther() is identical to the TransferElement is is passed to, TransferElement::mayReplaceOther() returns \c false. \ref transferElement_comment_B_12_1_5_1 "(*)" [\ref UnifiedTest_TransferElement_B_12_1_5_1 "U"]
   - 12.2 Adding TransferElements which cannot merge their transfers to the same TransferGroup is always allowed.
   - \anchor transferElement_B_12_3 12.3 If TransferElements have been added to a TransferGroup, individual read/write operations of the TransferElements are no longer allowed and will throw a ChimeraTK::logic_error. Read/write operations are then only possible through the TransferGroup. [\ref testTransferElement_B_12_3 "T"]
   - \anchor transferElement_B_12_4 12.4 A TransferGroup is becomes read-only (cf. TransferGroup::isReadOnly()), if at least one of the member TransferElements is read-only. [\ref testTransferElement_B_12_4 "T"]
@@ -346,6 +347,8 @@ This document describes the behaviour of the TransferElement base class, the NDR
 
 - \anchor transferElement_comment_B_11_7_1 \ref transferElement_B_11_7_1 "11.7.1" If a write call is done there might be older data in the read queue, which results in a lower version number once a read is called.
 - \anchor transferElement_comment_B_11_7_2 \ref transferElement_B_11_7_2 "11.7.2" The BiDirectionalProcessArray is implemented like this.
+
+- \anchor transferElement_comment_B_12_1_5_1 \ref transferElement_B_12_1_5_1 "12.1.5.1" Otherwise all implementations  of TransferElement::replaceTransferElement() would have to do an additional check for equality of the incoming element with their target before putting a copy decorator. This is easily forgotten and leads to subtle bugs which are difficult to track down.
 
 - \anchor transferElement_comment_B_12_8_2 \ref transferElement_B_12_8_2 "12.8.2" The reason is that there needs to be some entity which holds the TransferElement to be replaced. If it is directly used by the calling code, the TransferGroup has no means to replace it.
 

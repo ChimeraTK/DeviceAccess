@@ -91,6 +91,9 @@ namespace ChimeraTK {
       auto rhsCasted =
           boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>>(
               other);
+      if(rhsCasted.get() == this) {
+        return false;
+      }
       if(!rhsCasted) return false;
       if(_ioDevice != rhsCasted->_ioDevice) return false;
       if(_registerInfo != rhsCasted->_registerInfo) return false;

@@ -675,6 +675,10 @@ namespace ChimeraTK {
      * simply return false. It should only return if other is fully identical to
      * this (i.e. behaves identical in all situations but might be another
      * instance).
+     *
+     * If "other" is identical to the object where mayReplaceOther() is called, mayReplaceOther returns 'false', as the
+     * object may not be replaced with a copy-decorated version of itself (see \ref transferElement_B_12_1_5_1
+     * "TransferElement Spec. B12.1.5.1").
      */
     virtual bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const {
       (void)other; // prevent warning
