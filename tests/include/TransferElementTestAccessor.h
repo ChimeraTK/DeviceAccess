@@ -136,6 +136,10 @@ namespace ChimeraTK {
     }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+      if(this == other.get()) {
+        return false;
+      }
+
       return _listMayReplaceElements.count(other->getId());
     }
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {

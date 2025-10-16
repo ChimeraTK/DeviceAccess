@@ -734,6 +734,9 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
 
   bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
     auto casted = boost::dynamic_pointer_cast<CountingDecorator<T> const>(other);
+    if(this == casted.get()) {
+      return false;
+    }
     if(!casted) return false;
     if(_target == casted->_target) return true;
     if(_target->mayReplaceOther(casted->_target)) return true;

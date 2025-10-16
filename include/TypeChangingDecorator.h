@@ -121,6 +121,9 @@ namespace ChimeraTK {
 
     bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const override {
       auto casted = boost::dynamic_pointer_cast<TypeChangingDecorator<T, IMPL_T> const>(other);
+      if(casted.get() == this) {
+        return false;
+      }
       if(!casted) return false;
       return _target->mayReplaceOther(casted->_target);
     }
