@@ -202,6 +202,9 @@ namespace ChimeraTK {
     [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<
           const NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>>(other);
+      if(rhsCasted.get() == this) {
+        return false;
+      }
       if(!rhsCasted) return false;
       if(_dev != rhsCasted->_dev) return false;
       if(_registerInfo != rhsCasted->_registerInfo) return false;

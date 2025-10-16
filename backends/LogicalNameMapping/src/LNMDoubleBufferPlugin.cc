@@ -218,6 +218,9 @@ namespace ChimeraTK::LNMBackend {
     // we need this to support merging of accessors using the same double-buffered as target.
     // If other is also double-buffered region belonging to the same plugin instance, allow the merge
     auto otherDoubleBuffer = boost::dynamic_pointer_cast<DoubleBufferAccessorDecorator const>(other);
+    if(otherDoubleBuffer.get() == this) {
+      return false;
+    }
     if(!otherDoubleBuffer) {
       return false;
     }
