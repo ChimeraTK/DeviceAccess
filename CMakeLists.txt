@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
 set(${PROJECT_NAME}_MINOR_VERSION 24)
-set(${PROJECT_NAME}_PATCH_VERSION 01)
+set(${PROJECT_NAME}_PATCH_VERSION 02)
 include(cmake/set_version_numbers.cmake)
 
 # C++ compiler flags needed to compile this project and against this project
@@ -33,7 +33,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
 FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
-FIND_PACKAGE(ChimeraTK-cppext 01.05 REQUIRED)
+FIND_PACKAGE(ChimeraTK-cppext 01.07 REQUIRED)
 FIND_PACKAGE(exprtk 01.04 REQUIRED)
 
 FIND_PACKAGE(nlohmann_json 03.11 REQUIRED)
