@@ -330,7 +330,7 @@
                 {
                   "name": "VectorSum",
                   "bytesPerElement": 4,
-                  "offset": 10,
+                  "offset": 12,
                   "representation": {
                     "type": "bitField",
                     "width": 32,
