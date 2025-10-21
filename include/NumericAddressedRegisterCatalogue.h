@@ -51,7 +51,7 @@ namespace ChimeraTK {
     };
 
     struct DoubleBufferInfo {
-      uint32_t offset;
+      uint64_t offset;
       RegisterPath enableRegisterPath;
       RegisterPath inactiveBufferRegisterPath;
       uint32_t index;
