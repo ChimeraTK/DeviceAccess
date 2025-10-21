@@ -130,7 +130,7 @@ namespace ChimeraTK::detail {
       size_t index{0};
 
       void fill(NumericAddressedRegisterInfo& info) const {
-        info.doubleBuffer->offset = static_cast<uint32_t>(secondaryBufferAddress.offset.v);
+        info.doubleBuffer->offset = secondaryBufferAddress.offset.v;
         info.doubleBuffer->enableRegisterPath = enableRegister;
         info.doubleBuffer->inactiveBufferRegisterPath = readBufferRegister;
       }
@@ -251,9 +251,6 @@ namespace ChimeraTK::detail {
         info.doubleBuffer = NumericAddressedRegisterInfo::DoubleBufferInfo{};
       }
       if(doubleBuffering.has_value()) {
-        if(!info.doubleBuffer) {
-          info.doubleBuffer = NumericAddressedRegisterInfo::DoubleBufferInfo{};
-        }
         doubleBuffering->fill(info);
       }
       else {
@@ -274,6 +271,22 @@ namespace ChimeraTK::detail {
         fill(my, parentName);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
+        if(doubleBuffering.has_value()) {
+          // Create the .buf0 register as a copy of the main one
+          NumericAddressedRegisterInfo buf0Register = my;
+          buf0Register.pathName = my.pathName + ".BUF0";
+          buf0Register.doubleBuffer.reset(); // it's a simple view of the buffer
+          buf0Register.computeDataDescriptor();
+          catalogue.addRegister(buf0Register);
+          NumericAddressedRegisterInfo buf1Register = my;
+          buf1Register.pathName = my.pathName + ".BUF1";
+          buf1Register.doubleBuffer.reset(); // it's a simple view of the buffer
+          buf1Register.address = doubleBuffering->secondaryBufferAddress.offset.v;
+          // buf1Register.bar = doubleBuffering->secondaryBufferAddress.channel +
+          //     (doubleBuffering->secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);
+          buf1Register.computeDataDescriptor();
+          catalogue.addRegister(buf1Register);
+        }
       }
       for(const auto& child : children) {
         child.addInfos(catalogue, parentName / name);
