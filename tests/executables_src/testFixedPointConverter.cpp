@@ -68,17 +68,18 @@ DEF_TYPENAME(std::string)
 DEF_TYPENAME(Boolean)
 
 template<typename T>
-void checkToCookedOverflowNeg(FixedPointConverter const& converter, uint32_t input) {
+void checkToCookedOverflowNeg(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, uint32_t input) {
   BOOST_CHECK_EQUAL(converter.scalarToCooked<T>(input), std::numeric_limits<T>::min());
 }
 
 template<typename T>
-void checkToCookedOverflowPos(FixedPointConverter const& converter, uint32_t input) {
+void checkToCookedOverflowPos(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, uint32_t input) {
   BOOST_CHECK_EQUAL(converter.scalarToCooked<T>(input), std::numeric_limits<T>::max());
 }
 
 template<typename T>
-void checkToCooked(FixedPointConverter const& converter, uint32_t input, T expectedValue) {
+void checkToCooked(
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, uint32_t input, T expectedValue) {
   std::stringstream message;
   message << "testToCooked failed for type " << typeName<T>() << " with input " << std::hex << "0x" << input << std::hex
           << ", expected 0x" << expectedValue << std::dec;
@@ -93,7 +94,7 @@ void checkToCooked(FixedPointConverter const& converter, uint32_t input, T expec
 }
 
 template<typename T>
-void checkToRaw(FixedPointConverter const& converter, T input, uint32_t expectedValue) {
+void checkToRaw(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, T input, uint32_t expectedValue) {
   std::stringstream message;
   message << "testToRaw failed for type " << typeName<T>() << " with input 0x" << std::hex << input << ", expected 0x"
           << expectedValue << std::dec;
@@ -110,21 +111,24 @@ void checkToRaw(FixedPointConverter const& converter, T input, uint32_t expected
 BOOST_AUTO_TEST_SUITE(FixedPointConverterTestSuite)
 
 BOOST_AUTO_TEST_CASE(testConstructor) {
-  BOOST_CHECK_NO_THROW(FixedPointConverter("UnknownVariable"));
-  BOOST_CHECK_NO_THROW(FixedPointConverter("UnknownVariable", 16, 42, false));
+  BOOST_CHECK_NO_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable"));
+  BOOST_CHECK_NO_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 16, 42, false));
 
   // number of significant bits
-  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 33), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 33), ChimeraTK::logic_error);
 
   // dynamic range of sufficient for bit shift
-  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 2, 1021 - 1), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 2, -1024 + 1), ChimeraTK::logic_error);
-  BOOST_CHECK_NO_THROW(FixedPointConverter("UnknownVariable", 2, 1021 - 2));
-  BOOST_CHECK_NO_THROW(FixedPointConverter("UnknownVariable", 2, -1024 + 2));
+  BOOST_CHECK_THROW(
+      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 2, 1021 - 1), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 2, -1024 + 1), ChimeraTK::logic_error);
+  BOOST_CHECK_NO_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 2, 1021 - 2));
+  BOOST_CHECK_NO_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 2, -1024 + 2));
 }
 
 BOOST_AUTO_TEST_CASE(testInt32) {
-  FixedPointConverter converter("Variable32signed"); // default parameters are signed 32 bit
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter(
+      "Variable32signed"); // default parameters are signed 32 bit
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555));
   checkToCooked(converter, 0xAAAAAAAA, (int)0xAAAAAAAA);
@@ -172,7 +176,7 @@ BOOST_AUTO_TEST_CASE(testInt32) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32) {
-  FixedPointConverter converter("Variable32unsigned", 32, 0,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32unsigned", 32, 0,
       false); // 32 bits, 0 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA));
@@ -220,7 +224,7 @@ BOOST_AUTO_TEST_CASE(testUInt32) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt16) {
-  FixedPointConverter converter("Variable16signed",
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable16signed",
       16); // 16 bits, 0 fractional bits, signed
 
   checkToCooked(converter, 0xAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFFAAAA));
@@ -266,7 +270,7 @@ BOOST_AUTO_TEST_CASE(testInt16) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt16) {
-  FixedPointConverter converter("Variable16unsigned", 16, 0,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable16unsigned", 16, 0,
       false); // 16 bits, 0 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAA, HEX_TO_DOUBLE(0xAAAA));
@@ -310,7 +314,7 @@ BOOST_AUTO_TEST_CASE(testUInt16) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt8) {
-  FixedPointConverter converter("Variable8signed",
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable8signed",
       8); // 8 bits, 0 fractional bits, signed
 
   checkToCooked(converter, 0xAA, SIGNED_HEX_TO_DOUBLE(0xFFFFFFAA));
@@ -355,7 +359,7 @@ BOOST_AUTO_TEST_CASE(testInt8) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt8) {
-  FixedPointConverter converter("Variable8unsigned", 8, 0,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable8unsigned", 8, 0,
       false); // 8 bits, 0 fractional bits, not signed
 
   checkToCooked(converter, 0xAA, HEX_TO_DOUBLE(0xAA));
@@ -399,7 +403,7 @@ BOOST_AUTO_TEST_CASE(testUInt8) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fractionMinus12) {
-  FixedPointConverter converter("Variable32minus12signed", 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32minus12signed", 32,
       -12); // 32 bits, -12 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, 12)); // Basically a left shift 12
@@ -442,7 +446,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fractionMinus12) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus12) {
-  FixedPointConverter converter("Variable32minus12unsigned", 32, -12,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32minus12unsigned", 32, -12,
       false); // 32 bits, -12 fractional bits, not
               // signed
 
@@ -484,7 +488,7 @@ BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus12) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fractionMinus1) {
-  FixedPointConverter converter("Variable32minus1signed", 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32minus1signed", 32,
       -1); // 32 bits, -1 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * 2);
@@ -525,7 +529,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fractionMinus1) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus1) {
-  FixedPointConverter converter("Variable32minus1unsigned", 32, -1,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32minus1unsigned", 32, -1,
       false); // 32 bits, -1 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * 2);
@@ -558,7 +562,8 @@ BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus1) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt16_fractionMinus1) {
-  FixedPointConverter converter("Variable16minus1signed", 16, -1); // 16 bits, -1 fractional bits, signed
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter(
+      "Variable16minus1signed", 16, -1); // 16 bits, -1 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFFAAAA) * 2);
   checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x5555) * 2);
@@ -598,7 +603,8 @@ BOOST_AUTO_TEST_CASE(testInt16_fractionMinus1) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt16_fractionMinus1) {
-  FixedPointConverter converter("Variable16minus1unsigned", 16, -1, false); // 16 bits, -1 fractional bits, not signed
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter(
+      "Variable16minus1unsigned", 16, -1, false); // 16 bits, -1 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAA) * 2);
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x5555) * 2);
@@ -630,7 +636,7 @@ BOOST_AUTO_TEST_CASE(testUInt16_fractionMinus1) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction1) {
-  FixedPointConverter converter("Variable32plus1signed", 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus1signed", 32,
       1); // 32 bits, 1 fractional bit, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * 0.5);
@@ -675,7 +681,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction1) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction1) {
-  FixedPointConverter converter("Variable32plus1unsigned", 32, 1,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus1unsigned", 32, 1,
       false); // 32 bits, 1 fractional bit, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * 0.5);
@@ -716,7 +722,7 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction1) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction7) {
-  FixedPointConverter converter("Variable32plus7signed", 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus7signed", 32,
       7); // 32 bits, 7 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -7));
@@ -764,7 +770,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction7) {
-  FixedPointConverter converter("Variable32plus7unsigned", 32, 7,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus7unsigned", 32, 7,
       false); // 32 bits, -7 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -7));
@@ -801,7 +807,7 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction31) {
-  FixedPointConverter converter("Variable32plus31signed", 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus31signed", 32,
       31); // 32 bits, 31 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -31));
@@ -845,7 +851,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction31) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction31) {
-  FixedPointConverter converter("Variable32plus31unsigned", 32, 31,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus31unsigned", 32, 31,
       false); // 32 bits, 31 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -31));
@@ -890,7 +896,7 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction31) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction32) {
-  FixedPointConverter converter("Variable32plus32signed", 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus32signed", 32,
       32); // 32 bits, 32 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -32));
@@ -931,7 +937,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction32) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction32) {
-  FixedPointConverter converter("Variable32plus32unsigned", 32, 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus32unsigned", 32, 32,
       false); // 32 bits, 32 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -32));
@@ -971,7 +977,7 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction32) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction43) {
-  FixedPointConverter converter("Variable32plus43signed", 32,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus43signed", 32,
       43); // 32 bits, 43 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -43));
@@ -1012,7 +1018,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction43) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction43) {
-  FixedPointConverter converter("Variable32plus43unsigned", 32, 43,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable32plus43unsigned", 32, 43,
       false); // 32 bits, 43 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -43));
@@ -1049,7 +1055,7 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction43) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fractionMinus12) {
-  FixedPointConverter converter("int18_fractionMinus12", 18,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int18_fractionMinus12", 18,
       -12); // 10 bits, -12 fractional bits, signed
 
   checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, 12));
@@ -1082,7 +1088,7 @@ BOOST_AUTO_TEST_CASE(testInt18_fractionMinus12) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fractionMinus12) {
-  FixedPointConverter converter("Variable18minus12unsigned", 18, -12,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18minus12unsigned", 18, -12,
       false); // 10 bits, -12 fractional bits, not
               // signed
 
@@ -1117,7 +1123,7 @@ BOOST_AUTO_TEST_CASE(testUInt18_fractionMinus12) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction0) {
-  FixedPointConverter converter("Variable18minus12signed",
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18minus12signed",
       18); // 18 bits, 0 fractional bits, signed
 
   checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA));
@@ -1158,7 +1164,7 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction0) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction0) {
-  FixedPointConverter converter("Variable18unsigned", 18, 0,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18unsigned", 18, 0,
       false); // 10 bits, -12 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA));
@@ -1192,7 +1198,7 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction0) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction7) {
-  FixedPointConverter converter("Variable18plus7signed", 18,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18plus7signed", 18,
       7); // 18 bits, 7 fractional bits, signed
 
   checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -7));
@@ -1224,7 +1230,7 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction7) {
-  FixedPointConverter converter("Variable18plus7unsigned", 18, 7,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18plus7unsigned", 18, 7,
       false); // 10 bits, -12 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -7));
@@ -1261,7 +1267,7 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction17) {
-  FixedPointConverter converter("Variable18plus17signed", 18,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18plus17signed", 18,
       17); // 18 bits, 17 fractional bits, signed
 
   checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -17));
@@ -1283,7 +1289,7 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction17) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction17) {
-  FixedPointConverter converter("Variable18plus17unsigned", 18, 17,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18plus17unsigned", 18, 17,
       false); // 18 bits, 17 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -17));
@@ -1305,7 +1311,7 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction17) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction18) {
-  FixedPointConverter converter("Variable18plus18signed", 18,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18plus18signed", 18,
       18); // 18 bits, 18 fractional bits, signed
 
   checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -18));
@@ -1332,7 +1338,7 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction18) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction18) {
-  FixedPointConverter converter("Variable18plus18unsigned", 18, 18,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18plus18unsigned", 18, 18,
       false); // 10 bits, -12 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -18));
@@ -1356,7 +1362,7 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction18) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction43) {
-  FixedPointConverter converter("int18_fraction43", 18,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int18_fraction43", 18,
       43); // 18 bits, 43 fractional bits, signed
 
   checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -43));
@@ -1378,7 +1384,7 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction43) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction43) {
-  FixedPointConverter converter("Variable18plus43unsigned", 18, 43,
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable18plus43unsigned", 18, 43,
       false); // 18 bits, -43 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -43));
@@ -1400,19 +1406,19 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction43) {
 }
 
 BOOST_AUTO_TEST_CASE(testGetters) {
-  FixedPointConverter defaultConverter("default");
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> defaultConverter("default");
   BOOST_CHECK(defaultConverter.getNBits() == 32);
   BOOST_CHECK(defaultConverter.getFractionalBits() == 0);
   BOOST_CHECK(defaultConverter.isSigned() == true);
 
-  FixedPointConverter customConverter("custom", 13, 7, false);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> customConverter("custom", 13, 7, false);
   BOOST_CHECK(customConverter.getNBits() == 13);
   BOOST_CHECK(customConverter.getFractionalBits() == 7);
   BOOST_CHECK(customConverter.isSigned() == false);
 }
 
 BOOST_AUTO_TEST_CASE(testInt32ToInt32) {
-  FixedPointConverter converter("int32toInt32"); // default parameters are signed 32 bit
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int32toInt32"); // default parameters are signed 32 bit
 
   checkToCooked(converter, 0, (int32_t)0);
   checkToCooked(converter, 1, (int32_t)1);
@@ -1434,7 +1440,7 @@ BOOST_AUTO_TEST_CASE(testInt32ToInt32) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32ToInt16) {
-  FixedPointConverter converter("int32ToInt16"); // default constructor is signed 32 bit
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int32ToInt16"); // default constructor is signed 32 bit
 
   checkToCooked(converter, 0, (int16_t)0);
   checkToCooked(converter, 1, (int16_t)1);
@@ -1459,7 +1465,7 @@ BOOST_AUTO_TEST_CASE(testInt32ToInt16) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18ToInt32) {
-  FixedPointConverter converter("int18ToInt32", 18, 0, true);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int18ToInt32", 18, 0, true);
 
   checkToCooked(converter, 0, 0);
   checkToCooked(converter, 1, 1);
@@ -1486,7 +1492,8 @@ BOOST_AUTO_TEST_CASE(testInt18ToInt32) {
 }
 
 BOOST_AUTO_TEST_CASE(testIntSignedToUnsigned) {
-  FixedPointConverter converter("signedToUnsigned"); // default parameters are signed 32 bit
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter(
+      "signedToUnsigned"); // default parameters are signed 32 bit
 
   checkToCooked(converter, 0, (uint32_t)0);
   checkToCooked(converter, 1, (uint32_t)1);
@@ -1507,7 +1514,7 @@ BOOST_AUTO_TEST_CASE(testIntSignedToUnsigned) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt17SignedToInt16Unsigned) {
-  FixedPointConverter converter("int17SignedToInt16Unsigned", 17, 0, true);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int17SignedToInt16Unsigned", 17, 0, true);
 
   checkToCooked(converter, 0, (uint16_t)0);
   checkToCooked(converter, 1, (uint16_t)1);
@@ -1528,7 +1535,7 @@ BOOST_AUTO_TEST_CASE(testInt17SignedToInt16Unsigned) {
 
 BOOST_AUTO_TEST_CASE(testInt0unsigned) { // test with 0 significant bits
                                          // (unsigned, no fractional bits)
-  FixedPointConverter converter("int0unsigned", 0, 0, false);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int0unsigned", 0, 0, false);
 
   checkToCooked(converter, 0, 0);
   checkToCooked(converter, 1, 0);
@@ -1544,7 +1551,7 @@ BOOST_AUTO_TEST_CASE(testInt0unsigned) { // test with 0 significant bits
 
 BOOST_AUTO_TEST_CASE(testInt0signed) { // test with 0 significant bits (signed,
                                        // no fractional bits)
-  FixedPointConverter converter("int0signed", 0, 0, true);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int0signed", 0, 0, true);
 
   checkToCooked(converter, 0, 0);
   checkToCooked(converter, 1, 0);
@@ -1560,7 +1567,7 @@ BOOST_AUTO_TEST_CASE(testInt0signed) { // test with 0 significant bits (signed,
 
 BOOST_AUTO_TEST_CASE(testInt0unsignedFractional) { // test with 0 significant bits (unsigned,
                                                    // with fractional bits)
-  FixedPointConverter converter("int0unsignedFractional", 0, 5, false);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int0unsignedFractional", 0, 5, false);
 
   checkToCooked(converter, 0, 0);
   checkToCooked(converter, 1, 0);
@@ -1576,7 +1583,7 @@ BOOST_AUTO_TEST_CASE(testInt0unsignedFractional) { // test with 0 significant bi
 
 BOOST_AUTO_TEST_CASE(testInt0signedFractional) { // test with 0 significant bits (signed, with
                                                  // negative fractional bits)
-  FixedPointConverter converter("int0signedFractional", 0, -5, true);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("int0signedFractional", 0, -5, true);
 
   checkToCooked(converter, 0, 0);
   checkToCooked(converter, 1, 0);
@@ -1591,7 +1598,7 @@ BOOST_AUTO_TEST_CASE(testInt0signedFractional) { // test with 0 significant bits
 }
 
 BOOST_AUTO_TEST_CASE(testDynamicRangePos) {
-  FixedPointConverter converter("dynamicRangePos", 16, 1021 - 16, false);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("dynamicRangePos", 16, 1021 - 16, false);
 
   checkToCooked(converter, 0, 0.);
   checkToCooked(converter, 1, pow(2., -(1021 - 16)));
@@ -1603,7 +1610,7 @@ BOOST_AUTO_TEST_CASE(testDynamicRangePos) {
 }
 
 BOOST_AUTO_TEST_CASE(testDynamicRangeNeg) {
-  FixedPointConverter converter("dynamicRangeNeg", 16, -1024 + 16, false);
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("dynamicRangeNeg", 16, -1024 + 16, false);
 
   checkToCooked(converter, 0, 0.);
   checkToCooked(converter, 1, pow(2., 1024 - 16));
@@ -1615,13 +1622,15 @@ BOOST_AUTO_TEST_CASE(testDynamicRangeNeg) {
 }
 
 BOOST_AUTO_TEST_CASE(testBoolean0) {
-  FixedPointConverter converter("Variable32signed"); // default parameters are signed 32 bit
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter(
+      "Variable32signed"); // default parameters are signed 32 bit
 
   checkToCooked(converter, 0x00000000, Boolean(false));
 }
 
 BOOST_AUTO_TEST_CASE(testVoid) {
-  FixedPointConverter converter("Variable32signed"); // default parameters are signed 32 bit
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter(
+      "Variable32signed"); // default parameters are signed 32 bit
 
   Void output = converter.scalarToCooked<Void>(23);
   (void)output;
