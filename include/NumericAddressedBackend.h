@@ -145,6 +145,11 @@ namespace ChimeraTK {
     template<typename BackendSpecificUserType>
     std::pair<BackendSpecificUserType, VersionNumber> getAsyncDomainInitialValue(size_t asyncDomainId);
 
+    struct DoubleBufferControlState {
+      std::mutex mutex;
+      size_t readerCount = 0;
+    };
+
    protected:
     /*
      * Register catalogue. A reference is used here which is filled from _registerMapPointer in the constructor to allow
@@ -178,6 +183,8 @@ namespace ChimeraTK {
 
     /** We have to remember this in case a new async::Domain is created after calling ActivateAsyncRead. */
     std::atomic_bool _asyncIsActive{false};
+
+    std::unordered_map<std::string, std::shared_ptr<DoubleBufferControlState>> _controlStateMap;
   };
 
   /********************************************************************************************************************/
