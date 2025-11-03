@@ -26,11 +26,12 @@ namespace ChimeraTK {
 
     const std::string _devicePath;
 
-    XdmaIntfAbstract& _intfFromBar(uint64_t bar);
+    XdmaIntfAbstract& intfFromBar(uint64_t bar);
 
    public:
-    explicit XdmaBackend(std::string devicePath, std::string mapFileName = "");
-    ~XdmaBackend() override;
+    explicit XdmaBackend(std::string devicePath, const std::string& mapFileName = "",
+        const std::string& dataConsistencyKeyDescriptor = "");
+    ~XdmaBackend() override = default;
 
     void open() override;
     void closeImpl() override;
