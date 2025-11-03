@@ -5,7 +5,10 @@
 
 namespace ChimeraTK {
 
-  UioBackend::UioBackend(std::string deviceName, std::string mapFileName) : NumericAddressedBackend(mapFileName) {
+  UioBackend::UioBackend(
+      const std::string& deviceName, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+  : NumericAddressedBackend(
+        mapFileName, std::make_unique<NumericAddressedRegisterCatalogue>(), dataConsistencyKeyDescriptor) {
     _uioAccess = std::make_shared<UioAccess>("/dev/" + deviceName);
   }
 
@@ -14,11 +17,18 @@ namespace ChimeraTK {
   }
 
   boost::shared_ptr<DeviceBackend> UioBackend::createInstance(
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
       std::string address, std::map<std::string, std::string> parameters) {
     if(address.empty()) {
       throw ChimeraTK::logic_error("UIO: Device name not specified.");
     }
-    return boost::shared_ptr<DeviceBackend>(new UioBackend(address, parameters["map"]));
+
+    if(parameters["map"].empty()) {
+      throw ChimeraTK::logic_error("UIO: No map file name given.");
+    }
+
+    return boost::make_shared<UioBackend>(address, parameters["map"], parameters["DataConsistencyKeys"]);
   }
 
   void UioBackend::open() {
