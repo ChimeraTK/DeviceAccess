@@ -7,13 +7,15 @@
 
 #include <functional>
 #include <iomanip>
+#include <utility>
 
 namespace ChimeraTK {
 
-  XdmaBackend::XdmaBackend(std::string devicePath, std::string mapFileName)
-  : NumericAddressedBackend(mapFileName), _devicePath(devicePath) {}
-
-  XdmaBackend::~XdmaBackend() {}
+  XdmaBackend::XdmaBackend(
+      std::string devicePath, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
+  : NumericAddressedBackend(
+        mapFileName, std::make_unique<NumericAddressedRegisterCatalogue>(), dataConsistencyKeyDescriptor),
+    _devicePath(std::move(devicePath)) {}
 
   void XdmaBackend::open() {
 #ifdef _DEBUG
@@ -27,7 +29,7 @@ namespace ChimeraTK {
 
     _ctrlIntf.emplace(_devicePath);
 
-    std::for_each(_eventFiles.begin(), _eventFiles.end(), [](auto& eventFile) { eventFile = nullptr; });
+    std::ranges::for_each(_eventFiles, [](auto& eventFile) { eventFile = nullptr; });
 
     // Build vector of DMA channels
     _dmaChannels.clear();
@@ -48,7 +50,7 @@ namespace ChimeraTK {
   }
 
   void XdmaBackend::closeImpl() {
-    std::for_each(_eventFiles.begin(), _eventFiles.end(), [](auto& eventFile) { eventFile = nullptr; });
+    std::ranges::for_each(_eventFiles, [](auto& eventFile) { eventFile = nullptr; });
     _ctrlIntf.reset();
     _dmaChannels.clear();
     _opened = false;
@@ -58,7 +60,7 @@ namespace ChimeraTK {
     return _opened;
   }
 
-  XdmaIntfAbstract& XdmaBackend::_intfFromBar(uint64_t bar) {
+  XdmaIntfAbstract& XdmaBackend::intfFromBar(uint64_t bar) {
     if(bar == 0 && _ctrlIntf.has_value()) {
       return _ctrlIntf.value();
     }
@@ -96,7 +98,7 @@ namespace ChimeraTK {
 #ifdef _DEBUGDUMP
     std::cout << "XDMA: read " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
-    auto& intf = _intfFromBar(bar);
+    auto& intf = intfFromBar(bar);
     intf.read(address, data, sizeInBytes);
 #ifdef _DEBUGDUMP
     dump(data, sizeInBytes);
@@ -107,7 +109,7 @@ namespace ChimeraTK {
 #ifdef _DEBUGDUMP
     std::cout << "XDMA: write " << sizeInBytes << " bytes @ BAR" << bar << ", 0x" << std::hex << address << std::endl;
 #endif
-    auto& intf = _intfFromBar(bar);
+    auto& intf = intfFromBar(bar);
     intf.write(address, data, sizeInBytes);
 #ifdef _DEBUGDUMP
     dump(data, sizeInBytes);
@@ -150,12 +152,18 @@ namespace ChimeraTK {
   }
 
   boost::shared_ptr<DeviceBackend> XdmaBackend::createInstance(
+      // FIXME #11279 Implement API breaking changes from linter warnings
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
       std::string address, std::map<std::string, std::string> parameters) {
     if(address.empty()) {
       throw ChimeraTK::logic_error("XDMA device address not specified.");
     }
 
-    return boost::make_shared<XdmaBackend>("/dev/" + address, parameters["map"]);
+    if(parameters["map"].empty()) {
+      throw ChimeraTK::logic_error("XDMA: No map file name given.");
+    }
+
+    return boost::make_shared<XdmaBackend>("/dev/" + address, parameters["map"], parameters["DataConsistencyKeys"]);
   }
 
 } // namespace ChimeraTK
