@@ -78,8 +78,8 @@ void checkToCookedOverflowPos(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>
 }
 
 template<typename T>
-void checkToCooked(
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, uint32_t input, T expectedValue) {
+void checkToCooked(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, uint32_t input, T expectedValue,
+    const std::string& msg = std::string("")) {
   std::stringstream message;
   message << "testToCooked failed for type " << typeName<T>() << " with input " << std::hex << "0x" << input << std::hex
           << ", expected 0x" << expectedValue << std::dec;
@@ -87,14 +87,19 @@ void checkToCooked(
   BOOST_TEST_CHECKPOINT(message.str());
 
   T output = converter.scalarToCooked<T>(input);
-
-  message << std::hex << ", output 0x" << output << std::dec;
+  if(msg.empty()) {
+    message << std::hex << ", output 0x" << output << std::dec;
+  }
+  else {
+    message << std::hex << ", output 0x" << output << std::dec << ", " << msg;
+  }
 
   BOOST_CHECK_MESSAGE(output == expectedValue, message.str());
 }
 
 template<typename T>
-void checkToRaw(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, T input, uint32_t expectedValue) {
+void checkToRaw(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& converter, T input, uint32_t expectedValue,
+    const std::string& msg = std::string("")) {
   std::stringstream message;
   message << "testToRaw failed for type " << typeName<T>() << " with input 0x" << std::hex << input << ", expected 0x"
           << expectedValue << std::dec;
@@ -102,8 +107,12 @@ void checkToRaw(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> const& conver
   BOOST_TEST_CHECKPOINT(message.str());
 
   uint32_t result = converter.toRaw(input);
-
-  message << std::hex << ", output 0x" << result << std::dec;
+  if(msg.empty()) {
+    message << std::hex << ", output 0x" << result << std::dec;
+  }
+  else {
+    message << std::hex << ", output 0x" << result << std::dec << ", " << msg;
+  }
 
   BOOST_CHECK_MESSAGE(result == expectedValue, message.str());
 }
@@ -115,7 +124,7 @@ BOOST_AUTO_TEST_CASE(testConstructor) {
   BOOST_CHECK_NO_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 16, 42, false));
 
   // number of significant bits
-  BOOST_CHECK_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 33), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>("UnknownVariable", 65), ChimeraTK::logic_error);
 
   // dynamic range of sufficient for bit shift
   BOOST_CHECK_THROW(
@@ -910,29 +919,29 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction32) {
   checkToCooked(converter, 0xAAAAAAAA, (unsigned short)0);
   checkToCooked(converter, 0x55555555, (unsigned short)0);
 
-  checkToRaw(converter, 0.25, 0x40000000);
-  checkToRaw(converter, -0.25, 0xC0000000);
+  checkToRaw(converter, 0.25, 0x40000000, "ToRaw1");
+  checkToRaw(converter, -0.25, 0xC0000000, "ToRaw2");
 
   // these values are out of range
-  checkToRaw(converter, 0.75, 0x7FFFFFFF);
-  checkToRaw(converter, -0.75, 0x80000000);
-  checkToRaw(converter, 3.25, 0x7FFFFFFF);
-  checkToRaw(converter, -3.25, 0x80000000);
-  checkToRaw(converter, 5.75, 0x7FFFFFFF);
-  checkToRaw(converter, -5.75, 0x80000000);
+  checkToRaw(converter, 0.75, 0x7FFFFFFF, "ToRaw3");
+  checkToRaw(converter, -0.75, 0x80000000, "ToRaw4");
+  checkToRaw(converter, 3.25, 0x7FFFFFFF, "ToRaw5");
+  checkToRaw(converter, -3.25, 0x80000000, "ToRaw6");
+  checkToRaw(converter, 5.75, 0x7FFFFFFF, "ToRaw7");
+  checkToRaw(converter, -5.75, 0x80000000, "ToRaw8");
 
   checkToCooked(converter, 0x40000000, 0.25);
   checkToCooked(converter, 0xC0000000, -0.25);
 
-  checkToRaw(converter, (int)0x55555555, 0x7FFFFFFF);
-  checkToRaw(converter, (int)0xAAAAAAAA, 0x80000000);
-  checkToRaw(converter, (int)0, 0);
-  checkToRaw(converter, (int)1, 0x7FFFFFFF);
-  checkToRaw(converter, (int)-1, 0x80000000);
+  checkToRaw(converter, (int)0x55555555, 0x7FFFFFFF, "ToRaw9");
+  checkToRaw(converter, (int)0xAAAAAAAA, 0x80000000, "ToRaw10");
+  checkToRaw(converter, (int)0, 0, "ToRaw11");
+  checkToRaw(converter, (int)1, 0x7FFFFFFF, "ToRaw12");
+  checkToRaw(converter, (int)-1, 0x80000000, "ToRaw13");
   // checkToRaw( converter, (unsigned int)0x55555555, 0x7FFFFFFF );
   checkToRaw(converter, (short)0x5555, 0x7FFFFFFF);
-  checkToRaw(converter, (short)0xAAAA, 0x80000000);
-  checkToRaw(converter, (short)-1, 0x80000000);
+  checkToRaw(converter, (short)0xAAAA, 0x80000000, "ToRaw14");
+  checkToRaw(converter, (short)-1, 0x80000000, "ToRaw15");
   // checkToRaw( converter, (unsigned short)0x5555, 0x7FFFFFFF );
 }
 

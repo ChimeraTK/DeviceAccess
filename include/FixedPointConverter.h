@@ -70,8 +70,10 @@ namespace ChimeraTK {
           "COOKED_ITERATOR template argument must be a random access iterator.");
       static_assert(std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int8_t>::value ||
               std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int16_t>::value ||
-              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value,
-          "RAW_ITERATOR template argument must be an iterator with value type equal to int8_t, int16_t or int32_t");
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int64_t>::value,
+          "RAW_ITERATOR template argument must be an iterator with value type equal to int8_t, int16_t, int32_t or "
+          "int64_t");
       static_assert(std::is_same<typename std::iterator_traits<COOKED_ITERATOR>::value_type, UserType>::value,
           "COOKED_ITERATOR template argument must be an iterator with value type equal to the UserType template "
           "argument.");
@@ -85,7 +87,7 @@ namespace ChimeraTK {
 
     /** Inefficient convenience function for converting a single value to cooked */
     template<typename UserType>
-    UserType scalarToCooked(int32_t const& raw) const {
+    UserType scalarToCooked(RawType const& raw) const {
       UserType cooked;
       vectorToCooked<UserType>(&raw, (&raw) + 1, &cooked);
       return cooked;
@@ -338,13 +340,17 @@ namespace ChimeraTK {
   template<typename UserType>
   RawType FixedPointConverter<RawType>::toRaw(UserType cookedValue) const {
     if constexpr(std::is_same<UserType, std::string>::value) {
-      if(_fractionalBits == 0) { // use integer conversion
+      // use integer conversion
+      if(_fractionalBits == 0) {
         if(_isSigned) {
           return toRaw(std::stoi(cookedValue));
         }
-        return toRaw(static_cast<uint32_t>(std::stoul(cookedValue))); // on some compilers, long might be a
-                                                                      // different type than int...
+        // on some compilers, long might be a
+        // different type than int...
+        //
+        return toRaw(std::stoul(cookedValue));
       }
+
       return toRaw(std::stod(cookedValue));
     }
     else if constexpr(std::is_same<UserType, Boolean>::value) {
@@ -356,7 +362,6 @@ namespace ChimeraTK {
     else if constexpr(std::is_same<UserType, Void>::value) {
       return 0.0;
     }
-
     else {
       // Do a range check first. The later overflow check in the conversion is not
       // sufficient, since we can have non-standard word sizes like 12 bits.
@@ -371,7 +376,9 @@ namespace ChimeraTK {
       if(std::numeric_limits<UserType>::is_integer && _fractionalBits == 0) {
         // extract the sign and leave the positive number
         bool isNegative = isNegativeUserType(cookedValue);
-        if(isNegative && !_isSigned) return _minRawValue;
+        if(isNegative && !_isSigned) {
+          return _minRawValue;
+        }
         if(isNegative) {
           cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be used as UserType might be double
         }
@@ -384,7 +391,7 @@ namespace ChimeraTK {
         }
 
         // return with bit mask applied
-        return rawValue & static_cast<RawType>(_usedBitsMask);
+        return rawValue & _usedBitsMask;
       }
       // convert into double and scale by fractional bit coefficient
       double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);
@@ -399,14 +406,32 @@ namespace ChimeraTK {
       RawType raw;
       try {
         if(_isSigned) {
-          using converter_signed = boost::numeric::converter<int32_t, double,
-              boost::numeric::conversion_traits<int32_t, double>, boost::numeric::def_overflow_handler, Round<double>>;
-          raw = converter_signed::convert(d_cooked);
+          if constexpr(sizeof(RawType) == 4) {
+            using converter_signed =
+                boost::numeric::converter<int32_t, double, boost::numeric::conversion_traits<int32_t, double>,
+                    boost::numeric::def_overflow_handler, Round<double>>;
+            raw = static_cast<RawType>(converter_signed::convert(d_cooked));
+          }
+          else if constexpr(sizeof(RawType) == 8) {
+            using converter_signed =
+                boost::numeric::converter<int64_t, double, boost::numeric::conversion_traits<int64_t, double>,
+                    boost::numeric::def_overflow_handler, Round<double>>;
+            raw = static_cast<RawType>(converter_signed::convert(d_cooked));
+          }
         }
         else {
-          using converter_unsigned = boost::numeric::converter<uint32_t, double,
-              boost::numeric::conversion_traits<uint32_t, double>, boost::numeric::def_overflow_handler, Round<double>>;
-          raw = static_cast<RawType>(converter_unsigned::convert(d_cooked));
+          if constexpr(sizeof(RawType) == 4) {
+            using converter_unsigned =
+                boost::numeric::converter<uint32_t, double, boost::numeric::conversion_traits<uint32_t, double>,
+                    boost::numeric::def_overflow_handler, Round<double>>;
+            raw = static_cast<RawType>(converter_unsigned::convert(d_cooked));
+          }
+          else if constexpr(sizeof(RawType) == 8) {
+            using converter_unsigned =
+                boost::numeric::converter<uint64_t, double, boost::numeric::conversion_traits<uint64_t, double>,
+                    boost::numeric::def_overflow_handler, Round<double>>;
+            raw = static_cast<RawType>(converter_unsigned::convert(d_cooked));
+          }
         }
       }
       catch(boost::numeric::negative_overflow& e) {
@@ -468,11 +493,10 @@ namespace ChimeraTK {
   };
 
   /********************************************************************************************************************/
-  /* As the class is templated now, move implementation from the source file*/
-  /********************************************************************************************************************/
   template<typename RawType>
   const int FixedPointConverter<RawType>::zero = 0;
 
+  /********************************************************************************************************************/
   template<typename RawType>
   FixedPointConverter<RawType>::FixedPointConverter(
       std::string variableName, unsigned int nBits, int fractionalBits, bool isSignedFlag)
@@ -481,6 +505,7 @@ namespace ChimeraTK {
     reconfigure(nBits, fractionalBits, isSignedFlag);
   }
 
+  /********************************************************************************************************************/
   template<typename RawType>
   void FixedPointConverter<RawType>::reconfigure(unsigned int nBits, int fractionalBits, bool isSignedFlag) {
     _nBits = nBits;
@@ -490,10 +515,11 @@ namespace ChimeraTK {
     _inverseFractionalBitsCoefficient = pow(2., fractionalBits);
 
     _bitShiftMaskSigned = 0; // Fixme unused variable.
-    // some sanity checks
-    if(nBits > 32) {
+                             // some sanity checks
+    const auto maxBitsNo = (sizeof(RawType) * 8);
+    if(nBits > maxBitsNo) {
       std::stringstream errorMessage;
-      errorMessage << "The number of bits must be <= 32, but is " << nBits;
+      errorMessage << "The number of bits must be <= " << maxBitsNo << ", but is " << nBits;
       throw ChimeraTK::logic_error(errorMessage.str());
     }
 
@@ -519,16 +545,18 @@ namespace ChimeraTK {
     }
 
     // compute masks of used and unused bits
-    // by using 1L (64 bit) this also works for 32 bits, which needs 33 bits during the calculation
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    _usedBitsMask = static_cast<RawType>((1L << nBits) - 1L);
+    _usedBitsMask = RawType(~RawType(0));
+    if(nBits < sizeof(RawType) * 8) {
+      _usedBitsMask = static_cast<RawType>((RawType(1) << nBits) - RawType(1));
+    }
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
     _unusedBitsMask = ~_usedBitsMask;
 
     // compute bit shift mask, used to test if bit shifting for fractional bits
     // leads to an overflow
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    _bitShiftMask = static_cast<RawType>(~(0xFFFFFFFF >> abs(_fractionalBits)));
+    _bitShiftMask = static_cast<RawType>(~(RawType(~RawType(0)) >> abs(_fractionalBits)));
 
     // compute minimum and maximum value in raw representation
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
@@ -544,7 +572,7 @@ namespace ChimeraTK {
     boost::fusion::for_each(_minCookedValues, initCoefficients(this));
   }
 
-  using DEPRECATED_FIXEDPOINT_DEFAULT = int64_t;
+  using DEPRECATED_FIXEDPOINT_DEFAULT = int32_t;
 
   /********************************************************************************************************************/
 } // namespace ChimeraTK
