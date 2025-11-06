@@ -10,6 +10,7 @@
 #include <boost/fusion/sequence.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
+#include <bit>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -127,13 +128,9 @@ namespace ChimeraTK {
     /// is faster than division in the floating point unit.
     double _inverseFractionalBitsCoefficient;
 
-    RawType _signBitMask{};        ///< The bit which represents the sign
-    RawType _usedBitsMask{};       ///< The bits which are used
-    RawType _unusedBitsMask{};     ///< The bits which are not used
-    RawType _bitShiftMask{};       ///< Mask with N most significant bits set, where N is
-                                   ///< the number of factional bits
-    RawType _bitShiftMaskSigned{}; ///< Mask with N most significant bits set, where N
-                                   ///< is the number of factional bits + 1 if signed
+    RawType _signBitMask{};    ///< The bit which represents the sign
+    RawType _usedBitsMask{};   ///< The bits which are used
+    RawType _unusedBitsMask{}; ///< The bits which are not used
 
     RawType _maxRawValue{}; ///< The maximum possible fixed point value
     RawType _minRawValue{}; ///< The minimum possible fixed point value
@@ -232,7 +229,7 @@ namespace ChimeraTK {
     // NOLINTBEGIN(hicpp-signed-bitwise)
     // NOLINTBEGIN(bugprone-narrowing-conversions)
     // Turn off the linter warning. Yes, we are fiddling with the bit interpretation here, that's the whole point.
-    void padUnusedBits(int32_t& rawValue) const {
+    void padUnusedBits(RawType& rawValue) const {
       if(!(rawValue & _signBitMask)) {
         rawValue &= _usedBitsMask;
       }
@@ -245,10 +242,6 @@ namespace ChimeraTK {
   };
 
   /********************************************************************************************************************/
-
-  // FIXME: replace reinterpret_cast with bit_cast once C++20 is available for us.
-  // Until then, turn off the linter warning about reinterpret_cast
-  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
   template<typename RawType>
   template<typename UserType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
   void FixedPointConverter<RawType>::vectorToCooked_impl<UserType, RAW_ITERATOR, COOKED_ITERATOR>::impl(
@@ -257,14 +250,19 @@ namespace ChimeraTK {
     // Handle integer and floating-point types differently.
     switch(boost::fusion::at_key<UserType>(fpc.conversionBranch_toCooked.table)) {
       case 1: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](int32_t rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](RawType rawValue) {
           fpc.padUnusedBits(rawValue);
-          return numericToUserType<UserType>(*(reinterpret_cast<uint32_t*>(&rawValue)));
+          if constexpr(sizeof(RawType) == 4) {
+            return numericToUserType<UserType>(*(std::bit_cast<uint32_t*>(&rawValue)));
+          }
+          else if constexpr(sizeof(RawType) == 8) {
+            return numericToUserType<UserType>(*(std::bit_cast<uint64_t*>(&rawValue)));
+          }
         });
         break;
       }
       case 2: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](int32_t rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](RawType rawValue) {
           fpc.padUnusedBits(rawValue);
           return numericToUserType<UserType>(rawValue);
         });
@@ -272,55 +270,60 @@ namespace ChimeraTK {
       }
       case 9: { // _fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
         std::transform(raw_begin, raw_end, cooked_begin, [](const auto& rawValue) {
-          return numericToUserType<UserType>(*(reinterpret_cast<const uint16_t*>(&rawValue)));
+          return numericToUserType<UserType>(*(std::bit_cast<const uint16_t*>(&rawValue)));
         });
         break;
       }
       case 10: { //  _fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && _fpc->_isSigned
         std::transform(raw_begin, raw_end, cooked_begin, [](const auto& rawValue) {
-          return numericToUserType<UserType>(*(reinterpret_cast<const int16_t*>(&rawValue)));
+          return numericToUserType<UserType>(*(std::bit_cast<const int16_t*>(&rawValue)));
         });
         break;
       }
       case 7: { // _fpc->_nBits == 16 && _fpc->_fractionalBits < 0  && _fpc->_fractionalBits > -16 && !_fpc->_isSigned
         const auto f = static_cast<uint32_t>(fpc._fractionalBitsCoefficient);
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
-          return numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&rawValue)));
+          return numericToUserType<UserType>(f * *(std::bit_cast<const uint16_t*>(&rawValue)));
         });
         break;
       }
       case 8: { //  _fpc->_nBits == 16 && _fpc->_fractionalBits < 0 && _fpc->_fractionalBits > -16 && _fpc->_isSigned
         const auto f = static_cast<int32_t>(fpc._fractionalBitsCoefficient);
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
-          return numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&rawValue)));
+          return numericToUserType<UserType>(f * *(std::bit_cast<const int16_t*>(&rawValue)));
         });
         break;
       }
       case 5: { // _fpc->_nBits == 16 && !_fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
-          return numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&rawValue)));
+          return numericToUserType<UserType>(f * *(std::bit_cast<const uint16_t*>(&rawValue)));
         });
         break;
       }
       case 6: { //  _fpc->_nBits == 16 && _fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
-          return numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&rawValue)));
+          return numericToUserType<UserType>(f * *(std::bit_cast<const int16_t*>(&rawValue)));
         });
         break;
       }
       case 3: { // !_fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](int32_t rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](RawType rawValue) {
           fpc.padUnusedBits(rawValue);
-          return numericToUserType<UserType>(f * *(reinterpret_cast<uint32_t*>(&rawValue)));
+          if constexpr(sizeof(RawType) == 4) {
+            return numericToUserType<UserType>(f * *(std::bit_cast<uint32_t*>(&rawValue)));
+          }
+          else if constexpr(sizeof(RawType) == 8) {
+            return numericToUserType<UserType>(f * *(std::bit_cast<uint64_t*>(&rawValue)));
+          }
         });
         break;
       }
       case 4: { // _fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
-        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](int32_t rawValue) {
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](RawType rawValue) {
           fpc.padUnusedBits(rawValue);
           auto ttt = numericToUserType<UserType>(f * rawValue);
           return ttt;
@@ -340,14 +343,10 @@ namespace ChimeraTK {
   template<typename UserType>
   RawType FixedPointConverter<RawType>::toRaw(UserType cookedValue) const {
     if constexpr(std::is_same<UserType, std::string>::value) {
-      // use integer conversion
-      if(_fractionalBits == 0) {
+      if(_fractionalBits == 0) { // use integer conversion
         if(_isSigned) {
           return toRaw(std::stoi(cookedValue));
         }
-        // on some compilers, long might be a
-        // different type than int...
-        //
         return toRaw(std::stoul(cookedValue));
       }
 
@@ -355,12 +354,12 @@ namespace ChimeraTK {
     }
     else if constexpr(std::is_same<UserType, Boolean>::value) {
       if((bool)cookedValue) { // use integer conversion
-        return 1.0;
+        return 1;
       }
-      return 0.0;
+      return 0;
     }
     else if constexpr(std::is_same<UserType, Void>::value) {
-      return 0.0;
+      return 0;
     }
     else {
       // Do a range check first. The later overflow check in the conversion is not
@@ -373,36 +372,36 @@ namespace ChimeraTK {
       }
 
       // handle integer and floating-point types differently
-      if(std::numeric_limits<UserType>::is_integer && _fractionalBits == 0) {
-        // extract the sign and leave the positive number
-        bool isNegative = isNegativeUserType(cookedValue);
-        if(isNegative && !_isSigned) {
-          return _minRawValue;
-        }
-        if(isNegative) {
-          cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be used as UserType might be double
-        }
-        // cast into raw type
-        auto rawValue = static_cast<RawType>(cookedValue);
+      if constexpr(std::numeric_limits<UserType>::is_integer) {
+        if(_fractionalBits == 0) {
+          // extract the sign and leave the positive number
+          bool isNegative = isNegativeUserType(cookedValue);
+          if(isNegative && !_isSigned) {
+            return _minRawValue;
+          }
+          if(isNegative) {
+            cookedValue = -(cookedValue + 1); // bit inversion, ~ operator cannot be used as UserType might be double
+          }
+          // cast into raw type
+          auto rawValue = static_cast<RawType>(cookedValue);
 
-        // handle sign
-        if(_isSigned && isNegative) {
-          rawValue = ~rawValue;
-        }
+          // handle sign
+          if(_isSigned && isNegative) {
+            rawValue = ~rawValue;
+          }
 
-        // return with bit mask applied
-        return rawValue & _usedBitsMask;
+          // return with bit mask applied
+          return rawValue & _usedBitsMask;
+        }
       }
       // convert into double and scale by fractional bit coefficient
       double d_cooked = _inverseFractionalBitsCoefficient * static_cast<double>(cookedValue);
 
-      // Convert into either signed or unsigned int32_t, depending on _isSigned,
-      // so the conversion handles the sign correctly. Store always in a uint32_t,
-      // since this is our raw type. The conversion will properly round, when
-      // needed. Negative overflow exceptions need to be caught for some corner
+      // Convert into either signed or unsigned int32_t or int64t, depending on _isSigned,
+      // so the conversion handles the sign correctly and size of Raw type.
+      // Store always in RawType. The conversion will properly round, when
+      // needed. Negative and positive overflow exceptions need to be caught for some corner
       // cases (e.g. number of fractional bits >= number of bits in total).
-      // Positive overflow cannot happen due to the range check above (the negative
-      // branch has one more possible value).
       RawType raw;
       try {
         if(_isSigned) {
@@ -437,6 +436,9 @@ namespace ChimeraTK {
       catch(boost::numeric::negative_overflow& e) {
         raw = _minRawValue;
       }
+      catch(boost::numeric::positive_overflow& e) {
+        raw = _maxRawValue;
+      }
 
       // apply bit mask
       // NOLINTNEXTLINE(hicpp-signed-bitwise)
@@ -458,6 +460,7 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
+  /* specialization for a std::string as UserType*/
   template<typename RawType>
   template<typename RAW_ITERATOR, typename COOKED_ITERATOR>
   struct FixedPointConverter<RawType>::vectorToCooked_impl<std::string, RAW_ITERATOR, COOKED_ITERATOR> {
@@ -511,15 +514,13 @@ namespace ChimeraTK {
     _nBits = nBits;
     _fractionalBits = fractionalBits;
     _isSigned = isSignedFlag;
-    _fractionalBitsCoefficient = pow(2., -fractionalBits);
-    _inverseFractionalBitsCoefficient = pow(2., fractionalBits);
+    _fractionalBitsCoefficient = pow(2., -_fractionalBits);
+    _inverseFractionalBitsCoefficient = pow(2., _fractionalBits);
 
-    _bitShiftMaskSigned = 0; // Fixme unused variable.
-                             // some sanity checks
-    const auto maxBitsNo = (sizeof(RawType) * 8);
-    if(nBits > maxBitsNo) {
+    const auto maxBits = (sizeof(RawType) * 8);
+    if(nBits > maxBits) {
       std::stringstream errorMessage;
-      errorMessage << "The number of bits must be <= " << maxBitsNo << ", but is " << nBits;
+      errorMessage << "The number of bits must be <= " << maxBits << ", but is " << nBits;
       throw ChimeraTK::logic_error(errorMessage.str());
     }
 
@@ -536,27 +537,20 @@ namespace ChimeraTK {
 
     // compute mask for the signed bit
     // keep the mask at 0 if unsigned to simplify further calculations
-    if(nBits > 0) {
+    _signBitMask = 0;
+    if(_isSigned && nBits > 0) {
       // NOLINTNEXTLINE(hicpp-signed-bitwise)
-      _signBitMask = (_isSigned ? 1 << (nBits - 1) : 0x0); // the highest valid bit is the sign
-    }
-    else {
-      _signBitMask = 0;
+      _signBitMask = RawType(1) << (nBits - 1); // the highest valid bit is the sign
     }
 
     // compute masks of used and unused bits
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    _usedBitsMask = RawType(~RawType(0));
+    _usedBitsMask = ~RawType(0);
     if(nBits < sizeof(RawType) * 8) {
       _usedBitsMask = static_cast<RawType>((RawType(1) << nBits) - RawType(1));
     }
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
     _unusedBitsMask = ~_usedBitsMask;
-
-    // compute bit shift mask, used to test if bit shifting for fractional bits
-    // leads to an overflow
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    _bitShiftMask = static_cast<RawType>(~(RawType(~RawType(0)) >> abs(_fractionalBits)));
 
     // compute minimum and maximum value in raw representation
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
