@@ -25,6 +25,9 @@ using namespace boost::unit_test_framework;
 #define SIGNED_HEX_TO_DOUBLE(INPUT) static_cast<double>(static_cast<int32_t>(INPUT))
 #define SIGNED_HEX_TO_INT64(INPUT) static_cast<int64_t>(static_cast<int32_t>(INPUT))
 
+#define SIGNED_HEX16_TO_DOUBLE(INPUT) static_cast<double>(static_cast<int16_t>(INPUT))
+#define SIGNED_HEX16_TO_INT64(INPUT) static_cast<int64_t>(static_cast<int16_t>(INPUT))
+
 #define CHECK_SIGNED_FIXED_POINT_NO_FRACTIONAL                                                                         \
   checkToFixedPoint(converter, 0.25, 0);                                                                               \
   checkToFixedPoint(converter, -0.25, 0);                                                                              \
@@ -944,6 +947,46 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction32) {
   checkToRaw(converter, (short)0xAAAA, 0x80000000, "ToRaw14");
   checkToRaw(converter, (short)-1, 0x80000000, "ToRaw15");
   // checkToRaw( converter, (unsigned short)0x5555, 0x7FFFFFFF );
+}
+
+BOOST_AUTO_TEST_CASE(testInt16_fraction16) {
+  FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> converter("Variable16plus16signed", 16,
+      16); // 16 bits, 16 fractional bits, signed
+
+  checkToCooked(converter, 0xAAAA, SIGNED_HEX16_TO_DOUBLE(0xAAAA) * pow(2, -16), "ToCoocked1");
+  checkToCooked(converter, 0x5555, SIGNED_HEX16_TO_DOUBLE(0x5555) * pow(2, -16), "ToCoocked2");
+  checkToCooked(converter, 0xAAAA, (int)0);
+  checkToCooked(converter, 0x5555, (int)0);
+  checkToCooked(converter, 0xAAAA, (unsigned int)0);
+  checkToCooked(converter, 0x5555, (unsigned int)0);
+  checkToCooked(converter, 0xAAAA, (short)0);
+  checkToCooked(converter, 0x5555, (short)0);
+  checkToCooked(converter, 0xAAAA, (unsigned short)0);
+  checkToCooked(converter, 0x5555, (unsigned short)0);
+
+  checkToRaw(converter, 0.25, 0x4000, "ToRaw1");
+  checkToRaw(converter, -0.25, 0xC000, "ToRaw2");
+
+  // these values are out of range
+  checkToRaw(converter, 0.75, 0x7FFF, "ToRaw3");
+  checkToRaw(converter, -0.75, 0x8000, "ToRaw4");
+  checkToRaw(converter, 3.25, 0x7FFF, "ToRaw5");
+  checkToRaw(converter, -3.25, 0x8000, "ToRaw6");
+  checkToRaw(converter, 5.75, 0x7FFF, "ToRaw7");
+  checkToRaw(converter, -5.75, 0x8000, "ToRaw8");
+
+  checkToCooked(converter, 0x4000, 0.25);
+  checkToCooked(converter, 0xC000, -0.25);
+
+  checkToRaw(converter, (int)0x55555555, 0x7FFF, "ToRaw9");
+  checkToRaw(converter, (int)0xAAAAAAAA, 0x8000, "ToRaw10");
+  checkToRaw(converter, (int)0, 0, "ToRaw11");
+  checkToRaw(converter, (int)1, 0x7FFF, "ToRaw12");
+  checkToRaw(converter, (int)-1, 0x8000, "ToRaw13");
+
+  checkToRaw(converter, (short)0x5555, 0x7FFF, "ToRaw14");
+  checkToRaw(converter, (short)0xAAAA, 0x8000, "ToRaw15");
+  checkToRaw(converter, (short)-1, 0x8000, "ToRaw16");
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction32) {
