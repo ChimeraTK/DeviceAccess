@@ -405,6 +405,7 @@ namespace ChimeraTK {
           raw = RawType(numeric::convert<uint64_t>(d_cooked));
         }
       }
+
       std::cout << "ToRawFrac . Cooked: " << cookedValue << " d_cooked: " << d_cooked << " raw: 0x" << std::hex << raw
                 << std::endl;
       // when cookedValue is not zero and caculated raw is not zero, but still when _usedBitsMask is applied,
@@ -421,6 +422,8 @@ namespace ChimeraTK {
         return _minRawValue;
       }
 
+      //   apply bit mask
+      //   NOLINTNEXTLINE(hicpp-signed-bitwise)
       return raw & _usedBitsMask;
     }
   }
@@ -530,15 +533,24 @@ namespace ChimeraTK {
     // fractional bit coefficients note: we loop over one of the maps only, but
     // initCoefficients() will fill all maps!
     boost::fusion::for_each(_minCookedValues, initCoefficients(this));
+<<<<<<< HEAD
 
     std::cout << "\n\n"
               << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
+=======
+    /*
+    std::cout << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
+>>>>>>> d9275fb4 (fix: Add test for 32 bit raw and fix for it.)
               << ", _fractionalBits: " << _fractionalBits << std::endl;
     std::cout << "_signBitMask: " << std::hex << _signBitMask << std::endl;
     std::cout << "_usedBitsMask: " << std::hex << _usedBitsMask << std::endl;
     std::cout << "_unusedBitsMask: " << std::hex << _unusedBitsMask << std::endl;
     std::cout << "_maxRawValue: " << std::hex << _maxRawValue << std::endl;
     std::cout << "_minRawValue: " << std::hex << _minRawValue << std::endl;
+<<<<<<< HEAD
+=======
+    */
+>>>>>>> d9275fb4 (fix: Add test for 32 bit raw and fix for it.)
   }
 
   /********************************************************************************************************************/
