@@ -389,7 +389,6 @@ namespace ChimeraTK {
           if(_isSigned && isNegative) {
             rawValue = ~rawValue;
           }
-
           // return with bit mask applied
           return rawValue & _usedBitsMask;
         }
@@ -439,9 +438,13 @@ namespace ChimeraTK {
       catch(boost::numeric::positive_overflow& e) {
         raw = _maxRawValue;
       }
-
-      // apply bit mask
-      // NOLINTNEXTLINE(hicpp-signed-bitwise)
+      // when cookedValue is not zero and caculated raw is not zero, but still when _usedBitsMask is applied,
+      // the result is the zero - fix test testInt16_fraction16 for 32bits Raw value - cases ToRaw13 and ToRaw16
+      if(cookedValue && raw && !(raw & _usedBitsMask)) {
+        return _minRawValue;
+      }
+      //   apply bit mask
+      //   NOLINTNEXTLINE(hicpp-signed-bitwise)
       return raw & _usedBitsMask;
     }
   }
@@ -564,6 +567,15 @@ namespace ChimeraTK {
     // fractional bit coefficients note: we loop over one of the maps only, but
     // initCoefficients() will fill all maps!
     boost::fusion::for_each(_minCookedValues, initCoefficients(this));
+    /*
+    std::cout << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
+              << ", _fractionalBits: " << _fractionalBits << std::endl;
+    std::cout << "_signBitMask: " << std::hex << _signBitMask << std::endl;
+    std::cout << "_usedBitsMask: " << std::hex << _usedBitsMask << std::endl;
+    std::cout << "_unusedBitsMask: " << std::hex << _unusedBitsMask << std::endl;
+    std::cout << "_maxRawValue: " << std::hex << _maxRawValue << std::endl;
+    std::cout << "_minRawValue: " << std::hex << _minRawValue << std::endl;
+    */
   }
 
   using DEPRECATED_FIXEDPOINT_DEFAULT = int32_t;
