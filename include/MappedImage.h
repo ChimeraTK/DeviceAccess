@@ -151,7 +151,7 @@ namespace ChimeraTK {
     /// needs to be called after construction. corrupts all data.
     /// this throws logic_error if our buffer size is too small. Try lenghtForShape() to check that in advance
     void setShape(unsigned width, unsigned height, ImgFormat fmt);
-    size_t lengthForShape(unsigned width, unsigned height, ImgFormat fmt);
+    static size_t lengthForShape(unsigned width, unsigned height, ImgFormat fmt);
     /// returns pointer to image payload data
     unsigned char* imgBody() { return data() + sizeof(ImgHeader); }
 
@@ -171,7 +171,8 @@ namespace ChimeraTK {
     }
 
    protected:
-    void formatsDefinition(ImgFormat fmt, unsigned& channels, unsigned& bytesPerPixel);
+    /** Returns a pair of nChannels and nBytesPerPixel matching to the image format. */
+    static std::pair<uint32_t, uint32_t> getFormatDefinition(ImgFormat fmt);
   };
 
   /*************************** begin MappedStruct implementations  ************************************************/
@@ -212,7 +213,8 @@ namespace ChimeraTK {
 
   /*************************** begin MappedImage implementations  ************************************************/
 
-  inline void MappedImage::formatsDefinition(ImgFormat fmt, unsigned& channels, unsigned& bytesPerPixel) {
+  inline std::pair<uint32_t, uint32_t> MappedImage::getFormatDefinition(ImgFormat fmt) {
+    unsigned channels{0}, bytesPerPixel{0};
     switch(fmt) {
       case ImgFormat::Unset:
         assert(false && "ImgFormat::Unset not allowed");
@@ -234,33 +236,48 @@ namespace ChimeraTK {
         bytesPerPixel = 4;
         break;
       case ImgFormat::FLOAT1:
+        channels = 1;
+        bytesPerPixel = 4 * channels;
+        break;
       case ImgFormat::FLOAT2:
+        channels = 2;
+        bytesPerPixel = 4 * channels;
+        break;
       case ImgFormat::FLOAT3:
+        channels = 3;
+        bytesPerPixel = 4 * channels;
+        break;
       case ImgFormat::FLOAT4:
-        channels = unsigned(fmt) - unsigned(ImgFormat::FLOAT1) + 1;
+        channels = 4;
         bytesPerPixel = 4 * channels;
         break;
       case ImgFormat::DOUBLE1:
+        channels = 1;
+        bytesPerPixel = 8 * channels;
+        break;
       case ImgFormat::DOUBLE2:
+        channels = 2;
+        bytesPerPixel = 8 * channels;
+        break;
       case ImgFormat::DOUBLE3:
+        channels = 3;
+        bytesPerPixel = 8 * channels;
+        break;
       case ImgFormat::DOUBLE4:
-        channels = unsigned(fmt) - unsigned(ImgFormat::DOUBLE1) + 1;
+        channels = 4;
         bytesPerPixel = 8 * channels;
         break;
     }
+    return {channels, bytesPerPixel};
   }
 
   inline size_t MappedImage::lengthForShape(unsigned width, unsigned height, ImgFormat fmt) {
-    unsigned channels;
-    unsigned bytesPerPixel;
-    formatsDefinition(fmt, channels, bytesPerPixel);
-    return sizeof(ImgHeader) + (size_t)width * height * bytesPerPixel;
+    auto [channels, bytesPerPixel] = getFormatDefinition(fmt);
+    return sizeof(ImgHeader) + size_t(width) * height * bytesPerPixel;
   }
 
   inline void MappedImage::setShape(unsigned width, unsigned height, ImgFormat fmt) {
-    unsigned channels;
-    unsigned bytesPerPixel;
-    formatsDefinition(fmt, channels, bytesPerPixel);
+    auto [channels, bytesPerPixel] = getFormatDefinition(fmt);
     size_t totalLen = lengthForShape(width, height, fmt);
     if(totalLen > capacity()) {
       throw logic_error("MappedImage: provided buffer to small for requested image shape");
