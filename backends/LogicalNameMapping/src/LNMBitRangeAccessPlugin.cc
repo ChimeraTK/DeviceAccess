@@ -135,7 +135,7 @@ namespace ChimeraTK::LNMBackend {
         // data validity faulty according to B.2.4.1
         // For proper implementation of this, the fixed point converter needs to signalize
         // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
-        auto raw = fixedPointConverter.toRaw(buffer_2D[0][0]);
+        auto raw = static_cast<uint32_t>(fixedPointConverter.toRaw(buffer_2D[0][0]));
         if(raw != v) {
           validity = DataValidity::faulty;
         }
@@ -159,7 +159,7 @@ namespace ChimeraTK::LNMBackend {
             "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
       }
 
-      auto value = fixedPointConverter.toRaw(buffer_2D[0][0]);
+      auto value = static_cast<uint32_t>(fixedPointConverter.toRaw(buffer_2D[0][0]));
 
       // FIXME: Not setting the data validity according to the spec point B2.5.1.
       // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
@@ -217,7 +217,7 @@ namespace ChimeraTK::LNMBackend {
     ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
     bool _writeable{false};
-    FixedPointConverter fixedPointConverter;
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fixedPointConverter;
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::_target;
   };

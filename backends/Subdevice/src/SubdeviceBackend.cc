@@ -210,7 +210,7 @@ namespace ChimeraTK {
   class FixedPointConvertingDecorator : public NDRegisterAccessorDecorator<UserType, TargetUserType> {
    public:
     FixedPointConvertingDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
-        FixedPointConverter fixedPointConverter)
+        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fixedPointConverter)
     : NDRegisterAccessorDecorator<UserType, TargetUserType>(target),
       _fixedPointConverter(std::move(fixedPointConverter)) {}
 
@@ -250,7 +250,7 @@ namespace ChimeraTK {
     }
 
    protected:
-    FixedPointConverter _fixedPointConverter;
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fixedPointConverter;
 
     using NDRegisterAccessorDecorator<UserType, TargetUserType>::_target;
     using NDRegisterAccessor<UserType>::buffer_2D;
@@ -262,7 +262,7 @@ namespace ChimeraTK {
   class FixedPointConvertingRawDecorator : public NDRegisterAccessorDecorator<TargetUserType> {
    public:
     FixedPointConvertingRawDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
-        FixedPointConverter fixedPointConverter)
+        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fixedPointConverter)
     : NDRegisterAccessorDecorator<TargetUserType>(target), _fixedPointConverter(std::move(fixedPointConverter)) {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
@@ -292,7 +292,7 @@ namespace ChimeraTK {
     }
 
    protected:
-    FixedPointConverter _fixedPointConverter;
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fixedPointConverter;
 
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(
         FixedPointConvertingRawDecorator<TargetUserType>, getAsCooked_impl, 2);
@@ -408,8 +408,8 @@ namespace ChimeraTK {
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!isRaw) {
       return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
-          FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-              info.channels.front().signedFlag));
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
     }
     // this is handled by the template specialisation for int32_t
     throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
@@ -472,8 +472,8 @@ namespace ChimeraTK {
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!flags.has(AccessMode::raw)) {
       return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
-          FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-              info.channels.front().signedFlag));
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
     }
     // this is handled by the template specialisation for int32_t
     throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
@@ -503,12 +503,12 @@ namespace ChimeraTK {
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!isRaw) {
       return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>(rawAcc,
-          FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-              info.channels.front().signedFlag));
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
     }
     return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
-        FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-            info.channels.front().signedFlag));
+        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+            info.channels.front().nFractionalBits, info.channels.front().signedFlag));
   }
 
   /********************************************************************************************************************/
@@ -525,12 +525,12 @@ namespace ChimeraTK {
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!flags.has(AccessMode::raw)) {
       return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>(rawAcc,
-          FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-              info.channels.front().signedFlag));
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
     }
     return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
-        FixedPointConverter(registerPathName, info.channels.front().width, info.channels.front().nFractionalBits,
-            info.channels.front().signedFlag));
+        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+            info.channels.front().nFractionalBits, info.channels.front().signedFlag));
   }
 
   /********************************************************************************************************************/

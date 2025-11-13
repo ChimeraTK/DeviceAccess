@@ -191,7 +191,7 @@ namespace ChimeraTK {
     /// fixed point converter to handle type conversions from our "raw" type int
     /// to the requested user type. Note: no actual fixed point conversion is
     /// done, it is just used for the type conversion!
-    FixedPointConverter _fixedPointConverter;
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fixedPointConverter;
 
     /// bit mask for the bit we want to access
     size_t _bitMask;
