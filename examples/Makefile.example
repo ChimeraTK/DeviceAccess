@@ -5,8 +5,8 @@
 #Make sure the ChimeraTK-DeviceAccess-config executable is in your path.
 #For standard installations from debian packages this is the case.
 #For custom installations you might have to adapt you PATH variable.
-CPPFLAGS += $(shell ChimeraTK-DeviceAccess-config --cppflags)
-LDFLAGS +=  $(shell ChimeraTK-DeviceAccess-config --ldflags)
+CPPFLAGS += $(shell pkg-config ChimeraTK-DeviceAccess --cflags)
+LDFLAGS +=  $(shell pkg-config ChimeraTK-DeviceAccess --libs)
 
 SOURCES = $(shell ls *.cpp)
 TARGETS = $(basename $(SOURCES))
