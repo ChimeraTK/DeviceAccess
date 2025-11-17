@@ -1065,7 +1065,7 @@ namespace ChimeraTK {
          private:
           std::string _desc;
         };
-        throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
+        throw myBadCast(std::string("ChimeraTK::callForRawType() has been called for DataType::") + type.getAsString());
     }
   }
 
