@@ -7,6 +7,7 @@
 #include "async/DomainsContainer.h"
 #include "Exception.h"
 #include "MapFileParser.h"
+#include "NDDoubleBufferAccessorDecorator.h"
 #include "NumericAddress.h"
 #include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
@@ -197,6 +198,16 @@ namespace ChimeraTK {
             new NumericAddressedBackendMuxedRegisterAccessor<UserType, FixedPointConverter>(
                 registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
       }
+    }
+    // Optionally wrap with double buffer decorator
+    if(registerInfo.doubleBuffer != std::nullopt) {
+      const auto& enableRegPath = registerInfo.doubleBuffer->enableRegisterPath;
+      auto& controlState = _controlStateMap[enableRegPath];
+      if(!controlState) {
+        controlState = std::make_shared<DoubleBufferControlState>();
+      }
+      accessor = boost::make_shared<NumericDoubleBufferAccessorDecorator<UserType>>(
+          accessor, registerInfo.doubleBuffer, shared_from_this(), controlState);
     }
 
     accessor->setExceptionBackend(shared_from_this());

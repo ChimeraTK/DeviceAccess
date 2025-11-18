@@ -3,6 +3,8 @@
 
 #include "JsonMapFileParser.h"
 
+#include "JsonExtensions.h"
+
 #include <nlohmann/json.hpp>
 
 #include <boost/algorithm/string.hpp>
@@ -113,6 +115,31 @@ namespace ChimeraTK::detail {
     size_t numberOfElements{1};
     size_t bytesPerElement{0};
 
+    struct DoubleBufferingInfo {
+      struct Address {
+        AddressType type{AddressType::DMA};
+        size_t channel{0};
+        HexValue offset{0};
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Address, type, channel, offset)
+      };
+
+      Address secondaryBufferAddress;
+      std::string enableRegister;
+      std::string readBufferRegister;
+      size_t index{0};
+
+      void fill(NumericAddressedRegisterInfo& info) const {
+        info.doubleBuffer->offset = secondaryBufferAddress.offset.v;
+        info.doubleBuffer->enableRegisterPath = enableRegister;
+        info.doubleBuffer->inactiveBufferRegisterPath = readBufferRegister;
+      }
+
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+          DoubleBufferingInfo, secondaryBufferAddress, enableRegister, readBufferRegister, index)
+    };
+    std::optional<DoubleBufferingInfo> doubleBuffering;
+
     struct Address {
       AddressType type{AddressType::IO};
       size_t channel{0};
@@ -220,6 +247,15 @@ namespace ChimeraTK::detail {
         info.interruptId = triggeredByInterrupt;
         info.channels.emplace_back(0, NumericAddressedRegisterInfo::Type::VOID, 0, 0, false);
       }
+      if(!info.doubleBuffer) {
+        info.doubleBuffer = NumericAddressedRegisterInfo::DoubleBufferInfo{};
+      }
+      if(doubleBuffering.has_value()) {
+        doubleBuffering->fill(info);
+      }
+      else {
+        info.doubleBuffer.reset();
+      }
     }
 
     std::vector<JsonAddressSpaceEntry> children;
@@ -235,6 +271,22 @@ namespace ChimeraTK::detail {
         fill(my, parentName);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
+        if(doubleBuffering.has_value()) {
+          // Create the .buf0 register as a copy of the main one
+          NumericAddressedRegisterInfo buf0Register = my;
+          buf0Register.pathName = my.pathName + ".BUF0";
+          buf0Register.doubleBuffer.reset(); // it's a simple view of the buffer
+          buf0Register.computeDataDescriptor();
+          catalogue.addRegister(buf0Register);
+          NumericAddressedRegisterInfo buf1Register = my;
+          buf1Register.pathName = my.pathName + ".BUF1";
+          buf1Register.doubleBuffer.reset(); // it's a simple view of the buffer
+          buf1Register.address = doubleBuffering->secondaryBufferAddress.offset.v;
+          // buf1Register.bar = doubleBuffering->secondaryBufferAddress.channel +
+          //     (doubleBuffering->secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);
+          buf1Register.computeDataDescriptor();
+          catalogue.addRegister(buf1Register);
+        }
       }
       for(const auto& child : children) {
         child.addInfos(catalogue, parentName / name);
@@ -242,7 +294,8 @@ namespace ChimeraTK::detail {
     }
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonAddressSpaceEntry, name, engineeringUnit, description, access,
-        triggeredByInterrupt, numberOfElements, bytesPerElement, address, representation, children, channelTabs)
+        triggeredByInterrupt, numberOfElements, bytesPerElement, address, representation, children, channelTabs,
+        doubleBuffering)
   };
 
   /********************************************************************************************************************/
