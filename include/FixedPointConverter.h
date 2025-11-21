@@ -405,7 +405,6 @@ namespace ChimeraTK {
           raw = RawType(numeric::convert<uint64_t>(d_cooked));
         }
       }
-
       std::cout << "ToRawFrac . Cooked: " << cookedValue << " d_cooked: " << d_cooked << " raw: 0x" << std::hex << raw
                 << std::endl;
       // when cookedValue is not zero and caculated raw is not zero, but still when _usedBitsMask is applied,
@@ -413,16 +412,12 @@ namespace ChimeraTK {
       // if(cookedValue && raw && !(raw & _usedBitsMask)) {
       //  return _minRawValue;
       //}
-      //   apply bit mask
-      //   NOLINTNEXTLINE(hicpp-signed-bitwise)
 
       // negative overflow not detected by boost in case when converter is signed and number of bits in converter is
       // smaller than in raw type
       if(cookedValue && raw && (raw & _usedBitsMask) == 0) {
         return _minRawValue;
       }
-
-      //   apply bit mask
       //   NOLINTNEXTLINE(hicpp-signed-bitwise)
       return raw & _usedBitsMask;
     }
@@ -534,6 +529,7 @@ namespace ChimeraTK {
     // initCoefficients() will fill all maps!
     boost::fusion::for_each(_minCookedValues, initCoefficients(this));
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     std::cout << "\n\n"
               << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
@@ -541,6 +537,12 @@ namespace ChimeraTK {
     /*
     std::cout << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
 >>>>>>> d9275fb4 (fix: Add test for 32 bit raw and fix for it.)
+=======
+
+    std::cout << "\n\n"
+              << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
+>>>>>>> 6d0efd55 (feat: wip on testing the problem with convetion from -1 for signed, the same fractional bit as size of
+the converter)
               << ", _fractionalBits: " << _fractionalBits << std::endl;
     std::cout << "_signBitMask: " << std::hex << _signBitMask << std::endl;
     std::cout << "_usedBitsMask: " << std::hex << _usedBitsMask << std::endl;
@@ -548,9 +550,12 @@ namespace ChimeraTK {
     std::cout << "_maxRawValue: " << std::hex << _maxRawValue << std::endl;
     std::cout << "_minRawValue: " << std::hex << _minRawValue << std::endl;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     */
 >>>>>>> d9275fb4 (fix: Add test for 32 bit raw and fix for it.)
+=======
+>>>>>>> 6d0efd55 (feat: wip on testing the problem with convetion from -1 for signed, the same fractional bit as size of the converter)
   }
 
   /********************************************************************************************************************/
