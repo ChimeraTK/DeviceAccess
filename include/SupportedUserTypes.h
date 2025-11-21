@@ -229,9 +229,8 @@ namespace ChimeraTK {
 
   template<typename UserType, typename NUMERIC>
   UserType detail::numericToUserType_impl<UserType, NUMERIC>::impl(NUMERIC value) {
-    typedef boost::numeric::converter<UserType, NUMERIC, boost::numeric::conversion_traits<UserType, NUMERIC>,
-        boost::numeric::def_overflow_handler, Round<NUMERIC>>
-        converter;
+    using converter = boost::numeric::converter<UserType, NUMERIC, boost::numeric::conversion_traits<UserType, NUMERIC>,
+        boost::numeric::def_overflow_handler, Round<NUMERIC>>;
     // There seems to be no other way to alter the value on negative/positive overflow than using a try-catch-block
     // here. The overflow_handler is a stateless class and hence can either throw another exception or do nothing.
     // It does not have any influence on the converted value, and it cannot transport the information out differently.
@@ -250,9 +249,8 @@ namespace ChimeraTK {
 
   template<typename UserType, typename NUMERIC>
   NUMERIC detail::userTypeToNumeric_impl<UserType, NUMERIC>::impl(UserType value) {
-    typedef boost::numeric::converter<NUMERIC, UserType, boost::numeric::conversion_traits<NUMERIC, UserType>,
-        boost::numeric::def_overflow_handler, Round<UserType>>
-        converter;
+    using converter = boost::numeric::converter<NUMERIC, UserType, boost::numeric::conversion_traits<NUMERIC, UserType>,
+        boost::numeric::def_overflow_handler, Round<UserType>>;
     // There seems to be no other way to alter the value on negative/positive overflow than using a try-catch-block
     // here. The overflow_handler is a stateless class and hence can either throw another exception or do nothing.
     // It does not have any influence on the converted value, and it cannot transport the information out differently.

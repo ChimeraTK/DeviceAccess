@@ -352,8 +352,10 @@ namespace ChimeraTK {
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, true);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, false);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+      NumericAddressedBackendRegisterAccessor, FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>, true);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+      NumericAddressedBackendRegisterAccessor, FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>, false);
   DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
       NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, true);
   DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
