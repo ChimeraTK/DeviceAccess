@@ -359,12 +359,20 @@ namespace ChimeraTK {
       return 0;
     }
     else {
+      std::cout << "Cooked for conv to raw: " << std::dec << cookedValue
+                << ", min: " << boost::fusion::at_key<UserType>(_minCookedValues)
+                << ", max: " << boost::fusion::at_key<UserType>(_maxCookedValues) << std::endl;
+
       // Do a range check first. The later overflow check in the conversion is not
       // sufficient, since we can have non-standard word sizes like 12 bits.
       if(cookedValue < boost::fusion::at_key<UserType>(_minCookedValues)) {
+        std::cout << "Neg OF . min: " << boost::fusion::at_key<UserType>(_minCookedValues) << " raw: 0x" << std::hex
+                  << _minRawValue << std::endl;
         return _minRawValue;
       }
       if(cookedValue > boost::fusion::at_key<UserType>(_maxCookedValues)) {
+        std::cout << "Pos OF . max: " << boost::fusion::at_key<UserType>(_maxCookedValues) << " raw: 0x" << std::hex
+                  << _maxRawValue << std::endl;
         return _maxRawValue;
       }
 
@@ -430,18 +438,29 @@ namespace ChimeraTK {
         }
       }
       catch(boost::numeric::negative_overflow& e) {
+        std::cout << "BOOST Neg OF . Cooked: " << cookedValue << " raw: 0x" << std::hex << _minRawValue << std::endl;
         raw = _minRawValue;
       }
       catch(boost::numeric::positive_overflow& e) {
+        std::cout << "BOOST Pos OF . Cooked: " << cookedValue << " raw: 0x" << std::hex << _minRawValue << std::endl;
         raw = _maxRawValue;
       }
+      std::cout << "ToRawFrac . Cooked: " << cookedValue << " d_cooked: " << d_cooked << " raw: 0x" << std::hex << raw
+                << std::endl;
       // when cookedValue is not zero and caculated raw is not zero, but still when _usedBitsMask is applied,
       // the result is the zero - fix test testInt16_fraction16 for 32bits Raw value - cases ToRaw13 and ToRaw16
-      if(cookedValue && raw && !(raw & _usedBitsMask)) {
-        return _minRawValue;
-      }
+      // if(cookedValue && raw && !(raw & _usedBitsMask)) {
+      //  return _minRawValue;
+      //}
       //   apply bit mask
       //   NOLINTNEXTLINE(hicpp-signed-bitwise)
+
+      // negative overflow not detected by boost in case when converter is signed and number of bits in converter is
+      // smaller than in raw type
+      if(cookedValue && raw && (raw & _usedBitsMask) == 0) {
+        return _minRawValue;
+      }
+
       return raw & _usedBitsMask;
     }
   }
@@ -551,15 +570,15 @@ namespace ChimeraTK {
     // fractional bit coefficients note: we loop over one of the maps only, but
     // initCoefficients() will fill all maps!
     boost::fusion::for_each(_minCookedValues, initCoefficients(this));
-    /*
-    std::cout << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
+
+    std::cout << "\n\n"
+              << std::dec << "RAW BYTES: " << sizeof(RawType) << ", signed: " << _isSigned << ", nBits: " << nBits
               << ", _fractionalBits: " << _fractionalBits << std::endl;
     std::cout << "_signBitMask: " << std::hex << _signBitMask << std::endl;
     std::cout << "_usedBitsMask: " << std::hex << _usedBitsMask << std::endl;
     std::cout << "_unusedBitsMask: " << std::hex << _unusedBitsMask << std::endl;
     std::cout << "_maxRawValue: " << std::hex << _maxRawValue << std::endl;
     std::cout << "_minRawValue: " << std::hex << _minRawValue << std::endl;
-    */
   }
 
   /********************************************************************************************************************/
