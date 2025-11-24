@@ -65,7 +65,7 @@ namespace ChimeraTK {
         // device with same set of register names
         RegisterPath path{info.registerName};
         path.setAltSeparator(".");
-        LogicalNameMappingBackend::AccessorKey key(targetDevice.get(), path);
+        detail::SharedAccessorKey key(targetDevice.get(), path);
         auto it = map.find(key);
         // Obtain accessor if not found in the map or if weak pointer has expired
         // Note: we must not use boost::weak_ptr::expired() here, because we have to check the status and obtain the

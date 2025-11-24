@@ -6,6 +6,7 @@
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
 #include "LNMVariable.h"
+#include "SharedAccessor.h"
 
 #include <mutex>
 #include <unordered_set>
@@ -68,20 +69,7 @@ namespace ChimeraTK {
      * from the target backends */
     mutable bool catalogueCompleted{false};
 
-    /** Struct holding shared accessors together with a mutex for thread safety. See sharedAccessorMap data member. */
-    template<typename UserType>
-    struct SharedAccessor {
-      boost::weak_ptr<NDRegisterAccessor<UserType>> accessor;
-      std::recursive_mutex mutex;
-    };
-
-    /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of
-     *  LNMBackendBitAccessor. Multiple instances of LNMBackendBitAccessor referring to different bits of the same
-     *  register share their target accessor. This sharing is governed by this map. */
-    using AccessorKey = std::pair<DeviceBackend*, RegisterPath>;
-    template<typename UserType>
-    using SharedAccessorMap = std::map<AccessorKey, SharedAccessor<UserType>>;
-    TemplateUserTypeMap<SharedAccessorMap> sharedAccessorMap;
+    TemplateUserTypeMap<detail::SharedAccessorMap> sharedAccessorMap;
     /// a mutex to be locked when sharedAccessorMap (the container) is changed
     std::mutex sharedAccessorMap_mutex;
 

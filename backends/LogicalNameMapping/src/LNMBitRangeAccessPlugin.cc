@@ -13,6 +13,7 @@
 #include <charconv>
 
 namespace ChimeraTK::LNMBackend {
+  using detail::SharedAccessorKey;
 
   /********************************************************************************************************************/
 
@@ -49,7 +50,7 @@ namespace ChimeraTK::LNMBackend {
       auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
       RegisterPath path{name};
       path.setAltSeparator(".");
-      LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
+      SharedAccessorKey key{backend.get(), path};
 
       auto it = map.find(key);
       if(it != map.end()) {
