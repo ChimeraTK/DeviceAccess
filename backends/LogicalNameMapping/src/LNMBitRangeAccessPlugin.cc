@@ -6,6 +6,7 @@
 #include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "ReferenceCountedUniqueLock.h"
 
 #include <boost/make_shared.hpp>
 
@@ -13,54 +14,6 @@
 
 namespace ChimeraTK::LNMBackend {
 
-  /**
-   Helper class that keeps track of how many locks were taken on the recursive mutex in the current thread.
-
-   It is used by the BitRange accessor to determine whether or not it can safely call read() on the target in
-   preWrite for read-modify-write operations
-  */
-  class ReferenceCountedUniqueLock {
-   public:
-    ReferenceCountedUniqueLock() = default;
-
-    explicit ReferenceCountedUniqueLock(std::recursive_mutex& mutex) : _lock(mutex, std::defer_lock) {}
-
-    void lock();
-    void unlock();
-    [[nodiscard]] size_t useCount() const;
-
-   private:
-    thread_local static size_t targetUseCount;
-    std::unique_lock<std::recursive_mutex> _lock;
-  };
-
-  /********************************************************************************************************************/
-
-  thread_local size_t ReferenceCountedUniqueLock::targetUseCount;
-
-  /********************************************************************************************************************/
-
-  size_t ReferenceCountedUniqueLock::useCount() const {
-    assert(_lock.owns_lock());
-    return targetUseCount;
-  }
-
-  /********************************************************************************************************************/
-
-  void ReferenceCountedUniqueLock::unlock() {
-    assert(targetUseCount > 0);
-    targetUseCount--;
-    _lock.unlock();
-  }
-  /********************************************************************************************************************/
-
-  void ReferenceCountedUniqueLock::lock() {
-    _lock.lock();
-    targetUseCount++;
-  }
-
-  /********************************************************************************************************************/
-  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
@@ -100,7 +53,7 @@ namespace ChimeraTK::LNMBackend {
 
       auto it = map.find(key);
       if(it != map.end()) {
-        _lock = ReferenceCountedUniqueLock(it->second.mutex);
+        _lock = detail::ReferenceCountedUniqueLock(it->second.mutex);
       }
       else {
         assert(false);
@@ -214,7 +167,7 @@ namespace ChimeraTK::LNMBackend {
     uint64_t _targetTypeMask{getMaskForNBits(sizeof(TargetType) * CHAR_BIT)};
     uint64_t _baseBitMask;
 
-    ReferenceCountedUniqueLock _lock;
+    detail::ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
     bool _writeable{false};
     FixedPointConverter fixedPointConverter;
