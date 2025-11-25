@@ -69,7 +69,7 @@ namespace ChimeraTK {
      * from the target backends */
     mutable bool catalogueCompleted{false};
 
-    TemplateUserTypeMap<detail::SharedAccessorMap> sharedAccessorMap;
+    TemplateUserTypeMap<detail::TypedSharedAccessorMap> sharedAccessorMap;
     /// a mutex to be locked when sharedAccessorMap (the container) is changed
     std::mutex sharedAccessorMap_mutex;
 

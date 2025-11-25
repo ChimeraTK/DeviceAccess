@@ -3,6 +3,7 @@
 #pragma once
 
 #include "NDRegisterAccessor.h"
+#include "SupportedUserTypes.h"
 
 #include <mutex>
 
@@ -20,6 +21,18 @@ namespace ChimeraTK::detail {
   using SharedAccessorKey = std::pair<DeviceBackend*, RegisterPath>;
 
   template<typename UserType>
-  using SharedAccessorMap = std::map<SharedAccessorKey, SharedAccessor<UserType>>;
+  using TypedSharedAccessorMap = std::map<SharedAccessorKey, SharedAccessor<UserType>>;
+
+  class SharedAccessorMap {
+   public:
+    static SharedAccessorMap& getInstance();
+
+    // protected:
+    TemplateUserTypeMap<TypedSharedAccessorMap> _allTypesMap;
+    std::mutex _mutex;
+
+   protected:
+    static std::unique_ptr<SharedAccessorMap> _impl;
+  };
 
 } // namespace ChimeraTK::detail
