@@ -65,6 +65,9 @@ namespace ChimeraTK {
      * Hidden registers can be explicitly iterated, but the ordinary iterators will not show them.
      */
     [[nodiscard]] virtual bool isHidden() const { return false; }
+
+    /** Default comparison so inheriting classes can define a default comparison. */
+    bool operator==(const BackendRegisterInfoBase&) const = default;
   };
 
   /********************************************************************************************************************/
