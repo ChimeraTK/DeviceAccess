@@ -26,11 +26,15 @@ namespace ChimeraTK::detail {
 
     void doPreRead(TransferType type) override;
     void doPostRead(TransferType type, bool hasNewData) override;
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override;
+    void doPostWrite(TransferType type, VersionNumber versionNumber) override;
 
    protected:
     size_t _elementOffset;
 
     detail::ReferenceCountedUniqueLock _lock;
+
+    VersionNumber _temporaryVersion; // set in preWrite and used in postWrite
   };
 
   /********************************************************************************************************************/
@@ -83,6 +87,7 @@ namespace ChimeraTK::detail {
   }
 
   /********************************************************************************************************************/
+
   template<typename UserType, typename TargetUserType>
   void SubArrayAccessorDecorator<UserType, TargetUserType>::doPostRead(
       [[maybe_unused]] TransferType type, bool hasNewData) {
@@ -98,6 +103,40 @@ namespace ChimeraTK::detail {
     }
     this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
     this->_dataValidity = _target->dataValidity();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void SubArrayAccessorDecorator<UserType, TargetUserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
+    _lock.lock();
+
+    if(!_target->isWriteable()) {
+      throw ChimeraTK::logic_error("Register \"" + TransferElement::getName() + "\" is not writeable.");
+    }
+
+    // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
+    // Otherwise it will overwrite the
+    if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.useCount() == 1)) {
+      _target->read();
+    }
+
+    for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
+      _target->accessData(i + _elementOffset) = userTypeToUserType<TargetUserType, UserType>(buffer_2D[0][i]);
+    }
+
+    _temporaryVersion = std::max(versionNumber, _target->getVersionNumber());
+    _target->setDataValidity(this->_dataValidity);
+    _target->preWrite(type, _temporaryVersion);
+  }
+
+  /******************************************************************************************************************/
+
+  template<typename UserType, typename TargetUserType>
+  void SubArrayAccessorDecorator<UserType, TargetUserType>::doPostWrite(
+      TransferType type, [[maybe_unused]] VersionNumber versionNumber) {
+    auto unlock = cppext::finally([this] { this->_lock.unlock(); });
+    _target->postWrite(type, _temporaryVersion);
   }
 
 } // namespace ChimeraTK::detail
