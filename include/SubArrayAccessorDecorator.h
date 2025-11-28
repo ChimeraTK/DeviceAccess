@@ -20,9 +20,8 @@ namespace ChimeraTK::detail {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::_target;
 
    public:
-    explicit SubArrayAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target, size_t nElements,
-        size_t elementOffset);
+    explicit SubArrayAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath path,
+        size_t nElements, size_t elementOffset, const AccessModeFlags& flags);
 
     void doPreRead(TransferType type) override;
     void doPostRead(TransferType type, bool hasNewData) override;
@@ -35,21 +34,25 @@ namespace ChimeraTK::detail {
     detail::ReferenceCountedUniqueLock _lock;
 
     VersionNumber _temporaryVersion; // set in preWrite and used in postWrite
+
+    static boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> getTarget(
+        const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetRegisterPath,
+        const AccessModeFlags& flags);
   };
 
   /********************************************************************************************************************/
 
   template<typename UserType, typename TargetUserType>
   SubArrayAccessorDecorator<UserType, TargetUserType>::SubArrayAccessorDecorator(
-      const boost::shared_ptr<DeviceBackend>& targetBackend,
-      const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target, size_t nElements,
-      size_t elementOffset)
-  : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _elementOffset(elementOffset) {
+      const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath path, size_t nElements, size_t elementOffset,
+      const AccessModeFlags& flags)
+  : NDRegisterAccessorDecorator<UserType, TargetUserType>(getTarget(targetBackend, path, flags)),
+    _elementOffset(elementOffset) {
     if(nElements == 0) {
-      nElements = target->getNumberOfSamples();
+      throw ChimeraTK::logic_error("SubArrayAccessorDecorator: nElements must not be 0 in " + this->getName());
     }
 
-    if((nElements + elementOffset) > target->getNumberOfSamples()) {
+    if((nElements + elementOffset) > _target->getNumberOfSamples()) {
       throw ChimeraTK::logic_error("Requested offset + nElemements exceeds register size in " + this->getName());
     }
 
@@ -59,7 +62,6 @@ namespace ChimeraTK::detail {
 
     auto& sharedAccessorMultiTypeMap = detail::SharedAccessorMap::getInstance();
 
-    RegisterPath path{target->getName()};
     path.setAltSeparator(".");
     detail::SharedAccessorKey key(targetBackend.get(), path);
 
@@ -67,13 +69,6 @@ namespace ChimeraTK::detail {
     auto& map = boost::fusion::at_key<TargetUserType>(sharedAccessorMultiTypeMap._allTypesMap.table);
 
     auto& sharedAccessor = map[key];
-    auto sharedInstance = sharedAccessor.accessor.lock();
-    if(!sharedInstance) {
-      sharedAccessor.accessor = target;
-    }
-    else {
-      assert(sharedInstance == target);
-    }
     _lock = detail::ReferenceCountedUniqueLock(sharedAccessor.mutex);
   }
 
@@ -137,6 +132,28 @@ namespace ChimeraTK::detail {
       TransferType type, [[maybe_unused]] VersionNumber versionNumber) {
     auto unlock = cppext::finally([this] { this->_lock.unlock(); });
     _target->postWrite(type, _temporaryVersion);
+  }
+
+  template<typename UserType, typename TargetUserType>
+  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> SubArrayAccessorDecorator<UserType,
+      TargetUserType>::getTarget(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetRegisterPath,
+      const AccessModeFlags& flags) {
+    auto& sharedAccessorMultiTypeMap = detail::SharedAccessorMap::getInstance();
+
+    targetRegisterPath.setAltSeparator(".");
+    detail::SharedAccessorKey key(targetBackend.get(), targetRegisterPath);
+
+    auto l = std::lock_guard(sharedAccessorMultiTypeMap._mutex);
+    auto& map = boost::fusion::at_key<TargetUserType>(sharedAccessorMultiTypeMap._allTypesMap.table);
+
+    auto& sharedAccessor = map[key];
+    auto sharedInstance = sharedAccessor.accessor.lock();
+    if(!sharedInstance) {
+      auto newInstance = targetBackend->getRegisterAccessor<TargetUserType>(targetRegisterPath, 0, 0, flags);
+      sharedAccessor.accessor = newInstance;
+      return newInstance;
+    }
+    return sharedInstance;
   }
 
 } // namespace ChimeraTK::detail
