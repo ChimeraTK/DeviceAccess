@@ -244,6 +244,7 @@ the delay.
 \subsubsection plugins_reference_type_hint_modifier typeHintModifier
 The <code>typeHintModifier</code> is a simple plugin to change the type of the mapped variable in logical name mapper's
 catalogue. It does, however, <strong>NOT</strong> perform any type conversion on its own.
+In the context of ApplicationCore, use this to request conversion from the transport-layer type (raw type) to another type. Note that type conversion is implemented by clamping.
 
 Parameters:
 - <code>type</code>: New type. The same type names as for \ref variables_and_constants are supported.
