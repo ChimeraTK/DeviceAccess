@@ -4,14 +4,33 @@
         <type>int16</type>
         <value>0</value>
     </variable>
+    <!-- Test that independent bit ranges work in the same transfer group -->
+    <variable name="AnotherSimpleScalar">
+        <type>uint16</type>
+        <value>0</value>
+    </variable>
     <variable name="F32">
         <type>float32</type>
         <value>0</value>
     </variable>
 
-    <redirectedRegister name="Middle">
+    <!-- We need a decorator so something is happening in doPreWrite. This is necessary to be sensitive to the
+         correct calling of sequence of preWrite when sharing the target.
+         Just use the multiplier with factor 1 (which works in both directions ;-))-->
+    <redirectedRegister name="DecoratedSimpleScalar">
         <targetDevice>this</targetDevice>
         <targetRegister>SimpleScalar</targetRegister>
+        <plugin name="multiply">
+            <parameter name="factor">1.</parameter>
+        </plugin>
+        <plugin name="typeHintModifier">
+            <parameter name="type">int16</parameter>
+        </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="Middle">
+        <targetDevice>this</targetDevice>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">3</parameter>
             <parameter name="numberOfBits">10</parameter>
@@ -20,7 +39,7 @@
 
     <redirectedRegister name="TooLarge">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">12</parameter>
             <parameter name="numberOfBits">8</parameter>
@@ -29,7 +48,7 @@
 
     <redirectedRegister name="LoByte">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">0</parameter>
             <parameter name="numberOfBits">8</parameter>
@@ -37,7 +56,7 @@
     </redirectedRegister>
     <redirectedRegister name="HiByte">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">8</parameter>
             <parameter name="numberOfBits">8</parameter>
@@ -45,7 +64,7 @@
     </redirectedRegister>
     <redirectedRegister name="MidByte">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">4</parameter>
             <parameter name="numberOfBits">8</parameter>
@@ -54,7 +73,7 @@
 
     <redirectedRegister name="Bit0">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">0</parameter>
             <parameter name="numberOfBits">1</parameter>
@@ -65,7 +84,7 @@
     </redirectedRegister>
     <redirectedRegister name="Bit1">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">1</parameter>
             <parameter name="numberOfBits">1</parameter>
@@ -76,7 +95,7 @@
     </redirectedRegister>
     <redirectedRegister name="Bit2">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">2</parameter>
             <parameter name="numberOfBits">1</parameter>
@@ -87,7 +106,7 @@
     </redirectedRegister>
     <redirectedRegister name="Bit3">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">3</parameter>
             <parameter name="numberOfBits">1</parameter>
@@ -98,7 +117,7 @@
     </redirectedRegister>
     <redirectedRegister name="LowerSigned">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">0</parameter>
             <parameter name="numberOfBits">8</parameter>
@@ -107,7 +126,7 @@
     </redirectedRegister>
     <redirectedRegister name="LoByteClamped">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="math">
             <parameter name="formula">return [ clamp(0,x,5) ]</parameter>
         </plugin>
@@ -119,7 +138,7 @@
     </redirectedRegister>
     <redirectedRegister name="LowerFixedPoint">
         <targetDevice>this</targetDevice>
-        <targetRegister>SimpleScalar</targetRegister>
+        <targetRegister>DecoratedSimpleScalar</targetRegister>
         <plugin name="bitRange">
             <parameter name="shift">0</parameter>
             <parameter name="numberOfBits">8</parameter>
@@ -130,4 +149,23 @@
             <parameter name="type">float32</parameter>
         </plugin>
     </redirectedRegister>
+
+    <redirectedRegister name="AnotherLoByte">
+        <targetDevice>this</targetDevice>
+        <targetRegister>AnotherSimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">0</parameter>
+            <parameter name="numberOfBits">8</parameter>
+        </plugin>
+    </redirectedRegister>
+    <!-- Just 4 bits to test read/modify/write -->
+    <redirectedRegister name="AnotherHiByte">
+        <targetDevice>this</targetDevice>
+        <targetRegister>AnotherSimpleScalar</targetRegister>
+        <plugin name="bitRange">
+            <parameter name="shift">8</parameter>
+            <parameter name="numberOfBits">4</parameter>
+        </plugin>
+    </redirectedRegister>
+
 </logicalNameMap>

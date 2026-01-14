@@ -6,6 +6,7 @@
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
 #include "LNMVariable.h"
+#include "SharedAccessor.h"
 
 #include <mutex>
 #include <unordered_set>
@@ -72,7 +73,7 @@ namespace ChimeraTK {
     template<typename UserType>
     struct SharedAccessor {
       boost::weak_ptr<NDRegisterAccessor<UserType>> accessor;
-      std::recursive_mutex mutex;
+      detail::CountedRecursiveMutex mutex;
     };
 
     /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of

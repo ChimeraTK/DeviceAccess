@@ -48,8 +48,13 @@ namespace ChimeraTK::LNMBackend {
 
     double _factor;
 
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override;
+
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::_target;
   };
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void MultiplierPluginDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
@@ -64,6 +69,8 @@ namespace ChimeraTK::LNMBackend {
     this->_dataValidity = _target->dataValidity();
   }
 
+  /********************************************************************************************************************/
+
   template<typename UserType>
   void MultiplierPluginDecorator<UserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
@@ -73,6 +80,21 @@ namespace ChimeraTK::LNMBackend {
     }
     _target->setDataValidity(this->_dataValidity);
     _target->preWrite(type, versionNumber);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool MultiplierPluginDecorator<UserType>::mayReplaceOther(
+      const boost::shared_ptr<TransferElement const>& other) const {
+    auto rhsCasted = boost::dynamic_pointer_cast<const MultiplierPluginDecorator<UserType>>(other);
+    if(!rhsCasted) {
+      return false;
+    }
+    if(rhsCasted.get() == this) {
+      return false;
+    }
+    return ((_factor == rhsCasted->_factor) && (other->mayReplaceOther(_target)));
   }
 
   /********************************************************************************************************************/
@@ -89,4 +111,5 @@ namespace ChimeraTK::LNMBackend {
 
     return {};
   }
+
 } // namespace ChimeraTK::LNMBackend

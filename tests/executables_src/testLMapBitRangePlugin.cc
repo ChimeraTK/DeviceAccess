@@ -240,4 +240,81 @@ BOOST_AUTO_TEST_CASE(testDataDescription) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(TestMultiTargetsRead) {
+  /// Multiple independet ranges with individual target registers work in a transfer group
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+  auto accAnotherTarget = device.getScalarRegisterAccessor<uint>("AnotherSimpleScalar");
+
+  auto accRangedHi = device.getScalarRegisterAccessor<uint16_t>("HiByte");
+  auto accRangedLo = device.getScalarRegisterAccessor<uint16_t>("LoByte");
+  auto accAnotherRangedHi = device.getScalarRegisterAccessor<uint16_t>("AnotherHiByte");
+  auto accAnotherRangedLo = device.getScalarRegisterAccessor<uint16_t>("AnotherLoByte");
+
+  accRangedLo.read();
+  assert(accRangedLo == 0);
+  accRangedHi.read();
+  assert(accRangedHi == 0);
+  accAnotherRangedLo.read();
+  assert(accAnotherRangedLo == 0);
+  accAnotherRangedHi.read();
+  assert(accAnotherRangedHi == 0);
+
+  accTarget.setAndWrite(0x1f0f);
+  accAnotherTarget.setAndWrite(0xdead);
+
+  TransferGroup group;
+  group.addAccessor(accRangedLo);
+  group.addAccessor(accRangedHi);
+  group.addAccessor(accAnotherRangedLo);
+  group.addAccessor(accAnotherRangedHi);
+
+  group.read();
+  BOOST_TEST(accRangedLo == 0x0f);
+  BOOST_TEST(accRangedHi == 0x1f);
+  BOOST_TEST(accAnotherRangedLo == 0xad);
+  BOOST_TEST(accAnotherRangedHi == 0xe);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestMultiTargetsWrite) {
+  /// Multiple independet ranges with individual target registers work in a transfer group
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+  auto accAnotherTarget = device.getScalarRegisterAccessor<uint>("AnotherSimpleScalar");
+
+  auto accRangedHi = device.getScalarRegisterAccessor<uint16_t>("HiByte");
+  auto accRangedLo = device.getScalarRegisterAccessor<uint16_t>("LoByte");
+  auto accAnotherRangedHi = device.getScalarRegisterAccessor<uint16_t>("AnotherHiByte");
+  auto accAnotherRangedLo = device.getScalarRegisterAccessor<uint16_t>("AnotherLoByte");
+
+  TransferGroup group;
+  group.addAccessor(accRangedLo);
+  group.addAccessor(accRangedHi);
+  group.addAccessor(accAnotherRangedLo);
+  group.addAccessor(accAnotherRangedHi);
+
+  // pre-values to check read/modify/write
+  accAnotherTarget.setAndWrite(0x7000);
+
+  accRangedLo = 0x12;
+  accRangedHi = 0x34;
+  accAnotherRangedLo = 0x56;
+  accAnotherRangedHi = 0x8;
+
+  group.write();
+  accTarget.read();
+  accAnotherTarget.read();
+
+  BOOST_TEST(accTarget == 0x3412);
+  BOOST_TEST(accAnotherTarget == 0x7856);
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

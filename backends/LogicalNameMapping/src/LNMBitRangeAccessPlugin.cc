@@ -12,55 +12,8 @@
 #include <charconv>
 
 namespace ChimeraTK::LNMBackend {
+  using detail::SharedAccessorKey;
 
-  /**
-   Helper class that keeps track of how many locks were taken on the recursive mutex in the current thread.
-
-   It is used by the BitRange accessor to determine whether or not it can safely call read() on the target in
-   preWrite for read-modify-write operations
-  */
-  class ReferenceCountedUniqueLock {
-   public:
-    ReferenceCountedUniqueLock() = default;
-
-    explicit ReferenceCountedUniqueLock(std::recursive_mutex& mutex) : _lock(mutex, std::defer_lock) {}
-
-    void lock();
-    void unlock();
-    [[nodiscard]] size_t useCount() const;
-
-   private:
-    thread_local static size_t targetUseCount;
-    std::unique_lock<std::recursive_mutex> _lock;
-  };
-
-  /********************************************************************************************************************/
-
-  thread_local size_t ReferenceCountedUniqueLock::targetUseCount;
-
-  /********************************************************************************************************************/
-
-  size_t ReferenceCountedUniqueLock::useCount() const {
-    assert(_lock.owns_lock());
-    return targetUseCount;
-  }
-
-  /********************************************************************************************************************/
-
-  void ReferenceCountedUniqueLock::unlock() {
-    assert(targetUseCount > 0);
-    targetUseCount--;
-    _lock.unlock();
-  }
-  /********************************************************************************************************************/
-
-  void ReferenceCountedUniqueLock::lock() {
-    _lock.lock();
-    targetUseCount++;
-  }
-
-  /********************************************************************************************************************/
-  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
@@ -87,27 +40,36 @@ namespace ChimeraTK::LNMBackend {
         uint64_t dataInterpretationIsSigned)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
       _writeable{_target->isWriteable()},
-      fixedPointConverter(name, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned) {
+      _fixedPointConverter(name, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned) {
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
             TransferElement::getName() + ": Cannot target non-scalar registers.");
       }
 
-      auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
       RegisterPath path{name};
       path.setAltSeparator(".");
-      LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
+      detail::SharedAccessorKey key{backend.get(), path};
 
-      auto it = map.find(key);
-      if(it != map.end()) {
-        _lock = ReferenceCountedUniqueLock(it->second.mutex);
-      }
-      else {
-        assert(false);
-      }
+      // register the target and get the shared accessor state (is created if needed)
+      sharedAccessors.addTransferElement(target->getId());
+      _targetSharedState = sharedAccessors.getTargetSharedState<TargetType>(key);
+
+      // The buffer in the shared state is a variant. It has to be of TargetType
+      _sharedBuffer = std::get_if<detail::SharedAccessors::TargetSharedState::UserBuffer<TargetType>>(
+          &(_targetSharedState->dataBuffer));
+      assert(_sharedBuffer); // getTargetSharedState throws if the type does not match, so get_if() should always work
+      _lock = std::unique_lock<detail::CountedRecursiveMutex>(_targetSharedState->mutex, std::defer_lock);
 
       _baseBitMask = getMaskForNBits(_numberOfBits);
       _maskOnTarget = _baseBitMask << _shift;
+    }
+
+    /******************************************************************************************************************/
+
+    ~BitRangeAccessPluginDecorator() {
+      auto& sharedAccessorMutexes = detail::SharedAccessors::getInstance();
+      sharedAccessorMutexes.removeTransferElement(_target->getId());
     }
 
     /******************************************************************************************************************/
@@ -122,25 +84,36 @@ namespace ChimeraTK::LNMBackend {
 
     void doPostRead(TransferType type, bool hasNewData) override {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
-      _target->postRead(type, hasNewData);
-      if(!hasNewData) return;
+      _target->postRead(type, hasNewData); // only the first executed postRead() has an effect.
+                                           // The target already takes care of this.
+      if(!hasNewData) {
+        return;
+      }
+      // update the shared state (only the first call within a transfer group)
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      // the use count is counting down, so the first call has the full number
+      if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+        _sharedBuffer->value[0][0] = _target->accessData(0);
+        _sharedBuffer->dataValidity = _target->dataValidity();
+        _sharedBuffer->versionNumber = std::max(_sharedBuffer->versionNumber, _target->getVersionNumber());
+      }
 
       if constexpr(std::is_same_v<uint64_t, TargetType>) {
-        auto validity = _target->dataValidity();
-        uint64_t v{_target->accessData(0)};
+        auto validity = _sharedBuffer->dataValidity;
+        uint64_t v{_sharedBuffer->value[0][0]};
         v = (v & _maskOnTarget) >> _shift;
 
-        buffer_2D[0][0] = fixedPointConverter.scalarToCooked<UserType>(uint32_t(v));
+        buffer_2D[0][0] = _fixedPointConverter.scalarToCooked<UserType>(uint32_t(v));
         // Do a quick check if the fixed point converter clamped. Then set the
         // data validity faulty according to B.2.4.1
         // For proper implementation of this, the fixed point converter needs to signalize
         // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
-        auto raw = static_cast<uint32_t>(fixedPointConverter.toRaw(buffer_2D[0][0]));
+        auto raw = static_cast<uint32_t>(_fixedPointConverter.toRaw(buffer_2D[0][0]));
         if(raw != v) {
           validity = DataValidity::faulty;
         }
 
-        this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
+        this->_versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
         this->_dataValidity = validity;
       }
       else {
@@ -159,7 +132,7 @@ namespace ChimeraTK::LNMBackend {
             "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
       }
 
-      auto value = static_cast<uint32_t>(fixedPointConverter.toRaw(buffer_2D[0][0]));
+      auto value = static_cast<uint32_t>(_fixedPointConverter.toRaw(buffer_2D[0][0]));
 
       // FIXME: Not setting the data validity according to the spec point B2.5.1.
       // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
@@ -167,16 +140,31 @@ namespace ChimeraTK::LNMBackend {
 
       // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
       // Otherwise it will overwrite the
-      if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.useCount() == 1)) {
+      if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.mutex()->useCount() == 1)) {
         _target->read();
+        _sharedBuffer->value[0][0] = _target->accessData(0);
+        _sharedBuffer->dataValidity = _target->dataValidity();
+        _sharedBuffer->versionNumber = std::max(_sharedBuffer->versionNumber, _target->getVersionNumber());
       }
 
-      _target->accessData(0) &= ~_maskOnTarget;
-      _target->accessData(0) |= (value << _shift);
+      // update the shared buffer
+      _sharedBuffer->value[0][0] &= ~_maskOnTarget;
+      _sharedBuffer->value[0][0] |= (value << _shift);
+      _sharedBuffer->versionNumber = std::max(versionNumber, _sharedBuffer->versionNumber);
+      if((_sharedBuffer->dataValidity == DataValidity::ok) // don't overwrite faulty from previous preWrite()
+                                                           // in this transfer
+          || (_lock.mutex()->useCount() == 1)) {           // always set for first preWrite()
+        _sharedBuffer->dataValidity = this->_dataValidity;
+      }
 
-      _temporaryVersion = std::max(versionNumber, _target->getVersionNumber());
-      _target->setDataValidity(this->_dataValidity);
-      _target->preWrite(type, _temporaryVersion);
+      // only update and write the target for the last merged element in the transfer group
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+        _temporaryVersion = std::max(_sharedBuffer->versionNumber, _target->getVersionNumber());
+        _target->setDataValidity(_sharedBuffer->dataValidity);
+        _target->accessData(0) = _sharedBuffer->value[0][0];
+        _target->preWrite(type, _temporaryVersion);
+      }
     }
 
     /******************************************************************************************************************/
@@ -202,11 +190,28 @@ namespace ChimeraTK::LNMBackend {
           _writeable = false;
         }
       }
-      NDRegisterAccessorDecorator<UserType, TargetType>::replaceTransferElement(newElement);
+
+      auto castedTarget = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<TargetType>>(newElement);
+      if(castedTarget && newElement->mayReplaceOther(_target)) {
+        if(_target != newElement) {
+          // No copy decorator.
+          auto oldTarget = _target->getId();
+          _target = castedTarget;
+          // Bookkeeping: combine the original target and the replaced target's use count
+          auto& sharedAccessorMutexes = detail::SharedAccessors::getInstance();
+          sharedAccessorMutexes.combineTransferSharedStates(oldTarget, _target->getId());
+          std::cout << "combining is " << oldTarget << "and " << _target->getId() << std::endl;
+        }
+      }
+      else {
+        _target->replaceTransferElement(newElement);
+      }
+      _target->setExceptionBackend(this->_exceptionBackend);
     }
 
     /******************************************************************************************************************/
 
+   protected:
     uint64_t _shift;
     uint64_t _numberOfBits;
     uint64_t _maskOnTarget;
@@ -214,10 +219,15 @@ namespace ChimeraTK::LNMBackend {
     uint64_t _targetTypeMask{getMaskForNBits(sizeof(TargetType) * CHAR_BIT)};
     uint64_t _baseBitMask;
 
-    ReferenceCountedUniqueLock _lock;
+    std::shared_ptr<detail::SharedAccessors::TargetSharedState>
+        _targetSharedState; // we must hold an instance of the shared state to safely hold a lock to the mutex within,
+                            // and a pointer to the shared buffer
+    std::unique_lock<detail::CountedRecursiveMutex> _lock;
+    NDRegisterAccessor<TargetType>::Buffer* _sharedBuffer{nullptr};
+
     VersionNumber _temporaryVersion;
     bool _writeable{false};
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fixedPointConverter;
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fixedPointConverter;
 
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::_target;
   };
@@ -226,7 +236,7 @@ namespace ChimeraTK::LNMBackend {
 
   BitRangeAccessPlugin::BitRangeAccessPlugin(
       const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex, true) {
+  : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex) {
     try {
       const auto& shift = parameters.at("shift");
 

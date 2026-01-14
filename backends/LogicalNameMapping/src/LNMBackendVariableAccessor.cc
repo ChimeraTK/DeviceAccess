@@ -179,8 +179,29 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  bool LNMBackendVariableAccessor<UserType>::mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const {
-    return false; // never replace, since it does not optimise anything
+  bool LNMBackendVariableAccessor<UserType>::mayReplaceOther(
+      const boost::shared_ptr<TransferElement const>& other) const {
+    // does not optimise performance, but allows merging for decorators, e.g. the BitRange decorator.
+    auto rhsCasted = boost::dynamic_pointer_cast<const LNMBackendVariableAccessor<UserType>>(other);
+    if(!rhsCasted) {
+      return false;
+    }
+    if(rhsCasted.get() == this) {
+      return false;
+    }
+    if(_dev != rhsCasted->_dev) {
+      return false;
+    }
+    if(_info.name == rhsCasted->_info.name) {
+      std::cout << "DEBUG!!! mayReplaceOther " << _info.name << "  vs " << rhsCasted->_info.name << std::endl;
+      return true;
+    }
+    else {
+      std::cout << "DEBUG!!! may NOT ReplaceOther " << _info.name << "  vs " << rhsCasted->_info.name << std::endl;
+      return false;
+    }
+
+    return (_info.name == rhsCasted->_info.name);
   }
 
   /********************************************************************************************************************/
