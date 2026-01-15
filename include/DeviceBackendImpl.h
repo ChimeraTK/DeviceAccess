@@ -53,6 +53,8 @@ namespace ChimeraTK {
     std::string getActiveExceptionMessage() noexcept;
     std::set<DeviceBackend::BackendID> getInvolvedBackendIDs() override;
 
+    ChimeraTK::VersionNumber getVersionOnOpen() const override;
+
    protected:
     /** Backends should call this function at the end of a (successful) open() call.*/
     void setOpenedAndClearException() noexcept;
@@ -69,6 +71,9 @@ namespace ChimeraTK {
    private:
     /** flag if backend is in an exception state */
     std::atomic<bool> _hasActiveException{false};
+
+    /** A version number created when opening the backend. No version number lower than this will be given out.*/
+    std::atomic<ChimeraTK::VersionNumber> _versionOnOpen{ChimeraTK::VersionNumber{nullptr}};
 
     /**
      *  message for the current exception, if _hasActiveException is true. Access is protected by

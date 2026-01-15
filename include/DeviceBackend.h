@@ -7,6 +7,7 @@
 #include "ForwardDeclarations.h"
 #include "MetadataCatalogue.h"
 #include "RegisterCatalogue.h"
+#include "VersionNumber.h"
 #include "VirtualFunctionTemplate.h"
 
 #include <boost/enable_shared_from_this.hpp>
@@ -118,6 +119,13 @@ namespace ChimeraTK {
      * this contains the ID of all target backend, in addition to this backend's ID.
      */
     virtual std::set<BackendID> getInvolvedBackendIDs() = 0;
+
+    /**
+     * Get the version number which was set during the open process. It allows to determine whether a version number
+     * has been generated before or after the last time the device became functional.
+     * Note that the version is not increased if open() is called on an already functional backend.
+     */
+    virtual ChimeraTK::VersionNumber getVersionOnOpen() const = 0;
   };
 
   /********************************************************************************************************************/

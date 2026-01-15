@@ -56,7 +56,6 @@ namespace ChimeraTK {
     }
 
     // flag as opened
-    _versionOnOpen = ChimeraTK::VersionNumber{};
     _asyncReadActive = false;
     setOpenedAndClearException();
 
@@ -71,7 +70,8 @@ namespace ChimeraTK {
     }
 
     // update versions of constants
-    auto versionForConstants = ChimeraTK::VersionNumber{}; // needs to be bigger than _versionOnOpen
+    auto versionForConstants = ChimeraTK::VersionNumber{}; // needs to be bigger than the versionOnOpen
+                                                           // which is set in setOpenedAndClearException()
     for(auto& nameAndVar : _variables) {
       auto& variable = nameAndVar.second;
       if(variable.isConstant) {
@@ -430,12 +430,6 @@ namespace ChimeraTK {
       }
     }
     return ret;
-  }
-
-  /********************************************************************************************************************/
-
-  ChimeraTK::VersionNumber LogicalNameMappingBackend::getVersionOnOpen() const {
-    return _versionOnOpen;
   }
 
   /********************************************************************************************************************/
