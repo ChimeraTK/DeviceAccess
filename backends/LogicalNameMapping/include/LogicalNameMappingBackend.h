@@ -107,14 +107,6 @@ namespace ChimeraTK {
 
     /** Obtain list of all target devices referenced in the catalogue */
     std::unordered_set<std::string> getTargetDevices() const;
-
-   private:
-    // A version number created when opening the backend. All variables will report this version number until they are
-    // changed for the first time after opening the device.
-    std::atomic<ChimeraTK::VersionNumber> _versionOnOpen{ChimeraTK::VersionNumber{nullptr}};
-
-   public:
-    ChimeraTK::VersionNumber getVersionOnOpen() const;
   };
 
 } // namespace ChimeraTK
