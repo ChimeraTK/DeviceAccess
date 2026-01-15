@@ -15,6 +15,7 @@ namespace ChimeraTK {
       usleep(10000);
     }
 
+    _versionOnOpen = ChimeraTK::VersionNumber{};
     _opened = true;
     _hasActiveException = false;
     std::lock_guard<std::mutex> lk(_mx_activeExceptionMessage);
@@ -57,6 +58,13 @@ namespace ChimeraTK {
   std::set<DeviceBackend::BackendID> DeviceBackendImpl::getInvolvedBackendIDs() {
     return {getBackendID()};
   }
+
+  /********************************************************************************************************************/
+
+  ChimeraTK::VersionNumber DeviceBackendImpl::getVersionOnOpen() const {
+    return _versionOnOpen;
+  }
+
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
