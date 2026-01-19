@@ -34,9 +34,9 @@ namespace ChimeraTK::LNMBackend {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::buffer_2D;
 
     /******************************************************************************************************************/
-    BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
+    BitRangeAccessPluginDecorator(boost::shared_ptr<DeviceBackend>& targetBackend,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
-        uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
+        uint64_t shift, int32_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
       _writeable{_target->isWriteable()},
@@ -49,7 +49,7 @@ namespace ChimeraTK::LNMBackend {
       auto& sharedAccessors = detail::SharedAccessors::getInstance();
       RegisterPath path{name};
       path.setAltSeparator(".");
-      detail::SharedAccessorKey key{backend.get(), path};
+      detail::SharedAccessorKey key{targetBackend.get(), path};
 
       // register the target and get the shared accessor state (is created if needed)
       sharedAccessors.addTransferElement(target->getId());
@@ -304,8 +304,9 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
     if constexpr(std::is_integral<TargetType>::value) {
-      return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(backend, target, params._name,
-          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
+      auto targetBackend = backend->_devices[_info.deviceName];
+      return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(targetBackend, target,
+          _info.registerName, _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
 
     assert(false);
