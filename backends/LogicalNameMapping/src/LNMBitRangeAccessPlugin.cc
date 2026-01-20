@@ -304,7 +304,13 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
     if constexpr(std::is_integral<TargetType>::value) {
-      auto targetBackend = backend->_devices[_info.deviceName];
+      boost::shared_ptr<DeviceBackend> targetBackend;
+      if(_info.deviceName == "this") {
+        targetBackend = backend;
+      }
+      else {
+        targetBackend = backend->_devices[_info.deviceName];
+      }
       return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(targetBackend, target,
           _info.registerName, _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
