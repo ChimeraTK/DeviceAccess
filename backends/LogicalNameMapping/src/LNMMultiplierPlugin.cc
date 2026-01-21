@@ -94,7 +94,7 @@ namespace ChimeraTK::LNMBackend {
     if(rhsCasted.get() == this) {
       return false;
     }
-    return ((_factor == rhsCasted->_factor) && (other->mayReplaceOther(_target)));
+    return ((_factor == rhsCasted->_factor) && (rhsCasted->_target->mayReplaceOther(_target)));
   }
 
   /********************************************************************************************************************/
