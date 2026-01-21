@@ -429,6 +429,7 @@ namespace ChimeraTK {
     void test_B_11_2_2();
     void test_B_11_6();
     void test_B_12_1_3_1();
+    void test_B_12_1_5();
     void test_B_12_1_5_1();
     void test_C_5_2_1_2();
     void test_C_5_2_2_2();
@@ -1011,6 +1012,7 @@ namespace ChimeraTK {
     test_B_11_2_2();
     test_B_11_6();
     test_B_12_1_3_1();
+    test_B_12_1_5();
     test_B_12_1_5_1();
     test_C_5_2_1_2();
     test_C_5_2_2_2();
@@ -3190,6 +3192,32 @@ namespace ChimeraTK {
 
       // check: List of internal elements is unchanged
       BOOST_TEST(reg.getInternalElements() == internalElements);
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  /**
+   * mayReplaceOther() returns "true" if same target on same device with identical parameters
+   *  * \anchor UnifiedTest_TransferElement_B_12_1_5 \ref transferElement_B_12_1_5 "B.12.1.5"
+   */
+  template<typename VECTOR_OF_REGISTERS_T>
+  void UnifiedBackendTest<VECTOR_OF_REGISTERS_T>::test_B_12_1_5() {
+    std::cout
+        << "--- B.12.1.5 - mayReplaceOther() returns \"true\" if same target on same device with identical parameters"
+        << std::endl;
+    Device d(cdd);
+
+    boost::mpl::for_each<VECTOR_OF_REGISTERS_T>([&](auto x) {
+      using UserType = typename decltype(x)::minimumUserType;
+      auto registerName = x.path();
+      std::cout << "... registerName = " << registerName << std::endl;
+      // Just get two identical accessors. They can replace each other.
+      auto reg1 = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto reg2 = d.getTwoDRegisterAccessor<UserType>(registerName);
+      auto transferElement1 = reg1.getHighLevelImplElement();
+      auto transferElement2 = reg2.getHighLevelImplElement();
+      BOOST_CHECK(transferElement1->mayReplaceOther(transferElement2) == true);
     });
   }
 
