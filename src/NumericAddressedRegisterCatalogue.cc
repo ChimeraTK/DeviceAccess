@@ -20,10 +20,11 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint32_t nElements_,
       uint64_t address_, uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
-      Access dataAccess_, Type dataType_, std::vector<size_t> interruptId_)
+      Access dataAccess_, Type dataType_, std::vector<size_t> interruptId_,
+      std::optional<DoubleBufferInfo> doubleBufferInfo_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(nElements_ > 0 ? nBytes_ / nElements_ * 8 : 0),
     bar(bar_), address(address_), registerAccess(dataAccess_), interruptId(std::move(interruptId_)),
-    channels({{0, dataType_, width_, nFractionalBits_, signedFlag_}}) {
+    doubleBuffer(std::move(doubleBufferInfo_)), channels({{0, dataType_, width_, nFractionalBits_, signedFlag_}}) {
     assert(channels.size() == 1);
 
     // make sure . and / is treated as similar as possible
@@ -45,9 +46,10 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_,
       uint64_t address_, uint32_t nElements_, uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_,
-      Access dataAccess_, std::vector<size_t> interruptId_)
+      Access dataAccess_, std::vector<size_t> interruptId_, std::optional<DoubleBufferInfo> doubleBufferInfo_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(elementPitchBits_), bar(bar_), address(address_),
-    registerAccess(dataAccess_), interruptId(std::move(interruptId_)), channels(std::move(channelInfo_)) {
+    registerAccess(dataAccess_), interruptId(std::move(interruptId_)), doubleBuffer(std::move(doubleBufferInfo_)),
+    channels(std::move(channelInfo_)) {
     assert(!channels.empty());
 
     // make sure . and / is treated as similar as possible
