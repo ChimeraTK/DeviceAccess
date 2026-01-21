@@ -192,14 +192,6 @@ namespace ChimeraTK {
     if(_dev != rhsCasted->_dev) {
       return false;
     }
-    if(_info.name == rhsCasted->_info.name) {
-      std::cout << "DEBUG!!! mayReplaceOther " << _info.name << "  vs " << rhsCasted->_info.name << std::endl;
-      return true;
-    }
-    else {
-      std::cout << "DEBUG!!! may NOT ReplaceOther " << _info.name << "  vs " << rhsCasted->_info.name << std::endl;
-      return false;
-    }
 
     return (_info.name == rhsCasted->_info.name);
   }

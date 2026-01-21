@@ -183,7 +183,7 @@ namespace ChimeraTK::LNMBackend {
       // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
       // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write order
       // for overlapping bit ranges
-      if(casted && casted.get() != this && casted->_target == _target) {
+      if(casted && casted.get() != this && casted->_target->mayReplaceOther(_target)) {
         // anding the two masks will yield 0 iff there is no overlap
         if((casted->_maskOnTarget & _maskOnTarget) != 0) {
           casted->_writeable = false;
@@ -200,7 +200,6 @@ namespace ChimeraTK::LNMBackend {
           // Bookkeeping: combine the original target and the replaced target's use count
           auto& sharedAccessorMutexes = detail::SharedAccessors::getInstance();
           sharedAccessorMutexes.combineTransferSharedStates(oldTarget, _target->getId());
-          std::cout << "combining is " << oldTarget << "and " << _target->getId() << std::endl;
         }
       }
       else {
