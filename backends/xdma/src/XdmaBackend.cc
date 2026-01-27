@@ -72,7 +72,7 @@ namespace ChimeraTK {
         return _dmaChannels[dmaChIdx];
       }
     }
-    throw ChimeraTK::logic_error("Couldn't find XDMA channel for BAR value " + std::to_string(bar));
+    throw ChimeraTK::runtime_error("Couldn't find XDMA channel for BAR value " + std::to_string(bar));
   }
 
 #ifdef _DEBUG
