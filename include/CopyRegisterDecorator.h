@@ -55,6 +55,9 @@ namespace ChimeraTK {
 
     [[nodiscard]] bool isWriteable() const override { return false; }
 
+    // CopyRegisterDecorators can never replace each other. A separate copy should be made from the original target.
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override { return false; }
+
     using ChimeraTK::NDRegisterAccessorDecorator<T>::_target;
     using ChimeraTK::NDRegisterAccessorDecorator<T>::buffer_2D;
   };

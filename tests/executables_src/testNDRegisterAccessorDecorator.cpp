@@ -279,6 +279,27 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
 
 /**********************************************************************************************************************/
 
+// We need an instantiable decorator. mayReplaceOther() is intentionally pure virtual in the decorator base class.
+template<typename UserType>
+class TestNDRegisterAccessorDecorator : public NDRegisterAccessorDecorator<UserType, UserType> {
+ public:
+  using NDRegisterAccessorDecorator<UserType, UserType>::NDRegisterAccessorDecorator;
+  using NDRegisterAccessorDecorator<UserType, UserType>::_target;
+
+  [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+    auto casted = boost::dynamic_pointer_cast<TestNDRegisterAccessorDecorator<UserType>>(other);
+    if(!casted) {
+      return false;
+    }
+    if(casted.get() == this) {
+      return false;
+    }
+    return _target->mayReplaceOther(casted->_target);
+  }
+};
+
+/**********************************************************************************************************************/
+
 /**
  *  This test that the NDRegisterAccessorDecorator base class complies to the following specification:
  *  * \anchor testTransferElement_B_6_3 \ref transferElement_B_6_3 "TransferElement specification B.6.3" through the
@@ -292,7 +313,7 @@ BOOST_AUTO_TEST_CASE(TestExceptionHandling) {
   std::cout << "TestExceptionHandling" << std::endl;
   auto targetAccessor = boost::make_shared<DecoratorTestAccessor<int32_t>>(AccessModeFlags({}));
   // an empty decorator is sufficient for the test we want to make with TransferElement.
-  ChimeraTK::NDRegisterAccessorDecorator<int32_t> accessor(targetAccessor);
+  TestNDRegisterAccessorDecorator<int32_t> accessor(targetAccessor);
 
   targetAccessor->resetCounters();
   targetAccessor->_throwLogicErr = true;
@@ -361,15 +382,6 @@ BOOST_AUTO_TEST_CASE(TestExceptionHandling) {
   targetAccessor->_throwThreadInterruptedInTransfer = true;
   BOOST_CHECK_THROW(accessor.writeDestructively(), boost::thread_interrupted);
 }
-
-/**********************************************************************************************************************/
-
-template<typename UserType>
-class TestNDRegisterAccessorDecorator : public NDRegisterAccessorDecorator<UserType, UserType> {
- public:
-  using NDRegisterAccessorDecorator<UserType, UserType>::NDRegisterAccessorDecorator;
-  using NDRegisterAccessorDecorator<UserType, UserType>::_target;
-};
 
 /**********************************************************************************************************************/
 

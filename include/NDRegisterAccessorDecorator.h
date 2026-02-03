@@ -124,6 +124,9 @@ namespace ChimeraTK {
 
     void interrupt() override;
 
+    // DEBUG!! FIXME: Move this to TransferElement once all decorators are working
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const override = 0;
+
    protected:
     void initFromTarget(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target);
 
