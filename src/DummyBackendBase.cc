@@ -94,7 +94,7 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> DummyBackendBase::getRegisterAccessor_impl(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-    // First check if the request is for one of the special DUMMY_INTEERRUPT_X registers. if so, early return
+    // First check if the request is for one of the special DUMMY_INTERRUPT_X registers. if so, early return
     // this special accessor.
     if(registerPathName.startsWith("DUMMY_INTERRUPT_")) {
       bool interruptFound;
