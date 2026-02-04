@@ -30,16 +30,16 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
-    std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
+    std::lock_guard<decltype(_backend->_mutex)> lockGuard(_backend->_mutex);
     size_t nTransfers;
-    if(_backend->type == SubdeviceBackend::Type::areaHandshake) {
+    if(_backend->_type == SubdeviceBackend::Type::areaHandshake) {
       // for areaHandshake case with 1D array
       // TODO FIXME shouldn't this be nTransfers = 1 ???
       nTransfers = _numberOfWords;
     }
     else {
-      assert(_backend->type == SubdeviceBackend::Type::threeRegisters ||
-          _backend->type == SubdeviceBackend::Type::twoRegisters);
+      assert(_backend->_type == SubdeviceBackend::Type::threeRegisters ||
+          _backend->_type == SubdeviceBackend::Type::twoRegisters);
       // This is "_numberOfWords / _accData->getNumberOfSamples()" rounded up:
       nTransfers = (_numberOfWords + _accDataArea->getNumberOfSamples() - 1) / _accDataArea->getNumberOfSamples();
     }
@@ -47,14 +47,14 @@ namespace ChimeraTK {
       size_t idx = 0;
       for(size_t adr = _startAddress; adr < _startAddress + nTransfers; ++adr) {
         // write address register (if applicable)
-        if(_backend->type != SubdeviceBackend::Type::areaHandshake) {
+        if(_backend->_type != SubdeviceBackend::Type::areaHandshake) {
           _accAddress->accessData(0) = static_cast<int32_t>(adr);
           _accAddress->write();
-          usleep(_backend->addressToDataDelay);
+          usleep(_backend->_addressToDataDelay);
         }
 
         // write data register
-        if(_backend->type == SubdeviceBackend::Type::areaHandshake) {
+        if(_backend->_type == SubdeviceBackend::Type::areaHandshake) {
           int32_t val = (idx < _numberOfWords) ? _buffer[idx] : 0;
           _accDataArea->accessData(0, idx) = val;
           ++idx;
@@ -70,15 +70,17 @@ namespace ChimeraTK {
         _accDataArea->write();
 
         // wait until transaction is complete
-        if(_backend->type == SubdeviceBackend::Type::threeRegisters ||
-            _backend->type == SubdeviceBackend::Type::areaHandshake) {
+        if(_backend->_type == SubdeviceBackend::Type::threeRegisters ||
+            _backend->_type == SubdeviceBackend::Type::areaHandshake) {
           // for 3regs/areaHandshake, wait until status register is 0 again
           size_t retry = 0;
-          size_t max_retry = _backend->timeout * 1000 / _backend->sleepTime;
+          size_t max_retry = _backend->_timeout * 1000 / _backend->_sleepTime;
           while(true) {
-            usleep(_backend->sleepTime);
+            usleep(_backend->_sleepTime);
             _accStatus->read();
-            if(_accStatus->accessData(0) == 0) break;
+            if(_accStatus->accessData(0) == 0) {
+              break;
+            }
             if(++retry > max_retry) {
               throw ChimeraTK::runtime_error("Write to register '" + _name +
                   "' failed: timeout waiting for cleared busy flag (" + _accStatus->getName() + ")");
@@ -87,7 +89,7 @@ namespace ChimeraTK {
         }
         else {
           // for 2regs, wait given time
-          usleep(_backend->sleepTime);
+          usleep(_backend->_sleepTime);
         }
       }
     }
@@ -176,7 +178,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   std::list<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor::getInternalElements() {
-    if(_backend->type == SubdeviceBackend::Type::twoRegisters) {
+    if(_backend->_type == SubdeviceBackend::Type::twoRegisters) {
       // _accStatus is nullptr for twoReg
       return {_accAddress, _accDataArea};
     }
