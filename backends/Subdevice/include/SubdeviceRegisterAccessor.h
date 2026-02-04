@@ -5,8 +5,6 @@
 #include "NDRegisterAccessor.h"
 #include "SubdeviceBackend.h"
 
-#include <algorithm>
-
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
