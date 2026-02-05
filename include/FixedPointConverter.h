@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Exception.h"
+#include "NumericConverter.h"
 #include "SupportedUserTypes.h"
 
 #include <boost/fusion/algorithm.hpp>
@@ -17,7 +18,6 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <type_traits>
 
@@ -189,30 +189,12 @@ namespace ChimeraTK {
         }
 
         // compute minimum and maximum values in cooked representation
-        try {
-          boost::fusion::at_key<UserType>(_fpc->_minCookedValues) = _fpc->scalarToCooked<UserType>(_fpc->_minRawValue);
-        }
-        catch(boost::numeric::negative_overflow& e) {
-          boost::fusion::at_key<UserType>(_fpc->_minCookedValues) = std::numeric_limits<UserType>::min();
-        }
-        try {
-          boost::fusion::at_key<UserType>(_fpc->_maxCookedValues) = _fpc->scalarToCooked<UserType>(_fpc->_maxRawValue);
-        }
-        catch(boost::numeric::positive_overflow& e) {
-          boost::fusion::at_key<UserType>(_fpc->_maxCookedValues) = std::numeric_limits<UserType>::max();
-        }
+        boost::fusion::at_key<UserType>(_fpc->_minCookedValues) = _fpc->scalarToCooked<UserType>(_fpc->_minRawValue);
+        boost::fusion::at_key<UserType>(_fpc->_maxCookedValues) = _fpc->scalarToCooked<UserType>(_fpc->_maxRawValue);
       }
 
      private:
       FixedPointConverter* _fpc;
-    };
-
-    /** define round type for the boost::numeric::converter */
-    template<class S>
-    struct Round {
-      static S nearbyint(S s) { return round(s); }
-
-      using round_style = boost::mpl::integral_c<std::float_round_style, std::round_to_nearest>;
     };
 
     /** helper function to test if UserTyped value is negative without triggering a
@@ -400,41 +382,21 @@ namespace ChimeraTK {
       // needed. Negative and positive overflow exceptions need to be caught for some corner
       // cases (e.g. number of fractional bits >= number of bits in total).
       RawType raw;
-      try {
-        if(_isSigned) {
-          if constexpr(sizeof(RawType) == 4) {
-            using converter_signed =
-                boost::numeric::converter<int32_t, double, boost::numeric::conversion_traits<int32_t, double>,
-                    boost::numeric::def_overflow_handler, Round<double>>;
-            raw = static_cast<RawType>(converter_signed::convert(d_cooked));
-          }
-          else if constexpr(sizeof(RawType) == 8) {
-            using converter_signed =
-                boost::numeric::converter<int64_t, double, boost::numeric::conversion_traits<int64_t, double>,
-                    boost::numeric::def_overflow_handler, Round<double>>;
-            raw = static_cast<RawType>(converter_signed::convert(d_cooked));
-          }
+      if(_isSigned) {
+        if constexpr(sizeof(RawType) == 4) {
+          raw = RawType(numeric::convert<int32_t>(d_cooked));
         }
-        else {
-          if constexpr(sizeof(RawType) == 4) {
-            using converter_unsigned =
-                boost::numeric::converter<uint32_t, double, boost::numeric::conversion_traits<uint32_t, double>,
-                    boost::numeric::def_overflow_handler, Round<double>>;
-            raw = static_cast<RawType>(converter_unsigned::convert(d_cooked));
-          }
-          else if constexpr(sizeof(RawType) == 8) {
-            using converter_unsigned =
-                boost::numeric::converter<uint64_t, double, boost::numeric::conversion_traits<uint64_t, double>,
-                    boost::numeric::def_overflow_handler, Round<double>>;
-            raw = static_cast<RawType>(converter_unsigned::convert(d_cooked));
-          }
+        else if constexpr(sizeof(RawType) == 8) {
+          raw = RawType(numeric::convert<int64_t>(d_cooked));
         }
       }
-      catch(boost::numeric::negative_overflow& e) {
-        raw = _minRawValue;
-      }
-      catch(boost::numeric::positive_overflow& e) {
-        raw = _maxRawValue;
+      else {
+        if constexpr(sizeof(RawType) == 4) {
+          raw = RawType(numeric::convert<uint32_t>(d_cooked));
+        }
+        else if constexpr(sizeof(RawType) == 8) {
+          raw = RawType(numeric::convert<uint64_t>(d_cooked));
+        }
       }
 
       // apply bit mask
