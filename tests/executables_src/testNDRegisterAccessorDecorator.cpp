@@ -67,7 +67,6 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     _newVersion = versionNumber;
     if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
     if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
-    if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
     if(_throwThreadInterruptedInPre) throw boost::thread_interrupted();
   }
 
@@ -99,7 +98,7 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::write);
     BOOST_CHECK(versionNumber == _newVersion);
-    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwNumericCast) {
+    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre) {
       BOOST_CHECK_MESSAGE(false, "doWriteTransfer() must not be called if doPreWrite() has thrown an exception.");
     }
     ++_writeTransfer_counter;
@@ -117,7 +116,7 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_postWrite_counter == 0);
     BOOST_CHECK(_transferType == TransferType::writeDestructively);
     BOOST_CHECK(versionNumber == _newVersion);
-    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwNumericCast) {
+    if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre) {
       BOOST_CHECK_MESSAGE(
           false, "doWriteTransferDestructively() must not be called if doPreWrite() has thrown an exception.");
     }
@@ -165,7 +164,6 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_transferType == type);
     ++_postRead_counter;
     _hasNewData = updateDataBuffer;
-    if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
     if(_throwThreadInterruptedInPost) throw boost::thread_interrupted();
   }
 
@@ -181,7 +179,7 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     BOOST_CHECK(_preRead_counter == 0);
     BOOST_CHECK(_preWrite_counter == 1);
     BOOST_CHECK_EQUAL(_readTransfer_counter, 0);
-    if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwNumericCast && !_throwThreadInterruptedInPre) {
+    if(!_throwLogicErr && !_throwRuntimeErrInPre && !_throwThreadInterruptedInPre) {
       BOOST_CHECK(_writeTransfer_counter == 1);
     }
     else {
@@ -191,7 +189,7 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     // Exceptions must be passed on to the level which is throwing it (B.6.3 This actually tests the
     // NDRegisterAccessorDecorator)
     if(_throwLogicErr || _throwRuntimeErrInPre || _throwThreadInterruptedInPre || _throwRuntimeErrInTransfer ||
-        _throwThreadInterruptedInTransfer || _throwNumericCast) {
+        _throwThreadInterruptedInTransfer) {
       BOOST_CHECK(this->_activeException != nullptr);
     }
     BOOST_CHECK(versionNumber == _newVersion);
@@ -242,7 +240,6 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
     _throwLogicErr = false;
     _throwRuntimeErrInPre = false;
     _throwRuntimeErrInTransfer = false;
-    _throwNumericCast = false;
     _throwThreadInterruptedInPre = false;
     _throwThreadInterruptedInTransfer = false;
     _throwThreadInterruptedInPost = false;
@@ -251,7 +248,6 @@ class DecoratorTestAccessor : public NDRegisterAccessor<UserType> {
   bool _throwLogicErr{false}; // always in doPreXxx()
   bool _throwRuntimeErrInTransfer{false};
   bool _throwRuntimeErrInPre{false};
-  bool _throwNumericCast{false}; // in doPreWrite() or doPreRead() depending on operation
   bool _throwThreadInterruptedInPre{false};
   bool _throwThreadInterruptedInTransfer{false};
   bool _throwThreadInterruptedInPost{false};
