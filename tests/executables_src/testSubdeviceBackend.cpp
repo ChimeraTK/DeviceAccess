@@ -715,4 +715,16 @@ BOOST_AUTO_TEST_CASE(TestInvolvedBackendIDs) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(Test6RegRead) {
+  setDMapFilePath("subdeviceTest.dmap");
+
+  ChimeraTK::Device device("SUBDEV_6REG");
+  device.open();
+
+  auto acc1 = device.getScalarRegisterAccessor<int32_t>("APP/0/MY_REGISTER1");
+  acc1.read();
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

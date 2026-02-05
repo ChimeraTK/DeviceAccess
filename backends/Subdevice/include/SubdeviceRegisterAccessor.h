@@ -12,9 +12,12 @@ namespace ChimeraTK {
   class SubdeviceRegisterAccessor : public NDRegisterAccessor<int32_t> {
    public:
     SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
-        boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
-        boost::shared_ptr<NDRegisterAccessor<int32_t>> accDataArea,
-        boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus, size_t byteOffset, size_t numberOfWords);
+        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect,
+        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accAddress,
+        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accWriteDataArea,
+        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accStatus,
+        boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest,
+        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accReadData, size_t byteOffset, size_t numberOfWords);
 
     void doReadTransferSynchronously() override;
 
@@ -40,10 +43,13 @@ namespace ChimeraTK {
     /// Pointer to the backend
     boost::shared_ptr<SubdeviceBackend> _backend;
 
-    /// Pointers to the three accessors
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accAddress;  // address register, if present
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accDataArea; // data or area register
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> _accStatus;   // status register, if present
+    /// Pointers to the accessors
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accChipSelect;         // chip select register, if present
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accAddress;            // address register, if present
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accWriteDataArea;      // write data or write area register
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accStatus;             // status register, if present
+    boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> _accReadRequest; // read request register, if present
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accReadData;           // read data (area not supported)
 
     /// start address and length
     size_t _startAddress, _numberOfWords;

@@ -1,5 +1,11 @@
 # name                    number of elements       address          size           bar    width   fracbits  signed
 APP.0.THE_AREA            10                       1024             40             3      32      0         0
-APP.1.ADDRESS             1                        0                4              1      32      0         0
-APP.1.DATA                1                        4                4              1      32      0         0
-APP.1.STATUS              1                        8                4              1      32      0         0
+APP.1.ADDRESS              1                          0              4             1      32      0         0
+APP.1.DATA                 1                          4              4             1      32      0         0
+APP.1.STATUS               1                          8              4             1      32      0         0
+APP.6REG.CHIP_SELECT       1                          0              4             0      32      0         0         RW
+APP.6REG.ADDRESS           1                          4              4             0      32      0         0         RW
+APP.6REG.READ_REQUEST      1                          8              4             0       1      0         0         WO
+APP.6REG.READOUT_DATA      1                         12              4             0      32      0         1         RW
+APP.6REG.WRITE_DATA        1                         16              4             0      32      0         1         RW
+APP.6REG.BUSY              1                         20              4             0       1      0         0         RO

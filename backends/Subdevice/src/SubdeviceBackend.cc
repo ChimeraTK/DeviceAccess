@@ -83,6 +83,9 @@ namespace ChimeraTK {
                                      "descriptor for type '2regs'.");
       }
     }
+    else if(parameters["type"] == "6regs") {
+      _type = Type::sixRegisters;
+    }
     // unknown type
     else {
       throw ChimeraTK::logic_error("SubdeviceBackend: Unknown type '" + parameters["type"] + "' specified.");
@@ -102,15 +105,15 @@ namespace ChimeraTK {
       if(parameters["data"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target data register "
                                      "name must be specified in the device "
-                                     "descriptor for types '2regs' and '3regs'.");
+                                     "descriptor for types '2regs', '3regs' and '6regs'.");
       }
-      _targetData = parameters["data"];
+      _targetWriteData = parameters["data"];
 
       // check if all target register names are specified
       if(parameters["address"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target address register "
                                      "name must be specified in the device "
-                                     "descriptor for type '2regs' and '3regs'.");
+                                     "descriptor for type '2regs', '3regs' and '6regs'.");
       }
       _targetAddress = parameters["address"];
       // optional parameter for delay between address write and data write
@@ -121,6 +124,40 @@ namespace ChimeraTK {
         catch(std::exception& e) {
           throw ChimeraTK::logic_error("SubdeviceBackend: Invalid value for parameter 'dataDelay': '" +
               parameters["dataDelay"] + "': " + e.what());
+        }
+      }
+      if(_type == Type::sixRegisters) {
+        // we need three more entries
+        if(parameters["readRequest"].empty()) {
+          throw ChimeraTK::logic_error("SubdeviceBackend: Target read request register "
+                                       "name must be specified in the device "
+                                       "descriptor for type '6regs'.");
+        }
+        _targetReadRequest = parameters["readData"];
+
+        if(parameters["readData"].empty()) {
+          throw ChimeraTK::logic_error("SubdeviceBackend: Target read data register "
+                                       "name must be specified in the device "
+                                       "descriptor for type '6regs'.");
+        }
+        _targetReadData = parameters["readData"];
+
+        if(parameters["chipSelectRegister"].empty()) {
+          throw ChimeraTK::logic_error("SubdeviceBackend: Target chip select register "
+                                       "name must be specified in the device "
+                                       "descriptor for type '6regs'.");
+        }
+        _targetChipSelect = parameters["chipSelectRegister"];
+
+        // The chip index is optional. It defaults to 0.
+        if(!parameters["chipIndex"].empty()) {
+          try {
+            _addressToDataDelay = std::stoul(parameters["chipIndex"]);
+          }
+          catch(std::exception& e) {
+            throw ChimeraTK::logic_error("SubdeviceBackend: Invalid value for parameter 'chipIndex': '" +
+                parameters["dataDelay"] + "': " + e.what());
+          }
         }
       }
     }
@@ -157,7 +194,7 @@ namespace ChimeraTK {
     }
     std::tie(_registerMap, _metadataCatalogue) = MapFileParser::parse(parameters["map"]);
     if(_type == Type::twoRegisters || _type == Type::threeRegisters) {
-      // FIXME: Turn off readable flag in 2reg/3reg mode
+      // Turn off readable flag in 2reg/3reg mode
       for(auto info : _registerMap) {
         // we are modifying a copy here
         info.registerAccess = NumericAddressedRegisterInfo::Access::WRITE_ONLY;
@@ -326,7 +363,8 @@ namespace ChimeraTK {
     if(_type == Type::area) {
       returnValue = getAreaRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
-    else if(_type == Type::threeRegisters || _type == Type::twoRegisters || _type == Type::areaHandshake) {
+    else if(_type == Type::sixRegisters || _type == Type::threeRegisters || _type == Type::twoRegisters ||
+        _type == Type::areaHandshake) {
       returnValue =
           getSynchronisedRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
@@ -358,15 +396,15 @@ namespace ChimeraTK {
 
     // Partial accessors are not implemented correctly yet. Better throw than getting something that seems to work but
     // does the wrong thing.
-    if(_type == Type::threeRegisters || _type == Type::twoRegisters) {
+    if(_type == Type::sixRegisters || _type == Type::threeRegisters || _type == Type::twoRegisters) {
       if(wordOffsetInRegister != 0) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Partial accessors are not supported yet for type "
-                                     "threeRegisters and twoRegisters. Register " +
+                                     "sixRegisters, threeRegisters and twoRegisters. Register " +
             info.pathName + " has requested offset " + std::to_string(wordOffsetInRegister));
       }
       if((numberOfWords != 0) && (numberOfWords != info.nElements)) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Partial accessors are not supported yet for type "
-                                     "threeRegisters and twoRegisters. Register " +
+                                     "sixRegisters, threeRegisters and twoRegisters. Register " +
             info.pathName + " has requested nElements " + std::to_string(numberOfWords) + " of " +
             std::to_string(info.nElements));
       }
@@ -438,37 +476,54 @@ namespace ChimeraTK {
 
     verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, false);
 
-    // check if register access properly specified in map file
-    if(!info.isWriteable()) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: Subdevices of type 3reg or "
-                                   "2reg or areaHandshake must have writeable registers only!");
+    // check if register access properly specified in map file (2reg and 3reg only)
+    // (6reg registers can read and might be read-only)
+    if(_type == Type::threeRegisters || _type == Type::twoRegisters) {
+      if(!info.isWriteable()) {
+        throw ChimeraTK::logic_error("SubdeviceBackend: Subdevices of type 3reg or "
+                                     "2reg or areaHandshake must have writeable registers only!");
+      }
     }
-
     // obtain target accessors
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress, accData;
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accAddress;
+    boost::shared_ptr<NDRegisterAccessor<int32_t>> accWriteData;
     if(!needAreaParam()) {
-      accAddress = _targetDevice->getRegisterAccessor<int32_t>(_targetAddress, 1, 0, {});
-      accData = _targetDevice->getRegisterAccessor<int32_t>(_targetData, 0, 0, {});
+      accAddress = _targetDevice->getRegisterAccessor<uint32_t>(_targetAddress, 1, 0, {});
+      if(info.isWriteable()) { // 6reg might be read only
+        accWriteData = _targetDevice->getRegisterAccessor<int32_t>(_targetWriteData, 0, 0, {});
+      }
     }
     else {
       // check alignment just like it is done in 'area' type subdevice which is based on raw int32 accessors to target
       verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, true);
 
       // obtain target accessor in raw mode
-      size_t wordOffset = (info.address + sizeof(int32_t) * wordOffsetInRegister) / 4;
+      size_t wordOffset = (info.address + sizeof(uint32_t) * wordOffsetInRegister) / 4;
       flags.add(AccessMode::raw);
-      accData = _targetDevice->getRegisterAccessor<int32_t>(_targetArea, numberOfWords, wordOffset, flags);
+      accWriteData = _targetDevice->getRegisterAccessor<int32_t>(_targetArea, numberOfWords, wordOffset, flags);
     }
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus;
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accStatus;
     if(needStatusParam()) {
-      accStatus = _targetDevice->getRegisterAccessor<int32_t>(_targetControl, 1, 0, {});
+      accStatus = _targetDevice->getRegisterAccessor<uint32_t>(_targetControl, 1, 0, {});
     }
 
-    size_t byteOffset = info.address + sizeof(int32_t) * wordOffsetInRegister;
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect;
+    boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest;
+    boost::shared_ptr<NDRegisterAccessor<int32_t>> accReadData;
+    if(_type == Type::sixRegisters) {
+      accChipSelect = _targetDevice->getRegisterAccessor<uint32_t>(_targetChipSelect, 1, 0, {});
+      if(info.isReadable()) { // might be write only
+        accReadRequest = _targetDevice->getRegisterAccessor<ChimeraTK::Void>(_targetReadRequest, 1, 0, {});
+        accReadData = _targetDevice->getRegisterAccessor<int32_t>(_targetReadData, 1, 0, {});
+      }
+    }
+
+    size_t byteOffset = info.address + sizeof(uint32_t) * wordOffsetInRegister;
     auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
 
     return boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
-        info.pathName, accAddress, accData, accStatus, byteOffset, numberOfWords);
+        info.pathName, accChipSelect, accAddress, accWriteData, accStatus, accReadRequest, accReadData, byteOffset,
+        numberOfWords);
   }
 
   /********************************************************************************************************************/
