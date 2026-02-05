@@ -1,6 +1,15 @@
 # name                      number of elements        address          size           bar    width   fracbits  signed
-APP.0.MY_REGISTER1          1                         0                4              0      32      0         1
-APP.0.MY_REGISTER2          1                         4                4              0      18      2         1
-APP.0.MY_AREA1              6                         8                24             0      32      16        1
-APP.0.MY_AREA2              2                         32               8              0      32      0         0
-APP.0.MY_REGISTER_AT_BYTE_1 1                         1                4              0      32      0         1
+APP.0.MY_REGISTER1          1                            0                4             0      32       0        1
+APP.0.MY_REGISTER2          1                            4                4             0      18       2        1
+APP.0.MY_AREA1              6                            8               24             0      32      16        1
+APP.0.MY_AREA2              2                           32                8             0      32       0        0
+APP.0.MY_REGISTER_AT_BYTE_1 1                            1                4             0      32       0        1
+APP.0.EIGHT_BIT             1                          100                1             0       8       0        1
+APP.0.EIGHT_BIT_ARRAY       8                          100                8             0       8       0        1
+APP.0.SIXTEEN_BIT           1                          108                2             0      16       0        1
+APP.0.SIXTEEN_OFF1          1                          109                2             0      16       0        1
+APP.0.SIXTEEN_OFF2          1                          110                2             0      16       0        1
+APP.0.SIXTEEN_BIT_ARRAY     8                          112               16             0      16       0        1
+APP.0.SIXTEEN_ARRAY_OFF2    8                          114               16             0      16       0        1
+APP.0.SIXTYFOUR_BIT         1                          132                8             0      64       0        1
+

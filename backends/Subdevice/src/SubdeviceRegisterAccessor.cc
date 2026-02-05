@@ -30,7 +30,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
-    std::lock_guard<decltype(_backend->_mutex)> lockGuard(_backend->_mutex);
+    assert(_backend->_mutex);
+    std::lock_guard<std::mutex> lockGuard(*(_backend->_mutex));
     size_t nTransfers;
     if(_backend->_type == SubdeviceBackend::Type::areaHandshake) {
       // for areaHandshake case with 1D array
