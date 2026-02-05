@@ -16,8 +16,8 @@ BOOST_AUTO_TEST_CASE(test_toCooked_3_25) {
   IEEE754_SingleConverter converter;
 
   float testValue = 3.25;
-  void* warningAvoider = &testValue;
-  int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
+  int32_t rawValue;
+  memcpy(&rawValue, &testValue, sizeof(float));
 
   BOOST_CHECK_CLOSE(converter.scalarToCooked<float>(rawValue), 3.25, 0.0001);
   BOOST_CHECK_CLOSE(converter.scalarToCooked<double>(rawValue), 3.25, 0.0001);
@@ -39,14 +39,14 @@ BOOST_AUTO_TEST_CASE(test_toCooked_60k) {
   // tests two functionalities: range check of the target (value too large for
   // int8 and int16)
   float testValue = 60000.7;
-  void* warningAvoider = &testValue;
-  int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
+  int32_t rawValue;
+  memcpy(&rawValue, &testValue, sizeof(float));
 
   BOOST_CHECK_CLOSE(converter.scalarToCooked<float>(rawValue), 60000.7, 0.0001);
   BOOST_CHECK_CLOSE(converter.scalarToCooked<double>(rawValue), 60000.7, 0.0001);
-  BOOST_CHECK_THROW(converter.scalarToCooked<int8_t>(rawValue), boost::numeric::positive_overflow);
-  BOOST_CHECK_THROW(converter.scalarToCooked<uint8_t>(rawValue), boost::numeric::positive_overflow);
-  BOOST_CHECK_THROW(converter.scalarToCooked<int16_t>(rawValue), boost::numeric::positive_overflow); // +- 32k
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int8_t>(rawValue), 127);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint8_t>(rawValue), 255);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int16_t>(rawValue), 32767);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<uint16_t>(rawValue), 60001); // unsigned 16 bit is up to 65k
   BOOST_CHECK_EQUAL(converter.scalarToCooked<int32_t>(rawValue), 60001);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<uint32_t>(rawValue), 60001);
@@ -60,26 +60,26 @@ BOOST_AUTO_TEST_CASE(test_toCooked_minus240) {
   IEEE754_SingleConverter converter;
 
   float testValue = -240.6;
-  void* warningAvoider = &testValue;
-  int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
+  int32_t rawValue;
+  memcpy(&rawValue, &testValue, sizeof(float));
 
   BOOST_CHECK_CLOSE(converter.scalarToCooked<float>(rawValue), -240.6, 0.0001);
   BOOST_CHECK_CLOSE(converter.scalarToCooked<double>(rawValue), -240.6, 0.0001);
-  BOOST_CHECK_THROW(converter.scalarToCooked<int8_t>(rawValue), boost::numeric::negative_overflow);
-  BOOST_CHECK_THROW(converter.scalarToCooked<uint8_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int8_t>(rawValue), -128);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint8_t>(rawValue), 0);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<int16_t>(rawValue), -241);
-  BOOST_CHECK_THROW(converter.scalarToCooked<uint16_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint16_t>(rawValue), 0);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<int32_t>(rawValue), -241);
-  BOOST_CHECK_THROW(converter.scalarToCooked<uint32_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint32_t>(rawValue), 0);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<int64_t>(rawValue), -241);
-  BOOST_CHECK_THROW(converter.scalarToCooked<uint64_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint64_t>(rawValue), 0);
   BOOST_CHECK_EQUAL(converter.scalarToCooked<std::string>(rawValue), std::to_string(testValue));
   BOOST_CHECK_EQUAL(converter.scalarToCooked<Boolean>(rawValue), true);
 }
 
 void checkAsRaw(int32_t rawValue, float expectedValue) {
-  void* warningAvoider = &rawValue;
-  float testValue = *(reinterpret_cast<float*>(warningAvoider));
+  float testValue;
+  memcpy(&testValue, &rawValue, sizeof(float));
 
   BOOST_CHECK_CLOSE(testValue, expectedValue, 0.0001);
 }
@@ -116,8 +116,8 @@ BOOST_AUTO_TEST_CASE(test_toCooked_00) {
 
   // tests if Boolean turns 0.0 into false
   float testValue = 0.0;
-  void* warningAvoider = &testValue;
-  int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
+  int32_t rawValue;
+  memcpy(&rawValue, &testValue, sizeof(float));
 
   BOOST_CHECK_EQUAL(converter.scalarToCooked<Boolean>(rawValue), false);
 }

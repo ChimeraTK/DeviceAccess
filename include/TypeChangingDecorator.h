@@ -3,11 +3,11 @@
 #pragma once
 
 #include "NDRegisterAccessorDecorator.h"
+#include "NumericConverter.h"
 #include "SupportedUserTypes.h"
 #include "TransferElementAbstractor.h"
 
 #include <boost/fusion/include/for_each.hpp>
-#include <boost/numeric/conversion/converter.hpp>
 
 namespace ChimeraTK {
   /** There are two types of TypeChanging decorators which do different data
@@ -315,11 +315,8 @@ namespace ChimeraTK {
     void convertAndCopyToImpl() override {}
   };
 
-  /** This decorator uses the boost numeric converter which performs two tasks:
-   *
-   *  - a range check (throws boost::numeric::bad_numeric_cast if out of range)
-   *  - the rounding floating point -> int is done mathematically (not just cut
-   * off the bits)
+  /**
+   * This decorator uses ChimeraTK::numeric::convert() for proper conversion with clamping and rounding.
    */
   template<class T, class IMPL_T>
   class TypeChangingRangeCheckingDecorator : public TypeChangingStringImplDecorator<T, IMPL_T> {
@@ -328,22 +325,6 @@ namespace ChimeraTK {
     void convertAndCopyFromImpl() override;
     void convertAndCopyToImpl() override;
     DecoratorType getDecoratorType() const override { return DecoratorType::limiting; }
-
-   private:
-    /** Internal exceptions to overload the what() function of the boost
-     * exceptions in order to fill in the variable name. These exceptions are not
-     * part of the external interface and cannot be caught explicitly because they
-     * are protected. Catch boost::numeric::bad_numeric_cast and derrivatives if
-     * you want to do error handling.
-     */
-    template<class BOOST_EXCEPTION_T>
-    struct BadNumericCastException : public BOOST_EXCEPTION_T {
-      BadNumericCastException(std::string variableName)
-      : errorMessage(
-            "Exception during type changing conversion in " + variableName + ": " + BOOST_EXCEPTION_T().what()) {}
-      std::string errorMessage;
-      const char* what() const throw() override { return errorMessage.c_str(); }
-    };
 
     using ChimeraTK::NDRegisterAccessorDecorator<T, IMPL_T>::_target;
   };
@@ -454,41 +435,18 @@ namespace ChimeraTK {
 
   template<class T, class IMPL_T>
   void TypeChangingRangeCheckingDecorator<T, IMPL_T>::convertAndCopyFromImpl() {
-    typedef boost::numeric::converter<T, IMPL_T, boost::numeric::conversion_traits<T, IMPL_T>,
-        boost::numeric::def_overflow_handler, csa_helpers::Round<double>>
-        FromImplConverter;
-    // fixme: are iterartors more efficient?
     for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
       for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
-        try {
-          this->buffer_2D[i][j] = FromImplConverter::convert(_target->accessChannel(i)[j]);
-        }
-        catch(boost::numeric::positive_overflow&) {
-          this->buffer_2D[i][j] = std::numeric_limits<T>::max();
-        }
-        catch(boost::numeric::negative_overflow&) {
-          this->buffer_2D[i][j] = std::numeric_limits<T>::min();
-        }
+        this->buffer_2D[i][j] = numeric::convert<T>(_target->accessChannel(i)[j]);
       }
     }
   }
 
   template<class T, class IMPL_T>
   void TypeChangingRangeCheckingDecorator<T, IMPL_T>::convertAndCopyToImpl() {
-    typedef boost::numeric::converter<IMPL_T, T, boost::numeric::conversion_traits<IMPL_T, T>,
-        boost::numeric::def_overflow_handler, csa_helpers::Round<double>>
-        ToImplConverter;
     for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
       for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
-        try {
-          _target->accessChannel(i)[j] = ToImplConverter::convert(this->buffer_2D[i][j]);
-        }
-        catch(boost::numeric::positive_overflow&) {
-          _target->accessChannel(i)[j] = std::numeric_limits<IMPL_T>::max();
-        }
-        catch(boost::numeric::negative_overflow&) {
-          _target->accessChannel(i)[j] = std::numeric_limits<IMPL_T>::min();
-        }
+        _target->accessChannel(i)[j] = numeric::convert<IMPL_T>(this->buffer_2D[i][j]);
       }
     }
   }

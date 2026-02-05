@@ -21,7 +21,7 @@ using namespace ChimeraTK;
 /**********************************************************************************************************************/
 
 // helper function to convert numeric or string to double
-template<class UserType>
+template<user_type UserType>
 double toDouble(UserType input) {
   return userTypeToNumeric<double>(input);
 }
@@ -163,7 +163,7 @@ void testDecorator(double startReadValue, T expectedReadValue, T startWriteValue
   decoratedScalar.accessData(0) = startWriteValue;
   decoratedScalar.write();
   anotherScalarAccessor.read();
-  BOOST_CHECK_CLOSE(toDouble(anotherScalarAccessor), expectedWriteValue, 0.0001);
+  BOOST_CHECK_CLOSE(double(anotherScalarAccessor), expectedWriteValue, 0.0001);
 
   // repeat the read / write tests with all different functions
 
@@ -211,7 +211,7 @@ void testDecorator(double startReadValue, T expectedReadValue, T startWriteValue
   decoratedScalarInGroup->accessData(0) = Adder<T, IMPL_T>::add(startWriteValue, 1);
   transferGroup.write();
   anotherScalarAccessor.read();
-  BOOST_CHECK_CLOSE(toDouble(anotherScalarAccessor), expectedWriteValue + 1, 0.0001);
+  BOOST_CHECK_CLOSE(double(anotherScalarAccessor), expectedWriteValue + 1, 0.0001);
 
   // Test pre/postRead
   anotherScalarAccessor = startReadValue + 4;
