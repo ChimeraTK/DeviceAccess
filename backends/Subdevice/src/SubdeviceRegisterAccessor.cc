@@ -78,7 +78,9 @@ namespace ChimeraTK {
           while(true) {
             usleep(_backend->_sleepTime);
             _accStatus->read();
-            if(_accStatus->accessData(0) == 0) break;
+            if(_accStatus->accessData(0) == 0) {
+              break;
+            }
             if(++retry > max_retry) {
               throw ChimeraTK::runtime_error("Write to register '" + _name +
                   "' failed: timeout waiting for cleared busy flag (" + _accStatus->getName() + ")");
