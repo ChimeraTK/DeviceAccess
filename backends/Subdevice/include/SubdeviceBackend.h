@@ -24,7 +24,7 @@ namespace ChimeraTK {
    *  URI scheme:\n
    *  \verbatim(subdevice?type=area&device=<targetDevice>&area=<targetRegister>&map=mapFile>)\endverbatim
    *
-   *  - "3regs" type: use three scalar registers: address, data and status. Before
+   *  - "3regs" type: use three scalar registers: address, (write) data and status. Before
    * access, a value of 0 in the status register is awaited. Next, the address is
    * written to the address register. The value is then written to resp. read from
    * the data register.\n
@@ -42,6 +42,16 @@ namespace ChimeraTK {
    *    The sleep parameter is optional.\n
    * URI scheme:\n
    * \verbatim(subdevice?type=areaHandshake&device=<targetDevice>&area=<targetRegister>&map=mapFile&status=<statusRegister>&sleep=<usecs>)\endverbatim
+   *
+   *  - "6regs" type: extension of the "3regs" interface for reading and addressing multiple chips/sub-devices through
+   *    the same register set. In addition to the address, (write) data and status parameters there is readRequest,
+   *    readbackData, chipRegister and chipIndex.\n
+   *    write sequence: the backend writes into the (void type) "writeRequest" register and waits until the
+status(busy) flag turns back off. It then reads the data from the "readResponse" register.\n
+   *
+   * URI scheme:\n
+   * \verbatim(subdevice?type=6regs&device=<targetDevice>&address=<addressRegister>&data=<writeDataRegister>&status=<statusRegister>&readRequest=<readRequestRegister>&readData=<readDataRegister>&chipSelectRegister=<chipSelectRegister>&chipIndex=<chipIndex>&map=<mapFile>)\endverbatim
+   * The "chipIndex" parameter is optional and defaults to 0.
    *
    *  Example: We like to use the register "APP.0.EXT_PZ16M" of the device with
    * the alias name "TCK7_0" in our dmap file as a target and the file
@@ -83,7 +93,8 @@ namespace ChimeraTK {
       threeRegisters, //< use three registers (address, data and status) in target
                       //< device. status must be 0 when idle
       twoRegisters,   //< same as three registers but without status
-      areaHandshake   //< address space visible as an area in the target device, and wait on status 0
+      areaHandshake,  //< address space visible as an area in the target device, and wait on status 0
+      sixRegisters    //< use six registers. Allows write, read and multiple chips
     };
 
     /// Mutex to deal with concurrent access to the device
@@ -105,14 +116,21 @@ namespace ChimeraTK {
     /// for type == area: the name of the target register
     std::string _targetArea;
 
-    /// for type == threeRegisters or twoRegisters: the name of the target registers
-    std::string _targetAddress, _targetData, _targetControl;
+    /// for type == sixRegisters, threeRegisters or twoRegisters: the names of the basic target registers
+    std::string _targetAddress, _targetWriteData, _targetControl;
 
-    /// for type == threeRegisters or twoRegisters: sleep time of polling loop resp. between operations, in usecs.
+    /// for type == sixRegisters: the names of the additional 3 targetRegisters
+    std::string _targetReadRequest, _targetReadData, _targetChipSelect;
+
+    /// for type == sixRegisters, threeRegisters or twoRegisters: sleep time of polling loop resp. between operations,
+    /// in usecs.
     size_t _sleepTime{100};
 
-    /// for type == threeRegisters or twoRegisters: sleep time between address and data write
+    /// for type == sixRegisters, threeRegisters or twoRegisters: sleep time between address and data write
     size_t _addressToDataDelay{0};
+
+    /// for type == sixRegisters: chip index
+    size_t _chipIndex{0};
 
     /// map from register names to addresses
     NumericAddressedRegisterCatalogue _registerMap;
@@ -148,7 +166,9 @@ namespace ChimeraTK {
     void activateAsyncRead() noexcept override;
 
     bool needAreaParam() { return _type == Type::area || _type == Type::areaHandshake; }
-    bool needStatusParam() { return _type == Type::threeRegisters || _type == Type::areaHandshake; }
+    bool needStatusParam() {
+      return _type == Type::threeRegisters || _type == Type::sixRegisters || _type == Type::areaHandshake;
+    }
 
     // helper for reducing code duplication among template specializations
     boost::shared_ptr<SubdeviceRegisterAccessor> accessorCreationHelper(const NumericAddressedRegisterInfo& info,
