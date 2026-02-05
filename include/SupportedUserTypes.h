@@ -2,92 +2,18 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "Boolean.h"
+#include "Void.h"
+
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <algorithm>
 #include <concepts>
 #include <sstream>
 #include <utility>
 
 namespace ChimeraTK {
-
-  /********************************************************************************************************************/
-  /********************************************************************************************************************/
-
-  /**
-   * Wrapper Class to avoid vector<bool> problems
-   */
-  class Boolean {
-   public:
-    Boolean() : m_value() {}
-    // We want implicit construction and conversion. Turn off the linter warnings.
-    // NOLINTBEGIN(hicpp-explicit-conversions, google-explicit-constructor)
-    Boolean(bool value) : m_value(value) {}
-
-    operator const bool&() const { return m_value; }
-    operator bool&() { return m_value; }
-    // NOLINTEND(hicpp-explicit-conversions, google-explicit-constructor)
-    // TODO: test user types to numeric etc
-
-   private:
-    bool m_value;
-  };
-
-  /********************************************************************************************************************/
-
-  inline std::istream& operator>>(std::istream& is, Boolean& value) {
-    std::string data;
-    is >> data;
-
-    std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c) { return std::tolower(c); });
-
-    if(data == "false" || data == "0" || data.empty()) {
-      value = false;
-    }
-    else {
-      value = true;
-    }
-    return is;
-  }
-
-  /********************************************************************************************************************/
-
-  // Define ChimeraTK::to_string to convert Boolean into string. We cannot define std::to_string(Boolean), as it would
-  // violate the C++ standard. The right definition can be autoselected with
-  // "using std::to_string; using ChimeraTK::to_string;".
-  inline std::string to_string(Boolean& value) {
-    if(value) {
-      return "true";
-    }
-    return "false";
-  }
-
-  /********************************************************************************************************************/
-
-  /**
-   * Wrapper Class for void. return is always  0.
-   */
-  class Void {
-   public:
-    Void() = default;
-    Void& operator=(const Void&) = default;
-    Void(const Void&) = default;
-  };
-
-  /********************************************************************************************************************/
-
-  inline std::istream& operator>>(std::istream& is, __attribute__((unused)) Void& value) {
-    return is;
-  }
-
-  /********************************************************************************************************************/
-
-  inline std::ostream& operator<<(std::ostream& os, __attribute__((unused)) Void& value) {
-    os << 0;
-    return os;
-  }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -208,8 +134,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /** Helper function to convert numeric data into any UserType (even if it is a string etc.). The conversion is done
-   *  with proper rounding and range checking. It will throw boost::numeric::positive_overflow resp.
-   *  boost::numeric::negative_overflow if the data is out of range. */
+   *  with proper rounding and range checking (clamping). */
   template<typename UserType, typename NUMERIC>
   UserType numericToUserType(NUMERIC value) {
     return detail::numericToUserType_impl<UserType, NUMERIC>::impl(value);
@@ -218,8 +143,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /** Helper function to convert numeric data into any UserType (even if it is a string etc.). The conversion is done
-   *  with proper rounding and range checking. It will throw boost::numeric::positive_overflow resp.
-   *  boost::numeric::negative_overflow if the data is out of range. */
+   *  with proper rounding and range checking (clamping). */
   template<typename NUMERIC, typename UserType>
   NUMERIC userTypeToNumeric(UserType value) {
     return detail::userTypeToNumeric_impl<UserType, NUMERIC>::impl(value);
