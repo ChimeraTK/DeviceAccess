@@ -46,7 +46,6 @@ namespace ChimeraTK {
       try {
         if(_throwLogicErr) throw ChimeraTK::logic_error("Test");
         if(_throwRuntimeErrInPre) throw ChimeraTK::runtime_error("Test");
-        if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
         if(!_writeable) {
           throw ChimeraTK::logic_error("Not writeable!");
         }
@@ -116,14 +115,6 @@ namespace ChimeraTK {
       }
 
       this->buffer_2D[0][0] = _setPostReadData;
-
-      try {
-        if(_throwNumericCast) throw boost::numeric::bad_numeric_cast();
-      }
-      catch(...) {
-        _thrownException = std::current_exception();
-        throw;
-      }
     }
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override {
