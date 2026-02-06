@@ -196,9 +196,33 @@ BOOST_AUTO_TEST_CASE(TestNumericConverter) {
       static_assert(convert<F2>(F1(-1.)) == F2(-1.));
       static_assert(convert<F2>(F1(0.12345)) == F2(F1(0.12345)));
 
+      // check retention of sign bit for zero
+      static_assert(std::signbit(convert<F2>(F1(0.))) == 0); // signbit 0 means "positive"
+      constexpr F2 result = convert<F2>(F1(0.) / F1(-1.));   // "-0." will not give us a negative 0 in C++
+      static_assert(result == 0);                            // negative and positive zero compare equal in C++
+      static_assert(std::signbit(result) == 1);              // signbit 1 means "negative"
+
       static_assert(std::isnan(convert<F2>(std::numeric_limits<F1>::quiet_NaN())));
       static_assert(std::isinf(convert<F2>(std::numeric_limits<F1>::infinity())));
+      static_assert(convert<F2>(std::numeric_limits<F1>::infinity()) == std::numeric_limits<F2>::infinity());
+      static_assert(convert<F2>(-std::numeric_limits<F1>::infinity()) == -std::numeric_limits<F2>::infinity());
     });
+  });
+
+  // conversion from/to Void
+  forEachType<FloatTypes>([]<typename F>() {
+    static_assert(convert<F>(ChimeraTK::Void{}) == F(0));
+    constexpr auto result1 = convert<ChimeraTK::Void>(F(0.0));
+    static_assert(std::is_same_v<decltype(result1), const ChimeraTK::Void>);
+    constexpr auto result2 = convert<ChimeraTK::Void>(F(123.456));
+    static_assert(std::is_same_v<decltype(result2), const ChimeraTK::Void>);
+  });
+  forEachType<IntTypes>([]<typename I>() {
+    static_assert(convert<I>(ChimeraTK::Void{}) == I(0));
+    constexpr auto result1 = convert<ChimeraTK::Void>(I(0));
+    static_assert(std::is_same_v<decltype(result1), const ChimeraTK::Void>);
+    constexpr auto resulte = convert<ChimeraTK::Void>(I(123));
+    static_assert(std::is_same_v<decltype(resulte), const ChimeraTK::Void>);
   });
 }
 
