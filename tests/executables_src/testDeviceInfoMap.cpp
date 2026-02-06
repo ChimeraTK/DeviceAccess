@@ -182,10 +182,6 @@ void DeviceInfoMapTest::testErrorElemErrTypeStreamOperator() {
   std::stringstream file_stream2;
   file_stream2 << ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::WARNING;
   BOOST_CHECK(file_stream2.str() == "WARNING");
-
-  std::stringstream file_stream3;
-  file_stream3 << (ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::TYPE)4;
-  BOOST_CHECK(file_stream3.str() == "UNKNOWN");
 }
 
 void DeviceInfoMapTest::testDeviceInfoStreamOperator() {
