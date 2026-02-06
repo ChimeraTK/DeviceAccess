@@ -13,7 +13,7 @@ using namespace ChimeraTK::numeric;
 
 /**********************************************************************************************************************/
 
-// List of types to test with
+// List of types to test with. ChimeraTK::Void is tested separately.
 using IntTypes =
     std::tuple<uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, bool, ChimeraTK::Boolean>;
 using FloatTypes = std::tuple<float, double>;
