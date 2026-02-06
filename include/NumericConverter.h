@@ -15,7 +15,7 @@ namespace ChimeraTK::numeric {
   /********************************************************************************************************************/
 
   /**
-   * Concept to require a integral data type incl. ChimeraTK::Boolean and ChimeraTK::Void in templates
+   * Concept to require an integral data type incl. ChimeraTK::Boolean and ChimeraTK::Void in templates
    */
   template<typename T>
   concept Integral = std::integral<T> || std::is_same_v<T, ChimeraTK::Boolean> || std::is_same_v<T, ChimeraTK::Void>;
@@ -31,29 +31,30 @@ namespace ChimeraTK::numeric {
   /**
    * Replacement for std::round() which also works constexpr and also casts to the target type in the same step.
    */
-  template<Integral TO, std::floating_point FROM>
-  constexpr TO roundAndCast(FROM x) {
-    if constexpr(!isBoolean<TO>()) {
-      if(std::isnan(x)) {
-        if constexpr(std::is_signed_v<TO>) {
-          return std::numeric_limits<TO>::lowest();
+  namespace detail {
+    template<Integral TO, std::floating_point FROM>
+    constexpr TO roundAndCast(FROM x) {
+      if constexpr(!isBoolean<TO>()) {
+        if(std::isnan(x)) {
+          if constexpr(std::is_signed_v<TO>) {
+            return std::numeric_limits<TO>::lowest();
+          }
+          return std::numeric_limits<TO>::max();
         }
-        return std::numeric_limits<TO>::max();
+        // NOLINTNEXTLINE(bugprone-incorrect-roundings)
+        return (x >= FROM(0)) ? TO(x + FROM(0.5)) : TO(x - FROM(0.5));
       }
-      // NOLINTNEXTLINE(bugprone-incorrect-roundings)
-      return (x >= FROM(0)) ? TO(x + FROM(0.5)) : TO(x - FROM(0.5));
+
+      // Note: NaN will yield false
+      return x >= 0.5 || x <= -0.5;
     }
 
-    // Note: NaN will yield false
-    return x >= 0.5 || x <= -0.5;
-  }
+    /******************************************************************************************************************/
 
-  /********************************************************************************************************************/
-
-  namespace detail {
     // Helper to check wether T_LEFT has a greater maximum value than T_RIGHT, without generating warnings
     template<Arithmetic T_LEFT, Arithmetic T_RIGHT>
     constexpr bool greaterMaximum() {
+      static_assert(!std::is_same_v<T_LEFT, ChimeraTK::Void> && !std::is_same_v<T_RIGHT, ChimeraTK::Void>);
       if constexpr(std::is_same_v<T_LEFT, T_RIGHT> || isBoolean<T_LEFT>()) {
         return false;
       }
@@ -138,7 +139,7 @@ namespace ChimeraTK::numeric {
 
         if constexpr(std::is_floating_point_v<FROM> && !std::is_floating_point_v<TO>) {
           // conversion from floating point into integer: need to round
-          return roundAndCast<TO>(value);
+          return detail::roundAndCast<TO>(value);
         }
       }
 
