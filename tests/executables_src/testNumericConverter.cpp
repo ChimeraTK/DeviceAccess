@@ -132,6 +132,27 @@ BOOST_AUTO_TEST_CASE(TestNumericConverter) {
           static_assert(convert<I>(F(-1.50001)) == true);
         }
       }
+
+      // check Inf and NaN
+      static_assert(convert<I>(std::numeric_limits<F>::infinity()) == std::numeric_limits<I>::max());
+      if constexpr(!ChimeraTK::isBoolean<I>()) {
+        static_assert(convert<I>(-std::numeric_limits<F>::infinity()) == std::numeric_limits<I>::lowest());
+      }
+      else {
+        static_assert(convert<I>(-std::numeric_limits<F>::infinity()) == true);
+      }
+
+      if constexpr(std::is_signed_v<I>) {
+        static_assert(convert<I>(std::numeric_limits<F>::quiet_NaN()) == std::numeric_limits<I>::lowest());
+      }
+      else {
+        if constexpr(!ChimeraTK::isBoolean<I>()) {
+          static_assert(convert<I>(std::numeric_limits<F>::quiet_NaN()) == std::numeric_limits<I>::max());
+        }
+        else {
+          static_assert(convert<I>(std::numeric_limits<F>::quiet_NaN()) == false);
+        }
+      }
     });
   });
 

@@ -34,9 +34,17 @@ namespace ChimeraTK::numeric {
   template<Integral TO, std::floating_point FROM>
   constexpr TO roundAndCast(FROM x) {
     if constexpr(!isBoolean<TO>()) {
+      if(std::isnan(x)) {
+        if constexpr(std::is_signed_v<TO>) {
+          return std::numeric_limits<TO>::lowest();
+        }
+        return std::numeric_limits<TO>::max();
+      }
       // NOLINTNEXTLINE(bugprone-incorrect-roundings)
       return (x >= FROM(0)) ? TO(x + FROM(0.5)) : TO(x - FROM(0.5));
     }
+
+    // Note: NaN will yield false
     return x >= 0.5 || x <= -0.5;
   }
 
