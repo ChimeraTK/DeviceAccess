@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(TestNumericConverter) {
     forEachType<FloatTypes>([]<typename F>() {
       if constexpr(!std::is_same_v<I, int64_t> && !std::is_same_v<I, uint64_t> &&
           (std::is_same_v<F, double> || (!std::is_same_v<I, int32_t> && !std::is_same_v<I, uint32_t>))) {
-        // these checks work only if those values can be exactly represented in the F type
+        // these checks work only if lowest() and max() of the I type can be exactly represented in the F type
         static_assert(convert<I>(F(std::numeric_limits<I>::max())) == std::numeric_limits<I>::max());
         static_assert(convert<I>(F(std::numeric_limits<I>::max() - 1)) == std::numeric_limits<I>::max() - 1);
 
@@ -75,9 +75,12 @@ BOOST_AUTO_TEST_CASE(TestNumericConverter) {
             convert<I>(F(std::numeric_limits<I>::lowest()) + F(0.51)) == std::numeric_limits<I>::lowest() + 1);
         static_assert(convert<I>(F(std::numeric_limits<I>::lowest()) + F(0.49)) == std::numeric_limits<I>::lowest());
       }
+      // the next two checks might be insensitive for some types due to limited floating point precision
       static_assert(convert<I>(F(std::numeric_limits<I>::max()) + F(0.49)) == std::numeric_limits<I>::max());
       static_assert(convert<I>(F(std::numeric_limits<I>::max()) + F(0.51)) == std::numeric_limits<I>::max());
-      static_assert(convert<I>(F(std::numeric_limits<I>::max()) + F(100000.)) == std::numeric_limits<I>::max());
+      // make sure the next one does become insensitive due to limited precision
+      static_assert(F(std::numeric_limits<I>::max()) + F(1.E13) != F(std::numeric_limits<I>::max()));
+      static_assert(convert<I>(F(std::numeric_limits<I>::max()) + F(1.E13)) == std::numeric_limits<I>::max());
 
       static_assert(convert<I>(F(std::numeric_limits<I>::lowest()) - F(0.49)) == std::numeric_limits<I>::lowest());
       if constexpr(!ChimeraTK::isBoolean<I>()) {
@@ -243,8 +246,8 @@ BOOST_AUTO_TEST_CASE(TestNumericConverter) {
     static_assert(convert<I>(ChimeraTK::Void{}) == I(0));
     constexpr auto result1 = convert<ChimeraTK::Void>(I(0));
     static_assert(std::is_same_v<decltype(result1), const ChimeraTK::Void>);
-    constexpr auto resulte = convert<ChimeraTK::Void>(I(123));
-    static_assert(std::is_same_v<decltype(resulte), const ChimeraTK::Void>);
+    constexpr auto result2 = convert<ChimeraTK::Void>(I(123));
+    static_assert(std::is_same_v<decltype(result2), const ChimeraTK::Void>);
   });
 }
 
