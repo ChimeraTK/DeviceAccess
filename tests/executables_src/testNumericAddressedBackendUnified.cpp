@@ -229,7 +229,7 @@ struct ShortRaw_base {
   template<typename Type>
   std::vector<std::vector<Type>> generateValue(bool raw = false) {
     rawUserType newRawValue = static_cast<rawUserType>(get() + derived->rawIncrement);
-    Type v = (raw ? newRawValue : (newRawValue * derived->rawToCooked));
+    Type v = ChimeraTK::numeric::convert<Type>(raw ? newRawValue : (newRawValue * derived->rawToCooked));
     /* std::cout << "generateValue " << derived->path() << " " << float(rawUserType(get() + derived->rawIncrement))
               << " -> " << float(v) << std::endl; */
     lastPadding = acc & ~derived->bitmask;
