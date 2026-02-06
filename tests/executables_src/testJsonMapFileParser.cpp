@@ -105,6 +105,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 14);
     BOOST_TEST(reg.channels[0].nFractionalBits == 10);
     BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_TEST(!reg.doubleBuffer.has_value());
   }
   {
     auto reg = regs.getBackendRegister("DAQ.CTRL");
@@ -115,6 +116,10 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.address == 0x80000000);
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
     BOOST_TEST(reg.interruptId == std::vector<size_t>({3, 0, 1}), boost::test_tools::per_element());
+    BOOST_TEST(reg.doubleBuffer.has_value());
+    BOOST_TEST(reg.doubleBuffer->offset == 0x80200000);
+    BOOST_TEST(reg.doubleBuffer->inactiveBufferRegisterPath == "/DAQ.DOUBLE_BUF.INACTIVE_BUF_ID");
+    BOOST_TEST(reg.doubleBuffer->enableRegisterPath == "/DAQ.DOUBLE_BUF.ENA");
 
     BOOST_REQUIRE(reg.channels.size() == 5);
 
@@ -285,7 +290,6 @@ BOOST_AUTO_TEST_CASE(TestInterruptIntegration) {
   BOOST_TEST(int0.readNonBlocking() == true);
   BOOST_TEST(int301.readNonBlocking() == true);
 }
-
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
