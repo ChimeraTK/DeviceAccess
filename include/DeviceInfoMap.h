@@ -92,10 +92,12 @@ namespace ChimeraTK {
          * number of reported problems only to critical errors or wants to report
          * all detected problems (errors and warnings)
          */
-        enum TYPE {
+        enum class TYPE {
           ERROR,  /**< Critical error was detected */
           WARNING /**< Non-critical error was detected */
         };
+        using TYPE::ERROR;
+        using TYPE::WARNING;
         DeviceInfoMap::DeviceInfo _errorDevice1; /**< Detailed information about first device that
                                                     generate error or warning */
         DeviceInfoMap::DeviceInfo _errorDevice2; /**< Detailed information about second device that

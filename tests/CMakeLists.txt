@@ -10,6 +10,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/include")
 include_directories("${PROJECT_SOURCE_DIR}/plugin_example/include")
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src testSources)
 add_library(${PROJECT_NAME}_TEST_LIBRARY ${testSources})
+target_link_libraries(${PROJECT_NAME}_TEST_LIBRARY ${PROJECT_NAME})
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 

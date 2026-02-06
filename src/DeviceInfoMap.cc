@@ -89,15 +89,13 @@ namespace ChimeraTK {
     switch(me) {
       case DeviceInfoMap::ErrorList::ErrorElem::ERROR:
         os << "ERROR";
-        break;
+        return os;
+
       case DeviceInfoMap::ErrorList::ErrorElem::WARNING:
         os << "WARNING";
-        break;
-      default:
-        os << "UNKNOWN";
-        break;
+        return os;
     }
-    return os;
+    throw std::out_of_range("DeviceInfoMap::ErrorList::ErrorElem::TYPE has illegal value.");
   }
 
   DeviceInfoMap::ErrorList::ErrorElem::ErrorElem(TYPE infoType, DMAP_FILE_ERR errorType,
