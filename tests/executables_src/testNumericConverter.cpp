@@ -30,7 +30,7 @@ void forEachType(F&& f) {
 
 /**********************************************************************************************************************/
 
-// Note: This test does nothing at runtime, all checks are implemented as static_asserts at compile time.
+// Note: This test does almost nothing at runtime, almost all checks are implemented as static_asserts at compile time.
 BOOST_AUTO_TEST_CASE(TestNumericConverter) {
   // Conversion from int to float
   forEachType<IntTypes>([]<typename I>() {
@@ -197,10 +197,11 @@ BOOST_AUTO_TEST_CASE(TestNumericConverter) {
       static_assert(convert<F2>(F1(0.12345)) == F2(F1(0.12345)));
 
       // check retention of sign bit for zero
-      static_assert(std::signbit(convert<F2>(F1(0.))) == 0); // signbit 0 means "positive"
-      constexpr F2 result = convert<F2>(F1(0.) / F1(-1.));   // "-0." will not give us a negative 0 in C++
-      static_assert(result == 0);                            // negative and positive zero compare equal in C++
-      static_assert(std::signbit(result) == 1);              // signbit 1 means "negative"
+      // (Note: std::signbit isn't yet constexpr with clang on Ubuntu 24)
+      BOOST_TEST(std::signbit(convert<F2>(F1(0.))) == 0);  // signbit 0 means "positive"
+      constexpr F2 result = convert<F2>(F1(0.) / F1(-1.)); // "-0." will not give us a negative 0 in C++
+      static_assert(result == 0);                          // negative and positive zero compare equal in C++
+      BOOST_TEST(std::signbit(result) == 1);               // signbit 1 means "negative"
 
       static_assert(std::isnan(convert<F2>(std::numeric_limits<F1>::quiet_NaN())));
       static_assert(std::isinf(convert<F2>(std::numeric_limits<F1>::infinity())));
