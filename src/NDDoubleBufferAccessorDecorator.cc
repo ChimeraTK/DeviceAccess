@@ -142,18 +142,23 @@ namespace ChimeraTK {
   }
 
   // Explicit template instantiations
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<int8_t>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<uint8_t>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<int16_t>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<uint16_t>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<int32_t>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<uint32_t>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<uint64_t>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<long>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<float>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<double>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<ChimeraTK::Void>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<std::string>;
-  template class ChimeraTK::NumericDoubleBufferAccessorDecorator<ChimeraTK::Boolean>;
+#define NUMERIC_DOUBLE_BUFFER_TYPES                                                                                    \
+  X(int8_t)                                                                                                            \
+  X(uint8_t)                                                                                                           \
+  X(int16_t)                                                                                                           \
+  X(uint16_t)                                                                                                          \
+  X(int32_t)                                                                                                           \
+  X(uint32_t)                                                                                                          \
+  X(uint64_t)                                                                                                          \
+  X(long)                                                                                                              \
+  X(float)                                                                                                             \
+  X(double)                                                                                                            \
+  X(ChimeraTK::Void)                                                                                                   \
+  X(std::string)                                                                                                       \
+  X(ChimeraTK::Boolean)
+
+#define X(T) template class ChimeraTK::NumericDoubleBufferAccessorDecorator<T>;
+  NUMERIC_DOUBLE_BUFFER_TYPES
+#undef X
 
 } // namespace ChimeraTK
