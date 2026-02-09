@@ -48,8 +48,6 @@ namespace ChimeraTK {
     [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override;
 
    private:
-    // we know that plugin exists at least as long as any register (of the catalogue) refers to it,
-    // so no shared_ptr required here
     std::optional<NumericAddressedRegisterInfo::DoubleBufferInfo> _doubleBufferInfo;
     boost::shared_ptr<DeviceBackend> _backend;
     std::shared_ptr<NumericAddressedBackend::DoubleBufferControlState> _controlState;
