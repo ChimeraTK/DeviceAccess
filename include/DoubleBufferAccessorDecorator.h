@@ -13,11 +13,11 @@
 namespace ChimeraTK {
 
   template<typename UserType>
-  class NumericDoubleBufferAccessorDecorator : public NDRegisterAccessorDecorator<UserType> {
+  class DoubleBufferAccessorDecorator : public NDRegisterAccessorDecorator<UserType> {
    public:
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D;
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
-    NumericDoubleBufferAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target,
+    DoubleBufferAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target,
         std::optional<NumericAddressedRegisterInfo::DoubleBufferInfo> doubleBufferConfig,
         const boost::shared_ptr<DeviceBackend>& backend,
         std::shared_ptr<NumericAddressedBackend::DoubleBufferControlState> controlState);

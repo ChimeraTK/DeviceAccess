@@ -5,9 +5,9 @@
 
 #include "async/DomainImpl.h"
 #include "async/DomainsContainer.h"
+#include "DoubleBufferAccessorDecorator.h"
 #include "Exception.h"
 #include "MapFileParser.h"
-#include "NDDoubleBufferAccessorDecorator.h"
 #include "NumericAddress.h"
 #include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
@@ -206,7 +206,7 @@ namespace ChimeraTK {
       if(!controlState) {
         controlState = std::make_shared<DoubleBufferControlState>();
       }
-      accessor = boost::make_shared<NumericDoubleBufferAccessorDecorator<UserType>>(
+      accessor = boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(
           accessor, registerInfo.doubleBuffer, shared_from_this(), controlState);
     }
 
