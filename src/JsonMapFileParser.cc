@@ -116,15 +116,15 @@ namespace ChimeraTK::detail {
     size_t bytesPerElement{0};
 
     struct DoubleBufferingInfo {
-      struct Address {
+      struct SecondaryAddress {
         AddressType type{AddressType::DMA};
         size_t channel{0};
         HexValue offset{0};
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Address, type, channel, offset)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondaryAddress, type, channel, offset)
       };
 
-      Address secondaryBufferAddress;
+      SecondaryAddress secondaryBufferAddress;
       std::string enableRegister;
       std::string readBufferRegister;
       size_t index{0};
