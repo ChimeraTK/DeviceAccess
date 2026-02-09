@@ -194,6 +194,49 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].signedFlag == false);
   }
   {
+    auto reg = regs.getBackendRegister("DAQ.FD.BUF0");
+    BOOST_TEST(reg.pathName == "/DAQ/FD/BUF0");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x81000000);
+
+    BOOST_REQUIRE(reg.channels.size() == 2);
+
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[0].signedFlag == true);
+
+    BOOST_TEST(reg.channels[1].bitOffset == 2 * 8);
+    BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[1].width == 16);
+    BOOST_TEST(reg.channels[1].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[1].signedFlag == true);
+  }
+  {
+    auto reg = regs.getBackendRegister("DAQ.FD.BUF1");
+    BOOST_TEST(reg.pathName == "/DAQ/FD/BUF1");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+
+    BOOST_REQUIRE(reg.channels.size() == 2);
+
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[0].signedFlag == true);
+
+    BOOST_TEST(reg.channels[1].bitOffset == 2 * 8);
+    BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[1].width == 16);
+    BOOST_TEST(reg.channels[1].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[1].signedFlag == true);
+  }
+  {
     auto reg = regs.getBackendRegister("DAQ.MUX_SEL");
     BOOST_TEST(reg.pathName == "/DAQ/MUX_SEL");
     BOOST_TEST(reg.nElements == 1);
