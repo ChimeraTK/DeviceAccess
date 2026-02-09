@@ -24,7 +24,7 @@ namespace ChimeraTK {
   namespace detail {
 
     /** Iteration on a raw buffer with a given pitch (increment from one element to the next) in bytes */
-    template<typename DATA_TYPE>
+    template<typename DATA_TYPE, bool WRITE_PROXY = false>
     struct pitched_iterator {
       // standard iterator traits
       using iterator_category = std::random_access_iterator_tag;
@@ -32,6 +32,27 @@ namespace ChimeraTK {
       using difference_type = std::ptrdiff_t;
       using pointer = DATA_TYPE*;
       using reference = DATA_TYPE&;
+
+      class WriteProxy {
+       public:
+        operator DATA_TYPE() {
+          DATA_TYPE rv;
+          memcpy(&rv, _ptr, sizeof(DATA_TYPE));
+          return rv;
+        }
+
+        WriteProxy& operator=(const DATA_TYPE& rhs) {
+          memcpy(_ptr, &rhs, sizeof(DATA_TYPE));
+          return *this;
+        }
+
+       private:
+        std::byte* _ptr;
+
+        friend struct pitched_iterator;
+
+        explicit WriteProxy(std::byte* ptr) : _ptr(ptr) {}
+      };
 
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<std::byte*>(begin)), _pitch(pitch) {}
@@ -52,14 +73,23 @@ namespace ChimeraTK {
       bool operator==(pitched_iterator other) const { return _ptr == other._ptr; }
       bool operator!=(pitched_iterator other) const { return !(*this == other); }
       size_t operator-(pitched_iterator other) const { return _ptr - other._ptr; }
-      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-      DATA_TYPE& operator*() const { return *reinterpret_cast<DATA_TYPE*>(_ptr); }
+
+      auto operator*() const {
+        if constexpr(!WRITE_PROXY) {
+          DATA_TYPE rv;
+          memcpy(&rv, _ptr, sizeof(DATA_TYPE));
+          return rv;
+        }
+        else {
+          return WriteProxy(_ptr);
+        }
+      }
 
      private:
       std::byte* _ptr;
       const size_t _pitch;
 
-      template<typename OTHER_DATA_TYPE>
+      template<typename OTHER_DATA_TYPE, bool OTHER_WRITE_PROXY>
       friend struct pitched_iterator;
     };
 
@@ -260,7 +290,10 @@ namespace ChimeraTK {
         // Call FixedPointConverter::toRaw() for each value in the channel. The result (C++ type int32) is written to
         // the target buffer through the pitched iterators after converting it into the RawType matching the actual
         // bit width of the channel. This is important to avoid overwriting data of other channels.
-        std::transform(buffer_2D[i].begin(), buffer_2D[i].end(), detail::pitched_iterator<RawType>(_startIterators[i]),
+        // We are using the pitched_iterator with its WriteProxy here, to have safe write access to potentially
+        // unaligned data.
+        std::transform(buffer_2D[i].begin(), buffer_2D[i].end(),
+            detail::pitched_iterator<RawType, true>(_startIterators[i]),
             [&](UserType cookedValue) { return _converters[i].toRaw(cookedValue); });
       });
     }
