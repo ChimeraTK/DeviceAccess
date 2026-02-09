@@ -1,8 +1,11 @@
-#include "NDDoubleBufferAccessorDecorator.h"
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
+#include "DoubleBufferAccessorDecorator.h"
 namespace ChimeraTK {
 
   template<typename UserType>
-  NumericDoubleBufferAccessorDecorator<UserType>::NumericDoubleBufferAccessorDecorator(
+  DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       const boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
       std::optional<NumericAddressedRegisterInfo::DoubleBufferInfo> doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend,
@@ -33,7 +36,7 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void NumericDoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
+  void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
     {
       std::lock_guard<std::mutex> lg(_controlState->mutex);
       //_controlState._readerCount.value++;
@@ -58,7 +61,7 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void NumericDoubleBufferAccessorDecorator<UserType>::doReadTransferSynchronously() {
+  void DoubleBufferAccessorDecorator<UserType>::doReadTransferSynchronously() {
     if(_currentBuffer) {
       _target->readTransfer();
     }
@@ -68,7 +71,7 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void NumericDoubleBufferAccessorDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
+  void DoubleBufferAccessorDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     if(_currentBuffer) {
       _target->postRead(type, hasNewData);
     }
@@ -122,7 +125,7 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  std::vector<boost::shared_ptr<TransferElement>> NumericDoubleBufferAccessorDecorator<
+  std::vector<boost::shared_ptr<TransferElement>> DoubleBufferAccessorDecorator<
       UserType>::getHardwareAccessingElements() {
     // returning only this means the DoubleBufferAccessorDecorator will not be optimized when put into TransferGroup
     // optimizing would break our handshake protocol, since it reorders transfers
@@ -130,11 +133,11 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  bool NumericDoubleBufferAccessorDecorator<UserType>::mayReplaceOther(
+  bool DoubleBufferAccessorDecorator<UserType>::mayReplaceOther(
       const boost::shared_ptr<const TransferElement>& other) const {
     // we need this to support merging of accessors using the same double-buffered as target.
     // If other is also double-buffered region belonging to the same plugin instance, allow the merge
-    auto otherDoubleBuffer = boost::dynamic_pointer_cast<NumericDoubleBufferAccessorDecorator const>(other);
+    auto otherDoubleBuffer = boost::dynamic_pointer_cast<DoubleBufferAccessorDecorator const>(other);
     if(!otherDoubleBuffer) {
       return false;
     }
@@ -157,7 +160,7 @@ namespace ChimeraTK {
   X(std::string)                                                                                                       \
   X(ChimeraTK::Boolean)
 
-#define X(T) template class ChimeraTK::NumericDoubleBufferAccessorDecorator<T>;
+#define X(T) template class ChimeraTK::DoubleBufferAccessorDecorator<T>;
   NUMERIC_DOUBLE_BUFFER_TYPES
 #undef X
 
