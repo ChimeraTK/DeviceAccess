@@ -200,15 +200,14 @@ namespace ChimeraTK {
                 registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
       }
     }
-    // Optionally wrap with double buffer decorator
     if(registerInfo.doubleBuffer != std::nullopt) {
       const auto& enableRegPath = registerInfo.doubleBuffer->enableRegisterPath;
-      auto& controlState = _controlStateMap[enableRegPath];
+      auto& controlState = _doubleBufferMutexMap[enableRegPath];
       if(!controlState) {
-        controlState = std::make_shared<DoubleBufferControlState>();
+        controlState = std::make_shared<detail::CountedRecursiveMutex>();
       }
       accessor = boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(
-          accessor, registerInfo.doubleBuffer, shared_from_this(), controlState);
+          accessor, *registerInfo.doubleBuffer, shared_from_this(), controlState);
     }
 
     accessor->setExceptionBackend(shared_from_this());

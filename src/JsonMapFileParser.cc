@@ -130,7 +130,7 @@ namespace ChimeraTK::detail {
       size_t index{0};
 
       void fill(NumericAddressedRegisterInfo& info) const {
-        info.doubleBuffer->offset = secondaryBufferAddress.offset.v;
+        info.doubleBuffer->address = secondaryBufferAddress.offset.v;
         info.doubleBuffer->enableRegisterPath = enableRegister;
         info.doubleBuffer->inactiveBufferRegisterPath = readBufferRegister;
       }

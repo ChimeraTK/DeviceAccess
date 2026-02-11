@@ -18,9 +18,8 @@ namespace ChimeraTK {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D;
     using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
     DoubleBufferAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target,
-        std::optional<NumericAddressedRegisterInfo::DoubleBufferInfo> doubleBufferConfig,
-        const boost::shared_ptr<DeviceBackend>& backend,
-        std::shared_ptr<NumericAddressedBackend::DoubleBufferControlState> controlState);
+        NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
+        const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex);
 
     void doPreRead(TransferType type) override;
 
@@ -48,9 +47,9 @@ namespace ChimeraTK {
     [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override;
 
    private:
-    std::optional<NumericAddressedRegisterInfo::DoubleBufferInfo> _doubleBufferInfo;
+    NumericAddressedRegisterInfo::DoubleBufferInfo _doubleBufferInfo;
     boost::shared_ptr<DeviceBackend> _backend;
-    std::shared_ptr<NumericAddressedBackend::DoubleBufferControlState> _controlState;
+    std::shared_ptr<detail::CountedRecursiveMutex> _mutex;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _secondBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;

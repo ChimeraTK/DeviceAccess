@@ -7,18 +7,14 @@ namespace ChimeraTK {
   template<typename UserType>
   DoubleBufferAccessorDecorator<UserType>::DoubleBufferAccessorDecorator(
       const boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
-      std::optional<NumericAddressedRegisterInfo::DoubleBufferInfo> doubleBufferConfig,
-      const boost::shared_ptr<DeviceBackend>& backend,
-      std::shared_ptr<NumericAddressedBackend::DoubleBufferControlState> controlState)
+      NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
+      const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex)
   : NDRegisterAccessorDecorator<UserType>(target), _doubleBufferInfo(std::move(doubleBufferConfig)), _backend(backend),
-    _controlState(controlState) {
-    if(!_doubleBufferInfo) {
-      throw ChimeraTK::logic_error("DoubleBufferInfo must be provided.");
-    }
+    _mutex(mutex) {
     _enableDoubleBufferReg =
-        backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo->enableRegisterPath, 1, _doubleBufferInfo->index, {});
+        backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
-        _doubleBufferInfo->inactiveBufferRegisterPath, 1, _doubleBufferInfo->index, {});
+        _doubleBufferInfo.inactiveBufferRegisterPath, 1, _doubleBufferInfo.index, {});
 
     auto numSamples = _target->getNumberOfSamples();
     auto accessFlags = _target->getAccessModeFlags();
@@ -38,14 +34,12 @@ namespace ChimeraTK {
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
     {
-      std::lock_guard<std::mutex> lg(_controlState->mutex);
-      //_controlState._readerCount.value++;
-      if(_controlState->readerCount == 0) {
+      std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
+      if(_mutex->useCount() == 1) {
         // acquire a lock in firmware (disable buffer swapping)
         _enableDoubleBufferReg->accessData(0) = 0;
         _enableDoubleBufferReg->write();
       }
-      ++_controlState->readerCount;
     }
     // check which buffer is now in use by the firmware
     _currentBufferNumberReg->read();
@@ -80,19 +74,9 @@ namespace ChimeraTK {
     }
 
     {
-      std::lock_guard lg{_controlState->mutex};
-      assert(_controlState->readerCount > 0);
-      _controlState->readerCount--;
-      if(_controlState->readerCount == 0) {
-        /*if(_testUSleep) {
-          // for testing, check safety of handshake
-          // FIXME - remove testUSleep feature
-          _currentBufferNumberReg->read();
-          if(_currentBuffer != _currentBufferNumberReg->accessData(0)) {
-            std::cout << "WARNING: buffer switch happened while reading! Expect corrupted data." << std::endl;
-          }
-        }*/
-        // release a lock in firmware (enable buffer swapping)
+      std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
+      if(_mutex->useCount() == 1) {
+        // acquire a lock in firmware (disable buffer swapping)
         _enableDoubleBufferReg->accessData(0) = 1;
         _enableDoubleBufferReg->write();
       }
@@ -135,13 +119,11 @@ namespace ChimeraTK {
   template<typename UserType>
   bool DoubleBufferAccessorDecorator<UserType>::mayReplaceOther(
       const boost::shared_ptr<const TransferElement>& other) const {
-    // we need this to support merging of accessors using the same double-buffered as target.
-    // If other is also double-buffered region belonging to the same plugin instance, allow the merge
     auto otherDoubleBuffer = boost::dynamic_pointer_cast<DoubleBufferAccessorDecorator const>(other);
     if(!otherDoubleBuffer) {
       return false;
     }
-    return &(otherDoubleBuffer->_controlState) == &_controlState;
+    return &(otherDoubleBuffer->_mutex) == &_mutex;
   }
 
   // Explicit template instantiations
