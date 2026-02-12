@@ -5,6 +5,7 @@
 
 #include "async/DomainImpl.h"
 #include "async/DomainsContainer.h"
+#include "DoubleBufferAccessorDecorator.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
@@ -198,6 +199,15 @@ namespace ChimeraTK {
                 FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>>(
                 registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
       }
+    }
+    if(registerInfo.doubleBuffer != std::nullopt) {
+      const auto& enableRegPath = registerInfo.doubleBuffer->enableRegisterPath;
+      auto& controlState = _doubleBufferMutexMap[enableRegPath];
+      if(!controlState) {
+        controlState = std::make_shared<detail::CountedRecursiveMutex>();
+      }
+      accessor = boost::make_shared<DoubleBufferAccessorDecorator<UserType>>(
+          accessor, *registerInfo.doubleBuffer, shared_from_this(), controlState);
     }
 
     accessor->setExceptionBackend(shared_from_this());
