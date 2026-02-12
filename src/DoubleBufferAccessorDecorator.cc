@@ -119,11 +119,12 @@ namespace ChimeraTK {
   template<typename UserType>
   bool DoubleBufferAccessorDecorator<UserType>::mayReplaceOther(
       const boost::shared_ptr<const TransferElement>& other) const {
-    auto otherDoubleBuffer = boost::dynamic_pointer_cast<DoubleBufferAccessorDecorator const>(other);
-    if(!otherDoubleBuffer) {
-      return false;
-    }
-    return &(otherDoubleBuffer->_mutex) == &_mutex;
+    auto otherDoubleBuffer = boost::dynamic_pointer_cast<const DoubleBufferAccessorDecorator<UserType>>(other);
+    if(!otherDoubleBuffer) return false;
+    if(_backend.get() != otherDoubleBuffer->_backend.get()) return false;
+    if(_target->getName() != otherDoubleBuffer->_target->getName()) return false;
+    // if(_target->getNumberOfSamples() != otherDoubleBuffer->_target->getNumberOfSamples()) return false;
+    return true;
   }
 
   // Explicit template instantiations
