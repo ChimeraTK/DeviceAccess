@@ -11,7 +11,12 @@ namespace ChimeraTK {
       const boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
       DataConsistencyGroupDetail::HistorizedMatcher* dGroup)
   : NDRegisterAccessorDecorator<UserType, UserType>(target), _hGroup(dGroup) {
-    this->_inReadAnyGroup = target->getReadAnyGroup();
+    // meta data is already copied in base implemention, so only take over actual data
+    for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+      buffer_2D[i].swap(_target->accessChannel(i));
+    }
+
+    this->setInReadAnyGroup(target->getReadAnyGroup());
     this->_readQueue = target->getReadQueue().template then<void>([this]() { readCallback(); }, std::launch::deferred);
   }
 
@@ -65,7 +70,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void DataConsistencyDecorator<UserType>::readCallback() {
     // While ReadAnyGroup.waitAny() already calls preRead at the beginning, waitAnyNonBlocking() does not,
-    // and fist peeks into the readQueue, causing readCallback() to be executed first.
+    // and first peeks into the readQueue, causing readCallback() to be executed first.
     // We call preRead just to be sure; if called twice no harm done.
     // Using TransferType::read should be fine even in non-blocking case, since
     // readCallback is only executed when we know something is in target's readQueue.
@@ -80,7 +85,7 @@ namespace ChimeraTK {
     // because we need user buffer content to judge data consistency.
     _target->postRead(TransferType::read, true);
 
-    // check data consistency, including history, and update user buffers if necessary
+    // check data consistency, including history
     bool consistent = _hGroup->checkUpdate(_target->getId());
     if(!consistent) {
       // if not consistent, delay call to postRead (called from ReadAnyGroup), by throwing DiscardValueException.

@@ -173,8 +173,7 @@ namespace ChimeraTK {
       case MatchingMode::exact:
         return dynamic_cast<DataConsistencyGroupDetail::SimpleMatcher*>(_impl.get())->isConsistent();
       case MatchingMode::historized:
-        // no need to call HistorizedMatcher::findMatch; it would return true
-        return true;
+        return dynamic_cast<DataConsistencyGroupDetail::HistorizedMatcher*>(_impl.get())->isConsistent();
     }
     assert(false);
     return false;
