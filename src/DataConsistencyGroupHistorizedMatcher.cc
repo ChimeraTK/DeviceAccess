@@ -100,11 +100,17 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
     // To update other user buffers, call postRead on the other involved decorators.
     // This concerns all pushElements, except when a push element was already on right version num and received
     // another update, which can only happen if the new datum has the same version number (handled as special case).
+    // The other exception is when the initial value of some pushElements already had the matching version number.
     // Note, in case of an exception thrown by some postRead, it might happen that postRead is
     // called more than once in a row, for the other elements. This is allowed.
     for(auto& e : _pushElements) {
-      if(e.first != callerId) {
-        auto& acc = e.second;
+      if(e.first == callerId) {
+        continue;
+      }
+      auto& acc = e.second;
+      // in case the inital value of the accessor already had the matching version number, we must skip the postRead
+      // since otherwise it would swap away the value
+      if(lastMatchingVersionNumber() > acc.getVersionNumber()) {
         acc.getHighLevelImplElement()->postRead(TransferType::read, updateBuffer);
       }
     }
@@ -195,6 +201,24 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
 
   /********************************************************************************************************************/
 
+  bool HistorizedMatcher::isConsistent() {
+    // we cannot always assume that user buffers are consistent:
+    // - before receiving data updates through ReadAnyGroup, state of initial values is unknown
+    // - also, user might have added extra elements to DataConsistencyGroup
+    if(_pushElements.size() == 0) {
+      return true;
+    }
+    auto firstVn = _pushElements.begin()->second.getVersionNumber();
+    for(auto x : _pushElements) {
+      if(x.second.getVersionNumber() != firstVn) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /********************************************************************************************************************/
+
   bool HistorizedMatcher::findMatch(TransferElementID transferElementID) {
     auto it = _targetElements.find(transferElementID);
     if(it == _targetElements.end()) {
@@ -248,7 +272,6 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
       using UserType = decltype(arg);
       using UserBufferType = std::vector<std::vector<UserType>>;
       auto& buf = getUserBuffer<UserType>(transferElementID);
-      // update history of currentBunchPattern so we can use it in findBunchPattern()
 
       auto& bufferVector = *getBufferVector<UserBufferType>(transferElementID);
       unsigned histLen = bufferVector.size();

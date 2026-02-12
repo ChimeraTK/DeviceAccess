@@ -287,6 +287,10 @@ namespace ChimeraTK {
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       buffer_2D[i].resize(_target->getNumberOfSamples());
     }
+    // Here we do not take over the buffer contents of the target, since specific implementations
+    // of NDRegisterAccessorDecorator will handle this differently.
+    // In case UserType=TargetUserType a buffer swap would be efficient, but the specific implementation should
+    // have that under control.
 
     if(target->isReadTransactionInProgress()) {
       // In case accessor was already used from ReadAnyGroup, it has readTransactionInProgress set. We must copy
