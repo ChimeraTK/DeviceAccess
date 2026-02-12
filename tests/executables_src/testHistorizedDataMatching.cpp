@@ -9,6 +9,7 @@ using namespace boost::unit_test_framework;
 
 #include "DataConsistencyGroup.h"
 #include "Device.h"
+#include "NDRegisterAccessorDecorator.h"
 #include "ReadAnyGroup.h"
 
 using namespace ChimeraTK;
@@ -353,6 +354,69 @@ BOOST_FIXTURE_TEST_CASE(testInitialValues, Fixture) {
 
   BOOST_TEST(readAccA.getVersionNumber() != VersionNumber(nullptr));
   BOOST_TEST(readAccB.getVersionNumber() != VersionNumber(nullptr));
+}
+
+BOOST_AUTO_TEST_CASE(testInitialValuesConsistency) {
+  // in all the previous tests, we simply discarded the initial values.
+  // However in real use, e.g. with ApplicationCore, it often makes sense to keep the initial values and complete
+  // them with some data update that turns them into a consistent set.
+  // Test that MatchingMode::historized supports this use case.
+
+  Device dev;
+  dev.open("(logicalNameMap?map=historizedDataMatching.xlmap)");
+  dev.activateAsyncRead();
+
+  for(bool extraDecorators : {false, true}) {
+    // prepare initial values
+    VersionNumber vs0;
+    VersionNumber vs1;
+    auto accA = dev.getScalarRegisterAccessor<int32_t>("/A");
+    auto accB = dev.getScalarRegisterAccessor<int32_t>("/B");
+    accA.setAndWrite(100, vs1);
+    accB.setAndWrite(99, vs0);
+
+    // use 'fresh' read accessors not yet tainted by ReadAnyGroup or DataConsistencyGroup
+    auto readAccA = dev.getScalarRegisterAccessor<int32_t>("/A", 0, {AccessMode::wait_for_new_data});
+    auto readAccB = dev.getScalarRegisterAccessor<int32_t>("/B", 0, {AccessMode::wait_for_new_data});
+
+    if(extraDecorators) {
+      // In order to mimic ApplicationCore behaviour, where a MetaDataPropagatingRegisterDecorator is placed around
+      // every accessor, we add a decoration layer via otherwise useless NDRegisterAccessorDecorator.
+      // We want to test that DataConsistencyDecorator swaps the right buffers even then.
+      auto da = boost::make_shared<NDRegisterAccessorDecorator<int32_t>>(readAccA.getImpl());
+      readAccA.replace(da);
+      auto db = boost::make_shared<NDRegisterAccessorDecorator<int32_t>>(readAccB.getImpl());
+      readAccB.replace(db);
+    }
+
+    // read and check them
+    readAccA.readLatest();
+    readAccB.readLatest();
+    BOOST_TEST(readAccA == 100);
+    BOOST_TEST(readAccA.getVersionNumber() == vs1);
+    BOOST_TEST(readAccB == 99);
+    BOOST_TEST(readAccB.getVersionNumber() == vs0);
+
+    ReadAnyGroup rag{readAccA, readAccB};
+    DataConsistencyGroup dg({readAccA, readAccB}, DataConsistencyGroup::MatchingMode::historized);
+    // check user buffer again - because of DataConsistencyDecorator
+    BOOST_TEST(readAccA.getVersionNumber() == vs1);
+    BOOST_TEST(readAccB.getVersionNumber() == vs0);
+    BOOST_TEST(dg.isConsistent() == false);
+    // note, following 2 tests fail unless DataConsistencyDecorator takes over initial data on construction
+    BOOST_TEST(readAccA == 100);
+    BOOST_TEST(readAccB == 99);
+
+    // provide data update for B that completes consistent set
+    accB.setAndWrite(100, vs1);
+    auto id = rag.readAny();
+    BOOST_TEST(id == readAccB.getId());
+    BOOST_TEST(readAccA == 100);
+    BOOST_TEST(readAccB == 100);
+    BOOST_TEST(readAccA.getVersionNumber() == vs1);
+    BOOST_TEST(readAccB.getVersionNumber() == vs1);
+    BOOST_TEST(dg.isConsistent() == true);
+  }
 }
 
 BOOST_FIXTURE_TEST_CASE(testIllegalUse, Fixture) {

@@ -28,6 +28,7 @@ namespace ChimeraTK::DataConsistencyGroupDetail {
      * reason, we do not provide add function with TransferElement.
      */
     void add(TransferElementAbstractor& acc, unsigned histLen);
+    [[nodiscard]] bool isConsistent();
 
     void updateCalled(const TransferElementID& transferElementID) { _updateCalled = transferElementID; }
 
