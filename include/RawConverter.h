@@ -186,7 +186,7 @@ namespace ChimeraTK::RawConverter {
     void callWithConverterParams(const ChimeraTK::NumericAddressedRegisterInfo::ChannelInfo& info, F&& fun) {
       // get RawType from info
       callForRawType(info.getRawType(), [&](auto x) {
-        using RawType = decltype(x);
+        using RawType = std::make_unsigned_t<decltype(x)>;
         // get number of bits from info and determine SignificantBitsCase
         detail::callForSignificantBitsCase(info, [&]<SignificantBitsCase significantBitsCase> {
           // get number of fractional bits from info and determine FractionalCase
@@ -302,7 +302,8 @@ namespace ChimeraTK::RawConverter {
   : _signBitMask(detail::signBitMaskTable[info.width]), _usedBitMask(detail::usedBitMaskTable[info.width]),
     _unusedBitMask(detail::unusedBitMaskTable[info.width]) {
     if constexpr(fc != FractionalCase::integer) {
-      _conversionFactor = FloatIntermediateConditional(1.) / FloatIntermediateConditional(info.nFractionalBits);
+      _conversionFactor =
+          FloatIntermediateConditional(1.) / std::pow(FloatIntermediateConditional(2), info.nFractionalBits);
     }
     if constexpr(fc == FractionalCase::fixedNegative) {
       _nNegativeFractionalBits = -info.nFractionalBits;
@@ -313,7 +314,8 @@ namespace ChimeraTK::RawConverter {
 
   template<typename UserType, typename RawType, SignificantBitsCase sc, FractionalCase fc, bool isSigned>
   UserType ToCooked<UserType, RawType, sc, fc, isSigned>::convert(RawType rawValue) {
-    auto promotedRawValue = interpretArbitraryBitInteger(_signBitMask, _usedBitMask, _unusedBitMask, rawValue);
+    auto promotedRawValue = detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
+        _signBitMask, _usedBitMask, _unusedBitMask, rawValue);
 
     if constexpr(fc == FractionalCase::integer) {
       return numericToUserType<UserType>(promotedRawValue);
