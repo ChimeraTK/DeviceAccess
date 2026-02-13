@@ -48,7 +48,7 @@ namespace ChimeraTK {
       DataType rawType;
       bool operator==(const ChannelInfo& rhs) const;
       bool operator!=(const ChannelInfo& rhs) const;
-      [[nodiscard]] DataType getRawType() const; /**< Return raw type matching the given width */
+      [[nodiscard]] DataType getRawType() const;
     };
 
     struct DoubleBufferInfo {

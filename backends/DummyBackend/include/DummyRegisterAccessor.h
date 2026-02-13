@@ -3,6 +3,7 @@
 #pragma once
 
 #include "DummyBackend.h"
+#include "FixedPointConverter.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the prefixes to the register names
 
 namespace ChimeraTK {

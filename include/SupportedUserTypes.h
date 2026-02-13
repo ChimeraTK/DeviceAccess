@@ -28,6 +28,30 @@ namespace ChimeraTK {
       std::same_as<T, uint64_t> || std::same_as<T, float> || std::same_as<T, double> || std::same_as<T, std::string> ||
       std::same_as<T, ChimeraTK::Boolean> || std::same_as<T, ChimeraTK::Void>;
 
+  /**
+   * Constant which alles to check whether a type is one of the supported ChimeraTK UserTypes.
+   */
+  template<typename T>
+  constexpr bool isUserType = std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t> || std::is_same_v<T, int16_t> ||
+      std::is_same_v<T, uint16_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t> ||
+      std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t> || std::is_same_v<T, float> ||
+      std::is_same_v<T, double> || std::is_same_v<T, std::string> || std::is_same_v<T, ChimeraTK::Boolean> ||
+      std::is_same_v<T, ChimeraTK::Void>;
+
+  /**
+   * Concept requiring a type to be one of the supported ChimeraTK RawTypes.
+   */
+  template<typename T>
+  concept raw_type =
+      std::same_as<T, uint8_t> || std::same_as<T, uint16_t> || std::same_as<T, uint32_t> || std::same_as<T, uint64_t>;
+
+  /**
+   * Constant which alles to check whether a type is one of the supported ChimeraTK RawTypes.
+   */
+  template<typename T>
+  constexpr bool isRawType = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> ||
+      std::is_same_v<T, uint64_t>;
+
   /********************************************************************************************************************/
   /********************************************************************************************************************/
   /** Helper classes for the conversion functions below */
