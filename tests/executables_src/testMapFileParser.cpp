@@ -103,9 +103,9 @@ BOOST_AUTO_TEST_CASE(test64BitSequence) {
 
   std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents;
   RegisterInfoents.emplace_back(ChimeraTK::NumericAddressedRegisterInfo("INT642D", 0x0, 0x0, 0x02, 192,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false},
-          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int32},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int32},
+          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int32}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {}));
 
   RegisterInfoents.emplace_back(
@@ -143,9 +143,9 @@ BOOST_AUTO_TEST_CASE(testGoodMapFileParse) {
   RegisterInfoents.emplace_back("WORD_USER2", 0x00000001, 0x00000010, 0x00000004, 0x00000000, 32, 0, false);
 
   RegisterInfoents.emplace_back(ChimeraTK::NumericAddressedRegisterInfo("INT2D", 0x0, 0x0, 0x05, 96,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {}));
 
   RegisterInfoents.emplace_back(
@@ -307,9 +307,9 @@ BOOST_AUTO_TEST_CASE(testInterruptMapFileParse) {
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {4});
 
   RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_AREA_INT", 0x0, 0x0, 0x05, 96,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32}},
       NumericAddressedRegisterInfo::Access::INTERRUPT, {5});
 
   RegisterInfoents[12] =

@@ -133,13 +133,14 @@ namespace ChimeraTK::detail {
       int32_t fractionalBits{0};
       bool isSigned{false};
 
-      void fill(NumericAddressedRegisterInfo& info, size_t offset) const {
+      void fill(NumericAddressedRegisterInfo& info, size_t offset, size_t bytesPerElement) const {
         if(type != RepresentationType::representationNotSet) {
           info.channels.emplace_back(8 * offset, NumericAddressedRegisterInfo::Type(type), width, fractionalBits,
-              type != RepresentationType::IEEE754 ? isSigned : true);
+              type != RepresentationType::IEEE754 ? isSigned : true,
+              DataType("int" + std::to_string(bytesPerElement * 8)));
         }
         else {
-          Representation().fill(info, offset);
+          Representation().fill(info, offset, bytesPerElement);
         }
       }
 
@@ -158,7 +159,7 @@ namespace ChimeraTK::detail {
         size_t bytesPerElement{4};
         Representation representation{};
 
-        void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset); }
+        void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset, bytesPerElement); }
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
             Channel, name, engineeringUnit, description, offset, bytesPerElement, representation)
@@ -194,7 +195,7 @@ namespace ChimeraTK::detail {
         if(channelTabs.empty()) {
           info.elementPitchBits = bytesPerElement * 8;
           info.nElements = numberOfElements;
-          representation.fill(info, 0);
+          representation.fill(info, 0, bytesPerElement);
         }
         else {
           if(channelTabs[0].channels.empty()) {

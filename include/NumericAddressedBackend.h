@@ -162,7 +162,7 @@ namespace ChimeraTK {
     friend NumericAddressedLowLevelTransferElement;
     friend TriggeredPollDistributor;
 
-    template<class UserType, class ConverterType>
+    template<class UserType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;
 
    private:
