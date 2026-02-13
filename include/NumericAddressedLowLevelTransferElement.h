@@ -7,15 +7,10 @@
 
 namespace ChimeraTK {
 
-  template<typename UserType, typename DataConverterType, bool isRaw>
+  template<typename UserType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor;
 
   class NumericAddressedBackendASCIIAccessor;
-
-  namespace detail {
-    template<typename UserType, typename DataConverterType, bool isRaw>
-    struct NumericAddressedPrePostActionsImplementor;
-  } // namespace detail
 
   /********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends,
@@ -198,11 +193,8 @@ namespace ChimeraTK {
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
 
-    template<typename UserType, typename DataConverterType, bool isRaw>
+    template<typename UserType, bool isRaw>
     friend class NumericAddressedBackendRegisterAccessor;
-
-    template<typename UserType, typename DataConverterType, bool isRaw>
-    friend struct detail::NumericAddressedPrePostActionsImplementor;
 
     friend class NumericAddressedBackendASCIIAccessor;
   };
