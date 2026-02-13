@@ -7,9 +7,11 @@
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedRegisterCatalogue.h"
+#include "RawConverter.h"
 
 #include <boost/shared_ptr.hpp>
 
+#include <ranges>
 #include <sstream>
 
 namespace ChimeraTK {
@@ -35,11 +37,11 @@ namespace ChimeraTK {
 
       class WriteProxy {
        public:
-        operator DATA_TYPE() {
-          DATA_TYPE rv;
-          memcpy(&rv, _ptr, sizeof(DATA_TYPE));
-          return rv;
-        }
+        // operator DATA_TYPE() {
+        //   DATA_TYPE rv;
+        //   memcpy(&rv, _ptr, sizeof(DATA_TYPE));
+        //   return rv;
+        // }
 
         WriteProxy& operator=(const DATA_TYPE& rhs) {
           memcpy(_ptr, &rhs, sizeof(DATA_TYPE));
@@ -249,9 +251,13 @@ namespace ChimeraTK {
   void NumericAddressedBackendMuxedRegisterAccessor<UserType, ConverterType>::doPostRead(
       TransferType, bool hasNewData) {
     if(hasNewData) {
-      for(size_t i = 0; i < _converters.size(); ++i) {
-        _converters[i].template vectorToCooked<UserType>(_startIterators[i], _endIterators[i], buffer_2D[i].begin());
+      for(auto&& [channel, start, end, buf] :
+          std::views::zip(_registerInfo.channels, _startIterators, _endIterators, buffer_2D)) {
+        RawConverter::withToCooked<UserType>(channel, [&](auto converter) {
+          std::transform(start, end, buf.begin(), [&](auto rawValue) { return converter.convert(rawValue); });
+        });
       }
+
       // it is acceptable to create the version number in post read because this accessor does not have
       // wait_for_new_data. It is basically synchronous.
       this->_versionNumber = {};
