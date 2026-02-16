@@ -39,11 +39,12 @@ namespace ChimeraTK {
     // below functions are needed for TransferGroup to work
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override;
 
-    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
+    // porbably it's enough not override these methods
+    // std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
-    void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> /* newElement */) override {
-      // do nothing, we do not support merging of DoubleBufferAccessorDecorators
-    }
+    // void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> /* newElement */) override {
+    //  do nothing, we do not support merging of DoubleBufferAccessorDecorators
+    //}
     [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override;
 
    private:
