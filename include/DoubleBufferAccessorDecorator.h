@@ -56,4 +56,24 @@ namespace ChimeraTK {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
   };
+  // Factory for instantiation
+  template<typename T>
+  boost::shared_ptr<NDRegisterAccessor<T>> createDoubleBufferDecorator(
+      const boost::shared_ptr<NDRegisterAccessor<T>>& target,
+      NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
+      const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex) {
+    return boost::make_shared<DoubleBufferAccessorDecorator<T>>(target, doubleBufferConfig, backend, mutex);
+  }
+
+  template<typename T>
+  struct CreateDoubleBufferDecoratorInstancer {
+    CreateDoubleBufferDecoratorInstancer() : ptr(&createDoubleBufferDecorator<T>) {}
+    boost::shared_ptr<NDRegisterAccessor<T>> (*ptr)(const boost::shared_ptr<NDRegisterAccessor<T>>&,
+        NumericAddressedRegisterInfo::DoubleBufferInfo, const boost::shared_ptr<DeviceBackend>&,
+        std::shared_ptr<detail::CountedRecursiveMutex>);
+  };
+
+  // Global registrar to force instantiation
+  extern ChimeraTK::TemplateUserTypeMap<CreateDoubleBufferDecoratorInstancer> _createDoubleBufferDecorator_instancer;
+
 } // namespace ChimeraTK
