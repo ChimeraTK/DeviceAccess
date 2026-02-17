@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "SupportedUserTypes.h"
-
 // Note: We do not add these type definitions to SupportedUserTypes to avoid pulling <variant> into our entire code
 // base, which might potentially slow down compilation even further (although this was not tested or measured).
+#include "Boolean.h"
+#include "Void.h"
+
+#include <cstdint>
 #include <variant>
 
 namespace ChimeraTK {
