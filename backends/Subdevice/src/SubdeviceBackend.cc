@@ -469,7 +469,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<SubdeviceRegisterAccessor> SubdeviceBackend::accessorCreationHelper(
+  template<typename RegisterRawType>
+  boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType>> SubdeviceBackend::accessorCreationHelper(
       const NumericAddressedRegisterInfo& info, size_t numberOfWords, size_t wordOffsetInRegister,
       AccessModeFlags flags) {
     flags.checkForUnknownFlags({AccessMode::raw});
@@ -486,11 +487,11 @@ namespace ChimeraTK {
     }
     // obtain target accessors
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> accAddress;
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> accWriteData;
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accWriteData;
     if(!needAreaParam()) {
       accAddress = _targetDevice->getRegisterAccessor<uint32_t>(_targetAddress, 1, 0, {});
       if(info.isWriteable()) { // 6reg might be read only
-        accWriteData = _targetDevice->getRegisterAccessor<int32_t>(_targetWriteData, 0, 0, {});
+        accWriteData = _targetDevice->getRegisterAccessor<uint32_t>(_targetWriteData, 0, 0, {});
       }
     }
     else {
@@ -500,7 +501,7 @@ namespace ChimeraTK {
       // obtain target accessor in raw mode
       size_t wordOffset = (info.address + sizeof(uint32_t) * wordOffsetInRegister) / 4;
       flags.add(AccessMode::raw);
-      accWriteData = _targetDevice->getRegisterAccessor<int32_t>(_targetArea, numberOfWords, wordOffset, flags);
+      accWriteData = _targetDevice->getRegisterAccessor<uint32_t>(_targetArea, numberOfWords, wordOffset, flags);
     }
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> accStatus;
     if(needStatusParam()) {
@@ -509,21 +510,21 @@ namespace ChimeraTK {
 
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect;
     boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest;
-    boost::shared_ptr<NDRegisterAccessor<int32_t>> accReadData;
+    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accReadData;
     if(_type == Type::sixRegisters) {
       accChipSelect = _targetDevice->getRegisterAccessor<uint32_t>(_targetChipSelect, 1, 0, {});
       if(info.isReadable()) { // might be write only
         accReadRequest = _targetDevice->getRegisterAccessor<ChimeraTK::Void>(_targetReadRequest, 1, 0, {});
-        accReadData = _targetDevice->getRegisterAccessor<int32_t>(_targetReadData, 1, 0, {});
+        accReadData = _targetDevice->getRegisterAccessor<uint32_t>(_targetReadData, 1, 0, {});
       }
     }
 
     size_t byteOffset = info.address + sizeof(uint32_t) * wordOffsetInRegister;
     auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
 
-    return boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
-        info.pathName, accChipSelect, accAddress, accWriteData, accStatus, accReadRequest, accReadData, byteOffset,
-        numberOfWords);
+    return boost::make_shared<SubdeviceRegisterAccessor<RegisterRawType>>(
+        boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis), info.pathName, accChipSelect, accAddress,
+        accWriteData, accStatus, accReadRequest, accReadData, byteOffset, numberOfWords);
   }
 
   /********************************************************************************************************************/
@@ -533,19 +534,35 @@ namespace ChimeraTK {
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister,
       const AccessModeFlags& flags) {
     auto info = _registerMap.getBackendRegister(registerPathName);
-    boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
-        accessorCreationHelper(info, numberOfWords, wordOffsetInRegister, flags);
+    if constexpr(typeid(UserType) == typeid(int32_t)) {
+      if(flags.has(AccessMode::raw)) {
+        // Compatibility hack: don't use the propper rawAcc with unsigned int, but return a uin32_t accessor directly.
+        auto rawAcc = accessorCreationHelper<int32_t>(info, numberOfWords, wordOffsetInRegister, flags);
+        return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
+            FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+                info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+      }
+    }
+    // FIXME: Make this flexible with the length in the handshake register
+    auto rawAcc = accessorCreationHelper<uint32_t>(info, numberOfWords, wordOffsetInRegister, flags);
 
-    // decorate with appropriate FixedPointConvertingDecorator. This is done even
-    // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
+    // decorate with appropriate FixedPointConvertingDecorator.
     if(!flags.has(AccessMode::raw)) {
-      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
+      return boost::make_shared<FixedPointConvertingDecorator<UserType, uint32_t>>(rawAcc,
           FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
               info.channels.front().nFractionalBits, info.channels.front().signedFlag));
     }
-    // this is handled by the template specialisation for int32_t
-    throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
-        "match the expected type. Use an int32_t instead! (Register name: " + registerPathName + "')");
+    if constexpr(typeid(UserType) == typeid(uint32_t)) {
+      // decorate with appropriate decorator even in raw mode,
+      // so we can properly implement getAsCooked()/setAsCooked().
+      return boost::make_shared<FixedPointConvertingRawDecorator<uint32_t>>(rawAcc,
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+    }
+    else {
+      throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
+          "match the expected type. Use an uint32_t instead! (Register name: " + registerPathName + "')");
+    }
   }
 
   /********************************************************************************************************************/
@@ -570,28 +587,6 @@ namespace ChimeraTK {
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!isRaw) {
-      return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>(rawAcc,
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
-    }
-    return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
-        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-            info.channels.front().nFractionalBits, info.channels.front().signedFlag));
-  }
-
-  /********************************************************************************************************************/
-
-  template<>
-  boost::shared_ptr<NDRegisterAccessor<int32_t>> SubdeviceBackend::getSynchronisedRegisterAccessor<int32_t>(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister,
-      const AccessModeFlags& flags) {
-    auto info = _registerMap.getBackendRegister(registerPathName);
-    boost::shared_ptr<SubdeviceRegisterAccessor> rawAcc =
-        accessorCreationHelper(info, numberOfWords, wordOffsetInRegister, flags);
-
-    // decorate with appropriate FixedPointConvertingDecorator. This is done even
-    // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
-    if(!flags.has(AccessMode::raw)) {
       return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>(rawAcc,
           FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
               info.channels.front().nFractionalBits, info.channels.front().signedFlag));

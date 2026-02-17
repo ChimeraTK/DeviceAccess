@@ -9,7 +9,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  class SubdeviceRegisterAccessor : public NDRegisterAccessor<int32_t> {
+  template<typename RegisterRawType>
+  class SubdeviceRegisterAccessor : public NDRegisterAccessor<RegisterRawType> {
    public:
     SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
         boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect,
@@ -55,7 +56,7 @@ namespace ChimeraTK {
     size_t _startAddress, _numberOfWords;
 
     /// internal buffer
-    std::vector<int32_t> _buffer;
+    std::vector<RegisterRawType> _buffer; // Fixme: unclear if this should be byte
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override;
 

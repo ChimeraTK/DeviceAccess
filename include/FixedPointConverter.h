@@ -72,7 +72,11 @@ namespace ChimeraTK {
       static_assert(std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int8_t>::value ||
               std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int16_t>::value ||
               std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value ||
-              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int64_t>::value,
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int64_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, uint8_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, uint16_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, uint32_t>::value ||
+              std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, uint64_t>::value,
           "RAW_ITERATOR template argument must be an iterator with value type equal to int8_t, int16_t, int32_t or "
           "int64_t");
       static_assert(std::is_same<typename std::iterator_traits<COOKED_ITERATOR>::value_type, UserType>::value,
