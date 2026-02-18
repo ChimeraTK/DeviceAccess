@@ -25,10 +25,13 @@ namespace ChimeraTK {
     _target = backend->getRegisterAccessor<UserType>(buf0Name, numSamples, 0, accessFlags);
     _secondBufferReg = backend->getRegisterAccessor<UserType>(buf1Name, numSamples, 0, accessFlags);
 
-    // enable double buffering??
-    // uint32_t enable = 1;
-    // _enableDoubleBufferReg->accessChannel(0)[0] = enable;
-    // _enableDoubleBufferReg->write();
+    {
+      std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
+      if(_mutex->useCount() == 1) {
+        _enableDoubleBufferReg->accessChannel(0)[0] = 1;
+        _enableDoubleBufferReg->write();
+      }
+    }
   }
 
   template<typename UserType>
@@ -46,7 +49,7 @@ namespace ChimeraTK {
     _currentBuffer = _currentBufferNumberReg->accessData(0);
     // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use
     // _secondBufferReg (buffer 1)
-    if(_currentBuffer) {
+    if(_currentBuffer == 1) {
       _target->preRead(type);
     }
     else {
@@ -56,7 +59,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doReadTransferSynchronously() {
-    if(_currentBuffer) {
+    if(_currentBuffer == 1) {
       _target->readTransfer();
     }
     else {
@@ -66,7 +69,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    if(_currentBuffer) {
+    if(_currentBuffer == 1) {
       _target->postRead(type, hasNewData);
     }
     else {
@@ -76,14 +79,14 @@ namespace ChimeraTK {
     {
       std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
       if(_mutex->useCount() == 1) {
-        // acquire a lock in firmware (disable buffer swapping)
+        // acquire a lock in firmware (enable buffer swapping)
         _enableDoubleBufferReg->accessData(0) = 1;
         _enableDoubleBufferReg->write();
       }
     }
     // set version and data validity of this object
     this->_versionNumber = {};
-    if(_currentBuffer) {
+    if(_currentBuffer == 1) {
       this->_dataValidity = _target->dataValidity();
     }
     else {
@@ -96,7 +99,7 @@ namespace ChimeraTK {
       return;
     }
 
-    if(_currentBuffer) {
+    if(_currentBuffer == 1) {
       for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_target->accessChannel(i));
       }

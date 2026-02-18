@@ -51,10 +51,10 @@ namespace ChimeraTK {
     };
 
     struct DoubleBufferInfo {
-      uint64_t address;
-      RegisterPath enableRegisterPath;
-      RegisterPath inactiveBufferRegisterPath;
-      uint32_t index;
+      uint64_t address;                        /**< Secondary buffer address */
+      RegisterPath enableRegisterPath;         /**< double buffer enable */
+      RegisterPath inactiveBufferRegisterPath; /**< inactive register (BUF0/BUF1) */
+      uint32_t index;                          /**< Index in enable register */
     };
 
     /**
