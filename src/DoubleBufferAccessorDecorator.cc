@@ -127,24 +127,6 @@ namespace ChimeraTK {
     return true;
   }
 
-  // Explicit template instantiations
-#define NUMERIC_DOUBLE_BUFFER_TYPES                                                                                    \
-  X(int8_t)                                                                                                            \
-  X(uint8_t)                                                                                                           \
-  X(int16_t)                                                                                                           \
-  X(uint16_t)                                                                                                          \
-  X(int32_t)                                                                                                           \
-  X(uint32_t)                                                                                                          \
-  X(uint64_t)                                                                                                          \
-  X(long)                                                                                                              \
-  X(float)                                                                                                             \
-  X(double)                                                                                                            \
-  X(ChimeraTK::Void)                                                                                                   \
-  X(std::string)                                                                                                       \
-  X(ChimeraTK::Boolean)
-
-#define X(T) template class ChimeraTK::DoubleBufferAccessorDecorator<T>;
-  NUMERIC_DOUBLE_BUFFER_TYPES
-#undef X
+  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(DoubleBufferAccessorDecorator);
 
 } // namespace ChimeraTK

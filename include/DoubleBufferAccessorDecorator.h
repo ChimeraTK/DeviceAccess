@@ -39,12 +39,9 @@ namespace ChimeraTK {
     // below functions are needed for TransferGroup to work
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override;
 
-    // porbably it's enough not override these methods
-    // std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
+    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
-    // void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> /* newElement */) override {
-    //  do nothing, we do not support merging of DoubleBufferAccessorDecorators
-    //}
+    void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> /* newElement */) override {}
     [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override;
 
    private:
@@ -56,4 +53,14 @@ namespace ChimeraTK {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
   };
+  // Factory for instantiation
+  template<typename T>
+  boost::shared_ptr<NDRegisterAccessor<T>> createDoubleBufferDecorator(
+      const boost::shared_ptr<NDRegisterAccessor<T>>& target,
+      NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
+      const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex) {
+    return boost::make_shared<DoubleBufferAccessorDecorator<T>>(target, doubleBufferConfig, backend, mutex);
+  }
+
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(DoubleBufferAccessorDecorator);
 } // namespace ChimeraTK
