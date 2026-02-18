@@ -48,6 +48,7 @@ namespace ChimeraTK {
     NumericAddressedRegisterInfo::DoubleBufferInfo _doubleBufferInfo;
     boost::shared_ptr<DeviceBackend> _backend;
     std::shared_ptr<detail::CountedRecursiveMutex> _mutex;
+    std::unique_lock<detail::CountedRecursiveMutex> _transferLock;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _secondBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;

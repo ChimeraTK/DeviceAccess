@@ -10,7 +10,7 @@ namespace ChimeraTK {
       NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex)
   : NDRegisterAccessorDecorator<UserType>(target), _doubleBufferInfo(std::move(doubleBufferConfig)), _backend(backend),
-    _mutex(mutex) {
+    _mutex(std::move(mutex)), _transferLock(*_mutex, std::defer_lock) {
     _enableDoubleBufferReg =
         backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
@@ -36,24 +36,28 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPreRead(TransferType type) {
-    {
-      std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
-      if(_mutex->useCount() == 1) {
-        // acquire a lock in firmware (disable buffer swapping)
-        _enableDoubleBufferReg->accessData(0) = 0;
-        _enableDoubleBufferReg->write();
+    // Acquire lock for full transfer lifecycle
+    _transferLock.lock(); // blocks other threads
+    try {
+      // acquire a lock in firmware (disable buffer swapping)
+      _enableDoubleBufferReg->accessData(0) = 0;
+      _enableDoubleBufferReg->write();
+
+      // check which buffer is now in use by the firmware
+      _currentBufferNumberReg->read();
+      _currentBuffer = _currentBufferNumberReg->accessData(0);
+      // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use
+      // _secondBufferReg (buffer 1)
+      if(_currentBuffer == 1) {
+        _target->preRead(type);
+      }
+      else {
+        _secondBufferReg->preRead(type);
       }
     }
-    // check which buffer is now in use by the firmware
-    _currentBufferNumberReg->read();
-    _currentBuffer = _currentBufferNumberReg->accessData(0);
-    // if current buffer 1, it means firmware writes now to buffer1, so use target (buffer 0), else use
-    // _secondBufferReg (buffer 1)
-    if(_currentBuffer == 1) {
-      _target->preRead(type);
-    }
-    else {
-      _secondBufferReg->preRead(type);
+    catch(...) {
+      _transferLock.unlock(); // avoid deadlock on exception
+      throw;
     }
   }
 
@@ -69,46 +73,46 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void DoubleBufferAccessorDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    if(_currentBuffer == 1) {
-      _target->postRead(type, hasNewData);
-    }
-    else {
-      _secondBufferReg->postRead(type, hasNewData);
-    }
+    try {
+      if(_currentBuffer == 1) {
+        _target->postRead(type, hasNewData);
+      }
+      else {
+        _secondBufferReg->postRead(type, hasNewData);
+      }
 
-    {
-      std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
-      if(_mutex->useCount() == 1) {
-        // acquire a lock in firmware (enable buffer swapping)
-        _enableDoubleBufferReg->accessData(0) = 1;
-        _enableDoubleBufferReg->write();
+      // acquire a lock in firmware (enable buffer swapping)
+      _enableDoubleBufferReg->accessData(0) = 1;
+      _enableDoubleBufferReg->write();
+      // set version and data validity of this object
+      this->_versionNumber = {};
+      if(_currentBuffer == 1) {
+        this->_dataValidity = _target->dataValidity();
+      }
+      else {
+        this->_dataValidity = _secondBufferReg->dataValidity();
+      }
+
+      // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
+      // check.
+      if(!hasNewData) {
+        return;
+      }
+
+      // Swap buffer_2D if new data
+      if(hasNewData) {
+        auto& reg = (_currentBuffer == 1) ? _target : _secondBufferReg;
+        for(size_t i = 0; i < reg->getNumberOfChannels(); ++i) {
+          ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(reg->accessChannel(i));
+        }
       }
     }
-    // set version and data validity of this object
-    this->_versionNumber = {};
-    if(_currentBuffer == 1) {
-      this->_dataValidity = _target->dataValidity();
+    catch(...) {
+      _transferLock.unlock();
+      throw;
     }
-    else {
-      this->_dataValidity = _secondBufferReg->dataValidity();
-    }
-
-    // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
-    // check.
-    if(!hasNewData) {
-      return;
-    }
-
-    if(_currentBuffer == 1) {
-      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_target->accessChannel(i));
-      }
-    }
-    else {
-      for(size_t i = 0; i < _secondBufferReg->getNumberOfChannels(); ++i) {
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D[i].swap(_secondBufferReg->accessChannel(i));
-      }
-    }
+    // Release lock last thing
+    _transferLock.unlock();
   }
 
   template<typename UserType>
