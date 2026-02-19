@@ -315,7 +315,7 @@ namespace ChimeraTK {
     template<typename COOKED_TYPE>
     // NOLINTNEXTLINE(readability-identifier-naming)
     COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample) {
-      std::vector<int32_t> rawVector(1);
+      std::vector<DEPRECATED_FIXEDPOINT_DEFAULT> rawVector(1);
       std::vector<COOKED_TYPE> cookedVector(1);
       rawVector[0] = buffer_2D[channel][sample];
       _fixedPointConverter.template vectorToCooked<COOKED_TYPE>(
