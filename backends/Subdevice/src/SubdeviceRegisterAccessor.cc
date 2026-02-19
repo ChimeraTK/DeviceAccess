@@ -12,12 +12,12 @@ namespace ChimeraTK {
   template<typename RegisterRawType, typename WriteDataType>
   SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::SubdeviceRegisterAccessor(
       boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
-      boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect,
-      boost::shared_ptr<NDRegisterAccessor<uint32_t>> accAddress,
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> accChipSelect,
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> accAddress,
       boost::shared_ptr<NDRegisterAccessor<WriteDataType>> accWriteDataArea,
-      boost::shared_ptr<NDRegisterAccessor<uint32_t>> accStatus,
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> accStatus,
       boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest,
-      boost::shared_ptr<NDRegisterAccessor<uint32_t>> accReadData, size_t byteOffset, size_t numberOfWords)
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> accReadData, size_t byteOffset, size_t numberOfWords)
   : NDRegisterAccessor<RegisterRawType>(registerPathName, {AccessMode::raw}), _backend(std::move(backend)),
     _accChipSelect(std::move(accChipSelect)), _accAddress(std::move(accAddress)),
     _accWriteDataArea(std::move(accWriteDataArea)), _accStatus(std::move(accStatus)),
@@ -50,7 +50,7 @@ namespace ChimeraTK {
       size_t idx = 0;
       for(size_t adr = _startAddress; adr < _startAddress + nTransfers; ++adr) {
         // write address register
-        _accAddress->accessData(0) = static_cast<uint32_t>(adr);
+        _accAddress->accessData(0) = static_cast<uint64_t>(adr);
         _accAddress->write();
         usleep(_backend->_addressToDataDelay);
 
@@ -111,7 +111,7 @@ namespace ChimeraTK {
       for(size_t adr = _startAddress; adr < _startAddress + nTransfers; ++adr) {
         // write address register (if applicable)
         if(_backend->_type != SubdeviceBackend::Type::areaHandshake) {
-          _accAddress->accessData(0) = static_cast<uint32_t>(adr);
+          _accAddress->accessData(0) = static_cast<uint64_t>(adr);
           _accAddress->write();
           usleep(_backend->_addressToDataDelay);
         }
@@ -126,7 +126,7 @@ namespace ChimeraTK {
           for(size_t innerOffset = 0; innerOffset < _accWriteDataArea->getNumberOfSamples(); ++innerOffset) {
             // pad data with zeros, if _numberOfWords isn't an integer multiple of _accData->getNumberOfSamples()
             RegisterRawType val = (idx < _numberOfWords) ? _buffer[idx] : 0;
-            _accWriteDataArea->accessData(0, innerOffset) = uint32_t(val); // the area is fixed to uint32_t
+            _accWriteDataArea->accessData(0, innerOffset) = uint64_t(val); // the area is fixed to uint64_t
             ++idx;
           }
         }

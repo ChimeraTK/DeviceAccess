@@ -9,16 +9,16 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType, typename WriteDataType = uint32_t>
+  template<typename RegisterRawType, typename WriteDataType = uint64_t>
   class SubdeviceRegisterAccessor : public NDRegisterAccessor<RegisterRawType> {
    public:
     SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
-        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect,
-        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accAddress,
+        boost::shared_ptr<NDRegisterAccessor<uint64_t>> accChipSelect,
+        boost::shared_ptr<NDRegisterAccessor<uint64_t>> accAddress,
         boost::shared_ptr<NDRegisterAccessor<WriteDataType>> accWriteDataArea,
-        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accStatus,
+        boost::shared_ptr<NDRegisterAccessor<uint64_t>> accStatus,
         boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest,
-        boost::shared_ptr<NDRegisterAccessor<uint32_t>> accReadData, size_t byteOffset, size_t numberOfWords);
+        boost::shared_ptr<NDRegisterAccessor<uint64_t>> accReadData, size_t byteOffset, size_t numberOfWords);
 
     void doReadTransferSynchronously() override;
 
@@ -45,12 +45,12 @@ namespace ChimeraTK {
     boost::shared_ptr<SubdeviceBackend> _backend;
 
     /// Pointers to the accessors
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accChipSelect;         // chip select register, if present
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accAddress;            // address register, if present
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> _accChipSelect;         // chip select register, if present
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> _accAddress;            // address register, if present
     boost::shared_ptr<NDRegisterAccessor<WriteDataType>> _accWriteDataArea; // write data or write area register
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accStatus;             // status register, if present
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> _accStatus;             // status register, if present
     boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> _accReadRequest; // read request register, if present
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> _accReadData;           // read data (area not supported)
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> _accReadData;           // read data (area not supported)
 
     /// start address and length
     size_t _startAddress, _numberOfWords;

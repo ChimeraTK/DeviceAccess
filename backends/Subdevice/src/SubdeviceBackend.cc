@@ -486,10 +486,10 @@ namespace ChimeraTK {
       }
     }
     // obtain target accessors
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accAddress;
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> accAddress;
     boost::shared_ptr<NDRegisterAccessor<WriteDataType>> accWriteData;
     if(!needAreaParam()) {
-      accAddress = _targetDevice->getRegisterAccessor<uint32_t>(_targetAddress, 1, 0, {});
+      accAddress = _targetDevice->getRegisterAccessor<uint64_t>(_targetAddress, 1, 0, {});
       if(info.isWriteable()) { // 6reg might be read only
         accWriteData = _targetDevice->getRegisterAccessor<WriteDataType>(_targetWriteData, 0, 0, {});
       }
@@ -504,23 +504,23 @@ namespace ChimeraTK {
       flags.add(AccessMode::raw);
       accWriteData = _targetDevice->getRegisterAccessor<WriteDataType>(_targetArea, numberOfWords, wordOffset, flags);
     }
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accStatus;
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> accStatus;
     if(needStatusParam()) {
-      accStatus = _targetDevice->getRegisterAccessor<uint32_t>(_targetControl, 1, 0, {});
+      accStatus = _targetDevice->getRegisterAccessor<uint64_t>(_targetControl, 1, 0, {});
     }
 
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect;
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> accChipSelect;
     boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest;
-    boost::shared_ptr<NDRegisterAccessor<uint32_t>> accReadData;
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> accReadData;
     if(_type == Type::sixRegisters) {
-      accChipSelect = _targetDevice->getRegisterAccessor<uint32_t>(_targetChipSelect, 1, 0, {});
+      accChipSelect = _targetDevice->getRegisterAccessor<uint64_t>(_targetChipSelect, 1, 0, {});
       if(info.isReadable()) { // might be write only
         accReadRequest = _targetDevice->getRegisterAccessor<ChimeraTK::Void>(_targetReadRequest, 1, 0, {});
-        accReadData = _targetDevice->getRegisterAccessor<uint32_t>(_targetReadData, 1, 0, {});
+        accReadData = _targetDevice->getRegisterAccessor<uint64_t>(_targetReadData, 1, 0, {});
       }
     }
 
-    size_t byteOffset = info.address + sizeof(uint32_t) * wordOffsetInRegister;
+    size_t byteOffset = info.address + info.elementPitchBits / 8 * wordOffsetInRegister;
     auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
 
     return boost::make_shared<SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>>(
@@ -560,7 +560,7 @@ namespace ChimeraTK {
     callForRawType(info.getDataDescriptor().rawDataType(), [&](auto arg) {
       using uRawType = std::make_unsigned_t<decltype(arg)>;
 
-      auto rawAcc = accessorCreationHelper<uRawType, uint32_t>(info, numberOfWords, wordOffsetInRegister, flags);
+      auto rawAcc = accessorCreationHelper<uRawType, uint64_t>(info, numberOfWords, wordOffsetInRegister, flags);
 
       // decorate with appropriate FixedPointConvertingDecorator.
       if(!flags.has(AccessMode::raw)) {
