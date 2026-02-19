@@ -9,7 +9,7 @@
 #include <string>
 
 namespace ChimeraTK {
-  template<typename RegisterRawType>
+  template<typename RegisterRawType, typename WriteDataType>
   class SubdeviceRegisterAccessor;
 
   /**
@@ -87,7 +87,7 @@ status(busy) flag turns back off. It then reads the data from the "readResponse"
     std::set<DeviceBackend::BackendID> getInvolvedBackendIDs() override;
 
    protected:
-    template<typename RegisterRawType>
+    template<typename RegisterRawType, typename WriteDataType>
     friend class SubdeviceRegisterAccessor;
 
     enum class Type {
@@ -173,8 +173,8 @@ status(busy) flag turns back off. It then reads the data from the "readResponse"
     }
 
     // helper for reducing code duplication among template specializations
-    template<typename RegisterRawType>
-    boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType>> accessorCreationHelper(
+    template<typename RegisterRawType, typename WriteDataType>
+    boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>> accessorCreationHelper(
         const NumericAddressedRegisterInfo& info, size_t numberOfWords, size_t wordOffsetInRegister,
         AccessModeFlags flags);
   };

@@ -9,11 +9,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  SubdeviceRegisterAccessor<RegisterRawType>::SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend,
-      const std::string& registerPathName, boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect,
+  template<typename RegisterRawType, typename WriteDataType>
+  SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::SubdeviceRegisterAccessor(
+      boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
+      boost::shared_ptr<NDRegisterAccessor<uint32_t>> accChipSelect,
       boost::shared_ptr<NDRegisterAccessor<uint32_t>> accAddress,
-      boost::shared_ptr<NDRegisterAccessor<uint32_t>> accWriteDataArea,
+      boost::shared_ptr<NDRegisterAccessor<WriteDataType>> accWriteDataArea,
       boost::shared_ptr<NDRegisterAccessor<uint32_t>> accStatus,
       boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest,
       boost::shared_ptr<NDRegisterAccessor<uint32_t>> accReadData, size_t byteOffset, size_t numberOfWords)
@@ -36,8 +37,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  void SubdeviceRegisterAccessor<RegisterRawType>::doReadTransferSynchronously() {
+  template<typename RegisterRawType, typename WriteDataType>
+  void SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::doReadTransferSynchronously() {
     std::lock_guard<decltype(_backend->_mutex)> lockGuard(_backend->_mutex);
     assert(_backend->_type == SubdeviceBackend::Type::sixRegisters);
 
@@ -83,8 +84,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  bool SubdeviceRegisterAccessor<RegisterRawType>::doWriteTransfer(ChimeraTK::VersionNumber) {
+  template<typename RegisterRawType, typename WriteDataType>
+  bool SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::doWriteTransfer(ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->_mutex)> lockGuard(_backend->_mutex);
     size_t nTransfers;
     if(_backend->_type == SubdeviceBackend::Type::areaHandshake) {
@@ -165,8 +166,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  void SubdeviceRegisterAccessor<RegisterRawType>::doPreRead(TransferType) {
+  template<typename RegisterRawType, typename WriteDataType>
+  void SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::doPreRead(TransferType) {
     if(!_backend->isOpen()) {
       throw ChimeraTK::logic_error("Device is not opened.");
     }
@@ -200,8 +201,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  void SubdeviceRegisterAccessor<RegisterRawType>::doPostRead(TransferType, bool hasNewData) {
+  template<typename RegisterRawType, typename WriteDataType>
+  void SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::doPostRead(TransferType, bool hasNewData) {
     if(hasNewData) {
       NDRegisterAccessor<RegisterRawType>::buffer_2D[0].swap(_buffer);
       NDRegisterAccessor<RegisterRawType>::_versionNumber = {}; // generate a new version number
@@ -211,8 +212,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  void SubdeviceRegisterAccessor<RegisterRawType>::doPreWrite(TransferType, VersionNumber) {
+  template<typename RegisterRawType, typename WriteDataType>
+  void SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::doPreWrite(TransferType, VersionNumber) {
     if(!_backend->isOpen()) {
       throw ChimeraTK::logic_error("Device is not opened.");
     }
@@ -243,8 +244,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  void SubdeviceRegisterAccessor<RegisterRawType>::doPostWrite(TransferType, VersionNumber) {
+  template<typename RegisterRawType, typename WriteDataType>
+  void SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::doPostWrite(TransferType, VersionNumber) {
     if(!this->_activeException) {
       NDRegisterAccessor<RegisterRawType>::buffer_2D[0].swap(_buffer);
     }
@@ -252,8 +253,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  bool SubdeviceRegisterAccessor<RegisterRawType>::mayReplaceOther(
+  template<typename RegisterRawType, typename WriteDataType>
+  bool SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::mayReplaceOther(
       const boost::shared_ptr<TransferElement const>& other) const {
     auto castedOther = boost::dynamic_pointer_cast<SubdeviceRegisterAccessor const>(other);
     if(!castedOther) {
@@ -269,37 +270,38 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  bool SubdeviceRegisterAccessor<RegisterRawType>::isReadOnly() const {
+  template<typename RegisterRawType, typename WriteDataType>
+  bool SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::isReadOnly() const {
     return isReadable() && !isWriteable();
   }
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  bool SubdeviceRegisterAccessor<RegisterRawType>::isReadable() const {
+  template<typename RegisterRawType, typename WriteDataType>
+  bool SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::isReadable() const {
     return _accReadRequest != nullptr;
   }
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  bool SubdeviceRegisterAccessor<RegisterRawType>::isWriteable() const {
+  template<typename RegisterRawType, typename WriteDataType>
+  bool SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::isWriteable() const {
     return _accWriteDataArea != nullptr;
   }
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  std::vector<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor<
-      RegisterRawType>::getHardwareAccessingElements() {
+  template<typename RegisterRawType, typename WriteDataType>
+  std::vector<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor<RegisterRawType,
+      WriteDataType>::getHardwareAccessingElements() {
     return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
   }
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  std::list<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor<RegisterRawType>::getInternalElements() {
+  template<typename RegisterRawType, typename WriteDataType>
+  std::list<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor<RegisterRawType,
+      WriteDataType>::getInternalElements() {
     std::list<boost::shared_ptr<TransferElement>> retval = {_accWriteDataArea}; // always there
 
     if(_accAddress) { // nullprt for areaHandshake
@@ -322,8 +324,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType>
-  void SubdeviceRegisterAccessor<RegisterRawType>::replaceTransferElement(boost::shared_ptr<TransferElement>) {
+  template<typename RegisterRawType, typename WriteDataType>
+  void SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::replaceTransferElement(
+      boost::shared_ptr<TransferElement>) {
     // Nothing to replace here. The necessary read/write with the handshake cannot be merged with anything.
   }
 
@@ -335,6 +338,6 @@ namespace ChimeraTK {
   template class SubdeviceRegisterAccessor<uint32_t>;
   template class SubdeviceRegisterAccessor<uint64_t>;
 
-  template class SubdeviceRegisterAccessor<int32_t>; // backward compatibility
+  template class SubdeviceRegisterAccessor<int32_t, int32_t>; // backward compatibility
 
 } // namespace ChimeraTK

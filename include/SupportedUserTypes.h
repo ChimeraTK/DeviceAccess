@@ -952,6 +952,9 @@ namespace ChimeraTK {
       case DataType::int32: {
         lambda(int32_t());
       } break;
+      case DataType::int64: {
+        lambda(int64_t());
+      } break;
       // NOLINTEND(bugprone-branch-clone)
       default:
         class myBadCast : public std::bad_cast {
