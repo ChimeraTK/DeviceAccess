@@ -13,13 +13,11 @@
 namespace ChimeraTK {
 
   template<typename UserType>
-  class DoubleBufferAccessorDecorator : public NDRegisterAccessorDecorator<UserType> {
+  class DoubleBufferAccessorDecorator : public NDRegisterAccessor<UserType> {
    public:
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType>::buffer_2D;
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
-    DoubleBufferAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>& target,
-        NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
-        const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex);
+    DoubleBufferAccessorDecorator(NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
+        const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     void doPreRead(TransferType type) override;
 
@@ -28,6 +26,13 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override;
 
     [[nodiscard]] bool isWriteable() const override { return false; }
+    [[nodiscard]] bool isReadOnly() const override;
+
+    [[nodiscard]] bool isReadable() const override;
+
+    //[[nodiscard]] bool isWriteable() const override;
+
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override { return false; }
 
     void doPreWrite(TransferType, VersionNumber) override {
       throw ChimeraTK::logic_error("NumericAddressBackend DoubleBufferPlugin: Writing is not allowed atm.");
@@ -45,14 +50,20 @@ namespace ChimeraTK {
     [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override;
 
    private:
+    using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
     NumericAddressedRegisterInfo::DoubleBufferInfo _doubleBufferInfo;
     boost::shared_ptr<DeviceBackend> _backend;
     std::shared_ptr<detail::CountedRecursiveMutex> _mutex;
     std::unique_lock<detail::CountedRecursiveMutex> _transferLock;
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _secondBufferReg;
+    boost::shared_ptr<NDRegisterAccessor<UserType>> _buffer0;
+    boost::shared_ptr<NDRegisterAccessor<UserType>> _buffer1;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
+    const RegisterPath& _registerPathName;
+    size_t _numberOfWords;
+    size_t _wordOffsetInRegister;
+    AccessModeFlags _flags;
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(DoubleBufferAccessorDecorator);

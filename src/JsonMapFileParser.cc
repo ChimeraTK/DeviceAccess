@@ -116,27 +116,27 @@ namespace ChimeraTK::detail {
     size_t bytesPerElement{0};
 
     struct DoubleBufferingInfo {
-      struct SecondaryAddress {
+      struct SecondAddress {
         AddressType type{AddressType::DMA};
         size_t channel{0};
         HexValue offset{0};
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondaryAddress, type, channel, offset)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondAddress, type, channel, offset)
       };
 
-      SecondaryAddress secondaryBufferAddress;
+      SecondAddress secondBufferAddress;
       std::string enableRegister;
       std::string readBufferRegister;
       size_t index{0};
 
       void fill(NumericAddressedRegisterInfo& info) const {
-        info.doubleBuffer->address = secondaryBufferAddress.offset.v;
+        info.doubleBuffer->address = secondBufferAddress.offset.v;
         info.doubleBuffer->enableRegisterPath = enableRegister;
         info.doubleBuffer->inactiveBufferRegisterPath = readBufferRegister;
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-          DoubleBufferingInfo, secondaryBufferAddress, enableRegister, readBufferRegister, index)
+          DoubleBufferingInfo, secondBufferAddress, enableRegister, readBufferRegister, index)
     };
     std::optional<DoubleBufferingInfo> doubleBuffering;
 
@@ -282,9 +282,9 @@ namespace ChimeraTK::detail {
           NumericAddressedRegisterInfo buf1Register = my;
           buf1Register.pathName = my.pathName + "/BUF1";
           buf1Register.doubleBuffer.reset(); // it's a simple view of the buffer
-          buf1Register.address = doubleBuffering->secondaryBufferAddress.offset.v;
+          buf1Register.address = doubleBuffering->secondBufferAddress.offset.v;
           buf1Register.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
-          // buf1Register.bar = doubleBuffering->secondaryBufferAddress.channel +
+          // buf1Register.bar = doubleBuffering->secondBufferAddress.channel +
           //     (doubleBuffering->secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);
           buf1Register.computeDataDescriptor();
           catalogue.addRegister(buf1Register);
