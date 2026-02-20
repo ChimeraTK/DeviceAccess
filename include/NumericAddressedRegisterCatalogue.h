@@ -45,6 +45,7 @@ namespace ChimeraTK {
       uint32_t width;          /**< Number of significant bits in the register */
       int32_t nFractionalBits; /**< Number of fractional bits */
       bool signedFlag;         /**< Signed/Unsigned flag */
+      DataType rawType;
       bool operator==(const ChannelInfo& rhs) const;
       bool operator!=(const ChannelInfo& rhs) const;
       [[nodiscard]] DataType getRawType() const; /**< Return raw type matching the given width */

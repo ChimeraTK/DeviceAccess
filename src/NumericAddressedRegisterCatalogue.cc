@@ -23,7 +23,9 @@ namespace ChimeraTK {
       Access dataAccess_, Type dataType_, std::vector<size_t> interruptId_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(nElements_ > 0 ? nBytes_ / nElements_ * 8 : 0),
     bar(bar_), address(address_), registerAccess(dataAccess_), interruptId(std::move(interruptId_)),
-    channels({{0, dataType_, width_, nFractionalBits_, signedFlag_}}) {
+    channels({{0, dataType_, width_, nFractionalBits_, signedFlag_,
+        nElements_ > 0 ? ChimeraTK::DataType("int" + std::to_string(elementPitchBits)) :
+                         ChimeraTK::DataType(ChimeraTK::DataType::Void)}}) {
     assert(channels.size() == 1);
 
     // make sure . and / is treated as similar as possible
@@ -195,9 +197,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   DataType NumericAddressedRegisterInfo::ChannelInfo::getRawType() const {
-    if(width > 16) return DataType::int32;
-    if(width > 8) return DataType::int16;
-    return DataType::int8;
+    return rawType;
   }
 
   /********************************************************************************************************************/
