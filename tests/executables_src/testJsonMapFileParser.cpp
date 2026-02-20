@@ -105,6 +105,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 14);
     BOOST_TEST(reg.channels[0].nFractionalBits == 10);
     BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_TEST(!reg.doubleBuffer.has_value());
   }
   {
     auto reg = regs.getBackendRegister("DAQ.CTRL");
@@ -115,6 +116,10 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.address == 0x80000000);
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
     BOOST_TEST(reg.interruptId == std::vector<size_t>({3, 0, 1}), boost::test_tools::per_element());
+    BOOST_TEST(reg.doubleBuffer.has_value());
+    BOOST_TEST(reg.doubleBuffer->address == 0x80200000);
+    BOOST_TEST(reg.doubleBuffer->inactiveBufferRegisterPath == "/DAQ.DOUBLE_BUF.INACTIVE_BUF_ID");
+    BOOST_TEST(reg.doubleBuffer->enableRegisterPath == "/DAQ.DOUBLE_BUF.ENA");
 
     BOOST_REQUIRE(reg.channels.size() == 5);
 
@@ -187,6 +192,49 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+  }
+  {
+    auto reg = regs.getBackendRegister("DAQ.FD.BUF0");
+    BOOST_TEST(reg.pathName == "/DAQ/FD/BUF0");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x81000000);
+
+    BOOST_REQUIRE(reg.channels.size() == 2);
+
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[0].signedFlag == true);
+
+    BOOST_TEST(reg.channels[1].bitOffset == 2 * 8);
+    BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[1].width == 16);
+    BOOST_TEST(reg.channels[1].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[1].signedFlag == true);
+  }
+  {
+    auto reg = regs.getBackendRegister("DAQ.FD.BUF1");
+    BOOST_TEST(reg.pathName == "/DAQ/FD/BUF1");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+
+    BOOST_REQUIRE(reg.channels.size() == 2);
+
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[0].signedFlag == true);
+
+    BOOST_TEST(reg.channels[1].bitOffset == 2 * 8);
+    BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[1].width == 16);
+    BOOST_TEST(reg.channels[1].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[1].signedFlag == true);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.MUX_SEL");
@@ -285,7 +333,6 @@ BOOST_AUTO_TEST_CASE(TestInterruptIntegration) {
   BOOST_TEST(int0.readNonBlocking() == true);
   BOOST_TEST(int301.readNonBlocking() == true);
 }
-
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
