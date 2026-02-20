@@ -32,7 +32,7 @@ namespace ChimeraTK {
 
     //[[nodiscard]] bool isWriteable() const override;
 
-    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override { return false; }
+    bool doWriteTransfer(ChimeraTK::VersionNumber /* VersionNumber */) override { return false; }
 
     void doPreWrite(TransferType, VersionNumber) override {
       throw ChimeraTK::logic_error("NumericAddressBackend DoubleBufferPlugin: Writing is not allowed atm.");
