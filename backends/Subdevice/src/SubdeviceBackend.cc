@@ -133,7 +133,7 @@ namespace ChimeraTK {
                                        "name must be specified in the device "
                                        "descriptor for type '6regs'.");
         }
-        _targetReadRequest = parameters["readData"];
+        _targetReadRequest = parameters["readRequest"];
 
         if(parameters["readData"].empty()) {
           throw ChimeraTK::logic_error("SubdeviceBackend: Target read data register "
@@ -536,19 +536,8 @@ namespace ChimeraTK {
       const AccessModeFlags& flags) {
     auto info = _registerMap.getBackendRegister(registerPathName);
 
-    // Special treatment for the deprecated int32_t raw. Remove when raw types are unsigned and flexible in size
-    if constexpr(typeid(UserType) == typeid(int32_t)) {
-      if(flags.has(AccessMode::raw)) {
-        // Compatibility hack: don't use the propper rawAcc with unsigned int, but return a uin32_t accessor directly.
-        auto rawAcc = accessorCreationHelper<int32_t, int32_t>(info, numberOfWords, wordOffsetInRegister, flags);
-        return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
-            FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-                info.channels.front().nFractionalBits, info.channels.front().signedFlag));
-      }
-    }
-
-    if(_type == Type::areaHandshake) {
-      // we already covered the raw case above. But the areaHandshake also uses raw internally, so we need special
+    if(_type == Type::areaHandshake && !flags.has(AccessMode::raw)) {
+      // The areaHandshake also uses raw internally. We need special
       // treatment for the deprecated int32_t raw type.
       auto rawAcc = accessorCreationHelper<int32_t, int32_t>(info, numberOfWords, wordOffsetInRegister, flags);
       return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
@@ -574,6 +563,18 @@ namespace ChimeraTK {
         // decorate with appropriate decorator even in raw mode,
         // so we can properly implement getAsCooked()/setAsCooked().
         retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(rawAcc,
+            FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
+                info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+      }
+      else if constexpr(std::is_same_v<UserType, std::make_signed_t<uRawType>>) {
+        // Handling for deprecated, signed raw types
+        // As the FixedPointConvertingRawDecorator only works with one template class, we cannot use
+        // the unsigned rawAcc.
+        rawAcc.reset();
+        auto signedRawAcc =
+            accessorCreationHelper<UserType, UserType>(info, numberOfWords, wordOffsetInRegister, flags);
+
+        retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(signedRawAcc,
             FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
                 info.channels.front().nFractionalBits, info.channels.front().signedFlag));
       }

@@ -72,7 +72,8 @@ namespace ChimeraTK {
           }
         }
 
-        // copy data to buffer
+        // read data and copy to buffer
+        _accReadData->read();
         _buffer[idx++] = RegisterRawType(_accReadData->accessData(0));
       }
     }
@@ -338,6 +339,9 @@ namespace ChimeraTK {
   template class SubdeviceRegisterAccessor<uint32_t>;
   template class SubdeviceRegisterAccessor<uint64_t>;
 
+  template class SubdeviceRegisterAccessor<int8_t, int8_t>;   // backward compatibility
+  template class SubdeviceRegisterAccessor<int16_t, int16_t>; // backward compatibility
   template class SubdeviceRegisterAccessor<int32_t, int32_t>; // backward compatibility
+  template class SubdeviceRegisterAccessor<int64_t, int64_t>; // backward compatibility
 
 } // namespace ChimeraTK
