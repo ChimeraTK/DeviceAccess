@@ -247,10 +247,8 @@ namespace ChimeraTK::detail {
         info.interruptId = triggeredByInterrupt;
         info.channels.emplace_back(0, NumericAddressedRegisterInfo::Type::VOID, 0, 0, false);
       }
-      if(!info.doubleBuffer) {
-        info.doubleBuffer = NumericAddressedRegisterInfo::DoubleBufferInfo{};
-      }
-      if(doubleBuffering.has_value()) {
+      if(doubleBuffering) {
+        info.doubleBuffer.emplace();
         doubleBuffering->fill(info);
       }
       else {
