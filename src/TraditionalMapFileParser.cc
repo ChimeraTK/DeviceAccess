@@ -355,8 +355,10 @@ namespace ChimeraTK::detail {
     size_t bytesPerBlock = 0;
 
     for(auto& channel : channelLines) {
+      DataType rawType = DataType("int" + std::to_string(channel.nBytes * 8));
+
       channels.emplace_back(NumericAddressedRegisterInfo::ChannelInfo{uint32_t(channel.address - pl.address) * 8,
-          channel.type, channel.width, channel.nFractionalBits, channel.signedFlag});
+          channel.type, channel.width, channel.nFractionalBits, channel.signedFlag, rawType});
       bytesPerBlock += channel.nBytes;
 
       if(channel.nBytes != 1 && channel.nBytes != 2 && channel.nBytes != 4 && channel.nBytes != 8) {
