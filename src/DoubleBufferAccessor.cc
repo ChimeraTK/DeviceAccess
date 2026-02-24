@@ -76,38 +76,38 @@ namespace ChimeraTK {
     auto unlocker = cppext::finally([&] { _transferLock.unlock(); });
     if(_currentBuffer == 1) {
       _buffer0->postRead(type, hasNewData);
-      }
-      else {
-        _buffer1->postRead(type, hasNewData);
-      }
+    }
+    else {
+      _buffer1->postRead(type, hasNewData);
+    }
 
-      // release a lock in firmware (enable buffer swapping)
-      if(_mutex->useCount() == 1) {
-        _enableDoubleBufferReg->accessData(0) = 1;
-        _enableDoubleBufferReg->write();
-      }
-      // set version and data validity of this object
-      this->_versionNumber = {};
-      if(_currentBuffer == 1) {
-        this->_dataValidity = _buffer0->dataValidity();
-      }
-      else {
-        this->_dataValidity = _buffer1->dataValidity();
-      }
+    // release a lock in firmware (enable buffer swapping)
+    if(_mutex->useCount() == 1) {
+      _enableDoubleBufferReg->accessData(0) = 1;
+      _enableDoubleBufferReg->write();
+    }
+    // set version and data validity of this object
+    this->_versionNumber = {};
+    if(_currentBuffer == 1) {
+      this->_dataValidity = _buffer0->dataValidity();
+    }
+    else {
+      this->_dataValidity = _buffer1->dataValidity();
+    }
 
-      // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
-      // check.
-      if(!hasNewData) {
-        return;
-      }
+    // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
+    // check.
+    if(!hasNewData) {
+      return;
+    }
 
-      // Swap buffer_2D if new data
-      if(hasNewData) {
-        auto& reg = (_currentBuffer == 1) ? _buffer0 : _buffer1;
-        for(size_t i = 0; i < reg->getNumberOfChannels(); ++i) {
-          buffer_2D[i].swap(reg->accessChannel(i));
-        }
+    // Swap buffer_2D if new data
+    if(hasNewData) {
+      auto& reg = (_currentBuffer == 1) ? _buffer0 : _buffer1;
+      for(size_t i = 0; i < reg->getNumberOfChannels(); ++i) {
+        buffer_2D[i].swap(reg->accessChannel(i));
       }
+    }
   }
 
   template<typename UserType>
