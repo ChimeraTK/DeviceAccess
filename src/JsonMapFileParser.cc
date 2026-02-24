@@ -124,19 +124,19 @@ namespace ChimeraTK::detail {
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondAddress, type, channel, offset)
       };
 
-      SecondAddress secondBufferAddress;
+      SecondAddress secondaryBufferAddress;
       std::string enableRegister;
       std::string readBufferRegister;
       size_t index{0};
 
       void fill(NumericAddressedRegisterInfo& info) const {
-        info.doubleBuffer->address = secondBufferAddress.offset.v;
+        info.doubleBuffer->address = secondaryBufferAddress.offset.v;
         info.doubleBuffer->enableRegisterPath = enableRegister;
         info.doubleBuffer->inactiveBufferRegisterPath = readBufferRegister;
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-          DoubleBufferingInfo, secondBufferAddress, enableRegister, readBufferRegister, index)
+          DoubleBufferingInfo, secondaryBufferAddress, enableRegister, readBufferRegister, index)
     };
     std::optional<DoubleBufferingInfo> doubleBuffering;
 
@@ -280,7 +280,7 @@ namespace ChimeraTK::detail {
           NumericAddressedRegisterInfo buf1Register = my;
           buf1Register.pathName = my.pathName + "/BUF1";
           buf1Register.doubleBuffer.reset(); // it's a simple view of the buffer
-          buf1Register.address = doubleBuffering->secondBufferAddress.offset.v;
+          buf1Register.address = doubleBuffering->secondaryBufferAddress.offset.v;
           buf1Register.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
           // buf1Register.bar = doubleBuffering->secondBufferAddress.channel +
           //     (doubleBuffering->secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);

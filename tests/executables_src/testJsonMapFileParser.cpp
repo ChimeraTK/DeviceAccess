@@ -113,11 +113,11 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.nElements == 16384);
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);
-    BOOST_TEST(reg.address == 0x80000000);
+    BOOST_TEST(reg.address == 0x40000);
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
     BOOST_TEST(reg.interruptId == std::vector<size_t>({3, 0, 1}), boost::test_tools::per_element());
     BOOST_TEST(reg.doubleBuffer.has_value());
-    BOOST_TEST(reg.doubleBuffer->address == 0x80200000);
+    BOOST_TEST(reg.doubleBuffer->address == 0x40200);
     BOOST_TEST(reg.doubleBuffer->inactiveBufferRegisterPath == "/DAQ.DOUBLE_BUF.INACTIVE_BUF_ID");
     BOOST_TEST(reg.doubleBuffer->enableRegisterPath == "/DAQ.DOUBLE_BUF.ENA");
 
