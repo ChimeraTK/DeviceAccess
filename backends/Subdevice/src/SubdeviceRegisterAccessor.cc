@@ -9,15 +9,15 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType, typename WriteDataType>
-  SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>::SubdeviceRegisterAccessor(
+  template<typename RegisterRawType, typename ReadWriteDataType>
+  SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>::SubdeviceRegisterAccessor(
       boost::shared_ptr<SubdeviceBackend> backend, const std::string& registerPathName,
       boost::shared_ptr<NDRegisterAccessor<uint64_t>> accChipSelect,
       boost::shared_ptr<NDRegisterAccessor<uint64_t>> accAddress,
-      boost::shared_ptr<NDRegisterAccessor<WriteDataType>> accWriteDataArea,
+      boost::shared_ptr<NDRegisterAccessor<ReadWriteDataType>> accWriteDataArea,
       boost::shared_ptr<NDRegisterAccessor<uint64_t>> accStatus,
       boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest,
-      boost::shared_ptr<NDRegisterAccessor<uint64_t>> accReadData, size_t byteOffset, size_t numberOfWords)
+      boost::shared_ptr<NDRegisterAccessor<ReadWriteDataType>> accReadData, size_t byteOffset, size_t numberOfWords)
   : NDRegisterAccessor<RegisterRawType>(registerPathName, {AccessMode::raw}), _backend(std::move(backend)),
     _accChipSelect(std::move(accChipSelect)), _accAddress(std::move(accAddress)),
     _accWriteDataArea(std::move(accWriteDataArea)), _accStatus(std::move(accStatus)),
@@ -333,11 +333,27 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   // Code instantiations for the allowed raw types
+  // FIXME: Do we have a "for raw types" macro? Change to uint if so.
 
-  template class SubdeviceRegisterAccessor<uint8_t>;
-  template class SubdeviceRegisterAccessor<uint16_t>;
-  template class SubdeviceRegisterAccessor<uint32_t>;
-  template class SubdeviceRegisterAccessor<uint64_t>;
+  template class SubdeviceRegisterAccessor<uint8_t, uint8_t>;
+  template class SubdeviceRegisterAccessor<uint8_t, uint16_t>;
+  template class SubdeviceRegisterAccessor<uint8_t, uint32_t>;
+  template class SubdeviceRegisterAccessor<uint8_t, uint64_t>;
+
+  template class SubdeviceRegisterAccessor<uint16_t, uint8_t>;
+  template class SubdeviceRegisterAccessor<uint16_t, uint16_t>;
+  template class SubdeviceRegisterAccessor<uint16_t, uint32_t>;
+  template class SubdeviceRegisterAccessor<uint16_t, uint64_t>;
+
+  template class SubdeviceRegisterAccessor<uint32_t, uint8_t>;
+  template class SubdeviceRegisterAccessor<uint32_t, uint16_t>;
+  template class SubdeviceRegisterAccessor<uint32_t, uint32_t>;
+  template class SubdeviceRegisterAccessor<uint32_t, uint64_t>;
+
+  template class SubdeviceRegisterAccessor<uint64_t, uint8_t>;
+  template class SubdeviceRegisterAccessor<uint64_t, uint16_t>;
+  template class SubdeviceRegisterAccessor<uint64_t, uint32_t>;
+  template class SubdeviceRegisterAccessor<uint64_t, uint64_t>;
 
   template class SubdeviceRegisterAccessor<int8_t, int8_t>;   // backward compatibility
   template class SubdeviceRegisterAccessor<int16_t, int16_t>; // backward compatibility

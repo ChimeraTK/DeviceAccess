@@ -173,8 +173,8 @@ status(busy) flag turns back off. It then reads the data from the "readResponse"
     }
 
     // helper for reducing code duplication among template specializations
-    template<typename RegisterRawType, typename WriteDataType>
-    boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>> accessorCreationHelper(
+    template<typename RegisterRawType, typename ReadWriteDataType>
+    boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>> accessorCreationHelper(
         const NumericAddressedRegisterInfo& info, size_t numberOfWords, size_t wordOffsetInRegister,
         AccessModeFlags flags);
   };

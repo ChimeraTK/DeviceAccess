@@ -469,10 +469,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename RegisterRawType, typename WriteDataType>
-  boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>> SubdeviceBackend::accessorCreationHelper(
-      const NumericAddressedRegisterInfo& info, size_t numberOfWords, size_t wordOffsetInRegister,
-      AccessModeFlags flags) {
+  template<typename RegisterRawType, typename ReadWriteDataType>
+  boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>> SubdeviceBackend::
+      accessorCreationHelper(const NumericAddressedRegisterInfo& info, size_t numberOfWords,
+          size_t wordOffsetInRegister, AccessModeFlags flags) {
     flags.checkForUnknownFlags({AccessMode::raw});
 
     verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, false);
@@ -487,22 +487,23 @@ namespace ChimeraTK {
     }
     // obtain target accessors
     boost::shared_ptr<NDRegisterAccessor<uint64_t>> accAddress;
-    boost::shared_ptr<NDRegisterAccessor<WriteDataType>> accWriteData;
+    boost::shared_ptr<NDRegisterAccessor<ReadWriteDataType>> accWriteData;
     if(!needAreaParam()) {
       accAddress = _targetDevice->getRegisterAccessor<uint64_t>(_targetAddress, 1, 0, {});
       if(info.isWriteable()) { // 6reg might be read only
-        accWriteData = _targetDevice->getRegisterAccessor<WriteDataType>(_targetWriteData, 0, 0, {});
+        accWriteData = _targetDevice->getRegisterAccessor<ReadWriteDataType>(_targetWriteData, 0, 0, {});
       }
     }
     else {
       // check alignment just like it is done in 'area' type subdevice which is based on raw int32 accessors to target
       verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, true);
 
-      // obtain target accessor in raw mode
+      // obtain target accessor in 32 bit raw mode
       // FIXME: Should not be a raw accessor here
       size_t wordOffset = (info.address + sizeof(int32_t) * wordOffsetInRegister) / 4;
       flags.add(AccessMode::raw);
-      accWriteData = _targetDevice->getRegisterAccessor<WriteDataType>(_targetArea, numberOfWords, wordOffset, flags);
+      accWriteData =
+          _targetDevice->getRegisterAccessor<ReadWriteDataType>(_targetArea, numberOfWords, wordOffset, flags);
     }
     boost::shared_ptr<NDRegisterAccessor<uint64_t>> accStatus;
     if(needStatusParam()) {
@@ -511,19 +512,24 @@ namespace ChimeraTK {
 
     boost::shared_ptr<NDRegisterAccessor<uint64_t>> accChipSelect;
     boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest;
-    boost::shared_ptr<NDRegisterAccessor<uint64_t>> accReadData;
+    boost::shared_ptr<NDRegisterAccessor<ReadWriteDataType>> accReadData;
     if(_type == Type::sixRegisters) {
       accChipSelect = _targetDevice->getRegisterAccessor<uint64_t>(_targetChipSelect, 1, 0, {});
       if(info.isReadable()) { // might be write only
         accReadRequest = _targetDevice->getRegisterAccessor<ChimeraTK::Void>(_targetReadRequest, 1, 0, {});
-        accReadData = _targetDevice->getRegisterAccessor<uint64_t>(_targetReadData, 1, 0, {});
+        accReadData = _targetDevice->getRegisterAccessor<ReadWriteDataType>(_targetReadData, 1, 0, {});
       }
     }
 
     size_t byteOffset = info.address + info.elementPitchBits / 8 * wordOffsetInRegister;
     auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
 
-    return boost::make_shared<SubdeviceRegisterAccessor<RegisterRawType, WriteDataType>>(
+    if(_type == Type::sixRegisters) {
+      return boost::make_shared<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>>(
+          boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis), info.pathName, accChipSelect, accAddress,
+          accWriteData, accStatus, accReadRequest, accReadData, byteOffset, numberOfWords);
+    }
+    return boost::make_shared<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>>(
         boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis), info.pathName, accChipSelect, accAddress,
         accWriteData, accStatus, accReadRequest, accReadData, byteOffset, numberOfWords);
   }
