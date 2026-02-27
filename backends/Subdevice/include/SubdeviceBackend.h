@@ -11,6 +11,8 @@
 namespace ChimeraTK {
   template<typename RegisterRawType, typename WriteDataType>
   class SubdeviceRegisterAccessor;
+  template<typename RegisterRawType, typename WriteDataType>
+  class SubdeviceRegisterWindowAccessor;
 
   /**
    *  Backend for subdevices which are passed through some register or area of
@@ -89,6 +91,8 @@ status(busy) flag turns back off. It then reads the data from the "readResponse"
    protected:
     template<typename RegisterRawType, typename WriteDataType>
     friend class SubdeviceRegisterAccessor;
+    template<typename RegisterRawType, typename WriteDataType>
+    friend class SubdeviceRegisterWindowAccessor;
 
     enum class Type {
       area,           //< address space is visible as an area in the target device
@@ -168,13 +172,11 @@ status(busy) flag turns back off. It then reads the data from the "readResponse"
     void activateAsyncRead() noexcept override;
 
     bool needAreaParam() { return _type == Type::area || _type == Type::areaHandshake; }
-    bool needStatusParam() {
-      return _type == Type::threeRegisters || _type == Type::sixRegisters || _type == Type::areaHandshake;
-    }
+    bool needStatusParam() { return _type == Type::threeRegisters || _type == Type::areaHandshake; }
 
     // helper for reducing code duplication among template specializations
     template<typename RegisterRawType, typename ReadWriteDataType>
-    boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>> accessorCreationHelper(
+    boost::shared_ptr<NDRegisterAccessor<RegisterRawType>> accessorCreationHelper(
         const NumericAddressedRegisterInfo& info, size_t numberOfWords, size_t wordOffsetInRegister,
         AccessModeFlags flags);
   };

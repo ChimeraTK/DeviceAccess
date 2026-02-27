@@ -9,6 +9,7 @@
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "SubdeviceRegisterAccessor.h"
+#include "SubdeviceRegisterWindowAccessor.h"
 #include "TransferElement.h"
 
 #include <boost/algorithm/string.hpp>
@@ -127,27 +128,25 @@ namespace ChimeraTK {
         }
       }
       if(_type == Type::sixRegisters) {
-        // we need three more entries
-        if(parameters["readRequest"].empty()) {
-          throw ChimeraTK::logic_error("SubdeviceBackend: Target read request register "
-                                       "name must be specified in the device "
-                                       "descriptor for type '6regs'.");
+        // we can have three more entries
+        if(parameters["readData"].empty() && parameters["data"].empty()) {
+          throw ChimeraTK::logic_error(
+              "SubdeviceBackend: Either readData or writeData must be specified in RegisterWindow mode.");
         }
-        _targetReadRequest = parameters["readRequest"];
+        if((parameters["readData"].empty() && !parameters["readRequest"].empty()) ||
+            (!parameters["readData"].empty() && parameters["readRequest"].empty())) {
+          throw ChimeraTK::logic_error("SubdeviceBackend: readData and readRequest must both be specified in "
+                                       "RegisterWindow mode (or not at all).");
+        }
 
-        if(parameters["readData"].empty()) {
-          throw ChimeraTK::logic_error("SubdeviceBackend: Target read data register "
-                                       "name must be specified in the device "
-                                       "descriptor for type '6regs'.");
+        if(!parameters["readData"].empty()) {
+          _targetReadData = parameters["readData"];
+          _targetReadRequest = parameters["readRequest"];
         }
-        _targetReadData = parameters["readData"];
 
-        if(parameters["chipSelectRegister"].empty()) {
-          throw ChimeraTK::logic_error("SubdeviceBackend: Target chip select register "
-                                       "name must be specified in the device "
-                                       "descriptor for type '6regs'.");
+        if(!parameters["chipSelectRegister"].empty()) {
+          _targetChipSelect = parameters["chipSelectRegister"];
         }
-        _targetChipSelect = parameters["chipSelectRegister"];
 
         // The chip index is optional. It defaults to 0.
         if(!parameters["chipIndex"].empty()) {
@@ -161,12 +160,12 @@ namespace ChimeraTK {
         }
       }
     }
-    if(needStatusParam()) {
-      if(parameters["status"].empty()) {
-        throw ChimeraTK::logic_error("SubdeviceBackend: Target status register "
-                                     "name must be specified in the device "
-                                     "descriptor for types '3regs' and 'areaHandshake'.");
-      }
+    if(needStatusParam() && parameters["status"].empty()) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Target status register "
+                                   "name must be specified in the device "
+                                   "descriptor for types '3regs' and 'areaHandshake'.");
+    }
+    if(!parameters["status"].empty()) {
       _targetControl = parameters["status"];
       if(!parameters["timeout"].empty()) {
         try {
@@ -178,6 +177,7 @@ namespace ChimeraTK {
         }
       }
     }
+
     // sleep parameter for 2regs, 3regs or areaHandshake case
     if(!parameters["sleep"].empty()) {
       try {
@@ -470,9 +470,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename RegisterRawType, typename ReadWriteDataType>
-  boost::shared_ptr<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>> SubdeviceBackend::
-      accessorCreationHelper(const NumericAddressedRegisterInfo& info, size_t numberOfWords,
-          size_t wordOffsetInRegister, AccessModeFlags flags) {
+  boost::shared_ptr<NDRegisterAccessor<RegisterRawType>> SubdeviceBackend::accessorCreationHelper(
+      const NumericAddressedRegisterInfo& info, size_t numberOfWords, size_t wordOffsetInRegister,
+      AccessModeFlags flags) {
     flags.checkForUnknownFlags({AccessMode::raw});
 
     verifyRegisterAccessorSize(info, numberOfWords, wordOffsetInRegister, false);
@@ -482,7 +482,7 @@ namespace ChimeraTK {
     if(_type == Type::threeRegisters || _type == Type::twoRegisters) {
       if(!info.isWriteable()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Subdevices of type 3reg or "
-                                     "2reg or areaHandshake must have writeable registers only!");
+                                     "2reg must have writeable registers only!");
       }
     }
     // obtain target accessors
@@ -490,7 +490,7 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<ReadWriteDataType>> accWriteData;
     if(!needAreaParam()) {
       accAddress = _targetDevice->getRegisterAccessor<uint64_t>(_targetAddress, 1, 0, {});
-      if(info.isWriteable()) { // 6reg might be read only
+      if(!_targetWriteData.empty()) { // 6reg might be read only
         accWriteData = _targetDevice->getRegisterAccessor<ReadWriteDataType>(_targetWriteData, 0, 0, {});
       }
     }
@@ -506,7 +506,7 @@ namespace ChimeraTK {
           _targetDevice->getRegisterAccessor<ReadWriteDataType>(_targetArea, numberOfWords, wordOffset, flags);
     }
     boost::shared_ptr<NDRegisterAccessor<uint64_t>> accStatus;
-    if(needStatusParam()) {
+    if(!_targetControl.empty()) {
       accStatus = _targetDevice->getRegisterAccessor<uint64_t>(_targetControl, 1, 0, {});
     }
 
@@ -514,8 +514,10 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<ChimeraTK::Void>> accReadRequest;
     boost::shared_ptr<NDRegisterAccessor<ReadWriteDataType>> accReadData;
     if(_type == Type::sixRegisters) {
-      accChipSelect = _targetDevice->getRegisterAccessor<uint64_t>(_targetChipSelect, 1, 0, {});
-      if(info.isReadable()) { // might be write only
+      if(!_targetChipSelect.empty()) {
+        accChipSelect = _targetDevice->getRegisterAccessor<uint64_t>(_targetChipSelect, 1, 0, {});
+      }
+      if(!_targetReadData.empty()) { // might be write only
         accReadRequest = _targetDevice->getRegisterAccessor<ChimeraTK::Void>(_targetReadRequest, 1, 0, {});
         accReadData = _targetDevice->getRegisterAccessor<ReadWriteDataType>(_targetReadData, 1, 0, {});
       }
@@ -524,8 +526,8 @@ namespace ChimeraTK {
     size_t byteOffset = info.address + info.elementPitchBits / 8 * wordOffsetInRegister;
     auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
 
-    if(_type == Type::sixRegisters) {
-      return boost::make_shared<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>>(
+    if(_type != Type::areaHandshake) {
+      return boost::make_shared<SubdeviceRegisterWindowAccessor<RegisterRawType, ReadWriteDataType>>(
           boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis), info.pathName, accChipSelect, accAddress,
           accWriteData, accStatus, accReadRequest, accReadData, byteOffset, numberOfWords);
     }
@@ -555,7 +557,33 @@ namespace ChimeraTK {
     callForRawType(info.getDataDescriptor().rawDataType(), [&](auto arg) {
       using uRawType = std::make_unsigned_t<decltype(arg)>;
 
-      auto rawAcc = accessorCreationHelper<uRawType, uint64_t>(info, numberOfWords, wordOffsetInRegister, flags);
+      // Determine the "native" data type of the read/write accessors
+      DataType nativeReadWriteType;
+      auto targetCatalogue = _targetDevice->getRegisterCatalogue();
+      if(!_targetWriteData.empty()) {
+        auto writeAccInfo = targetCatalogue.getRegister(_targetWriteData);
+        nativeReadWriteType = writeAccInfo.getDataDescriptor().minimumDataType();
+      }
+      if(!_targetReadData.empty()) {
+        auto readAccInfo = targetCatalogue.getRegister(_targetReadData);
+        if(nativeReadWriteType != DataType::none) {
+          if(readAccInfo.getDataDescriptor().minimumDataType() != nativeReadWriteType) {
+            throw ChimeraTK::logic_error(
+                "Bad map/firmware file: " + _targetWriteData + " must have the same data type as " + _targetReadData);
+          }
+        }
+        else {
+          nativeReadWriteType = readAccInfo.getDataDescriptor().minimumDataType();
+        }
+      }
+
+      boost::shared_ptr<NDRegisterAccessor<uRawType>> rawAcc;
+      callForType(nativeReadWriteType, [&](auto innerArg) {
+        if constexpr(std::is_integral_v<decltype(innerArg)>) {
+          rawAcc = accessorCreationHelper<uRawType, std::make_unsigned_t<decltype(innerArg)>>(
+              info, numberOfWords, wordOffsetInRegister, flags);
+        }
+      });
 
       // decorate with appropriate FixedPointConvertingDecorator.
       if(!flags.has(AccessMode::raw)) {
