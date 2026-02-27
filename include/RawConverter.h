@@ -16,7 +16,7 @@ namespace ChimeraTK::RawConverter {
 
   /********************************************************************************************************************/
 
-  enum class FractionalCase { integer, fixedPositive, fixedNegative, ieee754_32 };
+  enum class FractionalCase { integer, fixedPositive, fixedNegative, fixedNegativeFast, ieee754_32 };
 
   /********************************************************************************************************************/
 
@@ -61,7 +61,7 @@ namespace ChimeraTK::RawConverter {
     FloatIntermediate _conversionFactor, _inverseConversionFactor;
 
     // We need the negative fractional bits as a positive value (needed for the bit shift). This field is unused unless
-    // fc == FractionalCase::fixedNegative.
+    // fc == FractionalCase::fixedNegative or fixedNegativeFast.
     uint32_t _nNegativeFractionalBits;
   };
 
@@ -152,6 +152,13 @@ namespace ChimeraTK::RawConverter {
 
     /******************************************************************************************************************/
 
+    // Helper to get the total number of bits from an integer type. std::numeric_limits::digits just gives you the
+    // number of bits excluding the sign bit.
+    template<std::integral T>
+    constexpr int numberOfBits = std::numeric_limits<T>::digits + (std::is_signed_v<T> ? 1 : 0);
+
+    /******************************************************************************************************************/
+
     // Note: order must match SignificantBitsCase enum
     using SignificantBitsCaseTypes = std::tuple<uint8_t, uint16_t, uint32_t, uint64_t>;
 
@@ -172,22 +179,22 @@ namespace ChimeraTK::RawConverter {
     void callForSignificantBitsCase(const ChimeraTK::NumericAddressedRegisterInfo::ChannelInfo& info, F&& fun) {
       switch(info.width) {
         case 8:
-          if constexpr(std::numeric_limits<RawType>::digits >= 8) {
+          if constexpr(numberOfBits<RawType> >= 8) {
             std::forward<F>(fun).template operator()<SignificantBitsCase::bit8>();
             return;
           }
         case 16:
-          if constexpr(std::numeric_limits<RawType>::digits >= 16) {
+          if constexpr(numberOfBits<RawType> >= 16) {
             std::forward<F>(fun).template operator()<SignificantBitsCase::bit16>();
             return;
           }
         case 32:
-          if constexpr(std::numeric_limits<RawType>::digits >= 32) {
+          if constexpr(numberOfBits<RawType> >= 32) {
             std::forward<F>(fun).template operator()<SignificantBitsCase::bit32>();
             return;
           }
         case 64:
-          if constexpr(std::numeric_limits<RawType>::digits >= 64) {
+          if constexpr(numberOfBits<RawType> >= 64) {
             std::forward<F>(fun).template operator()<SignificantBitsCase::bit64>();
             return;
           }
@@ -197,7 +204,7 @@ namespace ChimeraTK::RawConverter {
 
     /******************************************************************************************************************/
 
-    template<typename RawType, typename F>
+    template<typename RawType, typename UserType, typename F>
     void callForFractionalCase(const ChimeraTK::NumericAddressedRegisterInfo::ChannelInfo& info, F&& fun) {
       switch(info.dataType) {
         case NumericAddressedRegisterInfo::Type::FIXED_POINT:
@@ -210,12 +217,21 @@ namespace ChimeraTK::RawConverter {
             return;
           }
           else if(info.nFractionalBits < 0) {
+            if constexpr(std::is_integral_v<UserType>) {
+              if(numberOfBits<UserType> >= int(info.width) - info.nFractionalBits &&
+                  std::is_signed_v<UserType> == info.signedFlag) {
+                // We can make an even faster conversion if we have an integral target UserType of the correct
+                // signedness and the bit shifted raw value still fits directly into it.
+                std::forward<F>(fun).template operator()<FractionalCase::fixedNegativeFast>();
+                return;
+              }
+            }
             std::forward<F>(fun).template operator()<FractionalCase::fixedNegative>();
             return;
           }
           break;
         case NumericAddressedRegisterInfo::Type::IEEE754:
-          if constexpr(std::numeric_limits<RawType>::digits >= 32) {
+          if constexpr(numberOfBits<RawType> >= 32) {
             std::forward<F>(fun).template operator()<FractionalCase::ieee754_32>();
             return;
           }
@@ -235,11 +251,20 @@ namespace ChimeraTK::RawConverter {
       // get number of bits from info and determine SignificantBitsCase
       detail::callForSignificantBitsCase<RawType>(info.channels[channelIndex], [&]<SignificantBitsCase sc> {
         // get number of fractional bits from info and determine FractionalCase
-        detail::callForFractionalCase<RawType>(info.channels[channelIndex], [&]<FractionalCase fc> {
-          if constexpr(std::numeric_limits<RawType>::digits >= detail::getMinWidthsForFractionalCase(fc)) {
+        detail::callForFractionalCase<RawType, UserType>(info.channels[channelIndex], [&]<FractionalCase fc> {
+          if constexpr(numberOfBits<RawType> >= detail::getMinWidthsForFractionalCase(fc)) {
             if constexpr(fc == FractionalCase::ieee754_32) {
               // special case: IEEE754 is always signed, so we can avoid an additional code instance
               std::forward<F>(fun).template operator()<RawType, sc, fc, true>();
+            }
+            else if constexpr(fc == FractionalCase::fixedNegativeFast) {
+              // special case: fixed negative fast has some special requirements on the types, so we try not to
+              // instantiate impossible combinations (to speed up compilation time)
+              assert(numberOfBits<UserType> >= int(info.channels[channelIndex].width) -
+                      info.channels[channelIndex].nFractionalBits); // ensured by callForFractionalCase
+              assert(std::is_signed_v<UserType> ==
+                  info.channels[channelIndex].signedFlag); // ensured by callForFractionalCase
+              std::forward<F>(fun).template operator()<RawType, sc, fc, std::is_signed_v<UserType>>();
             }
             else {
               // Fractional/Integers: distinguish signed/unsigned and do the call
@@ -253,7 +278,9 @@ namespace ChimeraTK::RawConverter {
           }
           else {
             throw ChimeraTK::logic_error(
-                std::format("Requested data type does not fit into the raw data width for register '{}', channel {}.",
+                std::format("Specified raw data width of {} bits does not fit into the significant bit "
+                            "width of {} bits for register '{}', channel {}.",
+                    numberOfBits<RawType>, detail::getMinWidthsForFractionalCase(fc),
                     std::string(info.getRegisterName()), channelIndex));
           }
         });
@@ -368,8 +395,9 @@ namespace ChimeraTK::RawConverter {
   : _signBitMask(isSigned ? detail::signBitMaskTable[info.width] : 0),
     _usedBitMask(detail::usedBitMaskTable[info.width]), _unusedBitMask(detail::unusedBitMaskTable[info.width]) {
     // sanity check for parameters
-    if constexpr(fc == FractionalCase::fixedPositive || fc == FractionalCase::fixedNegative) {
-      constexpr uint32_t maxRawWidth = std::numeric_limits<uint64_t>::digits;
+    if constexpr(fc == FractionalCase::fixedPositive || fc == FractionalCase::fixedNegative ||
+        fc == FractionalCase::fixedNegativeFast) {
+      constexpr uint32_t maxRawWidth = detail::numberOfBits<uint64_t>;
       if(info.width > maxRawWidth) {
         throw ChimeraTK::logic_error(
             std::format("RawConverter cannot deal with a bit width of {} > {}.", info.width, maxRawWidth));
@@ -385,24 +413,26 @@ namespace ChimeraTK::RawConverter {
       }
     }
     // Fixed point conversion uses either floating-point conversion factors or bit shift
-    if constexpr(fc == FractionalCase::fixedPositive || fc == FractionalCase::fixedNegative) {
+    if constexpr(fc == FractionalCase::fixedPositive || fc == FractionalCase::fixedNegative ||
+        fc == FractionalCase::fixedNegativeFast) {
       // This is used for toRaw conversions, where we never do bit shifts to get proper rounding
       _inverseConversionFactor = std::pow(FloatIntermediate(2), info.nFractionalBits);
     }
     if constexpr(fc == FractionalCase::fixedPositive ||
-        (fc == FractionalCase::fixedNegative && std::is_floating_point_v<UserType>)) {
-      // This is used for toCooked conversions when floating point is involved
+        ((fc == FractionalCase::fixedNegative) && std::is_floating_point_v<UserType>)) {
+      // This is used for toCooked conversions when floating point is involved (fixedNegativeFast has always integral
+      // UserTypes)
       _conversionFactor = FloatIntermediate(1.) / _inverseConversionFactor;
     }
-    else if constexpr(fc == FractionalCase::fixedNegative) {
+    else if constexpr(fc == FractionalCase::fixedNegative || fc == FractionalCase::fixedNegativeFast) {
       // This is used for toCooked conversions when we can to a bit shift (int-to-int with negative fractional bits)
       _nNegativeFractionalBits = -info.nFractionalBits;
     }
 
     // toRaw conversion needs to know minimum and maximum value range for clamping
     // This must come last, since we already call toCooked (which does not need these values for clamping)
-    if constexpr(fc == FractionalCase::fixedNegative || fc == FractionalCase::fixedPositive ||
-        fc == FractionalCase::integer) {
+    if constexpr(fc == FractionalCase::fixedNegative || fc == FractionalCase::fixedNegativeFast ||
+        fc == FractionalCase::fixedPositive || fc == FractionalCase::integer) {
       if constexpr(isSigned) {
         _maxRawValue = _usedBitMask ^ _signBitMask;
         _minRawValue = _signBitMask;
@@ -425,30 +455,47 @@ namespace ChimeraTK::RawConverter {
 
   template<typename UserType, typename RawType, SignificantBitsCase sc, FractionalCase fc, bool isSigned>
   UserType Converter<UserType, RawType, sc, fc, isSigned>::toCooked(RawType rawValue) {
-    auto promotedRawValue = detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
-        _signBitMask, _usedBitMask, _unusedBitMask, rawValue);
-
     if constexpr(fc == FractionalCase::integer) {
+      auto promotedRawValue = detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
+          _signBitMask, _usedBitMask, _unusedBitMask, rawValue);
       return numericToUserType<UserType>(promotedRawValue);
     }
     else if constexpr(fc == FractionalCase::fixedPositive ||
         (fc == FractionalCase::fixedNegative && std::is_floating_point_v<UserType>)) {
       // Positive fractional bits will always convert through an intermediate float, to have proper rounding.
       // Negative fractional bits can use the same code path efficiently, if the UserType is floating point.
+      auto promotedRawValue = detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
+          _signBitMask, _usedBitMask, _unusedBitMask, rawValue);
       return numericToUserType<UserType>(FloatIntermediate(promotedRawValue) * _conversionFactor);
     }
     else if constexpr(fc == FractionalCase::fixedNegative) {
       // In signed case, make sure to fill up the leading 1s if negative.
       // @TODO Write test for signed negative case!!
       using IntIntermediate = std::conditional_t<isSigned, int64_t, uint64_t>;
-      auto intermediateUnsigned = uint64_t(IntIntermediate(promotedRawValue));
+      auto promotedRawValue = IntIntermediate(detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
+          _signBitMask, _usedBitMask, _unusedBitMask, rawValue));
+      auto intermediateUnsigned = uint64_t(promotedRawValue);
       intermediateUnsigned <<= _nNegativeFractionalBits;
       return numericToUserType<UserType>(IntIntermediate(intermediateUnsigned));
     }
+    else if constexpr(fc == FractionalCase::fixedNegativeFast) {
+      // This is the shortcut which avoids promoting to a 64 bit intermediate type and the final conversion to the
+      // UserType. Since we know, that the UserType is integral and has a wide-enough bit width, we can directly promote
+      // into the UserType and apply the bit shift there.
+      static_assert(std::is_integral_v<UserType>);
+      static_assert(std::is_signed_v<UserType> == std::is_signed_v<PromotedRawType>);
+      auto promotedRawValue = UserType(detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
+          _signBitMask, _usedBitMask, _unusedBitMask, rawValue));
+      auto intermediateUnsigned = std::make_unsigned_t<UserType>(promotedRawValue);
+      intermediateUnsigned <<= _nNegativeFractionalBits;
+      return UserType(intermediateUnsigned);
+    }
     else {
       static_assert(fc == FractionalCase::ieee754_32);
-      static_assert(std::numeric_limits<RawType>::digits >= 32);
+      static_assert(detail::numberOfBits<RawType> >= 32);
       static_assert(std::numeric_limits<float>::is_iec559);
+      auto promotedRawValue = detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
+          _signBitMask, _usedBitMask, _unusedBitMask, rawValue);
       return numericToUserType<UserType>(std::bit_cast<float>(uint32_t(promotedRawValue)));
     }
   }
@@ -473,7 +520,8 @@ namespace ChimeraTK::RawConverter {
     if constexpr(fc == FractionalCase::integer) {
       promotedRawValue = userTypeToNumeric<PromotedRawType>(cookedValue);
     }
-    else if constexpr(fc == FractionalCase::fixedPositive || fc == FractionalCase::fixedNegative) {
+    else if constexpr(fc == FractionalCase::fixedPositive || fc == FractionalCase::fixedNegative ||
+        fc == FractionalCase::fixedNegativeFast) {
       // All fractional bit cases will always convert through an intermediate float, to have proper rounding.
       promotedRawValue = userTypeToNumeric<PromotedRawType>(
           userTypeToNumeric<FloatIntermediate>(cookedValue) * _inverseConversionFactor);
