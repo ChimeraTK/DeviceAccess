@@ -526,8 +526,13 @@ namespace ChimeraTK {
     size_t byteOffset = info.address + info.elementPitchBits / 8 * wordOffsetInRegister;
     auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
 
-    if(_type != Type::areaHandshake) {
+    if(_type == Type::sixRegisters) {
       return boost::make_shared<SubdeviceRegisterWindowAccessor<RegisterRawType, ReadWriteDataType>>(
+          boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis), info.pathName, accChipSelect, accAddress,
+          accWriteData, accStatus, accReadRequest, accReadData, byteOffset, numberOfWords);
+    }
+    if(_type != Type::areaHandshake) {
+      return boost::make_shared<SubdeviceRegisterAccessor<RegisterRawType, ReadWriteDataType>>(
           boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis), info.pathName, accChipSelect, accAddress,
           accWriteData, accStatus, accReadRequest, accReadData, byteOffset, numberOfWords);
     }
