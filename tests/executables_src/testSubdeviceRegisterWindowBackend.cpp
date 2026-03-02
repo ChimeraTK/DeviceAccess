@@ -558,10 +558,10 @@ BOOST_AUTO_TEST_CASE(test3regsByteOffset1) {
   Device target;
   target.open("TARGET1");
 
-  auto acc = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER_AT_BYTE_1");
-  auto accA = target.getScalarRegisterAccessor<int32_t>("APP.1.ADDRESS");
-  auto accD = target.getScalarRegisterAccessor<int32_t>("APP.1.DATA");
-  auto accS = target.getScalarRegisterAccessor<int32_t>("APP.1.STATUS");
+  auto acc = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER_AT_BYTE_1");
+  auto accA = target.getScalarRegisterAccessor<uint32_t>("APP.1.ADDRESS");
+  auto accD = target.getScalarRegisterAccessor<uint32_t>("APP.1.DATA");
+  auto accS = target.getScalarRegisterAccessor<uint32_t>("APP.1.STATUS");
   std::atomic<bool> done;
   std::thread t;
 
@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE(test3regsByteOffset1) {
   accS.write();
   done = false;
   t = std::thread([&] {
-    acc = 1897;
+    acc = std::bit_cast<int32_t>(0xdeadbeef);
     acc.write();
     done = true;
   });
@@ -581,9 +581,13 @@ BOOST_AUTO_TEST_CASE(test3regsByteOffset1) {
   accS.write();
   t.join();
   accA.read();
+  // There have been two transfers, the last one to trasfer address 1.
+  // This is not the byte 1 in the map file!
   BOOST_CHECK(accA == 1);
   accD.read();
-  BOOST_TEST(accD == 1897);
+  // Leading/trailing bytes are padded with 0s. We can just see the last word.
+  BOOST_TEST(accD == 0x000000de);
+  std::cout << std::hex << accD << std::dec << std::endl;
 
   dev.close();
 }
@@ -673,7 +677,7 @@ BOOST_AUTO_TEST_CASE(test2regsScalar) {
   BOOST_CHECK(diff.count() >= 1.0); // sleep time is set to 1 second
 
   accA.read();
-  BOOST_CHECK(accA == 4);
+  BOOST_CHECK(accA == 1);
   accD.read();
   BOOST_CHECK_EQUAL(static_cast<int32_t>(accD), 666 * 4);
 

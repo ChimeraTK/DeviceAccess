@@ -23,9 +23,7 @@ namespace ChimeraTK {
     _accWriteDataArea(std::move(accWriteDataArea)), _accStatus(std::move(accStatus)),
     _accReadRequest(std::move(accReadRequest)), _accReadData(std::move(accReadData)), _startAddress(byteOffset),
     _numberOfWords(numberOfWords) {
-    assert(_backend->_type == SubdeviceBackend::Type::sixRegisters ||
-        _backend->_type == SubdeviceBackend::Type::threeRegisters ||
-        _backend->_type == SubdeviceBackend::Type::twoRegisters);
+    assert(_backend->_type == SubdeviceBackend::Type::sixRegisters);
 
     NDRegisterAccessor<RegisterRawType>::buffer_2D.resize(1);
     NDRegisterAccessor<RegisterRawType>::buffer_2D[0].resize(numberOfWords);
@@ -37,7 +35,6 @@ namespace ChimeraTK {
   template<typename RegisterRawType, typename WriteDataType>
   void SubdeviceRegisterWindowAccessor<RegisterRawType, WriteDataType>::doReadTransferSynchronously() {
     std::lock_guard<decltype(_backend->_mutex)> lockGuard(_backend->_mutex);
-    assert(_backend->_type == SubdeviceBackend::Type::sixRegisters);
 
     auto nTransfers = _numberOfWords; // At the moment, only scalar readData registers are supported.
     try {
@@ -113,14 +110,26 @@ namespace ChimeraTK {
         // only for the first transfer we might not start copying to the start of the accessor buffer
         auto deviceAccessorCopyOffset =
             (_startAddress > thisTransferStartAddress ? _startAddress - thisTransferStartAddress : 0);
-        // FIXME: fill start with 0s
 
-        auto* src = std::bit_cast<std::byte*>(_buffer.data()) + bufferCopyOffset;
-        auto* dest = std::bit_cast<std::byte*>(_accWriteDataArea->accessChannel(0).data()) + deviceAccessorCopyOffset;
+        auto* bufferStart = std::bit_cast<std::byte*>(_buffer.data());
+        auto* accessorStart = std::bit_cast<std::byte*>(_accWriteDataArea->accessChannel(0).data());
 
-        memcpy(dest, src, copyNBytes);
+        // Fill leading 0s. This is intentionally not read/modify write. If there is relevant data
+        // in these bytes, the SubdeviceRegisterWindowAccessor must be aligned with the write accessor
+        // and a SubArrayDecorator or BitRangeDecorator must be used around it.
+        uint64_t zeros{0}; // eight bytes with 0 to copy from
 
-        // FIXME: fill end with 0s
+        if(deviceAccessorCopyOffset > 0) {
+          memcpy(accessorStart, &zeros, deviceAccessorCopyOffset);
+        }
+
+        memcpy(accessorStart + deviceAccessorCopyOffset, bufferStart + bufferCopyOffset, copyNBytes);
+
+        // fill trailing 0s after the copy end
+        if(copyEndAddress < thisTransferEndAddress) {
+          memcpy(
+              accessorStart + deviceAccessorCopyOffset + copyNBytes, &zeros, thisTransferEndAddress - copyEndAddress);
+        }
 
         // set the transfer address
         _accAddress->accessData(0) = adr;
