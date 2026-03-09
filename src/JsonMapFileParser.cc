@@ -133,6 +133,7 @@ namespace ChimeraTK::detail {
         info.doubleBuffer->address = secondaryBufferAddress.offset.v;
         info.doubleBuffer->enableRegisterPath = enableRegister;
         info.doubleBuffer->inactiveBufferRegisterPath = readBufferRegister;
+        info.doubleBuffer->index = index;
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
