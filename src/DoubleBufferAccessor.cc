@@ -16,7 +16,7 @@ namespace ChimeraTK {
         backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
         _doubleBufferInfo.inactiveBufferRegisterPath, 1, _doubleBufferInfo.index, {});
-
+    std::cout << "numberOfWords:" << numberOfWords << std::endl;
     auto buf0Name = registerPathName + ".BUF0";
     auto buf1Name = registerPathName + ".BUF1";
 
