@@ -144,8 +144,6 @@ namespace ChimeraTK {
     boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
     // obtain register info
     auto registerInfo = getRegisterInfo(registerPathName);
-    std::cout << "registerInfo.getNumberOfDimensions():" << registerInfo.getNumberOfDimensions() << std::endl;
-    std::cout << "registerPathName:" << registerPathName << std::endl;
     if(registerInfo.doubleBuffer == std::nullopt) {
       // 1D or scalar register
       if(registerInfo.getNumberOfDimensions() <= 1) {
