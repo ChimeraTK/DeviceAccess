@@ -16,10 +16,9 @@ namespace {
     using DoubleBufferAccessor<T>::DoubleBufferAccessor;
     using DoubleBufferAccessor<T>::buffer_2D;
   };
-
 } // namespace
 
-BOOST_AUTO_TEST_CASE(test_read_buffer0) {
+BOOST_AUTO_TEST_CASE(test_current_buffer_selection) {
   Device device;
   device.open("(dummy?map=simpleJsonFile.jmap)");
 
@@ -55,9 +54,6 @@ BOOST_AUTO_TEST_CASE(test_read_buffer0) {
 
   inactive[0] = 1;
   inactive.write();
-
-  // enable[1] = 1;
-  // enable.write();
 
   accessor.doPreRead(TransferType::read);
   accessor.doReadTransferSynchronously();
@@ -208,4 +204,135 @@ BOOST_AUTO_TEST_CASE(test_firmware_handshake_toggle) {
   accessor.doPostRead(TransferType::read, true);
   enableReg.read();
   BOOST_CHECK_EQUAL(enableReg[0], 1); // must be re-enabled*/
+}
+
+// ------------------------------------------------------------
+// Test that hasNewData=false does not swap buffer_2D
+BOOST_AUTO_TEST_CASE(test_has_new_data_false) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto backend = boost::dynamic_pointer_cast<NumericAddressedBackend>(device.getBackend());
+  auto mutex = std::make_shared<detail::CountedRecursiveMutex>();
+  auto registerInfo = backend->getRegisterInfo("DAQ.FD");
+  auto dbInfo = registerInfo.doubleBuffer.value();
+
+  TestableDoubleBufferAccessor<int> accessor(dbInfo, backend, mutex, RegisterPath("/DAQ/FD"), 4, 0, AccessModeFlags{});
+
+  auto buf0 = device.getTwoDRegisterAccessor<int>("/DAQ/FD.BUF0");
+  auto inactive = device.getOneDRegisterAccessor<int>("/DAQ/DOUBLE_BUF/INACTIVE_BUF_ID");
+  inactive[0] = 1;
+  inactive.write();
+
+  buf0[0] = {100, 200, 300, 400};
+  buf0.write();
+
+  // Initial read
+  accessor.doPreRead(TransferType::read);
+  accessor.doReadTransferSynchronously();
+  accessor.doPostRead(TransferType::read, true);
+
+  auto oldBuffer0 = accessor.buffer_2D[0];
+
+  // update reg
+  buf0[0] = {20, 40, 60, 80};
+  buf0.write();
+
+  // hasNewData=false → buffer_2D should not update
+  accessor.doPreRead(TransferType::read);
+  accessor.doReadTransferSynchronously();
+  accessor.doPostRead(TransferType::read, false);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      oldBuffer0.begin(), oldBuffer0.end(), accessor.buffer_2D[0].begin(), accessor.buffer_2D[0].end() // still old
+  );
+  // hasNewData=true → buffer_2D should update
+  accessor.doPreRead(TransferType::read);
+  accessor.doReadTransferSynchronously();
+  accessor.doPostRead(TransferType::read, true);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      buf0[0].begin(), buf0[0].end(), accessor.buffer_2D[0].begin(), accessor.buffer_2D[0].end() // now updated
+  );
+}
+// ------------------------------------------------------------
+// Test multiple channels
+BOOST_AUTO_TEST_CASE(test_multiple_channels) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto backend = boost::dynamic_pointer_cast<NumericAddressedBackend>(device.getBackend());
+  auto mutex = std::make_shared<detail::CountedRecursiveMutex>();
+  auto dbInfo = backend->getRegisterInfo("DAQ.FD").doubleBuffer.value();
+
+  TestableDoubleBufferAccessor<int> accessor(dbInfo, backend, mutex, "/DAQ/FD", 4, 0, AccessModeFlags{});
+
+  auto buf0 = device.getTwoDRegisterAccessor<int>("/DAQ/FD.BUF0");
+  auto inactive = device.getOneDRegisterAccessor<int>("/DAQ/DOUBLE_BUF/INACTIVE_BUF_ID");
+  inactive[0] = 1;
+  inactive.write();
+
+  // simulate 2 channels
+  buf0[0] = {16, 20, 24, 32};
+  buf0[1] = {100, 200, 300, 400};
+  buf0.write();
+
+  accessor.doPreRead(TransferType::read);
+  accessor.doReadTransferSynchronously();
+  accessor.doPostRead(TransferType::read, true);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      buf0[0].begin(), buf0[0].end(), accessor.buffer_2D[0].begin(), accessor.buffer_2D[0].end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      buf0[1].begin(), buf0[1].end(), accessor.buffer_2D[1].begin(), accessor.buffer_2D[1].end());
+}
+
+// ------------------------------------------------------------
+// Test mayReplaceOther logic
+BOOST_AUTO_TEST_CASE(test_may_replace_other) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto backend = boost::dynamic_pointer_cast<NumericAddressedBackend>(device.getBackend());
+  auto mutex = std::make_shared<detail::CountedRecursiveMutex>();
+  auto registerInfo = backend->getRegisterInfo("DAQ.FD");
+  auto dbInfo = registerInfo.doubleBuffer.value();
+
+  auto accessor1 = boost::make_shared<TestableDoubleBufferAccessor<int>>(
+      dbInfo, backend, mutex, RegisterPath("/DAQ/FD"), 16384, 0, AccessModeFlags{});
+
+  auto accessor2 = boost::make_shared<TestableDoubleBufferAccessor<int>>(
+      dbInfo, backend, mutex, RegisterPath("/DAQ/FD"), 16384, 0, AccessModeFlags{});
+
+  // must not replace itself
+  BOOST_CHECK(!accessor1->mayReplaceOther(accessor1));
+
+  BOOST_CHECK(accessor1->mayReplaceOther(accessor2));
+}
+
+BOOST_AUTO_TEST_CASE(test_write_not_allowed) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto backend = boost::dynamic_pointer_cast<NumericAddressedBackend>(device.getBackend());
+  auto mutex = std::make_shared<detail::CountedRecursiveMutex>();
+  auto dbInfo = backend->getRegisterInfo("DAQ.FD").doubleBuffer.value();
+
+  TestableDoubleBufferAccessor<int> accessor(dbInfo, backend, mutex, "/DAQ/FD", 4, 0, AccessModeFlags{});
+
+  BOOST_CHECK_THROW(accessor.doPreWrite(TransferType::write, {}), ChimeraTK::logic_error);
+
+  // doPostWrite does nothing but should not throw
+  BOOST_CHECK_NO_THROW(accessor.doPostWrite(TransferType::write, {}));
+}
+
+// ------------------------------------------------------------
+// Edge case: numberOfWords = 0
+BOOST_AUTO_TEST_CASE(test_zero_words) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto backend = boost::dynamic_pointer_cast<NumericAddressedBackend>(device.getBackend());
+  auto mutex = std::make_shared<detail::CountedRecursiveMutex>();
+  auto registerInfo = backend->getRegisterInfo("DAQ.FD");
+  auto dbInfo = registerInfo.doubleBuffer.value();
+
+  TestableDoubleBufferAccessor<int> accessor(dbInfo, backend, mutex, RegisterPath("/DAQ/FD"), 0, 0, AccessModeFlags{});
+
+  BOOST_CHECK_EQUAL(accessor.getNumberOfSamples(), 0);
 }
