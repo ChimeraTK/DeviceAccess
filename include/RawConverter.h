@@ -72,7 +72,7 @@ namespace ChimeraTK::RawConverter {
    */
   class ConverterLoopHelper {
    public:
-    ConverterLoopHelper(const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex);
+    explicit ConverterLoopHelper(size_t implParameter);
 
     virtual ~ConverterLoopHelper() = default;
 
@@ -84,7 +84,10 @@ namespace ChimeraTK::RawConverter {
      *  template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc,
      *           RawConverter::FractionalCase fc, bool isSigned>
      *  void MyAccessor::doPostReadImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
-     *                                  size_t channelIndex);
+     *                                  size_t implParameter);
+     *
+     * The "implParameter" is the value which has been passed to the makeConverterLoopHelper() function. Its meaning
+     * depends on the accessor implementation.
      *
      * Please note, that the accessor might be already templated on the UserType, which will be always identical to
      * the CookedType. We keep this in, since in case of the 2D multiplexed accessor we might have a different
@@ -102,14 +105,16 @@ namespace ChimeraTK::RawConverter {
     /**
      * Create ConverterLoopHelper with the Converter object matching the given RegisterInfo and channel. On the given
      * accessor, the ConverterLoopHelper will call doPostReadImpl/doPreWriteImpl when doPostRead/doPreWrite is called.
+     * The argument "implParameter" is the value which will be passed on to doPostReadImpl/doPreWriteImpl. It is
+     * entirely up to the accessor implementation to define the meaning of this value.
      */
     template<typename UserType, typename Accessor>
     static std::unique_ptr<ConverterLoopHelper> makeConverterLoopHelper(
-        const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, Accessor& accessor);
+        const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, size_t implParameter,
+        Accessor& accessor);
 
    protected:
-    const ChimeraTK::NumericAddressedRegisterInfo& _info;
-    const size_t _channelIndex;
+    const size_t _implParameter;
   };
 
   /********************************************************************************************************************/
@@ -118,8 +123,8 @@ namespace ChimeraTK::RawConverter {
       typename Accessor>
   class ConverterLoopHelperImpl : public ConverterLoopHelper {
    public:
-    ConverterLoopHelperImpl(const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex,
-        Converter<UserType, RawType, sc, fc, isSigned> converter, Accessor& accessor);
+    ConverterLoopHelperImpl(
+        size_t implParameter, Converter<UserType, RawType, sc, fc, isSigned> converter, Accessor& accessor);
 
     void doPostRead() override;
 
@@ -541,14 +546,15 @@ namespace ChimeraTK::RawConverter {
 
   template<typename UserType, typename Accessor>
   std::unique_ptr<ConverterLoopHelper> ConverterLoopHelper::makeConverterLoopHelper(
-      const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, Accessor& accessor) {
+      const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, size_t implParameter,
+      Accessor& accessor) {
     std::unique_ptr<ConverterLoopHelper> rv;
 
     detail::callWithConverterParams<UserType>(
         info, channelIndex, [&]<typename RawType, SignificantBitsCase sc, FractionalCase fc, bool isSigned> {
           Converter<UserType, RawType, sc, fc, isSigned> converter(info.channels[channelIndex]);
           rv = std::make_unique<ConverterLoopHelperImpl<UserType, RawType, sc, fc, isSigned, Accessor>>(
-              info, channelIndex, converter, accessor);
+              implParameter, converter, accessor);
         });
 
     assert(rv != nullptr);
@@ -557,25 +563,22 @@ namespace ChimeraTK::RawConverter {
 
   /********************************************************************************************************************/
 
-  inline ConverterLoopHelper::ConverterLoopHelper(
-      const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex)
-  : _info(info), _channelIndex(channelIndex) {}
+  inline ConverterLoopHelper::ConverterLoopHelper(size_t implParameter) : _implParameter(implParameter) {}
 
   /********************************************************************************************************************/
 
   template<typename UserType, typename RawType, SignificantBitsCase sc, FractionalCase fc, bool isSigned,
       typename Accessor>
   ConverterLoopHelperImpl<UserType, RawType, sc, fc, isSigned, Accessor>::ConverterLoopHelperImpl(
-      const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex,
-      Converter<UserType, RawType, sc, fc, isSigned> converter, Accessor& accessor)
-  : ConverterLoopHelper(info, channelIndex), _converter(converter), _accessor(accessor) {}
+      size_t implParameter, Converter<UserType, RawType, sc, fc, isSigned> converter, Accessor& accessor)
+  : ConverterLoopHelper(implParameter), _converter(converter), _accessor(accessor) {}
 
   /********************************************************************************************************************/
 
   template<typename UserType, typename RawType, SignificantBitsCase sc, FractionalCase fc, bool isSigned,
       typename Accessor>
   void ConverterLoopHelperImpl<UserType, RawType, sc, fc, isSigned, Accessor>::doPostRead() {
-    _accessor.template doPostReadImpl<UserType, RawType, sc, fc, isSigned>(_converter, _channelIndex);
+    _accessor.template doPostReadImpl<UserType, RawType, sc, fc, isSigned>(_converter, _implParameter);
   }
 
   /********************************************************************************************************************/
@@ -583,7 +586,7 @@ namespace ChimeraTK::RawConverter {
   template<typename UserType, typename RawType, SignificantBitsCase sc, FractionalCase fc, bool isSigned,
       typename Accessor>
   void ConverterLoopHelperImpl<UserType, RawType, sc, fc, isSigned, Accessor>::doPreWrite() {
-    _accessor.template doPreWriteImpl<UserType, RawType, sc, fc, isSigned>(_converter, _channelIndex);
+    _accessor.template doPreWriteImpl<UserType, RawType, sc, fc, isSigned>(_converter, _implParameter);
   }
 
   /********************************************************************************************************************/
