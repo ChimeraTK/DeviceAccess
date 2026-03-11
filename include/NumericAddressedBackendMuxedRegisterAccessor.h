@@ -18,52 +18,6 @@ namespace ChimeraTK {
   constexpr auto MEM_MULTIPLEXED_PREFIX = "MEM_MULTIPLEXED_";
 
   /********************************************************************************************************************/
-
-  namespace detail {
-
-    /** Iteration on a raw buffer with a given pitch (increment from one element to the next) in bytes */
-    template<typename DATA_TYPE>
-    struct pitched_iterator {
-      // standard iterator traits
-      using iterator_category = std::random_access_iterator_tag;
-      using value_type = DATA_TYPE;
-      using difference_type = std::ptrdiff_t;
-      using pointer = DATA_TYPE*;
-      using reference = DATA_TYPE&;
-
-      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-      pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<std::byte*>(begin)), _pitch(pitch) {}
-
-      template<typename OTHER_DATA_TYPE>
-      explicit pitched_iterator(pitched_iterator<OTHER_DATA_TYPE>& other) : _ptr(other._ptr), _pitch(other._pitch) {}
-
-      pitched_iterator& operator++() {
-        _ptr += _pitch;
-        return *this;
-      }
-      pitched_iterator operator++(int) {
-        pitched_iterator retval = *this;
-        ++(*this);
-        return retval;
-      }
-      pitched_iterator operator+(size_t n) { return pitched_iterator(_ptr + n * _pitch, _pitch); }
-      bool operator==(pitched_iterator other) const { return _ptr == other._ptr; }
-      bool operator!=(pitched_iterator other) const { return !(*this == other); }
-      size_t operator-(pitched_iterator other) const { return _ptr - other._ptr; }
-      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-      DATA_TYPE& operator*() const { return *reinterpret_cast<DATA_TYPE*>(_ptr); }
-
-     private:
-      std::byte* _ptr;
-      const size_t _pitch;
-
-      template<typename OTHER_DATA_TYPE>
-      friend struct pitched_iterator;
-    };
-
-  } // namespace detail
-
-  /********************************************************************************************************************/
   /**
    * Implementation of the NDRegisterAccessor for NumericAddressedBackends for multiplexd 2D registers
    */
@@ -79,7 +33,7 @@ namespace ChimeraTK {
 
     template<typename UserType2, typename RawType, RawConverter::SignificantBitsCase sc,
         RawConverter::FractionalCase fc, bool isSigned>
-    void doPostReadImpl(RawConverter::Converter<UserType2, RawType, sc, fc, isSigned> converter, size_t channelIndex);
+    void doPostReadImpl(RawConverter::Converter<UserType2, RawType, sc, fc, isSigned> converter, size_t channelGroupId);
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
 
@@ -87,7 +41,7 @@ namespace ChimeraTK {
 
     template<typename UserType2, typename RawType, RawConverter::SignificantBitsCase sc,
         RawConverter::FractionalCase fc, bool isSigned>
-    void doPreWriteImpl(RawConverter::Converter<UserType2, RawType, sc, fc, isSigned> converter, size_t channelIndex);
+    void doPreWriteImpl(RawConverter::Converter<UserType2, RawType, sc, fc, isSigned> converter, size_t channelGroupId);
 
     void doPreRead(TransferType) override {
       if(!_ioDevice->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
@@ -112,7 +66,31 @@ namespace ChimeraTK {
     [[nodiscard]] bool isWriteable() const override { return _registerInfo.isWriteable(); }
 
    protected:
-    std::vector<std::unique_ptr<RawConverter::ConverterLoopHelper>> _converterLoopHelpers;
+    // Channels will be grouped such that all channels in each group can use the same RawConverter. This allows us to
+    // implement a more cache efficient demultiplexing strategy.
+    struct ChannelGroup {
+      struct Channel {
+        // Index of the channel
+        size_t index;
+
+        // Number of bytes to advance the raw iterator/pointer after a sample for the channel has been processed, so it
+        // subsequently points to the next sample of the next channel to process within this ChannelGroup. For the last
+        // channel in the group, it will contain the offset to move to the next sample for the first channel in the
+        // group.
+        size_t offsetToNext;
+
+        // This iterator is needed only during doPostReadImpl/doPreWriteImpl, but to avoid frequent memory
+        // (de)allocation, we provide storage for it here.
+        std::vector<UserType>::iterator cookedIterator;
+      };
+      std::vector<Channel> channels;
+
+      std::unique_ptr<RawConverter::ConverterLoopHelper> converterLoopHelper;
+
+      // offset from beginning of the register to the first sample in the group.
+      size_t startOffset{};
+    };
+    std::vector<ChannelGroup> _channelGroups;
 
     /** The device from (/to) which to perform the DMA transfer */
     boost::shared_ptr<NumericAddressedBackend> _ioDevice;
@@ -120,9 +98,6 @@ namespace ChimeraTK {
     std::vector<int32_t> _ioBuffer;
 
     NumericAddressedRegisterInfo _registerInfo;
-
-    std::vector<detail::pitched_iterator<int32_t>> _startIterators;
-    std::vector<detail::pitched_iterator<int32_t>> _endIterators;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};

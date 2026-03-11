@@ -34,16 +34,16 @@ namespace ChimeraTK {
     // Callback for ConverterLoopHelper, see documentation there.
     template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
         bool isSigned>
-    void doPostReadImpl(
-        RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t channelIndex);
+    void doPostReadImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
+        [[maybe_unused]] size_t implParameter);
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
     // Callback for ConverterLoopHelper, see documentation there.
     template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
         bool isSigned>
-    void doPreWriteImpl(
-        RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t channelIndex);
+    void doPreWriteImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
+        [[maybe_unused]] size_t implParameter);
 
     void doPreRead(TransferType type) override;
 

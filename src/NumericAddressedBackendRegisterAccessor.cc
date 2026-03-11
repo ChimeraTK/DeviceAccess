@@ -84,7 +84,7 @@ namespace ChimeraTK {
 
     if constexpr(!isRaw) {
       _converterLoopHelper =
-          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, *this);
+          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, 0, *this);
     }
 
     if(flags.has(AccessMode::raw)) {
@@ -151,7 +151,7 @@ namespace ChimeraTK {
   template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
       bool isSigned>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::doPostReadImpl(
-      RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t channelIndex) {
+      RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t implParameter) {
     static_assert(std::is_same_v<UserType, CookedType>);
     if constexpr(!isRaw) {
       auto* begin = reinterpret_cast<RawType*>(_rawAccessor->begin(_registerInfo.address));
@@ -200,7 +200,7 @@ namespace ChimeraTK {
   template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
       bool isSigned>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::doPreWriteImpl(
-      RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t channelIndex) {
+      RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t implParameter) {
     static_assert(std::is_same_v<UserType, CookedType>);
     if constexpr(!isRaw) {
       auto* begin = reinterpret_cast<RawType*>(_rawAccessor->begin(_registerInfo.address));
