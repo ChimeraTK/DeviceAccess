@@ -194,7 +194,7 @@ namespace ChimeraTK {
 
   bool NumericAddressedRegisterInfo::ChannelInfo::operator==(const ChannelInfo& rhs) const {
     return bitOffset == rhs.bitOffset && dataType == rhs.dataType && width == rhs.width &&
-        nFractionalBits == rhs.nFractionalBits && signedFlag == rhs.signedFlag;
+        nFractionalBits == rhs.nFractionalBits && signedFlag == rhs.signedFlag && rawType == rhs.rawType;
   }
 
   /********************************************************************************************************************/

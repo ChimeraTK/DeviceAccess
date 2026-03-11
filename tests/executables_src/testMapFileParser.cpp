@@ -8,7 +8,6 @@
 using namespace boost::unit_test_framework;
 
 #include "Exception.h"
-#include "helperFunctions.h"
 #include "MapFileParser.h"
 #include "NumericAddressedRegisterCatalogue.h"
 
@@ -103,9 +102,9 @@ BOOST_AUTO_TEST_CASE(test64BitSequence) {
 
   std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents;
   RegisterInfoents.emplace_back(ChimeraTK::NumericAddressedRegisterInfo("INT642D", 0x0, 0x0, 0x02, 192,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int32},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int32},
-          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int32}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int64},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int64},
+          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, false, DataType::int64}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {}));
 
   RegisterInfoents.emplace_back(
@@ -396,36 +395,36 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
 
   std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(18);
   RegisterInfoents[0] = ChimeraTK::NumericAddressedRegisterInfo("TEST.INT", 0x0, 0x0, 0x05, 96,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("uint32")},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("uint32")},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[1] = ChimeraTK::NumericAddressedRegisterInfo("TEST.INT.MULTIPLEXED_RAW", 0x0f, 0x0, 0x3c, 0x0, 32, 0,
       true, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[2] = ChimeraTK::NumericAddressedRegisterInfo("TEST.CHAR", 0x0, 0x40, 0x05, 24,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {8, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")},
+          {8, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")},
+          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[3] = ChimeraTK::NumericAddressedRegisterInfo("TEST.CHAR.MULTIPLEXED_RAW", 0x04, 0x40, 0x10, 0x0, 32,
       0, true, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("TEST.SHORT", 0x0, 0x50, 0x05, 48,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")},
-          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")},
+          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("TEST.SHORT.MULTIPLEXED_RAW", 0x08, 0x50, 0x20, 0x0, 32,
       0, true, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[6] = ChimeraTK::NumericAddressedRegisterInfo("TEST.FRAC_INT", 0x1, 0x0, 0x05, 96,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 1, true, ChimeraTK::DataType("uint32")},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 2, true, ChimeraTK::DataType("uint32")},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 3, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 1, true, ChimeraTK::DataType("int32")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 2, true, ChimeraTK::DataType("int32")},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 3, true, ChimeraTK::DataType("int32")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[7] =
@@ -433,9 +432,9 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
           NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[8] = ChimeraTK::NumericAddressedRegisterInfo("TEST.FRAC_CHAR", 0x1, 0x40, 0x05, 24,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 1, true, ChimeraTK::DataType("uint32")},
-          {8, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 2, true, ChimeraTK::DataType("uint32")},
-          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 3, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 1, true, ChimeraTK::DataType("int8")},
+          {8, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 2, true, ChimeraTK::DataType("int8")},
+          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 3, true, ChimeraTK::DataType("int8")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[9] =
@@ -443,9 +442,9 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
           NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[10] = ChimeraTK::NumericAddressedRegisterInfo("TEST.FRAC_SHORT", 0x1, 0x50, 0x05, 48,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 1, true, ChimeraTK::DataType("uint32")},
-          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 2, true, ChimeraTK::DataType("uint32")},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 3, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 1, true, ChimeraTK::DataType("int16")},
+          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 2, true, ChimeraTK::DataType("int16")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 3, true, ChimeraTK::DataType("int16")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[11] =
@@ -453,32 +452,32 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
           NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[12] = ChimeraTK::NumericAddressedRegisterInfo("TEST.DMA", 0x0d, 0x0, 0x04, 256,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {48, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {80, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {96, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {112, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {144, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {160, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {176, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {192, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {208, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {224, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")},
-          {240, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {48, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {80, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {96, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {112, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {144, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {160, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {176, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {192, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {208, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {224, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")},
+          {240, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, -2, true, ChimeraTK::DataType("int16")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[13] = ChimeraTK::NumericAddressedRegisterInfo("TEST.DMA.MULTIPLEXED_RAW", 0x20, 0x00, 0x80, 0x0d, 32,
       0, true, NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[14] = ChimeraTK::NumericAddressedRegisterInfo("TEST.MIXED", 0x3, 0x00, 0x03, 120,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {8, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")},
-          {24, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("uint32")},
-          {56, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, true, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")},
+          {8, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")},
+          {24, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")},
+          {56, NumericAddressedRegisterInfo::Type::FIXED_POINT, 64, 0, true, ChimeraTK::DataType("int64")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[15] =
@@ -486,23 +485,23 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
           NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   RegisterInfoents[16] = ChimeraTK::NumericAddressedRegisterInfo("APP0.DAQ0_BAM", 0x02, 0x0, 372, 352,
-      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")},
-          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")},
-          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 18, 0, true, ChimeraTK::DataType("uint32")},
-          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")},
-          {80, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("uint32")},
-          {96, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {112, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {136, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {144, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {152, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {160, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {192, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("uint32")},
-          {224, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("uint32")},
-          {256, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, false, ChimeraTK::DataType("uint32")},
-          {288, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, false, ChimeraTK::DataType("uint32")},
-          {320, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, false, ChimeraTK::DataType("uint32")}},
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")},
+          {16, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 18, 0, true, ChimeraTK::DataType("int32")},
+          {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")},
+          {80, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, true, ChimeraTK::DataType("int16")},
+          {96, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int16")},
+          {112, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int16")},
+          {128, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")},
+          {136, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")},
+          {144, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")},
+          {152, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int8")},
+          {160, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int32")},
+          {192, NumericAddressedRegisterInfo::Type::FIXED_POINT, 8, 0, true, ChimeraTK::DataType("int32")},
+          {224, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")},
+          {256, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, false, ChimeraTK::DataType("int32")},
+          {288, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, false, ChimeraTK::DataType("int32")},
+          {320, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, false, ChimeraTK::DataType("int32")}},
       NumericAddressedRegisterInfo::Access::READ_WRITE, {});
 
   RegisterInfoents[17] =
