@@ -293,28 +293,28 @@ namespace ChimeraTK::RawConverter {
 
     template<std::size_t... Is>
     constexpr auto makeUnusedBitMaskTable(std::index_sequence<Is...>) {
-      return std::array<uint64_t, 64>{(~uint64_t{} << Is)...};
+      return std::array<uint64_t, 65>{(Is < 64 ? (~uint64_t{} << Is) : 0)...};
     }
 
     /******************************************************************************************************************/
 
     template<std::size_t... Is>
     constexpr auto makeUsedBitMaskTable(std::index_sequence<Is...>) {
-      return std::array<uint64_t, 64>{(~(~uint64_t{} << Is))...};
+      return std::array<uint64_t, 65>{(Is < 64 ? (~(~uint64_t{} << Is)) : ~uint64_t{})...};
     }
 
     /******************************************************************************************************************/
 
     template<std::size_t... Is>
     constexpr auto makeSignBitMaskTable(std::index_sequence<Is...>) {
-      return std::array<uint64_t, 64>{(Is > 0 ? (uint64_t{1} << (Is - 1)) : 0)...};
+      return std::array<uint64_t, 65>{(Is > 0 ? (uint64_t{1} << (Is - 1)) : 0)...};
     }
 
     /******************************************************************************************************************/
 
-    constexpr auto unusedBitMaskTable = makeUnusedBitMaskTable(std::make_index_sequence<64>{});
-    constexpr auto usedBitMaskTable = makeUsedBitMaskTable(std::make_index_sequence<64>{});
-    constexpr auto signBitMaskTable = makeSignBitMaskTable(std::make_index_sequence<64>{});
+    constexpr auto unusedBitMaskTable = makeUnusedBitMaskTable(std::make_index_sequence<65>{});
+    constexpr auto usedBitMaskTable = makeUsedBitMaskTable(std::make_index_sequence<65>{});
+    constexpr auto signBitMaskTable = makeSignBitMaskTable(std::make_index_sequence<65>{});
 
     /******************************************************************************************************************/
 
