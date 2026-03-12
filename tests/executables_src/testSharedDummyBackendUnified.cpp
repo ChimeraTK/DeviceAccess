@@ -10,6 +10,7 @@ using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
 #include "DummyBackend.h"
+#include "ProcessManagement.h"
 #include "SharedDummyBackend.h"
 #include "sharedDummyHelpers.h"
 #include "UnifiedBackendTest.h"
