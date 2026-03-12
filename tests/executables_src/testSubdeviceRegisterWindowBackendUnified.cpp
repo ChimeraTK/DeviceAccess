@@ -139,7 +139,7 @@ struct RegWindowType : Register {
   std::vector<std::vector<Type>> generateValue(bool raw = false) {
     std::vector<Type> v;
 
-    assert(this->address() + this->nElementsPerChannel() * sizeof(RegisterRawType) < core.lastAddress);
+    assert(this->address() + this->nElementsPerChannel() * sizeof(RegisterRawType) <= core.lastAddress);
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       RegisterRawType cv;
       auto* bufferStart = core.currentValue.data();
@@ -157,7 +157,7 @@ struct RegWindowType : Register {
   std::vector<std::vector<Type>> getRemoteValue(bool raw = false) {
     std::vector<Type> v;
 
-    assert(this->address() + this->nElementsPerChannel() * sizeof(RegisterRawType) < core.lastAddress);
+    assert(this->address() + this->nElementsPerChannel() * sizeof(RegisterRawType) <= core.lastAddress);
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       RegisterRawType rawValue;
       auto* bufferStart = std::bit_cast<std::byte*>(core.currentValue.data());
@@ -171,7 +171,7 @@ struct RegWindowType : Register {
     auto v = generateValue<typename Register::minimumUserType>()[0];
     auto* bufferStart = std::bit_cast<std::byte*>(core.currentValue.data());
 
-    assert(this->address() + this->nElementsPerChannel() * sizeof(RegisterRawType) < core.lastAddress);
+    assert(this->address() + this->nElementsPerChannel() * sizeof(RegisterRawType) <= core.lastAddress);
     for(size_t i = 0; i < this->nElementsPerChannel(); ++i) {
       auto rawVal = this->toRaw(v[i]);
       static_assert(std::is_same_v<decltype(rawVal), RegisterRawType>);
@@ -267,13 +267,13 @@ struct MuxedArea2 {
 /**********************************************************************************************************************/
 
 struct EightBit {
-  std::string path() { return "/APP.0/EIGHT_BIT"; }
-  size_t nElementsPerChannel() { return 1; }
-  size_t address() { return 100; }
-  uint8_t toRaw(int8_t v) { return std::bit_cast<uint8_t>(v); }
-  int8_t fromRaw(uint8_t v) { return std::bit_cast<int8_t>(v); }
-  int8_t limitGenerated(int8_t e) { return e; }
-  int8_t increment = 2;
+  static std::string path() { return "/APP.0/EIGHT_BIT"; }
+  static size_t nElementsPerChannel() { return 1; }
+  static size_t address() { return 100; }
+  static uint8_t toRaw(int8_t v) { return std::bit_cast<uint8_t>(v); }
+  static int8_t fromRaw(uint8_t v) { return std::bit_cast<int8_t>(v); }
+  static int8_t limitGenerated(int8_t e) { return e; }
+  int8_t increment{2};
   using minimumUserType = int8_t;
   using rawUserType = uint8_t;
 };
@@ -281,13 +281,13 @@ struct EightBit {
 /**********************************************************************************************************************/
 
 struct EightBitArray {
-  std::string path() { return "/APP.0/EIGHT_BIT_ARRAY"; }
-  size_t nElementsPerChannel() { return 8; }
-  size_t address() { return 100; }
-  uint8_t toRaw(int8_t v) { return std::bit_cast<uint8_t>(v); }
-  int8_t fromRaw(uint8_t v) { return std::bit_cast<int8_t>(v); }
-  int8_t limitGenerated(int8_t e) { return e; }
-  int8_t increment = 3;
+  static std::string path() { return "/APP.0/EIGHT_BIT_ARRAY"; }
+  static size_t nElementsPerChannel() { return 8; }
+  static size_t address() { return 100; }
+  static uint8_t toRaw(int8_t v) { return std::bit_cast<uint8_t>(v); }
+  static int8_t fromRaw(uint8_t v) { return std::bit_cast<int8_t>(v); }
+  static int8_t limitGenerated(int8_t e) { return e; }
+  int8_t increment{3};
   using minimumUserType = int8_t;
   using rawUserType = uint8_t;
 };
@@ -295,13 +295,13 @@ struct EightBitArray {
 /**********************************************************************************************************************/
 
 struct SixteenBit {
-  std::string path() { return "/APP.0/SIXTEEN_BIT"; }
-  size_t nElementsPerChannel() { return 1; }
-  size_t address() { return 108; }
-  uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
-  int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
-  int16_t limitGenerated(int16_t e) { return e; }
-  int16_t increment = 0x202;
+  static std::string path() { return "/APP.0/SIXTEEN_BIT"; }
+  static size_t nElementsPerChannel() { return 1; }
+  static size_t address() { return 108; }
+  static uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
+  static int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
+  static int16_t limitGenerated(int16_t e) { return e; }
+  int16_t increment{0x202};
   using minimumUserType = int16_t;
   using rawUserType = uint16_t;
 };
@@ -309,13 +309,13 @@ struct SixteenBit {
 /**********************************************************************************************************************/
 
 struct SixteenBitOff1 {
-  std::string path() { return "/APP.0/SIXTEEN_OFF1"; }
-  size_t nElementsPerChannel() { return 1; }
-  size_t address() { return 109; }
-  uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
-  int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
-  int16_t limitGenerated(int16_t e) { return e; }
-  int16_t increment = 0x303;
+  static std::string path() { return "/APP.0/SIXTEEN_OFF1"; }
+  static size_t nElementsPerChannel() { return 1; }
+  static size_t address() { return 109; }
+  static uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
+  static int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
+  static int16_t limitGenerated(int16_t e) { return e; }
+  int16_t increment{0x303};
   using minimumUserType = int16_t;
   using rawUserType = uint16_t;
 };
@@ -323,13 +323,13 @@ struct SixteenBitOff1 {
 /**********************************************************************************************************************/
 
 struct SixteenBitOff2 {
-  std::string path() { return "/APP.0/SIXTEEN_OFF2"; }
-  size_t nElementsPerChannel() { return 1; }
-  size_t address() { return 110; }
-  uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
-  int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
-  int16_t limitGenerated(int16_t e) { return e; }
-  int16_t increment = 0x404;
+  static std::string path() { return "/APP.0/SIXTEEN_OFF2"; }
+  static size_t nElementsPerChannel() { return 1; }
+  static size_t address() { return 110; }
+  static uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
+  static int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
+  static int16_t limitGenerated(int16_t e) { return e; }
+  int16_t increment{0x404};
   using minimumUserType = int16_t;
   using rawUserType = uint16_t;
 };
@@ -337,13 +337,13 @@ struct SixteenBitOff2 {
 /**********************************************************************************************************************/
 
 struct SixteenBitArray {
-  std::string path() { return "/APP.0/SIXTEEN_BIT_ARRAY"; }
-  size_t nElementsPerChannel() { return 8; }
-  size_t address() { return 112; }
-  uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
-  int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
-  int16_t limitGenerated(int16_t e) { return e; }
-  int16_t increment = 0x505;
+  static std::string path() { return "/APP.0/SIXTEEN_BIT_ARRAY"; }
+  static size_t nElementsPerChannel() { return 8; }
+  static size_t address() { return 112; }
+  static uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
+  static int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
+  static int16_t limitGenerated(int16_t e) { return e; }
+  int16_t increment{0x505};
   using minimumUserType = int16_t;
   using rawUserType = uint16_t;
 };
@@ -351,13 +351,13 @@ struct SixteenBitArray {
 /**********************************************************************************************************************/
 
 struct SixteenBitArrayOff2 {
-  std::string path() { return "/APP.0/SIXTEEN_ARRAY_OFF2"; }
-  size_t nElementsPerChannel() { return 8; }
-  size_t address() { return 114; }
-  uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
-  int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
-  int16_t limitGenerated(int16_t e) { return e; }
-  int16_t increment = 0x606;
+  static std::string path() { return "/APP.0/SIXTEEN_ARRAY_OFF2"; }
+  static size_t nElementsPerChannel() { return 8; }
+  static size_t address() { return 114; }
+  static uint16_t toRaw(int16_t v) { return std::bit_cast<uint16_t>(v); }
+  static int16_t fromRaw(uint16_t v) { return std::bit_cast<int16_t>(v); }
+  static int16_t limitGenerated(int16_t e) { return e; }
+  int16_t increment{0x606};
   using minimumUserType = int16_t;
   using rawUserType = uint16_t;
 };
@@ -365,13 +365,13 @@ struct SixteenBitArrayOff2 {
 /**********************************************************************************************************************/
 
 struct SixtyFourBit {
-  std::string path() { return "/APP.0/SIXTYFOUR_BIT"; }
-  size_t nElementsPerChannel() { return 1; }
-  size_t address() { return 132; }
-  uint64_t toRaw(int64_t v) { return std::bit_cast<uint64_t>(v); }
-  int64_t fromRaw(uint64_t v) { return std::bit_cast<int64_t>(v); }
-  int64_t limitGenerated(int64_t e) { return e; }
-  int64_t increment = 0x600000006;
+  static std::string path() { return "/APP.0/SIXTYFOUR_BIT"; }
+  static size_t nElementsPerChannel() { return 1; }
+  static size_t address() { return 132; }
+  static uint64_t toRaw(int64_t v) { return std::bit_cast<uint64_t>(v); }
+  static int64_t fromRaw(uint64_t v) { return std::bit_cast<int64_t>(v); }
+  static int64_t limitGenerated(int64_t e) { return e; }
+  int64_t increment{0x600000006};
   using minimumUserType = int64_t;
   using rawUserType = uint64_t;
 };
@@ -472,11 +472,11 @@ BOOST_AUTO_TEST_CASE(Test16Bit) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(Test64Bit) {
-  // core.chipId = 0;
-  // ChimeraTK::UnifiedBackendTest<>().addRegister<RegWindowType<SixtyFourBit>>().runTests(
-  //     "(subdevice?type=regWindow&device=" + cdd +
-  //     "&address=APP.1.ADDRESS&writeData=APP.1.DATA&busy=APP.1.STATUS&readRequest=APP.REG_WIN.READ_REQUEST&readData="
-  //     "APP.REG_WIN.READOUT_SINGLE&chipSelectRegister=APP.REG_WIN.CHIP_SELECT&map=Subdevice.map)");
+  core.chipId = 0;
+  ChimeraTK::UnifiedBackendTest<>().addRegister<RegWindowType<SixtyFourBit>>().runTests(
+      "(subdevice?type=regWindow&device=" + cdd +
+      "&address=APP.1.ADDRESS&writeData=APP.1.DATA&busy=APP.1.STATUS&readRequest=APP.REG_WIN.READ_REQUEST&readData="
+      "APP.REG_WIN.READOUT_SINGLE&chipSelectRegister=APP.REG_WIN.CHIP_SELECT&map=Subdevice.map)");
 }
 
 /**********************************************************************************************************************/
@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_CASE(TestTransfer8) {
       .addRegister<RegWindowType<SixteenBitArrayOff2>>()
       .addRegister<RegWindowType<MyRegister1>>()
       .addRegister<RegWindowType<MyArea1>>()
-      //.addRegister<RegWindowType<SixtyFourBit>>()
+      .addRegister<RegWindowType<SixtyFourBit>>()
       .runTests("(subdevice?type=regWindow&device=" + cdd +
           "&address=APP.1.ADDRESS&writeData=APP.1.WRITE_DATA_8BIT&busy=APP.1.STATUS&readRequest=APP.REG_WIN.READ_"
           "REQUEST&readData=APP.REG_WIN.READOUT_8BIT&chipSelectRegister=APP.REG_WIN.CHIP_SELECT&map=Subdevice.map)");
