@@ -115,6 +115,14 @@ namespace ChimeraTK::RawConverter {
         const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, size_t implParameter,
         Accessor& accessor);
 
+    /**
+     * More efficient version of makeConverterLoopHelper if the raw type is already known in the calling code.
+     */
+    template<typename UserType, typename RawType, typename Accessor>
+    static std::unique_ptr<ConverterLoopHelper> makeConverterLoopHelperFixedRaw(
+        const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, size_t implParameter,
+        Accessor& accessor);
+
    protected:
     const size_t _implParameter;
   };
@@ -559,6 +567,28 @@ namespace ChimeraTK::RawConverter {
           Converter<UserType, RawType, sc, fc, isSigned> converter(info.channels[channelIndex]);
           rv = std::make_unique<ConverterLoopHelperImpl<UserType, RawType, sc, fc, isSigned, Accessor>>(
               implParameter, converter, accessor);
+        });
+
+    assert(rv != nullptr);
+    return rv;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename RawType, typename Accessor>
+  std::unique_ptr<ConverterLoopHelper> ConverterLoopHelper::makeConverterLoopHelperFixedRaw(
+      const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, size_t implParameter,
+      Accessor& accessor) {
+    std::unique_ptr<ConverterLoopHelper> rv;
+
+    RawConverter::detail::callWithConverterParamsFixedRaw<UserType, RawType>(info, channelIndex,
+        [&]<typename RawTypeAgain, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
+            bool isSigned> {
+          static_assert(std::is_same_v<RawTypeAgain, RawType>);
+          RawConverter::Converter<UserType, std::make_unsigned_t<RawTypeAgain>, sc, fc, isSigned> converter(
+              info.channels[0]);
+          rv = std::make_unique<RawConverter::ConverterLoopHelperImpl<UserType, std::make_unsigned_t<RawTypeAgain>, sc,
+              fc, isSigned, Accessor>>(implParameter, converter, accessor);
         });
 
     assert(rv != nullptr);

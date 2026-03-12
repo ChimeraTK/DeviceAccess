@@ -71,4 +71,32 @@ namespace ChimeraTK {
     std::vector<std::byte> _zeros; // _transferSize bytes with 0 to copy from for padding
   };
 
+  /********************************************************************************************************************/
+
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint8_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint16_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint32_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint64_t);
+
+  // Compatibility stuff
+  extern template class SubdeviceRegisterWindowAccessor<int8_t, uint8_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int8_t, uint16_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int8_t, uint32_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int8_t, uint64_t>;
+
+  extern template class SubdeviceRegisterWindowAccessor<int16_t, uint8_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int16_t, uint16_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int16_t, uint32_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int16_t, uint64_t>;
+
+  extern template class SubdeviceRegisterWindowAccessor<int32_t, uint8_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int32_t, uint16_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int32_t, uint32_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int32_t, uint64_t>;
+
+  extern template class SubdeviceRegisterWindowAccessor<int64_t, uint8_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int64_t, uint16_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int64_t, uint32_t>;
+  extern template class SubdeviceRegisterWindowAccessor<int64_t, uint64_t>;
+
 } // namespace ChimeraTK

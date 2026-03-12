@@ -351,27 +351,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
   // Code instantiations for the allowed raw types
-  // FIXME: Do we have a "for raw types" macro? Change to uint if so.
-
-  template class SubdeviceRegisterWindowAccessor<uint8_t, uint8_t>;
-  template class SubdeviceRegisterWindowAccessor<uint8_t, uint16_t>;
-  template class SubdeviceRegisterWindowAccessor<uint8_t, uint32_t>;
-  template class SubdeviceRegisterWindowAccessor<uint8_t, uint64_t>;
-
-  template class SubdeviceRegisterWindowAccessor<uint16_t, uint8_t>;
-  template class SubdeviceRegisterWindowAccessor<uint16_t, uint16_t>;
-  template class SubdeviceRegisterWindowAccessor<uint16_t, uint32_t>;
-  template class SubdeviceRegisterWindowAccessor<uint16_t, uint64_t>;
-
-  template class SubdeviceRegisterWindowAccessor<uint32_t, uint8_t>;
-  template class SubdeviceRegisterWindowAccessor<uint32_t, uint16_t>;
-  template class SubdeviceRegisterWindowAccessor<uint32_t, uint32_t>;
-  template class SubdeviceRegisterWindowAccessor<uint32_t, uint64_t>;
-
-  template class SubdeviceRegisterWindowAccessor<uint64_t, uint8_t>;
-  template class SubdeviceRegisterWindowAccessor<uint64_t, uint16_t>;
-  template class SubdeviceRegisterWindowAccessor<uint64_t, uint32_t>;
-  template class SubdeviceRegisterWindowAccessor<uint64_t, uint64_t>;
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint8_t);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint16_t);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint32_t);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(SubdeviceRegisterWindowAccessor, uint64_t);
 
   // Compatibility stuff
   template class SubdeviceRegisterWindowAccessor<int8_t, uint8_t>;
