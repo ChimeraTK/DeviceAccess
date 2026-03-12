@@ -281,8 +281,16 @@ namespace ChimeraTK {
         NumericAddressedRegisterInfo const& registerInfo)
     : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _registerInfo(registerInfo) {
       assert(registerInfo.getNumberOfChannels() == 1);
-      _converterLoopHelper =
-          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(registerInfo, 0, *this);
+      //_converterLoopHelper =
+      //    RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(registerInfo, 0, *this);
+      RawConverter::detail::callWithConverterParamsFixedRaw<UserType, TargetUserType>(registerInfo, 0 /*channelIndex*/,
+          [&]<typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc, bool isSigned> {
+            RawConverter::Converter<UserType, std::make_unsigned_t<RawType>, sc, fc, isSigned> converter(
+                registerInfo.channels[0]);
+            _converterLoopHelper =
+                std::make_unique<RawConverter::ConverterLoopHelperImpl<UserType, std::make_unsigned_t<RawType>, sc, fc,
+                    isSigned, decltype(*this)>>(registerInfo, 0 /*channelIndex*/, converter, *this);
+          });
     }
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
