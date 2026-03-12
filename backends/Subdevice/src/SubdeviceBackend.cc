@@ -5,9 +5,9 @@
 
 #include "BackendFactory.h"
 #include "Exception.h"
-#include "FixedPointConverter.h"
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "RawConverter.h"
 #include "SubdeviceRegisterAccessor.h"
 #include "SubdeviceRegisterWindowAccessor.h"
 #include "TransferElement.h"
@@ -276,10 +276,14 @@ namespace ChimeraTK {
   template<typename UserType, typename TargetUserType>
   class FixedPointConvertingDecorator : public NDRegisterAccessorDecorator<UserType, TargetUserType> {
    public:
-    FixedPointConvertingDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
-        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fixedPointConverter)
-    : NDRegisterAccessorDecorator<UserType, TargetUserType>(target),
-      _fixedPointConverter(std::move(fixedPointConverter)) {}
+    explicit FixedPointConvertingDecorator(
+        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
+        NumericAddressedRegisterInfo const& registerInfo)
+    : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _registerInfo(registerInfo) {
+      assert(registerInfo.getNumberOfChannels() == 1);
+      _converterLoopHelper =
+          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(registerInfo, 0, *this);
+    }
 
     void doPreRead(TransferType type) override { _target->preRead(type); }
 
@@ -288,22 +292,43 @@ namespace ChimeraTK {
       if(!hasNewData) {
         return;
       }
-      for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
-        _fixedPointConverter.template vectorToCooked<UserType>(
-            _target->accessChannel(i).begin(), _target->accessChannel(i).end(), buffer_2D[i].begin());
-      }
+
+      _converterLoopHelper->doPostRead();
+
       this->_dataValidity = _target->dataValidity();
       this->_versionNumber = _target->getVersionNumber();
     }
 
-    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
-      for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
-        for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
-          _target->accessChannel(i)[j] = _fixedPointConverter.toRaw<UserType>(buffer_2D[i][j]);
+    // Callback for ConverterLoopHelper, see documentation there.
+    template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
+        bool isSigned>
+    void doPostReadImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
+        [[maybe_unused]] size_t channelIndex) {
+      for(auto [itsrc, itdst] = std::make_pair(_target->accessChannel(0).begin(), buffer_2D[0].begin());
+          itdst != buffer_2D[0].end(); ++itsrc, ++itdst) {
+        if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
+          *itdst = converter.toCooked(*itsrc);
         }
       }
+    }
+
+    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
+      _converterLoopHelper->doPreWrite();
       _target->setDataValidity(this->_dataValidity);
       _target->preWrite(type, versionNumber);
+    }
+
+    // Callback for ConverterLoopHelper, see documentation there.
+    template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
+        bool isSigned>
+    void doPreWriteImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
+        [[maybe_unused]] size_t channelIndex) {
+      for(auto [itsrc, itdst] = std::make_pair(buffer_2D[0].begin(), _target->accessChannel(0).begin());
+          itsrc != buffer_2D[0].end(); ++itsrc, ++itdst) {
+        if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
+          *itdst = converter.toRaw(*itsrc);
+        }
+      }
     }
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override {
@@ -316,14 +341,15 @@ namespace ChimeraTK {
       if(!casted) {
         return false;
       }
-      if(_fixedPointConverter != casted->_fixedPointConverter) {
+      if(_registerInfo != casted->_registerInfo) {
         return false;
       }
       return _target->mayReplaceOther(casted->_target);
     }
 
    protected:
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fixedPointConverter;
+    std::unique_ptr<RawConverter::ConverterLoopHelper> _converterLoopHelper;
+    NumericAddressedRegisterInfo _registerInfo;
 
     using NDRegisterAccessorDecorator<UserType, TargetUserType>::_target;
     using NDRegisterAccessor<UserType>::buffer_2D;
@@ -335,8 +361,9 @@ namespace ChimeraTK {
   class FixedPointConvertingRawDecorator : public NDRegisterAccessorDecorator<TargetUserType> {
    public:
     FixedPointConvertingRawDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
-        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fixedPointConverter)
-    : NDRegisterAccessorDecorator<TargetUserType>(target), _fixedPointConverter(std::move(fixedPointConverter)) {
+        NumericAddressedRegisterInfo const& registerInfo)
+    : NDRegisterAccessorDecorator<TargetUserType>(target), _registerInfo(registerInfo) {
+      static_assert(isRawType<std::make_unsigned_t<TargetUserType>>);
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
     }
@@ -344,18 +371,22 @@ namespace ChimeraTK {
     template<typename COOKED_TYPE>
     // NOLINTNEXTLINE(readability-identifier-naming)
     COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample) {
-      std::vector<DEPRECATED_FIXEDPOINT_DEFAULT> rawVector(1);
-      std::vector<COOKED_TYPE> cookedVector(1);
-      rawVector[0] = buffer_2D[channel][sample];
-      _fixedPointConverter.template vectorToCooked<COOKED_TYPE>(
-          rawVector.begin(), rawVector.end(), cookedVector.begin());
-      return cookedVector[0];
+      COOKED_TYPE rv;
+      RawConverter::withConverter<COOKED_TYPE, std::make_unsigned_t<TargetUserType>>(
+          _registerInfo, 0, [&](auto converter) {
+            rv = converter.toCooked(
+                std::make_unsigned_t<TargetUserType>(NDRegisterAccessor<TargetUserType>::buffer_2D[channel][sample]));
+          });
+      return rv;
     }
 
     template<typename COOKED_TYPE>
     // NOLINTNEXTLINE(readability-identifier-naming)
     void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value) {
-      buffer_2D[channel][sample] = _fixedPointConverter.toRaw<COOKED_TYPE>(value);
+      RawConverter::withConverter<COOKED_TYPE, std::make_unsigned_t<TargetUserType>>(
+          _registerInfo, 0, [&](auto converter) {
+            NDRegisterAccessor<TargetUserType>::buffer_2D[channel][sample] = TargetUserType(converter.toRaw(value));
+          });
     }
 
     [[nodiscard]] bool mayReplaceOther(
@@ -364,15 +395,15 @@ namespace ChimeraTK {
       if(!casted) {
         return false;
       }
-      if(_fixedPointConverter != casted->_fixedPointConverter) {
+      if(_registerInfo != casted->_registerInfo) {
         return false;
       }
+
       return _target->mayReplaceOther(casted->_target);
     }
 
    protected:
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fixedPointConverter;
-
+    NumericAddressedRegisterInfo _registerInfo;
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(
         FixedPointConvertingRawDecorator<TargetUserType>, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(
@@ -489,9 +520,7 @@ namespace ChimeraTK {
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!isRaw) {
-      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc, info);
     }
     // this is handled by the template specialisation for int32_t
     throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
@@ -552,17 +581,13 @@ namespace ChimeraTK {
 
     // decorate with appropriate FixedPointConvertingDecorator.
     if(!flags.has(AccessMode::raw)) {
-      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc, info);
     }
 
     if constexpr(std::is_same_v<UserType, int32_t>) {
       // decorate with appropriate decorator even in raw mode,
       // so we can properly implement getAsCooked()/setAsCooked().
-      return boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(rawAcc,
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+      return boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(rawAcc, info);
     }
     throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
         "match the expected type. Use an int32_t instead! (Register name: '" + registerPathName + "')");
@@ -625,18 +650,14 @@ namespace ChimeraTK {
 
       // decorate with appropriate FixedPointConvertingDecorator.
       if(!flags.has(AccessMode::raw)) {
-        retVal = boost::make_shared<FixedPointConvertingDecorator<UserType, uRawType>>(rawAcc,
-            FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-                info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+        retVal = boost::make_shared<FixedPointConvertingDecorator<UserType, uRawType>>(rawAcc, info);
         return;
       }
 
       if constexpr(std::is_same_v<UserType, uRawType>) {
         // decorate with appropriate decorator even in raw mode,
         // so we can properly implement getAsCooked()/setAsCooked().
-        retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(rawAcc,
-            FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-                info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+        retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(rawAcc, info);
       }
       else if constexpr(std::is_same_v<UserType, std::make_signed_t<uRawType>>) {
         // Handling for deprecated, signed raw types
@@ -658,9 +679,7 @@ namespace ChimeraTK {
           }
         });
 
-        retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(signedRawAcc,
-            FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-                info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+        retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(signedRawAcc, info);
       }
       else {
         throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
@@ -694,13 +713,9 @@ namespace ChimeraTK {
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!isRaw) {
-      return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>(rawAcc,
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-              info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+      return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>(rawAcc, info);
     }
-    return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc,
-        FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(registerPathName, info.channels.front().width,
-            info.channels.front().nFractionalBits, info.channels.front().signedFlag));
+    return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc, info);
   }
 
   /********************************************************************************************************************/
