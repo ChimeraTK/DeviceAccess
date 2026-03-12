@@ -3,9 +3,6 @@
 #pragma once
 
 #include "DummyBackendBase.h"
-#include "Exception.h"
-#include "NumericAddressedRegisterCatalogue.h"
-#include "ProcessManagement.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
@@ -19,8 +16,7 @@
 
 #include <list>
 #include <map>
-#include <mutex>
-#include <set>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -280,7 +276,11 @@ namespace ChimeraTK {
       SemId _semId;
       ShmForSems* _semShm;
       ShmForSems::Sem* _sem = nullptr;
-      boost::thread _thr;
+      // This must not be boost::thread since we don't want interruption points.
+      // The problem is that boost::thread::join() is an interruption point for the calling thread. The
+      // InterruptDispatcherThread does not rely on boost interruption points to control its tear down, it uses the
+      // _stop flag for this purpose.
+      std::thread _thr;
       std::atomic_bool _started{false};
       std::atomic_bool _stop{false};
     };

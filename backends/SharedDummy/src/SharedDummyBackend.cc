@@ -7,6 +7,7 @@
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "parserUtilities.h"
+#include "ProcessManagement.h"
 #include "Utilities.h"
 
 #include <boost/filesystem.hpp>
@@ -14,7 +15,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <functional>
 #include <regex>
 #include <sstream>
 
@@ -226,7 +226,7 @@ namespace ChimeraTK {
   SharedDummyBackend::InterruptDispatcherThread::InterruptDispatcherThread(
       InterruptDispatcherInterface* dispatcherInterf)
   : _dispatcherInterf(dispatcherInterf), _semId(dispatcherInterf->_semId), _semShm(dispatcherInterf->_semBuf) {
-    _thr = boost::thread(&InterruptDispatcherThread::run, this);
+    _thr = std::thread(&InterruptDispatcherThread::run, this);
   }
 
   SharedDummyBackend::InterruptDispatcherThread::~InterruptDispatcherThread() {
