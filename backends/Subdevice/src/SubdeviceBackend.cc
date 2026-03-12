@@ -6,8 +6,8 @@
 #include "BackendFactory.h"
 #include "Exception.h"
 #include "MapFileParser.h"
-#include "SubdeviceConvertingDecodator.h"
-#include "SubdeviceConvertingRawDecodator.h"
+#include "SubdeviceConvertingDecorator.h"
+#include "SubdeviceConvertingRawDecorator.h"
 #include "SubdeviceRegisterAccessor.h"
 #include "SubdeviceRegisterWindowAccessor.h"
 
