@@ -159,7 +159,9 @@ namespace ChimeraTK::RawConverter {
 
     // Helper to get the total number of bits from an integer type. std::numeric_limits::digits just gives you the
     // number of bits excluding the sign bit.
-    template<std::integral T>
+    // Note: We should use the std::integral concept here, but clang 18 generates an error with it when using the
+    // template at least in one of the asserts below. Once we can use a newer clang version, we can change this back.
+    template<typename T>
     constexpr int numberOfBits = std::numeric_limits<T>::digits + (std::is_signed_v<T> ? 1 : 0);
 
     /******************************************************************************************************************/
