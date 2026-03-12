@@ -42,11 +42,13 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override {
       _target->postRead(type, hasNewData);
       if(hasNewData) {
-        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
+        for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
+          buffer_2D[i] = _target->accessChannel(i);
+        }
       }
     }
 
-    void doReadTransferSynchronously() {
+    void doReadTransferSynchronously() override {
       std::cerr << "CopyRegisterDecorator::doReadTransferSynchronously: Must not be called" << std::endl;
       assert(false);
     }

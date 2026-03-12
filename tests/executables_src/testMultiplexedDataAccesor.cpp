@@ -5,9 +5,7 @@
 
 #include "BackendFactory.h"
 #include "Device.h"
-#include "DummyBackend.h"
 #include "MapFileParser.h"
-#include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
 
 #include <iostream>
@@ -20,7 +18,6 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-static const std::string DMAP_FILE_NAME_("dummies.dmap");
 static const std::string TEST_MODULE_NAME("TEST");
 static const std::string INVALID_MODULE_NAME("INVALID");
 static const RegisterPath TEST_MODULE_PATH(TEST_MODULE_NAME);
