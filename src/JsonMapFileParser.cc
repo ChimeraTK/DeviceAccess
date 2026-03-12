@@ -160,14 +160,14 @@ namespace ChimeraTK::detail {
       int32_t fractionalBits{0};
       bool isSigned{false};
 
-      void fill(NumericAddressedRegisterInfo& info, size_t offset, size_t bytesPerElement) const {
+      void fill(NumericAddressedRegisterInfo& info, size_t offset, size_t bytesPerElem) const {
         if(type != RepresentationType::representationNotSet) {
           info.channels.emplace_back(8 * offset, NumericAddressedRegisterInfo::Type(type), width, fractionalBits,
               type != RepresentationType::IEEE754 ? isSigned : true,
-              DataType("int" + std::to_string(bytesPerElement * 8)));
+              DataType("int" + std::to_string(bytesPerElem * 8)));
         }
         else {
-          Representation().fill(info, offset, bytesPerElement);
+          Representation().fill(info, offset, bytesPerElem);
         }
       }
 

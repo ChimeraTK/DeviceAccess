@@ -121,12 +121,17 @@ namespace ChimeraTK {
 
   template<typename UserType, bool isRaw>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::doPostRead(TransferType type, bool hasNewData) {
-    if(!_dev->isOpen()) return; // do not delegate if exception was thrown by us in doPreWrite
+    if(!_dev->isOpen()) {
+      // do not delegate if exception was thrown by us in doPreWrite
+      return;
+    }
 
     _rawAccessor->setActiveException(this->_activeException);
     _rawAccessor->postRead(type, hasNewData);
 
-    if(!hasNewData) return;
+    if(!hasNewData) {
+      return;
+    }
 
     if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
       _converterLoopHelper->doPostRead();
@@ -176,7 +181,9 @@ namespace ChimeraTK {
   template<typename UserType, bool isRaw>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::doPreWrite(
       TransferType type, VersionNumber versionNumber) {
-    if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+    if(!_dev->isOpen()) {
+      throw ChimeraTK::logic_error("Device not opened.");
+    }
     // raw accessor preWrite must be called before our _prePostActionsImplementor.doPreWrite(), as it needs to
     // prepare the buffer in case of unaligned access and acquire the lock.
     _rawAccessor->preWrite(type, versionNumber);
@@ -227,7 +234,9 @@ namespace ChimeraTK {
 
   template<typename UserType, bool isRaw>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::doPreRead(TransferType type) {
-    if(!_dev->isOpen()) throw ChimeraTK::logic_error("Device not opened.");
+    if(!_dev->isOpen()) {
+      throw ChimeraTK::logic_error("Device not opened.");
+    }
     if(!_registerInfo.isReadable()) {
       throw ChimeraTK::logic_error(
           "NumericAddressedBackend: Reading from a non-readable register is not allowed (Register name: " +
@@ -241,7 +250,10 @@ namespace ChimeraTK {
   template<typename UserType, bool isRaw>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::doPostWrite(
       TransferType type, VersionNumber versionNumber) {
-    if(!_dev->isOpen()) return; // do not delegate if exception was thrown by us in doPreWrite
+    if(!_dev->isOpen()) {
+      // do not delegate if exception was thrown by us in doPreWrite
+      return;
+    }
     _rawAccessor->setActiveException(this->_activeException);
     _rawAccessor->postWrite(type, versionNumber);
   }
@@ -255,9 +267,15 @@ namespace ChimeraTK {
     if(rhsCasted.get() == this) {
       return false;
     }
-    if(!rhsCasted) return false;
-    if(_dev != rhsCasted->_dev) return false;
-    if(_registerInfo != rhsCasted->_registerInfo) return false;
+    if(!rhsCasted) {
+      return false;
+    }
+    if(_dev != rhsCasted->_dev) {
+      return false;
+    }
+    if(_registerInfo != rhsCasted->_registerInfo) {
+      return false;
+    }
     // No need to compare the RawConverters, since they are based on the registerInfo and UserType only.
     return true;
   }

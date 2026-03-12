@@ -16,6 +16,7 @@ namespace ChimeraTK::async {
 
     /// Copy constructor
     DataConsistencyKey(const DataConsistencyKey& other) = default;
+    DataConsistencyKey& operator=(const DataConsistencyKey& other) = default;
 
     /// Construct from numeric value
     explicit DataConsistencyKey(BaseType value) : _value(value) {}
