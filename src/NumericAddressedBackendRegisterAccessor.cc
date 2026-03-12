@@ -154,10 +154,15 @@ namespace ChimeraTK {
       RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t implParameter) {
     static_assert(std::is_same_v<UserType, CookedType>);
     if constexpr(!isRaw) {
-      auto* begin = reinterpret_cast<RawType*>(_rawAccessor->begin(_registerInfo.address));
-      for(auto [itsrc, itdst] = std::make_pair(begin, buffer_2D[0].begin()); itdst != buffer_2D[0].end();
-          ++itsrc, ++itdst) {
-        *itdst = converter.toCooked(*itsrc);
+      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
+        auto* begin = _rawAccessor->begin(_registerInfo.address);
+        assert(begin != nullptr);
+        for(auto [itsrc, itdst] = std::make_pair(begin, buffer_2D[0].begin()); itdst != buffer_2D[0].end();
+            itsrc += sizeof(RawType), ++itdst) {
+          RawType temp;
+          memcpy(&temp, itsrc, sizeof(RawType));
+          *itdst = converter.toCooked(temp);
+        }
       }
     }
     else {
@@ -203,10 +208,13 @@ namespace ChimeraTK {
       RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter, [[maybe_unused]] size_t implParameter) {
     static_assert(std::is_same_v<UserType, CookedType>);
     if constexpr(!isRaw) {
-      auto* begin = reinterpret_cast<RawType*>(_rawAccessor->begin(_registerInfo.address));
-      for(auto [itsrc, itdst] = std::make_pair(buffer_2D[0].begin(), begin); itsrc != buffer_2D[0].end();
-          ++itsrc, ++itdst) {
-        *itdst = converter.toRaw(*itsrc);
+      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
+        auto* begin = _rawAccessor->begin(_registerInfo.address);
+        for(auto [itsrc, itdst] = std::make_pair(buffer_2D[0].begin(), begin); itsrc != buffer_2D[0].end();
+            ++itsrc, itdst += sizeof(RawType)) {
+          RawType temp = converter.toRaw(*itsrc);
+          memcpy(itdst, &temp, sizeof(RawType));
+        }
       }
     }
     else {

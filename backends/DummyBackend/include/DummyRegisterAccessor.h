@@ -4,7 +4,6 @@
 
 #include "DummyBackend.h"
 #include "FixedPointConverter.h"
-#include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the prefixes to the register names
 
 namespace ChimeraTK {
 
@@ -20,59 +19,66 @@ namespace ChimeraTK {
     template<typename T>
     class DummyRegisterElement {
      public:
-      DummyRegisterElement(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpc, int _nbytes, int32_t* _buffer)
-      : fpcptr(_fpc), nbytes(_nbytes), buffer(_buffer) {}
+      DummyRegisterElement(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpc, int nbytes, std::byte* buffer)
+      : _fpcptr(fpc), _nbytes(nbytes), _buffer(buffer) {}
 
       /// Implicit type conversion to user type T.
       /// This covers already a lot of operations like arithmetic and comparison
       // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-      inline operator T() const { return fpcptr->template scalarToCooked<T>(*buffer); }
+      operator T() const { return _fpcptr->template scalarToCooked<T>(getBufferValue()); }
 
       /// assignment operator
-      inline DummyRegisterElement<T>& operator=(T rhs) {
-        int32_t raw = fpcptr->toRaw(rhs);
-        memcpy(buffer, &raw, nbytes);
+      DummyRegisterElement<T>& operator=(T rhs) {
+        int32_t raw = _fpcptr->toRaw(rhs);
+        memcpy(_buffer, &raw, _nbytes);
         return *this;
       }
 
       /// pre-increment operator
-      inline DummyRegisterElement<T> operator++() {
-        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+      DummyRegisterElement<T> operator++() {
+        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
         return operator=(cooked + 1);
       }
 
       /// pre-decrement operator
-      inline DummyRegisterElement<T> operator--() {
-        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+      DummyRegisterElement<T> operator--() {
+        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
         return operator=(cooked - 1);
       }
 
       /// post-increment operator
-      inline T operator++(int) {
-        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+      T operator++(int) {
+        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
         operator=(cooked + 1);
         return cooked;
       }
 
       /// post-decrement operator
-      inline T operator--(int) {
-        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+      T operator--(int) {
+        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
         operator=(cooked - 1);
         return cooked;
       }
 
      protected:
       /// constructor when used as a base class in DummyRegister
-      DummyRegisterElement() : fpcptr(nullptr), nbytes(0), buffer(nullptr) {}
+      DummyRegisterElement() : _fpcptr(nullptr), _nbytes(0), _buffer(nullptr) {}
 
       /// fixed point converter to be used for this element
-      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpcptr;
+      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpcptr;
 
       /// number of bytes per word
-      int nbytes;
+      int _nbytes;
 
       /// raw buffer of this element
-      int32_t* buffer;
+      std::byte* _buffer;
+
+      /// helper to acquire raw value from buffer
+      [[nodiscard]] int32_t getBufferValue() const {
+        int32_t temp;
+        memcpy(&temp, _buffer, sizeof(int32_t));
+        return temp;
+      }
     };
 
     /******************************************************************************************************************/
@@ -82,18 +88,18 @@ namespace ChimeraTK {
     class DummyRegisterSequence {
      public:
       DummyRegisterSequence(
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpc, int _nbytes, int _pitch, int32_t* _buffer)
-      : fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer) {}
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpc, int nbytes, int pitch, int32_t* buffer)
+      : _fpcptr(fpc), _nbytes(nbytes), _pitch(pitch), _buffer(buffer) {}
 
       /// Get or set register content by [] operator.
-      inline DummyRegisterElement<T> operator[](unsigned int sample) {
+      DummyRegisterElement<T> operator[](unsigned int sample) {
         // todo: Probably ranges are the correct tool in cpp22. In cpp17 this is not available yet. We turn off the
         // warning not to use reinterpret_cast for the time being
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        auto* basePtr = reinterpret_cast<std::byte*>(buffer);
-        auto* startAddress = basePtr + static_cast<size_t>(pitch) * sample;
+        auto* basePtr = reinterpret_cast<std::byte*>(_buffer);
+        auto* startPtr = basePtr + static_cast<size_t>(_pitch) * sample;
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<int32_t*>(startAddress));
+        return DummyRegisterElement<T>(_fpcptr, _nbytes, startPtr);
       }
 
       /// remove assignment operator since it will be confusing */
@@ -101,16 +107,16 @@ namespace ChimeraTK {
 
      protected:
       /// fixed point converter to be used for this sequence
-      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpcptr;
+      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpcptr;
 
       /// number of bytes per word
-      int nbytes;
+      int _nbytes;
 
       /// pitch in bytes (distance between samples of the same sequence)
-      int pitch;
+      int _pitch;
 
       /// reference to the raw buffer (first word of the sequence)
-      int32_t* buffer;
+      int32_t* _buffer;
     };
   } // namespace proxies
 
@@ -138,14 +144,15 @@ namespace ChimeraTK {
     /// to be accessed. A raw pointer is needed, as used inside the DummyBackend
     /// itself. module and name denominate the register entry in the map file.
     DummyRegisterAccessor(DummyBackend* dev, std::string const& module, std::string const& name)
-    : _dev(dev), _path(module + "/" + name), fpc(module + "/" + name) {
-      registerInfo = _dev->_registerMap.getBackendRegister(_path);
-      fpc = FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(module + "/" + name, registerInfo.channels.front().width,
-          registerInfo.channels.front().nFractionalBits, registerInfo.channels.front().signedFlag);
+    : _dev(dev), _path(module + "/" + name), _fpc(module + "/" + name) {
+      _registerInfo = _dev->_registerMap.getBackendRegister(_path);
+      _fpc =
+          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(module + "/" + name, _registerInfo.channels.front().width,
+              _registerInfo.channels.front().nFractionalBits, _registerInfo.channels.front().signedFlag);
       // initialise the base DummyRegisterElement
-      proxies::DummyRegisterElement<T>::fpcptr = &fpc;
-      proxies::DummyRegisterElement<T>::nbytes = sizeof(int32_t);
-      proxies::DummyRegisterElement<T>::buffer = getElement(0);
+      proxies::DummyRegisterElement<T>::_fpcptr = &_fpc;
+      proxies::DummyRegisterElement<T>::_nbytes = sizeof(int32_t);
+      proxies::DummyRegisterElement<T>::_buffer = getElement(0);
     }
     // declare that we want the default copy constructor. Needed because we have a custom = operator
     DummyRegisterAccessor(const DummyRegisterAccessor&) = default;
@@ -154,10 +161,10 @@ namespace ChimeraTK {
     void operator=(const DummyRegisterAccessor& rightHandSide) const = delete;
 
     /// Get or set register content by [] operator.
-    inline proxies::DummyRegisterElement<T> operator[](unsigned int index) { return getProxy(index); }
+    proxies::DummyRegisterElement<T> operator[](unsigned int index) { return getProxy(index); }
 
     /// return number of elements
-    unsigned int getNumberOfElements() { return registerInfo.nElements; }
+    unsigned int getNumberOfElements() { return _registerInfo.nElements; }
 
     /// expose = operator from base class
     using proxies::DummyRegisterElement<T>::operator=;
@@ -170,14 +177,14 @@ namespace ChimeraTK {
 
     /// Set callback function which is called when the register is written to (through the normal Device interface)
     void setWriteCallback(const std::function<void()>& writeCallback) {
-      assert(registerInfo.elementPitchBits % 8 == 0);
+      assert(_registerInfo.elementPitchBits % 8 == 0);
       _dev->setWriteCallbackFunction(
-          {static_cast<uint8_t>(registerInfo.bar), static_cast<uint32_t>(registerInfo.address),
-              registerInfo.nElements * registerInfo.elementPitchBits / 8},
+          {static_cast<uint8_t>(_registerInfo.bar), static_cast<uint32_t>(_registerInfo.address),
+              _registerInfo.nElements * _registerInfo.elementPitchBits / 8},
           writeCallback);
     }
 
-    const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
+    const NumericAddressedRegisterInfo& getRegisterInfo() { return _registerInfo; }
 
     /** Get a lock to safely modify the buffer in a multi-treaded environment. You have to release it as soon as
      * possible because it will block all other functionality of the Dummy and all application threads which use it.
@@ -189,22 +196,24 @@ namespace ChimeraTK {
     DummyBackend* _dev;
 
     /// register map information
-    NumericAddressedRegisterInfo registerInfo;
+    NumericAddressedRegisterInfo _registerInfo;
 
     /// path of the register
     RegisterPath _path;
 
     /// fixed point converter
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fpc;
+    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fpc;
 
     /// return element
-    inline int32_t* getElement(unsigned int index) {
-      return &(_dev->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t) + index]);
+    std::byte* getElement(unsigned int index) {
+      auto* ptr = &(_dev->_barContents[_registerInfo.bar][_registerInfo.address / sizeof(int32_t) + index]);
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      return reinterpret_cast<std::byte*>(ptr);
     }
 
     /// return a proxy object
-    inline proxies::DummyRegisterElement<T> getProxy(int index) {
-      return proxies::DummyRegisterElement<T>(&fpc, sizeof(int32_t), getElement(index));
+    proxies::DummyRegisterElement<T> getProxy(int index) {
+      return proxies::DummyRegisterElement<T>(&_fpc, sizeof(int32_t), getElement(index));
     }
   };
 
@@ -230,26 +239,26 @@ namespace ChimeraTK {
     /// name when searching for the register.
     DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string const& module, std::string const& name)
     : _dev(dev), _path(module + "/" + name) {
-      registerInfo = _dev->_registerMap.getBackendRegister(module + "." + name);
+      _registerInfo = _dev->_registerMap.getBackendRegister(module + "." + name);
 
       // create fixed point converters for each channel
-      for(auto& c : registerInfo.channels) {
+      for(auto& c : _registerInfo.channels) {
         // create fixed point converter for sequence
-        fpc.emplace_back(registerInfo.pathName, c.width, c.nFractionalBits, c.signedFlag);
+        _fpc.emplace_back(_registerInfo.pathName, c.width, c.nFractionalBits, c.signedFlag);
         // store offsets and number of bytes per word
         assert(c.bitOffset % 8 == 0);
-        offsets.push_back(registerInfo.address + c.bitOffset / 8);
-        nbytes.push_back((c.width - 1) / 8 + 1); // width/8 rounded up
+        _offsets.push_back(_registerInfo.address + c.bitOffset / 8);
+        _nbytes.push_back((c.width - 1) / 8 + 1); // width/8 rounded up
       }
 
-      if(fpc.empty()) {
+      if(_fpc.empty()) {
         throw ChimeraTK::logic_error("No sequences found for name \"" + name + "\".");
       }
 
       // cache some information
-      nElements = registerInfo.nElements;
-      assert(registerInfo.elementPitchBits % 8 == 0);
-      pitch = registerInfo.elementPitchBits / 8;
+      _nElements = _registerInfo.nElements;
+      assert(_registerInfo.elementPitchBits % 8 == 0);
+      _pitch = _registerInfo.elementPitchBits / 8;
     }
 
     /// remove assignment operator since it will be confusing
@@ -259,24 +268,24 @@ namespace ChimeraTK {
     DummyMultiplexedRegisterAccessor(const DummyMultiplexedRegisterAccessor&) = default;
 
     /// return number of elements per sequence
-    unsigned int getNumberOfElements() { return nElements; }
+    unsigned int getNumberOfElements() { return _nElements; }
 
     /// return number of sequences
-    unsigned int getNumberOfSequences() { return fpc.size(); }
+    unsigned int getNumberOfSequences() { return _fpc.size(); }
 
     /// Get or set register content by [] operators.
     /// The first [] denotes the sequence (aka. channel number), the second []
     /// indicates the sample inside the sequence. This means that in a sense the
     /// first index is the faster counting index. Example: myMuxRegister[3][987]
     /// will give you the 988th sample of the 4th channel.
-    inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence) {
+    proxies::DummyRegisterSequence<T> operator[](unsigned int sequence) {
       // todo: Probably ranges are the correct tool in cpp22. In cpp17 this is not available yet. We turn off the
       // warning not to use reinterpret_cast for the time being
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-      auto* basePtr = reinterpret_cast<std::byte*>(_dev->_barContents[registerInfo.bar].data());
+      auto* basePtr = reinterpret_cast<std::byte*>(_dev->_barContents[_registerInfo.bar].data());
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-      auto* seq = reinterpret_cast<int32_t*>(basePtr + offsets[sequence]);
-      return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
+      auto* seq = reinterpret_cast<int32_t*>(basePtr + _offsets[sequence]);
+      return proxies::DummyRegisterSequence<T>(&(_fpc[sequence]), _nbytes[sequence], _pitch, seq);
     }
 
     /// Return the backend
@@ -285,32 +294,32 @@ namespace ChimeraTK {
     /// Return the register path
     [[nodiscard]] const RegisterPath& getRegisterPath() const { return _path; }
 
-    [[nodiscard]] const NumericAddressedRegisterInfo& getRegisterInfo() { return registerInfo; }
+    [[nodiscard]] const NumericAddressedRegisterInfo& getRegisterInfo() { return _registerInfo; }
 
    protected:
     /// pointer to VirtualDevice
     DummyBackend* _dev;
 
     /// register map information
-    NumericAddressedRegisterInfo registerInfo;
+    NumericAddressedRegisterInfo _registerInfo;
 
     /// path of the register
     RegisterPath _path;
 
     /// pointer to fixed point converter
-    std::vector<FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>> fpc;
+    std::vector<FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>> _fpc;
 
     /// offsets in bytes for sequences
-    std::vector<uint32_t> offsets;
+    std::vector<uint32_t> _offsets;
 
     /// number of bytes per word for sequences
-    std::vector<uint32_t> nbytes;
+    std::vector<uint32_t> _nbytes;
 
     /// pitch in bytes (distance between samples of the same sequence)
-    int pitch = {0};
+    int _pitch = {0};
 
     /// number of elements per sequence
-    unsigned int nElements;
+    unsigned int _nElements;
   };
 
   /** Accessor for raw 32 bit integer access to the underlying memory space.
@@ -328,14 +337,14 @@ namespace ChimeraTK {
     /// Implicit type conversion to int32_t.
     /// This basically covers all operators for single integers.
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    operator int32_t&() { return *buffer; }
+    operator int32_t&() { return *_buffer; }
 
     DummyRegisterRawAccessor(
         boost::shared_ptr<DeviceBackend> const& backend, std::string const& module, std::string const& name)
     : _backend(boost::dynamic_pointer_cast<DummyBackend>(backend)) {
       assert(_backend);
-      registerInfo = _backend->_registerMap.getBackendRegister(module + "." + name);
-      buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t)]);
+      _registerInfo = _backend->_registerMap.getBackendRegister(module + "." + name);
+      _buffer = &(_backend->_barContents[_registerInfo.bar][_registerInfo.address / sizeof(int32_t)]);
     }
 
     // declare that we want the default copy constructor. Needed because we have a custom = operator
@@ -349,15 +358,15 @@ namespace ChimeraTK {
     void operator=(const DummyRegisterRawAccessor& rightHandSide) const = delete;
 
     DummyRegisterRawAccessor& operator=(int32_t rhs) {
-      buffer[0] = rhs;
+      _buffer[0] = rhs;
       return *this;
     }
 
     /// Get or set register content by [] operator.
-    int32_t& operator[](unsigned int index) { return buffer[index]; }
+    int32_t& operator[](unsigned int index) { return _buffer[index]; }
 
     /// return number of elements
-    [[nodiscard]] unsigned int getNumberOfElements() const { return registerInfo.nElements; }
+    [[nodiscard]] unsigned int getNumberOfElements() const { return _registerInfo.nElements; }
 
     /** Get a lock to safely modify the buffer. You have to release it as soon as possible because it will block all
      * other functionality of the Dummy. This is a really low low level debugging interface!
@@ -369,10 +378,10 @@ namespace ChimeraTK {
     boost::shared_ptr<DummyBackend> _backend;
 
     /// register map information
-    NumericAddressedRegisterInfo registerInfo;
+    NumericAddressedRegisterInfo _registerInfo;
 
     /// raw buffer of this accessor
-    int32_t* buffer;
+    int32_t* _buffer;
   };
 
 } // namespace ChimeraTK
