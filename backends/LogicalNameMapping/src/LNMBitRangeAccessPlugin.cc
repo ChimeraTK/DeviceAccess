@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "FixedPointConverter.h"
 #include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "RawConverter.h"
 
 #include <boost/make_shared.hpp>
 
@@ -76,24 +76,30 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TargetType>
-  struct BitRangeAccessPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType> {
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::buffer_2D;
+  template<typename UserType>
+  struct BitRangeAccessPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t> {
+    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::buffer_2D;
 
     /******************************************************************************************************************/
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
+        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
-      _writeable{_target->isWriteable()},
-      fixedPointConverter(name, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned) {
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(shift), _numberOfBits(numberOfBits),
+      _writeable{_target->isWriteable()} {
+      // makeConverterLoopHelper expects a NumericAddressedBackend RegisterInfo, which we create with the relevant
+      // parameters.
+      NumericAddressedRegisterInfo registerInfo{name, 1, 0, sizeof(uint64_t), 0, uint32_t(numberOfBits),
+          int32_t(dataInterpretationFractionalBits), bool(dataInterpretationIsSigned)};
+      _converterLoopHelper =
+          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(registerInfo, 0, 0, *this);
+
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
             TransferElement::getName() + ": Cannot target non-scalar registers.");
       }
 
-      auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
+      auto& map = boost::fusion::at_key<uint64_t>(backend->sharedAccessorMap.table);
       RegisterPath path{name};
       path.setAltSeparator(".");
       LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
@@ -123,19 +129,31 @@ namespace ChimeraTK::LNMBackend {
     void doPostRead(TransferType type, bool hasNewData) override {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
       _target->postRead(type, hasNewData);
-      if(!hasNewData) return;
+      if(!hasNewData) {
+        return;
+      }
 
-      if constexpr(std::is_same_v<uint64_t, TargetType>) {
+      _converterLoopHelper->doPostRead();
+    }
+
+    /******************************************************************************************************************/
+
+    template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
+        bool isSigned>
+    void doPostReadImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
+        [[maybe_unused]] size_t implParameter) {
+      static_assert(std::is_same_v<UserType, CookedType>);
+      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
         auto validity = _target->dataValidity();
         uint64_t v{_target->accessData(0)};
         v = (v & _maskOnTarget) >> _shift;
 
-        buffer_2D[0][0] = fixedPointConverter.scalarToCooked<UserType>(uint32_t(v));
+        buffer_2D[0][0] = converter.toCooked(v);
         // Do a quick check if the fixed point converter clamped. Then set the
         // data validity faulty according to B.2.4.1
         // For proper implementation of this, the fixed point converter needs to signalize
         // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
-        auto raw = static_cast<uint32_t>(fixedPointConverter.toRaw(buffer_2D[0][0]));
+        auto raw = converter.toRaw(buffer_2D[0][0]);
         if(raw != v) {
           validity = DataValidity::faulty;
         }
@@ -144,7 +162,6 @@ namespace ChimeraTK::LNMBackend {
         this->_dataValidity = validity;
       }
       else {
-        // This code should never be reached so long the the bit range plugin requires its target type to be uint64
         assert(false);
       }
     }
@@ -159,24 +176,40 @@ namespace ChimeraTK::LNMBackend {
             "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
       }
 
-      auto value = static_cast<uint32_t>(fixedPointConverter.toRaw(buffer_2D[0][0]));
-
-      // FIXME: Not setting the data validity according to the spec point B2.5.1.
-      // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
-      // To be revisted after fixing https://redmine.msktools.desy.de/issues/12912
-
-      // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
-      // Otherwise it will overwrite the
-      if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.useCount() == 1)) {
-        _target->read();
-      }
-
-      _target->accessData(0) &= ~_maskOnTarget;
-      _target->accessData(0) |= (value << _shift);
+      _converterLoopHelper->doPreWrite();
 
       _temporaryVersion = std::max(versionNumber, _target->getVersionNumber());
-      _target->setDataValidity(this->_dataValidity);
       _target->preWrite(type, _temporaryVersion);
+    }
+
+    /******************************************************************************************************************/
+
+    template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
+        bool isSigned>
+    void doPreWriteImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
+        [[maybe_unused]] size_t implParameter) {
+      static_assert(std::is_same_v<UserType, CookedType>);
+      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
+        auto value = converter.toRaw(buffer_2D[0][0]);
+
+        // FIXME: Not setting the data validity according to the spec point B2.5.1.
+        // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
+        // To be revisted after fixing https://redmine.msktools.desy.de/issues/12912
+
+        // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
+        // Otherwise it will overwrite the
+        if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.useCount() == 1)) {
+          _target->read();
+        }
+
+        _target->accessData(0) &= ~_maskOnTarget;
+        _target->accessData(0) |= (value << _shift);
+
+        _target->setDataValidity(this->_dataValidity);
+      }
+      else {
+        assert(false);
+      }
     }
 
     /******************************************************************************************************************/
@@ -189,12 +222,12 @@ namespace ChimeraTK::LNMBackend {
     /******************************************************************************************************************/
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
-      auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType, TargetType>>(newElement);
+      auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType>>(newElement);
 
       // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
       // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
-      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write order
-      // for overlapping bit ranges
+      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write
+      // order for overlapping bit ranges
       if(casted && casted.get() != this && casted->_target == _target) {
         // anding the two masks will yield 0 iff there is no overlap
         if((casted->_maskOnTarget & _maskOnTarget) != 0) {
@@ -202,24 +235,25 @@ namespace ChimeraTK::LNMBackend {
           _writeable = false;
         }
       }
-      NDRegisterAccessorDecorator<UserType, TargetType>::replaceTransferElement(newElement);
+      NDRegisterAccessorDecorator<UserType, uint64_t>::replaceTransferElement(newElement);
     }
 
     /******************************************************************************************************************/
 
+   private:
     uint64_t _shift;
     uint64_t _numberOfBits;
     uint64_t _maskOnTarget;
     uint64_t _userTypeMask{getMaskForNBits(sizeof(UserType) * CHAR_BIT)};
-    uint64_t _targetTypeMask{getMaskForNBits(sizeof(TargetType) * CHAR_BIT)};
+    uint64_t _targetTypeMask{getMaskForNBits(sizeof(uint64_t) * CHAR_BIT)};
     uint64_t _baseBitMask;
 
     ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
     bool _writeable{false};
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> fixedPointConverter;
+    std::unique_ptr<RawConverter::ConverterLoopHelper> _converterLoopHelper;
 
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::_target;
+    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
   };
 
   /********************************************************************************************************************/
@@ -293,9 +327,9 @@ namespace ChimeraTK::LNMBackend {
   boost::shared_ptr<NDRegisterAccessor<UserType>> BitRangeAccessPlugin::decorateAccessor(
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
-    if constexpr(std::is_integral<TargetType>::value) {
-      return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(backend, target, params._name,
-          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
+    if constexpr(std::is_same_v<TargetType, uint64_t>) {
+      return boost::make_shared<BitRangeAccessPluginDecorator<UserType>>(backend, target, params._name, _shift,
+          _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
 
     assert(false);

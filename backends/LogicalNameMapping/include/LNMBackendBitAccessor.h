@@ -2,16 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "CopyRegisterDecorator.h"
-#include "Device.h"
-#include "FixedPointConverter.h"
 #include "LogicalNameMappingBackend.h"
 #include "NDRegisterAccessor.h"
-#include "TwoDRegisterAccessor.h"
+#include "NDRegisterAccessorDecorator.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
-
-#include <algorithm>
 
 namespace ChimeraTK {
 
@@ -22,8 +17,7 @@ namespace ChimeraTK {
    public:
     LNMBackendBitAccessor(const boost::shared_ptr<DeviceBackend>& dev, const RegisterPath& registerPathName,
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-    : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName),
-      _fixedPointConverter(registerPathName, 32, 0, true) {
+    : NDRegisterAccessor<UserType>(registerPathName, flags), _registerPathName(registerPathName) {
       // check for unknown flags
       flags.checkForUnknownFlags({AccessMode::raw});
       // check for illegal parameter combinations
@@ -120,7 +114,7 @@ namespace ChimeraTK {
     void doPreWrite(TransferType type, VersionNumber) override {
       lock.lock();
 
-      if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
+      if(!userTypeToNumeric<ChimeraTK::Boolean>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
         _accessor->accessData(0) &= ~(_bitMask);
       }
       else {
@@ -187,11 +181,6 @@ namespace ChimeraTK {
 
     /// backend device
     boost::shared_ptr<LogicalNameMappingBackend> _dev;
-
-    /// fixed point converter to handle type conversions from our "raw" type int
-    /// to the requested user type. Note: no actual fixed point conversion is
-    /// done, it is just used for the type conversion!
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fixedPointConverter;
 
     /// bit mask for the bit we want to access
     size_t _bitMask;
