@@ -3,7 +3,6 @@
 #pragma once
 
 #include "DummyBackend.h"
-#include "FixedPointConverter.h"
 
 namespace ChimeraTK {
 
@@ -11,74 +10,83 @@ namespace ChimeraTK {
   /// point conversion. These classes are put into a separate name space, as they
   /// should never be instantiated by the user.
   namespace proxies {
+
+    /******************************************************************************************************************/
+
+    /**
+     * This abstract class encapsulates a RawConverter to erase the exact RawConverter type (with all its template
+     * parameters).
+     */
+    template<typename UserType>
+    class RawConverterCapsule {
+     public:
+      virtual ~RawConverterCapsule() = default;
+      virtual UserType toCooked(std::byte* raw) = 0;
+      virtual void toRaw(UserType cooked, std::byte* raw) = 0;
+      static std::shared_ptr<RawConverterCapsule<UserType>> makeCapsule(
+          const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex);
+    };
+
     /******************************************************************************************************************/
     /// Temporary proxy class for use in the DummyRegister and
     /// DummyMultiplexedRegister classes. Will be returned in place of l.h.s.
     /// references to the register elements, to allow read-write access to registers
-    /// governed by a FixedPointConverter.
+    /// governed by a RawConverter
     template<typename T>
     class DummyRegisterElement {
      public:
-      DummyRegisterElement(FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpc, int nbytes, std::byte* buffer)
-      : _fpcptr(fpc), _nbytes(nbytes), _buffer(buffer) {}
+      DummyRegisterElement(std::shared_ptr<RawConverterCapsule<T>>& rc, int nbytes, std::byte* buffer)
+      : _rc(rc), _nbytes(nbytes), _buffer(buffer) {}
 
       /// Implicit type conversion to user type T.
       /// This covers already a lot of operations like arithmetic and comparison
       // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-      operator T() const { return _fpcptr->template scalarToCooked<T>(getBufferValue()); }
+      operator T() const { return _rc->toCooked(_buffer); }
 
       /// assignment operator
       DummyRegisterElement<T>& operator=(T rhs) {
-        int32_t raw = _fpcptr->toRaw(rhs);
-        memcpy(_buffer, &raw, _nbytes);
+        _rc->toRaw(rhs, _buffer);
         return *this;
       }
 
       /// pre-increment operator
       DummyRegisterElement<T> operator++() {
-        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
+        T cooked = _rc->toCooked(_buffer);
         return operator=(cooked + 1);
       }
 
       /// pre-decrement operator
       DummyRegisterElement<T> operator--() {
-        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
+        T cooked = _rc->toCooked(_buffer);
+
         return operator=(cooked - 1);
       }
 
       /// post-increment operator
       T operator++(int) {
-        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
+        T cooked = _rc->toCooked(_buffer);
+
         operator=(cooked + 1);
         return cooked;
       }
 
       /// post-decrement operator
       T operator--(int) {
-        T cooked = _fpcptr->template scalarToCooked<T>(getBufferValue());
+        T cooked = _rc->toCooked(_buffer);
+
         operator=(cooked - 1);
         return cooked;
       }
 
      protected:
-      /// constructor when used as a base class in DummyRegister
-      DummyRegisterElement() : _fpcptr(nullptr), _nbytes(0), _buffer(nullptr) {}
-
       /// fixed point converter to be used for this element
-      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpcptr;
+      std::shared_ptr<RawConverterCapsule<T>>& _rc;
 
       /// number of bytes per word
       int _nbytes;
 
       /// raw buffer of this element
       std::byte* _buffer;
-
-      /// helper to acquire raw value from buffer
-      [[nodiscard]] int32_t getBufferValue() const {
-        int32_t temp;
-        memcpy(&temp, _buffer, sizeof(int32_t));
-        return temp;
-      }
     };
 
     /******************************************************************************************************************/
@@ -88,8 +96,8 @@ namespace ChimeraTK {
     class DummyRegisterSequence {
      public:
       DummyRegisterSequence(
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* fpc, int nbytes, int pitch, int32_t* buffer)
-      : _fpcptr(fpc), _nbytes(nbytes), _pitch(pitch), _buffer(buffer) {}
+          std::shared_ptr<proxies::RawConverterCapsule<T>>& rc, int nbytes, int pitch, int32_t* buffer)
+      : _rc(rc), _nbytes(nbytes), _pitch(pitch), _buffer(buffer) {}
 
       /// Get or set register content by [] operator.
       DummyRegisterElement<T> operator[](unsigned int sample) {
@@ -99,7 +107,7 @@ namespace ChimeraTK {
         auto* basePtr = reinterpret_cast<std::byte*>(_buffer);
         auto* startPtr = basePtr + static_cast<size_t>(_pitch) * sample;
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return DummyRegisterElement<T>(_fpcptr, _nbytes, startPtr);
+        return DummyRegisterElement<T>(_rc, _nbytes, startPtr);
       }
 
       /// remove assignment operator since it will be confusing */
@@ -107,7 +115,7 @@ namespace ChimeraTK {
 
      protected:
       /// fixed point converter to be used for this sequence
-      FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>* _fpcptr;
+      std::shared_ptr<proxies::RawConverterCapsule<T>>& _rc;
 
       /// number of bytes per word
       int _nbytes;
@@ -118,6 +126,9 @@ namespace ChimeraTK {
       /// reference to the raw buffer (first word of the sequence)
       int32_t* _buffer;
     };
+
+    /******************************************************************************************************************/
+
   } // namespace proxies
 
   /********************************************************************************************************************/
@@ -144,13 +155,10 @@ namespace ChimeraTK {
     /// to be accessed. A raw pointer is needed, as used inside the DummyBackend
     /// itself. module and name denominate the register entry in the map file.
     DummyRegisterAccessor(DummyBackend* dev, std::string const& module, std::string const& name)
-    : _dev(dev), _path(module + "/" + name), _fpc(module + "/" + name) {
-      _registerInfo = _dev->_registerMap.getBackendRegister(_path);
-      _fpc =
-          FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>(module + "/" + name, _registerInfo.channels.front().width,
-              _registerInfo.channels.front().nFractionalBits, _registerInfo.channels.front().signedFlag);
+    : proxies::DummyRegisterElement<T>(_rc, 0, nullptr), _dev(dev), _path(module + "/" + name),
+      _registerInfo(_dev->_registerMap.getBackendRegister(_path)),
+      _rc(proxies::RawConverterCapsule<T>::makeCapsule(_registerInfo, 0)) {
       // initialise the base DummyRegisterElement
-      proxies::DummyRegisterElement<T>::_fpcptr = &_fpc;
       proxies::DummyRegisterElement<T>::_nbytes = sizeof(int32_t);
       proxies::DummyRegisterElement<T>::_buffer = getElement(0);
     }
@@ -195,14 +203,14 @@ namespace ChimeraTK {
     /// pointer to VirtualDevice
     DummyBackend* _dev;
 
-    /// register map information
-    NumericAddressedRegisterInfo _registerInfo;
-
     /// path of the register
     RegisterPath _path;
 
+    /// register map information
+    NumericAddressedRegisterInfo _registerInfo;
+
     /// fixed point converter
-    FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT> _fpc;
+    std::shared_ptr<proxies::RawConverterCapsule<T>> _rc;
 
     /// return element
     std::byte* getElement(unsigned int index) {
@@ -213,7 +221,7 @@ namespace ChimeraTK {
 
     /// return a proxy object
     proxies::DummyRegisterElement<T> getProxy(int index) {
-      return proxies::DummyRegisterElement<T>(&_fpc, sizeof(int32_t), getElement(index));
+      return proxies::DummyRegisterElement<T>(_rc, sizeof(int32_t), getElement(index));
     }
   };
 
@@ -242,16 +250,18 @@ namespace ChimeraTK {
       _registerInfo = _dev->_registerMap.getBackendRegister(module + "." + name);
 
       // create fixed point converters for each channel
+      size_t ci = 0;
       for(auto& c : _registerInfo.channels) {
         // create fixed point converter for sequence
-        _fpc.emplace_back(_registerInfo.pathName, c.width, c.nFractionalBits, c.signedFlag);
+        _rc.emplace_back(proxies::RawConverterCapsule<T>::makeCapsule(_registerInfo, ci));
         // store offsets and number of bytes per word
         assert(c.bitOffset % 8 == 0);
         _offsets.push_back(_registerInfo.address + c.bitOffset / 8);
         _nbytes.push_back((c.width - 1) / 8 + 1); // width/8 rounded up
+        ++ci;
       }
 
-      if(_fpc.empty()) {
+      if(_rc.empty()) {
         throw ChimeraTK::logic_error("No sequences found for name \"" + name + "\".");
       }
 
@@ -271,7 +281,7 @@ namespace ChimeraTK {
     unsigned int getNumberOfElements() { return _nElements; }
 
     /// return number of sequences
-    unsigned int getNumberOfSequences() { return _fpc.size(); }
+    unsigned int getNumberOfSequences() { return _rc.size(); }
 
     /// Get or set register content by [] operators.
     /// The first [] denotes the sequence (aka. channel number), the second []
@@ -285,7 +295,7 @@ namespace ChimeraTK {
       auto* basePtr = reinterpret_cast<std::byte*>(_dev->_barContents[_registerInfo.bar].data());
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       auto* seq = reinterpret_cast<int32_t*>(basePtr + _offsets[sequence]);
-      return proxies::DummyRegisterSequence<T>(&(_fpc[sequence]), _nbytes[sequence], _pitch, seq);
+      return proxies::DummyRegisterSequence<T>(_rc[sequence], _nbytes[sequence], _pitch, seq);
     }
 
     /// Return the backend
@@ -307,7 +317,7 @@ namespace ChimeraTK {
     RegisterPath _path;
 
     /// pointer to fixed point converter
-    std::vector<FixedPointConverter<DEPRECATED_FIXEDPOINT_DEFAULT>> _fpc;
+    std::vector<std::shared_ptr<proxies::RawConverterCapsule<T>>> _rc;
 
     /// offsets in bytes for sequences
     std::vector<uint32_t> _offsets;
@@ -383,5 +393,7 @@ namespace ChimeraTK {
     /// raw buffer of this accessor
     int32_t* _buffer;
   };
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK
