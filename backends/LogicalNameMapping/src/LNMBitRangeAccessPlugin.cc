@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "FixedPointConverter.h"
 #include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
 #include "NDRegisterAccessor.h"
@@ -77,20 +76,20 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, typename TargetType>
-  struct BitRangeAccessPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType> {
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::buffer_2D;
+  template<typename UserType>
+  struct BitRangeAccessPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t> {
+    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::buffer_2D;
 
     /******************************************************************************************************************/
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetType>>& target, const std::string& name,
+        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>(target), _shift(shift), _numberOfBits(numberOfBits),
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(shift), _numberOfBits(numberOfBits),
       _writeable{_target->isWriteable()} {
       // makeConverterLoopHelper expects a NumericAddressedBackend RegisterInfo, which we create with the relevant
       // parameters.
-      NumericAddressedRegisterInfo registerInfo{name, 1, 0, sizeof(TargetType), 0, uint32_t(numberOfBits),
+      NumericAddressedRegisterInfo registerInfo{name, 1, 0, sizeof(uint64_t), 0, uint32_t(numberOfBits),
           int32_t(dataInterpretationFractionalBits), bool(dataInterpretationIsSigned)};
       _converterLoopHelper =
           RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(registerInfo, 0, 0, *this);
@@ -100,7 +99,7 @@ namespace ChimeraTK::LNMBackend {
             TransferElement::getName() + ": Cannot target non-scalar registers.");
       }
 
-      auto& map = boost::fusion::at_key<TargetType>(backend->sharedAccessorMap.table);
+      auto& map = boost::fusion::at_key<uint64_t>(backend->sharedAccessorMap.table);
       RegisterPath path{name};
       path.setAltSeparator(".");
       LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
@@ -134,13 +133,7 @@ namespace ChimeraTK::LNMBackend {
         return;
       }
 
-      if constexpr(std::is_same_v<uint64_t, TargetType>) {
-        _converterLoopHelper->doPostRead();
-      }
-      else {
-        // This code should never be reached so long the the bit range plugin requires its target type to be uint64
-        assert(false);
-      }
+      _converterLoopHelper->doPostRead();
     }
 
     /******************************************************************************************************************/
@@ -150,7 +143,7 @@ namespace ChimeraTK::LNMBackend {
     void doPostReadImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
-      if constexpr(std::is_same_v<uint64_t, TargetType> && !std::is_same_v<RawType, ChimeraTK::Void>) {
+      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
         auto validity = _target->dataValidity();
         uint64_t v{_target->accessData(0)};
         v = (v & _maskOnTarget) >> _shift;
@@ -196,7 +189,7 @@ namespace ChimeraTK::LNMBackend {
     void doPreWriteImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
-      if constexpr(std::is_same_v<uint64_t, TargetType> && !std::is_same_v<RawType, ChimeraTK::Void>) {
+      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
         auto value = converter.toRaw(buffer_2D[0][0]);
 
         // FIXME: Not setting the data validity according to the spec point B2.5.1.
@@ -229,7 +222,7 @@ namespace ChimeraTK::LNMBackend {
     /******************************************************************************************************************/
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
-      auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType, TargetType>>(newElement);
+      auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType>>(newElement);
 
       // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
       // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
@@ -242,16 +235,17 @@ namespace ChimeraTK::LNMBackend {
           _writeable = false;
         }
       }
-      NDRegisterAccessorDecorator<UserType, TargetType>::replaceTransferElement(newElement);
+      NDRegisterAccessorDecorator<UserType, uint64_t>::replaceTransferElement(newElement);
     }
 
     /******************************************************************************************************************/
 
+   private:
     uint64_t _shift;
     uint64_t _numberOfBits;
     uint64_t _maskOnTarget;
     uint64_t _userTypeMask{getMaskForNBits(sizeof(UserType) * CHAR_BIT)};
-    uint64_t _targetTypeMask{getMaskForNBits(sizeof(TargetType) * CHAR_BIT)};
+    uint64_t _targetTypeMask{getMaskForNBits(sizeof(uint64_t) * CHAR_BIT)};
     uint64_t _baseBitMask;
 
     ReferenceCountedUniqueLock _lock;
@@ -259,7 +253,7 @@ namespace ChimeraTK::LNMBackend {
     bool _writeable{false};
     std::unique_ptr<RawConverter::ConverterLoopHelper> _converterLoopHelper;
 
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetType>::_target;
+    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
   };
 
   /********************************************************************************************************************/
@@ -334,8 +328,8 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
     if constexpr(std::is_same_v<TargetType, uint64_t>) {
-      return boost::make_shared<BitRangeAccessPluginDecorator<UserType, TargetType>>(backend, target, params._name,
-          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
+      return boost::make_shared<BitRangeAccessPluginDecorator<UserType>>(backend, target, params._name, _shift,
+          _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
 
     assert(false);
