@@ -429,6 +429,12 @@ namespace ChimeraTK {
   extern template class TemplateClass<std::string>;                                                                    \
   extern template class TemplateClass<ChimeraTK::Boolean> // the last semicolon is added by the user
 
+#define DECLARE_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(TemplateClass)                                                        \
+  extern template class TemplateClass<uint8_t>;                                                                        \
+  extern template class TemplateClass<uint16_t>;                                                                       \
+  extern template class TemplateClass<uint32_t>;                                                                       \
+  extern template class TemplateClass<uint64_t> // the last semicolon is added by the user
+
 #define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                   \
   template class TemplateClass<int8_t>;                                                                                \
   template class TemplateClass<uint8_t>;                                                                               \
@@ -457,6 +463,12 @@ namespace ChimeraTK {
   template class TemplateClass<double>;                                                                                \
   template class TemplateClass<std::string>;                                                                           \
   template class TemplateClass<ChimeraTK::Boolean> // the last semicolon is added by the user
+
+#define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(TemplateClass)                                                    \
+  template class TemplateClass<uint8_t>;                                                                               \
+  template class TemplateClass<uint16_t>;                                                                              \
+  template class TemplateClass<uint32_t>;                                                                              \
+  template class TemplateClass<uint64_t>; // the last semicolon is added by the user
 // NOLINTEND(bugprone-macro-parentheses)
 
 /** Macro to declare a template class with multiple template parameters for all
@@ -493,6 +505,12 @@ namespace ChimeraTK {
   extern template class TemplateClass<std::string, __VA_ARGS__>;                                                       \
   extern template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__> // the last semicolon is added by the user
 
+#define DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(TemplateClass, ...)                                             \
+  extern template class TemplateClass<uint8_t, __VA_ARGS__>;                                                           \
+  extern template class TemplateClass<uint16_t, __VA_ARGS__>;                                                          \
+  extern template class TemplateClass<uint32_t, __VA_ARGS__>;                                                          \
+  extern template class TemplateClass<uint64_t, __VA_ARGS__> // the last semicolon is added by the user
+
 #define INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass, ...)                                        \
   template class TemplateClass<int8_t, __VA_ARGS__>;                                                                   \
   template class TemplateClass<uint8_t, __VA_ARGS__>;                                                                  \
@@ -521,6 +539,12 @@ namespace ChimeraTK {
   template class TemplateClass<double, __VA_ARGS__>;                                                                   \
   template class TemplateClass<std::string, __VA_ARGS__>;                                                              \
   template class TemplateClass<ChimeraTK::Boolean, __VA_ARGS__> // the last semicolon is added by the user
+
+#define INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(TemplateClass, ...)                                         \
+  template class TemplateClass<uint8_t, __VA_ARGS__>;                                                                  \
+  template class TemplateClass<uint16_t, __VA_ARGS__>;                                                                 \
+  template class TemplateClass<uint32_t, __VA_ARGS__>;                                                                 \
+  template class TemplateClass<uint64_t, __VA_ARGS__>; // the last semicolon is added by the user
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/

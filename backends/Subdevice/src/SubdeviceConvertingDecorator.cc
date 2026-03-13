@@ -117,10 +117,8 @@ namespace ChimeraTK {
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, uint16_t);
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, uint32_t);
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, uint64_t);
+
   // FIXME: get rid of the signed ints!
-  // INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, int8_t);
-  // INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, int16_t);
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, int32_t);
-  // INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, int64_t);
 
 } // namespace ChimeraTK
