@@ -45,6 +45,8 @@ namespace ChimeraTK::RawConverter {
 
     RawType toRaw(UserType cookedValue);
 
+    using raw_type = RawType;
+
    private:
     RawType _signBitMask, _usedBitMask, _unusedBitMask;
     UserType _minCookedValues, _maxCookedValues;

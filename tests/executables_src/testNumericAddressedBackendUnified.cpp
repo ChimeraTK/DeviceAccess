@@ -600,7 +600,7 @@ struct MuxedFloat {
                                            .disableTestWriteNeverLosesData()
                                            .disableTestRawTransfer();
 
-  DummyMultiplexedRegisterAccessor<int32_t> rawAcc{exceptionDummyMuxed.get(), "TEST", "FLOAT"};
+  DummyMultiplexedRegisterAccessor<float> acc{exceptionDummyMuxed.get(), "TEST", "FLOAT"};
 
   template<typename UserType>
   std::vector<std::vector<UserType>> generateValue() {
@@ -608,9 +608,7 @@ struct MuxedFloat {
     v.resize(nChannels());
     for(uint32_t c = 0; c < nChannels(); ++c) {
       for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
-        int32_t rawValue = rawAcc[c][e];
-        float* cookedValue = reinterpret_cast<float*>(&rawValue);
-        v[c].push_back(*cookedValue + 0.7f * c + 3 * e);
+        v[c].push_back(acc[c][e] + 0.7f * c + 3 * e);
       }
     }
     return v;
@@ -622,9 +620,7 @@ struct MuxedFloat {
     v.resize(nChannels());
     for(uint32_t c = 0; c < nChannels(); ++c) {
       for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
-        int32_t rawValue = rawAcc[c][e];
-        float* cookedValue = reinterpret_cast<float*>(&rawValue);
-        v[c].push_back(*cookedValue);
+        v[c].push_back(acc[c][e]);
       }
     }
     return v;
@@ -634,11 +630,8 @@ struct MuxedFloat {
     auto v = generateValue<minimumUserType>();
     for(uint32_t c = 0; c < nChannels(); ++c) {
       for(uint32_t e = 0; e < nElementsPerChannel(); ++e) {
-        int32_t rawValue;
-        float* cookedValue = reinterpret_cast<float*>(&rawValue);
-        *cookedValue = v[c][e];
-        std::cout << "raw value is " << rawValue << "; cookedValue is " << *cookedValue << std::endl;
-        rawAcc[c][e] = rawValue;
+        std::cout << "cookedValue is " << v[c][e] << std::endl;
+        acc[c][e] = v[c][e];
       }
     }
   }
