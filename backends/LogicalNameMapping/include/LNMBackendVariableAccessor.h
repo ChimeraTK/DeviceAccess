@@ -2,16 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "Device.h"
-#include "FixedPointConverter.h"
-#include "LNMAccessorPlugin.h"
 #include "LNMMathPlugin.h"
 #include "LogicalNameMappingBackend.h"
 #include "NDRegisterAccessor.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
-
-#include <algorithm>
 
 namespace ChimeraTK {
 
