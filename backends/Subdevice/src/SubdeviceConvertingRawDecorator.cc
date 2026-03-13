@@ -8,7 +8,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename TargetUserType>
-  FixedPointConvertingRawDecorator<TargetUserType>::FixedPointConvertingRawDecorator(
+  ConvertingRawDecorator<TargetUserType>::ConvertingRawDecorator(
       const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
       NumericAddressedRegisterInfo const& registerInfo)
   : NDRegisterAccessorDecorator<TargetUserType>(target), _registerInfo(registerInfo) {
@@ -22,8 +22,7 @@ namespace ChimeraTK {
   template<typename TargetUserType>
   template<typename COOKED_TYPE>
   // NOLINTNEXTLINE(readability-identifier-naming)
-  COOKED_TYPE FixedPointConvertingRawDecorator<TargetUserType>::getAsCooked_impl(
-      unsigned int channel, unsigned int sample) {
+  COOKED_TYPE ConvertingRawDecorator<TargetUserType>::getAsCooked_impl(unsigned int channel, unsigned int sample) {
     COOKED_TYPE rv;
     RawConverter::withConverter<COOKED_TYPE, std::make_unsigned_t<TargetUserType>>(
         _registerInfo, 0, [&](auto converter) {
@@ -38,7 +37,7 @@ namespace ChimeraTK {
   template<typename TargetUserType>
   template<typename COOKED_TYPE>
   // NOLINTNEXTLINE(readability-identifier-naming)
-  void FixedPointConvertingRawDecorator<TargetUserType>::setAsCooked_impl(
+  void ConvertingRawDecorator<TargetUserType>::setAsCooked_impl(
       unsigned int channel, unsigned int sample, COOKED_TYPE value) {
     RawConverter::withConverter<COOKED_TYPE, std::make_unsigned_t<TargetUserType>>(
         _registerInfo, 0, [&](auto converter) {
@@ -49,9 +48,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename TargetUserType>
-  [[nodiscard]] bool FixedPointConvertingRawDecorator<TargetUserType>::mayReplaceOther(
+  [[nodiscard]] bool ConvertingRawDecorator<TargetUserType>::mayReplaceOther(
       const boost::shared_ptr<ChimeraTK::TransferElement const>& other) const {
-    auto casted = boost::dynamic_pointer_cast<FixedPointConvertingRawDecorator<TargetUserType> const>(other);
+    auto casted = boost::dynamic_pointer_cast<ConvertingRawDecorator<TargetUserType> const>(other);
     if(!casted) {
       return false;
     }
@@ -64,12 +63,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(FixedPointConvertingRawDecorator);
+  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(ConvertingRawDecorator);
 
   // FIXME: get rid of the deprecated signed raw
-  template class FixedPointConvertingRawDecorator<int8_t>;
-  template class FixedPointConvertingRawDecorator<int16_t>;
-  template class FixedPointConvertingRawDecorator<int32_t>;
-  template class FixedPointConvertingRawDecorator<int64_t>;
+  template class ConvertingRawDecorator<int8_t>;
+  template class ConvertingRawDecorator<int16_t>;
+  template class ConvertingRawDecorator<int32_t>;
+  template class ConvertingRawDecorator<int64_t>;
 
 } // namespace ChimeraTK

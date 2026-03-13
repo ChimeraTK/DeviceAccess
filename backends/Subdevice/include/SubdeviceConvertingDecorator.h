@@ -10,10 +10,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType, typename TargetUserType>
-  class FixedPointConvertingDecorator : public NDRegisterAccessorDecorator<UserType, TargetUserType> {
+  class ConvertingDecorator : public NDRegisterAccessorDecorator<UserType, TargetUserType> {
    public:
-    explicit FixedPointConvertingDecorator(
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
+    explicit ConvertingDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
         NumericAddressedRegisterInfo const& registerInfo);
 
     void doPreRead(TransferType type) override;
@@ -48,12 +47,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, uint8_t);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, uint16_t);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, uint32_t);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, uint64_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ConvertingDecorator, uint8_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ConvertingDecorator, uint16_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ConvertingDecorator, uint32_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ConvertingDecorator, uint64_t);
 
   // FIXME: get rid of the signed ints!
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(FixedPointConvertingDecorator, int32_t);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ConvertingDecorator, int32_t);
 
 } // namespace ChimeraTK

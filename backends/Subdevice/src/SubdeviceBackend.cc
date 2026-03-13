@@ -377,7 +377,7 @@ namespace ChimeraTK {
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!isRaw) {
-      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc, info);
+      return boost::make_shared<ConvertingDecorator<UserType, int32_t>>(rawAcc, info);
     }
     // this is handled by the template specialisation for int32_t
     throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
@@ -438,13 +438,13 @@ namespace ChimeraTK {
 
     // decorate with appropriate FixedPointConvertingDecorator.
     if(!flags.has(AccessMode::raw)) {
-      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc, info);
+      return boost::make_shared<ConvertingDecorator<UserType, int32_t>>(rawAcc, info);
     }
 
     if constexpr(std::is_same_v<UserType, int32_t>) {
       // decorate with appropriate decorator even in raw mode,
       // so we can properly implement getAsCooked()/setAsCooked().
-      return boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(rawAcc, info);
+      return boost::make_shared<ConvertingRawDecorator<UserType>>(rawAcc, info);
     }
     throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
         "match the expected type. Use an int32_t instead! (Register name: '" + registerPathName + "')");
@@ -507,14 +507,14 @@ namespace ChimeraTK {
 
       // decorate with appropriate FixedPointConvertingDecorator.
       if(!flags.has(AccessMode::raw)) {
-        retVal = boost::make_shared<FixedPointConvertingDecorator<UserType, uRawType>>(rawAcc, info);
+        retVal = boost::make_shared<ConvertingDecorator<UserType, uRawType>>(rawAcc, info);
         return;
       }
 
       if constexpr(std::is_same_v<UserType, uRawType>) {
         // decorate with appropriate decorator even in raw mode,
         // so we can properly implement getAsCooked()/setAsCooked().
-        retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(rawAcc, info);
+        retVal = boost::make_shared<ConvertingRawDecorator<UserType>>(rawAcc, info);
       }
       else if constexpr(std::is_same_v<UserType, std::make_signed_t<uRawType>>) {
         // Handling for deprecated, signed raw types
@@ -536,7 +536,7 @@ namespace ChimeraTK {
           }
         });
 
-        retVal = boost::make_shared<FixedPointConvertingRawDecorator<UserType>>(signedRawAcc, info);
+        retVal = boost::make_shared<ConvertingRawDecorator<UserType>>(signedRawAcc, info);
       }
       else {
         throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "s +
@@ -570,9 +570,9 @@ namespace ChimeraTK {
     // decorate with appropriate FixedPointConvertingDecorator. This is done even
     // when in raw mode so we can properly implement getAsCooked()/setAsCooked().
     if(!isRaw) {
-      return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>(rawAcc, info);
+      return boost::make_shared<ConvertingDecorator<int32_t, int32_t>>(rawAcc, info);
     }
-    return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>(rawAcc, info);
+    return boost::make_shared<ConvertingRawDecorator<int32_t>>(rawAcc, info);
   }
 
   /********************************************************************************************************************/

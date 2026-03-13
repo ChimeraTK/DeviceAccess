@@ -10,9 +10,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename TargetUserType>
-  class FixedPointConvertingRawDecorator : public NDRegisterAccessorDecorator<TargetUserType> {
+  class ConvertingRawDecorator : public NDRegisterAccessorDecorator<TargetUserType> {
    public:
-    FixedPointConvertingRawDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
+    ConvertingRawDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target,
         NumericAddressedRegisterInfo const& registerInfo);
 
     template<typename COOKED_TYPE>
@@ -38,12 +38,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  DECLARE_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(FixedPointConvertingRawDecorator);
+  DECLARE_TEMPLATE_FOR_CHIMERATK_RAW_TYPES(ConvertingRawDecorator);
 
   // FIXME: get rid of the deprecated signed raw
-  extern template class FixedPointConvertingRawDecorator<int8_t>;
-  extern template class FixedPointConvertingRawDecorator<int16_t>;
-  extern template class FixedPointConvertingRawDecorator<int32_t>;
-  extern template class FixedPointConvertingRawDecorator<int64_t>;
+  extern template class ConvertingRawDecorator<int8_t>;
+  extern template class ConvertingRawDecorator<int16_t>;
+  extern template class ConvertingRawDecorator<int32_t>;
+  extern template class ConvertingRawDecorator<int64_t>;
 
 } // namespace ChimeraTK
