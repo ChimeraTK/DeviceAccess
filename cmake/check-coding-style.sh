@@ -25,10 +25,24 @@ fi
 # check copyright/licence file header comment
 checkCopyrightComment() {
   SPDX_OK=1
+  # First line must be SPDX-FileCopyrightText
   if [[ "`head -n1 $1`" != '// SPDX-FileCopyrightText: '* ]]; then
     SPDX_OK=0
   fi
-  if [[ "`head -n2 $1 | tail -n1`" != '// SPDX-License-Identifier: '* ]]; then
+  # Find the first non-FileCopyrightText line and check if it's License-Identifier
+  local found_license=0
+  while IFS= read -r line; do
+    if [[ "$line" == '// SPDX-FileCopyrightText: '* ]]; then
+      continue
+    elif [[ "$line" == '// SPDX-License-Identifier: '* ]]; then
+      found_license=1
+      break
+    else
+      # First non-FileCopyrightText line is not License-Identifier
+      break
+    fi
+  done < "$1"
+  if [ $found_license -eq 0 ]; then
     SPDX_OK=0
   fi
   if [ $SPDX_OK -eq 0 ]; then
@@ -39,17 +53,40 @@ checkCopyrightComment() {
 export -f checkCopyrightComment
 find $mypath \( -name \*.cc -o -name \*.cpp -o -name \*.h \) -not -path "$exclude_pattern" -exec bash -c 'checkCopyrightComment {}' \;
 
-# check all header files for "#pragma once" in 3rd line
+# check all header files for "#pragma once" immediately after SPDX-License-Identifier
 checkPramgaOnce() {
-  if [ "`head -n3 $1 | tail -n1`" != '#pragma once' ]; then
-    echo 1 > "${ERRFILE}"
-    echo "Header $1 has no pragma once in 3rd line!"
-  fi
+  # Valid structure: SPDX-FileCopyrightText lines, then SPDX-License-Identifier, then #pragma once
+  local state="copyright"
+  local line_num=0
+  while IFS= read -r line; do
+    ((line_num++))
+    case "$state" in
+      copyright)
+        if [[ "$line" == '// SPDX-FileCopyrightText: '* ]]; then
+          continue
+        elif [[ "$line" == '// SPDX-License-Identifier: '* ]]; then
+          state="license_seen"
+        else
+          echo 1 > "${ERRFILE}"
+          echo "Header $1 line $line_num: expected SPDX-FileCopyrightText or SPDX-License-Identifier, found '$line'!"
+          return
+        fi
+        ;;
+      license_seen)
+        if [ "$line" != '#pragma once' ]; then
+          echo 1 > "${ERRFILE}"
+          echo "Header $1 line $line_num: expected #pragma once after SPDX-License-Identifier, found '$line'!"
+        fi
+        return
+        ;;
+    esac
+  done < "$1"
+  echo 1 > "${ERRFILE}"
+  echo "Header $1 has incomplete SPDX header!"
 }
 export -f checkPramgaOnce
 find $mypath -name \*.h -not -path "$exclude_pattern" -exec bash -c 'checkPramgaOnce {}' \;
 
 ERROR=`cat "${ERRFILE}"`
 rm -f "${ERRFILE}"
-
 exit ${ERROR}
