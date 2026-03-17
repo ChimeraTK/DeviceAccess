@@ -345,44 +345,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, bool isRaw>
-  template<typename COOKED_TYPE>
-  COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, isRaw>::getAsCooked_impl(
-      unsigned int channel, unsigned int sample) {
-    if constexpr(isRaw && std::is_integral_v<UserType>) {
-      if constexpr(isRawType<std::make_unsigned_t<UserType>>) {
-        // Note: the "UserType" is our RawType here!
-        COOKED_TYPE rv;
-        RawConverter::withConverter<COOKED_TYPE, std::make_unsigned_t<UserType>>(_registerInfo, 0, [&](auto converter) {
-          rv = converter.toCooked(
-              std::make_unsigned_t<UserType>(NDRegisterAccessor<UserType>::buffer_2D[channel][sample]));
-        });
-        return rv;
-      }
-    }
-    throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType, bool isRaw>
-  template<typename COOKED_TYPE>
-  void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::setAsCooked_impl(
-      unsigned int channel, unsigned int sample, COOKED_TYPE value) {
-    if constexpr(isRaw && std::is_integral_v<UserType>) {
-      if constexpr(isRawType<std::make_unsigned_t<UserType>>) {
-        // Note: the "UserType" is our RawType here!
-        RawConverter::withConverter<COOKED_TYPE, std::make_unsigned_t<UserType>>(_registerInfo, 0, [&](auto converter) {
-          NDRegisterAccessor<UserType>::buffer_2D[channel][sample] = UserType(converter.toRaw(value));
-        });
-      }
-      return;
-    }
-    throw ChimeraTK::logic_error("Setting as cooked is only available for raw accessors!");
-  }
-
-  /********************************************************************************************************************/
-
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, true);
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, false);
 
