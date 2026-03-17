@@ -54,7 +54,7 @@ export -f checkCopyrightComment
 find $mypath \( -name \*.cc -o -name \*.cpp -o -name \*.h \) -not -path "$exclude_pattern" -exec bash -c 'checkCopyrightComment "$1"' _ {} \;
 
 # check all header files for "#pragma once" immediately after SPDX-License-Identifier
-checkPramgaOnce() {
+checkPragmaOnce() {
   # Valid structure: SPDX-FileCopyrightText lines, then SPDX-License-Identifier, then #pragma once
   local state="copyright"
   local line_num=0
@@ -84,8 +84,8 @@ checkPramgaOnce() {
   echo 1 > "${ERRFILE}"
   echo "Header $1 has incomplete SPDX header!"
 }
-export -f checkPramgaOnce
-find $mypath -name \*.h -not -path "$exclude_pattern" -exec bash -c 'checkPramgaOnce "$1"' _ {} \;
+export -f checkPragmaOnce
+find $mypath -name \*.h -not -path "$exclude_pattern" -exec bash -c 'checkPragmaOnce "$1"' _ {} \;
 
 ERROR=`cat "${ERRFILE}"`
 rm -f "${ERRFILE}"
