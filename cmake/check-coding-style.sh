@@ -1,18 +1,18 @@
 #!/bin/bash
 
-ERRFILE=`mktemp`
+ERRFILE=$(mktemp)
 export ERRFILE
 echo 0 > "${ERRFILE}"
 
 # This is necessary to get the two paths to match up, since we get a full path from cmake
 mypath=$(pwd)
-mypath=$(realpath $mypath)
+mypath=$(realpath "$mypath")
 exclude_path=${1:-justignoreme}
 exclude_pattern="$exclude_path/*"
 
 # check clang-format formatting
 if which clang-format-19 > /dev/null; then
-  find $mypath \( -name \*.cc -o -name \*.cpp -o -name \*.h \) -not -path "$exclude_pattern" -exec clang-format-19 --output-replacements-xml \{\} \; | grep "^<replacement " > /dev/null
+  find "$mypath" \( -name \*.cc -o -name \*.cpp -o -name \*.h \) -not -path "$exclude_pattern" -exec clang-format-19 --output-replacements-xml \{\} \; | grep "^<replacement " > /dev/null
   if [ $? -ne 1 ]; then
     echo 1 > "${ERRFILE}"
     echo "Code formatting incorrect!"
@@ -26,7 +26,7 @@ fi
 checkCopyrightComment() {
   SPDX_OK=1
   # First line must be SPDX-FileCopyrightText
-  if [[ "`head -n1 $1`" != '// SPDX-FileCopyrightText: '* ]]; then
+  if [[ "$(head -n1 "$1")" != '// SPDX-FileCopyrightText: '* ]]; then
     SPDX_OK=0
   fi
   # Find the first non-FileCopyrightText line and check if it's License-Identifier
@@ -51,7 +51,7 @@ checkCopyrightComment() {
   fi
 }
 export -f checkCopyrightComment
-find $mypath \( -name \*.cc -o -name \*.cpp -o -name \*.h \) -not -path "$exclude_pattern" -exec bash -c 'checkCopyrightComment "$1"' _ {} \;
+find "$mypath" \( -name \*.cc -o -name \*.cpp -o -name \*.h \) -not -path "$exclude_pattern" -exec bash -c 'checkCopyrightComment "$1"' _ {} \;
 
 # check all header files for "#pragma once" immediately after SPDX-License-Identifier
 checkPragmaOnce() {
@@ -85,7 +85,7 @@ checkPragmaOnce() {
   echo "Header $1 has incomplete SPDX header!"
 }
 export -f checkPragmaOnce
-find $mypath -name \*.h -not -path "$exclude_pattern" -exec bash -c 'checkPragmaOnce "$1"' _ {} \;
+find "$mypath" -name \*.h -not -path "$exclude_pattern" -exec bash -c 'checkPragmaOnce "$1"' _ {} \;
 
 ERROR=`cat "${ERRFILE}"`
 rm -f "${ERRFILE}"
