@@ -298,7 +298,7 @@ Parameters:
 - <code>shift</code>: Position of the first bit of the mask
 - <code>numberOfBits</code>: Length of the mask. Cannot be larger than 32.
 - <code>fractionalBits</code>: Optional, how many of the bits are representing the fractional part of
-  a fixed point value. Defaults to <code>0</code>. See ChimeraTK::FixedPointConverter() for details.
+  a fixed point value. Defaults to <code>0</code>. See ChimeraTK::RawConverter for details.
 - <code>signed</code>: Optional, whether the type represented by numberOfBits is signed. Defaults to
   <code>false</code>
 
