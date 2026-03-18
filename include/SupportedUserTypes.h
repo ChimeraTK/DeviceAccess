@@ -977,7 +977,7 @@ namespace ChimeraTK {
         lambda(int32_t());
       } break;
       case DataType::int64: {
-        lambda(int32_t());
+        lambda(int64_t());
       } break;
       // NOLINTEND(bugprone-branch-clone)
       default:
