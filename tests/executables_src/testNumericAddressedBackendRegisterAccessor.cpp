@@ -275,15 +275,14 @@ BOOST_AUTO_TEST_CASE(testRawWithTransferGroup) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testConverterTypes) {
-  // After the introduction of the IEEE754 floating point converter we have to test
-  // that all possible converters (two at the moment) are created when they should,
-  // and that raw and coocked accessors are working for all of them.
+BOOST_AUTO_TEST_CASE(testConversionTypes) {
+  // The bit interpretation can either have a fixed number of fractional bits or be IEEE754 single precision.
+  // We test those scenarios, and that raw and coocked accessors are working for all of them.
 
   // As we cannot rely on any NumericAddressedRegisterAccessor at the moment we use the
   // DummyRegisterRawAccessor to monitor what is going on in the target memory space on
   // the device
-  auto deviceDescriptor = "(dummy?map=goodMapFile.map)";
+  const char* deviceDescriptor = "(dummy?map=goodMapFile.map)";
 
   auto dummyBackend =
       boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend(deviceDescriptor));
@@ -291,7 +290,7 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
   Device device;
   device.open(deviceDescriptor);
 
-  // FixedPointConverter, raw and coocked accessors
+  // Fixed point convertion, raw and coocked accessors
   // MODULE0.WORD_USER1 is fixed point, 16 bit, 3 fractional, signed
   auto user1Dummy = dummyBackend->getRawAccessor("MODULE0", "WORD_USER1");
   // Demonstrate the correct usage of the raw accessor, with using the lock. It would not be strictly needed here
@@ -343,22 +342,21 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
     BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0x80);
   }
 
-  // IEEE754 converter, raw and coocked accessors
-  // FLOAT_TEST.ARRAY is IEEE754. We use the 1 D version in constrast to FixedPoint where we use scalar (just because we
-  // can)
+  // IEEE754 conversion, raw and coocked accessors
+  // FLOAT_TEST.ARRAY is IEEE754. We use the 1 D version in contrast to fixed point case, where we use scalar (just
+  // because we can)
   auto floatTestDummy = dummyBackend->getRawAccessor("FLOAT_TEST", "ARRAY");
 
   float testValue = 1.1;
-  void* warningAvoider = &testValue; // directly reinterpret-casting float gives compiler warnings
   {
     auto bufferLock = floatTestDummy.getBufferLock();
-    floatTestDummy[0] = *(reinterpret_cast<int32_t*>(warningAvoider));
+    floatTestDummy[0] = std::bit_cast<int32_t>(testValue);
     testValue = 2.2;
-    floatTestDummy[1] = *(reinterpret_cast<int32_t*>(warningAvoider));
+    floatTestDummy[1] = std::bit_cast<int32_t>(testValue);
     testValue = 3.3;
-    floatTestDummy[2] = *(reinterpret_cast<int32_t*>(warningAvoider));
+    floatTestDummy[2] = std::bit_cast<int32_t>(testValue);
     testValue = 4.4;
-    floatTestDummy[3] = *(reinterpret_cast<int32_t*>(warningAvoider));
+    floatTestDummy[3] = std::bit_cast<int32_t>(testValue);
   } // release buffer lock
 
   auto floatTestCoocked = device.getOneDRegisterAccessor<float>("FLOAT_TEST/ARRAY");
@@ -374,14 +372,14 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 
   {
     auto bufferLock = floatTestDummy.getBufferLock();
-    *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[3];
+    testValue = std::bit_cast<float>(floatTestDummy[3]);
   }
   BOOST_CHECK_CLOSE(testValue, 44.4, 0.0001);
 
   auto floatTestRaw = device.getOneDRegisterAccessor<int32_t>("FLOAT_TEST/ARRAY", 0, 0, {AccessMode::raw});
   floatTestRaw.read();
 
-  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestRaw[2];
+  testValue = std::bit_cast<float>(floatTestRaw[2]);
 
   BOOST_CHECK_CLOSE(testValue, 3.3, 0.0001);
   BOOST_CHECK_CLOSE(floatTestRaw.getAsCooked<float>(0), 1.1, 0.0001);
@@ -392,7 +390,7 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 
   {
     auto bufferLock = floatTestDummy.getBufferLock();
-    *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[0];
+    testValue = std::bit_cast<float>(floatTestDummy[0]);
   }
   BOOST_CHECK_CLOSE(testValue, -2.5, 0.0001);
 
@@ -410,7 +408,7 @@ BOOST_AUTO_TEST_CASE(testConverterTypes) {
 
   {
     auto bufferLock = floatTestDummy.getBufferLock();
-    *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[1];
+    testValue = std::bit_cast<float>(floatTestDummy[1]);
   }
   BOOST_CHECK_CLOSE(testValue, 16.0, 0.001);
 }

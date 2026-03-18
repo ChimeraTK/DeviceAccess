@@ -306,8 +306,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
-   *  dependence of the UserType. */
+  /** Map of UserType to value of the UserType. */
   using userTypeMap = boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
       boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
       boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>,
