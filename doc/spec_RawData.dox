@@ -1,0 +1,56 @@
+namespace ChimeraTK {
+/**
+\page spec_RawData Technical Specification Raw Data
+
+## Introduction ##
+
+## A. Definitions ##
+
+- A.1 Raw data are unsigned integers (uint8_t, uin16_t, uin32_t, uin64_t)
+- A.2 The raw type in the catalogue entry of an accessor is always the "register raw" of the highest level (see[\ref specRawData_B_1 "B.1"]
+- A.3 In case of numeric addressed backends, the number of bits is always nBytes/nElements*8,
+  with nElements and nBytes described in the map file.
+- A.4 The bit interpretation is only taken into accout for the cooked type.
+
+## B. Raw Data Types ##
+
+\anchor specRawData_B_1 B.1 There are three layers of raw data below the (cooked) user type data
+
+- **Transport layer raw** is the format as it is coming from the device. It might be larger or smaller than the register raw. The data here does not have to be contiguous, and the buffer might only contain a part of the accessor data, or even of part of a scalar value. It is completely implementation defined.
+- **Byte raw** is a contiguous buffer of all the data of the accessor in bytes. There might be a physical representation of this layer (like the LowLevelTansferElement in the NumericAddressedBackend), or
+it is a reinterpret_cast to \c "std::byte *" of another buffer (typically the register raw buffer).
+- **Register raw** is the data which is put into the RawConverter to generate the cooked value. This is the raw type which is mentioned in the catalogue and for which you can get a accessor with AccessMode::raw.
+
+Each accessor has this "stack" of data types. Some accessors have multiple stages (like the SubDeviceBackend's accessors which use other accessors as target, or decorator-like accessors.)
+
+Example: SubDevice RegisterWindow accessor with a data transfer register of 8 active bits (32 bits on PCIe).
+The data from the target device is 16 bits with 3 fractional bits, which is transported in two transfers.
+\verbatim
+RegisterWindow accessor:
+  Cooked Data       [    float   ]
+                           |
+  Conversion        (fixedPointConvertion)
+                           |
+  RegisterRaw       [   uint16   ]
+                           |
+  ByteRaw           [uint8][uint8]
+                        \    /
+  TransportLayerRaw     [uint8]
+
+Tranfer accessors:
+  Cooked Data                 [uint8]
+                                 |
+  Conversion           (fixedPointConvertion)
+                                 |
+  RegisterRaw       [         uint32           ]
+                                 |
+  ByteRaw           [uint8][uint8][uint8][uint8]
+                                 |
+  TransportLayerRaw [         uint32           ]
+\endverbatim
+
+
+
+*/
+
+} // end of namespace ChimeraTK
