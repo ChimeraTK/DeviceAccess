@@ -49,7 +49,7 @@ namespace ChimeraTK {
    *    the same register set. In addition to the address, writeData (data) and busy (status) parameters there is readRequest,
    *    readData, chipSelectRegister and chipIndex.\n
    *    read sequence: the backend writes into the (void type) "readRequest" register and waits until the
-status(busy) flag turns back off. It then reads the data from the "readResponse" register.\n
+   *    status(busy) flag turns back off. It then reads the data from the "readResponse" register.\n
    *
    * URI scheme:\n
    * \verbatim(subdevice?type=regWindow&device=<targetDevice>&address=<addressRegister>&writeData=<writeDataRegister>&busy=<busyRegister>&readRequest=<readRequestRegister>&readData=<readDataRegister>&chipSelectRegister=<chipSelectRegister>&chipIndex=<chipIndex>&map=<mapFile>)\endverbatim
