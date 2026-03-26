@@ -19,6 +19,11 @@ CMakeLists.txt.user
 #files ending with .swp might show up when using vi
 *.swp
 
+# ignore cmake presets file
+CMakePresets.json
+# ignore this files used with clangd
+compile_commands.json
+
 ######################
 # Project specific 'ignore patterns'
 #
