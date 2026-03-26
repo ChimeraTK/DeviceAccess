@@ -46,7 +46,7 @@ FILE_PATTERNS          = *.c \
                          */doc/*.md
 RECURSIVE              = YES
 EXCLUDE_SYMBOLS        = ChimeraTK::detail
-EXAMPLE_PATH           = @CMAKE_CURRENT_SOURCE_DIR@
+EXAMPLE_PATH           = @CMAKE_CURRENT_SOURCE_DIR@ @CMAKE_BINARY_DIR@/generated
 IMAGE_PATH             = @CMAKE_CURRENT_SOURCE_DIR@
 SOURCE_BROWSER         = YES
 HTML_COLORSTYLE_HUE    = 202
