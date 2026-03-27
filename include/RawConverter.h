@@ -48,10 +48,6 @@ namespace ChimeraTK::RawConverter {
     using raw_type = RawType;
 
    private:
-    RawType _signBitMask, _usedBitMask, _unusedBitMask;
-    UserType _minCookedValues, _maxCookedValues;
-    RawType _minRawValue, _maxRawValue;
-
     // The PromotedRawType has the same width as the RawType but the signedness according to isSigned. We will store the
     // "promoted" raw value in it, i.e. the arbitrary bit width of the raw has been changed into a proper CPU data type.
     using PromotedRawType = std::conditional_t<isSigned, std::make_signed_t<RawType>, RawType>;
@@ -59,6 +55,10 @@ namespace ChimeraTK::RawConverter {
     // Use double as intermediate conversion target, unless user has requested float (to avoid unnecessary conversion
     // to float via double).
     using FloatIntermediate = std::conditional_t<std::is_same_v<UserType, float>, float, double>;
+
+    RawType _signBitMask, _usedBitMask, _unusedBitMask;
+    RawType _minRawValue, _maxRawValue;
+    PromotedRawType _minPromotedRawValue, _maxPromotedRawValue;
 
     FloatIntermediate _conversionFactor, _inverseConversionFactor;
 
@@ -458,14 +458,15 @@ namespace ChimeraTK::RawConverter {
         _maxRawValue = _usedBitMask;
         _minRawValue = 0;
       }
+      _maxPromotedRawValue = _maxRawValue;
+      _minPromotedRawValue = detail::interpretArbitraryBitInteger<PromotedRawType, RawType, sc>(
+          _signBitMask, _usedBitMask, _unusedBitMask, _minRawValue);
     }
     else {
       static_assert(fc == FractionalCase::ieee754_32);
       _maxRawValue = RawType(std::bit_cast<uint32_t>(std::numeric_limits<float>::max()));
       _minRawValue = RawType(std::bit_cast<uint32_t>(std::numeric_limits<float>::lowest()));
     }
-    _maxCookedValues = toCooked(_maxRawValue);
-    _minCookedValues = toCooked(_minRawValue);
   }
 
   /********************************************************************************************************************/
@@ -521,17 +522,6 @@ namespace ChimeraTK::RawConverter {
 
   template<typename UserType, typename RawType, SignificantBitsCase sc, FractionalCase fc, bool isSigned>
   RawType Converter<UserType, RawType, sc, fc, isSigned>::toRaw(UserType cookedValue) {
-    // Do a range check first. The later overflow check in the conversion is not
-    // sufficient, since we can have non-standard word sizes like 12 bits.
-    if constexpr(!std::is_same_v<UserType, ChimeraTK::Void>) {
-      if(cookedValue < _minCookedValues) {
-        return _minRawValue;
-      }
-      if(cookedValue > _maxCookedValues) {
-        return _maxRawValue;
-      }
-    }
-
     PromotedRawType promotedRawValue;
 
     if constexpr(fc == FractionalCase::integer) {
@@ -548,8 +538,18 @@ namespace ChimeraTK::RawConverter {
       static_assert(std::numeric_limits<RawType>::digits >= 32);
       static_assert(std::numeric_limits<float>::is_iec559);
       promotedRawValue = PromotedRawType(std::bit_cast<uint32_t>(userTypeToNumeric<float>(cookedValue)));
+      // no need to apply usedBitMask, and no need for a range check (already done in userTypeToNumeric)
+      return RawType(promotedRawValue);
     }
 
+    // Range check for the conversion to the arbitrary bit width (by applying the _usedBitMask). The range change in the
+    // userTypeToNumeric calls above was insufficient in cases we have e.g. 18 bits.
+    if(promotedRawValue < _minPromotedRawValue) {
+      return _minRawValue;
+    }
+    if(promotedRawValue > _maxPromotedRawValue) {
+      return _maxRawValue;
+    }
     return RawType(promotedRawValue) & _usedBitMask;
   }
 
