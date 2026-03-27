@@ -164,6 +164,36 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(TestStringAccessor) {
+  setDMapFilePath("dummies.dmap");
+  std::cout << "TestStringAccessor" << std::endl;
+
+  Device device;
+  device.open("DUMMYD2");
+  boost::shared_ptr<DummyBackend> backend =
+      boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend("DUMMYD2"));
+  BOOST_TEST(backend != nullptr);
+
+  // obtain register accessor with integral type
+  auto accessor = device.getScalarRegisterAccessor<std::string>("MODULE0.WORD_USER3");
+  BOOST_TEST(accessor.isReadOnly() == false);
+  BOOST_TEST(accessor.isReadable());
+  BOOST_TEST(accessor.isWriteable());
+
+  // dummy register accessor for comparison
+  DummyRegisterAccessor<int> dummy(backend.get(), "MODULE0", "WORD_USER3");
+
+  dummy = 5;
+  accessor.read();
+  BOOST_TEST(std::string(accessor) == "5.000000");
+
+  accessor = "1234";
+  accessor.write();
+  BOOST_TEST(dummy == 1234);
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testFloatRegisterAccessor) {
   setDMapFilePath("dummies.dmap");
   std::cout << "testFloatRegisterAccessor" << std::endl;

@@ -1684,6 +1684,31 @@ BOOST_AUTO_TEST_CASE(testVoid) {
   (void)output;
 }
 
+BOOST_AUTO_TEST_CASE(TestString) {
+  NumericAddressedRegisterInfo::ChannelInfo info;
+  info.width = 18;
+  info.nFractionalBits = 0;
+  RawConverter::Converter<std::string, uint32_t, RawConverter::SignificantBitsCase::generic,
+      RawConverter::FractionalCase::integer, true>
+      converter(info);
+
+  BOOST_TEST(converter.toCooked(123) == "123");
+  BOOST_TEST(converter.toCooked(-42) == "-42");
+
+  BOOST_TEST(converter.toRaw("123") == 123);
+  BOOST_TEST(converter.toRaw("4444") == 4444);
+  BOOST_TEST(converter.toRaw("-4444") == (uint32_t(-4444) & 0x3FFFFU));
+  BOOST_TEST(converter.toRaw("5432barf00") == 5432);
+  BOOST_TEST(converter.toRaw("131080") == 131071);
+  BOOST_TEST(converter.toRaw("-131080") == 131072);
+  BOOST_TEST(converter.toRaw("9999999999999999999999999999999999") == 131071);
+  BOOST_TEST(converter.toRaw("-9999999999999999999999999999999999") == 131072);
+  BOOST_TEST(converter.toRaw("0123") == 123);
+  BOOST_TEST(converter.toRaw("deadbeef") == 0);
+  BOOST_TEST(converter.toRaw("0xAF") == 0xAF);
+  BOOST_TEST(converter.toRaw(" 123") == 123);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 /**********************************************************************************************************************/
