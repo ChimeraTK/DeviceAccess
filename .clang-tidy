@@ -1,7 +1,6 @@
 HeaderFilterRegex: '.*'
 Checks: >
   -*,
-  boost-use-ranges,
   boost-use-to-string,
   bugprone-argument-comment,
   bugprone-assert-side-effect,
@@ -193,6 +192,7 @@ Checks: >
   clang-analyzer-webkit.NoUncountedMemberChecker,
   clang-analyzer-webkit.RefCntblBaseVirtualDtor,
   clang-analyzer-webkit.UncountedLambdaCapturesChecker,
+  clang-diagnostic-*,
   cppcoreguidelines-interfaces-global-init,
   cppcoreguidelines-narrowing-conversions,
   cppcoreguidelines-no-malloc,
@@ -230,6 +230,7 @@ Checks: >
   llvm-prefer-static-over-anonymous-namespace,
   llvm-twine-local,
   misc-definitions-in-headers,
+  misc-include-cleaner,
   misc-misplaced-const,
   misc-new-delete-overloads,
   misc-non-copyable-objects,
@@ -268,6 +269,7 @@ Checks: >
   modernize-use-noexcept,
   modernize-use-nullptr,
   modernize-use-override,
+  modernize-use-ranges,
   modernize-use-transparent-functors,
   modernize-use-uncaught-exceptions,
   modernize-use-using,
@@ -297,11 +299,9 @@ Checks: >
   performance-type-promotion-in-math-fn,
   performance-unnecessary-copy-initialization,
   performance-unnecessary-value-param,
-  portability-avoid-pragma-once,
   portability-restrict-system-includes,
   portability-simd-intrinsics,
   portability-std-allocator-const,
-  portability-template-virtual-member-function,
   readability-avoid-const-params-in-decls,
   readability-braces-around-statements,
   readability-const-return-type,
@@ -338,10 +338,11 @@ Checks: >
   readability-uniqueptr-delete-release,
   readability-uppercase-literal-suffix,
   readability-use-anyofallof,
-  zircon-temporary-objects,
-  missing-noreturn
+  zircon-temporary-objects
 
 CheckOptions:
+  misc-include-cleaner.MissingIncludes: 'false'
+  misc-include-cleaner.IgnoreHeaders: 'boost/test/unit_test.hpp;'
   readability-identifier-naming.ClassCase: 'CamelCase'
   readability-identifier-naming.FunctionCase: 'camelBack'
   readability-identifier-naming.MacroDefinitionCase: 'UPPER_CASE'
