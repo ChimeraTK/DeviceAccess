@@ -44,14 +44,13 @@ namespace ChimeraTK {
       /// @param sizeInBytes Number of bytes to copy
       void write(uint64_t address, int32_t const* data, size_t sizeInBytes);
 
+     private:
       /// @brief Calculate the address from the perspective of the UIO map
       /// @param address Start address of memory of the request
       /// @param sizeInBytes Number of bytes to copy
       /// @param isWrite Determines if it is a read or a write request
       /// @return Unsigned value
-      size_t checkMapAddress(uint64_t address, size_t sizeInBytes, bool isWrite);
-
-     private:
+      size_t validateAndGetMapOffset(uint64_t address, size_t sizeInBytes, bool isWrite);
       size_t _deviceLowerBound = 0;
       size_t _deviceHigherBound = 0;
       void* _deviceUserBase = nullptr;
@@ -100,7 +99,7 @@ namespace ChimeraTK {
     bool mapIndexValid(uint64_t map);
 
     /// @brief Read data from the specified memory offset address. The address range starts at '0'.
-    /// @param map Selected UIO memory region. Only region '0' is currently supported.
+    /// @param map Selected UIO memory region.
     /// @param address Start address of memory to read from
     /// @param data Address pointer to which data is to be copied
     /// @param sizeInBytes Number of bytes to copy

@@ -21,7 +21,7 @@
 
 namespace ChimeraTK {
 
-  UioAccess::UioMap::UioMap() {}
+  UioAccess::UioMap::UioMap() = default;
 
   UioAccess::UioMap::UioMap(int deviceFileDescriptor, size_t uioMapIdx, const std::string& uioMapPath)
   : _deviceLowerBound(readUint64HexFromFile(uioMapPath + "/addr")),
@@ -29,12 +29,13 @@ namespace ChimeraTK {
     size_t mapSize = _deviceHigherBound - _deviceLowerBound;
 
     void* mapped =
-        mmap(NULL, mapSize, PROT_READ | PROT_WRITE, MAP_SHARED, deviceFileDescriptor, uioMapIdx * getpagesize());
+        mmap(nullptr, mapSize, PROT_READ | PROT_WRITE, MAP_SHARED, deviceFileDescriptor,
+            static_cast<off_t>(uioMapIdx * getpagesize()));
 
     if(mapped == MAP_FAILED) {
       _deviceLowerBound = 0;
       _deviceHigherBound = 0;
-      throw ChimeraTK::runtime_error("UIO: Cannot allocate memory for UIO map '" + uioMapPath + "'");
+      throw ChimeraTK::runtime_error(std::format("UIO: Cannot allocate memory for UIO map '{}'", uioMapPath));
     }
 
     _deviceUserBase = mapped;
@@ -72,7 +73,7 @@ namespace ChimeraTK {
 
   void UioAccess::UioMap::read(uint64_t address, int32_t* data, size_t sizeInBytes) {
     volatile int32_t* rptr = static_cast<volatile int32_t*>(_deviceUserBase) +
-        checkMapAddress(address, sizeInBytes, false) / sizeof(int32_t);
+        validateAndGetMapOffset(address, sizeInBytes, false) / sizeof(int32_t);
 
     while(sizeInBytes >= sizeof(int32_t)) {
       *(data++) = *(rptr++);
@@ -81,8 +82,8 @@ namespace ChimeraTK {
   }
 
   void UioAccess::UioMap::write(uint64_t address, int32_t const* data, size_t sizeInBytes) {
-    volatile int32_t* __restrict__ wptr =
-        static_cast<volatile int32_t*>(_deviceUserBase) + checkMapAddress(address, sizeInBytes, true) / sizeof(int32_t);
+    volatile int32_t* __restrict__ wptr = static_cast<volatile int32_t*>(_deviceUserBase) +
+        validateAndGetMapOffset(address, sizeInBytes, true) / sizeof(int32_t);
 
     while(sizeInBytes >= sizeof(int32_t)) {
       *(wptr++) = *(data++);
@@ -90,7 +91,7 @@ namespace ChimeraTK {
     }
   }
 
-  size_t UioAccess::UioMap::checkMapAddress(uint64_t address, size_t sizeInBytes, bool isWrite) {
+  size_t UioAccess::UioMap::validateAndGetMapOffset(uint64_t address, size_t sizeInBytes, bool isWrite) {
     if(!*this) [[unlikely]] {
       std::string requestType = isWrite ? "Write" : "Read";
       throw ChimeraTK::logic_error(std::format("UIO: {} request on unmapped memory region", requestType));
@@ -118,19 +119,17 @@ namespace ChimeraTK {
       _deviceFilePath = boost::filesystem::canonical(_deviceFilePath);
     }
     _filename = _deviceFilePath.filename().string();
-    _lastInterruptCount = readUint32FromFile("/sys/class/uio/" + _filename + "/event");
+    _lastInterruptCount = readUint32FromFile(std::format("/sys/class/uio/{}/event", _filename));
 
     // Open UIO device file here, so that interrupt thread can run before calling open()
     _deviceFileDescriptor = ::open(_deviceFilePath.c_str(), O_RDWR);
     if(_deviceFileDescriptor < 0) {
-      throw ChimeraTK::runtime_error("UIO: Failed to open device file '" + getDeviceFilePath() + "'");
+      throw ChimeraTK::runtime_error(std::format("UIO: Failed to open device file '{}'", getDeviceFilePath()));
     }
 
-    _maps_number = 0;
-    while(true) {
-      std::string uioMapPath = "/sys/class/uio/" + _filename + "/maps/map" + std::to_string(_maps_number);
+    for(_maps_number = 0; _maps_number < MAX_UIO_MAPS; _maps_number++) {
+      std::string uioMapPath = std::format("/sys/class/uio/{}/maps/map{}", _filename, _maps_number);
       if(!boost::filesystem::is_directory(uioMapPath)) break;
-      _maps_number++;
     }
 
     _opened = true;
@@ -150,8 +149,8 @@ namespace ChimeraTK {
 
   void UioAccess::read(uint64_t map, uint64_t address, int32_t* __restrict__ data, size_t sizeInBytes) {
     if(!mapIndexValid(map)) [[unlikely]] {
-      throw ChimeraTK::logic_error("UIO: Attempt to access map" + std::to_string(map) +
-          " outside the range (registered maps = " + std::to_string(_maps.size()) + ")");
+      throw ChimeraTK::logic_error(
+          std::format("UIO: Attempt to access map{} outside the range (registered maps = {})", map, _maps_number));
     }
 
     getMap(map).read(address, data, sizeInBytes);
@@ -159,8 +158,8 @@ namespace ChimeraTK {
 
   void UioAccess::write(uint64_t map, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     if(!mapIndexValid(map)) [[unlikely]] {
-      throw ChimeraTK::logic_error("UIO: Attempt to access map" + std::to_string(map) +
-          " outside the range (registered maps = " + std::to_string(_maps.size()) + ")");
+      throw ChimeraTK::logic_error(
+          std::format("UIO: Attempt to access map{} outside the range (registered maps = {})", map, _maps_number));
     }
 
     getMap(map).write(address, data, sizeInBytes);
@@ -168,7 +167,7 @@ namespace ChimeraTK {
 
   UioAccess::UioMap& UioAccess::getMap(size_t map) {
     if(!_maps[map]) [[unlikely]] {
-      std::string uioMapPath = "/sys/class/uio/" + _filename + "/maps/map" + std::to_string(map);
+      std::string uioMapPath = std::format("/sys/class/uio/{}/maps/map{}", _filename, map);
       _maps[map] = UioAccess::UioMap(_deviceFileDescriptor, map, uioMapPath);
     }
 
