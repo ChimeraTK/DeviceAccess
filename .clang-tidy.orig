@@ -1,6 +1,7 @@
 HeaderFilterRegex: '.*'
 Checks: >
   -*,
+  boost-use-ranges,
   boost-use-to-string,
   bugprone-argument-comment,
   bugprone-assert-side-effect,
@@ -192,7 +193,10 @@ Checks: >
   clang-analyzer-webkit.NoUncountedMemberChecker,
   clang-analyzer-webkit.RefCntblBaseVirtualDtor,
   clang-analyzer-webkit.UncountedLambdaCapturesChecker,
+<<<<<<< Updated upstream
+=======
   clang-diagnostic-*,
+>>>>>>> Stashed changes
   cppcoreguidelines-interfaces-global-init,
   cppcoreguidelines-narrowing-conversions,
   cppcoreguidelines-no-malloc,
@@ -269,7 +273,6 @@ Checks: >
   modernize-use-noexcept,
   modernize-use-nullptr,
   modernize-use-override,
-  modernize-use-ranges,
   modernize-use-transparent-functors,
   modernize-use-uncaught-exceptions,
   modernize-use-using,
@@ -299,9 +302,17 @@ Checks: >
   performance-type-promotion-in-math-fn,
   performance-unnecessary-copy-initialization,
   performance-unnecessary-value-param,
+<<<<<<< Updated upstream
   portability-restrict-system-includes,
   portability-simd-intrinsics,
   portability-std-allocator-const,
+=======
+  portability-avoid-pragma-once,
+  portability-restrict-system-includes,
+  portability-simd-intrinsics,
+  portability-std-allocator-const,
+  portability-template-virtual-member-function,
+>>>>>>> Stashed changes
   readability-avoid-const-params-in-decls,
   readability-braces-around-statements,
   readability-const-return-type,
@@ -338,7 +349,12 @@ Checks: >
   readability-uniqueptr-delete-release,
   readability-uppercase-literal-suffix,
   readability-use-anyofallof,
+<<<<<<< Updated upstream
+  zircon-temporary-objects,
+  missing-noreturn
+=======
   zircon-temporary-objects
+>>>>>>> Stashed changes
 
 CheckOptions:
   misc-include-cleaner.MissingIncludes: 'false'
