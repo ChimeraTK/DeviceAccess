@@ -1,0 +1,12 @@
+fix(project-template): adapt clang-tidy settings
+
+- remove 'portability-avoid-pragma-once'. Our style require pragma-once
+- remove 'portability-template-virtual-member-function'. We want and need template virtual member functions.(*)
+- activate 'misc-include-cleaner' to warn for unused headers
+- add 'clang-diagnostic-*'. This covers clang compliler warnings. As we have -Wall activated, this entry exceptionally has a wild card so we get the clang compiler warnings in the linter in case we are compiling with g++.
+  -- remove 'missing-noreturn'. It is a clang compiler flag, not a clang-tidy flag. It is covered by 'clang-diagnostic-missing-noreturn﻿'
+- use 'modernize-use-ranges' (std::ranges) instead of 'boost-use-ranges'
+- also remove 'boost-use-to-string'. We don't want the boost version
+
+
+(*) It was introduced because someone had broken code that was not instantiated by some compilers and then compilation failed on other compilers. But the issue was the broken code, not the virtual member function. Pretty useless feature.

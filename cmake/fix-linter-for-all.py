@@ -21,7 +21,7 @@ def make_absolute(file: str, path: str):
 def main():
     parser = argparse.ArgumentParser(description="Runs clang-tidy over a compilation database and applies the fixes")
     parser.add_argument("compile_db", metavar='PATH')
-    parser.add_argument("--tidy", help="Path to clang-tidy", default="clang-tidy-14")
+    parser.add_argument("--tidy", help="Path to clang-tidy", default="clang-tidy-22")
     parser.add_argument("--apply-tool", help='Path to clang-apply-replacements', default="clang-apply-replacements-14")
     parser.add_argument("--git", help="Path to git", default="git")
     parser.add_argument("--source", help="Path to top-level source folder", default=".")

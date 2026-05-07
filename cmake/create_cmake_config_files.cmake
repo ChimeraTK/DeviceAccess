@@ -309,9 +309,6 @@ configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}.pc.in "${PROJECT_BINA
 install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION share/pkgconfig COMPONENT dev)
 
 if(${PROVIDES_EXPORTED_TARGETS})
-    # imported targets should be namespaced, so define namespaced alias
-    add_library(ChimeraTK::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-
     # generate and install export file
     install(EXPORT ${PROJECT_NAME}Targets
         FILE ${PROJECT_NAME}Targets.cmake
