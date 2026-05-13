@@ -23,14 +23,15 @@ namespace ChimeraTK {
 
   UioAccess::UioMap::UioMap() = default;
 
+  /********************************************************************************************************************/
+
   UioAccess::UioMap::UioMap(int deviceFileDescriptor, size_t uioMapIdx, const std::string& uioMapPath)
   : _deviceLowerBound(readUint64HexFromFile(uioMapPath + "/addr")),
     _deviceHigherBound(_deviceLowerBound + readUint64HexFromFile(uioMapPath + "/size")) {
     size_t mapSize = _deviceHigherBound - _deviceLowerBound;
 
-    void* mapped =
-        mmap(nullptr, mapSize, PROT_READ | PROT_WRITE, MAP_SHARED, deviceFileDescriptor,
-            static_cast<off_t>(uioMapIdx * getpagesize()));
+    void* mapped = mmap(nullptr, mapSize, PROT_READ | PROT_WRITE, MAP_SHARED, deviceFileDescriptor,
+        static_cast<off_t>(uioMapIdx * getpagesize()));
 
     if(mapped == MAP_FAILED) {
       _deviceLowerBound = 0;
@@ -41,6 +42,8 @@ namespace ChimeraTK {
     _deviceUserBase = mapped;
   }
 
+  /********************************************************************************************************************/
+
   UioAccess::UioMap::~UioMap() {
     if(*this) {
       auto mapSize = _deviceHigherBound - _deviceLowerBound;
@@ -48,10 +51,14 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   UioAccess::UioMap::UioMap(UioMap&& other) noexcept
   : _deviceLowerBound(std::exchange(other._deviceLowerBound, 0)),
     _deviceHigherBound(std::exchange(other._deviceHigherBound, 0)),
     _deviceUserBase(std::exchange(other._deviceUserBase, nullptr)) {}
+
+  /********************************************************************************************************************/
 
   UioAccess::UioMap& UioAccess::UioMap::operator=(UioMap&& other) noexcept {
     if(this != &other) {
@@ -67,9 +74,13 @@ namespace ChimeraTK {
     return *this;
   }
 
+  /********************************************************************************************************************/
+
   UioAccess::UioMap::operator bool() const noexcept {
     return _deviceUserBase != nullptr;
   }
+
+  /********************************************************************************************************************/
 
   void UioAccess::UioMap::read(uint64_t address, int32_t* data, size_t sizeInBytes) {
     volatile int32_t* rptr = static_cast<volatile int32_t*>(_deviceUserBase) +
@@ -81,6 +92,8 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   void UioAccess::UioMap::write(uint64_t address, int32_t const* data, size_t sizeInBytes) {
     volatile int32_t* __restrict__ wptr = static_cast<volatile int32_t*>(_deviceUserBase) +
         validateAndGetMapOffset(address, sizeInBytes, true) / sizeof(int32_t);
@@ -90,6 +103,8 @@ namespace ChimeraTK {
       sizeInBytes -= sizeof(int32_t);
     }
   }
+
+  /********************************************************************************************************************/
 
   size_t UioAccess::UioMap::validateAndGetMapOffset(uint64_t address, size_t sizeInBytes, bool isWrite) {
     if(!*this) [[unlikely]] {
@@ -108,11 +123,17 @@ namespace ChimeraTK {
     return address - _deviceLowerBound;
   }
 
+  /********************************************************************************************************************/
+
   UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {}
+
+  /********************************************************************************************************************/
 
   UioAccess::~UioAccess() {
     close();
   }
+
+  /********************************************************************************************************************/
 
   void UioAccess::open() {
     if(boost::filesystem::is_symlink(_deviceFilePath)) {
@@ -135,6 +156,8 @@ namespace ChimeraTK {
     _opened = true;
   }
 
+  /********************************************************************************************************************/
+
   void UioAccess::close() {
     if(_opened) {
       for(auto& map : _maps) map = UioMap{};
@@ -143,9 +166,13 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   bool UioAccess::mapIndexValid(uint64_t map) {
     return map < _maps_number;
   }
+
+  /********************************************************************************************************************/
 
   void UioAccess::read(uint64_t map, uint64_t address, int32_t* __restrict__ data, size_t sizeInBytes) {
     if(!mapIndexValid(map)) [[unlikely]] {
@@ -156,6 +183,8 @@ namespace ChimeraTK {
     getMap(map).read(address, data, sizeInBytes);
   }
 
+  /********************************************************************************************************************/
+
   void UioAccess::write(uint64_t map, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     if(!mapIndexValid(map)) [[unlikely]] {
       throw ChimeraTK::logic_error(
@@ -165,6 +194,8 @@ namespace ChimeraTK {
     getMap(map).write(address, data, sizeInBytes);
   }
 
+  /********************************************************************************************************************/
+
   UioAccess::UioMap& UioAccess::getMap(size_t map) {
     if(!_maps[map]) [[unlikely]] {
       std::string uioMapPath = std::format("/sys/class/uio/{}/maps/map{}", _filename, map);
@@ -173,6 +204,8 @@ namespace ChimeraTK {
 
     return _maps[map];
   }
+
+  /********************************************************************************************************************/
 
   uint32_t UioAccess::waitForInterrupt(int timeoutMs) {
     // Represents the total interrupt count since system uptime.
@@ -208,6 +241,8 @@ namespace ChimeraTK {
     return occurredInterruptCount;
   }
 
+  /********************************************************************************************************************/
+
   void UioAccess::clearInterrupts() {
     uint32_t unmask = 1;
     ssize_t ret = ::write(_deviceFileDescriptor, &unmask, sizeof(unmask));
@@ -217,9 +252,13 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   std::string UioAccess::getDeviceFilePath() {
     return _deviceFilePath.string();
   }
+
+  /********************************************************************************************************************/
 
   uint32_t UioAccess::subtractUint32OverflowSafe(uint32_t minuend, uint32_t subtrahend) {
     if(subtrahend > minuend) {
@@ -231,6 +270,8 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   uint32_t UioAccess::readUint32FromFile(std::string fileName) {
     uint64_t value = 0;
     std::ifstream inputFile(fileName);
@@ -241,6 +282,8 @@ namespace ChimeraTK {
     }
     return (uint32_t)value;
   }
+
+  /********************************************************************************************************************/
 
   uint64_t UioAccess::readUint64HexFromFile(std::string fileName) {
     uint64_t value = 0;

@@ -95,7 +95,7 @@ namespace ChimeraTK {
     /// @brief Closes UIO device.
     void close();
 
-    // @brief check whether the passed map is valid
+    /// @brief Check whether the passed map index is valid.
     bool mapIndexValid(uint64_t map);
 
     /// @brief Read data from the specified memory offset address. The address range starts at '0'.
