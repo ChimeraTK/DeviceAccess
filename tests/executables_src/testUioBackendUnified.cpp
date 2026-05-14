@@ -7,6 +7,7 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include "Device.h"
 #include "MapFileParser.h"
 #include "UnifiedBackendTest.h"
 
@@ -19,6 +20,7 @@ using namespace boost::unit_test_framework;
 
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 using namespace ChimeraTK;
 
@@ -43,12 +45,10 @@ struct TestLocker {
     }
   }
 
-  ~TestLocker() {
-    // FIXME: It would be nice to unlink the file here, so it does not unnecessarily remain in the file system.
-    // Unfortunately, this somehow spoils the locking. Completely unclear why.
-
-    // unlink(lockfile.c_str());
-  }
+  // FIXME: It would be nice to unlink the file here, so it does not unnecessarily remain in the file system.
+  // Unfortunately, this somehow spoils the locking. Completely unclear why.
+  // unlink(lockfile.c_str());
+  ~TestLocker() = default;
 };
 static TestLocker testLocker;
 
@@ -67,8 +67,6 @@ class RawUioAccess {
   explicit RawUioAccess(const std::string& filePath, const std::string& mapFile);
   ~RawUioAccess();
   void sendInterrupt() const;
-  [[nodiscard]] size_t getMemorySize() const;
-  void* data();
   template<typename T>
   T read(const std::string& name);
   template<typename T>
@@ -78,8 +76,8 @@ class RawUioAccess {
   int _uioFileDescriptor;
   int _uioProcFd;
   std::filesystem::path _deviceFilePath;
-  size_t _deviceMemSize = 0;
-  void* _memoryPointer{nullptr};
+  std::vector<size_t> _mapSizes;
+  std::vector<void*> _mapPointers;
   NumericAddressedRegisterCatalogue _catalogue;
 
   static uint64_t readUint64HexFromFile(const std::string& filePath);
@@ -103,17 +101,23 @@ RawUioAccess::RawUioAccess(const std::string& filePath, const std::string& mapFi
     throw std::runtime_error("failed to open UIO device '" + filePath + "'");
   }
 
-  // Determine size of UIO memory region
   std::string fileName = _deviceFilePath.filename().string();
-  _deviceMemSize = readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/size");
-
-  _memoryPointer = mmap(nullptr, _deviceMemSize, PROT_READ | PROT_WRITE, MAP_SHARED, _uioFileDescriptor, 0);
-
-  if(_memoryPointer == MAP_FAILED) {
-    throw std::runtime_error("UioMmap construction failed");
+  for(size_t mapIdx = 0;; ++mapIdx) {
+    std::string mapPath = "/sys/class/uio/" + fileName + "/maps/map" + std::to_string(mapIdx);
+    if(!std::filesystem::is_directory(mapPath)) {
+      break;
+    }
+    size_t mapSize = readUint64HexFromFile(mapPath + "/size");
+    void* ptr = mmap(nullptr, mapSize, PROT_READ | PROT_WRITE, MAP_SHARED, _uioFileDescriptor,
+        static_cast<off_t>(mapIdx * getpagesize()));
+    if(ptr == MAP_FAILED) {
+      throw std::runtime_error("UioMmap construction failed for map" + std::to_string(mapIdx));
+    }
+    _mapSizes.push_back(mapSize);
+    _mapPointers.push_back(ptr);
   }
-  MapFileParser p;
-  auto [cat, metaCat] = p.parse(mapFile);
+
+  auto [cat, metaCat] = MapFileParser::parse(mapFile);
   _catalogue = std::move(cat);
 }
 
@@ -122,7 +126,9 @@ RawUioAccess::RawUioAccess(const std::string& filePath, const std::string& mapFi
 /**********************************************************************************************************************/
 
 RawUioAccess::~RawUioAccess() {
-  munmap(_memoryPointer, _deviceMemSize);
+  for(size_t i = 0; i < _mapPointers.size(); ++i) {
+    munmap(_mapPointers[i], _mapSizes[i]);
+  }
   close(_uioFileDescriptor);
   close(_uioProcFd);
 }
@@ -136,22 +142,11 @@ void RawUioAccess::sendInterrupt() const {
 
 /**********************************************************************************************************************/
 
-size_t RawUioAccess::getMemorySize() const {
-  return _deviceMemSize;
-}
-
-/**********************************************************************************************************************/
-
-void* RawUioAccess::data() {
-  return _memoryPointer;
-}
-
-/**********************************************************************************************************************/
-
 template<typename T>
 T RawUioAccess::read(const std::string& name) {
   auto r = _catalogue.getBackendRegister(name);
-  return *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(data()) + r.address);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  return *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(_mapPointers[r.bar]) + r.address);
 }
 
 /**********************************************************************************************************************/
@@ -159,7 +154,8 @@ T RawUioAccess::read(const std::string& name) {
 template<typename T>
 void RawUioAccess::write(const std::string& name, T value) {
   auto r = _catalogue.getBackendRegister(name);
-  *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(data()) + r.address) = value;
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(_mapPointers[r.bar]) + r.address) = value;
   sendInterrupt();
 }
 
@@ -243,7 +239,15 @@ struct ScalarDescriptor {
 
 /**********************************************************************************************************************/
 
-struct Scalar32 : ScalarDescriptor<Scalar32> {
+struct Scalar32Bar0 : ScalarDescriptor<Scalar32Bar0> {
+  static std::string path() { return "BSP.SCRATCH"; }
+  static bool isReadable() { return true; }
+  static bool isWriteable() { return true; }
+};
+
+/**********************************************************************************************************************/
+
+struct Scalar32Bar1 : ScalarDescriptor<Scalar32Bar1> {
   static std::string path() { return "TIMING.WORD_ID"; }
   static bool isReadable() { return true; }
   static bool isWriteable() { return false; }
@@ -251,7 +255,7 @@ struct Scalar32 : ScalarDescriptor<Scalar32> {
 
 /**********************************************************************************************************************/
 
-struct Scalar32Async : ScalarDescriptor<Scalar32Async> {
+struct Scalar32Bar1Async : ScalarDescriptor<Scalar32Bar1Async> {
   static std::string path() { return "MOTOR_CONTROL.MOTOR_POSITION"; }
   static bool isReadable() { return true; }
   static bool isWriteable() { return false; }
@@ -262,8 +266,31 @@ struct Scalar32Async : ScalarDescriptor<Scalar32Async> {
 
 /**********************************************************************************************************************/
 
+struct Scalar32Bar2 : ScalarDescriptor<Scalar32Bar2> {
+  static std::string path() { return "FCM.WORD_REV_SWITCH"; }
+  static bool isReadable() { return true; }
+  static bool isWriteable() { return true; }
+};
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testBrokenBar) {
+  Device dev;
+  dev.open(cdd);
+  BOOST_CHECK_THROW(dev.getScalarRegisterAccessor<int32_t>("/BROKEN/REG"),
+      ChimeraTK::logic_error); // NOLINT(clang-diagnostic-unused-result)
+  dev.close();
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testUnified) {
-  UnifiedBackendTest<>().addRegister<Scalar32>().addRegister<Scalar32Async>().runTests(cdd);
+  UnifiedBackendTest<>()
+      .addRegister<Scalar32Bar0>()
+      .addRegister<Scalar32Bar1>()
+      .addRegister<Scalar32Bar1Async>()
+      .addRegister<Scalar32Bar2>()
+      .runTests(cdd);
 }
 
 /**********************************************************************************************************************/
