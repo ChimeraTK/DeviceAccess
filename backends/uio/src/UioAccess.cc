@@ -125,7 +125,17 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {}
+  UioAccess::UioAccess(const std::string& deviceFilePath) : _deviceFilePath(deviceFilePath.c_str()) {
+    if(boost::filesystem::is_symlink(_deviceFilePath)) {
+      _deviceFilePath = boost::filesystem::canonical(_deviceFilePath);
+    }
+    _filename = _deviceFilePath.filename().string();
+
+    for(_maps_number = 0; _maps_number < MAX_UIO_MAPS; _maps_number++) {
+      std::string uioMapPath = std::format("/sys/class/uio/{}/maps/map{}", _filename, _maps_number);
+      if(!boost::filesystem::is_directory(uioMapPath)) break;
+    }
+  }
 
   /********************************************************************************************************************/
 
@@ -136,21 +146,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void UioAccess::open() {
-    if(boost::filesystem::is_symlink(_deviceFilePath)) {
-      _deviceFilePath = boost::filesystem::canonical(_deviceFilePath);
-    }
-    _filename = _deviceFilePath.filename().string();
     _lastInterruptCount = readUint32FromFile(std::format("/sys/class/uio/{}/event", _filename));
 
     // Open UIO device file here, so that interrupt thread can run before calling open()
     _deviceFileDescriptor = ::open(_deviceFilePath.c_str(), O_RDWR);
     if(_deviceFileDescriptor < 0) {
       throw ChimeraTK::runtime_error(std::format("UIO: Failed to open device file '{}'", getDeviceFilePath()));
-    }
-
-    for(_maps_number = 0; _maps_number < MAX_UIO_MAPS; _maps_number++) {
-      std::string uioMapPath = std::format("/sys/class/uio/{}/maps/map{}", _filename, _maps_number);
-      if(!boost::filesystem::is_directory(uioMapPath)) break;
     }
 
     _opened = true;
