@@ -112,15 +112,17 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error(std::format("UIO: {} request on unmapped memory region", requestType));
     }
 
-    if(address < _deviceLowerBound || address + sizeInBytes > _deviceHigherBound) [[unlikely]] {
+    // Register addresses are absolute bus addresses; convert to map offset the same way as the single-map backend.
+    size_t offset = address % _deviceLowerBound;
+
+    if(offset + sizeInBytes > _deviceHigherBound - _deviceLowerBound) [[unlikely]] {
       std::string requestType = isWrite ? "Write" : "Read";
       throw ChimeraTK::logic_error(
-          std::format("UIO: {} request (low = {}, high = {}) outside device memory region (low = {}, high = {})",
-              requestType, address, address + sizeInBytes, _deviceLowerBound, _deviceHigherBound));
+          std::format("UIO: {} request exceeds device memory region of map (offset = {}, size = {})", requestType,
+              offset, _deviceHigherBound - _deviceLowerBound));
     }
 
-    // This is a temporary work around, because register nodes of current map use absolute bus addresses.
-    return address - _deviceLowerBound;
+    return offset;
   }
 
   /********************************************************************************************************************/
