@@ -239,7 +239,7 @@ struct ScalarDescriptor {
 
 /**********************************************************************************************************************/
 
-struct Scalar32Bar0 : ScalarDescriptor<Scalar32Bar0> {
+struct Scalar32Map0 : ScalarDescriptor<Scalar32Map0> {
   static std::string path() { return "BSP.SCRATCH"; }
   static bool isReadable() { return true; }
   static bool isWriteable() { return true; }
@@ -247,7 +247,7 @@ struct Scalar32Bar0 : ScalarDescriptor<Scalar32Bar0> {
 
 /**********************************************************************************************************************/
 
-struct Scalar32Bar1 : ScalarDescriptor<Scalar32Bar1> {
+struct Scalar32Map1 : ScalarDescriptor<Scalar32Map1> {
   static std::string path() { return "TIMING.WORD_ID"; }
   static bool isReadable() { return true; }
   static bool isWriteable() { return false; }
@@ -255,7 +255,7 @@ struct Scalar32Bar1 : ScalarDescriptor<Scalar32Bar1> {
 
 /**********************************************************************************************************************/
 
-struct Scalar32Bar1Async : ScalarDescriptor<Scalar32Bar1Async> {
+struct Scalar32Map1Async : ScalarDescriptor<Scalar32Map1Async> {
   static std::string path() { return "MOTOR_CONTROL.MOTOR_POSITION"; }
   static bool isReadable() { return true; }
   static bool isWriteable() { return false; }
@@ -266,7 +266,7 @@ struct Scalar32Bar1Async : ScalarDescriptor<Scalar32Bar1Async> {
 
 /**********************************************************************************************************************/
 
-struct Scalar32Bar2 : ScalarDescriptor<Scalar32Bar2> {
+struct Scalar32Map2 : ScalarDescriptor<Scalar32Map2> {
   static std::string path() { return "FCM.WORD_REV_SWITCH"; }
   static bool isReadable() { return true; }
   static bool isWriteable() { return true; }
@@ -274,7 +274,7 @@ struct Scalar32Bar2 : ScalarDescriptor<Scalar32Bar2> {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testBrokenBar) {
+BOOST_AUTO_TEST_CASE(testBrokenMap) {
   Device dev;
   dev.open(cdd);
   BOOST_CHECK_THROW(dev.getScalarRegisterAccessor<int32_t>("/BROKEN/REG"),
@@ -286,10 +286,10 @@ BOOST_AUTO_TEST_CASE(testBrokenBar) {
 
 BOOST_AUTO_TEST_CASE(testUnified) {
   UnifiedBackendTest<>()
-      .addRegister<Scalar32Bar0>()
-      .addRegister<Scalar32Bar1>()
-      .addRegister<Scalar32Bar1Async>()
-      .addRegister<Scalar32Bar2>()
+      .addRegister<Scalar32Map0>()
+      .addRegister<Scalar32Map1>()
+      .addRegister<Scalar32Map1Async>()
+      .addRegister<Scalar32Map2>()
       .runTests(cdd);
 }
 
