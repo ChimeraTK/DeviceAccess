@@ -355,10 +355,19 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<decltype(T)>> target;
 
       if(_needSharedTarget) {
+        // get target device name
+        std::string devName = _info.deviceName;
+        boost::shared_ptr<DeviceBackend> targetDevice;
+        if(devName != "this") {
+          targetDevice = backend->_devices[devName];
+        }
+        else {
+          targetDevice = backend;
+        }
         auto& map = boost::fusion::at_key<decltype(T)>(backend->sharedAccessorMap.table);
         RegisterPath path{_info.registerName};
         path.setAltSeparator(".");
-        LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
+        LogicalNameMappingBackend::AccessorKey key{targetDevice.get(), path};
 
         auto it = map.find(key);
         if(it == map.end() || (target = it->second.accessor.lock()) == nullptr) {
