@@ -82,11 +82,18 @@ namespace ChimeraTK::LNMBackend {
 
     /******************************************************************************************************************/
     BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<DeviceBackend>& targetDevice,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>>& target, const std::string& name,
         uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(shift), _numberOfBits(numberOfBits),
       _writeable{_target->isWriteable()} {
+      // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
+      // bit-range registers targeting the same physical register). In that case the target's version number may have
+      // been set by operations through another decorator, but from the user's perspective this is a fresh accessor.
+      // The test UnifiedBackendTest_B_6 checks this by verifying VersionNumber(nullptr).
+      this->_versionNumber = VersionNumber{nullptr};
+
       // makeConverterLoopHelper expects a NumericAddressedBackend RegisterInfo, which we create with the relevant
       // parameters.
       NumericAddressedRegisterInfo registerInfo{name, 1, 0, sizeof(uint64_t), 0, uint32_t(numberOfBits),
@@ -100,9 +107,10 @@ namespace ChimeraTK::LNMBackend {
       }
 
       auto& map = boost::fusion::at_key<uint64_t>(backend->sharedAccessorMap.table);
+
       RegisterPath path{name};
       path.setAltSeparator(".");
-      LogicalNameMappingBackend::AccessorKey key{backend.get(), path};
+      LogicalNameMappingBackend::AccessorKey key{targetDevice.get(), path};
 
       auto it = map.find(key);
       if(it != map.end()) {
@@ -194,7 +202,7 @@ namespace ChimeraTK::LNMBackend {
 
         // FIXME: Not setting the data validity according to the spec point B2.5.1.
         // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
-        // To be revisted after fixing https://redmine.msktools.desy.de/issues/12912
+        // To be revisited after fixing https://redmine.msktools.desy.de/issues/12912
 
         // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
         // Otherwise it will overwrite the
@@ -328,8 +336,31 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
     if constexpr(std::is_same_v<TargetType, uint64_t>) {
-      return boost::make_shared<BitRangeAccessPluginDecorator<UserType>>(backend, target, params._name, _shift,
-          _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
+      if(params._wordOffsetInRegister != 0) {
+        throw ChimeraTK::logic_error(std::format("BitRangePlugin (on {}) cannot have a word offset", params._name));
+      }
+
+      if(params._numberOfWords > 1) {
+        throw ChimeraTK::logic_error(std::format(
+            "BitRangePlugin (on {}) must have size <=1, but {} was requested", params._name, params._numberOfWords));
+      }
+
+      if(params._flags.has(AccessMode::wait_for_new_data) || params._flags.has(AccessMode::raw)) {
+        throw ChimeraTK::logic_error(
+            std::format("BitRangePlugin (on {}) Unsupported flags in {}", params._name, params._flags.serialize()));
+      }
+
+      // Resolve the correct target device (must match the logic in getAccessor_impl)
+      std::string devName = _info.deviceName;
+      boost::shared_ptr<DeviceBackend> targetDevice;
+      if(devName != "this") {
+        targetDevice = backend->_devices[devName];
+      }
+      else {
+        targetDevice = backend;
+      }
+      return boost::make_shared<BitRangeAccessPluginDecorator<UserType>>(backend, targetDevice, target, params._name,
+          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
 
     assert(false);
