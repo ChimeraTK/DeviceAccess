@@ -55,6 +55,8 @@ namespace ChimeraTK {
 
     ChimeraTK::VersionNumber getVersionOnOpen() const override;
 
+    boost::shared_ptr<detail::SharedAccessors> getSharedAccessors() final;
+
    protected:
     /** Backends should call this function at the end of a (successful) open() call.*/
     void setOpenedAndClearException() noexcept;
@@ -83,6 +85,9 @@ namespace ChimeraTK {
 
     /** mutex to protect access to _activeExceptionMessage */
     std::mutex _mx_activeExceptionMessage;
+
+    boost::shared_ptr<detail::SharedAccessors> _sharedAccessors;
+    std::mutex _sharedAccessorsMutex; /// protect the lazy creation of _sharedAccessors
   };
 
   /********************************************************************************************************************/

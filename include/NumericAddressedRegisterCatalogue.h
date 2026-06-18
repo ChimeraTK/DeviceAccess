@@ -66,7 +66,7 @@ namespace ChimeraTK {
         uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
         int32_t nFractionalBits_ = 0, bool signedFlag_ = true, Access dataAccess_ = Access::READ_WRITE,
         Type dataType_ = Type::FIXED_POINT, std::vector<size_t> interruptId_ = {},
-        std::optional<DoubleBufferInfo> doubleBuffer_ = std::nullopt);
+        std::optional<DoubleBufferInfo> doubleBuffer_ = std::nullopt, bool isBitRange_ = false);
 
     /**
      * Constructor to set all data members for 2D registers.
@@ -125,6 +125,8 @@ namespace ChimeraTK {
     Access registerAccess; /**< Data access direction: Read, write, read and write or interrupt */
     std::vector<size_t> interruptId;
     std::optional<DoubleBufferInfo> doubleBuffer;
+    bool isBitRange; // A (sub) bit range of a bit field.
+
     /** Define per-channel information (bit interpretation etc.), 1D/scalars have exactly one entry. */
     std::vector<ChannelInfo> channels;
 

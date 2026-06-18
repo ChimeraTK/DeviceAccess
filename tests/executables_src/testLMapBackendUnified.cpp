@@ -1166,12 +1166,12 @@ struct RegUpperHalfOfFirmware : RegBitRangeDescriptor<RegUpperHalfOfFirmware> {
   BitRangeAccessorTarget target;
 };
 
-struct Reg9BitsInChar : RegBitRangeDescriptor<Reg9BitsInChar> {
+struct RegBitRangeMiddle : RegBitRangeDescriptor<RegBitRangeMiddle> {
   std::string path() { return "/BitRangeMiddle"; }
 
   using minimumUserType = int8_t;
 
-  uint16_t width = 9;
+  uint16_t width = 8;
   uint16_t shift = 4;
 
   BitRangeAccessorTarget target;
@@ -1286,7 +1286,7 @@ BOOST_AUTO_TEST_CASE(unifiedBackendTest) {
       .addRegister<RegMonostableTrigger>()
       .addRegister<RegLowerHalfOfFirmware>()
       .addRegister<RegUpperHalfOfFirmware>()
-      .addRegister<Reg9BitsInChar>()
+      .addRegister<RegBitRangeMiddle>()
       .addRegister<RegWithFanOutMainTarget>()
       .addRegister<RegWithFanOutTarget2>()
       .addRegister<RegWithFanOutTarget3>()

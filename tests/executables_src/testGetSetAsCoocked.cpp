@@ -38,3 +38,38 @@ BOOST_AUTO_TEST_CASE(testRawAccessor) {
   BOOST_CHECK_EQUAL(oneDRawAccessor[0], 42);
   BOOST_CHECK_EQUAL(oneDRawAccessor[1], 43);
 }
+
+BOOST_AUTO_TEST_CASE(testRawAccessorBitField) {
+  setDMapFilePath("simpleJsonFile.dmap");
+
+  Device d("JDEV");
+  d.open();
+
+  // APP/STATUS/ErrorCounter is a bitField register sub-element with bitShift 2, width 3, unsigned.
+  // With raw access, buffer_2D stores the full 32-bit register word.
+  // auto errorCounter = d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/ErrorCounter", 0, {AccessMode::raw});
+  auto errorCounter =
+      d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/ErrorCounter/DUMMY_WRITEABLE", 0, {AccessMode::raw});
+
+  // APP/STATUS is the full 32 bit word behind ErrorCounter. The content should be identical to the raw access
+  auto status = d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/DUMMY_WRITEABLE");
+
+  status.setAndWrite(0b110110); // Also bits 1 and 5 are set, but not part of ErrorCounter
+
+  errorCounter.read();
+  // Test: The complete raw word as it exists on the device is available as raw data. Reading worked.
+  BOOST_TEST(errorCounter == 0b110110);
+  // Test: getAsCooked() is extracting the correct bits [2:4]
+  BOOST_TEST(errorCounter.getAsCooked<uint32_t>() == 5);
+
+  // Test: setAsCooked on ErrorCounter should only affect bits [4:2], not the other bits
+  errorCounter.setAsCooked(2); // ErrorCounter=2 (binary 010)
+  BOOST_TEST(errorCounter == 0b101010);
+
+  status.setAndWrite(0);
+
+  // Writing writes the whole word.
+  errorCounter.write();
+  BOOST_TEST(status.readAndGet() == 0b101010);
+  BOOST_TEST(errorCounter.isWriteable());
+}
