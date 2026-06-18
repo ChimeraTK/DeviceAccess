@@ -3,6 +3,8 @@
 
 #include "DeviceBackendImpl.h"
 
+#include "SharedAccessor.h"
+
 #include <unistd.h>
 
 namespace ChimeraTK {
@@ -63,6 +65,18 @@ namespace ChimeraTK {
 
   ChimeraTK::VersionNumber DeviceBackendImpl::getVersionOnOpen() const {
     return _versionOnOpen;
+  }
+
+  /********************************************************************************************************************/
+
+  inline boost::shared_ptr<detail::SharedAccessors> DeviceBackendImpl::getSharedAccessors() {
+    std::lock_guard<std::mutex> lk(_sharedAccessorsMutex);
+    if(!_sharedAccessors) {
+      if(!_sharedAccessors) {
+        _sharedAccessors = boost::make_shared<detail::SharedAccessors>();
+      }
+    }
+    return _sharedAccessors;
   }
 
   /********************************************************************************************************************/

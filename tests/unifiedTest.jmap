@@ -1,0 +1,47 @@
+{
+  "mapFormatVersion": "0.0.1",
+  "metadata": {
+    "mapfileRevision": "1.8.3-0-gdeadbeef"
+  },
+  "interruptHandler": {},
+  "addressSpace": [
+    {
+      "name": "WORD_FIRMWARE",
+      "bytesPerElement": 4,
+      "address": {
+        "type": "I/O",
+        "channel": 0,
+        "offset": 0
+      },
+      "representation": {
+        "isSigned": false
+      },
+      "children": [
+        {
+          "name": "BitRangeLower",
+          "representation": {
+            "bitShift": 8,
+            "width": 8,
+            "isSigned": true
+          }
+        },
+        {
+          "name": "BitRangeMiddle",
+          "representation": {
+            "bitShift": 4,
+            "width": 8,
+            "isSigned": true
+          }
+        },
+        {
+          "name": "BitRangeUpper",
+          "representation": {
+            "bitShift": 16,
+            "width": 16,
+            "isSigned": true
+          }
+        }
+      ]
+    }
+  ]
+}

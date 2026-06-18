@@ -179,8 +179,30 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  bool LNMBackendVariableAccessor<UserType>::mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const {
-    return false; // never replace, since it does not optimise anything
+  bool LNMBackendVariableAccessor<UserType>::mayReplaceOther(
+      const boost::shared_ptr<TransferElement const>& other) const {
+    auto rhsCasted = boost::dynamic_pointer_cast<const LNMBackendVariableAccessor<UserType>>(other);
+    if(rhsCasted.get() == this) {
+      return false;
+    }
+    if(!rhsCasted) {
+      return false;
+    }
+    if(_dev != rhsCasted->_dev) {
+      return false;
+    }
+    if(_info != rhsCasted->_info) {
+      return false;
+    }
+    if(_wordOffsetInRegister != rhsCasted->_wordOffsetInRegister) {
+      return false;
+    }
+    if(_flags != rhsCasted->_flags) {
+      return false;
+    }
+
+    // Do we have to compare  formula helpers?
+    return true;
   }
 
   /********************************************************************************************************************/

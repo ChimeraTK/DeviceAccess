@@ -5,6 +5,7 @@
 
 #include "async/DomainImpl.h"
 #include "async/DomainsContainer.h"
+#include "BitRangeAccessorDecorator.h"
 #include "DoubleBufferAccessor.h"
 #include "Exception.h"
 #include "MapFileParser.h"
@@ -124,6 +125,36 @@ namespace ChimeraTK {
     if(registerInfo.doubleBuffer == std::nullopt) {
       // 1D or scalar register
       if(registerInfo.getNumberOfDimensions() <= 1) {
+        if(registerInfo.isBitRange) {
+          if(numberOfWords == 0) {
+            numberOfWords = 1;
+          }
+          if(numberOfWords > 1) {
+            throw ChimeraTK::logic_error(
+                "Error in '" + registerPathName + "': Requested number of words must be 1 for bit-range registers!");
+          }
+          if(wordOffsetInRegister != 0) {
+            throw ChimeraTK::logic_error(
+                "Error in '" + registerPathName + "': No offset allowed in bit-range registers!");
+          }
+          size_t bitsPerElement = registerInfo.elementPitchBits / registerInfo.nElements;
+          // no need to check the bits per element here. The check will be done when evaluating the targetRegisterPath
+
+          RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
+              (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8) + 'u' +
+                  std::to_string(bitsPerElement));
+          auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
+          auto channelInfo = registerInfo.channels.front();
+
+          if(flags.has(AccessMode::raw)) {
+            return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(shared_from_this(),
+                targetRegisterPath, target, registerPathName, channelInfo.bitOffset, channelInfo.width,
+                channelInfo.nFractionalBits, channelInfo.signedFlag, registerInfo.isWriteable());
+          }
+          return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(shared_from_this(),
+              targetRegisterPath, target, registerPathName, channelInfo.bitOffset, channelInfo.width,
+              channelInfo.nFractionalBits, channelInfo.signedFlag, registerInfo.isWriteable());
+        }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
