@@ -41,6 +41,7 @@ namespace ChimeraTK::detail {
 
     boost::shared_ptr<DeviceBackend> _targetBackend;
 
+    boost::shared_ptr<SharedAccessors> _sharedAccessors;
     std::shared_ptr<SharedAccessors::TargetSharedState>
         _targetSharedState; // we must hold an instance of the shared state to safely hold a lock to the mutex within,
                             // and a pointer to the shared buffer
@@ -67,7 +68,8 @@ namespace ChimeraTK::detail {
       const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath path, size_t nElements, size_t elementOffset,
       const AccessModeFlags& flags)
   : NDRegisterAccessorDecorator<UserType, TargetUserType>(getTarget(targetBackend, path, flags)),
-    _elementOffset(elementOffset), _isWriteable(_target->isWriteable()), _targetBackend(targetBackend) {
+    _elementOffset(elementOffset), _isWriteable(_target->isWriteable()), _targetBackend(targetBackend),
+    _sharedAccessors(targetBackend->getSharedAccessors()) {
     if(nElements == 0) {
       throw ChimeraTK::logic_error("SubArrayAccessorDecorator: nElements must not be 0 in " + this->getName());
     }
@@ -80,13 +82,11 @@ namespace ChimeraTK::detail {
       channel.resize(nElements);
     }
 
-    auto& sharedAccessors = detail::SharedAccessors::getInstance();
-
     path.setAltSeparator(".");
     detail::SharedAccessorKey key(targetBackend.get(), path);
 
-    _targetSharedState = sharedAccessors.getTargetSharedState<TargetUserType>(key);
-    // The buffer in the shared state is a variant. It has to be of TargetUserType
+    _targetSharedState = _sharedAccessors->getTargetSharedState<TargetUserType>(
+        key); // The buffer in the shared state is a variant. It has to be of TargetUserType
     _sharedBuffer =
         std::get_if<SharedAccessors::TargetSharedState::UserBuffer<TargetUserType>>(&(_targetSharedState->dataBuffer));
     assert(_sharedBuffer); // getTargetSharedState throws if the type does not match, so get_if() should always work
@@ -96,8 +96,7 @@ namespace ChimeraTK::detail {
 
   template<typename UserType, typename TargetUserType>
   SubArrayAccessorDecorator<UserType, TargetUserType>::~SubArrayAccessorDecorator() {
-    auto& sharedAccessorMutexes = detail::SharedAccessors::getInstance();
-    sharedAccessorMutexes.removeTransferElement(_target->getId());
+    _sharedAccessors->removeTransferElement(_target->getId());
   }
 
   /********************************************************************************************************************/
@@ -122,9 +121,8 @@ namespace ChimeraTK::detail {
     auto unlock = cppext::finally([this] { this->_lock.unlock(); });
 
     // step 1: target postRead() and swap the data into the shared state
-    auto& sharedAccessors = detail::SharedAccessors::getInstance();
     // the use count is counting down, so the first call has the full number
-    if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+    if(_lock.mutex()->useCount() == _sharedAccessors->instanceCount(_target->getId())) {
       // whether the postRead throws or we have new data: The target buffer must be swapped back to keep the shared
       // state intact
       auto swapBack = cppext::finally([this] { targetToSharedBuffer(); });
@@ -177,8 +175,7 @@ namespace ChimeraTK::detail {
 
     // According to spec, only the first call to preWrite() does something, so it has to be the last accessor
     // in a transfer group. (use count is always one if not in transfer group)
-    auto& sharedAccessors = detail::SharedAccessors::getInstance();
-    if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+    if(_lock.mutex()->useCount() == _sharedAccessors->instanceCount(_target->getId())) {
       _temporaryVersion = std::max(_sharedBuffer->versionNumber, _target->getVersionNumber());
       // It is safe to swap the shared buffer into the target. doWriteTransferDestructively() is
       // overridden in this decorator to always call the non-destructive write transfer on the target, so we can
@@ -195,8 +192,7 @@ namespace ChimeraTK::detail {
       TransferType type, [[maybe_unused]] VersionNumber versionNumber) {
     auto unlock = cppext::finally([this] { this->_lock.unlock(); });
 
-    auto& sharedAccessors = detail::SharedAccessors::getInstance();
-    if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+    if(_lock.mutex()->useCount() == _sharedAccessors->instanceCount(_target->getId())) {
       // even if postWrite throws: The target buffer must be swapped back to keep the shared state intact
       auto swapBack = cppext::finally([this] { targetToSharedBuffer(); });
       _target->postWrite(type, _temporaryVersion);
@@ -208,8 +204,8 @@ namespace ChimeraTK::detail {
       TargetUserType>::getTarget(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetRegisterPath,
       const AccessModeFlags& flags) {
     auto newAccessor = targetBackend->getRegisterAccessor<TargetUserType>(targetRegisterPath, 0, 0, flags);
-    auto& sharedAccessors = detail::SharedAccessors::getInstance();
-    sharedAccessors.addTransferElement(newAccessor->getId());
+    auto sharedAccessors = targetBackend->getSharedAccessors();
+    sharedAccessors->addTransferElement(newAccessor->getId());
 
     return newAccessor;
   }
@@ -241,8 +237,7 @@ namespace ChimeraTK::detail {
         auto oldTarget = _target->getId();
         _target = castedToTargetType;
         // Bookkeeping: combine the original target and the replaced target's use count
-        auto& sharedAccessorMutexes = detail::SharedAccessors::getInstance();
-        sharedAccessorMutexes.combineTransferSharedStates(oldTarget, _target->getId());
+        _sharedAccessors->combineTransferSharedStates(oldTarget, _target->getId());
       }
     }
     else {
