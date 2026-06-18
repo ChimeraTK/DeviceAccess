@@ -154,24 +154,30 @@ namespace ChimeraTK::detail {
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Address, type, channel, offset)
     } address{AddressType::addressTypeNotSet};
 
+    // Basic representation without sub elements
     struct Representation {
       RepresentationType type{RepresentationType::FIXED_POINT};
       uint32_t width{type != RepresentationType::representationNotSet ? 32U : 0U};
       int32_t fractionalBits{0};
       bool isSigned{false};
+      uint32_t bitShift{0};
 
       void fill(NumericAddressedRegisterInfo& info, size_t offset, size_t bytesPerElem) const {
         if(type != RepresentationType::representationNotSet) {
           info.channels.emplace_back(8 * offset, NumericAddressedRegisterInfo::Type(type), width, fractionalBits,
               type != RepresentationType::IEEE754 ? isSigned : true,
               DataType("int" + std::to_string(bytesPerElem * 8)));
+          info.channels.back().bitOffset += bitShift;
+          if(bitShift != 0) {
+            info.isBitRange = true;
+          }
         }
         else {
           Representation().fill(info, offset, bytesPerElem);
         }
       }
 
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned)
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned, bitShift)
     } representation{RepresentationType::representationNotSet};
 
     struct ChannelTab {
@@ -198,12 +204,16 @@ namespace ChimeraTK::detail {
     };
     std::vector<ChannelTab> channelTabs;
 
-    void fill(NumericAddressedRegisterInfo& info, const RegisterPath& parentName) const {
+    void fill(NumericAddressedRegisterInfo& info, const RegisterPath& parentName, bool addressSetByParent) const {
       info.pathName = parentName / name;
 
       if(triggeredByInterrupt.empty()) {
-        info.registerAccess = access != Access::accessNotSet ? NumericAddressedRegisterInfo::Access(access) :
-                                                               NumericAddressedRegisterInfo::Access::READ_WRITE;
+        if(access != Access::accessNotSet) {
+          info.registerAccess = NumericAddressedRegisterInfo::Access(access);
+        }
+        else if(!addressSetByParent) {
+          info.registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
+        }
       }
       else {
         if(access != Access::accessNotSet) {
@@ -214,30 +224,47 @@ namespace ChimeraTK::detail {
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
       }
 
-      if(address.type != AddressType::addressTypeNotSet) {
-        if(representation.type == RepresentationType::VOID) {
-          throw ChimeraTK::logic_error("Address is set for void-typed register " + info.pathName);
+      if(representation.type != RepresentationType::VOID) {
+        if(address.type != AddressType::addressTypeNotSet) {
+          address.fill(info);
+          if(channelTabs.empty()) {
+            auto bPerElem = (bytesPerElement != 0 ? bytesPerElement : 4); // create default if not set
+            info.elementPitchBits = bPerElem * 8;
+            info.nElements = numberOfElements;
+            representation.fill(info, 0, bPerElem);
+          }
+          else {
+            if(channelTabs[0].channels.empty()) {
+              throw ChimeraTK::logic_error("Empty channel definition in register " + info.pathName);
+            }
+            info.elementPitchBits = channelTabs[0].pitch * 8;
+            info.nElements = channelTabs[0].numberOfElements;
+            for(const auto& channel : channelTabs[0].channels) {
+              channel.fill(info);
+            }
+          }
         }
-        address.fill(info);
-        if(channelTabs.empty()) {
-          info.elementPitchBits = bytesPerElement * 8;
-          info.nElements = numberOfElements;
-          representation.fill(info, 0, bytesPerElement);
+        else if(addressSetByParent) {
+          if(channelTabs.empty()) {
+            if(representation.type == RepresentationType::representationNotSet) {
+              throw ChimeraTK::logic_error("Representation not set for register " + parentName / name +
+                  " which inherited the address from parent!");
+            }
+            // If bytesPerElement has not been set in the json file, take it from parent info
+            representation.fill(info, 0, (bytesPerElement != 0 ? bytesPerElement : info.elementPitchBits / 8));
+          }
+          else {
+            throw ChimeraTK::logic_error("Address must be set for entries in channel tabs: register " + info.pathName);
+          }
         }
         else {
-          if(channelTabs[0].channels.empty()) {
-            throw ChimeraTK::logic_error("Empty channel definition in register " + info.pathName);
-          }
-          info.elementPitchBits = channelTabs[0].pitch * 8;
-          info.nElements = channelTabs[0].numberOfElements;
-          for(const auto& channel : channelTabs[0].channels) {
-            channel.fill(info);
-          }
+          throw ChimeraTK::logic_error("Address not set but representation given in register " + parentName / name);
         }
       }
       else {
-        if(representation.type != RepresentationType::VOID) {
-          throw ChimeraTK::logic_error("Address not set but representation given in register " + parentName / name);
+        // VOID registers have no address — they are pure interrupt sources
+        if(address.type != AddressType::addressTypeNotSet) {
+          throw ChimeraTK::logic_error("Address is set for void-typed register " + info.pathName);
         }
         if(triggeredByInterrupt.empty()) {
           throw ChimeraTK::logic_error(
@@ -246,8 +273,11 @@ namespace ChimeraTK::detail {
         info.nElements = 0;
         info.dataDescriptor = DataDescriptor{DataDescriptor::FundamentalType::nodata};
         info.interruptId = triggeredByInterrupt;
+        info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
+        info.channels.clear();
         info.channels.emplace_back(0, NumericAddressedRegisterInfo::Type::VOID, 0, 0, false);
       }
+
       if(doubleBuffering) {
         info.doubleBuffer.emplace();
         doubleBuffering->fill(info);
@@ -259,15 +289,16 @@ namespace ChimeraTK::detail {
 
     std::vector<JsonAddressSpaceEntry> children;
 
-    void addInfos(NumericAddressedRegisterCatalogue& catalogue, const RegisterPath& parentName) const {
+    void addInfos(
+        NumericAddressedRegisterCatalogue& catalogue, const RegisterPath& parentName, bool addressSetByParent) const {
       if(name.empty()) {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
       }
-      if(address.type != AddressType::addressTypeNotSet ||
-          representation.type != RepresentationType::representationNotSet) {
+      if(address.type != AddressType::addressTypeNotSet) {
+        // New address entry. Don't use parent information
         NumericAddressedRegisterInfo my;
         my.channels.clear(); // default constructor already creates a channel with default settings...
-        fill(my, parentName);
+        fill(my, parentName, addressSetByParent);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
         if(doubleBuffering.has_value()) {
@@ -289,8 +320,17 @@ namespace ChimeraTK::detail {
           catalogue.addRegister(buf1Register);
         }
       }
+      else if(representation.type != RepresentationType::representationNotSet) {
+        auto my = catalogue.getBackendRegister(parentName);
+        my.channels.clear();                      // will be refilled from representation
+        fill(my, parentName, addressSetByParent); // only updates the name and the representation
+        my.computeDataDescriptor();
+        catalogue.addRegister(my);
+      }
+
       for(const auto& child : children) {
-        child.addInfos(catalogue, parentName / name);
+        child.addInfos(
+            catalogue, parentName / name, addressSetByParent || (address.type != AddressType::addressTypeNotSet));
       }
     }
 
@@ -340,7 +380,27 @@ namespace ChimeraTK::detail {
 
       std::vector<JsonAddressSpaceEntry> addressSpace = data.at("addressSpace");
       for(const auto& entry : addressSpace) {
-        entry.addInfos(catalogue, "/");
+        entry.addInfos(catalogue, "/", /*addressSetByParent=*/false);
+      }
+
+      // Scan the catalogue for bit ranges.
+      // Afterwards, scan again for registers which have bit shift 0, a width smaller than their element size and that
+      // share their starting address with a bit range. They have to become bit ranges as well.
+      std::set<std::pair<uint64_t, uint64_t>> addressesWithBitRange;
+      for(auto& reg : catalogue) {
+        if(reg.isBitRange) {
+          addressesWithBitRange.insert({reg.bar, reg.address});
+        }
+      }
+      if(addressesWithBitRange.size()) {
+        for(auto& reg : catalogue) {
+          if((reg.channels.size() == 1) && (reg.channels[0].bitOffset == 0) &&
+              (reg.channels[0].width < reg.elementPitchBits)) {
+            if(addressesWithBitRange.find({reg.bar, reg.address}) != addressesWithBitRange.end()) {
+              reg.isBitRange = true;
+            }
+          }
+        }
       }
 
       for(const auto& entry : data.at("metadata").items()) {

@@ -104,24 +104,12 @@ namespace ChimeraTK::LNMBackend {
   template<typename Derived>
   class AccessorPlugin : public AccessorPluginBase {
    public:
-    /**
-     * The constructor of the plugin should also accept a 3rd argument:
-     *   const std::map<std::string, std::string>& parameters
-     *  Since the parameters are not used in the base class, they do not need to be passed on.
-     */
-    explicit AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex, bool shareTargetAccessors = false);
+    explicit AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex);
 
    private:
     // we make our destructor private and add Derived as a friend to enforce the correct CRTP
     ~AccessorPlugin() override = default;
     friend Derived;
-
-   protected:
-    /**
-     * Deriving plugins should set this to true if they want to use interlocked access to the same
-     * target accessor. Otherwise different accessors for the same target will given out.
-     */
-    const bool _needSharedTarget;
 
    public:
     /**
@@ -259,7 +247,7 @@ namespace ChimeraTK::LNMBackend {
     uint32_t _shift{0};
     uint32_t _numberOfBits{0};
     bool _writeable{true};
-    uint32_t dataInterpretationFractionalBits{0};
+    int32_t dataInterpretationFractionalBits{0};
     bool dataInterpretationIsSigned{false};
   };
 
@@ -310,9 +298,8 @@ namespace ChimeraTK::LNMBackend {
   /********************************************************************************************************************/
 
   template<typename Derived>
-  AccessorPlugin<Derived>::AccessorPlugin(
-      const LNMBackendRegisterInfo& info, size_t pluginIndex, bool shareTargetAccessors)
-  : AccessorPluginBase(info), _needSharedTarget{shareTargetAccessors}, _pluginIndex(pluginIndex) {
+  AccessorPlugin<Derived>::AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex)
+  : AccessorPluginBase(info), _pluginIndex(pluginIndex) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl);
   }
 
@@ -354,33 +341,8 @@ namespace ChimeraTK::LNMBackend {
     callForType(type, [&](auto T) {
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<decltype(T)>> target;
 
-      if(_needSharedTarget) {
-        // get target device name
-        std::string devName = _info.deviceName;
-        boost::shared_ptr<DeviceBackend> targetDevice;
-        if(devName != "this") {
-          targetDevice = backend->_devices[devName];
-        }
-        else {
-          targetDevice = backend;
-        }
-        auto& map = boost::fusion::at_key<decltype(T)>(backend->sharedAccessorMap.table);
-        RegisterPath path{_info.registerName};
-        path.setAltSeparator(".");
-        LogicalNameMappingBackend::AccessorKey key{targetDevice.get(), path};
-
-        auto it = map.find(key);
-        if(it == map.end() || (target = it->second.accessor.lock()) == nullptr) {
-          // obtain target accessor with desired type
-          target = backend->getRegisterAccessor_impl<decltype(T)>(
-              _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
-          map[key].accessor = target;
-        }
-      }
-      else {
-        target = backend->getRegisterAccessor_impl<decltype(T)>(
-            _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
-      }
+      target = backend->getRegisterAccessor_impl<decltype(T)>(
+          _info.getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
 
       // double buffering plugin needs numberOfWords, wordOffsetInRegister of already existing accessor
       UndecoratedParams accessorParams(_info.registerName, numberOfWords, wordOffsetInRegister, flags);

@@ -51,7 +51,6 @@
       "cacheable": true,
       "_": "cacheable: Software may assume value never changed from remote side - unused in the beginning. Default: true",
       "numberOfElements": 1,
-      "bytesPerElement": 4,
       "address": {
         "type": "I/O",
         "channel": 0,
@@ -89,7 +88,6 @@
           "numberOfElements": 1,
           "bytesPerElement": 4,
           "address": {
-            "channel": 0,
             "offset": 4
           },
           "representation": {
@@ -151,37 +149,72 @@
             "offset": "0x8000"
           },
           "bytesPerElement": 4,
-          "representation": {
-            "type": "bitField",
-            "width": 32,
-            "elements": [
-              {
-                "name": "ProbeLimiter",
-                "bitShift": 0,
-                "representation": {
-                  "width": 1
-                }
-              },
-              {
-                "name": "ExternalInterlock",
-                "bitShift": 1,
-                "representation": {
-                  "width": 1
-                }
-              },
-              {
-                "name": "ErrorCounter",
-                "bitShift": 2,
-                "representation": {
-                  "type": "fixedPoint",
-                  "width": 3,
-                  "fractionalBits": 0,
-                  "isSigned": false
-                },
-                "_comment": "Will be unsupported at first"
+          "children": [
+            {
+              "name": "ProbeLimiter",
+              "representation": {
+                "width": 1
               }
-            ]
-          }
+            },
+            {
+              "name": "ExternalInterlock",
+              "representation": {
+                "bitShift": 1,
+                "width": 1
+              }
+            },
+            {
+              "name": "ErrorCounter",
+              "representation": {
+                "bitShift": 2,
+                "type": "fixedPoint",
+                "width": 3,
+                "fractionalBits": 0,
+                "isSigned": false
+              },
+              "_comment": "Will be unsupported at first"
+            }
+          ]
+        },
+        {
+          "name": "LARGE_STATUS",
+          "description": "longer application status",
+          "access": "RO",
+          "address": {
+            "type": "I/O",
+            "channel": 2,
+            "offset": "0x8004"
+          },
+          "bytesPerElement": 8,
+          "representation": {
+            "width": 64
+          },
+          "children": [
+            {
+              "name": "ProbeLimiter",
+              "representation": {
+                "width": 1
+              }
+            },
+            {
+              "name": "ExternalInterlock",
+              "representation": {
+                "bitShift": 34,
+                "width": 1
+              }
+            },
+            {
+              "name": "ErrorCounter",
+              "representation": {
+                "bitShift": 2,
+                "type": "fixedPoint",
+                "width": 3,
+                "fractionalBits": 0,
+                "isSigned": false
+              },
+              "_comment": "Will be unsupported at first"
+            }
+          ]
         },
         {
           "name": "SomeTable",
@@ -278,36 +311,32 @@
                   "name": "status",
                   "bytesPerElement": 4,
                   "offset": 4,
-                  "representation": {
-                    "type": "bitField",
-                    "width": 32,
-                    "elements": [
-                      {
-                        "name": "ProbeLimiter",
+                  "children": [
+                    {
+                      "name": "ProbeLimiter",
+                      "representation": {
                         "bitShift": 0,
-                        "representation": {
-                          "width": 1
-                        }
-                      },
-                      {
-                        "name": "ExternalInterlock",
-                        "bitShift": 1,
-                        "representation": {
-                          "width": 1
-                        }
-                      },
-                      {
-                        "name": "ErrorCounter",
-                        "bitShift": 2,
-                        "representation": {
-                          "type": "fixedPoint",
-                          "width": 3,
-                          "fractionalBits": 0,
-                          "isSigned": false
-                        }
+                        "width": 1
                       }
-                    ]
-                  }
+                    },
+                    {
+                      "name": "ExternalInterlock",
+                      "representation": {
+                        "bitShift": 1,
+                        "width": 1
+                      }
+                    },
+                    {
+                      "name": "ErrorCounter",
+                      "representation": {
+                        "bitShift": 2,
+                        "type": "fixedPoint",
+                        "width": 3,
+                        "fractionalBits": 0,
+                        "isSigned": false
+                      }
+                    }
+                  ]
                 },
                 {
                   "name": "VectorSum",
@@ -315,17 +344,17 @@
                   "offset": 8,
                   "representation": {
                     "type": "bitField",
-                    "width": 32,
-                    "elements": [
-                      {
-                        "name": "I",
+                    "width": 32
+                  },
+                  "children": [
+                    {
+                      "name": "I",
+                      "representation": {
                         "bitShift": 0,
-                        "representation": {
-                          "width": 18
-                        }
+                        "width": 18
                       }
-                    ]
-                  }
+                    }
+                  ]
                 },
                 {
                   "name": "VectorSum",
@@ -333,17 +362,17 @@
                   "offset": 10,
                   "representation": {
                     "type": "bitField",
-                    "width": 32,
-                    "elements": [
-                      {
-                        "name": "Q",
+                    "width": 32
+                  },
+                  "children": [
+                    {
+                      "name": "Q",
+                      "representation": {
                         "bitShift": 2,
-                        "representation": {
-                          "width": 18
-                        }
+                        "width": 18
                       }
-                    ]
-                  }
+                    }
+                  ]
                 }
               ]
             }
