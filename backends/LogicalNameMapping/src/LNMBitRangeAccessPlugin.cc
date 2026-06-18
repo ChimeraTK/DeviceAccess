@@ -1,40 +1,16 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "BitRangeAccessorDecorator.h"
 #include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
-#include "NDRegisterAccessor.h"
-#include "NDRegisterAccessorDecorator.h"
-#include "RawConverter.h"
+#include "LogicalNameMappingBackend.h"
 
 #include <boost/make_shared.hpp>
 
 #include <charconv>
 
 namespace ChimeraTK::LNMBackend {
-
-  /**
-   Helper class that keeps track of how many locks were taken on the recursive mutex in the current thread.
-
-   It is used by the BitRange accessor to determine whether or not it can safely call read() on the target in
-   preWrite for read-modify-write operations
-  */
-  class ReferenceCountedUniqueLock {
-   public:
-    ReferenceCountedUniqueLock() = default;
-
-    explicit ReferenceCountedUniqueLock(std::recursive_mutex& mutex) : _lock(mutex, std::defer_lock) {}
-
-    void lock();
-    void unlock();
-    [[nodiscard]] size_t useCount() const;
-
-   private:
-    thread_local static size_t targetUseCount;
-    std::unique_lock<std::recursive_mutex> _lock;
-  };
-
-  /********************************************************************************************************************/
 
   thread_local size_t ReferenceCountedUniqueLock::targetUseCount;
 
@@ -52,6 +28,7 @@ namespace ChimeraTK::LNMBackend {
     targetUseCount--;
     _lock.unlock();
   }
+
   /********************************************************************************************************************/
 
   void ReferenceCountedUniqueLock::lock() {
@@ -61,209 +38,6 @@ namespace ChimeraTK::LNMBackend {
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
-  /********************************************************************************************************************/
-
-  // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
-  constexpr uint64_t getMaskForNBits(uint64_t numberOfBits) {
-    // Prevent warning about undefined behavior if shifting right by 64 bit below
-    if(numberOfBits == 0) {
-      return 0;
-    }
-
-    return (static_cast<uint64_t>(-(numberOfBits != 0)) &
-        (static_cast<uint64_t>(-1) >> ((sizeof(uint64_t) * CHAR_BIT) - numberOfBits)));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  struct BitRangeAccessPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t> {
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::buffer_2D;
-
-    /******************************************************************************************************************/
-    BitRangeAccessPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
-        boost::shared_ptr<DeviceBackend>& targetDevice,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>>& target, const std::string& name,
-        uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
-        uint64_t dataInterpretationIsSigned)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(shift), _numberOfBits(numberOfBits),
-      _writeable{_target->isWriteable()} {
-      // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
-      // bit-range registers targeting the same physical register). In that case the target's version number may have
-      // been set by operations through another decorator, but from the user's perspective this is a fresh accessor.
-      // The test UnifiedBackendTest_B_6 checks this by verifying VersionNumber(nullptr).
-      this->_versionNumber = VersionNumber{nullptr};
-
-      // makeConverterLoopHelper expects a NumericAddressedBackend RegisterInfo, which we create with the relevant
-      // parameters.
-      NumericAddressedRegisterInfo registerInfo{name, 1, 0, sizeof(uint64_t), 0, uint32_t(numberOfBits),
-          int32_t(dataInterpretationFractionalBits), bool(dataInterpretationIsSigned)};
-      _converterLoopHelper =
-          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(registerInfo, 0, 0, *this);
-
-      if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
-        throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPluginDecorator: " +
-            TransferElement::getName() + ": Cannot target non-scalar registers.");
-      }
-
-      auto& map = boost::fusion::at_key<uint64_t>(backend->sharedAccessorMap.table);
-
-      RegisterPath path{name};
-      path.setAltSeparator(".");
-      LogicalNameMappingBackend::AccessorKey key{targetDevice.get(), path};
-
-      auto it = map.find(key);
-      if(it != map.end()) {
-        _lock = ReferenceCountedUniqueLock(it->second.mutex);
-      }
-      else {
-        assert(false);
-      }
-
-      _baseBitMask = getMaskForNBits(_numberOfBits);
-      _maskOnTarget = _baseBitMask << _shift;
-    }
-
-    /******************************************************************************************************************/
-
-    void doPreRead(TransferType type) override {
-      _lock.lock();
-
-      _target->preRead(type);
-    }
-
-    /******************************************************************************************************************/
-
-    void doPostRead(TransferType type, bool hasNewData) override {
-      auto unlock = cppext::finally([this] { this->_lock.unlock(); });
-      _target->postRead(type, hasNewData);
-      if(!hasNewData) {
-        return;
-      }
-
-      _converterLoopHelper->doPostRead();
-    }
-
-    /******************************************************************************************************************/
-
-    template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
-        bool isSigned>
-    void doPostReadImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
-        [[maybe_unused]] size_t implParameter) {
-      static_assert(std::is_same_v<UserType, CookedType>);
-      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        auto validity = _target->dataValidity();
-        uint64_t v{_target->accessData(0)};
-        v = (v & _maskOnTarget) >> _shift;
-
-        buffer_2D[0][0] = converter.toCooked(v);
-        // Do a quick check if the fixed point converter clamped. Then set the
-        // data validity faulty according to B.2.4.1
-        // For proper implementation of this, the fixed point converter needs to signalize
-        // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
-        auto raw = converter.toRaw(buffer_2D[0][0]);
-        if(raw != v) {
-          validity = DataValidity::faulty;
-        }
-
-        this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
-        this->_dataValidity = validity;
-      }
-      else {
-        assert(false);
-      }
-    }
-
-    /******************************************************************************************************************/
-
-    void doPreWrite(TransferType type, VersionNumber versionNumber) override {
-      _lock.lock();
-
-      if(!_writeable) {
-        throw ChimeraTK::logic_error(
-            "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
-      }
-
-      _converterLoopHelper->doPreWrite();
-
-      _temporaryVersion = std::max(versionNumber, _target->getVersionNumber());
-      _target->preWrite(type, _temporaryVersion);
-    }
-
-    /******************************************************************************************************************/
-
-    template<class CookedType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
-        bool isSigned>
-    void doPreWriteImpl(RawConverter::Converter<CookedType, RawType, sc, fc, isSigned> converter,
-        [[maybe_unused]] size_t implParameter) {
-      static_assert(std::is_same_v<UserType, CookedType>);
-      if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        auto value = converter.toRaw(buffer_2D[0][0]);
-
-        // FIXME: Not setting the data validity according to the spec point B2.5.1.
-        // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
-        // To be revisited after fixing https://redmine.msktools.desy.de/issues/12912
-
-        // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
-        // Otherwise it will overwrite the
-        if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.useCount() == 1)) {
-          _target->read();
-        }
-
-        _target->accessData(0) &= ~_maskOnTarget;
-        _target->accessData(0) |= (value << _shift);
-
-        _target->setDataValidity(this->_dataValidity);
-      }
-      else {
-        assert(false);
-      }
-    }
-
-    /******************************************************************************************************************/
-
-    void doPostWrite(TransferType type, VersionNumber /*versionNumber*/) override {
-      auto unlock = cppext::finally([this] { this->_lock.unlock(); });
-      _target->postWrite(type, _temporaryVersion);
-    }
-
-    /******************************************************************************************************************/
-
-    void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
-      auto casted = boost::dynamic_pointer_cast<BitRangeAccessPluginDecorator<UserType>>(newElement);
-
-      // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
-      // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
-      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write
-      // order for overlapping bit ranges
-      if(casted && casted.get() != this && casted->_target == _target) {
-        // anding the two masks will yield 0 iff there is no overlap
-        if((casted->_maskOnTarget & _maskOnTarget) != 0) {
-          casted->_writeable = false;
-          _writeable = false;
-        }
-      }
-      NDRegisterAccessorDecorator<UserType, uint64_t>::replaceTransferElement(newElement);
-    }
-
-    /******************************************************************************************************************/
-
-   private:
-    uint64_t _shift;
-    uint64_t _numberOfBits;
-    uint64_t _maskOnTarget;
-    uint64_t _userTypeMask{getMaskForNBits(sizeof(UserType) * CHAR_BIT)};
-    uint64_t _targetTypeMask{getMaskForNBits(sizeof(uint64_t) * CHAR_BIT)};
-    uint64_t _baseBitMask;
-
-    ReferenceCountedUniqueLock _lock;
-    VersionNumber _temporaryVersion;
-    bool _writeable{false};
-    std::unique_ptr<RawConverter::ConverterLoopHelper> _converterLoopHelper;
-
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
-  };
-
   /********************************************************************************************************************/
 
   BitRangeAccessPlugin::BitRangeAccessPlugin(
@@ -297,7 +71,7 @@ namespace ChimeraTK::LNMBackend {
     }
     catch(std::out_of_range&) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessPlugin: " + info.getRegisterName() +
-          R"(: Unparseable parameter "numberOfBits".)");
+          R"(: Missing parameter "numberOfBits".)");
     }
 
     if(const auto it = parameters.find("fractionalBits"); it != parameters.end()) {
@@ -359,8 +133,20 @@ namespace ChimeraTK::LNMBackend {
       else {
         targetDevice = backend;
       }
-      return boost::make_shared<BitRangeAccessPluginDecorator<UserType>>(backend, targetDevice, target, params._name,
-          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
+
+      // Look up the mutex from the shared accessor map
+      auto& map = boost::fusion::at_key<uint64_t>(backend->sharedAccessorMap.table);
+      RegisterPath path{params._name};
+      path.setAltSeparator(".");
+      LogicalNameMappingBackend::AccessorKey key{targetDevice.get(), path};
+
+      auto it = map.find(key);
+      if(it == map.end()) {
+        assert(false);
+      }
+
+      return boost::make_shared<BitRangeAccessorDecorator<UserType>>(it->second.mutex, target, params._name, _shift,
+          _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
 
     assert(false);
