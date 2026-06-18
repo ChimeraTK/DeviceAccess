@@ -5,6 +5,7 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/deadline_timer.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 
