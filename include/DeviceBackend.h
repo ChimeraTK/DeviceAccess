@@ -22,6 +22,10 @@ namespace ChimeraTK {
     class SubDomain;
   } // namespace async
 
+  namespace detail {
+    class SharedAccessors;
+  } // namespace detail
+
   /** The base class for backends providing IO functionality for the Device class.
    * Note that most backends should actually be based on the DeviceBackendImpl
    * class (unless it is a decorator backend). The actual IO is always performed
@@ -126,6 +130,11 @@ namespace ChimeraTK {
      * Note that the version is not increased if open() is called on an already functional backend.
      */
     virtual ChimeraTK::VersionNumber getVersionOnOpen() const = 0;
+
+    /**
+     * Get the SharedAccessors object of this backend instance. It is used in accessors which implement partial access
+     * to underlying accessors.*/
+    virtual boost::shared_ptr<detail::SharedAccessors> getSharedAccessors() = 0;
   };
 
   /********************************************************************************************************************/
