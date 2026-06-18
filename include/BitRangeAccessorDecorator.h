@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <mutex>
 
-namespace ChimeraTK::LNMBackend {
+namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
@@ -227,4 +227,4 @@ namespace ChimeraTK::LNMBackend {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
   };
 
-} // namespace ChimeraTK::LNMBackend
+} // namespace ChimeraTK::detail

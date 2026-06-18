@@ -12,30 +12,6 @@
 
 namespace ChimeraTK::LNMBackend {
 
-  thread_local size_t ReferenceCountedUniqueLock::targetUseCount;
-
-  /********************************************************************************************************************/
-
-  size_t ReferenceCountedUniqueLock::useCount() const {
-    assert(_lock.owns_lock());
-    return targetUseCount;
-  }
-
-  /********************************************************************************************************************/
-
-  void ReferenceCountedUniqueLock::unlock() {
-    assert(targetUseCount > 0);
-    targetUseCount--;
-    _lock.unlock();
-  }
-
-  /********************************************************************************************************************/
-
-  void ReferenceCountedUniqueLock::lock() {
-    _lock.lock();
-    targetUseCount++;
-  }
-
   /********************************************************************************************************************/
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -145,8 +121,8 @@ namespace ChimeraTK::LNMBackend {
         assert(false);
       }
 
-      return boost::make_shared<BitRangeAccessorDecorator<UserType>>(it->second.mutex, target, params._name, _shift,
-          _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
+      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType>>(it->second.mutex, target, params._name,
+          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
     }
 
     assert(false);
