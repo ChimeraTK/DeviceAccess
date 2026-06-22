@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "CountedRecursiveMutex.h"
 #include "NDRegisterAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "RawConverter.h"
+#include "SharedAccessor.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -15,29 +17,6 @@
 #include <mutex>
 
 namespace ChimeraTK::detail {
-
-  /********************************************************************************************************************/
-
-  /**
-   Helper class that keeps track of how many locks were taken on the recursive mutex in the current thread.
-
-   It is used by the BitRange accessor to determine whether or not it can safely call read() on the target in
-   preWrite for read-modify-write operations
-  */
-  class ReferenceCountedUniqueLock {
-   public:
-    ReferenceCountedUniqueLock() = default;
-
-    explicit ReferenceCountedUniqueLock(std::recursive_mutex& mutex) : _lock(mutex, std::defer_lock) {}
-
-    void lock();
-    void unlock();
-    [[nodiscard]] size_t useCount() const;
-
-   private:
-    thread_local static size_t targetUseCount;
-    std::unique_lock<std::recursive_mutex> _lock;
-  };
 
   /********************************************************************************************************************/
 
@@ -57,14 +36,14 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   struct BitRangeAccessorDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::buffer_2D;
+    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
 
     /******************************************************************************************************************/
-    BitRangeAccessorDecorator(std::recursive_mutex& mutex,
-        const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>>& target, const std::string& name,
-        uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
-        uint64_t dataInterpretationIsSigned)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(shift), _numberOfBits(numberOfBits),
-      _writeable{_target->isWriteable()}, _lock(mutex) {
+    BitRangeAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath path,
+        const std::string& name, uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
+        uint64_t dataInterpretationIsSigned, const AccessModeFlags& flags)
+    : NDRegisterAccessorDecorator<UserType, uint64_t>(getTarget(targetBackend, path, flags)), _shift(shift),
+      _numberOfBits(numberOfBits), _writeable(_target->isWriteable()), _targetBackend(targetBackend) {
       // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
       // bit-range registers targeting the same physical register). In that case the target's version number may have
       // been set by operations through another decorator, but from the user's perspective this is a fresh accessor.
@@ -85,6 +64,22 @@ namespace ChimeraTK::detail {
 
       _baseBitMask = getMaskForNBits(_numberOfBits);
       _maskOnTarget = _baseBitMask << _shift;
+
+      // Set up shared state via SharedAccessors
+      path.setAltSeparator(".");
+      detail::SharedAccessorKey key(targetBackend.get(), path);
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      _targetSharedState = sharedAccessors.getTargetSharedState<uint64_t>(key);
+      _sharedBuffer =
+          std::get_if<SharedAccessors::TargetSharedState::UserBuffer<uint64_t>>(&(_targetSharedState->dataBuffer));
+      assert(_sharedBuffer); // getTargetSharedState throws if type mismatch
+      _lock = std::unique_lock<detail::CountedRecursiveMutex>(_targetSharedState->mutex, std::defer_lock);
+    }
+
+    /******************************************************************************************************************/
+    ~BitRangeAccessorDecorator() override {
+      auto& sharedAccessorMutexes = detail::SharedAccessors::getInstance();
+      sharedAccessorMutexes.removeTransferElement(_target->getId());
     }
 
     /******************************************************************************************************************/
@@ -92,18 +87,32 @@ namespace ChimeraTK::detail {
     void doPreRead(TransferType type) override {
       _lock.lock();
 
-      _target->preRead(type);
+      // In a transfer group: only swap the shared buffer to the target once, before calling the target's preRead().
+      if(_lock.mutex()->useCount() == 1) {
+        sharedBufferToTarget();
+        _target->preRead(type);
+      }
     }
 
     /******************************************************************************************************************/
 
     void doPostRead(TransferType type, bool hasNewData) override {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
-      _target->postRead(type, hasNewData);
+
+      // step 1: target postRead() and swap the data into the shared state
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+        // whether the postRead throws or we have new data: The target buffer must be swapped back to keep the shared
+        // state intact
+        auto swapBack = cppext::finally([this] { targetToSharedBuffer(); });
+        _target->postRead(type, hasNewData);
+      } // the swapBack finally will be executed with this clothing brace
+
       if(!hasNewData) {
         return;
       }
 
+      // Step 2: Extract the bit range from the shared buffer into the user buffer via the converter loop
       _converterLoopHelper->doPostRead();
     }
 
@@ -115,8 +124,8 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        auto validity = _target->dataValidity();
-        uint64_t v{_target->accessData(0)};
+        auto validity = _sharedBuffer->dataValidity;
+        uint64_t v{_sharedBuffer->value[0][0]};
         v = (v & _maskOnTarget) >> _shift;
 
         buffer_2D[0][0] = converter.toCooked(v);
@@ -129,7 +138,7 @@ namespace ChimeraTK::detail {
           validity = DataValidity::faulty;
         }
 
-        this->_versionNumber = std::max(this->_versionNumber, _target->getVersionNumber());
+        this->_versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
         this->_dataValidity = validity;
       }
       else {
@@ -147,10 +156,27 @@ namespace ChimeraTK::detail {
             "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
       }
 
+      // Read-Remember-Modify-Write:
+      // Only read to the shared state once after opening the device. The content there must not change while the
+      // software is connected. Reading always would be a performance penalty and subject to race condition. If the
+      // content can really change on the device, the software business logic has to implement the read/modify/write and
+      // be aware of the race conditions. It intentionally is not handles in the framework logic.
+      if(_target->isReadable() && (_sharedBuffer->versionNumber < _targetBackend->getVersionOnOpen())) {
+        sharedBufferToTarget();
+        auto swapBack = cppext::finally([this] { targetToSharedBuffer(); });
+        _target->read();
+      }
+
       _converterLoopHelper->doPreWrite();
 
-      _temporaryVersion = std::max(versionNumber, _target->getVersionNumber());
-      _target->preWrite(type, _temporaryVersion);
+      // After doPreWriteImpl has filled the shared buffer, write it to the target.
+      // Only the last accessor in a transfer group does the actual preWrite on the target.
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+        _temporaryVersion = std::max(versionNumber, _target->getVersionNumber());
+        sharedBufferToTarget();
+        _target->preWrite(type, _temporaryVersion);
+      }
     }
 
     /******************************************************************************************************************/
@@ -167,16 +193,14 @@ namespace ChimeraTK::detail {
         // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
         // To be revisited after fixing https://redmine.msktools.desy.de/issues/12912
 
-        // When in a transfer group, only the first accessor to write to the _target can call read() in its preWrite()
-        // Otherwise it will overwrite the
-        if(_target->isReadable() && (!TransferElement::_isInTransferGroup || _lock.useCount() == 1)) {
-          _target->read();
+        // Modify the bit range in the shared buffer
+        _sharedBuffer->value[0][0] &= ~_maskOnTarget;
+        _sharedBuffer->value[0][0] |= (value << _shift);
+
+        _sharedBuffer->versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
+        if((_sharedBuffer->dataValidity == DataValidity::ok) || (_lock.mutex()->useCount() == 1)) {
+          _sharedBuffer->dataValidity = this->_dataValidity;
         }
-
-        _target->accessData(0) &= ~_maskOnTarget;
-        _target->accessData(0) |= (value << _shift);
-
-        _target->setDataValidity(this->_dataValidity);
       }
       else {
         assert(false);
@@ -187,27 +211,62 @@ namespace ChimeraTK::detail {
 
     void doPostWrite(TransferType type, VersionNumber /*versionNumber*/) override {
       auto unlock = cppext::finally([this] { this->_lock.unlock(); });
-      _target->postWrite(type, _temporaryVersion);
+
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      if(_lock.mutex()->useCount() == sharedAccessors.instanceCount(_target->getId())) {
+        // even if postWrite throws: The target buffer must be swapped back to keep the shared state intact
+        auto swapBack = cppext::finally([this] { targetToSharedBuffer(); });
+        _target->postWrite(type, _temporaryVersion);
+      }
+    }
+
+    /******************************************************************************************************************/
+
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
+      // Always call the non-destructive write. We must be able to swap back the intact buffer into the _sharedState.
+      return this->_target->writeTransfer(versionNumber);
     }
 
     /******************************************************************************************************************/
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
-      auto casted = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType>>(newElement);
+      auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType>>(newElement);
 
       // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
       // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
       // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write
       // order for overlapping bit ranges
-      if(casted && casted.get() != this && casted->_target == _target) {
+      if(castedToThisType && castedToThisType.get() != this && castedToThisType->_target == _target) {
         // anding the two masks will yield 0 iff there is no overlap
-        if((casted->_maskOnTarget & _maskOnTarget) != 0) {
-          casted->_writeable = false;
+        if((castedToThisType->_maskOnTarget & _maskOnTarget) != 0) {
+          castedToThisType->_writeable = false;
           _writeable = false;
         }
       }
-      NDRegisterAccessorDecorator<UserType, uint64_t>::replaceTransferElement(newElement);
+
+      auto castedToTargetType = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<uint64_t>>(newElement);
+      if(castedToTargetType && newElement->mayReplaceOther(_target)) {
+        if(_target != newElement) {
+          auto oldTarget = _target->getId();
+          _target = castedToTargetType;
+          // Bookkeeping: combine the original target and the replaced target's use count
+          auto& sharedAccessorMutexes = detail::SharedAccessors::getInstance();
+          sharedAccessorMutexes.combineTransferSharedStates(oldTarget, _target->getId());
+        }
+      }
+      else {
+        _target->replaceTransferElement(newElement);
+      }
+      _target->setExceptionBackend(this->_exceptionBackend);
     }
+
+    /******************************************************************************************************************/
+
+    [[nodiscard]] bool isWriteable() const override { return _writeable; }
+
+    /******************************************************************************************************************/
+
+    [[nodiscard]] bool isReadOnly() const override { return !_writeable; }
 
     /******************************************************************************************************************/
 
@@ -220,11 +279,40 @@ namespace ChimeraTK::detail {
     uint64_t _baseBitMask;
 
     bool _writeable{false};
-    ReferenceCountedUniqueLock _lock;
     VersionNumber _temporaryVersion;
     std::unique_ptr<RawConverter::ConverterLoopHelper> _converterLoopHelper;
 
-    using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
+    std::shared_ptr<SharedAccessors::TargetSharedState> _targetSharedState;
+    std::unique_lock<CountedRecursiveMutex> _lock;
+    NDRegisterAccessor<uint64_t>::Buffer* _sharedBuffer{nullptr};
+    boost::shared_ptr<DeviceBackend> _targetBackend;
+
+    /******************************************************************************************************************/
+
+    static boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>> getTarget(
+        const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetRegisterPath,
+        const AccessModeFlags& flags) {
+      auto newAccessor = targetBackend->getRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, flags);
+      auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      sharedAccessors.addTransferElement(newAccessor->getId());
+
+      return newAccessor;
+    }
+
+    /******************************************************************************************************************/
+
+    void sharedBufferToTarget() {
+      _sharedBuffer->value[0].swap(_target->accessChannel(0));
+      _target->setDataValidity(_sharedBuffer->dataValidity);
+    }
+
+    /******************************************************************************************************************/
+
+    void targetToSharedBuffer() {
+      _sharedBuffer->value[0].swap(_target->accessChannel(0));
+      _sharedBuffer->versionNumber = std::max(_sharedBuffer->versionNumber, _target->getVersionNumber());
+      _sharedBuffer->dataValidity = _target->dataValidity();
+    }
   };
 
 } // namespace ChimeraTK::detail

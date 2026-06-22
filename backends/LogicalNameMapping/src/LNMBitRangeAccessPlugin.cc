@@ -18,7 +18,7 @@ namespace ChimeraTK::LNMBackend {
 
   BitRangeAccessPlugin::BitRangeAccessPlugin(
       const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters)
-  : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex, true) {
+  : AccessorPlugin<BitRangeAccessPlugin>(info, pluginIndex, false) {
     try {
       const auto& shift = parameters.at("shift");
 
@@ -83,8 +83,8 @@ namespace ChimeraTK::LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> BitRangeAccessPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
-      const UndecoratedParams& params) {
+      boost::shared_ptr<LogicalNameMappingBackend>& backend,
+      boost::shared_ptr<NDRegisterAccessor<TargetType>>& /*target*/, const UndecoratedParams& params) {
     if constexpr(std::is_same_v<TargetType, uint64_t>) {
       if(params._wordOffsetInRegister != 0) {
         throw ChimeraTK::logic_error(std::format("BitRangePlugin (on {}) cannot have a word offset", params._name));
@@ -100,7 +100,7 @@ namespace ChimeraTK::LNMBackend {
             std::format("BitRangePlugin (on {}) Unsupported flags in {}", params._name, params._flags.serialize()));
       }
 
-      // Resolve the correct target device (must match the logic in getAccessor_impl)
+      // Resolve the correct target device
       std::string devName = _info.deviceName;
       boost::shared_ptr<DeviceBackend> targetDevice;
       if(devName != "this") {
@@ -110,19 +110,10 @@ namespace ChimeraTK::LNMBackend {
         targetDevice = backend;
       }
 
-      // Look up the mutex from the shared accessor map
-      auto& map = boost::fusion::at_key<uint64_t>(backend->sharedAccessorMap.table);
       RegisterPath path{params._name};
-      path.setAltSeparator(".");
-      LogicalNameMappingBackend::AccessorKey key{targetDevice.get(), path};
 
-      auto it = map.find(key);
-      if(it == map.end()) {
-        assert(false);
-      }
-
-      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType>>(it->second.mutex, target, params._name,
-          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned);
+      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType>>(targetDevice, path, params._name, _shift,
+          _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned, params._flags);
     }
 
     assert(false);
