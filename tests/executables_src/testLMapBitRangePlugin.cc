@@ -210,6 +210,50 @@ BOOST_AUTO_TEST_CASE(testBitExtraction) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testReadOnceRememberModifyWrite) {
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+  auto accLo = device.getScalarRegisterAccessor<uint16_t>("LoByte");
+
+  // Set initial value on the device. SimpleScalar is int16 so values must stay within range.
+  accTarget.setAndWrite(0x1234);
+
+  // First write to LoByte: this is the "read once" step.
+  // The decorator reads 0x1234 from the device into the shared buffer,
+  // modifies the low byte (0xAB → 0x34→0xAB), and writes back 0x12AB.
+  accLo = 0xAB;
+  accLo.write();
+  accTarget.read();
+  BOOST_TEST(accTarget == 0x12AB);
+
+  // Simulate another accessor modifying the underlying register directly.
+  // This bypasses the shared buffer.
+  accTarget.setAndWrite(0x3FFF); // still within int16
+
+  // Second write to LoByte: this is the "remember" step.
+  // The decorator does NOT re-read from the device. It uses the cached
+  // shared-buffer value (still 0x12AB, not the current device value 0x3FFF).
+  // So the write modifies 0x12AB → 0x1201, not 0x3FFF → 0x3F01.
+  accLo = 0x01;
+  accLo.write();
+  accTarget.read();
+  BOOST_TEST(accTarget == 0x1201);
+
+  // Demonstrate shared buffer between two bit-range accessors.
+  // Write to HiByte (first write): since shared buffer version is already >= versionOnOpen
+  // (set by previous LoByte writes), it also uses the cached value 0x1255 without reading.
+  accTarget.setAndWrite(0x7F23);
+  auto accHi = device.getScalarRegisterAccessor<uint16_t>("HiByte");
+  accHi = 0x3B;
+  accHi.write();
+  accTarget.read();
+  BOOST_TEST(accTarget == 0x3B01);
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testDataDescription) {
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
