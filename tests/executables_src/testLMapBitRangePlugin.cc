@@ -99,20 +99,21 @@ BOOST_AUTO_TEST_CASE(testAccessorSanity) {
   auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
 
   auto accMiddle = device.getScalarRegisterAccessor<int8_t>("Middle");
-  accTarget.setAndWrite(0x1fff);
+  accTarget.setAndWrite(0x1ff0);
   accMiddle.read();
   BOOST_TEST(accMiddle == 127);
   BOOST_CHECK(accMiddle.dataValidity() == ChimeraTK::DataValidity::faulty);
 
   // The Number of bits requested from the target register is larger than the register
-  auto accTooLarge = device.getScalarRegisterAccessor<int16_t>("TooLarge");
+  auto accTooLarge = device.getScalarRegisterAccessor<int16_t>("TooLarge"); // FIXME: This should throw
   accTooLarge.setAndWrite(0xff1);
   accTarget.read();
-  BOOST_CHECK(accTarget == std::numeric_limits<int16_t>::max());
+  BOOST_CHECK(accTarget == std::numeric_limits<int16_t>::max()); // FIXME: This should not touch the lower bits
 
   // The number of bits requested is smaller than what is available in the user type and the value
   // written in the accessor is larger than maximum value in those bits
   accTarget.setAndWrite(0);
+  accMiddle.read(); // To get the 0 into the shared buffer.
 
   auto accMiddle2 = device.getScalarRegisterAccessor<int16_t>("MidByte");
   accMiddle2.setAndWrite(0x100);
