@@ -48,6 +48,12 @@ namespace ChimeraTK::Rebot {
   }
 
   void Connection::close() {
+    std::unique_lock lock{_closeMutex, std::defer_lock};
+    if(!lock.try_lock()) {
+      // Mutex already taken! Another thread is handling the close. Returning immediately.
+      return;
+    }
+
     if(s_.is_open()) {
       s_.cancel();
       s_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
