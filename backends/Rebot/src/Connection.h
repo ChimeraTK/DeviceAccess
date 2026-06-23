@@ -45,6 +45,8 @@ namespace ChimeraTK::Rebot {
     boost::asio::deadline_timer disconnectTimer_;
     boost::asio::deadline_timer::duration_type connectionTimeout_;
 
+    std::mutex _closeMutex; // prevent concurrent close from the backend and the connection timeout
+
     void disconnectionTimerStart();
     void disconnectionTimerCancel(const boost::system::error_code& ec);
   };
