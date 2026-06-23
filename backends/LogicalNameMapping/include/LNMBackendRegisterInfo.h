@@ -29,6 +29,8 @@ namespace ChimeraTK {
     LNMBackendRegisterInfo(const LNMBackendRegisterInfo&) = default;
     LNMBackendRegisterInfo& operator=(const LNMBackendRegisterInfo& other) = default;
 
+    [[nodiscard]] bool operator==(const LNMBackendRegisterInfo&) const = default;
+
     [[nodiscard]] RegisterPath getRegisterName() const override { return name; }
 
     [[nodiscard]] unsigned int getNumberOfElements() const override { return length; }
