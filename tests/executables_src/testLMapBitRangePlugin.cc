@@ -210,9 +210,9 @@ BOOST_AUTO_TEST_CASE(testBitExtraction) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testReadOnceRememberModifyWrite) {
-  ChimeraTK::Device device;
-  device.open("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+BOOST_AUTO_TEST_CASE(TestReadOnceRememberModifyWrite) {
+  ChimeraTK::Device device("(logicalNameMap?map=bitRangeReadPlugin.xlmap)");
+  device.open();
 
   auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
   auto accLo = device.getScalarRegisterAccessor<uint16_t>("LoByte");
@@ -243,13 +243,26 @@ BOOST_AUTO_TEST_CASE(testReadOnceRememberModifyWrite) {
 
   // Demonstrate shared buffer between two bit-range accessors.
   // Write to HiByte (first write): since shared buffer version is already >= versionOnOpen
-  // (set by previous LoByte writes), it also uses the cached value 0x1255 without reading.
+  // (set by previous LoByte writes), it also uses the cached value 0x1201 without reading.
   accTarget.setAndWrite(0x7F23);
   auto accHi = device.getScalarRegisterAccessor<uint16_t>("HiByte");
   accHi = 0x3B;
   accHi.write();
   accTarget.read();
   BOOST_TEST(accTarget == 0x3B01);
+
+  // Close and re-open the device.
+  device.close();
+  device.open();
+
+  // Modify value on the device.
+  accTarget.setAndWrite(0x7F00);
+
+  // First write to LoByte after re-open: must re-read from device.
+  accLo = 0x55;
+  accLo.write();
+  accTarget.read();
+  BOOST_TEST(accTarget == 0x7F55);
 }
 
 /**********************************************************************************************************************/
