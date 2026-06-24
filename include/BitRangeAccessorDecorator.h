@@ -39,10 +39,10 @@ namespace ChimeraTK::detail {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
 
     /******************************************************************************************************************/
-    BitRangeAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath path,
+    BitRangeAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetPath,
         const std::string& name, uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned, const AccessModeFlags& flags)
-    : NDRegisterAccessorDecorator<UserType, uint64_t>(getTarget(targetBackend, path, flags)), _shift(shift),
+    : NDRegisterAccessorDecorator<UserType, uint64_t>(getTarget(targetBackend, targetPath, flags)), _shift(shift),
       _numberOfBits(numberOfBits), _writeable(_target->isWriteable()), _targetBackend(targetBackend) {
       // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
       // bit-range registers targeting the same physical register). In that case the target's version number may have
@@ -66,8 +66,8 @@ namespace ChimeraTK::detail {
       _maskOnTarget = _baseBitMask << _shift;
 
       // Set up shared state via SharedAccessors
-      path.setAltSeparator(".");
-      detail::SharedAccessorKey key(targetBackend.get(), path);
+      targetPath.setAltSeparator(".");
+      detail::SharedAccessorKey key(targetBackend.get(), targetPath);
       auto& sharedAccessors = detail::SharedAccessors::getInstance();
       _targetSharedState = sharedAccessors.getTargetSharedState<uint64_t>(key);
       _sharedBuffer =
