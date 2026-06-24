@@ -172,7 +172,25 @@ namespace ChimeraTK::detail {
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned)
-    } representation{RepresentationType::representationNotSet};
+    };
+    struct RepresentationWithBitField : public Representation {
+      struct BitFieldElement {
+        std::string name;
+        uint32_t bitShift{0};
+        Representation representation{};
+
+        void fill(NumericAddressedRegisterInfo& info, uint32_t bytesPerElem) const {
+          info.pathName = info.pathName / name; // extend the name in the pre-filled info object
+          info.bitRangeInfo.emplace(bitShift);
+          representation.fill(info, 0 /*offset*/, bytesPerElem);
+        }
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(BitFieldElement, name, bitShift, representation)
+      };
+      std::vector<BitFieldElement> elements;
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+          RepresentationWithBitField, type, width, fractionalBits, isSigned, elements)
+    } representation{{RepresentationType::representationNotSet}, {}};
 
     struct ChannelTab {
       size_t numberOfElements{0};
@@ -287,6 +305,13 @@ namespace ChimeraTK::detail {
           //     (doubleBuffering->secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);
           buf1Register.computeDataDescriptor();
           catalogue.addRegister(buf1Register);
+        }
+        for(const auto& bfe : representation.elements) {
+          std::cout << "adding fbe " << bfe.name << std::endl;
+          NumericAddressedRegisterInfo bfeInfo = my;
+          bfe.fill(bfeInfo, bytesPerElement);
+          bfeInfo.computeDataDescriptor();
+          catalogue.addRegister(bfeInfo);
         }
       }
       for(const auto& child : children) {

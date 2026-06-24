@@ -21,10 +21,10 @@ namespace ChimeraTK {
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint32_t nElements_,
       uint64_t address_, uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
       Access dataAccess_, Type dataType_, std::vector<size_t> interruptId_,
-      std::optional<DoubleBufferInfo> doubleBufferInfo_)
+      std::optional<DoubleBufferInfo> doubleBufferInfo_, std::optional<BitRangeInfo> bitRangeInfo_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(nElements_ > 0 ? nBytes_ / nElements_ * 8 : 0),
     bar(bar_), address(address_), registerAccess(dataAccess_), interruptId(std::move(interruptId_)),
-    doubleBuffer(std::move(doubleBufferInfo_)),
+    doubleBuffer(std::move(doubleBufferInfo_)), bitRangeInfo(bitRangeInfo_),
     channels({{0, dataType_, width_, nFractionalBits_, signedFlag_,
         nElements_ > 0 ? ChimeraTK::DataType("int" + std::to_string(elementPitchBits)) :
                          ChimeraTK::DataType(ChimeraTK::DataType::Void)}}) {
