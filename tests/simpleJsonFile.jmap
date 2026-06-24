@@ -98,7 +98,7 @@
             "fractionalBits": 0,
             "isSigned": false
           },
-          "constant": "0x01080300",
+          "constant": "0x01083",
           "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
         },
         {
@@ -113,7 +113,7 @@
           "representation": {
             "type": "string"
           },
-          "constant": "0x01080300",
+          "constant": "0x01083",
           "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
         },
         {
@@ -357,12 +357,12 @@
           ],
           "address": {
             "type": "DMA",
-            "offset": "0x81000000"
+            "offset": "0x81000"
           },
           "doubleBuffering": {
             "secondaryBufferAddress": {
               "type": "DMA",
-              "offset": "0x81200000"
+              "offset": "0x81200"
             },
             "enableRegister": "DAQ.DOUBLE_BUF.ENA",
             "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
@@ -485,12 +485,12 @@
           "_": "First element of last channel in DAQ.FD area",
           "address": {
             "type": "DMA",
-            "offset": "0x8100003C"
+            "offset": "0x8103C"
           },
           "doubleBuffering": {
             "secondaryBufferAddress": {
               "type": "DMA",
-              "offset": "0x8120003C"
+              "offset": "0x8123C"
             },
             "enableRegister": "DAQ.DOUBLE_BUF.ENA",
             "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",

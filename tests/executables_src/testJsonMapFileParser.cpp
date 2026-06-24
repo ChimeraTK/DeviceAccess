@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.nElements == 16384);
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);
-    BOOST_TEST(reg.address == 0x81000000);
+    BOOST_TEST(reg.address == 0x81000);
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
     BOOST_TEST(reg.interruptId == std::vector<size_t>({0}), boost::test_tools::per_element());
 
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.nElements == 16384);
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);
-    BOOST_TEST(reg.address == 0x81000000);
+    BOOST_TEST(reg.address == 0x81000);
 
     BOOST_REQUIRE(reg.channels.size() == 2);
 
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.nElements == 1);
     BOOST_TEST(reg.elementPitchBits == 4 * 8);
     BOOST_TEST(reg.bar == 13);
-    BOOST_TEST(reg.address == 0x8100003C);
+    BOOST_TEST(reg.address == 0x8103C);
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
