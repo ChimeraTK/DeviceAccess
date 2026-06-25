@@ -154,7 +154,7 @@
           "representation": {
             "type": "bitField",
             "width": 32,
-            "elements": [
+            "subElements": [
               {
                 "name": "ProbeLimiter",
                 "bitShift": 0,
@@ -281,7 +281,7 @@
                   "representation": {
                     "type": "bitField",
                     "width": 32,
-                    "elements": [
+                    "subElements": [
                       {
                         "name": "ProbeLimiter",
                         "bitShift": 0,
@@ -316,7 +316,7 @@
                   "representation": {
                     "type": "bitField",
                     "width": 32,
-                    "elements": [
+                    "subElements": [
                       {
                         "name": "I",
                         "bitShift": 0,
@@ -334,7 +334,7 @@
                   "representation": {
                     "type": "bitField",
                     "width": 32,
-                    "elements": [
+                    "subElements": [
                       {
                         "name": "Q",
                         "bitShift": 2,

@@ -154,7 +154,8 @@ namespace ChimeraTK::detail {
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Address, type, channel, offset)
     } address{AddressType::addressTypeNotSet};
 
-    struct Representation {
+    // Basic representation without sub elements
+    struct BasicRepresentation {
       RepresentationType type{RepresentationType::FIXED_POINT};
       uint32_t width{type != RepresentationType::representationNotSet ? 32U : 0U};
       int32_t fractionalBits{0};
@@ -167,17 +168,17 @@ namespace ChimeraTK::detail {
               DataType("int" + std::to_string(bytesPerElem * 8)));
         }
         else {
-          Representation().fill(info, offset, bytesPerElem);
+          BasicRepresentation().fill(info, offset, bytesPerElem);
         }
       }
 
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned)
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(BasicRepresentation, type, width, fractionalBits, isSigned)
     };
-    struct RepresentationWithBitField : public Representation {
-      struct BitFieldElement {
+    struct Representation : public BasicRepresentation {
+      struct SubElement {
         std::string name;
         uint32_t bitShift{0};
-        Representation representation{};
+        BasicRepresentation representation{};
 
         void fill(NumericAddressedRegisterInfo& info, uint32_t bytesPerElem) const {
           info.pathName = info.pathName / name; // extend the name in the pre-filled info object
@@ -186,11 +187,10 @@ namespace ChimeraTK::detail {
           representation.fill(info, 0 /*offset*/, bytesPerElem);
         }
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(BitFieldElement, name, bitShift, representation)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SubElement, name, bitShift, representation)
       };
-      std::vector<BitFieldElement> elements;
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-          RepresentationWithBitField, type, width, fractionalBits, isSigned, elements)
+      std::vector<SubElement> subElements;
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned, subElements)
     } representation{{RepresentationType::representationNotSet}, {}};
 
     struct ChannelTab {
@@ -203,7 +203,7 @@ namespace ChimeraTK::detail {
         std::string description;
         size_t offset;
         size_t bytesPerElement{4};
-        Representation representation{};
+        BasicRepresentation representation{};
 
         void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset, bytesPerElement); }
 
@@ -307,7 +307,7 @@ namespace ChimeraTK::detail {
           buf1Register.computeDataDescriptor();
           catalogue.addRegister(buf1Register);
         }
-        for(const auto& bfe : representation.elements) {
+        for(const auto& bfe : representation.subElements) {
           std::cout << "adding fbe " << bfe.name << std::endl;
           NumericAddressedRegisterInfo bfeInfo = my;
           bfe.fill(bfeInfo, bytesPerElement);
