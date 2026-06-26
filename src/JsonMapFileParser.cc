@@ -308,7 +308,6 @@ namespace ChimeraTK::detail {
           catalogue.addRegister(buf1Register);
         }
         for(const auto& bfe : representation.subElements) {
-          std::cout << "adding fbe " << bfe.name << std::endl;
           NumericAddressedRegisterInfo bfeInfo = my;
           bfe.fill(bfeInfo, bytesPerElement);
           bfeInfo.computeDataDescriptor();

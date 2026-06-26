@@ -5,6 +5,7 @@
 
 #include "async/DomainImpl.h"
 #include "async/DomainsContainer.h"
+#include "BitRangeAccessorDecorator.h"
 #include "DoubleBufferAccessor.h"
 #include "Exception.h"
 #include "MapFileParser.h"
@@ -147,6 +148,16 @@ namespace ChimeraTK {
     if(registerInfo.doubleBuffer == std::nullopt) {
       // 1D or scalar register
       if(registerInfo.getNumberOfDimensions() <= 1) {
+        if(registerInfo.bitRangeInfo.has_value()) {
+          RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
+              (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8));
+          std::cout << "Target Register Path: " << targetRegisterPath << std::endl;
+          auto channelInfo = registerInfo.channels.front();
+
+          return boost::make_shared<detail::BitRangeAccessorDecorator<UserType>>(shared_from_this(), targetRegisterPath,
+              registerPathName, registerInfo.bitRangeInfo.value().shift, channelInfo.width, channelInfo.nFractionalBits,
+              channelInfo.signedFlag, AccessModeFlags{});
+        }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
