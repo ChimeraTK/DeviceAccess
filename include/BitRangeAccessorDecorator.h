@@ -127,11 +127,7 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        if constexpr(_isRaw) {
-          // Raw mode: copy 1:1 from shared buffer to user buffer with no bit manipulation
-          buffer_2D[0][0] = static_cast<UserType>(_sharedBuffer->value[0][0]);
-        }
-        else {
+        if constexpr(!_isRaw) {
           auto validity = _sharedBuffer->dataValidity;
           uint64_t v{_sharedBuffer->value[0][0]};
           v = (v & _maskOnTarget) >> _shift;
@@ -147,6 +143,11 @@ namespace ChimeraTK::detail {
           }
 
           this->_dataValidity = validity;
+        }
+        else {
+          // Raw mode: copy 1:1 from shared buffer to user buffer with no bit manipulation
+          buffer_2D[0][0] = static_cast<UserType>(_sharedBuffer->value[0][0]);
+          this->_dataValidity = _sharedBuffer->dataValidity;
         }
 
         this->_versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
@@ -197,11 +198,7 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        if constexpr(_isRaw) {
-          // Raw mode: copy 1:1 from user buffer to shared buffer with no bit manipulation
-          _sharedBuffer->value[0][0] = static_cast<uint64_t>(buffer_2D[0][0]);
-        }
-        else {
+        if constexpr(!_isRaw) {
           uint64_t value = converter.toRaw(buffer_2D[0][0]);
 
           // FIXME: Not setting the data validity according to the spec point B2.5.1.
@@ -211,6 +208,10 @@ namespace ChimeraTK::detail {
           // Modify the bit range in the shared buffer
           _sharedBuffer->value[0][0] &= ~_maskOnTarget;
           _sharedBuffer->value[0][0] |= (value << _shift);
+        }
+        else {
+          // Raw mode: copy 1:1 from user buffer to shared buffer with no bit manipulation
+          _sharedBuffer->value[0][0] = static_cast<uint64_t>(buffer_2D[0][0]);
         }
 
         _sharedBuffer->versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
