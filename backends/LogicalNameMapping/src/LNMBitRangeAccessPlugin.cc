@@ -112,8 +112,8 @@ namespace ChimeraTK::LNMBackend {
 
       RegisterPath path{params._name};
 
-      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType>>(targetDevice, path, params._name, _shift,
-          _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned, params._flags);
+      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(targetDevice, path, params._name,
+          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned, params._flags);
     }
 
     assert(false);

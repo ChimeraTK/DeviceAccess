@@ -33,7 +33,7 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  template<typename UserType>
+  template<typename UserType, bool _isRaw = false>
   struct BitRangeAccessorDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::buffer_2D;
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
@@ -52,10 +52,13 @@ namespace ChimeraTK::detail {
 
       // makeConverterLoopHelper expects a NumericAddressedBackend RegisterInfo, which we create with the relevant
       // parameters.
-      NumericAddressedRegisterInfo registerInfo{name, 1, 0, sizeof(uint64_t), 0, uint32_t(numberOfBits),
+      _registerInfo = NumericAddressedRegisterInfo{name, 1, 0, sizeof(uint64_t), 0, uint32_t(numberOfBits),
           int32_t(dataInterpretationFractionalBits), bool(dataInterpretationIsSigned)};
       _converterLoopHelper =
-          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(registerInfo, 0, 0, *this);
+          RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, 0, *this);
+
+      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
+      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
 
       if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
         throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessorDecorator: " +
@@ -128,14 +131,19 @@ namespace ChimeraTK::detail {
         uint64_t v{_sharedBuffer->value[0][0]};
         v = (v & _maskOnTarget) >> _shift;
 
-        buffer_2D[0][0] = converter.toCooked(v);
-        // Do a quick check if the fixed point converter clamped. Then set the
-        // data validity faulty according to B.2.4.1
-        // For proper implementation of this, the fixed point converter needs to signalize
-        // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
-        auto raw = converter.toRaw(buffer_2D[0][0]);
-        if(raw != v) {
-          validity = DataValidity::faulty;
+        if constexpr(_isRaw) {
+          buffer_2D[0][0] = static_cast<UserType>(v);
+        }
+        else {
+          buffer_2D[0][0] = converter.toCooked(v);
+          // Do a quick check if the fixed point converter clamped. Then set the
+          // data validity faulty according to B.2.4.1
+          // For proper implementation of this, the fixed point converter needs to signalize
+          // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
+          auto raw = converter.toRaw(buffer_2D[0][0]);
+          if(raw != v) {
+            validity = DataValidity::faulty;
+          }
         }
 
         this->_versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
@@ -187,7 +195,13 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        auto value = converter.toRaw(buffer_2D[0][0]);
+        uint64_t value;
+        if constexpr(_isRaw) {
+          value = static_cast<uint64_t>(buffer_2D[0][0]);
+        }
+        else {
+          value = converter.toRaw(buffer_2D[0][0]);
+        }
 
         // FIXME: Not setting the data validity according to the spec point B2.5.1.
         // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
@@ -219,6 +233,21 @@ namespace ChimeraTK::detail {
         _target->postWrite(type, _temporaryVersion);
       }
     }
+
+    /******************************************************************************************************************/
+
+    template<typename COOKED_TYPE>
+    COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample);
+
+    template<typename COOKED_TYPE>
+    void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
+
+    // a local typename so the DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER does
+    // not get confused by the comma which separates the two template parameters
+    using THIS_TYPE = BitRangeAccessorDecorator<UserType, _isRaw>;
+
+    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, getAsCooked_impl, 2);
+    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, setAsCooked_impl, 3);
 
     /******************************************************************************************************************/
 
@@ -280,6 +309,7 @@ namespace ChimeraTK::detail {
 
     bool _writeable{false};
     VersionNumber _temporaryVersion;
+    NumericAddressedRegisterInfo _registerInfo;
     std::unique_ptr<RawConverter::ConverterLoopHelper> _converterLoopHelper;
 
     std::shared_ptr<SharedAccessors::TargetSharedState> _targetSharedState;
@@ -314,5 +344,33 @@ namespace ChimeraTK::detail {
       _sharedBuffer->dataValidity = _target->dataValidity();
     }
   };
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, bool _isRaw>
+  template<typename COOKED_TYPE>
+  COOKED_TYPE BitRangeAccessorDecorator<UserType, _isRaw>::getAsCooked_impl(unsigned int channel, unsigned int sample) {
+    if constexpr(_isRaw) {
+      COOKED_TYPE result{};
+      RawConverter::withConverter<COOKED_TYPE, uint64_t>(_registerInfo, 0,
+          [&](auto converter) { result = converter.toCooked(static_cast<uint64_t>(buffer_2D[channel][sample])); });
+      return result;
+    }
+    throw ChimeraTK::logic_error("Reading as cooked is not available for this accessor");
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, bool _isRaw>
+  template<typename COOKED_TYPE>
+  void BitRangeAccessorDecorator<UserType, _isRaw>::setAsCooked_impl(
+      unsigned int channel, unsigned int sample, COOKED_TYPE value) {
+    if constexpr(_isRaw) {
+      RawConverter::withConverter<COOKED_TYPE, uint64_t>(_registerInfo, 0,
+          [&](auto converter) { buffer_2D[channel][sample] = static_cast<UserType>(converter.toRaw(value)); });
+      return;
+    }
+    throw ChimeraTK::logic_error("Setting as cooked is not available for this accessor");
+  }
 
 } // namespace ChimeraTK::detail
