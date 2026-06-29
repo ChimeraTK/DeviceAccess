@@ -144,7 +144,7 @@ namespace ChimeraTK::detail {
 
           this->_dataValidity = validity;
         }
-        else {
+        else if constexpr(std::is_integral_v<UserType>) {
           // Raw mode: copy 1:1 from shared buffer to user buffer with no bit manipulation
           buffer_2D[0][0] = static_cast<UserType>(_sharedBuffer->value[0][0]);
           this->_dataValidity = _sharedBuffer->dataValidity;
@@ -209,7 +209,7 @@ namespace ChimeraTK::detail {
           _sharedBuffer->value[0][0] &= ~_maskOnTarget;
           _sharedBuffer->value[0][0] |= (value << _shift);
         }
-        else {
+        else if constexpr(std::is_integral_v<UserType>) {
           // Raw mode: copy 1:1 from user buffer to shared buffer with no bit manipulation
           _sharedBuffer->value[0][0] = static_cast<uint64_t>(buffer_2D[0][0]);
         }
@@ -262,17 +262,24 @@ namespace ChimeraTK::detail {
     /******************************************************************************************************************/
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
-      auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType>>(newElement);
+      if constexpr(_isRaw) {
+        auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType, true>>(newElement);
 
-      // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
-      // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
-      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write
-      // order for overlapping bit ranges
-      if(castedToThisType && castedToThisType.get() != this && castedToThisType->_target == _target) {
-        // anding the two masks will yield 0 iff there is no overlap
-        if((castedToThisType->_maskOnTarget & _maskOnTarget) != 0) {
-          castedToThisType->_writeable = false;
-          _writeable = false;
+        if(castedToThisType && castedToThisType.get() != this && castedToThisType->_target == _target) {
+          if((castedToThisType->_maskOnTarget & _maskOnTarget) != 0) {
+            castedToThisType->_writeable = false;
+            _writeable = false;
+          }
+        }
+      }
+      else {
+        auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType, false>>(newElement);
+
+        if(castedToThisType && castedToThisType.get() != this && castedToThisType->_target == _target) {
+          if((castedToThisType->_maskOnTarget & _maskOnTarget) != 0) {
+            castedToThisType->_writeable = false;
+            _writeable = false;
+          }
         }
       }
 
@@ -353,7 +360,7 @@ namespace ChimeraTK::detail {
   template<typename UserType, bool _isRaw>
   template<typename COOKED_TYPE>
   COOKED_TYPE BitRangeAccessorDecorator<UserType, _isRaw>::getAsCooked_impl(unsigned int channel, unsigned int sample) {
-    if constexpr(_isRaw) {
+    if constexpr(_isRaw && std::is_integral_v<UserType>) {
       COOKED_TYPE result{};
       uint64_t raw = static_cast<uint64_t>(buffer_2D[channel][sample]);
       // Apply bit shift to extract the actual raw value from the full register value
@@ -371,7 +378,7 @@ namespace ChimeraTK::detail {
   template<typename COOKED_TYPE>
   void BitRangeAccessorDecorator<UserType, _isRaw>::setAsCooked_impl(
       unsigned int channel, unsigned int sample, COOKED_TYPE value) {
-    if constexpr(_isRaw) {
+    if constexpr(_isRaw && std::is_integral_v<UserType>) {
       RawConverter::withConverter<COOKED_TYPE, uint64_t>(_registerInfo, 0, [&](auto converter) {
         // buffer_2D stores the full register word. Perform a read-modify-write on the bit range.
         auto rawField = static_cast<uint64_t>(converter.toRaw(value));

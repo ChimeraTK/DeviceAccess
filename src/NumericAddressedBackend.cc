@@ -154,9 +154,14 @@ namespace ChimeraTK {
           std::cout << "Target Register Path: " << targetRegisterPath << std::endl;
           auto channelInfo = registerInfo.channels.front();
 
+          if(flags.has(AccessMode::raw)) {
+            return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(shared_from_this(),
+                targetRegisterPath, registerPathName, registerInfo.bitRangeInfo.value().shift, channelInfo.width,
+                channelInfo.nFractionalBits, channelInfo.signedFlag, flags);
+          }
           return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(shared_from_this(),
               targetRegisterPath, registerPathName, registerInfo.bitRangeInfo.value().shift, channelInfo.width,
-              channelInfo.nFractionalBits, channelInfo.signedFlag, AccessModeFlags{});
+              channelInfo.nFractionalBits, channelInfo.signedFlag, flags);
         }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||
