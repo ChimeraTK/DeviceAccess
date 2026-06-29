@@ -262,24 +262,17 @@ namespace ChimeraTK::detail {
     /******************************************************************************************************************/
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
-      if constexpr(_isRaw) {
-        auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType, true>>(newElement);
+      auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType, _isRaw>>(newElement);
 
-        if(castedToThisType && castedToThisType.get() != this && castedToThisType->_target == _target) {
-          if((castedToThisType->_maskOnTarget & _maskOnTarget) != 0) {
-            castedToThisType->_writeable = false;
-            _writeable = false;
-          }
-        }
-      }
-      else {
-        auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType, false>>(newElement);
-
-        if(castedToThisType && castedToThisType.get() != this && castedToThisType->_target == _target) {
-          if((castedToThisType->_maskOnTarget & _maskOnTarget) != 0) {
-            castedToThisType->_writeable = false;
-            _writeable = false;
-          }
+      // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
+      // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
+      // the replacement read-only which switches the transfergroup read-only since we cannot guarantee the write
+      // order for overlapping bit ranges
+      if(castedToThisType && castedToThisType.get() != this && castedToThisType->_target == _target) {
+        // anding the two masks will yield 0 iff there is no overlap
+        if((castedToThisType->_maskOnTarget & _maskOnTarget) != 0) {
+          castedToThisType->_writeable = false;
+          _writeable = false;
         }
       }
 
