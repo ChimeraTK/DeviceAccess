@@ -42,7 +42,7 @@ namespace ChimeraTK::detail {
     BitRangeAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetPath,
         const std::string& name, uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
         uint64_t dataInterpretationIsSigned, const AccessModeFlags& flags)
-    : NDRegisterAccessorDecorator<UserType, uint64_t>(getTarget(targetBackend, targetPath, flags)), _shift(shift),
+    : NDRegisterAccessorDecorator<UserType, uint64_t>(getTarget(targetBackend, targetPath)), _shift(shift),
       _numberOfBits(numberOfBits), _writeable(_target->isWriteable()), _targetBackend(targetBackend) {
       // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
       // bit-range registers targeting the same physical register). In that case the target's version number may have
@@ -323,9 +323,10 @@ namespace ChimeraTK::detail {
     /******************************************************************************************************************/
 
     static boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>> getTarget(
-        const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetRegisterPath,
-        const AccessModeFlags& flags) {
-      auto newAccessor = targetBackend->getRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, flags);
+        const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetRegisterPath) {
+      // The target accessor is always a sync accessor which is not RAW. It is always uint64, independent of the
+      // raw data size.
+      auto newAccessor = targetBackend->getRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
       auto& sharedAccessors = detail::SharedAccessors::getInstance();
       sharedAccessors.addTransferElement(newAccessor->getId());
 
