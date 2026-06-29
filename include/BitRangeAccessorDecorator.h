@@ -127,14 +127,15 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        auto validity = _sharedBuffer->dataValidity;
-        uint64_t v{_sharedBuffer->value[0][0]};
-        v = (v & _maskOnTarget) >> _shift;
-
         if constexpr(_isRaw) {
-          buffer_2D[0][0] = static_cast<UserType>(v);
+          // Raw mode: copy 1:1 from shared buffer to user buffer with no bit manipulation
+          buffer_2D[0][0] = static_cast<UserType>(_sharedBuffer->value[0][0]);
         }
         else {
+          auto validity = _sharedBuffer->dataValidity;
+          uint64_t v{_sharedBuffer->value[0][0]};
+          v = (v & _maskOnTarget) >> _shift;
+
           buffer_2D[0][0] = converter.toCooked(v);
           // Do a quick check if the fixed point converter clamped. Then set the
           // data validity faulty according to B.2.4.1
@@ -144,10 +145,11 @@ namespace ChimeraTK::detail {
           if(raw != v) {
             validity = DataValidity::faulty;
           }
+
+          this->_dataValidity = validity;
         }
 
         this->_versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
-        this->_dataValidity = validity;
       }
       else {
         assert(false);
@@ -195,21 +197,21 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        uint64_t value;
         if constexpr(_isRaw) {
-          value = static_cast<uint64_t>(buffer_2D[0][0]);
+          // Raw mode: copy 1:1 from user buffer to shared buffer with no bit manipulation
+          _sharedBuffer->value[0][0] = static_cast<uint64_t>(buffer_2D[0][0]);
         }
         else {
-          value = converter.toRaw(buffer_2D[0][0]);
+          uint64_t value = converter.toRaw(buffer_2D[0][0]);
+
+          // FIXME: Not setting the data validity according to the spec point B2.5.1.
+          // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
+          // To be revisited after fixing https://redmine.msktools.desy.de/issues/12912
+
+          // Modify the bit range in the shared buffer
+          _sharedBuffer->value[0][0] &= ~_maskOnTarget;
+          _sharedBuffer->value[0][0] |= (value << _shift);
         }
-
-        // FIXME: Not setting the data validity according to the spec point B2.5.1.
-        // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
-        // To be revisited after fixing https://redmine.msktools.desy.de/issues/12912
-
-        // Modify the bit range in the shared buffer
-        _sharedBuffer->value[0][0] &= ~_maskOnTarget;
-        _sharedBuffer->value[0][0] |= (value << _shift);
 
         _sharedBuffer->versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
         if((_sharedBuffer->dataValidity == DataValidity::ok) || (_lock.mutex()->useCount() == 1)) {
@@ -352,8 +354,11 @@ namespace ChimeraTK::detail {
   COOKED_TYPE BitRangeAccessorDecorator<UserType, _isRaw>::getAsCooked_impl(unsigned int channel, unsigned int sample) {
     if constexpr(_isRaw) {
       COOKED_TYPE result{};
-      RawConverter::withConverter<COOKED_TYPE, uint64_t>(_registerInfo, 0,
-          [&](auto converter) { result = converter.toCooked(static_cast<uint64_t>(buffer_2D[channel][sample])); });
+      uint64_t raw = static_cast<uint64_t>(buffer_2D[channel][sample]);
+      // Apply bit shift to extract the actual raw value from the full register value
+      raw = (raw & _maskOnTarget) >> _shift;
+      RawConverter::withConverter<COOKED_TYPE, uint64_t>(
+          _registerInfo, 0, [&](auto converter) { result = converter.toCooked(raw); });
       return result;
     }
     throw ChimeraTK::logic_error("Reading as cooked is not available for this accessor");
@@ -366,8 +371,14 @@ namespace ChimeraTK::detail {
   void BitRangeAccessorDecorator<UserType, _isRaw>::setAsCooked_impl(
       unsigned int channel, unsigned int sample, COOKED_TYPE value) {
     if constexpr(_isRaw) {
-      RawConverter::withConverter<COOKED_TYPE, uint64_t>(_registerInfo, 0,
-          [&](auto converter) { buffer_2D[channel][sample] = static_cast<UserType>(converter.toRaw(value)); });
+      RawConverter::withConverter<COOKED_TYPE, uint64_t>(_registerInfo, 0, [&](auto converter) {
+        // buffer_2D stores the full register word. Perform a read-modify-write on the bit range.
+        auto rawField = static_cast<uint64_t>(converter.toRaw(value));
+        auto regValue = static_cast<uint64_t>(buffer_2D[channel][sample]);
+        regValue &= ~_maskOnTarget;
+        regValue |= (rawField << _shift);
+        buffer_2D[channel][sample] = static_cast<UserType>(regValue);
+      });
       return;
     }
     throw ChimeraTK::logic_error("Setting as cooked is not available for this accessor");
