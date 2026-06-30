@@ -92,6 +92,57 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].signedFlag == false);
   }
   {
+    auto reg = regs.getBackendRegister("APP.STATUS.ProbeLimiter");
+    BOOST_TEST(reg.pathName == "/APP/STATUS/ProbeLimiter");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_TEST(reg.elementPitchBits == 4 * 8);
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8000);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 1);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_REQUIRE(reg.bitRangeInfo.has_value());
+    BOOST_TEST(reg.bitRangeInfo->shift == 0);
+  }
+  {
+    auto reg = regs.getBackendRegister("APP.STATUS.ExternalInterlock");
+    BOOST_TEST(reg.pathName == "/APP/STATUS/ExternalInterlock");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_TEST(reg.elementPitchBits == 4 * 8);
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8000);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 1);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_REQUIRE(reg.bitRangeInfo.has_value());
+    BOOST_TEST(reg.bitRangeInfo->shift == 1);
+  }
+  {
+    auto reg = regs.getBackendRegister("APP.STATUS.ErrorCounter");
+    BOOST_TEST(reg.pathName == "/APP/STATUS/ErrorCounter");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_TEST(reg.elementPitchBits == 4 * 8);
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8000);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 3);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_REQUIRE(reg.bitRangeInfo.has_value());
+    BOOST_TEST(reg.bitRangeInfo->shift == 2);
+  }
+  {
     auto reg = regs.getBackendRegister("APP.SomeTable");
     BOOST_TEST(reg.pathName == "/APP/SomeTable");
     BOOST_TEST(reg.nElements == 16384);
