@@ -98,7 +98,7 @@
             "fractionalBits": 0,
             "isSigned": false
           },
-          "constant": "0x01083",
+          "constant": "0x01080300",
           "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
         },
         {
@@ -113,7 +113,7 @@
           "representation": {
             "type": "string"
           },
-          "constant": "0x01083",
+          "constant": "0x01080300",
           "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
         },
         {
