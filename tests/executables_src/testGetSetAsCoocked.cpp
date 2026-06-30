@@ -42,24 +42,33 @@ BOOST_AUTO_TEST_CASE(testRawAccessor) {
 BOOST_AUTO_TEST_CASE(testRawAccessorBitField) {
   setDMapFilePath("simpleJsonFile.dmap");
 
-  Device d;
-  d.open("JDEV");
+  Device d("JDEV");
+  d.open();
 
-  // APP/STATUS is a bitField register: sub-element ProbeLimiter at bitShift 0, width 1 (unsigned).
+  // APP/STATUS/ErrorCounter is a bitField register sub-element with bitShift 2, width 3, unsigned.
   // With raw access, buffer_2D stores the full 32-bit register word.
-  auto rawAccessor = d.getScalarRegisterAccessor<int32_t>("APP/STATUS", 0, {AccessMode::raw});
-  rawAccessor.read();
+  // auto errorCounter = d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/ErrorCounter", 0, {AccessMode::raw});
+  auto errorCounter = d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/ErrorCounter", 0, {AccessMode::raw});
 
-  // The sharedMemoryDummy initializes to 0, so the full word is 0 and the bit-field is also 0.
-  BOOST_CHECK_EQUAL(int32_t(rawAccessor), 0);
-  BOOST_CHECK_EQUAL(rawAccessor.getAsCooked<double>(), 0.0);
+  // APP/STATUS is the full 32 bit word behind ErrorCounter. The content should be identical to the raw access
+  auto status = d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/DUMMY_WRITEABLE");
 
-  // Set raw value to a known bit pattern and verify getAsCooked extracts the correct bit field.
-  // ProbeLimiter is bit 0 (shift 0, width 1). Set bit 0 to 1 -> raw value = 1, cooked = 1.0.
-  rawAccessor = 1;
-  BOOST_CHECK_EQUAL(rawAccessor.getAsCooked<double>(), 1.0);
+  status.setAndWrite(0b110110); // Also bits 1 and 5 are set, but not part of ErrorCounter
 
-  // setAsCooked should convert and merge into the full register word.
-  rawAccessor.setAsCooked(0.0);
-  BOOST_CHECK_EQUAL(int32_t(rawAccessor), 0);
+  errorCounter.read();
+  // Test: The complete raw word as it exists on the device is available as raw data. Reading worked.
+  BOOST_TEST(errorCounter == 0b110110);
+  // Test: getAsCooked() is extracting the correct bits [2:4]
+  BOOST_TEST(errorCounter.getAsCooked<uint32_t>() == 5);
+
+  // Test: setAsCooked on ErrorCounter should only affect bits [4:2], not the other bits
+  errorCounter.setAsCooked(2); // ErrorCounter=2 (binary 010)
+  BOOST_TEST(errorCounter == 0b101010);
+
+  status.setAndWrite(0);
+
+  // Writing writes the whole word.
+  errorCounter.write();
+  BOOST_TEST(status.readAndGet() == 0b101010);
+  BOOST_TEST(errorCounter.isWriteable());
 }
