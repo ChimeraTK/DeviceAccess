@@ -12,9 +12,13 @@ namespace ChimeraTK {
     _uioAccess = std::make_shared<UioAccess>("/dev/" + deviceName);
   }
 
+  /********************************************************************************************************************/
+
   UioBackend::~UioBackend() {
     UioBackend::closeImpl();
   }
+
+  /********************************************************************************************************************/
 
   boost::shared_ptr<DeviceBackend> UioBackend::createInstance(
       // FIXME #11279 Implement API breaking changes from linter warnings
@@ -31,6 +35,8 @@ namespace ChimeraTK {
     return boost::make_shared<UioBackend>(address, parameters["map"], parameters["DataConsistencyKeys"]);
   }
 
+  /********************************************************************************************************************/
+
   void UioBackend::open() {
     if(_opened) {
       if(isFunctional()) {
@@ -42,6 +48,8 @@ namespace ChimeraTK {
     _uioAccess->open();
     setOpenedAndClearException();
   }
+
+  /********************************************************************************************************************/
 
   void UioBackend::closeImpl() {
     if(_opened) {
@@ -56,9 +64,13 @@ namespace ChimeraTK {
     _opened = false;
   }
 
+  /********************************************************************************************************************/
+
   bool UioBackend::barIndexValid(uint64_t bar) {
-    return (bar == 0);
+    return _uioAccess->mapIndexValid(bar);
   }
+
+  /********************************************************************************************************************/
 
   void UioBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     assert(_opened);
@@ -67,12 +79,16 @@ namespace ChimeraTK {
     _uioAccess->read(bar, address, data, sizeInBytes);
   }
 
+  /********************************************************************************************************************/
+
   void UioBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     assert(_opened);
     checkActiveException();
 
     _uioAccess->write(bar, address, data, sizeInBytes);
   }
+
+  /********************************************************************************************************************/
 
   std::future<void> UioBackend::activateSubscription(
       uint32_t interruptNumber, boost::shared_ptr<async::DomainImpl<std::nullptr_t>> asyncDomain) {
@@ -95,6 +111,8 @@ namespace ChimeraTK {
     return subscriptionDoneFuture;
   }
 
+  /********************************************************************************************************************/
+
   std::string UioBackend::readDeviceInfo() {
     std::string result = std::string("UIO backend: Device path = " + _uioAccess->getDeviceFilePath());
     if(!isOpen()) {
@@ -103,6 +121,8 @@ namespace ChimeraTK {
 
     return result;
   }
+
+  /********************************************************************************************************************/
 
   void UioBackend::waitForInterruptLoop(std::promise<void> subscriptionDonePromise) {
     try { // also the scope for the promiseFulfiller
