@@ -182,9 +182,10 @@ namespace ChimeraTK::detail {
 
         void fill(NumericAddressedRegisterInfo& info, uint32_t bytesPerElem) const {
           info.pathName = info.pathName / name; // extend the name in the pre-filled info object
-          info.bitRangeInfo.emplace(bitShift);
           info.channels.clear();
           representation.fill(info, 0 /*offset*/, bytesPerElem);
+          info.channels[0].bitOffset = bitShift;
+          info.isBitRange = true;
         }
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SubElement, name, bitShift, representation)

@@ -148,7 +148,7 @@ namespace ChimeraTK {
     if(registerInfo.doubleBuffer == std::nullopt) {
       // 1D or scalar register
       if(registerInfo.getNumberOfDimensions() <= 1) {
-        if(registerInfo.bitRangeInfo.has_value()) {
+        if(registerInfo.isBitRange) {
           RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
               (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8));
           std::cout << "Target Register Path: " << targetRegisterPath << std::endl;
@@ -156,11 +156,11 @@ namespace ChimeraTK {
 
           if(flags.has(AccessMode::raw)) {
             return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(shared_from_this(),
-                targetRegisterPath, registerPathName, registerInfo.bitRangeInfo.value().shift, channelInfo.width,
+                targetRegisterPath, registerPathName, channelInfo.bitOffset, channelInfo.width,
                 channelInfo.nFractionalBits, channelInfo.signedFlag, flags);
           }
           return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(shared_from_this(),
-              targetRegisterPath, registerPathName, registerInfo.bitRangeInfo.value().shift, channelInfo.width,
+              targetRegisterPath, registerPathName, channelInfo.bitOffset, channelInfo.width,
               channelInfo.nFractionalBits, channelInfo.signedFlag, flags);
         }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||

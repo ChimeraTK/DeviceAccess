@@ -105,8 +105,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
-    BOOST_REQUIRE(reg.bitRangeInfo.has_value());
-    BOOST_TEST(reg.bitRangeInfo->shift == 0);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.isBitRange == true);
   }
   {
     auto reg = regs.getBackendRegister("APP.STATUS.ExternalInterlock");
@@ -122,8 +122,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
-    BOOST_REQUIRE(reg.bitRangeInfo.has_value());
-    BOOST_TEST(reg.bitRangeInfo->shift == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 1);
+    BOOST_TEST(reg.isBitRange == true);
   }
   {
     auto reg = regs.getBackendRegister("APP.STATUS.ErrorCounter");
@@ -139,8 +139,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 3);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
-    BOOST_REQUIRE(reg.bitRangeInfo.has_value());
-    BOOST_TEST(reg.bitRangeInfo->shift == 2);
+    BOOST_TEST(reg.channels[0].bitOffset == 2);
+    BOOST_TEST(reg.isBitRange == true);
   }
   {
     auto reg = regs.getBackendRegister("APP.SomeTable");
