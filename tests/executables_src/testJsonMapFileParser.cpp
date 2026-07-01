@@ -45,6 +45,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 8);
     BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("BSP.VERSION");
@@ -60,6 +61,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("BSP");
@@ -75,6 +77,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("APP.STATUS");
@@ -90,6 +93,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("APP.STATUS.ProbeLimiter");
@@ -105,7 +109,6 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
-    BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_TEST(reg.isBitRange == true);
   }
   {
@@ -117,12 +120,11 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.address == 0x8000);
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
     BOOST_REQUIRE(reg.channels.size() == 1);
-    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].bitOffset == 1);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
-    BOOST_TEST(reg.channels[0].bitOffset == 1);
     BOOST_TEST(reg.isBitRange == true);
   }
   {
@@ -134,12 +136,11 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.address == 0x8000);
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
     BOOST_REQUIRE(reg.channels.size() == 1);
-    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].bitOffset == 2);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 3);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
-    BOOST_TEST(reg.channels[0].bitOffset == 2);
     BOOST_TEST(reg.isBitRange == true);
   }
   {
@@ -157,6 +158,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].nFractionalBits == 10);
     BOOST_TEST(reg.channels[0].signedFlag == true);
     BOOST_TEST(!reg.doubleBuffer.has_value());
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.CTRL");
@@ -191,6 +193,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[2].width == 32);
     BOOST_TEST(reg.channels[2].nFractionalBits == 0);
     BOOST_TEST(reg.channels[2].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.FD");
@@ -215,6 +218,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[1].width == 16);
     BOOST_TEST(reg.channels[1].nFractionalBits == -2);
     BOOST_TEST(reg.channels[1].signedFlag == true);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.DOUBLE_BUF.ENA");
@@ -229,6 +233,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.DOUBLE_BUF.INACTIVE_BUF_ID");
@@ -243,6 +248,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.FD.BUF0");
@@ -265,6 +271,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[1].width == 16);
     BOOST_TEST(reg.channels[1].nFractionalBits == -2);
     BOOST_TEST(reg.channels[1].signedFlag == true);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.FD.BUF1");
@@ -286,6 +293,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[1].width == 16);
     BOOST_TEST(reg.channels[1].nFractionalBits == -2);
     BOOST_TEST(reg.channels[1].signedFlag == true);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.MUX_SEL");
@@ -300,6 +308,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 2);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.MACRO_PULSE_NUMBER");
@@ -314,6 +323,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("BSP.SOME_INFO");
@@ -328,6 +338,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("APP.SomeFloat");
@@ -342,6 +353,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_TEST(reg.isBitRange == false);
   }
   {
     auto reg = regs.getBackendRegister("BSP.VOID_INTERRUPT_0");
@@ -353,6 +365,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 0);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
   }
 
   BOOST_TEST(metas.getNumberOfMetadata() == 6);
