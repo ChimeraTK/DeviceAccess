@@ -151,17 +151,19 @@ namespace ChimeraTK {
         if(registerInfo.isBitRange) {
           RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
               (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8));
+          auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
+
           std::cout << "Target Register Path: " << targetRegisterPath << std::endl;
           auto channelInfo = registerInfo.channels.front();
 
           if(flags.has(AccessMode::raw)) {
             return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(shared_from_this(),
-                targetRegisterPath, registerPathName, channelInfo.bitOffset, channelInfo.width,
-                channelInfo.nFractionalBits, channelInfo.signedFlag, flags);
+                targetRegisterPath, target, registerPathName, channelInfo.bitOffset, channelInfo.width,
+                channelInfo.nFractionalBits, channelInfo.signedFlag, registerInfo.isWriteable());
           }
           return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(shared_from_this(),
-              targetRegisterPath, registerPathName, channelInfo.bitOffset, channelInfo.width,
-              channelInfo.nFractionalBits, channelInfo.signedFlag, flags);
+              targetRegisterPath, target, registerPathName, channelInfo.bitOffset, channelInfo.width,
+              channelInfo.nFractionalBits, channelInfo.signedFlag, registerInfo.isWriteable());
         }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||

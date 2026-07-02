@@ -83,8 +83,8 @@ namespace ChimeraTK::LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> BitRangeAccessPlugin::decorateAccessor(
-      boost::shared_ptr<LogicalNameMappingBackend>& backend,
-      boost::shared_ptr<NDRegisterAccessor<TargetType>>& /*target*/, const UndecoratedParams& params) {
+      boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
+      const UndecoratedParams& params) {
     if constexpr(std::is_same_v<TargetType, uint64_t>) {
       if(params._wordOffsetInRegister != 0) {
         throw ChimeraTK::logic_error(std::format("BitRangePlugin (on {}) cannot have a word offset", params._name));
@@ -110,10 +110,11 @@ namespace ChimeraTK::LNMBackend {
         targetDevice = backend;
       }
 
-      RegisterPath path{params._name};
+      RegisterPath targetPath{params._name};
 
-      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(targetDevice, path, params._name,
-          _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned, params._flags);
+      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(targetDevice, targetPath, target,
+          _info.name, _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned,
+          _info.isWriteable());
     }
 
     assert(false);

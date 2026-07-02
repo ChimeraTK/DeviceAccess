@@ -33,17 +33,18 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, bool _isRaw = false>
+  template<typename UserType, bool isRaw = false>
   struct BitRangeAccessorDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::buffer_2D;
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
 
     /******************************************************************************************************************/
     BitRangeAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetPath,
-        const std::string& name, uint64_t shift, uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits,
-        uint64_t dataInterpretationIsSigned, const AccessModeFlags& flags)
-    : NDRegisterAccessorDecorator<UserType, uint64_t>(getTarget(targetBackend, targetPath)), _shift(shift),
-      _numberOfBits(numberOfBits), _writeable(_target->isWriteable()), _targetBackend(targetBackend) {
+        boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const std::string& name, uint64_t shift,
+        uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits, uint64_t dataInterpretationIsSigned,
+        bool isWriteable)
+    : NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(shift), _numberOfBits(numberOfBits),
+      _writeable(isWriteable), _targetBackend(targetBackend) {
       // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
       // bit-range registers targeting the same physical register). In that case the target's version number may have
       // been set by operations through another decorator, but from the user's perspective this is a fresh accessor.
@@ -72,6 +73,7 @@ namespace ChimeraTK::detail {
       targetPath.setAltSeparator(".");
       detail::SharedAccessorKey key(targetBackend.get(), targetPath);
       auto& sharedAccessors = detail::SharedAccessors::getInstance();
+      sharedAccessors.addTransferElement(_target->getId());
       _targetSharedState = sharedAccessors.getTargetSharedState<uint64_t>(key);
       _sharedBuffer =
           std::get_if<SharedAccessors::TargetSharedState::UserBuffer<uint64_t>>(&(_targetSharedState->dataBuffer));
@@ -127,7 +129,7 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        if constexpr(!_isRaw) {
+        if constexpr(!isRaw) {
           auto validity = _sharedBuffer->dataValidity;
           uint64_t v{_sharedBuffer->value[0][0]};
           v = (v & _maskOnTarget) >> _shift;
@@ -163,8 +165,7 @@ namespace ChimeraTK::detail {
       _lock.lock();
 
       if(!_writeable) {
-        throw ChimeraTK::logic_error(
-            "Register \"" + TransferElement::getName() + "\" with BitRange plugin is not writeable.");
+        throw ChimeraTK::logic_error("Register \"" + _registerInfo.pathName + "\" is not writeable.");
       }
 
       // Read-Remember-Modify-Write:
@@ -198,7 +199,7 @@ namespace ChimeraTK::detail {
         [[maybe_unused]] size_t implParameter) {
       static_assert(std::is_same_v<UserType, CookedType>);
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
-        if constexpr(!_isRaw) {
+        if constexpr(!isRaw) {
           uint64_t value = converter.toRaw(buffer_2D[0][0]);
 
           // FIXME: Not setting the data validity according to the spec point B2.5.1.
@@ -247,7 +248,7 @@ namespace ChimeraTK::detail {
 
     // a local typename so the DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER does
     // not get confused by the comma which separates the two template parameters
-    using THIS_TYPE = BitRangeAccessorDecorator<UserType, _isRaw>;
+    using THIS_TYPE = BitRangeAccessorDecorator<UserType, isRaw>;
 
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, setAsCooked_impl, 3);
@@ -262,7 +263,7 @@ namespace ChimeraTK::detail {
     /******************************************************************************************************************/
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override {
-      auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType, _isRaw>>(newElement);
+      auto castedToThisType = boost::dynamic_pointer_cast<BitRangeAccessorDecorator<UserType, isRaw>>(newElement);
 
       // In a transfer group, we are trying to replaced with an accessor. Check if this accessor is for the
       // same target and not us and check for overlapping bit range afterwards. If they overlap, switch us and
@@ -322,19 +323,6 @@ namespace ChimeraTK::detail {
 
     /******************************************************************************************************************/
 
-    static boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint64_t>> getTarget(
-        const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetRegisterPath) {
-      // The target accessor is always a sync accessor which is not RAW. It is always uint64, independent of the
-      // raw data size.
-      auto newAccessor = targetBackend->getRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
-      auto& sharedAccessors = detail::SharedAccessors::getInstance();
-      sharedAccessors.addTransferElement(newAccessor->getId());
-
-      return newAccessor;
-    }
-
-    /******************************************************************************************************************/
-
     void sharedBufferToTarget() {
       _sharedBuffer->value[0].swap(_target->accessChannel(0));
       _target->setDataValidity(_sharedBuffer->dataValidity);
@@ -351,10 +339,10 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, bool _isRaw>
+  template<typename UserType, bool isRaw>
   template<typename COOKED_TYPE>
-  COOKED_TYPE BitRangeAccessorDecorator<UserType, _isRaw>::getAsCooked_impl(unsigned int channel, unsigned int sample) {
-    if constexpr(_isRaw && std::is_integral_v<UserType>) {
+  COOKED_TYPE BitRangeAccessorDecorator<UserType, isRaw>::getAsCooked_impl(unsigned int channel, unsigned int sample) {
+    if constexpr(isRaw && std::is_integral_v<UserType>) {
       COOKED_TYPE result{};
       uint64_t raw = static_cast<uint64_t>(buffer_2D[channel][sample]);
       // Apply bit shift to extract the actual raw value from the full register value
@@ -368,11 +356,11 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  template<typename UserType, bool _isRaw>
+  template<typename UserType, bool isRaw>
   template<typename COOKED_TYPE>
-  void BitRangeAccessorDecorator<UserType, _isRaw>::setAsCooked_impl(
+  void BitRangeAccessorDecorator<UserType, isRaw>::setAsCooked_impl(
       unsigned int channel, unsigned int sample, COOKED_TYPE value) {
-    if constexpr(_isRaw && std::is_integral_v<UserType>) {
+    if constexpr(isRaw && std::is_integral_v<UserType>) {
       RawConverter::withConverter<COOKED_TYPE, uint64_t>(_registerInfo, 0, [&](auto converter) {
         // buffer_2D stores the full register word. Perform a read-modify-write on the bit range.
         auto rawField = static_cast<uint64_t>(converter.toRaw(value));
