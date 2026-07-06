@@ -152,8 +152,6 @@ namespace ChimeraTK {
           RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
               (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8));
           auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
-
-          std::cout << "Target Register Path: " << targetRegisterPath << std::endl;
           auto channelInfo = registerInfo.channels.front();
 
           if(flags.has(AccessMode::raw)) {
