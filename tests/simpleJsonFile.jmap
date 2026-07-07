@@ -305,17 +305,17 @@
                   "offset": 8,
                   "representation": {
                     "type": "bitField",
-                    "width": 32,
-                    "subElements": [
-                      {
-                        "name": "I",
+                    "width": 32
+                  },
+                  "children": [
+                    {
+                      "name": "I",
+                      "representation": {
                         "bitShift": 0,
-                        "representation": {
-                          "width": 18
-                        }
+                        "width": 18
                       }
-                    ]
-                  }
+                    }
+                  ]
                 },
                 {
                   "name": "VectorSum",
@@ -323,17 +323,17 @@
                   "offset": 10,
                   "representation": {
                     "type": "bitField",
-                    "width": 32,
-                    "subElements": [
-                      {
-                        "name": "Q",
+                    "width": 32
+                  },
+                  "children": [
+                    {
+                      "name": "Q",
+                      "representation": {
                         "bitShift": 2,
-                        "representation": {
-                          "width": 18
-                        }
+                        "width": 18
                       }
-                    ]
-                  }
+                    }
+                  ]
                 }
               ]
             }
