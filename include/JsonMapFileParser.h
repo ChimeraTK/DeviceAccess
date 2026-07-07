@@ -27,9 +27,8 @@ namespace ChimeraTK::detail {
      */
     std::pair<NumericAddressedRegisterCatalogue, MetadataCatalogue> parse(std::ifstream& stream);
 
-   private:
     struct Imp;
-    std::unique_ptr<Imp> _theImp;
+    std::unique_ptr<Imp> theImp;
   };
 
 } // namespace ChimeraTK::detail

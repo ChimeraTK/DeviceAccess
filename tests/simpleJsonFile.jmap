@@ -89,7 +89,6 @@
           "numberOfElements": 1,
           "bytesPerElement": 4,
           "address": {
-            "channel": 0,
             "offset": 4
           },
           "representation": {
@@ -151,37 +150,32 @@
             "offset": "0x8000"
           },
           "bytesPerElement": 4,
-          "representation": {
-            "type": "bitField",
-            "width": 32,
-            "subElements": [
-              {
-                "name": "ProbeLimiter",
-                "bitShift": 0,
-                "representation": {
-                  "width": 1
-                }
-              },
-              {
-                "name": "ExternalInterlock",
-                "bitShift": 1,
-                "representation": {
-                  "width": 1
-                }
-              },
-              {
-                "name": "ErrorCounter",
-                "bitShift": 2,
-                "representation": {
-                  "type": "fixedPoint",
-                  "width": 3,
-                  "fractionalBits": 0,
-                  "isSigned": false
-                },
-                "_comment": "Will be unsupported at first"
+          "children": [
+            {
+              "name": "ProbeLimiter",
+              "representation": {
+                "width": 1
               }
-            ]
-          }
+            },
+            {
+              "name": "ExternalInterlock",
+              "representation": {
+                "bitShift": 1,
+                "width": 1
+              }
+            },
+            {
+              "name": "ErrorCounter",
+              "representation": {
+                "bitShift": 2,
+                "type": "fixedPoint",
+                "width": 3,
+                "fractionalBits": 0,
+                "isSigned": false
+              },
+              "_comment": "Will be unsupported at first"
+            }
+          ]
         },
         {
           "name": "SomeTable",
@@ -278,36 +272,32 @@
                   "name": "status",
                   "bytesPerElement": 4,
                   "offset": 4,
-                  "representation": {
-                    "type": "bitField",
-                    "width": 32,
-                    "subElements": [
-                      {
-                        "name": "ProbeLimiter",
+                  "children": [
+                    {
+                      "name": "ProbeLimiter",
+                      "representation": {
                         "bitShift": 0,
-                        "representation": {
-                          "width": 1
-                        }
-                      },
-                      {
-                        "name": "ExternalInterlock",
-                        "bitShift": 1,
-                        "representation": {
-                          "width": 1
-                        }
-                      },
-                      {
-                        "name": "ErrorCounter",
-                        "bitShift": 2,
-                        "representation": {
-                          "type": "fixedPoint",
-                          "width": 3,
-                          "fractionalBits": 0,
-                          "isSigned": false
-                        }
+                        "width": 1
                       }
-                    ]
-                  }
+                    },
+                    {
+                      "name": "ExternalInterlock",
+                      "representation": {
+                        "bitShift": 1,
+                        "width": 1
+                      }
+                    },
+                    {
+                      "name": "ErrorCounter",
+                      "representation": {
+                        "bitShift": 2,
+                        "type": "fixedPoint",
+                        "width": 3,
+                        "fractionalBits": 0,
+                        "isSigned": false
+                      }
+                    }
+                  ]
                 },
                 {
                   "name": "VectorSum",
