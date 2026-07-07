@@ -158,7 +158,7 @@ namespace ChimeraTK::detail {
     } address{AddressType::addressTypeNotSet};
 
     // Basic representation without sub elements
-    struct BasicRepresentation {
+    struct Representation {
       RepresentationType type{RepresentationType::FIXED_POINT};
       uint32_t width{type != RepresentationType::representationNotSet ? 32U : 0U};
       int32_t fractionalBits{0};
@@ -177,32 +177,12 @@ namespace ChimeraTK::detail {
           }
         }
         else {
-          BasicRepresentation().fill(info, offset, bytesPerElem);
+          Representation().fill(info, offset, bytesPerElem);
         }
       }
 
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(BasicRepresentation, type, width, fractionalBits, isSigned, bitShift)
-    };
-    struct Representation : public BasicRepresentation {
-      struct SubElement {
-        std::string name;
-        uint32_t bitShift{0};
-        BasicRepresentation representation{};
-
-        void fill(NumericAddressedRegisterInfo& info, uint32_t bytesPerElem) const {
-          info.pathName = info.pathName / name; // extend the name in the pre-filled info object
-          info.channels.clear();
-          representation.fill(info, 0 /*offset*/, bytesPerElem);
-          info.channels[0].bitOffset = bitShift;
-          info.isBitRange = true;
-        }
-
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SubElement, name, bitShift, representation)
-      };
-      std::vector<SubElement> subElements;
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-          Representation, type, width, fractionalBits, isSigned, subElements, bitShift)
-    } representation{{RepresentationType::representationNotSet}, {}};
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned, bitShift)
+    } representation{RepresentationType::representationNotSet};
 
     struct ChannelTab {
       size_t numberOfElements{0};
@@ -214,7 +194,7 @@ namespace ChimeraTK::detail {
         std::string description;
         size_t offset;
         size_t bytesPerElement{4};
-        BasicRepresentation representation{};
+        Representation representation{};
 
         void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset, bytesPerElement); }
 
@@ -341,12 +321,6 @@ namespace ChimeraTK::detail {
           buf1Register.computeDataDescriptor();
           catalogue.addRegister(buf1Register);
         }
-        for(const auto& bfe : representation.subElements) {
-          NumericAddressedRegisterInfo bfeInfo = my;
-          bfe.fill(bfeInfo, bytesPerElement);
-          bfeInfo.computeDataDescriptor();
-          catalogue.addRegister(bfeInfo);
-        }
       }
       else if(representation.type != RepresentationType::representationNotSet) {
         auto my = catalogue.getBackendRegister(parentName);
@@ -409,6 +383,18 @@ namespace ChimeraTK::detail {
       std::vector<JsonAddressSpaceEntry> addressSpace = data.at("addressSpace");
       for(const auto& entry : addressSpace) {
         entry.addInfos(catalogue, "/", /*addressSetByParent=*/false);
+      }
+      if(addressesWithBitRange.size()) {
+        // Scan the catalogue for registers what have bit shift 0, a width smaller than their element size and that
+        // share their starting address with a bit range. They have to become bit ranges as well.
+        for(auto& reg : catalogue) {
+          if((reg.channels.size() == 1) && (reg.channels[0].bitOffset == 0) &&
+              (reg.channels[0].width < reg.elementPitchBits)) {
+            if(addressesWithBitRange.find({reg.bar, reg.address}) != addressesWithBitRange.end()) {
+              reg.isBitRange = true;
+            }
+          }
+        }
       }
 
       for(const auto& entry : data.at("metadata").items()) {
