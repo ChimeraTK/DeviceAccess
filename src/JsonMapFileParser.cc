@@ -248,42 +248,45 @@ namespace ChimeraTK::detail {
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
       }
 
-      if(address.type != AddressType::addressTypeNotSet) {
-        if(representation.type == RepresentationType::VOID) {
-          throw ChimeraTK::logic_error("Address is set for void-typed register " + info.pathName);
+      if(representation.type != RepresentationType::VOID) {
+        if(address.type != AddressType::addressTypeNotSet) {
+          address.fill(info);
+          if(channelTabs.empty()) {
+            info.elementPitchBits = bytesPerElement * 8;
+            info.nElements = numberOfElements;
+            representation.fill(info, 0, bytesPerElement);
+          }
+          else {
+            if(channelTabs[0].channels.empty()) {
+              throw ChimeraTK::logic_error("Empty channel definition in register " + info.pathName);
+            }
+            info.elementPitchBits = channelTabs[0].pitch * 8;
+            info.nElements = channelTabs[0].numberOfElements;
+            for(const auto& channel : channelTabs[0].channels) {
+              channel.fill(info);
+            }
+          }
         }
-        address.fill(info);
-        if(channelTabs.empty()) {
-          info.elementPitchBits = bytesPerElement * 8;
-          info.nElements = numberOfElements;
-          representation.fill(info, 0, bytesPerElement);
+        else if(addressSetByParent) {
+          if(channelTabs.empty()) {
+            if(representation.type == RepresentationType::representationNotSet) {
+              throw ChimeraTK::logic_error("Representation not set for register " + parentName / name +
+                  " which inherited the address from parent!");
+            }
+            representation.fill(info, 0, bytesPerElement);
+          }
+          else {
+            throw ChimeraTK::logic_error("Address must be set for entries in channel tabs: register " + info.pathName);
+          }
         }
         else {
-          if(channelTabs[0].channels.empty()) {
-            throw ChimeraTK::logic_error("Empty channel definition in register " + info.pathName);
-          }
-          info.elementPitchBits = channelTabs[0].pitch * 8;
-          info.nElements = channelTabs[0].numberOfElements;
-          for(const auto& channel : channelTabs[0].channels) {
-            channel.fill(info);
-          }
-        }
-      }
-      else if(addressSetByParent) {
-        if(channelTabs.empty()) {
-          if(representation.type == RepresentationType::representationNotSet) {
-            throw ChimeraTK::logic_error("Representation not set for register " + parentName / name +
-                " which inherited the address from parent!");
-          }
-          representation.fill(info, 0, bytesPerElement);
-        }
-        else {
-          throw ChimeraTK::logic_error("Address must be set for entries in channel tabs: register " + info.pathName);
+          throw ChimeraTK::logic_error("Address not set but representation given in register " + parentName / name);
         }
       }
       else {
-        if(representation.type != RepresentationType::VOID) {
-          throw ChimeraTK::logic_error("Address not set but representation given in register " + parentName / name);
+        // VOID registers have no address — they are pure interrupt sources
+        if(address.type != AddressType::addressTypeNotSet) {
+          throw ChimeraTK::logic_error("Address is set for void-typed register " + info.pathName);
         }
         if(triggeredByInterrupt.empty()) {
           throw ChimeraTK::logic_error(
@@ -292,6 +295,8 @@ namespace ChimeraTK::detail {
         info.nElements = 0;
         info.dataDescriptor = DataDescriptor{DataDescriptor::FundamentalType::nodata};
         info.interruptId = triggeredByInterrupt;
+        info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
+        info.channels.clear();
         info.channels.emplace_back(0, NumericAddressedRegisterInfo::Type::VOID, 0, 0, false);
       }
 
