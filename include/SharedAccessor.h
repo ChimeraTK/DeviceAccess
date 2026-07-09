@@ -19,7 +19,7 @@ namespace ChimeraTK::detail {
    *  register share their target accessor. This sharing is governed by this map. */
   class SharedAccessors {
    public:
-    static SharedAccessors& getInstance();
+    //    static SharedAccessors& getInstance();
 
     /** SharedState of a (complete) target register.
      *  It contains the complete data buffer and a mutex to protect it.

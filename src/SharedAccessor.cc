@@ -7,10 +7,10 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  SharedAccessors& SharedAccessors::getInstance() {
-    static SharedAccessors instance;
-    return instance;
-  }
+  // SharedAccessors& SharedAccessors::getInstance() {
+  //   static SharedAccessors instance;
+  //   return instance;
+  // }
 
   /********************************************************************************************************************/
 
