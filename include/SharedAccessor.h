@@ -63,9 +63,6 @@ At the mmomen*/
     // to the value objects of the map are not safe against insertions into the map.
     std::map<SharedAccessorKey, std::shared_ptr<TargetSharedState>> _targetSharedStates;
     std::map<TransferElementID, TransferSharedState> _transferSharedStates;
-
-   private:
-    SharedAccessors() = default;
   };
 
   /********************************************************************************************************************/
