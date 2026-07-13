@@ -7,13 +7,6 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  // SharedAccessors& SharedAccessors::getInstance() {
-  //   static SharedAccessors instance;
-  //   return instance;
-  // }
-
-  /********************************************************************************************************************/
-
   void SharedAccessors::combineTransferSharedStates(TransferElementID oldId, TransferElementID newId) {
     std::lock_guard<std::mutex> l(_mapMutex); // protect against concurrent map insertion via the [] operator
     auto oldIter = _transferSharedStates.find(oldId);

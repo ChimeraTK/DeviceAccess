@@ -19,12 +19,10 @@ namespace ChimeraTK::detail {
    *  register share their target accessor. This sharing is governed by this map. */
   class SharedAccessors {
    public:
-    //    static SharedAccessors& getInstance();
-
     /** SharedState of a (complete) target register.
      *  It contains the complete data buffer and a mutex to protect it.
-     * The mutex must also be held while performing any operation on an accessor registered in the
-     * _transferSharedStates map.
+     *  The mutex must also be held while performing any operation on an accessor registered in the
+     *  _transferSharedStates map.
      */
     struct TargetSharedState {
       // Helper name for the variant because the template argument is on NDRegisterAccessor, not the buffer class
@@ -37,7 +35,11 @@ namespace ChimeraTK::detail {
     };
 
     /** SharedState for all accessors sharing the same TransferElement.
-At the mmomen*/
+     *  At the moment it only contains the instance count which is increased when accessors are merged while being added
+     *  to a TransferGroup. This counter is basically counting how many accessors for the same target are in the same
+     *  transfer group. If there are accessor to the same target in different TransferGroups, they will have individual
+     *  entries in the _transferSharedStates map, but only one entry in the _targetSharedStates map.
+     */
     struct TransferSharedState {
       size_t instanceCount;
     };
