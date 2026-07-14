@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <atomic>
 #include <memory>
@@ -12,7 +12,7 @@ namespace ChimeraTK {
   /// @brief Implements a generic userspace interface for UIO devices.
   class UioAccess {
    private:
-    boost::filesystem::path _deviceFilePath;
+    std::filesystem::path _deviceFilePath;
     int _deviceFileDescriptor = 0;
     void* _deviceUserBase = nullptr;
     void* _deviceKernelBase = nullptr;
