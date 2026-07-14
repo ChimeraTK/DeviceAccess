@@ -23,11 +23,34 @@ namespace ChimeraTK {
     close();
   }
 
+  std::string UioAccess::lookupUioDevFromDtNode(const std::string dtNodeNname) {
+    std::string path = "/sys/class/uio/";
+    for(const auto& entry : std::filesystem::directory_iterator(path)) {
+      std::ifstream ifs{entry.path() / "name"};
+      if(!ifs) {
+        continue;
+      }
+
+      std::string currentName;
+      ifs >> currentName;
+      if(currentName == dtNodeNname) {
+        return entry.path().filename();
+      }
+    }
+    return "";
+  }
+
   void UioAccess::open() {
     if(std::filesystem::is_symlink(_deviceFilePath)) {
       _deviceFilePath = std::filesystem::canonical(_deviceFilePath);
     }
     std::string fileName = _deviceFilePath.filename().string();
+    std::string resolvedUioDev = lookupUioDevFromDtNode(fileName);
+    if(!resolvedUioDev.empty()) {
+      fileName = resolvedUioDev;
+      _deviceFilePath = "/dev/" + fileName;
+    }
+
     _deviceKernelBase = (void*)readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/addr");
     _deviceMemSize = readUint64HexFromFile("/sys/class/uio/" + fileName + "/maps/map0/size");
     _lastInterruptCount = readUint32FromFile("/sys/class/uio/" + fileName + "/event");

@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include <filesystem>
-
 #include <atomic>
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -25,6 +24,11 @@ namespace ChimeraTK {
 
     /// @brief Unmaps user space memory range for address range of UIO device.
     void UioUnmap();
+
+    /// @brief Looks up UIO device file name (e.g. uio0) from device tree node name.
+    /// @param dtNodeName Device tree node name
+    /// @return UIO device file name or empty string
+    static std::string lookupUioDevFromDtNode(const std::string dtNodeNname);
 
     /// @brief Subtracts uint32_t values taking overflow into account.
     /// @param minuend Minuend of subtraction
