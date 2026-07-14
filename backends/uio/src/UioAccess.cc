@@ -11,6 +11,7 @@
 #include <poll.h>
 
 #include <cerrno>
+#include <cstring>
 #include <fstream>
 #include <limits>
 
