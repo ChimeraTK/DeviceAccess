@@ -1,3 +1,4 @@
+
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
@@ -645,6 +646,117 @@ struct MuxedFloat {
 
 /**********************************************************************************************************************/
 
+static std::string cddSimpleJson("(ExceptionDummy:3?map=simpleJsonFile.jmap)");
+static auto exceptionDummySimpleJson =
+    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cddSimpleJson));
+
+/**********************************************************************************************************************/
+
+template<typename Derived, typename rawUserType_>
+struct AppStatusBitRange_base {
+  Derived* derived{static_cast<Derived*>(this)};
+
+  bool isWriteable() { return true; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 1; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef int32_t minimumUserType;
+  typedef rawUserType_ rawUserType;
+
+  int32_t lastPadding{0};
+  bool printPaddingChangedMessage{true};
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
+
+  DummyRegisterRawAccessor acc{exceptionDummySimpleJson, "", "/APP/STATUS"};
+
+  rawUserType get() { return (acc & derived->bitmask) >> derived->bitshift; }
+
+  void set(rawUserType val) {
+    val &= derived->valueMask;
+    acc &= ~derived->bitmask;
+    lastPadding = acc;
+    printPaddingChangedMessage = true;
+    acc |= (val << derived->bitshift) & derived->bitmask;
+  }
+
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue([[maybe_unused]] bool raw = false) {
+    rawUserType newRawValue = static_cast<rawUserType>((get() + derived->rawIncrement) & derived->valueMask);
+    Type v = ChimeraTK::numeric::convert<Type>(raw ? newRawValue : (newRawValue * derived->rawToCooked));
+    lastPadding = acc & ~derived->bitmask;
+    printPaddingChangedMessage = true;
+    return {{v}};
+  }
+
+  template<typename Type>
+  std::vector<std::vector<Type>> getRemoteValue([[maybe_unused]] bool raw = false) {
+    Type v = get() * (raw ? 1 : derived->rawToCooked);
+    if((acc & ~derived->bitmask) != lastPadding) {
+      if(printPaddingChangedMessage) {
+        std::cerr << "getRemoteValue(): Padding data has changed. Test will be failed by returing a false remote value "
+                  << "(off by one)." << std::endl;
+        printPaddingChangedMessage = false;
+      }
+      v++;
+      return {{v}};
+    }
+    return {{v}};
+  }
+
+  void setRemoteValue() { set((get() + derived->rawIncrement) & derived->valueMask); }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummySimpleJson->throwExceptionRead = enable;
+    exceptionDummySimpleJson->throwExceptionWrite = enable;
+    exceptionDummySimpleJson->throwExceptionOpen = enable;
+  }
+};
+
+/**********************************************************************************************************************/
+
+struct AppStatusProbeLimiter : AppStatusBitRange_base<AppStatusProbeLimiter, int8_t> {
+  std::string path() { return "/APP/STATUS/ProbeLimiter/DUMMY_WRITEABLE"; }
+  int8_t rawToCooked = 1;
+  int8_t rawIncrement = 1;
+  int8_t valueMask = 0x01;
+  int bitshift = 0;
+  int32_t bitmask = 0x00000001;
+};
+
+/**********************************************************************************************************************/
+
+struct AppStatusExternalInterlock : AppStatusBitRange_base<AppStatusExternalInterlock, int8_t> {
+  std::string path() { return "/APP/STATUS/ExternalInterlock/DUMMY_WRITEABLE"; }
+  int8_t rawToCooked = 1;
+  int8_t rawIncrement = 1;
+  int8_t valueMask = 0x01;
+  int bitshift = 1;
+  int32_t bitmask = 0x00000002;
+};
+
+/**********************************************************************************************************************/
+
+struct AppStatusErrorCounter : AppStatusBitRange_base<AppStatusErrorCounter, int8_t> {
+  std::string path() { return "/APP/STATUS/ErrorCounter/DUMMY_WRITEABLE"; }
+  int8_t rawToCooked = 1;
+  int8_t rawIncrement = 3;
+  int8_t valueMask = 0x07;
+  int bitshift = 2;
+  int32_t bitmask = 0x0000001C;
+};
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
@@ -673,6 +785,17 @@ BOOST_AUTO_TEST_CASE(testMultiplexedRegisterAccessor) {
       .addRegister<MuxedNodmaAsync>()
       .addRegister<MuxedFloat>()
       .runTests(cddMuxed);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testJsonMapFileBitFieldRegisters) {
+  std::cout << "*** testJsonMapFileBitFieldRegisters *** " << std::endl;
+  ChimeraTK::UnifiedBackendTest<>()
+      .addRegister<AppStatusProbeLimiter>()
+      .addRegister<AppStatusExternalInterlock>()
+      .addRegister<AppStatusErrorCounter>()
+      .runTests(cddSimpleJson);
 }
 
 /**********************************************************************************************************************/
