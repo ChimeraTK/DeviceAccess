@@ -39,6 +39,10 @@ static std::string cddMuxed("(ExceptionDummy:1?map=muxedDataAcessor.map)");
 static auto exceptionDummyMuxed =
     boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cddMuxed));
 
+static std::string cddBitRange("(ExceptionDummy:1?map=unifiedTest.jmap)");
+static auto exceptionDummyBitRange =
+    boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cddBitRange));
+
 /**********************************************************************************************************************/
 
 struct Integers_signed32 {
@@ -645,6 +649,230 @@ struct MuxedFloat {
 
 /**********************************************************************************************************************/
 
+// Base descriptor with defaults, used for all register descriptor which use the base classes from this file
+template<typename Derived>
+struct RegisterDescriptorBase {
+  Derived* derived{static_cast<Derived*>(this)};
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
+
+  bool isWriteable() { return true; }
+  bool isReadable() { return true; }
+  bool isPush() { return false; }
+  ChimeraTK::AccessModeFlags supportedFlags() {
+    ChimeraTK::AccessModeFlags flags{ChimeraTK::AccessMode::raw};
+    if(derived->isPush()) flags.add(ChimeraTK::AccessMode::wait_for_new_data);
+    return flags;
+  }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    auto& dummy = dynamic_cast<ExceptionDummy&>(derived->acc.getBackend());
+    dummy.throwExceptionRead = enable;
+    dummy.throwExceptionWrite = enable;
+    dummy.throwExceptionOpen = enable;
+    if(derived->isPush() && enable) {
+      dummy.triggerInterrupt(6);
+    }
+  }
+};
+
+/// Base descriptor for 1D accessors (and scalars)
+template<typename Derived>
+struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
+  using RegisterDescriptorBase<Derived>::derived;
+
+  size_t nChannels() { return 1; }
+
+  size_t myOffset() { return 0; }
+
+  // T is always minimumUserType, but C++ doesn't allow to use Derived::minimumUserType here (circular dependency)
+  template<typename T, typename Traw>
+  T convertRawToCooked(Traw value) {
+    return static_cast<T>(value);
+  }
+
+  template<typename UserType>
+  void generateValueHook(std::vector<UserType>&) {} // override in derived if needed
+
+  // type can be user type or raw type
+  template<typename Type>
+  std::vector<std::vector<Type>> generateValue(bool getRaw = false) {
+    std::vector<Type> v;
+    typedef typename Derived::rawUserType Traw;
+    typedef typename Derived::minimumUserType T;
+    auto cv = derived->template getRemoteValue<Traw>(true)[0];
+    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+      Traw e = cv[i] + derived->increment * (static_cast<Traw>(i) + 1);
+      if(!getRaw) {
+        v.push_back(derived->template convertRawToCooked<T, Traw>(e));
+      }
+      else {
+        v.push_back(static_cast<T>(e));
+      }
+    }
+    derived->generateValueHook(v);
+    return {v};
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue(bool getRaw = false) {
+    typedef typename Derived::rawUserType Traw;
+
+    std::vector<UserType> cookedValues(derived->nElementsPerChannel());
+    std::vector<Traw> rawValues(derived->nElementsPerChannel());
+
+    // Keep the scope of the dummy buffer lock as limited as possible (see #12332).
+    // The rawToCooked conversion will acquire a lock via the math pluging decorator,
+    // which will cause lock order inversion if you hold the dummy buffer lock at that point.
+    {
+      auto bufferLock = derived->acc.getBufferLock();
+
+      for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+        rawValues[i] = derived->acc[i + derived->myOffset()];
+      }
+    } // end of bufferLock scope
+
+    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+      if(!getRaw) {
+        cookedValues[i] = derived->template convertRawToCooked<UserType, Traw>(rawValues[i]);
+      }
+      else {
+        cookedValues[i] = static_cast<UserType>(rawValues[i]);
+      }
+    }
+    return {cookedValues};
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<typename Derived::rawUserType>(true)[0];
+    { // scope for the buffer lock
+      auto bufferLock = derived->acc.getBufferLock();
+      for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+        derived->acc[i + derived->myOffset()] = v[i];
+      }
+    } // release the buffer lock before triggering another thread
+    if(derived->isPush()) {
+      dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(6);
+    }
+  }
+};
+
+/// Base descriptor for scalars
+template<typename Derived>
+struct ScalarRegisterDescriptorBase : OneDRegisterDescriptorBase<Derived> {
+  size_t nElementsPerChannel() { return 1; }
+};
+
+  // Base descriptor for bit accessors
+template<typename Derived>
+struct RegBitRangeDescriptor : OneDRegisterDescriptorBase<Derived> {
+  using RegisterDescriptorBase<Derived>::derived;
+  static constexpr auto capabilities = RegisterDescriptorBase<Derived>::capabilities;
+
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 1; }
+
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  size_t nValuesToTest() { return 1; }
+
+  size_t nRuntimeErrorCases() { return derived->target.nRuntimeErrorCases(); }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue(bool getRaw = false) {
+    if(getRaw) {
+      // For raw mode, generate a full word value (raw accessor returns the full parent word)
+      return derived->target.template generateValue<UserType>(true);
+    }
+    // For cooked mode, delegate to target (generates a word value, which when written
+    // to the bit range and read back via getRemoteValue will round-trip correctly)
+    return derived->target.template generateValue<UserType>();
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue(bool getRaw = false) {
+    if(getRaw) {
+      // For raw mode, return the full word value (raw accessor returns full parent word)
+      return derived->target.template getRemoteValue<UserType>(true);
+    }
+    // For cooked mode, extract the bit range
+    uint64_t v = derived->target.template getRemoteValue<uint64_t>()[0][0];
+    uint64_t mask = ((1ull << derived->width) - 1) << derived->shift;
+    UserType result = static_cast<UserType>((v & mask) >> derived->shift);
+    return {{result}};
+  }
+
+  void setRemoteValue() { 
+    derived->target.setRemoteValue(); 
+    std::cout << "DEBUG setRemoteValue: target.acc = 0x" << std::hex 
+              << (uint32_t)derived->target.acc << std::dec 
+              << " (full word 0x" << std::hex << (uint32_t)derived->target.acc << std::dec
+              << ") path=" << derived->path() << std::endl;
+  }
+
+  /// Read the raw full word value from _barContents directly via the DummyRegisterAccessor
+  uint64_t debugReadRawFullWord() {
+    return static_cast<uint64_t>(static_cast<uint32_t>(derived->target.acc));
+  }
+
+  void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }
+};
+
+struct BitRangeAccessorTarget : ScalarRegisterDescriptorBase<BitRangeAccessorTarget> {
+  std::string path() { return "/WORD_FIRMWARE"; }
+
+  const uint32_t increment = 0x1313'2131;
+
+  using minimumUserType = uint32_t;
+  using rawUserType = int32_t;
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyBitRange.get(), "", "/WORD_FIRMWARE"};
+};
+
+struct RegLowerHalfOfFirmware : RegBitRangeDescriptor<RegLowerHalfOfFirmware> {
+  std::string path() { return "/WORD_FIRMWARE/BitRangeLower"; }
+
+  using minimumUserType = int8_t;
+  using rawUserType = int32_t;
+
+  uint16_t width = 8;
+  uint16_t shift = 8;
+
+  BitRangeAccessorTarget target;
+};
+
+struct RegUpperHalfOfFirmware : RegBitRangeDescriptor<RegUpperHalfOfFirmware> {
+  std::string path() { return "/WORD_FIRMWARE/BitRangeUpper"; }
+
+  using minimumUserType = int16_t;
+  using rawUserType = int32_t;
+
+  uint16_t width = 16;
+  uint16_t shift = 16;
+
+  BitRangeAccessorTarget target;
+};
+
+struct Reg9BitsInChar : RegBitRangeDescriptor<Reg9BitsInChar> {
+  std::string path() { return "/WORD_FIRMWARE/BitRangeMiddle"; }
+
+  using minimumUserType = int8_t;
+  using rawUserType = int32_t;
+
+  uint16_t width = 9;
+  uint16_t shift = 4;
+
+  BitRangeAccessorTarget target;
+};
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
@@ -673,6 +901,123 @@ BOOST_AUTO_TEST_CASE(testMultiplexedRegisterAccessor) {
       .addRegister<MuxedNodmaAsync>()
       .addRegister<MuxedFloat>()
       .runTests(cddMuxed);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testBitRanges) {
+  std::cout << "*** testBitRanges *** " << std::endl;
+
+  // Quick debug: simulate exactly what test_B_3_1_2_1 does for RegLowerHalfOfFirmware
+  {
+    // Static target already exists via the static global exceptionDummyBitRange
+    // Create the descriptors that will be used in the test
+    RegLowerHalfOfFirmware desc;
+    
+    ChimeraTK::Device d(cddBitRange);
+    auto reg = d.getTwoDRegisterAccessor<int8_t>("/WORD_FIRMWARE/BitRangeLower");
+    
+    std::cout << "DEBUG: BEFORE setRemoteValue: target.acc = 0x" << std::hex << (uint32_t)desc.target.acc << std::dec << std::endl;
+    
+    // Step 1: setRemoteValue
+    desc.setRemoteValue();
+    auto v1 = desc.getRemoteValue<int8_t>();
+    std::cout << "DEBUG: AFTER setRemoteValue: target.acc = 0x" << std::hex << (uint32_t)desc.target.acc << std::dec << std::endl;
+    std::cout << "DEBUG: AFTER setRemoteValue: getRemoteValue = " << (int)v1[0][0] << std::endl;
+    
+    // Step 2: open and read
+    d.open();
+    reg.read();
+    std::cout << "DEBUG: AFTER open+read: Device read = " << (int)reg[0][0] << std::endl;
+    
+    d.close();
+    std::cout << "DEBUG: AFTER close: target.acc = 0x" << std::hex << (uint32_t)desc.target.acc << std::dec << std::endl;
+  }
+
+  // Test after close cycle - same flow as test_B_3_1_2_1
+  {
+    RegLowerHalfOfFirmware desc;
+    ChimeraTK::Device d(cddBitRange);
+    auto reg = d.getTwoDRegisterAccessor<int8_t>("/WORD_FIRMWARE/BitRangeLower");
+    std::cout << "DEBUG2: BEFORE setRemoteValue: target.acc = 0x" << std::hex << (uint32_t)desc.target.acc << std::dec << std::endl;
+    desc.setRemoteValue();
+    auto v1 = desc.getRemoteValue<int8_t>();
+    std::cout << "DEBUG2: AFTER setRemoteValue: getRemoteValue = " << (int)v1[0][0] << std::endl;
+    d.open();
+    reg.read();
+    std::cout << "DEBUG2: AFTER open+read: Device read = " << (int)reg[0][0] << std::endl;
+    d.close();
+  }
+
+  // Debug: replicate exact test_B_3_1_2_1 flow for all three registers with close between
+  // No rawReg accessors — testing if bug reproduces without them
+  {
+    ChimeraTK::Device d(cddBitRange);
+    
+    // --- BitRangeLower ---
+    {
+      RegLowerHalfOfFirmware desc;
+      auto reg = d.getTwoDRegisterAccessor<int8_t>("/WORD_FIRMWARE/BitRangeLower");
+      
+      desc.setRemoteValue();
+      auto v1 = desc.getRemoteValue<int8_t>();
+      std::cout << "NO_RAW:Lower v1=" << (int)v1[0][0] << std::endl;
+      
+      d.open();
+      reg.read();
+      std::cout << "NO_RAW:Lower R1=" << (int)reg[0][0] << std::endl;
+      
+      desc.setRemoteValue();
+      reg.read();
+      std::cout << "NO_RAW:Lower R2=" << (int)reg[0][0] << std::endl;
+      
+      d.close();
+    }
+    
+    // --- BitRangeUpper ---
+    {
+      RegUpperHalfOfFirmware desc;
+      auto reg = d.getTwoDRegisterAccessor<int16_t>("/WORD_FIRMWARE/BitRangeUpper");
+      
+      desc.setRemoteValue();
+      auto v1 = desc.getRemoteValue<int16_t>();
+      std::cout << "NO_RAW:Upper v1=" << (int)v1[0][0] << std::endl;
+      
+      d.open();
+      reg.read();
+      std::cout << "NO_RAW:Upper R1=" << (int)reg[0][0] << std::endl;
+      
+      desc.setRemoteValue();
+      reg.read();
+      std::cout << "NO_RAW:Upper R2=" << (int)reg[0][0] << std::endl;
+      
+      d.close();
+    }
+    
+    // --- BitRangeMiddle ---
+    {
+      Reg9BitsInChar desc;
+      auto reg = d.getTwoDRegisterAccessor<int8_t>("/WORD_FIRMWARE/BitRangeMiddle");
+      
+      desc.setRemoteValue();
+      auto v1 = desc.getRemoteValue<int8_t>();
+      std::cout << "NO_RAW:Middle v1=" << (int)v1[0][0] << std::endl;
+      
+      d.open();
+      reg.read();
+      std::cout << "NO_RAW:Middle R1=" << (int)reg[0][0] << std::endl;
+      
+      d.close();
+    }
+    
+    std::cout << "--- NO_RAW test complete ---" << std::endl;
+  }
+
+  ChimeraTK::UnifiedBackendTest<>()
+      .addRegister<RegLowerHalfOfFirmware>()
+      .addRegister<RegUpperHalfOfFirmware>()
+      .addRegister<Reg9BitsInChar>()
+      .runTests(cddBitRange);
 }
 
 /**********************************************************************************************************************/

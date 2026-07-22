@@ -209,6 +209,9 @@ namespace ChimeraTK::detail {
       if constexpr(!isRaw) {
         auto validity = _sharedBuffer->dataValidity;
         uint64_t v{_sharedBuffer->value[0][0]};
+        std::cout << "BTRACE name=" << this->getName() << " _sharedBuffer[0]=" << std::hex << v << std::dec
+                  << " useCount=" << _lock.mutex()->useCount()
+                  << " instanceCount=" << _sharedAccessors->instanceCount(_target->getId()) << std::endl;
         v = (v & _maskOnTarget) >> _shift;
 
         buffer_2D[0][0] = converter.toCooked(v);
