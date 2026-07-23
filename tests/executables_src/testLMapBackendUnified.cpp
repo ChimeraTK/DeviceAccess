@@ -1171,7 +1171,7 @@ struct Reg9BitsInChar : RegBitRangeDescriptor<Reg9BitsInChar> {
 
   using minimumUserType = int8_t;
 
-  uint16_t width = 9;
+  uint16_t width = 8;
   uint16_t shift = 4;
 
   BitRangeAccessorTarget target;

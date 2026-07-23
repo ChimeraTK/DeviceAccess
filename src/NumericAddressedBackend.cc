@@ -149,6 +149,15 @@ namespace ChimeraTK {
       // 1D or scalar register
       if(registerInfo.getNumberOfDimensions() <= 1) {
         if(registerInfo.isBitRange) {
+          // scalar register check: validate numberOfWords and wordOffsetInRegister
+          auto nWords = numberOfWords;
+          if(nWords == 0) nWords = 1;
+          if(nWords + wordOffsetInRegister > 1) {
+            throw ChimeraTK::logic_error("Requested number of words (" + std::to_string(nWords) + " + " +
+                std::to_string(wordOffsetInRegister) + ") exceeds the size (1) of the bit-range register '" +
+                registerPathName + "'!");
+          }
+
           RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
               (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8));
           auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
