@@ -224,20 +224,44 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Illegal numeric address: '" + (path) + "'");
       }
       auto bar = std::stoi(components[1]);
-      size_t pos = components[2].find_first_of('*');
+      // Scan the second entry, starting with the signed/unsigned indicator and the bit width
+      // We use the fact that stoi stops at the first non-numeric character, so it will stop at a * if it comes after
+      // the u/s entry, or the other way around.
+      bool signedFlag = true;
+      size_t bitWidth = 32;
+      size_t pos = components[2].find_first_of("uU");
+      if(pos != std::string::npos) {
+        signedFlag = false;
+        bitWidth = std::stoi(components[2].substr(pos + 1));
+      }
+      else {
+        pos = components[2].find_first_of("sS");
+        if(pos != std::string::npos) {
+          signedFlag = true;
+          bitWidth = std::stoi(components[2].substr(pos + 1));
+        }
+      }
+      if(bitWidth != 8 && bitWidth != 16 && bitWidth != 32 && bitWidth != 64) {
+        throw ChimeraTK::logic_error("Illegal numeric address: '" + (path) + "'");
+      }
+      auto bytesPerElement = bitWidth / 8;
+
+      // now scan for the number of bytes
+      pos = components[2].find_first_of('*');
       auto address = std::stoi(components[2].substr(0, pos));
       size_t nBytes;
       if(pos != std::string::npos) {
         nBytes = std::stoi(components[2].substr(pos + 1));
       }
       else {
-        nBytes = sizeof(int32_t);
+        nBytes = bytesPerElement;
       }
-      auto nElements = nBytes / sizeof(int32_t);
-      if(nBytes == 0 || nBytes % sizeof(int32_t) != 0) {
+      auto nElements = nBytes / bytesPerElement;
+      if(nBytes == 0 || nBytes % bytesPerElement != 0) {
         throw ChimeraTK::logic_error("Illegal numeric address: '" + (path) + "'");
       }
-      return NumericAddressedRegisterInfo(path, nElements, address, nBytes, bar);
+      return NumericAddressedRegisterInfo(
+          path, nElements, address, nBytes, bar, bitWidth, /* fracBits */ 0, signedFlag);
     }
     if(path.startsWith("!")) {
       auto canonicalInterrupt = _canonicalInterrupts.find(path);
