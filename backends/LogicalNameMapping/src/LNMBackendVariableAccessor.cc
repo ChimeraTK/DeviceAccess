@@ -201,7 +201,8 @@ namespace ChimeraTK {
       return false;
     }
 
-    // Do we have to compare  formula helpers?
+    // We do not compare formula helpers because they are constructed from the _info, and hence are equal if the _infos
+    // are equal.
     return true;
   }
 
