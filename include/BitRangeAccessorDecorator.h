@@ -22,7 +22,7 @@ namespace ChimeraTK::detail {
 
   // From https://stackoverflow.com/questions/1392059/algorithm-to-generate-bit-mask
   constexpr uint64_t getMaskForNBits(uint64_t numberOfBits) {
-    // Prevent warning about undefined behavior if shifting right by 64 bit below
+    // Prevent undefined behaviour if shifting right by 64 bit below
     if(numberOfBits == 0) {
       return 0;
     }
