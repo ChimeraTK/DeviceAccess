@@ -5,6 +5,7 @@
 #include "CountedRecursiveMutex.h"
 #include "NDRegisterAccessor.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "NumericAddressedRegisterCatalogue.h"
 #include "RawConverter.h"
 #include "SharedAccessor.h"
 
@@ -39,9 +40,7 @@ namespace ChimeraTK::detail {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
 
     BitRangeAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetPath,
-        boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const std::string& name, uint64_t shift,
-        uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits, uint64_t dataInterpretationIsSigned,
-        bool isWriteable);
+        boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const NumericAddressedRegisterInfo& registerInfo);
 
     ~BitRangeAccessorDecorator() override;
 
@@ -115,21 +114,16 @@ namespace ChimeraTK::detail {
   template<typename UserType, bool isRaw>
   BitRangeAccessorDecorator<UserType, isRaw>::BitRangeAccessorDecorator(
       const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetPath,
-      boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const std::string& name, uint64_t shift,
-      uint64_t numberOfBits, uint64_t dataInterpretationFractionalBits, uint64_t dataInterpretationIsSigned,
-      bool isWriteable)
-  : NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(shift), _numberOfBits(numberOfBits),
-    _writeable(isWriteable), _targetBackend(targetBackend), _sharedAccessors(targetBackend->getSharedAccessors()) {
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const NumericAddressedRegisterInfo& registerInfo)
+  : NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(registerInfo.channels.front().bitOffset),
+    _numberOfBits(registerInfo.channels.front().width), _writeable(registerInfo.isWriteable()),
+    _targetBackend(targetBackend), _sharedAccessors(targetBackend->getSharedAccessors()), _registerInfo(registerInfo) {
     // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
     // bit-range registers targeting the same physical register). In that case the target's version number may have
     // been set by operations through another decorator, but from the user's perspective this is a fresh accessor.
     // The test UnifiedBackendTest_B_6 checks this by verifying VersionNumber(nullptr).
     this->_versionNumber = VersionNumber{nullptr};
 
-    // makeConverterLoopHelper expects a NumericAddressedBackend RegisterInfo, which we create with the relevant
-    // parameters.
-    _registerInfo = NumericAddressedRegisterInfo{name, 1, 0, sizeof(uint64_t), 0, uint32_t(numberOfBits),
-        int32_t(dataInterpretationFractionalBits), bool(dataInterpretationIsSigned)};
     _converterLoopHelper =
         RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, 0, *this);
 
@@ -142,9 +136,10 @@ namespace ChimeraTK::detail {
     }
 
     if constexpr(isRaw) {
-      if(DataType(typeid(UserType)) != DataType(typeid(uint64_t))) {
-        throw ChimeraTK::logic_error("BitRangeAccessorDecorator in raw mode requires integral UserType for register '" +
-            name + "'. Requested type is " + std::string(typeid(UserType).name()) + ".");
+      if(DataType(typeid(UserType)) != _registerInfo.getDataDescriptor().rawDataType()) {
+        throw ChimeraTK::logic_error("BitRangeAccessorDecorator in raw mode requires UserType " +
+            _registerInfo.getDataDescriptor().rawDataType().getAsString() + " for register '" + _registerInfo.pathName +
+            "'. Requested type is " + DataType(typeid(UserType)).getAsString() + ".");
       }
     }
 

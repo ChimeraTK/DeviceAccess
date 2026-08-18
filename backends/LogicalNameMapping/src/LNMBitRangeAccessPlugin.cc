@@ -5,6 +5,7 @@
 #include "LNMAccessorPlugin.h"
 #include "LNMBackendRegisterInfo.h"
 #include "LogicalNameMappingBackend.h"
+#include "NumericAddressedRegisterCatalogue.h"
 
 #include <boost/make_shared.hpp>
 
@@ -112,9 +113,14 @@ namespace ChimeraTK::LNMBackend {
 
       RegisterPath targetPath{params._name};
 
-      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(targetDevice, targetPath, target,
-          _info.name, _shift, _numberOfBits, dataInterpretationFractionalBits, dataInterpretationIsSigned,
-          _info.isWriteable());
+      NumericAddressedRegisterInfo regInfo(_info.name, 1, 0, sizeof(uint64_t), 0, _numberOfBits,
+          dataInterpretationFractionalBits, dataInterpretationIsSigned,
+          _info.isWriteable() ? NumericAddressedRegisterInfo::Access::READ_WRITE :
+                                NumericAddressedRegisterInfo::Access::READ_ONLY);
+      regInfo.channels[0].bitOffset = _shift;
+
+      return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(
+          targetDevice, targetPath, target, regInfo);
     }
 
     assert(false);

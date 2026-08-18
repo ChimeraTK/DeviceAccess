@@ -144,16 +144,13 @@ namespace ChimeraTK {
               (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8) + 'u' +
                   std::to_string(bitsPerElement));
           auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
-          auto channelInfo = registerInfo.channels.front();
 
           if(flags.has(AccessMode::raw)) {
-            return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(shared_from_this(),
-                targetRegisterPath, target, registerPathName, channelInfo.bitOffset, channelInfo.width,
-                channelInfo.nFractionalBits, channelInfo.signedFlag, registerInfo.isWriteable());
+            return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(
+                shared_from_this(), targetRegisterPath, target, registerInfo);
           }
-          return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(shared_from_this(),
-              targetRegisterPath, target, registerPathName, channelInfo.bitOffset, channelInfo.width,
-              channelInfo.nFractionalBits, channelInfo.signedFlag, registerInfo.isWriteable());
+          return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(
+              shared_from_this(), targetRegisterPath, target, registerInfo);
         }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||
