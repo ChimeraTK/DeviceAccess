@@ -104,11 +104,6 @@ namespace ChimeraTK::LNMBackend {
   template<typename Derived>
   class AccessorPlugin : public AccessorPluginBase {
    public:
-    /**
-     * The constructor of the plugin should also accept a 3rd argument:
-     *   const std::map<std::string, std::string>& parameters
-     *  Since the parameters are not used in the base class, they do not need to be passed on.
-     */
     explicit AccessorPlugin(const LNMBackendRegisterInfo& info, size_t pluginIndex);
 
    private:
