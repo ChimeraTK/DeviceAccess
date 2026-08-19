@@ -8,7 +8,11 @@
 
 #include <boost/bimap.hpp>
 
+#include <atomic>
+#include <chrono>
+#include <iostream>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 namespace ChimeraTK::async {
@@ -175,7 +179,6 @@ namespace ChimeraTK::async {
   }
 
   /********************************************************************************************************************/
-
   /**
    * This extracts and validates data from the json snippet 'descriptorJsonStr' that matches the version 1 format
    * Expect 'descriptionJsonStr' of the form  {"path":"APP.INTCB", "options":{"ICR", "IPR", "MER"...}, "version":1}
@@ -520,6 +523,12 @@ namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
   GenericMuxedInterruptDistributor::~GenericMuxedInterruptDistributor() {
+    // Stop and join the watchdog thread first, so it does not outlive this object or touch a closing backend.
+    _stopWatchdog = true;
+    if(_watchdogThread.joinable()) {
+      _watchdogThread.join();
+    }
+
     if(_backend->isFunctional()) {
       try {
         disableInterruptsFromMask(_activeInterrupts);
@@ -533,6 +542,76 @@ namespace ChimeraTK::async {
     }
 
   } // destructor
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+  void GenericMuxedInterruptDistributor::watchdogLoop() {
+    while(!_stopWatchdog.load()) {
+      std::this_thread::sleep_for(_watchdogInterval);
+
+      if(_stopWatchdog.load()) {
+        break;
+      }
+
+      // Atomically read-and-clear the handler heartbeat.
+      // NOTE: we use the default memory order (seq_cst) here for simplicity/robustness. Explicitly
+      // passing std::memory_order_acq_rel would be strictly better.
+      bool handlerRan = _handlerRan.exchange(false);
+
+      // If we have already raised a device exception, stay dormant until the device has genuinely recovered.
+      if(_watchdogAlerted.load()) {
+        // Normally this flag is cleared in activate() when the device is re-opened/re-activated.
+        // Keeping it as fallback if a recovery path bypasses activate()).
+        if(_backend->isFunctional()) {
+          _watchdogAlerted.store(false);
+        }
+        // else: still wedged/closed, keep waiting.
+        continue;
+      }
+
+      if(!handlerRan) {
+        // The device is down (exception active or closed) - do not probe the ISR (logic error)
+        if(!_backend->isFunctional()) {
+          continue;
+        }
+
+        // No interrupt handler run completed between the two watchdog samples, so
+        // check if the ISR actually still has pending, enabled bits.
+        uint32_t pendingInterrupts = _activeInterrupts;
+        try {
+          _isr->read();
+          pendingInterrupts &= _isr->accessData(0);
+        }
+        catch(ChimeraTK::runtime_error&) {
+          // ISR could not be read because the backend is already in an exception state.
+          _watchdogAlerted.store(true);
+          continue;
+        }
+        catch(ChimeraTK::logic_error& e) {
+          // ISR could not be read because the device is not open.
+          std::cerr << "Watchdog: logic error reading ISR (device likely closed): " << e.what() << std::endl;
+          _watchdogAlerted.store(true);
+          continue;
+        }
+
+        // If the ISR is zero the device is simply idle
+        if(pendingInterrupts == 0) {
+          continue;
+        }
+
+        _backend->setException("GenericMuxedInterruptDistributor: interrupt handler did not run for " +
+            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(_watchdogInterval).count()) +
+            " ms. Setting device exception.");
+
+        // Go dormant until the handler runs again (device recovers). Do NOT break/detach: the thread must stay
+        // alive so it can raise the device exception again after a reopen, and the destructor's join() is the
+        // single, race-free cleanup point.
+        _watchdogAlerted.store(true);
+      }
+      // else: handler ran at least once since the last sample — nothing to do this interval.
+    }
+  }
 
   /********************************************************************************************************************/
   void GenericMuxedInterruptDistributor::clearInterruptsFromMask(uint32_t mask) {
@@ -633,25 +712,48 @@ namespace ChimeraTK::async {
   /********************************************************************************************************************/
   void GenericMuxedInterruptDistributor::handle(VersionNumber version) {
     try {
+      // after distributing and clearing one snapshot, re-read the ISR .
+      uint32_t processedMask = 0; // bits already distributed in this handle() run
+      uint32_t ipr;
       _isr->read();
-      uint32_t ipr = _activeInterrupts & _isr->accessData(0);
+      ipr = _activeInterrupts & _isr->accessData(0);
+      do {
+        // Only distribute bits that were not already handled in a previous round of this run.
+        uint32_t newBits = ipr & ~processedMask;
+        for(auto const& [i, subDomainWeakPtr] : _subDomains) {
+          // i is the bit index of the subDomain
+          if(newBits & iToMask(i)) {
+            if(auto subDomain = subDomainWeakPtr.lock(); subDomain) {
+              //  The weak pointer might have gone.
+              //  TODO FIXME: We need a cleanup function which removes the map entry.
+              //  Otherwise we might be stuck with a bad weak pointer which is tried in each handle() call.
 
-      for(auto const& [i, subDomainWeakPtr] : _subDomains) {
-        // i is the bit index of the subDomain
-        if(ipr & iToMask(i)) {
-          if(auto subDomain = subDomainWeakPtr.lock(); subDomain) {
-            //  The weak pointer might have gone.
-            //  TODO FIXME: We need a cleanup function which removes the map entry.
-            //  Otherwise we might be stuck with a bad weak pointer which is tried in each handle() call.
+              subDomain->distribute(nullptr, version);
 
-            subDomain->distribute(nullptr, version);
-
-            // Requirement: nested interrupt handlers must clear their active interrupt flag first,
-            // then the parent interrupt flags are cleared.
-            clearOneInterrupt(i);
+              // Requirement: nested interrupt handlers must clear their active interrupt flag first,
+              // then the parent interrupt flags are cleared.
+              // why not first clear and then distribute?
+              clearOneInterrupt(i);
+            }
           }
-        }
-      } // for
+        } // for
+        processedMask |= ipr;
+
+        // Re-read to catch stragglers that arrived during distribution (interrupts asserted during the
+        // distribute()/clearOneInterrupt() calls above and therefore missed by the first snapshot). Giving the
+        // hardware (experimental) tiny moment to latch newly arrived interrupts, then loop while an enabled bit that we
+        // have not yet processed in this run is still pending.
+        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        _isr->read();
+        ipr = _activeInterrupts & _isr->accessData(0);
+      } while((ipr & ~processedMask) != 0);
+
+      // Signal that the interrupt handler has completed a run. The watchdog thread reads-and-clears
+      // this flag via exchange() to detect a wedged / starved interrupt handler.
+      //
+      // NOTE: we use the default memory order (seq_cst) here for simplicity/robustness. Explicitly
+      // passing std::memory_order_release would be strictly better.
+      _handlerRan.store(true);
     }
     catch(ChimeraTK::runtime_error&) {
       // There's nothing to do. The transferElement part of _activeInterrupts has already called the backend's setException
@@ -699,6 +801,16 @@ namespace ChimeraTK::async {
     enableInterruptsFromMask(activeInterrupts);
 
     clearAllEnabledInterrupts();
+
+    // Re-arm the watchdog.
+    _watchdogAlerted.store(false);
+
+    // Start the watchdog thread if it is not already running. It monitors that the interrupt handler
+    // keeps executing by checking a counter.
+    if(!_watchdogThread.joinable()) {
+      _stopWatchdog = false;
+      _watchdogThread = std::thread(&GenericMuxedInterruptDistributor::watchdogLoop, this);
+    }
 
     // Activate all existing sub-domains. We have to implement a loop here because the parent activate is calling
     // activateSubDomain() internally, which is not necessary because we already wrote to the hardware to do the

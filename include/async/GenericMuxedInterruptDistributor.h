@@ -5,7 +5,12 @@
 #include "../RegisterPath.h"
 #include "MuxedInterruptDistributor.h"
 
+#include <atomic>
 #include <bitset>
+#include <chrono>
+#include <map>
+#include <memory>
+#include <thread>
 
 namespace ChimeraTK::async {
 
@@ -68,6 +73,22 @@ namespace ChimeraTK::async {
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _cie;
 
     RegisterPath _path; // just a string path, with the added overwritten / operator etc.
+
+    /** Set true by handle() after each completed run. The watchdog atomically reads-and-clears it
+     *  via exchange() each interval to detect a wedged/starved handler. */
+    std::atomic<bool> _handlerRan{false};
+
+    /** Set true once the watchdog has raised a device exception*/
+    std::atomic<bool> _watchdogAlerted{false};
+
+    /** Watchdog thread and its stop flag. */
+    std::thread _watchdogThread;
+    std::atomic<bool> _stopWatchdog{false};
+    /** Watchdog polling/decision interval (experimental) */
+    static constexpr std::chrono::milliseconds _watchdogInterval{1000};
+
+    /** watchdog thread. */
+    void watchdogLoop();
 
     /**
      * In mask, 1 bits clear the corresponding registers, 0 bits do nothing.
