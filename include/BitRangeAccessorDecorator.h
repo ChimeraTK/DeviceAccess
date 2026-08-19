@@ -170,7 +170,9 @@ namespace ChimeraTK::detail {
   void BitRangeAccessorDecorator<UserType, isRaw>::doPreRead(TransferType type) {
     _lock.lock();
 
-    // In a transfer group: only swap the shared buffer to the target once, before calling the target's preRead().
+    // In a transfer group, this code is called multiple times for a single target, but we must only swap once.
+    // We use the use count of the accessor mutex to identify the first time this code is called in a transfer, so it is
+    // executed exactly once, independent of whether the accessor is on a transfer group or not.
     if(_lock.mutex()->useCount() == 1) {
       sharedBufferToTarget();
       _target->preRead(type);
