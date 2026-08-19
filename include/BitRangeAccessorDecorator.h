@@ -186,6 +186,8 @@ namespace ChimeraTK::detail {
     auto unlock = cppext::finally([this] { this->_lock.unlock(); });
 
     // step 1: target postRead() and swap the data into the shared state
+    // Use the use count of the accessor mutex to only run it the first time per transfer and target if the accessor is
+    // in a transfer group.
     if(_lock.mutex()->useCount() == _sharedAccessors->instanceCount(_target->getId())) {
       // whether the postRead throws or we have new data: The target buffer must be swapped back to keep the shared
       // state intact
