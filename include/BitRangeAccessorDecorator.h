@@ -117,7 +117,7 @@ namespace ChimeraTK::detail {
       boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const NumericAddressedRegisterInfo& registerInfo)
   : NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(registerInfo.channels.front().bitOffset),
     _numberOfBits(registerInfo.channels.front().width), _writeable(registerInfo.isWriteable()),
-    _targetBackend(targetBackend), _sharedAccessors(targetBackend->getSharedAccessors()), _registerInfo(registerInfo) {
+    _registerInfo(registerInfo), _targetBackend(targetBackend), _sharedAccessors(targetBackend->getSharedAccessors()) {
     // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
     // bit-range registers targeting the same physical register). In that case the target's version number may have
     // been set by operations through another decorator, but from the user's perspective this is a fresh accessor.
@@ -297,6 +297,9 @@ namespace ChimeraTK::detail {
       else if constexpr(std::is_integral_v<UserType>) {
         // Raw mode: copy 1:1 from user buffer to shared buffer with no bit manipulation
         _sharedBuffer->value[0][0] = static_cast<uint64_t>(buffer_2D[0][0]);
+      }
+      else {
+        assert(false);
       }
 
       _sharedBuffer->versionNumber = std::max(this->_versionNumber, _sharedBuffer->versionNumber);
