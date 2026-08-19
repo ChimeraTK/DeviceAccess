@@ -160,7 +160,7 @@ if(BUILD_TESTS)
 endif()
 
 # Install the tools
-foreach(toolScripts chimeratk-lmap-editor)
+foreach(toolScripts chimeratk-lmap-editor chimeratk-map-to-jmap)
   install(PROGRAMS "tools/${toolScripts}" DESTINATION bin)
 endforeach(toolScripts)
 

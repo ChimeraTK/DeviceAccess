@@ -1,0 +1,713 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""
+Convert a classic ChimeraTK .map or .mapp file to the new .jmap (JSON) format.
+
+Usage:
+    chimeratk-map-to-jmap input.map [output.jmap]
+
+If output.jmap is omitted, it is derived from the input filename by replacing
+the extension with .jmap, or appending .jmap if no extension is present.
+"""
+
+import json
+import re
+import sys
+import os
+from typing import Any, TypedDict
+
+
+# -- Helpers ------------------------------------------------------------------
+
+
+def _format_address(val: int) -> str:
+    """Format an address value as a hex string for jmap compatibility.
+
+    The C++ JsonMapFileParser accepts both numeric and string hex addresses,
+    but producing hex strings is the convention used in hand-written .jmap
+    files and avoids ambiguity with decimal/hex representations.
+    """
+    if val == 0:
+        return "0x0"
+    return hex(val)
+
+
+def _parse_int(s: str) -> int | None:
+    """Parse an integer token with automatic base detection (0x prefix = hex)."""
+    s = s.strip()
+    if not s:
+        return None
+    try:
+        return int(s, 0)
+    except ValueError:
+        return None
+
+
+# The parsed representation of a single classic register definition.
+class RegisterDescr(TypedDict):
+    """Structured representation of one parsed register line.
+
+    Populated by ``_split_register_line`` with exactly these keys.
+    Note: ``name`` is stripped before the dict is stored in the register tree
+    (it is used as the key in the flat ``all_registers`` dict instead).
+    """
+    name: str
+    nElements: int
+    address: int
+    nBytes: int
+    bar: int
+    width: int
+    fracBits: int
+    signedFlag: bool
+    accessType: str
+    interruptIDs: list[int]
+    type: str
+
+
+# -- Interrupt handling -------------------------------------------------------
+
+
+def _get_interrupt_ids(s: str) -> list[int]:
+    """Extract a list of interrupt IDs from an access string like 'INTERRUPT3:4'.
+
+    The traditional map format encodes interrupt associations in the access
+    column (e.g. ``INTERRUPT6`` or ``INTERRUPT5:9``).  This function parses
+    the colon-separated numeric IDs out of such a string.
+    """
+    s_upper = s.upper()
+    pos = s_upper.find('INTERRUPT')
+    if pos < 0:
+        return []
+    # Everything after "INTERRUPT" is the colon-separated ID chain
+    rest = s_upper[pos + len('INTERRUPT'):]
+    ids = []
+    for part in rest.split(':'):
+        part = part.strip()
+        if part:
+            try:
+                ids.append(int(part, 0))
+            except ValueError:
+                return []
+    return ids
+
+
+def _add_interrupt_handler(
+    handler_dict: dict[str, Any],
+    int_ids: list[int],
+    data: dict[str, Any],
+) -> None:
+    """Store an interrupt handler entry in *handler_dict* keyed by its IDs.
+
+    Single IDs (e.g. ``[5]``) become a top-level key ``"5"``.
+    Two or more IDs (e.g. ``[4, 8]``) nest under a ``subhandler`` map on the
+    first ID, so ``[4, 8]`` becomes ``handler["4"]["subhandler"]["8"] = data``.
+    """
+    if len(int_ids) == 1:
+        controller_id = str(int_ids[0])
+        handler_dict[controller_id] = data
+    elif len(int_ids) >= 2:
+        controller_id = str(int_ids[0])
+        sub_id = str(int_ids[1])
+        if controller_id not in handler_dict:
+            handler_dict[controller_id] = {}
+        if 'subhandler' not in handler_dict[controller_id]:
+            handler_dict[controller_id]['subhandler'] = {}
+        handler_dict[controller_id]['subhandler'][sub_id] = data
+
+
+def _access_to_jmap(access_type: str) -> str:
+    """Convert a classic map-file access string into the jmap convention."""
+    mapping = {
+        'RO': 'RO',
+        'RW': 'RW',
+        'WO': 'WO',
+        'INTERRUPT': 'RO',
+    }
+    return mapping.get(access_type, 'RW')
+
+
+# -- Register line parsing ----------------------------------------------------
+
+
+def _split_register_line(line: str) -> RegisterDescr | None:
+    """Parse one register definition line from a classic .map file.
+
+    The classic format is::
+
+        name  nElements  address  nBytes  [bar]  [width]  [fracBits|type]  [signed]  [access|INTERRUPT...]
+
+    * ``type`` can be ``IEEE754``, ``ASCII``, or ``VOID`` (replaces ``fracBits``).
+    * A ``width`` of 0 forces the register type to ``void``, zeroes all
+      numeric fields, and triggers the void-register code path downstream.
+    * Trailing ``#`` comments are stripped before tokenising.
+
+    Returns a dict with all parsed fields, or ``None`` if the line cannot be
+    parsed (too few tokens, unparseable numbers, etc.).
+    """
+    # Strip trailing comments: everything from the first '#' to end of line
+    line = line.split('#', 1)[0].strip()
+    if not line:
+        return None
+
+    tokens = line.split()
+    if len(tokens) < 4:
+        return None
+
+    # The first four tokens are mandatory: name, nElements, address, nBytes
+    name = tokens[0]
+    try:
+        n_elements = _parse_int(tokens[1])
+        address = _parse_int(tokens[2])
+        n_bytes = _parse_int(tokens[3])
+    except (ValueError, IndexError):
+        return None
+
+    # Default values for optional fields
+    bar = 0
+    width = 32
+    frac_bits = 0
+    signed_flag = True
+    access_type = 'RW'
+    interrupt_ids = []
+    reg_type = 'fixedPoint'
+
+    # Optional bar (token 4)
+    if len(tokens) > 4:
+        parsed_bar = _parse_int(tokens[4])
+        if parsed_bar is not None:
+            bar = parsed_bar
+
+    # Optional width (token 5)
+    if len(tokens) > 5:
+        parsed_width = _parse_int(tokens[5])
+        if parsed_width is not None:
+            width = parsed_width
+
+    # Optional fractional bits or type keyword (token 6):
+    #   - "IEEE754" selects floating-point representation
+    #   - "ASCII"   selects string representation
+    #   - "VOID"    selects void (interrupt-only) representation
+    #   - otherwise parsed as a signed integer for fractional bits
+    if len(tokens) > 6:
+        tok = tokens[6]
+        if tok.upper() == 'IEEE754':
+            reg_type = 'IEEE754'
+        elif tok.upper() == 'ASCII':
+            reg_type = 'ASCII'
+        elif tok.upper() == 'VOID':
+            reg_type = 'void'
+        else:
+            fb = _parse_int(tok)
+            if fb is not None:
+                frac_bits = fb
+
+    # Optional signed flag (token 7): 0 = unsigned, 1 (or omitted) = signed
+    if len(tokens) > 7:
+        sf = _parse_int(tokens[7])
+        if sf is not None:
+            signed_flag = bool(sf)
+
+    # Optional access type (token 8):
+    #   "RO", "RW", "WO"  -> standard access modes
+    #   "INTERRUPT..."    -> interrupt-triggered (with optional :sub-id chain)
+    if len(tokens) > 8:
+        access_str = tokens[8].upper()
+        int_ids = _get_interrupt_ids(access_str)
+        if int_ids:
+            interrupt_ids = int_ids
+            access_type = 'INTERRUPT'
+        elif access_str in ('RO', 'RW', 'WO'):
+            access_type = access_str
+
+    # width == 0 is the classic way to declare a void (interrupt-only) register.
+    # Overwrite all parsed numeric values with zero/null equivalents.
+    if width == 0:
+        reg_type = 'void'
+        n_elements = 0
+        address = 0
+        n_bytes = 0
+        bar = 0
+        width = 0
+
+    return {
+        'name': name,
+        'nElements': n_elements if n_elements is not None else 0,
+        'address': address if address is not None else 0,
+        'nBytes': n_bytes if n_bytes is not None else 0,
+        'bar': bar if bar is not None else 0,
+        'width': width if width is not None else 32,
+        'fracBits': frac_bits if frac_bits is not None else 0,
+        'signedFlag': signed_flag,
+        'accessType': access_type,
+        'interruptIDs': interrupt_ids,
+        'type': reg_type,
+    }
+
+
+# -- Representation construction ----------------------------------------------
+
+
+def _make_representation(reg: RegisterDescr) -> dict[str, str | int | bool | list[int]] | None:
+    """Build a jmap ``representation`` block from parsed register descriptor.
+
+    Returns ``None`` when the representation matches the jmap defaults
+    (fixedPoint, 32-bit, unsigned, 0 fractional bits) so that the field
+    can be omitted from the output, keeping the JSON compact.
+    """
+    reg_type = reg.get('type', 'fixedPoint')
+    width = reg.get('width', 32)
+    frac_bits = reg.get('fracBits', 0)
+    signed_flag = reg.get('signedFlag', True)
+
+    if reg_type == 'void':
+        return {'type': 'void'}
+
+    if reg_type == 'IEEE754':
+        return {'type': 'IEEE754', 'width': width}
+
+    if reg_type == 'ASCII':
+        return {'type': 'string', 'width': width}
+
+    # Fixed-point default: 32-bit, unsigned, 0 fractional bits
+    rep: dict[str, str | int | bool | list[int]]
+    rep = {'type': 'fixedPoint'}
+
+    # Only emit fields that deviate from defaults
+    if width != 32:
+        rep['width'] = width
+    if frac_bits != 0:
+        rep['fractionalBits'] = frac_bits
+    if signed_flag:
+        rep['isSigned'] = True
+
+    # Completely default fixed-point -> omit the block
+    if rep == {'type': 'fixedPoint'}:
+        return None
+
+    return rep
+
+
+# -- Register entry construction ----------------------------------------------
+
+
+def _fill_entry_from_reg(entry: dict[str, Any], reg: RegisterDescr) -> None:
+    """Populate a JSON *entry* dict with the fields from a parsed *reg* dict.
+
+    Handles two major cases:
+
+    1. **Void registers** (``reg_type == 'void'`` and ``nElements == 0``):
+       These are pure interrupt triggers without an address.  Only
+       ``triggeredByInterrupt`` and ``representation: {type: void}`` are set.
+
+    2. **Normal registers**: Access mode, interrupt IDs, number of elements,
+       bytes-per-element, address, and representation are conditionally emitted
+       (default-valued fields are omitted to keep the output compact).
+    """
+    n_elements = reg['nElements']
+    reg_type = reg['type']
+    interrupt_ids = reg['interruptIDs']
+
+    # -- Void interrupt registers ---------------------------------------------
+    # These are pure notification points: no address, no data, just a
+    # triggeredByInterrupt list and a "void" representation type.
+    if reg_type == 'void' and n_elements == 0:
+        entry['triggeredByInterrupt'] = interrupt_ids
+        entry['representation'] = {'type': 'void'}
+        return
+
+    # -- Access mode ----------------------------------------------------------
+    # INTERRUPT access implies read-only; omit the field when it matches
+    # the jmap default (RW).
+    if reg['accessType'] != 'INTERRUPT':
+        access = _access_to_jmap(reg['accessType'])
+        if access != 'RW':
+            entry['access'] = access
+
+    # -- Interrupt triggers ---------------------------------------------------
+    # Non-void registers can also be interrupt-triggered (they still have
+    # address/data but only produce values when the interrupt fires).
+    if interrupt_ids:
+        entry['triggeredByInterrupt'] = interrupt_ids
+
+    # -- Number of elements ---------------------------------------------------
+    # Omit the field when it matches the jmap default of 1.
+    if n_elements != 1:
+        entry['numberOfElements'] = n_elements
+
+    # -- Bytes per element ----------------------------------------------------
+    # Compute from nBytes / nElements.  Omit when it matches the default of 4.
+    if reg['nBytes'] > 0 and n_elements > 0:
+        bpe = reg['nBytes'] // n_elements
+        if bpe != 4 or reg['nBytes'] != n_elements * 4:
+            entry['bytesPerElement'] = bpe
+    else:
+        entry['bytesPerElement'] = 0
+
+    # -- Address --------------------------------------------------------------
+    # Always emit address blocks for non-void registers that have them.
+    # The "type" field is omitted when "I/O" (the default in the C++ parser).
+    if reg['address'] is not None:
+        addr_entry = {}
+        if reg['bar'] != 0:
+            addr_entry['channel'] = reg['bar']
+        elif reg['bar'] == 0:
+            # Explicitly emit bar=0 for readability, even though it is the
+            # default, because omitting it is ambiguous with an absent channel.
+            addr_entry['channel'] = 0
+        addr_entry['offset'] = _format_address(reg['address'])
+        entry['address'] = addr_entry
+
+    # -- Representation -------------------------------------------------------
+    rep = _make_representation(reg)
+    if rep:
+        entry['representation'] = rep
+
+
+# -- Tree construction --------------------------------------------------------
+# Register names in classic .map files use dots or slashes as path separators
+# (e.g. "APP.MODULE0.WORD_USER1" or "/int_ctrls/controller5/active_ints").
+# The tree-building functions below split these into components, create nested
+# module nodes, and attach register data at the leaves.  Pure module containers
+# (nodes with children but no data) are emitted without an address -- the C++
+# parser can handle address-less parent nodes.
+
+
+def _insert_into_tree(tree: dict[str, Any], components: list[str], reg: RegisterDescr) -> None:
+    """Insert a register into the nested *tree* structure.
+
+    *tree* is a recursive dict with the schema::
+
+        {name: {"children": {name: {...}}, "data": parsed_reg_dict | None}}
+
+    *components* is the list of path parts (e.g. ``["APP", "MODULE0", "WORD"]``).
+    The last component becomes a leaf node holding *reg* as its data;
+    intermediate components become container nodes.
+    """
+    name = components[0]
+    # Ensure the tree node exists
+    if name not in tree:
+        tree[name] = {'children': {}, 'data': None}
+
+    if len(components) == 1:
+        # Leaf: attach the register data
+        tree[name]['data'] = reg
+    else:
+        # Intermediate: recurse into children
+        _insert_into_tree(tree[name]['children'], components[1:], reg)
+
+
+def _serialize_tree(tree: dict[str, Any], parent_data: RegisterDescr | None = None) -> list[dict[str, Any]]:
+    """Recursively serialize the internal *tree* into a list of address-space entries.
+
+    Each node becomes one JSON address-space entry.  Three cases exist:
+
+    * **Leaf with data** - the register is emitted as-is.
+    * **Node with both data and children** - the register is emitted with a
+      ``children`` array (this happens when a module also has its own register
+      data, e.g. ``BSP`` in simpleJsonFile.jmap).
+    * **Node with children only** (pure container) - emitted with just a
+      ``children`` array and *no* address.  The C++ parser can handle
+      address-less parent nodes as long as no child requires the parent in
+      the catalogue, which is the case when the children have their own
+      addresses.
+
+    The *parent_data* parameter (register data of the parent node) is
+    accepted but currently unused; it exists for future use if parent-address
+    inheritance needs to be implemented.
+    """
+    entries = []
+    for name in sorted(tree.keys()):
+        node = tree[name]
+        entry: dict[str, Any] = {'name': name}
+
+        has_data = node['data'] is not None
+        has_children = bool(node['children'])
+
+        # Fill register properties first, so they appear close to the name.
+        if has_data:
+            _fill_entry_from_reg(entry, node['data'])
+
+        # Append children last so the potentially long list does not bury
+        # the register's own properties (address, access, representation, ...).
+        if has_children:
+            entry['children'] = _serialize_tree(node['children'], node['data'])
+
+        entries.append(entry)
+    return entries
+
+
+def _ensure_void_parents(entries):
+    """Wrap top-level void registers inside synthetic parent modules.
+
+    The C++ ``JsonMapFileParser`` requires every entry with a
+    ``representation.type == "void"`` to be a child of a register that
+    exists in the catalogue (has an ``address``).  Top-level void registers
+    would fail with "Register '/' does not exist" because there is no
+    catalogue entry for the root path.
+
+    This function detects such entries, groups them by their interrupt-ID
+    chain, and wraps each group in a synthetic module with a dummy address.
+    The synthetic parent is named after the interrupt IDs (e.g.
+    ``interrupt_4_8_2``).
+    """
+    # Separate entries into those that need a parent (void, no address)
+    # and those that don't.
+    needs_parent = []
+    non_void_entries = []
+    for e in entries:
+        rep = e.get('representation', {})
+        is_void = isinstance(rep, dict) and rep.get('type') == 'void'
+        if is_void and e.get('address') is None:
+            needs_parent.append(e)
+        else:
+            # Clean up any residual internal markers
+            if '_is_void' in e:
+                del e['_is_void']
+            non_void_entries.append(e)
+
+    # If no top-level void registers exist, return the list unchanged
+    if not needs_parent:
+        return entries
+
+    # Group the orphaned void registers by their triggeredByInterrupt IDs so
+    # that each interrupt group gets its own synthetic parent module.
+    by_int = {}
+    for e in needs_parent:
+        ints = tuple(e.get('triggeredByInterrupt', []))
+        by_int.setdefault(ints, []).append(e)
+
+    for int_ids, void_children in by_int.items():
+        int_label = '_'.join(str(i) for i in int_ids) if int_ids else 'void'
+        parent: dict[str, Any] = {
+            'name': f'interrupt_{int_label}',
+            'address': {'channel': 0, 'offset': '0x0'},
+            'bytesPerElement': 4,
+        }
+        parent['children'] = void_children
+        non_void_entries.append(parent)
+
+    return non_void_entries
+
+
+# -- Top-level parsing --------------------------------------------------------
+
+
+def _build_tree(all_registers):
+    """Convert a flat register-name -> register-data dict into a hierarchy.
+
+    Steps:
+    1. Filter out old-style sequence/multiplexed entries (``SEQUENCE_*_[0-9]+``,
+       ``AREA_MULTIPLEXED_SEQUENCE_*``, ``MEM_MULTIPLEXED_*``) that have no
+       jmap equivalent.
+    2. Split each remaining name on ``.`` or ``/`` to obtain path components.
+    3. Insert components into a recursive tree via ``_insert_into_tree``.
+    4. Serialise the tree into address-space entries via ``_serialize_tree``.
+    5. Post-process with ``_ensure_void_parents`` to catch orphaned void
+       interrupt registers.
+    """
+    # -- Step 1: filter -------------------------------------------------------
+    # Classic .map files use a flat namespace.  Multiplexed (2D) registers
+    # are named like "AREA.SEQUENCE_0", "AREA.SEQUENCE_1", ...  These are
+    # filtered out because jmap uses children/bitshift instead.
+    path_data = {}
+    for name, reg in all_registers.items():
+        last_part = name.split('.')[-1]
+
+        # Old-style single-dimension sequence elements (e.g. SEQUENCE_INT_0)
+        if re.match(r'SEQUENCE_.*_\d+$', last_part):
+            continue
+
+        # Old-style area container (e.g. AREA_MULTIPLEXED_SEQUENCE_INT)
+        if 'AREA_MULTIPLEXED_SEQUENCE_' in last_part:
+            continue
+
+        # New-style MEM_MULTIPLEXED container (e.g. MEM_MULTIPLEXED_INT)
+        if 'MEM_MULTIPLEXED_' in last_part:
+            continue
+
+        path_data[name] = reg
+
+    # -- Step 2: split & insert -----------------------------------------------
+    root = {}
+    for name, reg in path_data.items():
+        # Support both '.' (dot-separated module paths) and '/' (absolute paths)
+        normalized = name.lstrip('/')
+        components = re.split(r'[./]', normalized)
+        # Remove empty components that arise from leading/trailing separators
+        components = [c for c in components if c]
+        _insert_into_tree(root, components, reg)
+
+    # -- Step 3: serialise ----------------------------------------------------
+    entries = _serialize_tree(root)
+
+    # -- Step 4: void-parent fixup --------------------------------------------
+    return _ensure_void_parents(entries)
+
+
+def parse_map_file(filepath):
+    """Parse a classic .map or .mapp file and return structured data.
+
+    The parser handles two kinds of content:
+
+    * **Metadata lines** (starting with ``@``):
+      - ``@key value`` - generic key-value metadata.
+      - ``@![int_ids] {...}`` - interrupt handler descriptors (JSON payload).
+
+    * **Register definition lines**: The classic 4+ column format parsed by
+      ``_split_register_line``.
+
+    Returns a dict with three keys:
+
+    - ``metadata`` - dict of key-value metadata pairs.
+    - ``interruptHandler`` - nested dict of interrupt-handler configurations.
+    - ``addressSpace`` - list of hierarchical address-space entries ready for
+      JSON serialisation.
+    """
+    metadata = {}
+    interrupt_handler = {}
+    all_registers = {}
+
+    # Regex for @! lines: @![comma-separated-IDs] optional-JSON
+    mapp_json_meta = re.compile(r'@!\[([^\]]+)\]\s*(.*)')
+
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
+
+    line_no = 0
+    for raw_line in lines:
+        line_no += 1
+        line = raw_line.strip()
+
+        # Skip blank lines and comments
+        if not line:
+            continue
+        if line.startswith('#'):
+            continue
+
+        # -- Metadata lines (@...) --------------------------------------------
+        if line.startswith('@'):
+            m = mapp_json_meta.match(line)
+            if m:
+                # @![ID1,ID2,...] {"key": "value", ...}
+                int_ids_str = m.group(1)
+                json_str = m.group(2)
+                int_ids = [int(x.strip()) for x in int_ids_str.split(',')]
+                try:
+                    handler_data = json.loads(json_str)
+                except json.JSONDecodeError as e:
+                    print(f"Warning: line {line_no}: invalid JSON in interrupt handler metadata: {e}",
+                          file=sys.stderr)
+                    continue
+                _add_interrupt_handler(interrupt_handler, int_ids, handler_data)
+            else:
+                # @key value  (or @key alone)
+                content = line[1:].strip()
+                space_idx = content.find(' ')
+                if space_idx > 0:
+                    key = content[:space_idx]
+                    value = content[space_idx:].strip()
+                else:
+                    key = content
+                    value = ''
+                metadata[key] = value
+            continue
+
+        # -- Register definition lines ----------------------------------------
+        parts = _split_register_line(line)
+        if not parts:
+            continue
+
+        reg_name = parts['name']
+        # Store parsed register data keyed by its flat (unsplit) name
+        all_registers[reg_name] = {
+            'nElements': parts['nElements'],
+            'address': parts['address'],
+            'nBytes': parts['nBytes'],
+            'bar': parts['bar'],
+            'width': parts['width'],
+            'fracBits': parts['fracBits'],
+            'signedFlag': parts['signedFlag'],
+            'accessType': parts['accessType'],
+            'interruptIDs': parts['interruptIDs'],
+            'type': parts['type'],
+        }
+
+    # Build the hierarchical address-space tree from flat names
+    address_space = _build_tree(all_registers)
+
+    return {
+        'metadata': metadata,
+        'interruptHandler': interrupt_handler if interrupt_handler else None,
+        'addressSpace': address_space,
+    }
+
+
+# -- Output generation --------------------------------------------------------
+
+
+def convert(filepath, output_path=None):
+    """Convert a .map / .mapp file to .jmap format and write it to disk.
+
+    *filepath* - input file.
+    *output_path* - output file (auto-derived from input if omitted).
+
+    Returns the path of the written output file.
+    """
+    # Determine the output path if not provided
+    if not output_path:
+        base, ext = os.path.splitext(filepath)
+        if ext.lower() in ('.map', '.mapp'):
+            output_path = base + '.jmap'
+        else:
+            output_path = filepath + '.jmap'
+
+    # Parse the classic format into structured data
+    data = parse_map_file(filepath)
+
+    # Build the jmap document
+    jmap = {}
+    jmap['mapFormatVersion'] = '0.0.1'
+
+    # Metadata is optional but always emitted (empty object if absent)
+    jmap['metadata'] = data['metadata'] if data['metadata'] else {}
+
+    # Interrupt handler block; use an empty object if none were defined
+    if data['interruptHandler']:
+        jmap['interruptHandler'] = data['interruptHandler']
+    else:
+        jmap['interruptHandler'] = {}
+
+    # The address space with its hierarchical register tree
+    jmap['addressSpace'] = data['addressSpace']
+
+    # Write formatted JSON with a trailing newline
+    with open(output_path, 'w') as f:
+        json.dump(jmap, f, indent=2)
+        f.write('\n')
+
+    print(f"Converted {filepath} -> {output_path}")
+    return output_path
+
+
+# -- Entry point --------------------------------------------------------------
+
+
+def main():
+    """CLI entry point: parse arguments and run the conversion."""
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print(__doc__, file=sys.stderr)
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_path = sys.argv[2] if len(sys.argv) > 2 else None
+
+    if not os.path.exists(input_path):
+        print(f"Error: input file not found: {input_path}", file=sys.stderr)
+        sys.exit(1)
+
+    convert(input_path, output_path)
+
+
+if __name__ == '__main__':
+    main()
