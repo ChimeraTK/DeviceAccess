@@ -633,25 +633,32 @@ namespace ChimeraTK::async {
   /********************************************************************************************************************/
   void GenericMuxedInterruptDistributor::handle(VersionNumber version) {
     try {
-      _isr->read();
-      uint32_t ipr = _activeInterrupts & _isr->accessData(0);
+      do {
+        _isr->read();
+        uint32_t ipr = _activeInterrupts & _isr->accessData(0);
 
-      for(auto const& [i, subDomainWeakPtr] : _subDomains) {
-        // i is the bit index of the subDomain
-        if(ipr & iToMask(i)) {
-          if(auto subDomain = subDomainWeakPtr.lock(); subDomain) {
-            //  The weak pointer might have gone.
-            //  TODO FIXME: We need a cleanup function which removes the map entry.
-            //  Otherwise we might be stuck with a bad weak pointer which is tried in each handle() call.
+        // Process all pending interrupts
+        for(auto const& [i, subDomainWeakPtr] : _subDomains) {
+          // i is the bit index of the subDomain
+          if(ipr & iToMask(i)) {
+            if(auto subDomain = subDomainWeakPtr.lock(); subDomain) {
+              // The weak pointer might have gone.
+              //  TODO FIXME: We need a cleanup function which removes the map entry.
+              //  Otherwise we might be stuck with a bad weak pointer which is tried in each handle() call.
 
-            subDomain->distribute(nullptr, version);
+              subDomain->distribute(nullptr, version);
 
-            // Requirement: nested interrupt handlers must clear their active interrupt flag first,
-            // then the parent interrupt flags are cleared.
-            clearOneInterrupt(i);
+              // Requirement: nested interrupt handlers must clear their active interrupt flag first,
+              // then the parent interrupt flags are cleared.
+            }
           }
-        }
-      } // for
+        } // for
+        // Clear all processed interrupts at once so to avoid edge-case.
+        clearInterruptsFromMask(ipr);
+        // Re-read ISR to catch any interrupts that arrived during processing above.
+        // These were not in the original ipr and were not cleared.
+        _isr->read();
+      } while((_activeInterrupts & _isr->accessData(0)) != 0);
     }
     catch(ChimeraTK::runtime_error&) {
       // There's nothing to do. The transferElement part of _activeInterrupts has already called the backend's setException
