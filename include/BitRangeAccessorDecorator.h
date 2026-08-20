@@ -40,7 +40,8 @@ namespace ChimeraTK::detail {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint64_t>::_target;
 
     BitRangeAccessorDecorator(const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetPath,
-        boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const NumericAddressedRegisterInfo& registerInfo);
+        boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const NumericAddressedRegisterInfo& registerInfo,
+        size_t numberOfWords, size_t wordOffsetInRegister);
 
     ~BitRangeAccessorDecorator() override;
 
@@ -103,6 +104,9 @@ namespace ChimeraTK::detail {
     boost::shared_ptr<DeviceBackend> _targetBackend;
     boost::shared_ptr<detail::SharedAccessors> _sharedAccessors;
 
+    size_t _numberOfWords;
+    size_t _wordOffsetInRegister{0};
+
     void sharedBufferToTarget();
 
     void targetToSharedBuffer();
@@ -114,15 +118,23 @@ namespace ChimeraTK::detail {
   template<typename UserType, bool isRaw>
   BitRangeAccessorDecorator<UserType, isRaw>::BitRangeAccessorDecorator(
       const boost::shared_ptr<DeviceBackend>& targetBackend, RegisterPath targetPath,
-      boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const NumericAddressedRegisterInfo& registerInfo)
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> target, const NumericAddressedRegisterInfo& registerInfo,
+      size_t numberOfWords, size_t wordOffsetInRegister)
   : NDRegisterAccessorDecorator<UserType, uint64_t>(target), _shift(registerInfo.channels.front().bitOffset),
     _numberOfBits(registerInfo.channels.front().width), _writeable(registerInfo.isWriteable()),
-    _registerInfo(registerInfo), _targetBackend(targetBackend), _sharedAccessors(targetBackend->getSharedAccessors()) {
+    _registerInfo(registerInfo), _targetBackend(targetBackend), _sharedAccessors(targetBackend->getSharedAccessors()),
+    _numberOfWords(numberOfWords), _wordOffsetInRegister(wordOffsetInRegister) {
     // Reset the version number. The target accessor may be shared between different decorators (e.g. multiple
     // bit-range registers targeting the same physical register). In that case the target's version number may have
     // been set by operations through another decorator, but from the user's perspective this is a fresh accessor.
     // The test UnifiedBackendTest_B_6 checks this by verifying VersionNumber(nullptr).
     this->_versionNumber = VersionNumber{nullptr};
+
+    // The base class initialises buffer_2D with the target's size (full parent register).  Resize the
+    // user buffer to match the number of words requested (sub-array size).
+    for(auto& channel : buffer_2D) {
+      channel.resize(_numberOfWords);
+    }
 
     _converterLoopHelper =
         RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, 0, *this);
@@ -130,13 +142,21 @@ namespace ChimeraTK::detail {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
 
-    if(_target->getNumberOfChannels() > 1 || _target->getNumberOfSamples() > 1) {
+    if(_target->getNumberOfChannels() > 1) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend BitRangeAccessorDecorator: " +
-          TransferElement::getName() + ": Cannot target non-scalar registers.");
+          TransferElement::getName() + ": Cannot target multi-channel registers.");
     }
 
     if constexpr(isRaw) {
-      if(DataType(typeid(UserType)) != _registerInfo.getDataDescriptor().rawDataType()) {
+      bool wrongRawType;
+      if constexpr(std::is_integral_v<UserType>) {
+        wrongRawType =
+            DataType(typeid(std::make_signed_t<UserType>)) != _registerInfo.getDataDescriptor().rawDataType();
+      }
+      else {
+        wrongRawType = true;
+      }
+      if(wrongRawType) {
         throw ChimeraTK::logic_error("BitRangeAccessorDecorator in raw mode requires UserType " +
             _registerInfo.getDataDescriptor().rawDataType().getAsString() + " for register '" + _registerInfo.pathName +
             "'. Requested type is " + DataType(typeid(UserType)).getAsString() + ".");
@@ -214,24 +234,29 @@ namespace ChimeraTK::detail {
     if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
       if constexpr(!isRaw) {
         auto validity = _sharedBuffer->dataValidity;
-        uint64_t v{_sharedBuffer->value[0][0]};
-        v = (v & _maskOnTarget) >> _shift;
 
-        buffer_2D[0][0] = converter.toCooked(v);
-        // Do a quick check if the fixed point converter clamped. Then set the
-        // data validity faulty according to B.2.4.1
-        // For proper implementation of this, the fixed point converter needs to signalize
-        // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
-        auto raw = converter.toRaw(buffer_2D[0][0]);
-        if(raw != v) {
-          validity = DataValidity::faulty;
+        for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
+          uint64_t v{_sharedBuffer->value[0][i + _wordOffsetInRegister]};
+          v = (v & _maskOnTarget) >> _shift;
+
+          buffer_2D[0][i] = converter.toCooked(v);
+          // Do a quick check if the fixed point converter clamped. Then set the
+          // data validity faulty according to B.2.4.1
+          // For proper implementation of this, the fixed point converter needs to signalize
+          // that it had clamped. See https://redmine.msktools.desy.de/issues/12912
+          auto raw = converter.toRaw(buffer_2D[0][i]);
+          if(raw != v) {
+            validity = DataValidity::faulty;
+          }
         }
 
         this->_dataValidity = validity;
       }
       else if constexpr(std::is_integral_v<UserType>) {
         // Raw mode: copy 1:1 from shared buffer to user buffer with no bit manipulation
-        buffer_2D[0][0] = static_cast<UserType>(_sharedBuffer->value[0][0]);
+        for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
+          buffer_2D[0][i] = static_cast<UserType>(_sharedBuffer->value[0][i + _wordOffsetInRegister]);
+        }
         this->_dataValidity = _sharedBuffer->dataValidity;
       }
 
@@ -284,19 +309,27 @@ namespace ChimeraTK::detail {
     static_assert(std::is_same_v<UserType, CookedType>);
     if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
       if constexpr(!isRaw) {
-        uint64_t value = converter.toRaw(buffer_2D[0][0]);
+        for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
+          uint64_t value = converter.toRaw(buffer_2D[0][i]);
 
-        // FIXME: Not setting the data validity according to the spec point B2.5.1.
-        // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
-        // To be revisited after fixing https://redmine.msktools.desy.de/issues/12912
+          // FIXME: Not setting the data validity according to the spec point B2.5.1.
+          // This needs a change in the fixedpoint converter to tell us that it has clamped the value to reliably work.
+          // To be revisited after fixing https://redmine.msktools.desy.de/issues/12912
 
-        // Modify the bit range in the shared buffer
-        _sharedBuffer->value[0][0] &= ~_maskOnTarget;
-        _sharedBuffer->value[0][0] |= (value << _shift);
+          // Modify the bit range in the shared buffer
+          _sharedBuffer->value[0][i + _wordOffsetInRegister] &= ~_maskOnTarget;
+          _sharedBuffer->value[0][i + _wordOffsetInRegister] |= (value << _shift);
+        }
       }
       else if constexpr(std::is_integral_v<UserType>) {
-        // Raw mode: copy 1:1 from user buffer to shared buffer with no bit manipulation
-        _sharedBuffer->value[0][0] = static_cast<uint64_t>(buffer_2D[0][0]);
+        // Raw mode: copy 1:1 from user buffer to shared buffer with no bit manipulation.
+        // Zero-extend via the unsigned type first to avoid sign-extension when casting from signed UserType to
+        // uint64_t.
+        using UnsignedUserType = std::make_unsigned_t<UserType>;
+        for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
+          _sharedBuffer->value[0][i + _wordOffsetInRegister] =
+              static_cast<uint64_t>(static_cast<UnsignedUserType>(buffer_2D[0][i]));
+        }
       }
       else {
         assert(false);

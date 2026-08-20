@@ -87,15 +87,6 @@ namespace ChimeraTK::LNMBackend {
       boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target,
       const UndecoratedParams& params) {
     if constexpr(std::is_same_v<TargetType, uint64_t>) {
-      if(params._wordOffsetInRegister != 0) {
-        throw ChimeraTK::logic_error(std::format("BitRangePlugin (on {}) cannot have a word offset", params._name));
-      }
-
-      if(params._numberOfWords > 1) {
-        throw ChimeraTK::logic_error(std::format(
-            "BitRangePlugin (on {}) must have size <=1, but {} was requested", params._name, params._numberOfWords));
-      }
-
       if(params._flags.has(AccessMode::wait_for_new_data) || params._flags.has(AccessMode::raw)) {
         throw ChimeraTK::logic_error(
             std::format("BitRangePlugin (on {}) Unsupported flags in {}", params._name, params._flags.serialize()));
@@ -120,7 +111,7 @@ namespace ChimeraTK::LNMBackend {
       regInfo.channels[0].bitOffset = _shift;
 
       return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(
-          targetDevice, targetPath, target, regInfo);
+          targetDevice, targetPath, target, regInfo, params._numberOfWords, params._wordOffsetInRegister);
     }
 
     assert(false);

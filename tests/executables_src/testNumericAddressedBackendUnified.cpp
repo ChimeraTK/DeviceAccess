@@ -824,7 +824,7 @@ struct RegLowerHalfOfFirmware : RegBitRangeDescriptor<RegLowerHalfOfFirmware> {
   std::string path() { return "/WORD_FIRMWARE/BitRangeLower"; }
 
   using minimumUserType = int8_t;
-  using rawUserType = uint64_t;
+  using rawUserType = uint32_t;
 
   uint16_t width = 8;
   uint16_t shift = 8;
@@ -836,7 +836,7 @@ struct RegUpperHalfOfFirmware : RegBitRangeDescriptor<RegUpperHalfOfFirmware> {
   std::string path() { return "/WORD_FIRMWARE/BitRangeUpper"; }
 
   using minimumUserType = int16_t;
-  using rawUserType = uint64_t;
+  using rawUserType = uint32_t;
 
   uint16_t width = 16;
   uint16_t shift = 16;
@@ -848,12 +848,93 @@ struct RegBitRangeMiddle : RegBitRangeDescriptor<RegBitRangeMiddle> {
   std::string path() { return "/WORD_FIRMWARE/BitRangeMiddle"; }
 
   using minimumUserType = int8_t;
-  using rawUserType = uint64_t;
+  using rawUserType = uint32_t;
 
   uint16_t width = 8;
   uint16_t shift = 4;
 
   BitRangeAccessorTarget target;
+};
+
+/**********************************************************************************************************************/
+
+/// Base descriptor for array bit-range accessors
+template<typename Derived>
+struct ArrayRegBitRangeDescriptor : OneDRegisterDescriptorBase<Derived> {
+  using RegisterDescriptorBase<Derived>::derived;
+  static constexpr auto capabilities = RegisterDescriptorBase<Derived>::capabilities;
+
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return derived->target.nElementsPerChannel(); }
+
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  size_t nValuesToTest() { return 1; }
+
+  size_t nRuntimeErrorCases() { return derived->target.nRuntimeErrorCases(); }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue([[maybe_unused]] bool getRaw = false) {
+    return derived->target.template generateValue<UserType>();
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue(bool getRaw = false) {
+    if(getRaw) {
+      // For raw mode, return the full word value (raw accessor returns full parent words)
+      return derived->target.template getRemoteValue<UserType>(true);
+    }
+    // For cooked mode, extract the bit range from each element
+    auto rawValues = derived->target.template getRemoteValue<uint64_t>();
+    std::vector<UserType> result;
+    for(size_t i = 0; i < rawValues[0].size(); ++i) {
+      uint64_t v = rawValues[0][i];
+      uint64_t mask = ((1ULL << derived->width) - 1) << derived->shift;
+      result.push_back(static_cast<UserType>((v & mask) >> derived->shift));
+    }
+    return {result};
+  }
+
+  void setRemoteValue() { derived->target.setRemoteValue(); }
+
+  void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }
+};
+
+struct ArrayRegTarget : OneDRegisterDescriptorBase<ArrayRegTarget> {
+  std::string path() { return "/ARRAY_REG"; }
+
+  // The test framework iterates generateValue a few times; use a small increment to avoid overflow across 3 elements
+  const uint32_t increment = 0x0101'0101;
+
+  using minimumUserType = uint32_t;
+  using rawUserType = uint32_t;
+
+  size_t nElementsPerChannel() { return 3; }
+
+  DummyRegisterAccessor<minimumUserType> acc{exceptionDummyBitRange.get(), "", "/ARRAY_REG"};
+};
+
+struct ArrayBitRangeLow : ArrayRegBitRangeDescriptor<ArrayBitRangeLow> {
+  std::string path() { return "/ARRAY_REG/ArrayBitRangeLow"; }
+
+  using minimumUserType = uint8_t;
+  using rawUserType = int32_t;
+
+  uint16_t width = 8;
+  uint16_t shift = 0;
+
+  ArrayRegTarget target;
+};
+
+struct ArrayBitRangeHigh : ArrayRegBitRangeDescriptor<ArrayBitRangeHigh> {
+  std::string path() { return "/ARRAY_REG/ArrayBitRangeHigh"; }
+
+  using minimumUserType = uint8_t;
+  using rawUserType = int32_t;
+
+  uint16_t width = 8;
+  uint16_t shift = 8;
+
+  ArrayRegTarget target;
 };
 
 /**********************************************************************************************************************/
@@ -897,6 +978,8 @@ BOOST_AUTO_TEST_CASE(testBitRanges) {
       .addRegister<RegLowerHalfOfFirmware>()
       .addRegister<RegUpperHalfOfFirmware>()
       .addRegister<RegBitRangeMiddle>()
+      .addRegister<ArrayBitRangeLow>()
+      .addRegister<ArrayBitRangeHigh>()
       .runTests(cddBitRange);
 }
 

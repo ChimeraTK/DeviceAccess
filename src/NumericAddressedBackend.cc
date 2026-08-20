@@ -127,30 +127,27 @@ namespace ChimeraTK {
       if(registerInfo.getNumberOfDimensions() <= 1) {
         if(registerInfo.isBitRange) {
           if(numberOfWords == 0) {
-            numberOfWords = 1;
+            numberOfWords = registerInfo.nElements == 0 ? 1 : registerInfo.nElements;
           }
-          if(numberOfWords > 1) {
-            throw ChimeraTK::logic_error(
-                "Error in '" + registerPathName + "': Requested number of words must be 1 for bit-range registers!");
+          size_t nParentElements = registerInfo.nElements == 0 ? 1 : registerInfo.nElements;
+          if(numberOfWords + wordOffsetInRegister > nParentElements) {
+            throw ChimeraTK::logic_error("Error in '" + registerPathName + "': Requested number of words+offset " +
+                std::to_string(numberOfWords + wordOffsetInRegister) + " exceeds register size of " +
+                std::to_string(registerInfo.nElements) + ".");
           }
-          if(wordOffsetInRegister != 0) {
-            throw ChimeraTK::logic_error(
-                "Error in '" + registerPathName + "': No offset allowed in bit-range registers!");
-          }
-          size_t bitsPerElement = registerInfo.elementPitchBits / registerInfo.nElements;
-          // no need to check the bits per element here. The check will be done when evaluating the targetRegisterPath
-
+          // Target must point to the full parent register (all elements)
+          uint64_t targetSizeBytes = nParentElements * registerInfo.elementPitchBits / 8;
           RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
-              (std::to_string(registerInfo.address) + "*" + std::to_string(registerInfo.elementPitchBits / 8) + 'u' +
-                  std::to_string(bitsPerElement));
-          auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, 0, 0, {});
+              (std::to_string(registerInfo.address) + "*" + std::to_string(targetSizeBytes) + 'u' +
+                  std::to_string(registerInfo.elementPitchBits));
+          auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, nParentElements, 0, {});
 
           if(flags.has(AccessMode::raw)) {
             return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(
-                shared_from_this(), targetRegisterPath, target, registerInfo);
+                shared_from_this(), targetRegisterPath, target, registerInfo, numberOfWords, wordOffsetInRegister);
           }
           return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(
-              shared_from_this(), targetRegisterPath, target, registerInfo);
+              shared_from_this(), targetRegisterPath, target, registerInfo, numberOfWords, wordOffsetInRegister);
         }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||

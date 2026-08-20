@@ -42,6 +42,37 @@
           }
         }
       ]
+    },
+    {
+      "name": "ARRAY_REG",
+      "bytesPerElement": 4,
+      "numberOfElements": 3,
+      "address": {
+        "type": "I/O",
+        "channel": 0,
+        "offset": 16
+      },
+      "representation": {
+        "isSigned": false
+      },
+      "children": [
+        {
+          "name": "ArrayBitRangeLow",
+          "representation": {
+            "bitShift": 0,
+            "width": 8,
+            "isSigned": false
+          }
+        },
+        {
+          "name": "ArrayBitRangeHigh",
+          "representation": {
+            "bitShift": 8,
+            "width": 8,
+            "isSigned": false
+          }
+        }
+      ]
     }
   ]
 }
