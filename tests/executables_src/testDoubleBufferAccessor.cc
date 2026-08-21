@@ -5,7 +5,6 @@
 #include "Device.h"
 #include "DoubleBufferAccessor.h"
 #include "DummyBackend.h"
-
 #include <boost/test/unit_test.hpp>
 
 using namespace ChimeraTK;
@@ -144,7 +143,7 @@ BOOST_AUTO_TEST_CASE(test_buffer_selection_current_buffer_1) {
   device.open("(dummy?map=simpleJsonFile.jmap)");
   auto backend = boost::dynamic_pointer_cast<NumericAddressedBackend>(device.getBackend());
 
-  // Write INACTIVE_BUF_ID[index=1] = 1 via the public device API
+  // Write INACTIVE_BUF_ID[index=1] = 1 
   auto inactiveBuf = device.getOneDRegisterAccessor<uint32_t>("/DAQ/DOUBLE_BUF/INACTIVE_BUF_ID", 1, 1);
   inactiveBuf[0] = 1;
   inactiveBuf.write();
@@ -156,9 +155,9 @@ BOOST_AUTO_TEST_CASE(test_buffer_selection_current_buffer_1) {
   TestableDoubleBufferAccessor<int> accessor(
       dbInfo, backend, mutex, RegisterPath("/DAQ/FD"), 16384, 0, AccessModeFlags{});
 
-  // Do a full read cycle — _currentBuffer should be 1
+  // Do a full read cycle, _currentBuffer should be 1
   accessor.doPreRead(TransferType::read);
   accessor.doReadTransferSynchronously();
-  // Must not crash — verifies _currentBuffer==1 path works
+  // Must not crash, verifies _currentBuffer==1 path works
   accessor.doPostRead(TransferType::read, false);
 }
