@@ -249,7 +249,8 @@ namespace ChimeraTK::detail {
               throw ChimeraTK::logic_error("Representation not set for register " + parentName / name +
                   " which inherited the address from parent!");
             }
-            representation.fill(info, 0, bytesPerElement);
+            // If bytesPerElement has not been set in the json file, take it from parent info
+            representation.fill(info, 0, (bytesPerElement != 0 ? bytesPerElement : info.elementPitchBits / 8));
           }
           else {
             throw ChimeraTK::logic_error("Address must be set for entries in channel tabs: register " + info.pathName);
