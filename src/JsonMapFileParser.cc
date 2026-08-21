@@ -228,9 +228,10 @@ namespace ChimeraTK::detail {
         if(address.type != AddressType::addressTypeNotSet) {
           address.fill(info);
           if(channelTabs.empty()) {
-            info.elementPitchBits = bytesPerElement * 8;
+            auto bPerElem = (bytesPerElement != 0 ? bytesPerElement : 4); // create default if not set
+            info.elementPitchBits = bPerElem * 8;
             info.nElements = numberOfElements;
-            representation.fill(info, 0, bytesPerElement);
+            representation.fill(info, 0, bPerElem);
           }
           else {
             if(channelTabs[0].channels.empty()) {

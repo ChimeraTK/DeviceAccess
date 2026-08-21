@@ -51,7 +51,6 @@
       "cacheable": true,
       "_": "cacheable: Software may assume value never changed from remote side - unused in the beginning. Default: true",
       "numberOfElements": 1,
-      "bytesPerElement": 4,
       "address": {
         "type": "I/O",
         "channel": 0,
