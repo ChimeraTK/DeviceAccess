@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(testRawAccessorBitField) {
   // With raw access, buffer_2D stores the full 32-bit register word.
   // auto errorCounter = d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/ErrorCounter", 0, {AccessMode::raw});
   auto errorCounter =
-      d.getScalarRegisterAccessor<uint64_t>("APP/STATUS/ErrorCounter/DUMMY_WRITEABLE", 0, {AccessMode::raw});
+      d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/ErrorCounter/DUMMY_WRITEABLE", 0, {AccessMode::raw});
 
   // APP/STATUS is the full 32 bit word behind ErrorCounter. The content should be identical to the raw access
   auto status = d.getScalarRegisterAccessor<uint32_t>("APP/STATUS/DUMMY_WRITEABLE");

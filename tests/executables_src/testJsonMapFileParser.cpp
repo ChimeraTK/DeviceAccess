@@ -90,6 +90,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
     BOOST_TEST(reg.channels[0].width == 32);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
@@ -107,6 +108,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
@@ -123,6 +125,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 1);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
@@ -139,6 +142,76 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 2);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 3);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  {
+    auto reg = regs.getBackendRegister("APP.LARGE_STATUS");
+    BOOST_TEST(reg.pathName == "/APP/LARGE_STATUS");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_TEST(reg.elementPitchBits == 8 * 8);
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8004);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int64);
+    BOOST_TEST(reg.channels[0].width == 64);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
+  }
+  {
+    auto reg = regs.getBackendRegister("APP.LARGE_STATUS.ProbeLimiter");
+    BOOST_TEST(reg.pathName == "/APP/LARGE_STATUS/ProbeLimiter");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_TEST(reg.elementPitchBits == 8 * 8);
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8004);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_TEST(reg.channels.size() == 1); // for the debug printout if failing
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int64);
+    BOOST_TEST(reg.channels[0].width == 1);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  {
+    auto reg = regs.getBackendRegister("APP.LARGE_STATUS.ExternalInterlock");
+    BOOST_TEST(reg.pathName == "/APP/LARGE_STATUS/ExternalInterlock");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_TEST(reg.elementPitchBits == 8 * 8);
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8004);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 34);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int64);
+    BOOST_TEST(reg.channels[0].width == 1);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  {
+    auto reg = regs.getBackendRegister("APP.LARGE_STATUS.ErrorCounter");
+    BOOST_TEST(reg.pathName == "/APP/LARGE_STATUS/ErrorCounter");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_TEST(reg.elementPitchBits == 8 * 8);
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8004);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 2);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int64);
     BOOST_TEST(reg.channels[0].width == 3);
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);

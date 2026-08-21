@@ -178,6 +178,46 @@
           ]
         },
         {
+          "name": "LARGE_STATUS",
+          "description": "longer application status",
+          "access": "RO",
+          "address": {
+            "type": "I/O",
+            "channel": 2,
+            "offset": "0x8004"
+          },
+          "bytesPerElement": 8,
+          "representation": {
+            "width": 64
+          },
+          "children": [
+            {
+              "name": "ProbeLimiter",
+              "representation": {
+                "width": 1
+              }
+            },
+            {
+              "name": "ExternalInterlock",
+              "representation": {
+                "bitShift": 34,
+                "width": 1
+              }
+            },
+            {
+              "name": "ErrorCounter",
+              "representation": {
+                "bitShift": 2,
+                "type": "fixedPoint",
+                "width": 3,
+                "fractionalBits": 0,
+                "isSigned": false
+              },
+              "_comment": "Will be unsupported at first"
+            }
+          ]
+        },
+        {
           "name": "SomeTable",
           "access": "WO",
           "numberOfElements": 16384,
