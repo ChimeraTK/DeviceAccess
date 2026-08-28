@@ -5,6 +5,7 @@
 #include "Device.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
+
 #include <boost/test/unit_test.hpp>
 
 #include <future>
