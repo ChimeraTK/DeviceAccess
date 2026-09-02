@@ -28,6 +28,9 @@
         <targetDevice>PCIE3</targetDevice>
         <targetRegister>TEST.NODMA</targetRegister>
         <targetChannel>4</targetChannel>
+        <plugin name="setDescription">
+          <parameter name="description">A custom description</parameter>
+        </plugin>
     </redirectedChannel>
     <redirectedChannel name="LastChannelInRegister">
         <targetDevice>PCIE3</targetDevice>
@@ -62,6 +65,42 @@
         </plugin>
         <plugin name="multiply">
           <parameter name="factor">3</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="CustomUnitDescription">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="engineeringUnit">mV</parameter>
+          <parameter name="description">A custom description</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="CustomUnitOnly">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="engineeringUnit">mA</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="CustomDescriptionOnly">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="description">Only description overwritten</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="JsonUnitOnly">
+        <targetDevice>JSRC</targetDevice>
+        <targetRegister>SomeTopLevelRegister</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="engineeringUnit">V</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="JsonDescriptionOnly">
+        <targetDevice>JSRC</targetDevice>
+        <targetRegister>SomeTopLevelRegister</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="description">Overwritten by plugin</parameter>
         </plugin>
     </redirectedRegister>
     <redirectedRegister name="FullArea_Scaled">

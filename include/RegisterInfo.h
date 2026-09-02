@@ -4,7 +4,6 @@
 
 #include "BackendRegisterInfoBase.h"
 
-#include <iostream>
 #include <memory>
 
 namespace ChimeraTK {
@@ -73,6 +72,12 @@ namespace ChimeraTK {
      * @see ChimeraTK::SystemTags for a list of pre-defined tags.
      */
     [[nodiscard]] std::set<std::string> getTags() const;
+
+    /** Return the engineering unit of the register. */
+    [[nodiscard]] std::string getUnit() const;
+
+    /** Return the description of the register. */
+    [[nodiscard]] std::string getDescription() const;
 
    protected:
     std::unique_ptr<BackendRegisterInfoBase> _impl;

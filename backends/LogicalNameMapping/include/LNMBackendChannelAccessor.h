@@ -28,6 +28,10 @@ namespace ChimeraTK {
       // copy the register info and create the internal accessors, if needed
       _info = _dev->_catalogue_mutable.getBackendRegister(_registerPathName);
 
+      // propagate the (plugin-updated) engineering unit and description from the register info into the accessor
+      this->_unit = _info.engineeringUnit;
+      this->_description = _info.description;
+
       // check for incorrect usage of this accessor
       assert(_info.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
 

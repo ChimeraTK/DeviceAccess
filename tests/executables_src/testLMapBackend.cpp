@@ -909,10 +909,11 @@ BOOST_AUTO_TEST_CASE(testParameters) {
 
 BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target;
+  ChimeraTK::Device device, target, jsonSrc;
 
   device.open("LMAP0");
   target.open("PCIE2");
+  jsonSrc.open("JSRC");
 
   // test scalar register with multiply plugin
   auto wordUser = target.getScalarRegisterAccessor<int32_t>("BOARD.WORD_USER");
@@ -987,6 +988,78 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   areaScaled.write();
   area.read();
   for(int i = 0; i < 1024; ++i) BOOST_CHECK_EQUAL(area[i], -100 + i);
+
+  // test setDescription plugin: both engineering unit and description are overwritten
+  // Catalogue info must already carry the values before an accessor is created, so tooling can view them.
+  {
+    auto info = device.getRegisterCatalogue().getRegister("CustomUnitDescription");
+    BOOST_TEST(info.getUnit() == "mV");
+    BOOST_TEST(info.getDescription() == "A custom description");
+  }
+  auto customUnitDesc = device.getScalarRegisterAccessor<double>("CustomUnitDescription");
+  BOOST_TEST(customUnitDesc.getUnit() == "mV");
+  BOOST_TEST(customUnitDesc.getDescription() == "A custom description");
+
+  // test setDescription plugin: only engineering unit is overwritten, description stays as in target
+  // (here the target is a map-based NumericAddressed register whose info carries no unit/description,
+  //  so the non-overwritten catalogue field stays empty; the accessor reflects the target accessor)
+  {
+    auto info = device.getRegisterCatalogue().getRegister("CustomUnitOnly");
+    BOOST_TEST(info.getUnit() == "mA");
+    BOOST_TEST(info.getDescription() == "");
+  }
+  auto customUnitOnly = device.getScalarRegisterAccessor<double>("CustomUnitOnly");
+  BOOST_TEST(customUnitOnly.getUnit() == "mA");
+  BOOST_TEST(customUnitOnly.getDescription() == wordUser.getDescription());
+
+  // test setDescription plugin: only description is overwritten, engineering unit stays as in target
+  {
+    auto info = device.getRegisterCatalogue().getRegister("CustomDescriptionOnly");
+    BOOST_TEST(info.getDescription() == "Only description overwritten");
+    BOOST_TEST(info.getUnit() == "");
+  }
+  auto customDescriptionOnly = device.getScalarRegisterAccessor<double>("CustomDescriptionOnly");
+  BOOST_TEST(customDescriptionOnly.getDescription() == "Only description overwritten");
+  BOOST_TEST(customDescriptionOnly.getUnit() == wordUser.getUnit());
+
+  // test setDescription plugin on a target coming from a JSON map file
+  // Verify the description coming from the JSON file is NOT overwritten when the plugin
+  // only overwrites the engineering unit.
+  auto jsonTarget = jsonSrc.getScalarRegisterAccessor<double>("SomeTopLevelRegister");
+  BOOST_TEST(jsonTarget.getUnit() == "mV");
+  BOOST_TEST(jsonTarget.getDescription() == "This is an example register");
+
+  // only engineeringUnit is overwritten -> the JSON description must be preserved in catalogue and accessor
+  {
+    auto info = device.getRegisterCatalogue().getRegister("JsonUnitOnly");
+    BOOST_TEST(info.getUnit() == "V");
+    BOOST_TEST(info.getDescription() == "This is an example register");
+  }
+  auto jsonUnitOnly = device.getScalarRegisterAccessor<double>("JsonUnitOnly");
+  BOOST_TEST(jsonUnitOnly.getUnit() == "V");
+  BOOST_TEST(jsonUnitOnly.getDescription() == "This is an example register");
+
+  // only description is overwritten -> the JSON unit must be preserved
+  {
+    auto info = device.getRegisterCatalogue().getRegister("JsonDescriptionOnly");
+    BOOST_TEST(info.getDescription() == "Overwritten by plugin");
+    BOOST_TEST(info.getUnit() == "mV");
+  }
+  auto jsonDescriptionOnly = device.getScalarRegisterAccessor<double>("JsonDescriptionOnly");
+  BOOST_TEST(jsonDescriptionOnly.getDescription() == "Overwritten by plugin");
+  BOOST_TEST(jsonDescriptionOnly.getUnit() == "mV");
+
+  // overwrite description of 2D area while extracting channel via 'redirectedChannel'; keep unit
+  // note, we accept that if name/description/unit for that _channel_ already exists in .jmap, it will not be
+  // available when extracting from the 2D area.
+  {
+    auto info = device.getRegisterCatalogue().getRegister("Channel4");
+    BOOST_TEST(info.getDescription() == "A custom description");
+    BOOST_TEST(info.getUnit() == "mA");
+  }
+  auto channel4 = device.getOneDRegisterAccessor<int32_t>("Channel4");
+  BOOST_TEST(channel4.getDescription() == "A custom description");
+  BOOST_TEST(channel4.getUnit() == "mA");
 }
 
 /**********************************************************************************************************************/
@@ -1123,6 +1196,7 @@ BOOST_AUTO_TEST_CASE(TestInvolvedBackendIDs) {
   ChimeraTK::Device device("LMAP0");
   ChimeraTK::Device target1("PCIE2");
   ChimeraTK::Device target2("PCIE3");
+  ChimeraTK::Device jsonSrc("JSRC");
 
   // This actually is a test for the default implementation in DeviceBackendImpl,
   // which does not have it's own tests as it cannot be instantiated.
@@ -1132,9 +1206,10 @@ BOOST_AUTO_TEST_CASE(TestInvolvedBackendIDs) {
 
   // The real test for the LMapBackend
   auto deviceIDs = device.getInvolvedBackendIDs();
-  BOOST_TEST(deviceIDs.size() == 3);
+  BOOST_TEST(deviceIDs.size() == 4);
   BOOST_TEST(deviceIDs.contains(target1.getBackend()->getBackendID()));
   BOOST_TEST(deviceIDs.contains(target2.getBackend()->getBackendID()));
+  BOOST_TEST(deviceIDs.contains(jsonSrc.getBackend()->getBackendID()));
   BOOST_TEST(deviceIDs.contains(device.getBackend()->getBackendID()));
 }
 
