@@ -1,0 +1,555 @@
+{
+  "mapFormatVersion": "0.0.1",
+  "metadata": {},
+  "interruptHandler": {},
+  "addressSpace": [
+    {
+      "name": "AREA_DMAABLE",
+      "numberOfElements": 1024,
+      "address": {
+        "channel": 2,
+        "offset": "0x0"
+      },
+      "representation": {
+        "type": "fixedPoint",
+        "isSigned": true
+      }
+    },
+    {
+      "name": "TEST",
+      "children": [
+        {
+          "name": "DMA",
+          "address": {
+            "channel": 13,
+            "offset": "0x0"
+          },
+          "channelTabs": [
+            {
+              "numberOfElements": 4,
+              "pitch": 32,
+              "channels": [
+                {
+                  "name": "0",
+                  "offset": 0,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "1",
+                  "offset": 2,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "2",
+                  "offset": 4,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "3",
+                  "offset": 6,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "4",
+                  "offset": 8,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "5",
+                  "offset": 10,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "6",
+                  "offset": 12,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "7",
+                  "offset": 14,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "8",
+                  "offset": 16,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "9",
+                  "offset": 18,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "10",
+                  "offset": 20,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "11",
+                  "offset": 22,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "12",
+                  "offset": 24,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "13",
+                  "offset": 26,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "14",
+                  "offset": 28,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "15",
+                  "offset": 30,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "FLOAT",
+          "address": {
+            "channel": 2,
+            "offset": "0x0"
+          },
+          "channelTabs": [
+            {
+              "numberOfElements": 8,
+              "pitch": 16,
+              "channels": [
+                {
+                  "name": "0",
+                  "offset": 0,
+                  "bytesPerElement": 4,
+                  "representation": {
+                    "type": "IEEE754",
+                    "width": 32
+                  }
+                },
+                {
+                  "name": "1",
+                  "offset": 4,
+                  "bytesPerElement": 4,
+                  "representation": {
+                    "type": "IEEE754",
+                    "width": 32
+                  }
+                },
+                {
+                  "name": "2",
+                  "offset": 8,
+                  "bytesPerElement": 4,
+                  "representation": {
+                    "type": "IEEE754",
+                    "width": 32
+                  }
+                },
+                {
+                  "name": "3",
+                  "offset": 12,
+                  "bytesPerElement": 4,
+                  "representation": {
+                    "type": "IEEE754",
+                    "width": 32
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "NODMA",
+          "address": {
+            "channel": 2,
+            "offset": "0x0"
+          },
+          "channelTabs": [
+            {
+              "numberOfElements": 4,
+              "pitch": 32,
+              "channels": [
+                {
+                  "name": "0",
+                  "offset": 0,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "1",
+                  "offset": 2,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "2",
+                  "offset": 4,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "3",
+                  "offset": 6,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "4",
+                  "offset": 8,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "5",
+                  "offset": 10,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "6",
+                  "offset": 12,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "7",
+                  "offset": 14,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "8",
+                  "offset": 16,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "9",
+                  "offset": 18,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "10",
+                  "offset": 20,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "11",
+                  "offset": 22,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "12",
+                  "offset": 24,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "13",
+                  "offset": 26,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "14",
+                  "offset": 28,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "15",
+                  "offset": 30,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "NODMAASYNC",
+          "triggeredByInterrupt": [
+            6
+          ],
+          "address": {
+            "channel": 2,
+            "offset": "0x0"
+          },
+          "channelTabs": [
+            {
+              "numberOfElements": 4,
+              "pitch": 32,
+              "channels": [
+                {
+                  "name": "0",
+                  "offset": 0,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "1",
+                  "offset": 2,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "2",
+                  "offset": 4,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "3",
+                  "offset": 6,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "4",
+                  "offset": 8,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "5",
+                  "offset": 10,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "6",
+                  "offset": 12,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "7",
+                  "offset": 14,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "8",
+                  "offset": 16,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "9",
+                  "offset": 18,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "10",
+                  "offset": 20,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "11",
+                  "offset": 22,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "12",
+                  "offset": 24,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "13",
+                  "offset": 26,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "14",
+                  "offset": 28,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "15",
+                  "offset": 30,
+                  "bytesPerElement": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

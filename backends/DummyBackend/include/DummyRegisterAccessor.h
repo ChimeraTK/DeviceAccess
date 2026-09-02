@@ -214,7 +214,19 @@ namespace ChimeraTK {
 
     /// return element
     std::byte* getElement(unsigned int index) {
-      auto* ptr = &(_dev->_barContents[_registerInfo.bar][_registerInfo.address / sizeof(int32_t) + index]);
+      // elements are strided by elementPitchBits (which equals the element size for ordinary contiguous
+      // registers, i.e. elementPitchBits / 32 == 1); a channel slice of a 2D register has a larger pitch
+      // FIXME: this is currently limited to pitches divisible by 32 bits, because the dummy uses 32 bit words as an
+      // internal representation.
+      if((_registerInfo.address % sizeof(int32_t)) != 0 ||
+          (_registerInfo.elementPitchBits % (8 * sizeof(int32_t))) != 0) {
+        throw ChimeraTK::logic_error("DummyRegisterAccessor: elementPitchBits/address must be 32-bit aligned for "
+                                     "strided element access. Register: " +
+            _path);
+      }
+      const auto strideWords = _registerInfo.elementPitchBits / (8 * sizeof(int32_t));
+      auto* ptr =
+          &(_dev->_barContents[_registerInfo.bar][_registerInfo.address / sizeof(int32_t) + index * strideWords]);
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       return reinterpret_cast<std::byte*>(ptr);
     }

@@ -35,7 +35,7 @@ static std::string cdd("(ExceptionDummy:1?map=test3.map)");
 static auto exceptionDummy =
     boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cdd));
 
-static std::string cddMuxed("(ExceptionDummy:1?map=muxedDataAcessor.map)");
+static std::string cddMuxed("(ExceptionDummy:1?map=muxedDataAccessor.jmap)");
 static auto exceptionDummyMuxed =
     boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cddMuxed));
 
@@ -517,6 +517,124 @@ struct MuxedNodma {
   }
 };
 
+// Read-only 1D channel slice of the 2D register TEST/NODMA. The setRemoteValue()/getRemoteValue()
+// pair exercises the strided access: values are written into the corresponding row of the full 2D
+// register (DummyMultiplexedRegisterAccessor, already pitch-aware) and read back through the slice's
+// DummyRegisterAccessor (whose getElement() must stride by the element pitch as well).
+struct NamedChannelSlice0 {
+  std::string path() { return "/TEST/NODMA.0"; }
+  bool isWriteable() { return false; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 4; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef uint16_t minimumUserType;
+  typedef int16_t rawUserType;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
+
+  static const size_t channelIndex = 0;
+  DummyRegisterAccessor<uint16_t> acc{exceptionDummyMuxed.get(), "TEST/NODMA", "0"};
+  DummyMultiplexedRegisterAccessor<uint16_t> full{exceptionDummyMuxed.get(), "TEST", "NODMA"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue([[maybe_unused]] bool raw = false) {
+    std::vector<std::vector<UserType>> v(1);
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      v[0].push_back(uint16_t(full[channelIndex][e] + 37 + 11 * e));
+    }
+    return v;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
+    std::vector<std::vector<UserType>> v(1);
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      v[0].push_back(acc[e]);
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<minimumUserType>();
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      full[channelIndex][e] = v[0][e];
+    }
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+  }
+};
+
+struct NamedChannelSlice3 {
+  std::string path() { return "/TEST/NODMA.3"; }
+  bool isWriteable() { return false; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::raw}; }
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 4; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef uint16_t minimumUserType;
+  typedef int16_t rawUserType;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
+
+  // Channel "3" sits at byte offset 6 and is *not* thus 4-byte aligned, which the Dummy backdoor accessor
+  // (getElement, working on 32-bit words) requires for a strided 16-bit channel slice. Hence we do not use
+  // it in this case and instead rely solely on the muxed backdoor accessor.
+  static const size_t channelIndex = 3;
+  DummyMultiplexedRegisterAccessor<uint16_t> full{exceptionDummyMuxed.get(), "TEST", "NODMA"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue([[maybe_unused]] bool raw = false) {
+    std::vector<std::vector<UserType>> v(1);
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      v[0].push_back(uint16_t(full[channelIndex][e] + 53 + 7 * e));
+    }
+    return v;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
+    std::vector<std::vector<UserType>> v(1);
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      v[0].push_back(full[channelIndex][e]);
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<minimumUserType>();
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      full[channelIndex][e] = v[0][e];
+    }
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+  }
+};
+
 struct MuxedNodmaAsync {
   std::string path() { return "/TEST/NODMAASYNC"; }
   bool isWriteable() { return false; }
@@ -967,6 +1085,14 @@ BOOST_AUTO_TEST_CASE(testMultiplexedRegisterAccessor) {
       .addRegister<MuxedNodmaAsync>()
       .addRegister<MuxedFloat>()
       .runTests(cddMuxed);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testNamedChannelSlices) {
+  std::cout << "*** testNamedChannelSlices *** " << std::endl;
+  ChimeraTK::UnifiedBackendTest<>().addRegister<NamedChannelSlice0>().addRegister<NamedChannelSlice3>().runTests(
+      cddMuxed);
 }
 
 /**********************************************************************************************************************/

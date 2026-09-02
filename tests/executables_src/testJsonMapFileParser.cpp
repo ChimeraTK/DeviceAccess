@@ -271,6 +271,38 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[2].signedFlag == false);
     BOOST_TEST(reg.isBitRange == false);
   }
+  // Named channel slices of the 2D register DAQ.CTRL: each is a read-only 1D register whose address
+  // already contains the channel's byte offset, keeps the full element pitch as stride, and stores a
+  // single ChannelInfo with bitOffset 0 and the channel's raw type.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.errorI");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/errorI");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x40000);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
+  }
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.errorQ");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/errorQ");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x40000 + 2);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
+  }
   {
     auto reg = regs.getBackendRegister("DAQ.FD");
     BOOST_TEST(reg.pathName == "/DAQ/FD");

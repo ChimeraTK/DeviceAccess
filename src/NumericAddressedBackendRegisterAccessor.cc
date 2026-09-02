@@ -138,9 +138,18 @@ namespace ChimeraTK {
     }
     else {
       // optimised variant for raw transfers (unless type is a string)
+      // the elements are strided by elementPitchBits, which may exceed sizeof(UserType) for a channel slice
       auto* itsrc = _rawAccessor->begin(_registerInfo.address);
       auto* itdst = buffer_2D[0].data();
-      memcpy(itdst, itsrc, buffer_2D[0].size() * sizeof(UserType));
+      const size_t stride = _registerInfo.elementPitchBits / 8;
+      if(stride == sizeof(UserType)) {
+        memcpy(itdst, itsrc, buffer_2D[0].size() * sizeof(UserType));
+      }
+      else {
+        for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
+          memcpy(itdst + i, itsrc + i * stride, sizeof(UserType));
+        }
+      }
     }
 
     // we don't put the setting of the version number into the PrePostActionImplementor
@@ -162,8 +171,10 @@ namespace ChimeraTK {
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
         auto* begin = _rawAccessor->begin(_registerInfo.address);
         assert(begin != nullptr);
+        // the elements are strided by elementPitchBits, which may exceed sizeof(RawType) for a channel slice
+        const size_t stride = _registerInfo.elementPitchBits / 8;
         for(auto [itsrc, itdst] = std::make_pair(begin, buffer_2D[0].begin()); itdst != buffer_2D[0].end();
-            itsrc += sizeof(RawType), ++itdst) {
+            itsrc += stride, ++itdst) {
           RawType temp;
           memcpy(&temp, itsrc, sizeof(RawType));
           *itdst = converter.toCooked(temp);
@@ -198,9 +209,13 @@ namespace ChimeraTK {
     }
     else {
       // optimised variant for raw transfers (unless type is a string)
+      // the elements are strided by elementPitchBits, which may exceed sizeof(UserType) for a channel slice
       auto* itdst = _rawAccessor->begin(_registerInfo.address);
-      auto itsrc = buffer_2D[0].begin();
-      memcpy(&(*itdst), &(*itsrc), buffer_2D[0].size() * sizeof(UserType));
+      auto* itsrc = buffer_2D[0].data();
+      const size_t stride = _registerInfo.elementPitchBits / 8;
+      for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
+        memcpy(itdst + i * stride, itsrc + i, sizeof(UserType));
+      }
     }
 
     _rawAccessor->setDataValidity(this->_dataValidity);
@@ -217,8 +232,10 @@ namespace ChimeraTK {
     if constexpr(!isRaw) {
       if constexpr(!std::is_same_v<RawType, ChimeraTK::Void>) {
         auto* begin = _rawAccessor->begin(_registerInfo.address);
+        // the elements are strided by elementPitchBits, which may exceed sizeof(RawType) for a channel slice
+        const size_t stride = _registerInfo.elementPitchBits / 8;
         for(auto [itsrc, itdst] = std::make_pair(buffer_2D[0].begin(), begin); itsrc != buffer_2D[0].end();
-            ++itsrc, itdst += sizeof(RawType)) {
+            ++itsrc, itdst += stride) {
           RawType temp = converter.toRaw(*itsrc);
           memcpy(itdst, &temp, sizeof(RawType));
         }
