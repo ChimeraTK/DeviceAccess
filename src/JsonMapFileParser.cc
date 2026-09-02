@@ -207,6 +207,7 @@ namespace ChimeraTK::detail {
 
     void fill(NumericAddressedRegisterInfo& info, const RegisterPath& parentName, bool addressSetByParent) const {
       info.pathName = parentName / name;
+      info.pathName.setAltSeparator(".");
 
       if(triggeredByInterrupt.empty()) {
         if(access != Access::accessNotSet) {

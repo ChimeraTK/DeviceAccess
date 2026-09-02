@@ -30,6 +30,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
 
   BOOST_TEST(regs.hasRegister("/SomeTopLevelRegister"));
+  BOOST_TEST(regs.hasRegister("BSP.VERSION"));
+  BOOST_TEST(regs.hasRegister("/BSP/VERSION"));
 
   {
     auto reg = regs.getBackendRegister("/SomeTopLevelRegister");
