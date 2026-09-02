@@ -78,29 +78,15 @@ namespace ChimeraTK {
       }
     }
 
-    // set raw data type
+    // set raw data type from the channel's stored raw type (its size defines the element size for the
+    // transport layer; for a strided channel slice this may differ from elementPitchBits, the stride)
     DataType rawDataInfo{DataType::none};
     if(channels.size() == 1) {
       if(elementPitchBits == 0) {
         rawDataInfo = DataType::Void;
       }
-      else if(elementPitchBits == 8) {
-        rawDataInfo = DataType::int8;
-      }
-      else if(elementPitchBits == 16) {
-        rawDataInfo = DataType::int16;
-      }
-      else if(elementPitchBits == 32) {
-        rawDataInfo = DataType::int32;
-      }
-      else if(elementPitchBits == 64) {
-        rawDataInfo = DataType::int64;
-      }
-      else {
-        if(dataType != Type::ASCII) {
-          throw ChimeraTK::logic_error(
-              "Unsupported raw size: " + std::to_string(elementPitchBits) + " bits in register " + pathName);
-        }
+      else if(dataType != Type::ASCII && dataType != Type::VOID) {
+        rawDataInfo = channels.front().getRawType();
       }
     }
 

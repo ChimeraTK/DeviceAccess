@@ -303,6 +303,33 @@ namespace ChimeraTK::detail {
         fill(my, parentName, addressSetByParent);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
+        if(!channelTabs.empty()) {
+          // create one register entry per named channel of the first channel tab: a read-only 1D slice of the
+          // 2D register. The channel's byte offset is folded into the address (so bitOffset == 0), and the full
+          // element pitch is kept as the stride between samples.
+          for(const auto& channel : channelTabs[0].channels) {
+            RegisterPath slicePath = my.pathName / channel.name;
+            slicePath.setAltSeparator(".");
+            // skip a channel whose slice path would collide with an already created slice (e.g. a
+            // bit-field channel split into multiple entries carrying the same name)
+            if(catalogue.hasRegister(slicePath)) {
+              continue;
+            }
+            const auto& rep = channel.representation;
+            NumericAddressedRegisterInfo::ChannelInfo ci{rep.bitShift, // bitOffset within the channel element
+                NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
+                rep.type != RepresentationType::IEEE754 ? rep.isSigned : true,
+                DataType("int" + std::to_string(channel.bytesPerElement * 8))};
+            // A channel slice is read-only: writing to a single channel of a 2D register would require a
+            // read-modify-write cycle across the channels, which is deliberately not supported.
+            NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel.offset, my.nElements,
+                my.elementPitchBits, {ci}, NumericAddressedRegisterInfo::Access::READ_ONLY, my.interruptId,
+                my.doubleBuffer);
+            slice.isBitRange = (rep.bitShift != 0);
+            slice.computeDataDescriptor();
+            catalogue.addRegister(slice);
+          }
+        }
         if(doubleBuffering.has_value()) {
           // Create the .buf0 register as a copy of the main one
           NumericAddressedRegisterInfo buf0Register = my;

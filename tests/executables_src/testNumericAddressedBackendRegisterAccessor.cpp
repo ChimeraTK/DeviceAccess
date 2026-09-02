@@ -653,4 +653,78 @@ BOOST_AUTO_TEST_CASE(testMergeNumericRegistersDifferentTypes) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(TestMergeStridedChannelSlices) {
+  // Open a device on the multiplexed-data map so the named channel slices of the
+  // 2D register TEST/NODMA are constructed as strided channel accessors.
+  ChimeraTK::Device device;
+  device.open("(ExceptionDummy:1?map=muxedDataAccessor.jmap)");
+
+  // Create strided channel accessors for a non-trivial subset of channels.
+  auto ch0 = device.getOneDRegisterAccessor<int16_t>("/TEST/NODMA.0");
+  auto ch5 = device.getOneDRegisterAccessor<int16_t>("/TEST/NODMA.5");
+  auto ch12 = device.getOneDRegisterAccessor<int16_t>("/TEST/NODMA.12");
+
+  // A full 2D accessor, used exclusively to write the values expected to be read
+  // back through the channel accessors. It is never added to the group.
+  auto full = device.getTwoDRegisterAccessor<int16_t>("/TEST/NODMA");
+
+  // Obtain the high-level impl elements to inspect the underlying low-level elements.
+  auto ch0i = boost::dynamic_pointer_cast<NDRegisterAccessor<int16_t>>(ch0.getHighLevelImplElement());
+  auto ch5i = boost::dynamic_pointer_cast<NDRegisterAccessor<int16_t>>(ch5.getHighLevelImplElement());
+  auto ch12i = boost::dynamic_pointer_cast<NDRegisterAccessor<int16_t>>(ch12.getHighLevelImplElement());
+
+  // Before adding to the group, all underlying low-level elements are distinct...
+  BOOST_TEST((ch0i->getHardwareAccessingElements()[0] != ch5i->getHardwareAccessingElements()[0]));
+  BOOST_TEST((ch0i->getHardwareAccessingElements()[0] != ch12i->getHardwareAccessingElements()[0]));
+  BOOST_TEST((ch5i->getHardwareAccessingElements()[0] != ch12i->getHardwareAccessingElements()[0]));
+
+  // ...and after adding them to the group (intentionally out of order) they all
+  // become one shared low-level transfer element, because the interleaved channel
+  // slices overlap in memory.
+  TransferGroup group;
+  group.addAccessor(ch12);
+  group.addAccessor(ch0);
+  group.addAccessor(ch5);
+
+  BOOST_TEST((ch0i->getHardwareAccessingElements()[0] == ch5i->getHardwareAccessingElements()[0]));
+  BOOST_TEST((ch0i->getHardwareAccessingElements()[0] == ch12i->getHardwareAccessingElements()[0]));
+  BOOST_TEST((ch5i->getHardwareAccessingElements()[0] == ch12i->getHardwareAccessingElements()[0]));
+
+  // Functional read-back verification: write per-channel values through the full 2D
+  // accessor, then read via the group and confirm each channel accessor decodes its
+  // own channel's strided data through the now-shared low-level element.
+  for(size_t e = 0; e < 4; ++e) {
+    full[0][e] = static_cast<int16_t>(100 + e);
+    full[5][e] = static_cast<int16_t>(200 + e);
+    full[12][e] = static_cast<int16_t>(300 + e);
+  }
+  full.write();
+
+  group.read();
+  for(size_t e = 0; e < 4; ++e) {
+    BOOST_TEST(ch0[static_cast<int>(e)] == static_cast<int16_t>(100 + e));
+    BOOST_TEST(ch5[static_cast<int>(e)] == static_cast<int16_t>(200 + e));
+    BOOST_TEST(ch12[static_cast<int>(e)] == static_cast<int16_t>(300 + e));
+  }
+
+  // Overwrite the values once more through the 2D accessor and re-read through the
+  // group, confirming the shared low-level element still decodes each channel
+  // independently after the merge.
+  for(size_t e = 0; e < 4; ++e) {
+    full[0][e] = static_cast<int16_t>(400 - e);
+    full[5][e] = static_cast<int16_t>(500 - e);
+    full[12][e] = static_cast<int16_t>(600 - e);
+  }
+  full.write();
+
+  group.read();
+  for(size_t e = 0; e < 4; ++e) {
+    BOOST_TEST(ch0[static_cast<int>(e)] == static_cast<int16_t>(400 - e));
+    BOOST_TEST(ch5[static_cast<int>(e)] == static_cast<int16_t>(500 - e));
+    BOOST_TEST(ch12[static_cast<int>(e)] == static_cast<int16_t>(600 - e));
+  }
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
