@@ -95,6 +95,9 @@ namespace ChimeraTK {
     /** Returns the description of this variable/register */
     const std::string& getDescription() const { return _description; }
 
+    void setUnit(const std::string& unit) { _unit = unit; }
+    void setDescription(const std::string& description) { _description = description; }
+
     /** Returns the \c std::type_info for the value type of this transfer element.
      *  This can be used to determine the type at runtime.
      */

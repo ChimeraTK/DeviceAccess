@@ -193,6 +193,7 @@ namespace ChimeraTK::detail {
         size_t bytesPerElement{4};
         Representation representation{};
 
+        /// adds channel representation of this Channel to channels of info
         void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset, bytesPerElement); }
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
@@ -304,6 +305,9 @@ namespace ChimeraTK::detail {
       else {
         info.doubleBuffer.reset();
       }
+
+      info.description = description;
+      info.engineeringUnit = engineeringUnit;
     }
 
     std::map<std::string, JsonAddressSpaceEntry> children;
@@ -349,6 +353,8 @@ namespace ChimeraTK::detail {
                 my.elementPitchBits, {ci}, sliceAccessType, my.interruptId, my.doubleBuffer);
             slice.isBitRange = (rep.bitShift != 0);
             slice.computeDataDescriptor();
+            slice.engineeringUnit = channel->engineeringUnit;
+            slice.description = channel->description;
             catalogue.addRegister(slice);
           }
         }
@@ -372,6 +378,7 @@ namespace ChimeraTK::detail {
         }
       }
       else if(representation.type != RepresentationType::representationNotSet) {
+        // take over parent address (except void interrupt registers which don't have an address)
         auto my = catalogue.getBackendRegister(parentName);
         my.channels.clear();                            // will be refilled from representation
         fill(my, name, parentName, addressSetByParent); // only updates the name and the representation

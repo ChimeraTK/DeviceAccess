@@ -49,6 +49,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].nFractionalBits == 8);
     BOOST_TEST(reg.channels[0].signedFlag == true);
     BOOST_TEST(reg.isBitRange == false);
+    BOOST_TEST(reg.description == "This is an example register");
+    BOOST_TEST(reg.engineeringUnit == "mV");
   }
   {
     auto reg = regs.getBackendRegister("BSP.VERSION");
@@ -278,6 +280,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   {
     auto reg = regs.getBackendRegister("DAQ.CTRL.errorI");
     BOOST_TEST(reg.pathName == "/DAQ/CTRL/errorI");
+    BOOST_TEST(reg.engineeringUnit == "bits");
+    BOOST_TEST(reg.description == "Error signal in I");
     BOOST_TEST(reg.nElements == 16384);
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);
@@ -295,6 +299,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   {
     auto reg = regs.getBackendRegister("DAQ.CTRL.errorQ");
     BOOST_TEST(reg.pathName == "/DAQ/CTRL/errorQ");
+    BOOST_TEST(reg.engineeringUnit == "bits");
+    BOOST_TEST(reg.description == "Error signal in Q");
     BOOST_TEST(reg.nElements == 16384);
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);

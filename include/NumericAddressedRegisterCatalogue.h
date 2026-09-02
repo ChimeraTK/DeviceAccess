@@ -143,6 +143,16 @@ namespace ChimeraTK {
     void computeDataDescriptor();
 
     [[nodiscard]] bool isHidden() const override { return hidden; }
+
+    std::string description;
+
+    std::string engineeringUnit;
+
+    /** Return the engineering unit of the register. */
+    [[nodiscard]] std::string getUnit() const override { return engineeringUnit; }
+
+    /** Return the description of the register. */
+    [[nodiscard]] std::string getDescription() const override { return description; }
   };
 
   /********************************************************************************************************************/
