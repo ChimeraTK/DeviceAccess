@@ -60,6 +60,20 @@ namespace ChimeraTK {
     [[nodiscard]] virtual std::set<std::string> getTags() const { return {}; };
 
     /**
+     * Return the engineering unit of the register.
+     *
+     * The default implementation returns an empty string.
+     */
+    [[nodiscard]] virtual std::string getUnit() const { return {}; };
+
+    /**
+     * Return the description of the register.
+     *
+     * The default implementation returns an empty string.
+     */
+    [[nodiscard]] virtual std::string getDescription() const { return {}; };
+
+    /**
      * Returns whether the register is "hidden", meaning it won't be listed when iterating the catalogue.
      *
      * Hidden registers can be explicitly iterated, but the ordinary iterators will not show them.

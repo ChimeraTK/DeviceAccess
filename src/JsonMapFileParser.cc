@@ -286,6 +286,9 @@ namespace ChimeraTK::detail {
       else {
         info.doubleBuffer.reset();
       }
+
+      info.description = description;
+      info.engineeringUnit = engineeringUnit;
     }
 
     std::vector<JsonAddressSpaceEntry> children;

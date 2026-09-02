@@ -46,6 +46,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].nFractionalBits == 8);
     BOOST_TEST(reg.channels[0].signedFlag == true);
     BOOST_TEST(reg.isBitRange == false);
+    BOOST_TEST(reg.description == "This is an example register");
+    BOOST_TEST(reg.engineeringUnit == "mV");
   }
   {
     auto reg = regs.getBackendRegister("BSP.VERSION");
