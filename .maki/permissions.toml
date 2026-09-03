@@ -1,0 +1,18 @@
+[write]
+allow = [
+    "/home/drothe/.local/state/maki/plans/**",
+]
+
+[edit]
+allow = [
+    "/home/drothe/.local/state/maki/plans/**",
+]
+
+[bash]
+allow = [
+    "cd *",
+    "grep *",
+    "head *",
+    "echo *",
+    "tail *",
+]

@@ -17,7 +17,7 @@ namespace ChimeraTK {
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
         _doubleBufferInfo.inactiveBufferRegisterPath, 1, _doubleBufferInfo.index, {});
 
-    auto buf0Name = registerPathName + ".BUF0";
+    auto buf0Name = registerPathName + ".BUF0"; // TODO discuss - why does this work?
     auto buf1Name = registerPathName + ".BUF1";
 
     _buffer0 = backend->getRegisterAccessor<UserType>(buf0Name, numberOfWords, wordOffsetInRegister, flags);

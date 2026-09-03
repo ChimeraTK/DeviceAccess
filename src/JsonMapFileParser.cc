@@ -186,6 +186,8 @@ namespace ChimeraTK::detail {
       size_t pitch{0};
 
       struct Channel {
+        // TODO named channels are not yet supported: name never used!
+        // same of course for engineeringUnit & description, will be same code pattern as for name.
         std::string name;
         std::string engineeringUnit;
         std::string description;
@@ -193,7 +195,12 @@ namespace ChimeraTK::detail {
         size_t bytesPerElement{4};
         Representation representation{};
 
-        void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset, bytesPerElement); }
+        void fill(NumericAddressedRegisterInfo& info) const {
+          // info.pathName = RegisterPath(name); // TODO full path
+          // info.engineeringUnit = engineeringUnit;
+          // info.description = description;
+          representation.fill(info, offset, bytesPerElement);
+        }
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
             Channel, name, engineeringUnit, description, offset, bytesPerElement, representation)
@@ -241,6 +248,8 @@ namespace ChimeraTK::detail {
             info.elementPitchBits = channelTabs[0].pitch * 8;
             info.nElements = channelTabs[0].numberOfElements;
             for(const auto& channel : channelTabs[0].channels) {
+              // TODO check - I don't yet understand meaning . channels should be treated as child registers,
+              // not change current register!
               channel.fill(info);
             }
           }
@@ -305,6 +314,36 @@ namespace ChimeraTK::detail {
         fill(my, parentName, addressSetByParent);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
+        // here add martins code:
+        /*
+        if(!channelTabs.empty()) {
+          // create one register entry per named channel of the first channel tab: a read-only 1D slice of the
+          // 2D register. The channel's byte offset is folded into the address (so bitOffset == 0), and the full
+          // element pitch is kept as the stride between samples.
+          for(const auto& channel : channelTabs[0].channels) {
+            RegisterPath slicePath = my.pathName / channel.name;
+            slicePath.setAltSeparator(".");
+            // TODO discuss - why
+            // skip a channel whose slice path would collide with an already created slice (e.g. a
+            // bit-field channel split into multiple entries carrying the same name)
+            if(catalogue.hasRegister(slicePath)) {
+              continue;
+            }
+            const auto& rep = channel.representation;
+            NumericAddressedRegisterInfo::ChannelInfo ci{0, // bitOffset, folded into address below
+                NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
+                rep.type != RepresentationType::IEEE754 ? rep.isSigned : true,
+                DataType("int" + std::to_string(channel.bytesPerElement * 8))};
+            // A channel slice is read-only: writing to a single channel of a 2D register would require a
+            // read-modify-write cycle across the channels, which is deliberately not supported.
+            NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel.offset, my.nElements,
+                my.elementPitchBits, {ci}, NumericAddressedRegisterInfo::Access::READ_ONLY, my.interruptId,
+                my.doubleBuffer);
+            slice.computeDataDescriptor();
+            catalogue.addRegister(slice);
+          }
+        }
+        */
         if(doubleBuffering.has_value()) {
           // Create the .buf0 register as a copy of the main one
           NumericAddressedRegisterInfo buf0Register = my;
@@ -325,6 +364,7 @@ namespace ChimeraTK::detail {
         }
       }
       else if(representation.type != RepresentationType::representationNotSet) {
+        // TODO discuss what this means - does it mean we take over parent address and name?
         auto my = catalogue.getBackendRegister(parentName);
         my.channels.clear();                      // will be refilled from representation
         fill(my, parentName, addressSetByParent); // only updates the name and the representation
