@@ -15,6 +15,7 @@ are complete and fully functional.
 \li \ref basic_example
 \li \ref accessor1d
 \li \ref accessor2d
+\li \ref jmap
 \li \ref numeric_addresses
 \li \ref lmap
 \li Transfer groups
@@ -26,8 +27,6 @@ are complete and fully functional.
 
 \li \ref exceptions
 \li \ref q_and_a
-
-\subsection lnm Logical Name Mapping plugins
 
 \page basic_example Basic Example
 
