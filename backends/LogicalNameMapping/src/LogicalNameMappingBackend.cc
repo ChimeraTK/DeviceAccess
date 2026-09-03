@@ -287,6 +287,8 @@ namespace ChimeraTK {
       }
 
       lnmInfo.tags = target_info.getTags();
+      lnmInfo.engineeringUnit = target_info.getUnit();
+      lnmInfo.description = target_info.getDescription();
 
       _catalogue_mutable.modifyRegister(lnmInfo);
     }

@@ -86,6 +86,20 @@
           <parameter name="description">Only description overwritten</parameter>
         </plugin>
     </redirectedRegister>
+    <redirectedRegister name="JsonUnitOnly">
+        <targetDevice>JSRC</targetDevice>
+        <targetRegister>SomeTopLevelRegister</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="engineeringUnit">V</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="JsonDescriptionOnly">
+        <targetDevice>JSRC</targetDevice>
+        <targetRegister>SomeTopLevelRegister</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="description">Overwritten by plugin</parameter>
+        </plugin>
+    </redirectedRegister>
     <redirectedRegister name="FullArea_Scaled">
         <targetDevice>PCIE2</targetDevice>
         <targetRegister>ADC.AREA_DMAABLE</targetRegister>

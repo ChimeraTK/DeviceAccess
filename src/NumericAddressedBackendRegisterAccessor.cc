@@ -27,6 +27,10 @@ namespace ChimeraTK {
     _registerInfo = _dev->getRegisterInfo(registerPathName);
     assert(!_registerInfo.channels.empty());
 
+    // Propagate the engineering unit and description from the register info into the accessor
+    this->_unit = _registerInfo.engineeringUnit;
+    this->_description = _registerInfo.description;
+
     if(_registerInfo.elementPitchBits % 8 != 0) {
       throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor: Elements must be byte aligned.");
     }

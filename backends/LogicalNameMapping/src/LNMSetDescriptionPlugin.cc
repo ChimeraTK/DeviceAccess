@@ -34,7 +34,6 @@ namespace ChimeraTK::LNMBackend {
     }
     if(_description) {
       _info.description = *_description;
-      // TODO fix - I think this is not sufficient; _info.description would be always empty even when provided from JSON
     }
   }
 

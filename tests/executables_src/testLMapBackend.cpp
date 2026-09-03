@@ -909,10 +909,11 @@ BOOST_AUTO_TEST_CASE(testParameters) {
 
 BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target;
+  ChimeraTK::Device device, target, jsonSrc;
 
   device.open("LMAP0");
   target.open("PCIE2");
+  jsonSrc.open("JSRC");
 
   // test scalar register with multiply plugin
   auto wordUser = target.getScalarRegisterAccessor<int32_t>("BOARD.WORD_USER");
@@ -1000,7 +1001,8 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   BOOST_CHECK(customUnitDesc.getDescription() == "A custom description");
 
   // test setDescription plugin: only engineering unit is overwritten, description stays as in target
-  // (LNM does not propagate the target's unit/description into the catalogue, so the non-overwritten field stays empty)
+  // (here the target is a map-based NumericAddressed register whose info carries no unit/description,
+  //  so the non-overwritten catalogue field stays empty; the accessor reflects the target accessor)
   {
     auto info = device.getRegisterCatalogue().getRegister("CustomUnitOnly");
     BOOST_CHECK(info.getUnit() == "mA");
@@ -1019,6 +1021,33 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   auto customDescriptionOnly = device.getScalarRegisterAccessor<double>("CustomDescriptionOnly");
   BOOST_CHECK(customDescriptionOnly.getDescription() == "Only description overwritten");
   BOOST_CHECK(customDescriptionOnly.getUnit() == wordUser.getUnit());
+
+  // test setDescription plugin on a target coming from a JSON map file
+  // Verify the description coming from the JSON file is NOT overwritten when the plugin
+  // only overwrites the engineering unit.
+  auto jsonTarget = jsonSrc.getScalarRegisterAccessor<double>("SomeTopLevelRegister");
+  BOOST_CHECK(jsonTarget.getUnit() == "mV");
+  BOOST_CHECK(jsonTarget.getDescription() == "This is an example register");
+
+  // only engineeringUnit is overwritten -> the JSON description must be preserved in catalogue and accessor
+  {
+    auto info = device.getRegisterCatalogue().getRegister("JsonUnitOnly");
+    BOOST_CHECK(info.getUnit() == "V");
+    BOOST_CHECK(info.getDescription() == "This is an example register");
+  }
+  auto jsonUnitOnly = device.getScalarRegisterAccessor<double>("JsonUnitOnly");
+  BOOST_CHECK(jsonUnitOnly.getUnit() == "V");
+  BOOST_CHECK(jsonUnitOnly.getDescription() == "This is an example register");
+
+  // only description is overwritten -> the JSON unit must be preserved
+  {
+    auto info = device.getRegisterCatalogue().getRegister("JsonDescriptionOnly");
+    BOOST_CHECK(info.getDescription() == "Overwritten by plugin");
+    BOOST_CHECK(info.getUnit() == "mV");
+  }
+  auto jsonDescriptionOnly = device.getScalarRegisterAccessor<double>("JsonDescriptionOnly");
+  BOOST_CHECK(jsonDescriptionOnly.getDescription() == "Overwritten by plugin");
+  BOOST_CHECK(jsonDescriptionOnly.getUnit() == "mV");
 }
 
 /**********************************************************************************************************************/
@@ -1155,6 +1184,7 @@ BOOST_AUTO_TEST_CASE(TestInvolvedBackendIDs) {
   ChimeraTK::Device device("LMAP0");
   ChimeraTK::Device target1("PCIE2");
   ChimeraTK::Device target2("PCIE3");
+  ChimeraTK::Device jsonSrc("JSRC");
 
   // This actually is a test for the default implementation in DeviceBackendImpl,
   // which does not have it's own tests as it cannot be instantiated.
@@ -1164,9 +1194,10 @@ BOOST_AUTO_TEST_CASE(TestInvolvedBackendIDs) {
 
   // The real test for the LMapBackend
   auto deviceIDs = device.getInvolvedBackendIDs();
-  BOOST_TEST(deviceIDs.size() == 3);
+  BOOST_TEST(deviceIDs.size() == 4);
   BOOST_TEST(deviceIDs.contains(target1.getBackend()->getBackendID()));
   BOOST_TEST(deviceIDs.contains(target2.getBackend()->getBackendID()));
+  BOOST_TEST(deviceIDs.contains(jsonSrc.getBackend()->getBackendID()));
   BOOST_TEST(deviceIDs.contains(device.getBackend()->getBackendID()));
 }
 
