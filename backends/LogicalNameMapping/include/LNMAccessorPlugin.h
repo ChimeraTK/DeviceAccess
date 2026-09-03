@@ -6,6 +6,7 @@
 #include "LogicalNameMappingBackend.h"
 #include "VirtualFunctionTemplate.h"
 
+#include <optional>
 #include <utility>
 
 namespace ChimeraTK::LNMBackend {
@@ -218,6 +219,26 @@ namespace ChimeraTK::LNMBackend {
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<LogicalNameMappingBackend>& backend,
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
+  };
+
+  /** SetDescription Plugin: Overwrites the engineering unit and/or description of the returned accessor without
+   *  changing any other behaviour (in particular, the UserType is not changed). The values can be set independently:
+   *  only the fields provided via the plugin parameters are overwritten, all others keep the target's value. */
+  class SetDescriptionPlugin : public AccessorPlugin<SetDescriptionPlugin> {
+   public:
+    SetDescriptionPlugin(
+        const LNMBackendRegisterInfo& info, size_t pluginIndex, const std::map<std::string, std::string>& parameters);
+
+    void doRegisterInfoUpdate() override;
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target, const UndecoratedParams& accessorParams);
+
+   private:
+    std::optional<std::string> _engineeringUnit;
+    std::optional<std::string> _description;
   };
 
   /** TypeHintModifier Plugin: Change the catalogue type of the mapped register. No actual type conversion takes place */

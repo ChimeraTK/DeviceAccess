@@ -26,6 +26,9 @@ namespace ChimeraTK::LNMBackend {
     if(name == "forceReadOnly") {
       return boost::make_shared<ForceReadOnlyPlugin>(info, pluginIndex, parameters);
     }
+    if(name == "setDescription") {
+      return boost::make_shared<SetDescriptionPlugin>(info, pluginIndex, parameters);
+    }
     if(name == "forcePollingRead") {
       return boost::make_shared<ForcePollingReadPlugin>(info, pluginIndex, parameters);
     }

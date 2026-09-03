@@ -987,6 +987,38 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   areaScaled.write();
   area.read();
   for(int i = 0; i < 1024; ++i) BOOST_CHECK_EQUAL(area[i], -100 + i);
+
+  // test setDescription plugin: both engineering unit and description are overwritten
+  // Catalogue info must already carry the values before an accessor is created, so tooling can view them.
+  {
+    auto info = device.getRegisterCatalogue().getRegister("CustomUnitDescription");
+    BOOST_CHECK(info.getUnit() == "mV");
+    BOOST_CHECK(info.getDescription() == "A custom description");
+  }
+  auto customUnitDesc = device.getScalarRegisterAccessor<double>("CustomUnitDescription");
+  BOOST_CHECK(customUnitDesc.getUnit() == "mV");
+  BOOST_CHECK(customUnitDesc.getDescription() == "A custom description");
+
+  // test setDescription plugin: only engineering unit is overwritten, description stays as in target
+  // (LNM does not propagate the target's unit/description into the catalogue, so the non-overwritten field stays empty)
+  {
+    auto info = device.getRegisterCatalogue().getRegister("CustomUnitOnly");
+    BOOST_CHECK(info.getUnit() == "mA");
+    BOOST_CHECK(info.getDescription() == "");
+  }
+  auto customUnitOnly = device.getScalarRegisterAccessor<double>("CustomUnitOnly");
+  BOOST_CHECK(customUnitOnly.getUnit() == "mA");
+  BOOST_CHECK(customUnitOnly.getDescription() == wordUser.getDescription());
+
+  // test setDescription plugin: only description is overwritten, engineering unit stays as in target
+  {
+    auto info = device.getRegisterCatalogue().getRegister("CustomDescriptionOnly");
+    BOOST_CHECK(info.getDescription() == "Only description overwritten");
+    BOOST_CHECK(info.getUnit() == "");
+  }
+  auto customDescriptionOnly = device.getScalarRegisterAccessor<double>("CustomDescriptionOnly");
+  BOOST_CHECK(customDescriptionOnly.getDescription() == "Only description overwritten");
+  BOOST_CHECK(customDescriptionOnly.getUnit() == wordUser.getUnit());
 }
 
 /**********************************************************************************************************************/

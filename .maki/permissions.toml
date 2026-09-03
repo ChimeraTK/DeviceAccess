@@ -15,4 +15,7 @@ allow = [
     "head *",
     "echo *",
     "tail *",
+    "ls *",
+    "cat *",
+    "find *",
 ]

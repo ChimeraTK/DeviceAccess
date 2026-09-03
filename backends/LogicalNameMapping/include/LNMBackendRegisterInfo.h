@@ -2,15 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "BackendRegisterCatalogue.h"
 #include "BackendRegisterInfoBase.h"
-#include "ForwardDeclarations.h"
-#include "RegisterInfo.h"
-#include "TransferElement.h"
-
 #include <boost/shared_ptr.hpp>
 
-#include <mutex>
 
 namespace ChimeraTK {
 
@@ -77,27 +71,6 @@ namespace ChimeraTK {
     /** Data type of CONSTANT or VARIABLE type. */
     DataType valueType;
 
-    //    /** Hold values of CONSTANT or VARIABLE types in a type-dependent table. Only the entry matching the valueType
-    //     *  is actually valid.
-    //     *  Note: We cannot directly put the std::vector in a TemplateUserTypeMap, since it has more than one template
-    //     *  arguments (with defaults). */
-    //    template<typename T>
-    //    struct ValueTable {
-    //      std::vector<T> latestValue;
-    //      DataValidity latestValidity;
-    //      VersionNumber latestVersion;
-    //      struct QueuedValue {
-    //        std::vector<T> value;
-    //        DataValidity validity;
-    //        VersionNumber version;
-    //      };
-    //      std::map<TransferElementID, cppext::future_queue<QueuedValue>> subscriptions;
-    //    };
-    //    TemplateUserTypeMap<ValueTable> valueTable;
-
-    //    /** Mutex one needs to hold while accessing valueTable. */
-    //    std::mutex valueTable_mutex;
-
     /** Flag if the register is readable. Might be derived from the target
      * register */
     bool readable{};
@@ -116,18 +89,22 @@ namespace ChimeraTK {
 
     std::set<std::string> tags;
 
+    /** Custom engineering unit overwritten by plugins (e.g. SetDescriptionPlugin). Empty if not set. */
+    std::string engineeringUnit;
+
+    /** Custom description overwritten by plugins (e.g. SetDescriptionPlugin). Empty if not set. */
+    std::string description;
+
+    /** Return the engineering unit of the register. */
+    [[nodiscard]] std::string getUnit() const override { return engineeringUnit; }
+
+    /** Return the description of the register. */
+    [[nodiscard]] std::string getDescription() const override { return description; }
+
     [[nodiscard]] std::unique_ptr<BackendRegisterInfoBase> clone() const override {
       return std::make_unique<LNMBackendRegisterInfo>(*this);
     }
   };
-  /********************************************************************************************************************/
-
-  /*class LNMRegisterCatalogue : public BackendRegisterCatalogue<LNMBackendRegisterInfo> {
-    public:
-      LNMRegisterCatalogue() = default;
-      LNMRegisterCatalogue& operator=(const LNMRegisterCatalogue& other) = default;
-      LNMRegisterCatalogue(const LNMRegisterCatalogue&) = default;
-  };*/
 
   /********************************************************************************************************************/
 } /* namespace ChimeraTK */

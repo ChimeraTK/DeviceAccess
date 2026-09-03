@@ -64,6 +64,28 @@
           <parameter name="factor">3</parameter>
         </plugin>
     </redirectedRegister>
+    <redirectedRegister name="CustomUnitDescription">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="engineeringUnit">mV</parameter>
+          <parameter name="description">A custom description</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="CustomUnitOnly">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="engineeringUnit">mA</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="CustomDescriptionOnly">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="setDescription">
+          <parameter name="description">Only description overwritten</parameter>
+        </plugin>
+    </redirectedRegister>
     <redirectedRegister name="FullArea_Scaled">
         <targetDevice>PCIE2</targetDevice>
         <targetRegister>ADC.AREA_DMAABLE</targetRegister>
