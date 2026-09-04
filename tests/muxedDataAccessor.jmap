@@ -21,7 +21,7 @@
         {
           "name": "DMA",
           "address": {
-            "channel": 13,
+            "type": "DMA",
             "offset": "0x0"
           },
           "channelTabs": [
