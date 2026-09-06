@@ -5,7 +5,12 @@
 #include "../RegisterPath.h"
 #include "MuxedInterruptDistributor.h"
 
+#include <atomic>
 #include <bitset>
+#include <chrono>
+#include <map>
+#include <memory>
+#include <thread>
 
 namespace ChimeraTK::async {
 
@@ -68,6 +73,35 @@ namespace ChimeraTK::async {
     boost::shared_ptr<NDRegisterAccessor<uint32_t>> _cie;
 
     RegisterPath _path; // just a string path, with the added overwritten / operator etc.
+
+    /** Counter incremented by handle() after each completed run. Used by the watchdog.*/
+    std::atomic<uint64_t> _irqRunCount{0};
+
+    /** Counter of distinct watchdog detections (i.e. how many times the interrupt handler was found
+     *  wedged / starved and a device exception was raised). */
+    std::atomic<uint64_t> _watchdogExceptionCount{0};
+
+    /** Set true once the watchdog has raised a device exception*/
+    std::atomic<bool> _watchdogAlerted{false};
+
+    /** Interrupt bits that were pending/enabled in the ISR in the most recent handle() run but were not
+     *  distributed to any sub-domain. */
+    std::atomic<uint32_t> _undistributedInterrupts{0};
+
+    /** Read-only snapshot mapping each interrupt bit index for diaganostics */
+    std::atomic<std::shared_ptr<const std::map<size_t, std::string>>> _bitToSubDomainId;
+
+    /** Watchdog thread and its stop flag. */
+    std::thread _watchdogThread;
+    std::atomic<bool> _stopWatchdog{false};
+    /** Watchdog polling/decision interval (experimental) */
+    static constexpr std::chrono::milliseconds _watchdogInterval{1000};
+
+    /** watchdog thread. */
+    void watchdogLoop();
+
+    /** Format a bit mask into "bit N (treeID [..])" entries using the read-only snapshot map. */
+    std::string formatInterruptMask(uint32_t mask);
 
     /**
      * In mask, 1 bits clear the corresponding registers, 0 bits do nothing.
