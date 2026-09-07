@@ -14,9 +14,14 @@ namespace ChimeraTK::detail {
     auto newIter = _transferSharedStates.find(newId);
     assert(newIter != _transferSharedStates.end());
 
-    // The only action at the moment: sum the instance counts of both states
-    newIter->second.instanceCount = newIter->second.instanceCount + oldIter->second.instanceCount;
-    _transferSharedStates.erase(oldIter);
+    // Shift instanceCount from old to new. When old is no longer used after the shifting,
+    // drop the old entry
+    assert(oldIter->second.instanceCount >= 1);
+    --(oldIter->second.instanceCount);
+    ++(newIter->second.instanceCount);
+    if(oldIter->second.instanceCount == 0) {
+      _transferSharedStates.erase(oldIter);
+    }
   }
 
   /********************************************************************************************************************/
