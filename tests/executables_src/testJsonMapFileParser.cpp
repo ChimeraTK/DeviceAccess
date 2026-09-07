@@ -32,6 +32,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   BOOST_TEST(regs.hasRegister("/SomeTopLevelRegister"));
   BOOST_TEST(regs.hasRegister("BSP.VERSION"));
   BOOST_TEST(regs.hasRegister("/BSP/VERSION"));
+  BOOST_TEST(regs.hasRegister("DAQ.SIMPLE2D.A"));
 
   {
     auto reg = regs.getBackendRegister("/SomeTopLevelRegister");
@@ -281,7 +282,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);
     BOOST_TEST(reg.address == 0x40000);
-    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+    BOOST_CHECK(reg.getSupportedAccessModes().has(ChimeraTK::AccessMode::wait_for_new_data) == true);
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
@@ -297,9 +299,25 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);
     BOOST_TEST(reg.address == 0x40000 + 2);
-    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+    BOOST_CHECK(reg.getSupportedAccessModes().has(ChimeraTK::AccessMode::wait_for_new_data) == true);
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
+  }
+  // Named channel slice of a non-interrupt 2D register stays read-only and does not advertise
+  // wait_for_new_data.
+  {
+    auto reg = regs.getBackendRegister("DAQ.SIMPLE2D.A");
+    BOOST_TEST(reg.pathName == "/DAQ/SIMPLE2D/A");
+    BOOST_TEST(reg.bar == 13);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_CHECK(reg.getSupportedAccessModes().has(ChimeraTK::AccessMode::raw) == true);
+    BOOST_CHECK(reg.getSupportedAccessModes().has(ChimeraTK::AccessMode::wait_for_new_data) == false);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
   }
