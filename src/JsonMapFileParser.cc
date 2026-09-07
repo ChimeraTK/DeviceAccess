@@ -320,11 +320,15 @@ namespace ChimeraTK::detail {
                 NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
                 rep.type != RepresentationType::IEEE754 ? rep.isSigned : true,
                 DataType("int" + std::to_string(channel.bytesPerElement * 8))};
-            // A channel slice is read-only: writing to a single channel of a 2D register would require a
-            // read-modify-write cycle across the channels, which is deliberately not supported.
+            // A channel slice of a non-interrupt 2D register is read-only: writing to a single channel of a 2D
+            // register would require a read-modify-write cycle across the channels, which is deliberately not
+            // supported. A slice of an interrupt-driven 2D register additionally advertises wait_for_new_data,
+            // since the whole 2D register (including all its channel slices) updates with the same interrupt.
+            auto sliceAccessType = (my.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) ?
+                NumericAddressedRegisterInfo::Access::INTERRUPT :
+                NumericAddressedRegisterInfo::Access::READ_ONLY;
             NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel.offset, my.nElements,
-                my.elementPitchBits, {ci}, NumericAddressedRegisterInfo::Access::READ_ONLY, my.interruptId,
-                my.doubleBuffer);
+                my.elementPitchBits, {ci}, sliceAccessType, my.interruptId, my.doubleBuffer);
             slice.isBitRange = (rep.bitShift != 0);
             slice.computeDataDescriptor();
             catalogue.addRegister(slice);

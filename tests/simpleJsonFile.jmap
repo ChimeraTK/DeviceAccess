@@ -459,6 +459,44 @@
           ]
         },
         {
+          "name": "SIMPLE2D",
+          "_": "A non-interrupt 2D register with named channels; its slices stay read-only and never advertise wait_for_new_data.",
+          "address": {
+            "channel": 13,
+            "offset": "0x51000"
+          },
+          "channelTabs": [
+            {
+              "numberOfElements": 4,
+              "pitch": 32,
+              "channels": [
+                {
+                  "name": "A",
+                  "bytesPerElement": 2,
+                  "offset": 0,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16,
+                    "fractionalBits": 0,
+                    "isSigned": true
+                  }
+                },
+                {
+                  "name": "B",
+                  "bytesPerElement": 2,
+                  "offset": 2,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16,
+                    "fractionalBits": 0,
+                    "isSigned": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "DOUBLE_BUF",
           "children": [
             {

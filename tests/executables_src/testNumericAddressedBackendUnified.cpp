@@ -700,6 +700,66 @@ struct MuxedNodmaAsync {
   }
 };
 
+struct NamedChannelSliceAsync0 {
+  std::string path() { return "/TEST/NODMAASYNC.0"; }
+  bool isWriteable() { return false; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() {
+    return {ChimeraTK::AccessMode::raw, ChimeraTK::AccessMode::wait_for_new_data};
+  }
+
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 4; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef uint16_t minimumUserType;
+  typedef int16_t rawUserType;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .enableTestRawTransfer();
+
+  static const size_t channelIndex = 0;
+  DummyMultiplexedRegisterAccessor<uint16_t> full{exceptionDummyMuxed.get(), "TEST", "NODMAASYNC"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue([[maybe_unused]] bool raw = false) {
+    std::vector<std::vector<UserType>> v(1);
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      v[0].push_back(uint16_t(full[channelIndex][e] + 41 + 7 * e));
+    }
+    return v;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue([[maybe_unused]] bool raw = false) {
+    std::vector<std::vector<UserType>> v(1);
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      v[0].push_back(full[channelIndex][e]);
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    auto v = generateValue<minimumUserType>();
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      full[channelIndex][e] = v[0][e];
+    }
+    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(6);
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+    if(exceptionDummyMuxed->isOpen()) exceptionDummyMuxed->triggerInterrupt(6);
+  }
+};
+
 /**********************************************************************************************************************/
 
 struct MuxedFloat {
@@ -1093,6 +1153,13 @@ BOOST_AUTO_TEST_CASE(testNamedChannelSlices) {
   std::cout << "*** testNamedChannelSlices *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>().addRegister<NamedChannelSlice0>().addRegister<NamedChannelSlice3>().runTests(
       cddMuxed);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testNamedChannelSliceAsync) {
+  std::cout << "*** testNamedChannelSliceAsync *** " << std::endl;
+  ChimeraTK::UnifiedBackendTest<>().addRegister<NamedChannelSliceAsync0>().runTests(cddMuxed);
 }
 
 /**********************************************************************************************************************/
