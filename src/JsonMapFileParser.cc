@@ -369,7 +369,7 @@ namespace ChimeraTK::detail {
               NumericAddressedRegisterInfo sliceBuf1 = slice;
               sliceBuf1.pathName = slicePath + "/BUF1";
               sliceBuf1.doubleBuffer.reset();
-              sliceBuf1.address = my.doubleBuffer->address + channel.offset;
+              sliceBuf1.address = my.doubleBuffer->address + channel->offset;
               sliceBuf1.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
               sliceBuf1.computeDataDescriptor();
               catalogue.addRegister(sliceBuf1);

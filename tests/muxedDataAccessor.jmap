@@ -493,8 +493,7 @@
             }
           ]
         },
-        {
-          "name": "DBL",
+        "DBL": {
           "address": {
             "type": "DMA",
             "offset": "0x1000"
@@ -512,9 +511,8 @@
             {
               "numberOfElements": 4,
               "pitch": 32,
-              "channels": [
-                {
-                  "name": "0",
+              "channels": {
+                "0": {
                   "offset": 0,
                   "bytesPerElement": 4,
                   "representation": {
@@ -522,8 +520,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "1",
+                "1": {
                   "offset": 4,
                   "bytesPerElement": 4,
                   "representation": {
@@ -531,15 +528,13 @@
                     "width": 16
                   }
                 }
-              ]
+              }
             }
           ]
         },
-        {
-          "name": "DOUBLE_BUF",
-          "children": [
-            {
-              "name": "ENA",
+        "DOUBLE_BUF": {
+          "children": {
+            "ENA": {
               "bytesPerElement": 4,
               "numberOfElements": 1,
               "address": {
@@ -550,8 +545,7 @@
                 "width": 1
               }
             },
-            {
-              "name": "INACTIVE_BUF_ID",
+            "INACTIVE_BUF_ID": {
               "bytesPerElement": 4,
               "numberOfElements": 1,
               "address": {
@@ -562,7 +556,7 @@
                 "width": 1
               }
             }
-          ]
+          }
         }
       }
     }
