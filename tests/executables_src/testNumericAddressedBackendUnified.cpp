@@ -1120,7 +1120,7 @@ struct ArrayBitRangeHigh : ArrayRegBitRangeDescriptor<ArrayBitRangeHigh> {
 // Double-buffered named channel slice of the 2D register TEST.DBL. The firmware-side double buffer handshake is
 // simulated through backdoor accessors on the slice's buffer registers and the buffer-number control register,
 // mirroring AreaType in testDoubleBuffering.cpp.
-struct DoubleBufferedNamedChannelSlice0 {
+struct DoubleBufferedNamedChannelSlice {
   std::string path() { return "/TEST/DBL.1"; }
   bool isWriteable() { return false; }
   bool isReadable() { return true; }
@@ -1154,13 +1154,12 @@ struct DoubleBufferedNamedChannelSlice0 {
     return values;
   }
 
+  DummyRegisterAccessor<uint32_t> currentBufferNumber{exceptionDummyMuxed.get(), "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
+  DummyRegisterAccessor<minimumUserType> buffer0{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF0"};
+  DummyRegisterAccessor<minimumUserType> buffer1{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF1"};
+
   template<typename UserType>
   std::vector<std::vector<UserType>> getRemoteValue(bool = false) {
-    DummyRegisterAccessor<uint32_t> currentBufferNumber{
-        exceptionDummyMuxed.get(), "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
-    DummyRegisterAccessor<minimumUserType> buffer0{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF0"};
-    DummyRegisterAccessor<minimumUserType> buffer1{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF1"};
-
     std::vector<std::vector<UserType>> v(1);
     if(currentBufferNumber[0] == 1) {
       for(size_t e = 0; e < nElementsPerChannel(); ++e) {
@@ -1176,11 +1175,6 @@ struct DoubleBufferedNamedChannelSlice0 {
   }
 
   void setRemoteValue() {
-    DummyRegisterAccessor<uint32_t> currentBufferNumber{
-        exceptionDummyMuxed.get(), "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
-    DummyRegisterAccessor<minimumUserType> buffer0{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF0"};
-    DummyRegisterAccessor<minimumUserType> buffer1{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF1"};
-
     currentBufferNumber[0] = _currentBufferNumber;
     _currentBufferNumber = _currentBufferNumber ? 0 : 1; // change current buffer no. 0->1 or 1->0
 
@@ -1205,7 +1199,7 @@ struct DoubleBufferedNamedChannelSlice0 {
   }
 };
 
-uint32_t DoubleBufferedNamedChannelSlice0::_currentBufferNumber = 0;
+uint32_t DoubleBufferedNamedChannelSlice::_currentBufferNumber = 0;
 
 /**********************************************************************************************************************/
 
@@ -1258,7 +1252,7 @@ BOOST_AUTO_TEST_CASE(testNamedChannelSliceAsync) {
 
 BOOST_AUTO_TEST_CASE(testDoubleBufferedNamedChannelSlices) {
   std::cout << "*** testDoubleBufferedNamedChannelSlices *** " << std::endl;
-  ChimeraTK::UnifiedBackendTest<>().addRegister<DoubleBufferedNamedChannelSlice0>().runTests(cddMuxed);
+  ChimeraTK::UnifiedBackendTest<>().addRegister<DoubleBufferedNamedChannelSlice>().runTests(cddMuxed);
 }
 
 /**********************************************************************************************************************/
