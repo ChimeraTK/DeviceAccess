@@ -42,9 +42,8 @@
       }
     }
   },
-  "addressSpace": [
-    {
-      "name": "SomeTopLevelRegister",
+  "addressSpace": {
+    "SomeTopLevelRegister": {
       "engineeringUnit": "mV",
       "description": "This is an example register",
       "access": "RW",
@@ -52,7 +51,7 @@
       "_": "cacheable: Software may assume value never changed from remote side - unused in the beginning. Default: true",
       "numberOfElements": 1,
       "address": {
-        "type": "IO",
+        "type": "I/O",
         "channel": 0,
         "offset": 32,
         "_comment": "'type' can be 'IO' (default), or 'DMA'. 'channel' is optional and defaults to 0."
@@ -71,8 +70,7 @@
       "initialValue": 3.5,
       "__": "Unclear how to implement, must be written only during initialisation, not upon every open. Maybe remove."
     },
-    {
-      "name": "BSP",
+    "BSP": {
       "address": {
         "channel": 0,
         "offset": 0
@@ -81,9 +79,8 @@
       "bytesPerElement": 4,
       "_comment": "omitting 'representation': width = bytesPerElement * 8 bits, unsigned integer",
       "_comment2": "This is the equivalent of 'ch0_top.BSP', with the BSP.* registers defined as 'children'",
-      "children": [
-        {
-          "name": "VERSION",
+      "children": {
+        "VERSION": {
           "access": "RO",
           "numberOfElements": 1,
           "bytesPerElement": 4,
@@ -99,8 +96,7 @@
           "constant": "0x01080300",
           "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
         },
-        {
-          "name": "SOME_INFO",
+        "SOME_INFO": {
           "access": "RO",
           "numberOfElements": 1,
           "bytesPerElement": 40,
@@ -114,8 +110,7 @@
           "constant": "0x01080300",
           "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
         },
-        {
-          "name": "VOID_INTERRUPT_0",
+        "VOID_INTERRUPT_0": {
           "triggeredByInterrupt": [
             0
           ],
@@ -123,8 +118,7 @@
             "type": "void"
           }
         },
-        {
-          "name": "VOID_INTERRUPT_3_0_1",
+        "VOID_INTERRUPT_3_0_1": {
           "triggeredByInterrupt": [
             3,
             0,
@@ -134,13 +128,11 @@
             "type": "void"
           }
         }
-      ]
+      }
     },
-    {
-      "name": "APP",
-      "children": [
-        {
-          "name": "STATUS",
+    "APP": {
+      "children": {
+        "STATUS": {
           "description": "application status",
           "access": "RO",
           "address": {
@@ -149,22 +141,19 @@
             "offset": "0x8000"
           },
           "bytesPerElement": 4,
-          "children": [
-            {
-              "name": "ProbeLimiter",
+          "children": {
+            "ProbeLimiter": {
               "representation": {
                 "width": 1
               }
             },
-            {
-              "name": "ExternalInterlock",
+            "ExternalInterlock": {
               "representation": {
                 "bitShift": 1,
                 "width": 1
               }
             },
-            {
-              "name": "ErrorCounter",
+            "ErrorCounter": {
               "representation": {
                 "bitShift": 2,
                 "type": "fixedPoint",
@@ -174,10 +163,9 @@
               },
               "_comment": "Will be unsupported at first"
             }
-          ]
+          }
         },
-        {
-          "name": "LARGE_STATUS",
+        "LARGE_STATUS": {
           "description": "longer application status",
           "access": "RO",
           "address": {
@@ -189,22 +177,19 @@
           "representation": {
             "width": 64
           },
-          "children": [
-            {
-              "name": "ProbeLimiter",
+          "children": {
+            "ProbeLimiter": {
               "representation": {
                 "width": 1
               }
             },
-            {
-              "name": "ExternalInterlock",
+            "ExternalInterlock": {
               "representation": {
                 "bitShift": 34,
                 "width": 1
               }
             },
-            {
-              "name": "ErrorCounter",
+            "ErrorCounter": {
               "representation": {
                 "bitShift": 2,
                 "type": "fixedPoint",
@@ -214,10 +199,9 @@
               },
               "_comment": "Will be unsupported at first"
             }
-          ]
+          }
         },
-        {
-          "name": "SomeTable",
+        "SomeTable": {
           "access": "WO",
           "numberOfElements": 16384,
           "bytesPerElement": 2,
@@ -232,8 +216,7 @@
             "isSigned": true
           }
         },
-        {
-          "name": "SomeFloat",
+        "SomeFloat": {
           "access": "RW",
           "numberOfElements": 1,
           "bytesPerElement": 4,
@@ -246,13 +229,11 @@
             "width": 32
           }
         }
-      ]
+      }
     },
-    {
-      "name": "DAQ",
-      "children": [
-        {
-          "name": "CTRL",
+    "DAQ": {
+      "children": {
+        "CTRL": {
           "description": "Controller DAQ",
           "triggeredByInterrupt": [
             3,
@@ -280,9 +261,8 @@
             {
               "numberOfElements": 16384,
               "pitch": 64,
-              "channels": [
-                {
-                  "name": "errorI",
+              "channels": {
+                "errorI": {
                   "bytesPerElement": 2,
                   "offset": 0,
                   "description": "Error signal in I",
@@ -294,8 +274,7 @@
                     "isSigned": true
                   }
                 },
-                {
-                  "name": "errorQ",
+                "errorQ": {
                   "bytesPerElement": 2,
                   "offset": 2,
                   "description": "Error signal in Q",
@@ -307,27 +286,23 @@
                     "isSigned": true
                   }
                 },
-                {
-                  "name": "status",
+                "status": {
                   "bytesPerElement": 4,
                   "offset": 4,
-                  "children": [
-                    {
-                      "name": "ProbeLimiter",
+                  "children": {
+                    "ProbeLimiter": {
                       "representation": {
                         "bitShift": 0,
                         "width": 1
                       }
                     },
-                    {
-                      "name": "ExternalInterlock",
+                    "ExternalInterlock": {
                       "representation": {
                         "bitShift": 1,
                         "width": 1
                       }
                     },
-                    {
-                      "name": "ErrorCounter",
+                    "ErrorCounter": {
                       "representation": {
                         "bitShift": 2,
                         "type": "fixedPoint",
@@ -336,42 +311,37 @@
                         "isSigned": false
                       }
                     }
-                  ]
+                  }
                 },
-                {
-                  "name": "VectorSum",
+                "VectorSum_I": {
                   "bytesPerElement": 4,
                   "offset": 8,
-                  "children": [
-                    {
-                      "name": "I",
+                  "children": {
+                    "I": {
                       "representation": {
                         "bitShift": 0,
                         "width": 18
                       }
                     }
-                  ]
+                  }
                 },
-                {
-                  "name": "VectorSum",
+                "VectorSum_Q": {
                   "bytesPerElement": 4,
                   "offset": 10,
-                  "children": [
-                    {
-                      "name": "Q",
+                  "children": {
+                    "Q": {
                       "representation": {
                         "bitShift": 2,
                         "width": 18
                       }
                     }
-                  ]
+                  }
                 }
-              ]
+              }
             }
           ]
         },
-        {
-          "name": "FD",
+        "FD": {
           "description": "Field detection DAQ",
           "triggeredByInterrupt": [
             0
@@ -395,9 +365,8 @@
             {
               "numberOfElements": 16384,
               "pitch": 64,
-              "channels": [
-                {
-                  "name": "AmplitudeCh0",
+              "channels": {
+                "AmplitudeCh0": {
                   "bytesPerElement": 2,
                   "offset": 0,
                   "description": "Amplitude of channel 0",
@@ -409,8 +378,7 @@
                     "isSigned": true
                   }
                 },
-                {
-                  "name": "PhaseCh0",
+                "PhaseCh0": {
                   "bytesPerElement": 2,
                   "offset": 2,
                   "description": "Phase of channel 0",
@@ -422,14 +390,13 @@
                     "isSigned": true
                   }
                 }
-              ]
+              }
             },
             {
               "numberOfElements": 16384,
               "pitch": 64,
-              "channels": [
-                {
-                  "name": "RawCh0",
+              "channels": {
+                "RawCh0": {
                   "bytesPerElement": 4,
                   "offset": 0,
                   "description": "Raw signal for channel 0",
@@ -441,8 +408,7 @@
                     "isSigned": true
                   }
                 },
-                {
-                  "name": "RawCh1",
+                "RawCh1": {
                   "bytesPerElement": 4,
                   "offset": 4,
                   "description": "Phase of channel 1",
@@ -454,12 +420,11 @@
                     "isSigned": true
                   }
                 }
-              ]
+              }
             }
           ]
         },
-        {
-          "name": "SIMPLE2D",
+        "SIMPLE2D": {
           "_": "A non-interrupt 2D register with named channels; its slices stay read-only and never advertise wait_for_new_data.",
           "address": {
             "channel": 13,
@@ -469,9 +434,8 @@
             {
               "numberOfElements": 4,
               "pitch": 32,
-              "channels": [
-                {
-                  "name": "A",
+              "channels": {
+                "A": {
                   "bytesPerElement": 2,
                   "offset": 0,
                   "representation": {
@@ -481,8 +445,7 @@
                     "isSigned": true
                   }
                 },
-                {
-                  "name": "B",
+                "B": {
                   "bytesPerElement": 2,
                   "offset": 2,
                   "representation": {
@@ -492,15 +455,13 @@
                     "isSigned": true
                   }
                 }
-              ]
+              }
             }
           ]
         },
-        {
-          "name": "DOUBLE_BUF",
-          "children": [
-            {
-              "name": "ENA",
+        "DOUBLE_BUF": {
+          "children": {
+            "ENA": {
               "bytesPerElement": 4,
               "numberOfElements": 3,
               "address": {
@@ -511,8 +472,7 @@
                 "width": 1
               }
             },
-            {
-              "name": "INACTIVE_BUF_ID",
+            "INACTIVE_BUF_ID": {
               "bytesPerElement": 4,
               "numberOfElements": 3,
               "address": {
@@ -523,10 +483,9 @@
                 "width": 1
               }
             }
-          ]
+          }
         },
-        {
-          "name": "MUX_SEL",
+        "MUX_SEL": {
           "bytesPerElement": 4,
           "numberOfElements": 1,
           "address": {
@@ -537,8 +496,7 @@
             "width": 2
           }
         },
-        {
-          "name": "MACRO_PULSE_NUMBER",
+        "MACRO_PULSE_NUMBER": {
           "bytesPerElement": 4,
           "numberOfElements": 1,
           "_": "First element of last channel in DAQ.FD area",
@@ -559,13 +517,11 @@
             "width": 32
           }
         }
-      ]
+      }
     },
-    {
-      "name": "MY_INTC",
-      "children": [
-        {
-          "name": "ISR",
+    "MY_INTC": {
+      "children": {
+        "ISR": {
           "bytesPerElement": 4,
           "numberOfElements": 1,
           "address": {
@@ -573,8 +529,7 @@
             "offset": 0
           }
         },
-        {
-          "name": "IER",
+        "IER": {
           "bytesPerElement": 4,
           "numberOfElements": 1,
           "address": {
@@ -582,8 +537,7 @@
             "offset": 0
           }
         },
-        {
-          "name": "MER",
+        "MER": {
           "bytesPerElement": 4,
           "numberOfElements": 1,
           "address": {
@@ -591,11 +545,9 @@
             "offset": 0
           }
         },
-        {
-          "name": "SUB0",
-          "children": [
-            {
-              "name": "ISR",
+        "SUB0": {
+          "children": {
+            "ISR": {
               "bytesPerElement": 4,
               "numberOfElements": 1,
               "address": {
@@ -603,8 +555,7 @@
                 "offset": 0
               }
             },
-            {
-              "name": "IER",
+            "IER": {
               "bytesPerElement": 4,
               "numberOfElements": 1,
               "address": {
@@ -612,9 +563,9 @@
                 "offset": 0
               }
             }
-          ]
+          }
         }
-      ]
+      }
     }
-  ]
+  }
 }

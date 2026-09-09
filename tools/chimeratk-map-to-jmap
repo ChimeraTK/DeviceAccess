@@ -421,17 +421,18 @@ def _insert_into_tree(tree: dict[str, Any], components: list[str], reg: Register
         _insert_into_tree(tree[name]['children'], components[1:], reg)
 
 
-def _serialize_tree(tree: dict[str, Any], parent_data: RegisterDescr | None = None) -> list[dict[str, Any]]:
-    """Recursively serialize the internal *tree* into a list of address-space entries.
+def _serialize_tree(tree: dict[str, Any], parent_data: RegisterDescr | None = None) -> dict[str, Any]:
+    """Recursively serialize the internal *tree* into a name-keyed address-space dictionary.
 
-    Each node becomes one JSON address-space entry.  Three cases exist:
+    Each node becomes one address-space entry keyed by its name.  Three cases
+    exist:
 
     * **Leaf with data** - the register is emitted as-is.
     * **Node with both data and children** - the register is emitted with a
-      ``children`` array (this happens when a module also has its own register
-      data, e.g. ``BSP`` in simpleJsonFile.jmap).
+      ``children`` dictionary (this happens when a module also has its own
+      register data, e.g. ``BSP`` in simpleJsonFile.jmap).
     * **Node with children only** (pure container) - emitted with just a
-      ``children`` array and *no* address.  The C++ parser can handle
+      ``children`` dictionary and *no* address.  The C++ parser can handle
       address-less parent nodes as long as no child requires the parent in
       the catalogue, which is the case when the children have their own
       addresses.
@@ -440,10 +441,10 @@ def _serialize_tree(tree: dict[str, Any], parent_data: RegisterDescr | None = No
     accepted but currently unused; it exists for future use if parent-address
     inheritance needs to be implemented.
     """
-    entries = []
+    entries: dict[str, Any] = {}
     for name in sorted(tree.keys()):
         node = tree[name]
-        entry: dict[str, Any] = {'name': name}
+        entry: dict[str, Any] = {}
 
         has_data = node['data'] is not None
         has_children = bool(node['children'])
@@ -457,7 +458,7 @@ def _serialize_tree(tree: dict[str, Any], parent_data: RegisterDescr | None = No
         if has_children:
             entry['children'] = _serialize_tree(node['children'], node['data'])
 
-        entries.append(entry)
+        entries[name] = entry
     return entries
 
 
@@ -477,39 +478,39 @@ def _ensure_void_parents(entries):
     """
     # Separate entries into those that need a parent (void, no address)
     # and those that don't.
-    needs_parent = []
-    non_void_entries = []
-    for e in entries:
+    needs_parent = {}
+    non_void_entries = {}
+    for name, e in entries.items():
         rep = e.get('representation', {})
         is_void = isinstance(rep, dict) and rep.get('type') == 'void'
         if is_void and e.get('address') is None:
-            needs_parent.append(e)
+            needs_parent[name] = e
         else:
             # Clean up any residual internal markers
             if '_is_void' in e:
                 del e['_is_void']
-            non_void_entries.append(e)
+            non_void_entries[name] = e
 
-    # If no top-level void registers exist, return the list unchanged
+    # If no top-level void registers exist, return the dict unchanged
     if not needs_parent:
         return entries
 
     # Group the orphaned void registers by their triggeredByInterrupt IDs so
     # that each interrupt group gets its own synthetic parent module.
     by_int = {}
-    for e in needs_parent:
+    for name, e in needs_parent.items():
         ints = tuple(e.get('triggeredByInterrupt', []))
-        by_int.setdefault(ints, []).append(e)
+        by_int.setdefault(ints, {})[name] = e
 
     for int_ids, void_children in by_int.items():
         int_label = '_'.join(str(i) for i in int_ids) if int_ids else 'void'
+        parent_name = f'interrupt_{int_label}'
         parent: dict[str, Any] = {
-            'name': f'interrupt_{int_label}',
             'address': {'channel': 0, 'offset': '0x0'},
             'bytesPerElement': 4,
         }
         parent['children'] = void_children
-        non_void_entries.append(parent)
+        non_void_entries[parent_name] = parent
 
     return non_void_entries
 
@@ -612,17 +613,16 @@ def _build_2d_descriptor(container_name: str, container: RegisterDescr, channels
     bytes_per_block = sum(reg['nBytes'] for _, reg in channels)
     n_blocks = container['nBytes'] // bytes_per_block if bytes_per_block else 0
 
-    channel_entries = []
+    channel_entries: dict[str, Any] = {}
     for chan_name, reg in channels:
         channel_entry: dict[str, Any] = {
-            'name': chan_name,
             'offset': reg['address'] - container['address'],
             'bytesPerElement': reg['nBytes'],
         }
         rep = _make_representation(reg)
         if rep:
             channel_entry['representation'] = rep
-        channel_entries.append(channel_entry)
+        channel_entries[chan_name] = channel_entry
 
     descriptor: dict[str, Any] = dict(container)
     descriptor['name'] = container_name
@@ -713,8 +713,8 @@ def parse_map_file(filepath):
 
     - ``metadata`` - dict of key-value metadata pairs.
     - ``interruptHandler`` - nested dict of interrupt-handler configurations.
-    - ``addressSpace`` - list of hierarchical address-space entries ready for
-      JSON serialisation.
+    - ``addressSpace`` - name-keyed dictionary of hierarchical address-space
+      entries ready for JSON serialisation.
     """
     metadata = {}
     interrupt_handler = {}

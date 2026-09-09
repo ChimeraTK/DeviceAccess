@@ -4,9 +4,8 @@
     "mapfileRevision": "1.8.3-0-gdeadbeef"
   },
   "interruptHandler": {},
-  "addressSpace": [
-    {
-      "name": "WORD_FIRMWARE",
+  "addressSpace": {
+    "WORD_FIRMWARE": {
       "bytesPerElement": 4,
       "address": {
         "type": "I/O",
@@ -16,35 +15,31 @@
       "representation": {
         "isSigned": false
       },
-      "children": [
-        {
-          "name": "BitRangeLower",
+      "children": {
+        "BitRangeLower": {
           "representation": {
             "bitShift": 8,
             "width": 8,
             "isSigned": true
           }
         },
-        {
-          "name": "BitRangeMiddle",
+        "BitRangeMiddle": {
           "representation": {
             "bitShift": 4,
             "width": 8,
             "isSigned": true
           }
         },
-        {
-          "name": "BitRangeUpper",
+        "BitRangeUpper": {
           "representation": {
             "bitShift": 16,
             "width": 16,
             "isSigned": true
           }
         }
-      ]
+      }
     },
-    {
-      "name": "ARRAY_REG",
+    "ARRAY_REG": {
       "bytesPerElement": 4,
       "numberOfElements": 3,
       "address": {
@@ -55,24 +50,22 @@
       "representation": {
         "isSigned": false
       },
-      "children": [
-        {
-          "name": "ArrayBitRangeLow",
+      "children": {
+        "ArrayBitRangeLow": {
           "representation": {
             "bitShift": 0,
             "width": 8,
             "isSigned": false
           }
         },
-        {
-          "name": "ArrayBitRangeHigh",
+        "ArrayBitRangeHigh": {
           "representation": {
             "bitShift": 8,
             "width": 8,
             "isSigned": false
           }
         }
-      ]
+      }
     }
-  ]
+  }
 }

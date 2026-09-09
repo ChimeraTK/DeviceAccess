@@ -9,6 +9,8 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <algorithm>
+#include <map>
 #include <string>
 
 using json = nlohmann::json;
@@ -107,7 +109,6 @@ namespace ChimeraTK::detail {
   /** Representation of an entry in the "addressSpace" section, can be either a register or a module (or both) */
 
   struct JsonAddressSpaceEntry {
-    std::string name;
     std::string engineeringUnit;
     std::string description;
     Access access{Access::accessNotSet};
@@ -186,7 +187,6 @@ namespace ChimeraTK::detail {
       size_t pitch{0};
 
       struct Channel {
-        std::string name;
         std::string engineeringUnit;
         std::string description;
         size_t offset;
@@ -196,16 +196,30 @@ namespace ChimeraTK::detail {
         void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset, bytesPerElement); }
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-            Channel, name, engineeringUnit, description, offset, bytesPerElement, representation)
+            Channel, engineeringUnit, description, offset, bytesPerElement, representation)
       };
 
-      std::vector<Channel> channels;
+      // The channels, sorted by byte offset so that per-channel information (and thus the channel index of a
+      // 2D accessor) follows the natural memory order, independent of the lexically sorted map key. Returns the
+      // channel names together with the pointers so both the plain fill and the slice creation can use it.
+      [[nodiscard]] std::vector<std::pair<std::string, const Channel*>> channelsInOffsetOrder() const {
+        std::vector<std::pair<std::string, const Channel*>> result;
+        result.reserve(channels.size());
+        for(const auto& [channelName, channel] : channels) {
+          result.emplace_back(channelName, &channel);
+        }
+        std::ranges::sort(result, [](const auto& a, const auto& b) { return a.second->offset < b.second->offset; });
+        return result;
+      }
+
+      std::map<std::string, Channel> channels;
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ChannelTab, numberOfElements, pitch, channels)
     };
     std::vector<ChannelTab> channelTabs;
 
-    void fill(NumericAddressedRegisterInfo& info, const RegisterPath& parentName, bool addressSetByParent) const {
+    void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
+        bool addressSetByParent) const {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
 
@@ -241,8 +255,11 @@ namespace ChimeraTK::detail {
             }
             info.elementPitchBits = channelTabs[0].pitch * 8;
             info.nElements = channelTabs[0].numberOfElements;
-            for(const auto& channel : channelTabs[0].channels) {
-              channel.fill(info);
+            // Iterate the channels sorted by byte offset (see ChannelTab::channelsInOffsetOrder) so the per-channel
+            // information (and hence the channel index of the 2D accessor) stays in the natural memory order.
+            for(const auto& [channelName, channel] : channelTabs[0].channelsInOffsetOrder()) {
+              (void)channelName; // the channel name is the map key; the channel data carries its own offset
+              channel->fill(info);
             }
           }
         }
@@ -289,10 +306,10 @@ namespace ChimeraTK::detail {
       }
     }
 
-    std::vector<JsonAddressSpaceEntry> children;
+    std::map<std::string, JsonAddressSpaceEntry> children;
 
-    void addInfos(
-        NumericAddressedRegisterCatalogue& catalogue, const RegisterPath& parentName, bool addressSetByParent) const {
+    void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
+        bool addressSetByParent) const {
       if(name.empty()) {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
       }
@@ -300,26 +317,27 @@ namespace ChimeraTK::detail {
         // New address entry. Don't use parent information
         NumericAddressedRegisterInfo my;
         my.channels.clear(); // default constructor already creates a channel with default settings...
-        fill(my, parentName, addressSetByParent);
+        fill(my, name, parentName, addressSetByParent);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
         if(!channelTabs.empty()) {
           // create one register entry per named channel of the first channel tab: a read-only 1D slice of the
           // 2D register. The channel's byte offset is folded into the address (so bitOffset == 0), and the full
-          // element pitch is kept as the stride between samples.
-          for(const auto& channel : channelTabs[0].channels) {
-            RegisterPath slicePath = my.pathName / channel.name;
+          // element pitch is kept as the stride between samples. Iterate sorted by byte offset (see
+          // ChannelTab::channelsInOffsetOrder) so the created slice registers follow the natural memory order.
+          for(const auto& [channelName, channel] : channelTabs[0].channelsInOffsetOrder()) {
+            RegisterPath slicePath = my.pathName / channelName;
             slicePath.setAltSeparator(".");
             // skip a channel whose slice path would collide with an already created slice (e.g. a
             // bit-field channel split into multiple entries carrying the same name)
             if(catalogue.hasRegister(slicePath)) {
               continue;
             }
-            const auto& rep = channel.representation;
+            const auto& rep = channel->representation;
             NumericAddressedRegisterInfo::ChannelInfo ci{rep.bitShift, // bitOffset within the channel element
                 NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
                 rep.type != RepresentationType::IEEE754 ? rep.isSigned : true,
-                DataType("int" + std::to_string(channel.bytesPerElement * 8))};
+                DataType("int" + std::to_string(channel->bytesPerElement * 8))};
             // A channel slice of a non-interrupt 2D register is read-only: writing to a single channel of a 2D
             // register would require a read-modify-write cycle across the channels, which is deliberately not
             // supported. A slice of an interrupt-driven 2D register additionally advertises wait_for_new_data,
@@ -327,7 +345,7 @@ namespace ChimeraTK::detail {
             auto sliceAccessType = (my.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) ?
                 NumericAddressedRegisterInfo::Access::INTERRUPT :
                 NumericAddressedRegisterInfo::Access::READ_ONLY;
-            NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel.offset, my.nElements,
+            NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel->offset, my.nElements,
                 my.elementPitchBits, {ci}, sliceAccessType, my.interruptId, my.doubleBuffer);
             slice.isBitRange = (rep.bitShift != 0);
             slice.computeDataDescriptor();
@@ -355,19 +373,19 @@ namespace ChimeraTK::detail {
       }
       else if(representation.type != RepresentationType::representationNotSet) {
         auto my = catalogue.getBackendRegister(parentName);
-        my.channels.clear();                      // will be refilled from representation
-        fill(my, parentName, addressSetByParent); // only updates the name and the representation
+        my.channels.clear();                            // will be refilled from representation
+        fill(my, name, parentName, addressSetByParent); // only updates the name and the representation
         my.computeDataDescriptor();
         catalogue.addRegister(my);
       }
 
-      for(const auto& child : children) {
-        child.addInfos(
-            catalogue, parentName / name, addressSetByParent || (address.type != AddressType::addressTypeNotSet));
+      for(const auto& [childName, child] : children) {
+        child.addInfos(catalogue, childName, parentName / name,
+            addressSetByParent || (address.type != AddressType::addressTypeNotSet));
       }
     }
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonAddressSpaceEntry, name, engineeringUnit, description, access,
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonAddressSpaceEntry, engineeringUnit, description, access,
         triggeredByInterrupt, numberOfElements, bytesPerElement, address, representation, children, channelTabs,
         doubleBuffering)
   };
@@ -411,9 +429,9 @@ namespace ChimeraTK::detail {
     try {
       auto data = json::parse(stream);
 
-      std::vector<JsonAddressSpaceEntry> addressSpace = data.at("addressSpace");
-      for(const auto& entry : addressSpace) {
-        entry.addInfos(catalogue, "/", /*addressSetByParent=*/false);
+      std::map<std::string, JsonAddressSpaceEntry> addressSpace = data.at("addressSpace");
+      for(const auto& [addressSpaceName, entry] : addressSpace) {
+        entry.addInfos(catalogue, addressSpaceName, "/", /*addressSetByParent=*/false);
       }
 
       // Scan the catalogue for bit ranges.
