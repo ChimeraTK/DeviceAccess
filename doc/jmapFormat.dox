@@ -15,9 +15,9 @@ A JMAP file is a single JSON object with the following top-level keys:
 \li \c mapFormatVersion - a version string of the file format (currently \c "0.0.1").
 \li \c metadata - an object holding arbitrary key-value pairs describing the firmware (see \ref jmap_metadata).
 \li \c interruptHandler - a description of the interrupt controllers (see \ref jmap_interrupts).
-\li \c addressSpace - the list of registers and modules making up the register map.
+\li \c addressSpace - the dictionary of registers and modules making up the register map (each key is a register/module name).
 
-The heart of the file is the \c addressSpace array. Each entry in it is either a register, or a \e module which groups other registers and modules below it. Registers are addressed by a hierarchical path, which is built from the \c name entries of the nested objects (modules and registers), separated by \c '/' or \c '.', e.g. \c APP/STATUS or \c APP.STATUS (\c '/' and \c '.' have synonymous meaning and can be exchanged arbitrarily). This path is used to access the register through register accessors, as described in \ref accessor1d and \ref accessor2d.
+The heart of the file is the \c addressSpace object. Each key is the name of a register, or of a \e module which groups other registers and modules below it; the object stored under a key describes that register/module. Registers are addressed by a hierarchical path, which is built from the \c addressSpace / \c children dictionary keys (the names of the modules and registers), separated by \c '/' or \c '.', e.g. \c APP/STATUS or \c APP.STATUS (\c '/' and \c '.' have synonymous meaning and can be exchanged arbitrarily). This path is used to access the register through register accessors, as described in \ref accessor1d and \ref accessor2d.
 
 \subsection jmap_comments Comments
 
@@ -29,7 +29,7 @@ JSON does not support comments natively. By convention, entries whose key starts
   "mapFormatVersion": "0.0.1",
   "metadata": {},
   "interruptHandler": {},
-  "addressSpace": []
+  "addressSpace": {}
 }
 \endverbatim
 
@@ -41,11 +41,12 @@ A register is an entry carrying an \c address (or inheriting one from a parent m
 
 \subsection jmap_address Address
 
-The minimal register entry needs only a \c name and an \c address:
+The minimal register entry is stored under its name and needs only an \c address:
 \verbatim
-{
-  "name": "SomeTopLevelRegister",
-  "address": { "type": "IO", "channel": 0, "offset": 32 }
+"addressSpace": {
+  "SomeTopLevelRegister": {
+    "address": { "type": "IO", "channel": 0, "offset": 32 }
+  }
 }
 \endverbatim
 
@@ -65,10 +66,11 @@ The \c access member defines how a register may be accessed:
 
 Example:
 \verbatim
-{
-  "name": "STATUS",
-  "access": "RO",
-  "address": { "channel": 2, "offset": "0x8000" }
+"addressSpace": {
+  "STATUS": {
+    "access": "RO",
+    "address": { "channel": 2, "offset": "0x8000" }
+  }
 }
 \endverbatim
 
@@ -80,12 +82,13 @@ By default a register holds a single element of 4 bytes. A register holding more
 
 Example:
 \verbatim
-{
-  "name": "SomeTable",
-  "access": "WO",
-  "numberOfElements": 16384,
-  "bytesPerElement": 2,
-  "address": { "channel": 0, "offset": 2048 }
+"addressSpace": {
+  "SomeTable": {
+    "access": "WO",
+    "numberOfElements": 16384,
+    "bytesPerElement": 2,
+    "address": { "channel": 0, "offset": 2048 }
+  }
 }
 \endverbatim
 
@@ -102,14 +105,15 @@ If the entire representation is omitted, it defaults to a 32-bit unsigned intege
 
 A single-precision floating point register:
 \verbatim
-{
-  "name": "ExampleRegister",
-  "address": { "channel": 0, "offset": 32 },
-  "representation": {
-    "type": "fixedPoint",
-    "width": 26,
-    "fractionalBits": 12,
-    "isSigned": true
+"addressSpace": {
+  "ExampleRegister": {
+    "address": { "channel": 0, "offset": 32 },
+    "representation": {
+      "type": "fixedPoint",
+      "width": 26,
+      "fractionalBits": 12,
+      "isSigned": true
+    }
   }
 }
 \endverbatim
@@ -121,11 +125,12 @@ A single-precision floating point register:
 
 Both are purely informational and may be omitted. Example:
 \verbatim
-{
-  "name": "SomeTopLevelRegister",
-  "engineeringUnit": "mV",
-  "description": "This is an example register",
-  "address": { "channel": 0, "offset": 32 }
+"addressSpace": {
+  "SomeTopLevelRegister": {
+    "engineeringUnit": "mV",
+    "description": "This is an example register",
+    "address": { "channel": 0, "offset": 32 }
+  }
 }
 \endverbatim
 
@@ -133,46 +138,44 @@ Both are purely informational and may be omitted. Example:
 
 \subsection jmap_simple_modules Modules
 
-An entry in the \c addressSpace without an \c address is a module: it groups nested registers and modules below it by providing a \c children list, and contributes its \c name to the hierarchical path of everything beneath it. A module is not a register and carries no data of its own. Example (from \c simpleJsonFile.jmap):
+A register/module in the \c addressSpace without an \c address is a module: it groups nested registers and modules below it by providing a \c children dictionary keyed by the children's names, and contributes its own name (its \c addressSpace / \c children key) to the hierarchical path of everything beneath it. A module is not a register and carries no data of its own. Example (from \c simpleJsonFile.jmap):
 \verbatim
-{
-  "name": "APP",
-  "children": [
-    {
-      "name": "STATUS",
-      "access": "RO",
-      "address": { "type": "IO", "channel": 2, "offset": "0x8000" }
-    },
-    {
-      "name": "CONTROL",
-      "access": "RW",
-      "address": { "type": "IO", "channel": 2, "offset": "0x8004" }
+"addressSpace": {
+  "APP": {
+    "children": {
+      "STATUS": {
+        "access": "RO",
+        "address": { "type": "IO", "channel": 2, "offset": "0x8000" }
+      },
+      "CONTROL": {
+        "access": "RW",
+        "address": { "type": "IO", "channel": 2, "offset": "0x8004" }
+      }
     }
-  ]
+  }
 }
 \endverbatim
 This yields the registers \c APP.STATUS and \c APP.CONTROL.
 
 Note: a module simply becomes a register by adding an address. This can be used to describe a hierarchical address space by describing the raw address space e.g. for a firmware module at the higher level of the hierarchy, while adding the detailed registers in the firmware module's address space as children. Keep in mind that there is no technical necessity that all children have to have addresses inside the address space of their parents (although it is certainly a good convention). Example:
 \verbatim
-{
-  "name": "APP",
-  "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
-  "numberOfElements": 2,
-  "children": [
-    {
-      "name": "STATUS",
-      "access": "RO",
-      "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
-      "representation": { "width": 3 }
-    },
-    {
-      "name": "CONTROL",
-      "access": "RW",
-      "address": { "type": "IO", "channel": 2, "offset": "0x8004" },
-      "representation": { "width": 5 }
+"addressSpace": {
+  "APP": {
+    "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
+    "numberOfElements": 2,
+    "children": {
+      "STATUS": {
+        "access": "RO",
+        "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
+        "representation": { "width": 3 }
+      },
+      "CONTROL": {
+        "access": "RW",
+        "address": { "type": "IO", "channel": 2, "offset": "0x8004" },
+        "representation": { "width": 5 }
+      }
     }
-  ]
+  }
 }
 \endverbatim
 
@@ -183,23 +186,22 @@ This yields the same registers \c APP/STATUS and \c APP.CONTROL as before, but i
 
 A child entry does not have to carry an address of its own: it inherits the address of the nearest ancestor that does. The inheritance works per field of the address entry, so e.g. only the \c type and \c channel may be inherited while the \c offset is overridden. Example (identical outcome to the last example above):
 \verbatim
-{
-  "name": "APP",
-  "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
-  "numberOfElements": 2,
-  "children": [
-    {
-      "name": "STATUS",
-      "access": "RO",
-      "representation": { "width": 3 }
-    },
-    {
-      "name": "CONTROL",
-      "access": "RW",
-      "address": { "offset": "0x8004" },
-      "representation": { "width": 5 }
+"addressSpace": {
+  "APP": {
+    "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
+    "numberOfElements": 2,
+    "children": {
+      "STATUS": {
+        "access": "RO",
+        "representation": { "width": 3 }
+      },
+      "CONTROL": {
+        "access": "RW",
+        "address": { "offset": "0x8004" },
+        "representation": { "width": 5 }
+      }
     }
-  ]
+  }
 }
 \endverbatim
 
@@ -225,15 +227,15 @@ Registers can be triggered by an interrupt. The \c "triggeredByInterrupt" field 
 
 Plain interrupts have a \c representation of type \c "void" and must not have an address. Example:
 \verbatim
-{
-  "name": "PRIMARY_INTERRUPT_3",
-  "triggeredByInterrupt": [3],
-  "representation": { "type": "void" }
-},
-{
-  "name": "SUB_INTERRUPT_3_0_2",
-  "triggeredByInterrupt": [3,0,2],
-  "representation": { "type": "void" }
+"addressSpace": {
+  "PRIMARY_INTERRUPT_3": {
+    "triggeredByInterrupt": [3],
+    "representation": { "type": "void" }
+  },
+  "SUB_INTERRUPT_3_0_2": {
+    "triggeredByInterrupt": [3,0,2],
+    "representation": { "type": "void" }
+  }
 }
 \endverbatim
 
@@ -241,12 +243,13 @@ Plain interrupts have a \c representation of type \c "void" and must not have an
 
 When interrupts shall be used to trigger data read-out, they can be added to normal registers:
 \verbatim
-{
-  "name": "TRIGGERED_DATA",
-  "address": { "offset": "0x8100" },
-  "numberOfElements": 2048,
-  "triggeredByInterrupt": [3,0,2],
-  "representation": { "width": 24, "fractionalBits": 10, "isSigned": true }
+"addressSpace": {
+  "TRIGGERED_DATA": {
+    "address": { "offset": "0x8100" },
+    "numberOfElements": 2048,
+    "triggeredByInterrupt": [3,0,2],
+    "representation": { "width": 24, "fractionalBits": 10, "isSigned": true }
+  }
 }
 \endverbatim
 This will create a push-type register (supporting ChimeraTK::AccessMode::wait_for_new_data) that will receive new values when the interrupt \c 3:0:2 arrives by polling the data from the specified address. See \ref design_AsyncNDRegisterAccessor_NumericAddressed for more details.
@@ -257,33 +260,32 @@ This will create a push-type register (supporting ChimeraTK::AccessMode::wait_fo
 A register holding several channels of time-multiplexed samples is declared by giving a \c channelTabs entry:
 \li \c numberOfElements - the number of samples (time slots) per channel.
 \li \c pitch - the number of bytes between two samples of the same channel.
-\li \c channels - the list of channels of this tab. Each channel has a \c name, a byte \c offset relative to the register base address, a \c bytesPerElement and an optional \c representation.
+\li \c channels - the channels of this tab, given as a dictionary keyed by channel \c name. Each channel value has a byte \c offset relative to the register base address, a \c bytesPerElement and an optional \c representation. (Channel order in memory follows the \c offset, independent of the order of the dictionary keys.)
 
 Channels can have arbitrary names; single-word channels are simply indexed \c "0", \c "1", ... Example:
 \verbatim
-{
-  "name": "DMA",
-  "address": { "type": "DMA", "offset": "0x0" },
-  "channelTabs": [
-    {
-      "numberOfElements": 16384,
-      "pitch": 32,
-      "channels": [
-        {
-          "name": "0",
-          "offset": 0,
-          "bytesPerElement": 2,
-          "representation": { "type": "fixedPoint", "width": 16 }
-        },
-        {
-          "name": "1",
-          "offset": 2,
-          "bytesPerElement": 2,
-          "representation": { "type": "fixedPoint", "width": 12, "fractionalBits": 12 }
+"addressSpace": {
+  "DMA": {
+    "address": { "type": "DMA", "offset": "0x0" },
+    "channelTabs": [
+      {
+        "numberOfElements": 16384,
+        "pitch": 32,
+        "channels": {
+          "0": {
+            "offset": 0,
+            "bytesPerElement": 2,
+            "representation": { "type": "fixedPoint", "width": 16 }
+          },
+          "1": {
+            "offset": 2,
+            "bytesPerElement": 2,
+            "representation": { "type": "fixedPoint", "width": 12, "fractionalBits": 12 }
+          }
         }
-      ]
-    }
-  ]
+      }
+    ]
+  }
 }
 \endverbatim
 Here \c DMA is a 2D register with two channels, each holding 16384 samples, with a pitch of 32 bytes between the samples of a channel (so there is space for more channels in this example).
@@ -306,67 +308,65 @@ A register that is fed by double-buffered DMA hardware is marked with a \c doubl
 
 In addition to the main register, two read-only registers named \c NAME/BUF0 and \c NAME/BUF1 are created for the two buffers. Example:
 \verbatim
-{
-  "name": "CTRL",
-  "triggeredByInterrupt": [3, 0, 1],
-  "address": { "type": "DMA", "offset": "0x40000" },
-  "doubleBuffering": {
-    "secondaryBufferAddress": { "type": "DMA", "offset": "0x40200" },
-    "enableRegister": "DAQ.DOUBLE_BUF.ENA",
-    "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
-    "index": 0
-  },
-  "channelTabs": [
-    {
-      "numberOfElements": 16384,
-      "pitch": 64,
-      "channels": [
-        {
-          "name": "errorI",
-          "bytesPerElement": 2,
-          "offset": 0,
-          "representation": {
-            "type": "fixedPoint",
-            "width": 16,
-            "fractionalBits": -2,
-            "isSigned": true
+"addressSpace": {
+  "CTRL": {
+    "triggeredByInterrupt": [3, 0, 1],
+    "address": { "type": "DMA", "offset": "0x40000" },
+    "doubleBuffering": {
+      "secondaryBufferAddress": { "type": "DMA", "offset": "0x40200" },
+      "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+      "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
+      "index": 0
+    },
+    "channelTabs": [
+      {
+        "numberOfElements": 16384,
+        "pitch": 64,
+        "channels": {
+          "errorI": {
+            "bytesPerElement": 2,
+            "offset": 0,
+            "representation": {
+              "type": "fixedPoint",
+              "width": 16,
+              "fractionalBits": -2,
+              "isSigned": true
+            }
           }
         }
-      ]
-    }
-  ]
+      }
+    ]
+  }
 }
 \endverbatim
 
 \subsection jmap_bitfields Bit fields
 
-A register can carry a list of \c children which are bit fields of the register word. Each child has a \c name and a \c representation with \c bitShift and \c width; the children share the starting address of their parent register (see \ref jmap_address_inheritance). The full word register itself is also accessible. Example:
+A register can carry a \c children dictionary of entries which are bit fields of the register word. Each child key is the bit-field's name and its value a \c representation with \c bitShift and \c width; the children share the starting address of their parent register (see \ref jmap_address_inheritance). The full word register itself is also accessible. Example:
 \verbatim
-{
-  "name": "STATUS",
-  "access": "RO",
-  "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
-  "bytesPerElement": 4,
-  "children": [
-    {
-      "name": "ProbeLimiter",
-      "representation": { "width": 1 }
-    },
-    {
-      "name": "ExternalInterlock",
-      "representation": { "bitShift": 1, "width": 1 }
-    },
-    {
-      "name": "ErrorCounter",
-      "representation": {
-        "bitShift": 2,
-        "type": "fixedPoint",
-        "width": 3,
-        "fractionalBits": 0,
-        "isSigned": false
+"addressSpace": {
+  "STATUS": {
+    "access": "RO",
+    "address": { "type": "IO", "channel": 2, "offset": "0x8000" },
+    "bytesPerElement": 4,
+    "children": {
+      "ProbeLimiter": {
+        "representation": { "width": 1 }
+      },
+      "ExternalInterlock": {
+        "representation": { "bitShift": 1, "width": 1 }
+      },
+      "ErrorCounter": {
+        "representation": {
+          "bitShift": 2,
+          "type": "fixedPoint",
+          "width": 3,
+          "fractionalBits": 0,
+          "isSigned": false
+        }
       }
     }
-  ]
+  }
 }
 \endverbatim
 Registers which share the starting address with a bit range and have a width smaller than their element size are automatically recognised as bit ranges as well.

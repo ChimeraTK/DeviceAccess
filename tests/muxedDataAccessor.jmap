@@ -2,9 +2,8 @@
   "mapFormatVersion": "0.0.1",
   "metadata": {},
   "interruptHandler": {},
-  "addressSpace": [
-    {
-      "name": "AREA_DMAABLE",
+  "addressSpace": {
+    "AREA_DMAABLE": {
       "numberOfElements": 1024,
       "address": {
         "channel": 2,
@@ -15,11 +14,9 @@
         "isSigned": true
       }
     },
-    {
-      "name": "TEST",
-      "children": [
-        {
-          "name": "DMA",
+    "TEST": {
+      "children": {
+        "DMA": {
           "address": {
             "type": "DMA",
             "offset": "0x0"
@@ -28,9 +25,8 @@
             {
               "numberOfElements": 4,
               "pitch": 32,
-              "channels": [
-                {
-                  "name": "0",
+              "channels": {
+                "0": {
                   "offset": 0,
                   "bytesPerElement": 2,
                   "representation": {
@@ -38,8 +34,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "1",
+                "1": {
                   "offset": 2,
                   "bytesPerElement": 2,
                   "representation": {
@@ -47,8 +42,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "2",
+                "2": {
                   "offset": 4,
                   "bytesPerElement": 2,
                   "representation": {
@@ -56,8 +50,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "3",
+                "3": {
                   "offset": 6,
                   "bytesPerElement": 2,
                   "representation": {
@@ -65,8 +58,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "4",
+                "4": {
                   "offset": 8,
                   "bytesPerElement": 2,
                   "representation": {
@@ -74,8 +66,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "5",
+                "5": {
                   "offset": 10,
                   "bytesPerElement": 2,
                   "representation": {
@@ -83,8 +74,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "6",
+                "6": {
                   "offset": 12,
                   "bytesPerElement": 2,
                   "representation": {
@@ -92,8 +82,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "7",
+                "7": {
                   "offset": 14,
                   "bytesPerElement": 2,
                   "representation": {
@@ -101,8 +90,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "8",
+                "8": {
                   "offset": 16,
                   "bytesPerElement": 2,
                   "representation": {
@@ -110,8 +98,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "9",
+                "9": {
                   "offset": 18,
                   "bytesPerElement": 2,
                   "representation": {
@@ -119,8 +106,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "10",
+                "10": {
                   "offset": 20,
                   "bytesPerElement": 2,
                   "representation": {
@@ -128,8 +114,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "11",
+                "11": {
                   "offset": 22,
                   "bytesPerElement": 2,
                   "representation": {
@@ -137,8 +122,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "12",
+                "12": {
                   "offset": 24,
                   "bytesPerElement": 2,
                   "representation": {
@@ -146,8 +130,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "13",
+                "13": {
                   "offset": 26,
                   "bytesPerElement": 2,
                   "representation": {
@@ -155,8 +138,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "14",
+                "14": {
                   "offset": 28,
                   "bytesPerElement": 2,
                   "representation": {
@@ -164,8 +146,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "15",
+                "15": {
                   "offset": 30,
                   "bytesPerElement": 2,
                   "representation": {
@@ -173,12 +154,11 @@
                     "width": 16
                   }
                 }
-              ]
+              }
             }
           ]
         },
-        {
-          "name": "FLOAT",
+        "FLOAT": {
           "address": {
             "channel": 2,
             "offset": "0x0"
@@ -187,9 +167,8 @@
             {
               "numberOfElements": 8,
               "pitch": 16,
-              "channels": [
-                {
-                  "name": "0",
+              "channels": {
+                "0": {
                   "offset": 0,
                   "bytesPerElement": 4,
                   "representation": {
@@ -197,8 +176,7 @@
                     "width": 32
                   }
                 },
-                {
-                  "name": "1",
+                "1": {
                   "offset": 4,
                   "bytesPerElement": 4,
                   "representation": {
@@ -206,8 +184,7 @@
                     "width": 32
                   }
                 },
-                {
-                  "name": "2",
+                "2": {
                   "offset": 8,
                   "bytesPerElement": 4,
                   "representation": {
@@ -215,8 +192,7 @@
                     "width": 32
                   }
                 },
-                {
-                  "name": "3",
+                "3": {
                   "offset": 12,
                   "bytesPerElement": 4,
                   "representation": {
@@ -224,12 +200,11 @@
                     "width": 32
                   }
                 }
-              ]
+              }
             }
           ]
         },
-        {
-          "name": "NODMA",
+        "NODMA": {
           "address": {
             "channel": 2,
             "offset": "0x0"
@@ -238,9 +213,8 @@
             {
               "numberOfElements": 4,
               "pitch": 32,
-              "channels": [
-                {
-                  "name": "0",
+              "channels": {
+                "0": {
                   "offset": 0,
                   "bytesPerElement": 2,
                   "representation": {
@@ -248,8 +222,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "1",
+                "1": {
                   "offset": 2,
                   "bytesPerElement": 2,
                   "representation": {
@@ -257,8 +230,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "2",
+                "2": {
                   "offset": 4,
                   "bytesPerElement": 2,
                   "representation": {
@@ -266,8 +238,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "3",
+                "3": {
                   "offset": 6,
                   "bytesPerElement": 2,
                   "representation": {
@@ -275,8 +246,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "4",
+                "4": {
                   "offset": 8,
                   "bytesPerElement": 2,
                   "representation": {
@@ -284,8 +254,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "5",
+                "5": {
                   "offset": 10,
                   "bytesPerElement": 2,
                   "representation": {
@@ -293,8 +262,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "6",
+                "6": {
                   "offset": 12,
                   "bytesPerElement": 2,
                   "representation": {
@@ -302,8 +270,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "7",
+                "7": {
                   "offset": 14,
                   "bytesPerElement": 2,
                   "representation": {
@@ -311,8 +278,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "8",
+                "8": {
                   "offset": 16,
                   "bytesPerElement": 2,
                   "representation": {
@@ -320,8 +286,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "9",
+                "9": {
                   "offset": 18,
                   "bytesPerElement": 2,
                   "representation": {
@@ -329,8 +294,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "10",
+                "10": {
                   "offset": 20,
                   "bytesPerElement": 2,
                   "representation": {
@@ -338,8 +302,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "11",
+                "11": {
                   "offset": 22,
                   "bytesPerElement": 2,
                   "representation": {
@@ -347,8 +310,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "12",
+                "12": {
                   "offset": 24,
                   "bytesPerElement": 2,
                   "representation": {
@@ -356,8 +318,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "13",
+                "13": {
                   "offset": 26,
                   "bytesPerElement": 2,
                   "representation": {
@@ -365,8 +326,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "14",
+                "14": {
                   "offset": 28,
                   "bytesPerElement": 2,
                   "representation": {
@@ -374,8 +334,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "15",
+                "15": {
                   "offset": 30,
                   "bytesPerElement": 2,
                   "representation": {
@@ -383,12 +342,11 @@
                     "width": 16
                   }
                 }
-              ]
+              }
             }
           ]
         },
-        {
-          "name": "NODMAASYNC",
+        "NODMAASYNC": {
           "triggeredByInterrupt": [
             6
           ],
@@ -400,9 +358,8 @@
             {
               "numberOfElements": 4,
               "pitch": 32,
-              "channels": [
-                {
-                  "name": "0",
+              "channels": {
+                "0": {
                   "offset": 0,
                   "bytesPerElement": 2,
                   "representation": {
@@ -410,8 +367,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "1",
+                "1": {
                   "offset": 2,
                   "bytesPerElement": 2,
                   "representation": {
@@ -419,8 +375,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "2",
+                "2": {
                   "offset": 4,
                   "bytesPerElement": 2,
                   "representation": {
@@ -428,8 +383,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "3",
+                "3": {
                   "offset": 6,
                   "bytesPerElement": 2,
                   "representation": {
@@ -437,8 +391,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "4",
+                "4": {
                   "offset": 8,
                   "bytesPerElement": 2,
                   "representation": {
@@ -446,8 +399,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "5",
+                "5": {
                   "offset": 10,
                   "bytesPerElement": 2,
                   "representation": {
@@ -455,8 +407,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "6",
+                "6": {
                   "offset": 12,
                   "bytesPerElement": 2,
                   "representation": {
@@ -464,8 +415,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "7",
+                "7": {
                   "offset": 14,
                   "bytesPerElement": 2,
                   "representation": {
@@ -473,8 +423,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "8",
+                "8": {
                   "offset": 16,
                   "bytesPerElement": 2,
                   "representation": {
@@ -482,8 +431,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "9",
+                "9": {
                   "offset": 18,
                   "bytesPerElement": 2,
                   "representation": {
@@ -491,8 +439,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "10",
+                "10": {
                   "offset": 20,
                   "bytesPerElement": 2,
                   "representation": {
@@ -500,8 +447,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "11",
+                "11": {
                   "offset": 22,
                   "bytesPerElement": 2,
                   "representation": {
@@ -509,8 +455,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "12",
+                "12": {
                   "offset": 24,
                   "bytesPerElement": 2,
                   "representation": {
@@ -518,8 +463,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "13",
+                "13": {
                   "offset": 26,
                   "bytesPerElement": 2,
                   "representation": {
@@ -527,8 +471,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "14",
+                "14": {
                   "offset": 28,
                   "bytesPerElement": 2,
                   "representation": {
@@ -536,8 +479,7 @@
                     "width": 16
                   }
                 },
-                {
-                  "name": "15",
+                "15": {
                   "offset": 30,
                   "bytesPerElement": 2,
                   "representation": {
@@ -545,11 +487,11 @@
                     "width": 16
                   }
                 }
-              ]
+              }
             }
           ]
         }
-      ]
+      }
     }
-  ]
+  }
 }
