@@ -32,7 +32,10 @@ namespace ChimeraTK {
 
     {
       std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
-      if(_mutex->useCount() == 1) {
+      // Only signal the firmware that the first buffer is in use if the device is already open. Creating the
+      // accessor before the device is opened must not touch the hardware; the real handshake in doPreRead/
+      // doPostRead (which only run on a read, after the device is open) then applies the initial enable-swap value.
+      if(_mutex->useCount() == 1 && _backend->isOpen()) {
         _enableDoubleBufferReg->accessChannel(0)[0] = 1;
         _enableDoubleBufferReg->write();
       }

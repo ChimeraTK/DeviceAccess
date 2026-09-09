@@ -356,6 +356,24 @@ namespace ChimeraTK::detail {
             slice.engineeringUnit = channel->engineeringUnit;
             slice.description = channel->description;
             catalogue.addRegister(slice);
+            if(my.doubleBuffer.has_value()) {
+              // Create the slice's two buffer-view registers, mirroring the parent BUF0/BUF1 block but folding
+              // the channel byte offset into both buffer addresses. They are plain read-only views of the
+              // buffers, exactly what DoubleBufferAccessor reads on the leaf paths.
+              NumericAddressedRegisterInfo sliceBuf0 = slice;
+              sliceBuf0.pathName = slicePath + "/BUF0";
+              sliceBuf0.doubleBuffer.reset();
+              sliceBuf0.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+              sliceBuf0.computeDataDescriptor();
+              catalogue.addRegister(sliceBuf0);
+              NumericAddressedRegisterInfo sliceBuf1 = slice;
+              sliceBuf1.pathName = slicePath + "/BUF1";
+              sliceBuf1.doubleBuffer.reset();
+              sliceBuf1.address = my.doubleBuffer->address + channel.offset;
+              sliceBuf1.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+              sliceBuf1.computeDataDescriptor();
+              catalogue.addRegister(sliceBuf1);
+            }
           }
         }
         if(doubleBuffering.has_value()) {

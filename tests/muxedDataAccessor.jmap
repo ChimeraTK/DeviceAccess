@@ -492,6 +492,77 @@
               }
             }
           ]
+        },
+        {
+          "name": "DBL",
+          "address": {
+            "type": "DMA",
+            "offset": "0x1000"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "offset": "0x2000"
+            },
+            "enableRegister": "TEST.DOUBLE_BUF.ENA",
+            "readBufferRegister": "TEST.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 0
+          },
+          "channelTabs": [
+            {
+              "numberOfElements": 4,
+              "pitch": 32,
+              "channels": [
+                {
+                  "name": "0",
+                  "offset": 0,
+                  "bytesPerElement": 4,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                },
+                {
+                  "name": "1",
+                  "offset": 4,
+                  "bytesPerElement": 4,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "DOUBLE_BUF",
+          "children": [
+            {
+              "name": "ENA",
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 0,
+                "offset": 3000
+              },
+              "representation": {
+                "width": 1
+              }
+            },
+            {
+              "name": "INACTIVE_BUF_ID",
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 0,
+                "offset": 3004
+              },
+              "representation": {
+                "width": 1
+              }
+            }
+          ]
         }
       }
     }

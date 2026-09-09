@@ -221,6 +221,9 @@ namespace ChimeraTK {
     }
     // double buffer register
     else {
+      if(numberOfWords == 0) {
+        numberOfWords = registerInfo.getNumberOfElements();
+      }
       const auto& enableRegPath = registerInfo.doubleBuffer->enableRegisterPath;
       auto& controlState = _doubleBufferMutexMap[enableRegPath];
       if(!controlState) {

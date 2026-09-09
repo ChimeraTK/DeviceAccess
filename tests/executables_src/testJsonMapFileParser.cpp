@@ -312,6 +312,52 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
   }
+  // A double-buffered named channel slice inherits the parent register's double-buffer configuration. The slice
+  // additionally gets its own BUF0/BUF1 buffer-view registers, identical to the parent's but with the channel byte
+  // offset folded into both buffer addresses.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.errorI");
+    BOOST_TEST(reg.doubleBuffer.has_value());
+    BOOST_TEST(reg.doubleBuffer->address == 0x40200);
+    BOOST_TEST(reg.doubleBuffer->enableRegisterPath == "/DAQ.DOUBLE_BUF.ENA");
+    BOOST_TEST(reg.doubleBuffer->inactiveBufferRegisterPath == "/DAQ.DOUBLE_BUF.INACTIVE_BUF_ID");
+    BOOST_TEST(reg.doubleBuffer->index == 0);
+  }
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.errorI.BUF0");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/errorI/BUF0");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x40000);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_CHECK(!reg.doubleBuffer.has_value());
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
+  }
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.errorI.BUF1");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/errorI/BUF1");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x40200);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_CHECK(!reg.doubleBuffer.has_value());
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].width == 16);
+    BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
+  }
+  // A channel with non-zero byte offset folds that offset into both buffer addresses.
+  {
+    auto reg0 = regs.getBackendRegister("DAQ.CTRL.errorQ.BUF0");
+    BOOST_TEST(reg0.address == 0x40000 + 2);
+    auto reg1 = regs.getBackendRegister("DAQ.CTRL.errorQ.BUF1");
+    BOOST_TEST(reg1.address == 0x40200 + 2);
+  }
   // Named channel slice of a non-interrupt 2D register stays read-only and does not advertise
   // wait_for_new_data.
   {

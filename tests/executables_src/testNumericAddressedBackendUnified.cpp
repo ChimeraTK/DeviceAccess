@@ -1117,6 +1117,98 @@ struct ArrayBitRangeHigh : ArrayRegBitRangeDescriptor<ArrayBitRangeHigh> {
 
 /**********************************************************************************************************************/
 
+// Double-buffered named channel slice of the 2D register TEST.DBL. The firmware-side double buffer handshake is
+// simulated through backdoor accessors on the slice's buffer registers and the buffer-number control register,
+// mirroring AreaType in testDoubleBuffering.cpp.
+struct DoubleBufferedNamedChannelSlice0 {
+  std::string path() { return "/TEST/DBL.1"; }
+  bool isWriteable() { return false; }
+  bool isReadable() { return true; }
+  ChimeraTK::AccessModeFlags supportedFlags() { return {}; }
+  size_t nChannels() { return 1; }
+  size_t nElementsPerChannel() { return 4; }
+  size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  size_t nRuntimeErrorCases() { return 1; }
+  typedef uint16_t minimumUserType;
+  typedef int16_t rawUserType;
+
+  static uint32_t _currentBufferNumber;
+
+  // A channel slice of a 2D register is read-only. Double buffering adds the write-losing caveats of a buffer swap
+  // and does not support raw transfer or wait_for_new_data yet.
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer()
+                                           .disableTestCatalogue();
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue(bool = false) {
+    auto values = getRemoteValue<minimumUserType>();
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      values[0][e] += uint16_t(37 + 11 * e);
+    }
+    return values;
+  }
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue(bool = false) {
+    DummyRegisterAccessor<uint32_t> currentBufferNumber{
+        exceptionDummyMuxed.get(), "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
+    DummyRegisterAccessor<minimumUserType> buffer0{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF0"};
+    DummyRegisterAccessor<minimumUserType> buffer1{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF1"};
+
+    std::vector<std::vector<UserType>> v(1);
+    if(currentBufferNumber[0] == 1) {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        v[0].push_back(buffer0[e]);
+      }
+    }
+    else {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        v[0].push_back(buffer1[e]);
+      }
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    DummyRegisterAccessor<uint32_t> currentBufferNumber{
+        exceptionDummyMuxed.get(), "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
+    DummyRegisterAccessor<minimumUserType> buffer0{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF0"};
+    DummyRegisterAccessor<minimumUserType> buffer1{exceptionDummyMuxed.get(), "TEST/DBL.1", "BUF1"};
+
+    currentBufferNumber[0] = _currentBufferNumber;
+    _currentBufferNumber = _currentBufferNumber ? 0 : 1; // change current buffer no. 0->1 or 1->0
+
+    auto values = generateValue<minimumUserType>();
+
+    if(currentBufferNumber[0] == 1) {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        buffer0[e] = values[0][e];
+      }
+    }
+    else {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        buffer1[e] = values[0][e];
+      }
+    }
+  }
+
+  void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+  }
+};
+
+uint32_t DoubleBufferedNamedChannelSlice0::_currentBufferNumber = 0;
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
@@ -1160,6 +1252,13 @@ BOOST_AUTO_TEST_CASE(testNamedChannelSlices) {
 BOOST_AUTO_TEST_CASE(testNamedChannelSliceAsync) {
   std::cout << "*** testNamedChannelSliceAsync *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>().addRegister<NamedChannelSliceAsync0>().runTests(cddMuxed);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDoubleBufferedNamedChannelSlices) {
+  std::cout << "*** testDoubleBufferedNamedChannelSlices *** " << std::endl;
+  ChimeraTK::UnifiedBackendTest<>().addRegister<DoubleBufferedNamedChannelSlice0>().runTests(cddMuxed);
 }
 
 /**********************************************************************************************************************/
