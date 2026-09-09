@@ -132,6 +132,15 @@ namespace ChimeraTK::detail {
 
       void fill(NumericAddressedRegisterInfo& info) const {
         info.doubleBuffer->address = secondaryBufferAddress.offset.v;
+        // The two buffers of a double-buffered register must live on the same BAR.
+        size_t secondaryBar =
+            secondaryBufferAddress.channel + (secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);
+        if(secondaryBar != info.bar) {
+          throw ChimeraTK::logic_error("Register " + info.pathName +
+              ": double-buffered registers whose two buffers lie on different BARs are not supported (primary "
+              "BAR " +
+              std::to_string(info.bar) + ", secondary BAR " + std::to_string(secondaryBar) + ").");
+        }
         info.doubleBuffer->enableRegisterPath = enableRegister;
         info.doubleBuffer->inactiveBufferRegisterPath = readBufferRegister;
         info.doubleBuffer->index = index;
@@ -351,11 +360,35 @@ namespace ChimeraTK::detail {
                 NumericAddressedRegisterInfo::Access::READ_ONLY;
             NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel->offset, my.nElements,
                 my.elementPitchBits, {ci}, sliceAccessType, my.interruptId, my.doubleBuffer);
+            // The slice's double-buffer configuration inherits the parent's, but its secondary buffer address
+            // is the parent's shifted by the channel byte offset, matching the slice's own data address and the
+            // slice's BUF1 buffer-view register created below.
+            if(slice.doubleBuffer.has_value()) {
+              slice.doubleBuffer->address += channel->offset;
+            }
             slice.isBitRange = (rep.bitShift != 0);
             slice.computeDataDescriptor();
             slice.engineeringUnit = channel->engineeringUnit;
             slice.description = channel->description;
             catalogue.addRegister(slice);
+            if(my.doubleBuffer.has_value()) {
+              // Create the slice's two buffer-view registers, mirroring the parent BUF0/BUF1 block but folding
+              // the channel byte offset into both buffer addresses. They are plain read-only views of the
+              // buffers, exactly what DoubleBufferAccessor reads on the leaf paths.
+              NumericAddressedRegisterInfo sliceBuf0 = slice;
+              sliceBuf0.pathName = slicePath + "/BUF0";
+              sliceBuf0.doubleBuffer.reset();
+              sliceBuf0.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+              sliceBuf0.computeDataDescriptor();
+              catalogue.addRegister(sliceBuf0);
+              NumericAddressedRegisterInfo sliceBuf1 = slice;
+              sliceBuf1.pathName = slicePath + "/BUF1";
+              sliceBuf1.doubleBuffer.reset();
+              sliceBuf1.address = my.doubleBuffer->address + channel->offset;
+              sliceBuf1.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+              sliceBuf1.computeDataDescriptor();
+              catalogue.addRegister(sliceBuf1);
+            }
           }
         }
         if(doubleBuffering.has_value()) {
@@ -371,8 +404,6 @@ namespace ChimeraTK::detail {
           buf1Register.doubleBuffer.reset(); // it's a simple view of the buffer
           buf1Register.address = doubleBuffering->secondaryBufferAddress.offset.v;
           buf1Register.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
-          // buf1Register.bar = doubleBuffering->secondBufferAddress.channel +
-          //     (doubleBuffering->secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);
           buf1Register.computeDataDescriptor();
           catalogue.addRegister(buf1Register);
         }
