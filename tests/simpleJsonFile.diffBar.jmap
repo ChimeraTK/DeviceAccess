@@ -1,0 +1,44 @@
+{
+  "_comment": "Fixture for the differing-BAR double-buffer check: the secondary buffer address lives on a different channel (hence a different BAR, via channel + (type == DMA ? 13 : 0)) than the primary address, which is not supported for double-buffered registers.",
+  "mapFormatVersion": "0.0.1",
+  "addressSpace": {
+    "DEV": {
+      "children": {
+        "DBUF": {
+          "description": "Double-buffered 2D register with secondary buffer on a different channel",
+          "address": {
+            "type": "DMA",
+            "offset": "0x40000"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "channel": 1,
+              "offset": "0x40200"
+            },
+            "enableRegister": "DEV.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DEV.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 0
+          },
+          "channelTabs": [
+            {
+              "numberOfElements": 16384,
+              "pitch": 4,
+              "channels": {
+                "A": {
+                  "bytesPerElement": 4,
+                  "offset": 0,
+                  "representation": {
+                    "type": "fixedPoint",
+                    "width": 16,
+                    "fractionalBits": 0
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
