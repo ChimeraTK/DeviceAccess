@@ -21,188 +21,180 @@
             "type": "DMA",
             "offset": "0x0"
           },
-          "channelTabs": [
-            {
-              "numberOfElements": 4,
-              "pitch": 32,
-              "channels": {
-                "0": {
-                  "offset": 0,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "1": {
-                  "offset": 2,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "2": {
-                  "offset": 4,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "3": {
-                  "offset": 6,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "4": {
-                  "offset": 8,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "5": {
-                  "offset": 10,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "6": {
-                  "offset": 12,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "7": {
-                  "offset": 14,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "8": {
-                  "offset": 16,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "9": {
-                  "offset": 18,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "10": {
-                  "offset": 20,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "11": {
-                  "offset": 22,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "12": {
-                  "offset": 24,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "13": {
-                  "offset": 26,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "14": {
-                  "offset": 28,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "15": {
-                  "offset": 30,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                }
+          "numberOfElements": 4,
+          "pitch": 32,
+          "channels": {
+            "0": {
+              "offset": 0,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "1": {
+              "offset": 2,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "2": {
+              "offset": 4,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "3": {
+              "offset": 6,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "4": {
+              "offset": 8,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "5": {
+              "offset": 10,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "6": {
+              "offset": 12,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "7": {
+              "offset": 14,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "8": {
+              "offset": 16,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "9": {
+              "offset": 18,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "10": {
+              "offset": 20,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "11": {
+              "offset": 22,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "12": {
+              "offset": 24,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "13": {
+              "offset": 26,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "14": {
+              "offset": 28,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "15": {
+              "offset": 30,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
               }
             }
-          ]
+          }
         },
         "FLOAT": {
           "address": {
             "channel": 2,
             "offset": "0x0"
           },
-          "channelTabs": [
-            {
-              "numberOfElements": 8,
-              "pitch": 16,
-              "channels": {
-                "0": {
-                  "offset": 0,
-                  "bytesPerElement": 4,
-                  "representation": {
-                    "type": "IEEE754",
-                    "width": 32
-                  }
-                },
-                "1": {
-                  "offset": 4,
-                  "bytesPerElement": 4,
-                  "representation": {
-                    "type": "IEEE754",
-                    "width": 32
-                  }
-                },
-                "2": {
-                  "offset": 8,
-                  "bytesPerElement": 4,
-                  "representation": {
-                    "type": "IEEE754",
-                    "width": 32
-                  }
-                },
-                "3": {
-                  "offset": 12,
-                  "bytesPerElement": 4,
-                  "representation": {
-                    "type": "IEEE754",
-                    "width": 32
-                  }
-                }
+          "numberOfElements": 8,
+          "pitch": 16,
+          "channels": {
+            "0": {
+              "offset": 0,
+              "bytesPerElement": 4,
+              "representation": {
+                "type": "IEEE754",
+                "width": 32
+              }
+            },
+            "1": {
+              "offset": 4,
+              "bytesPerElement": 4,
+              "representation": {
+                "type": "IEEE754",
+                "width": 32
+              }
+            },
+            "2": {
+              "offset": 8,
+              "bytesPerElement": 4,
+              "representation": {
+                "type": "IEEE754",
+                "width": 32
+              }
+            },
+            "3": {
+              "offset": 12,
+              "bytesPerElement": 4,
+              "representation": {
+                "type": "IEEE754",
+                "width": 32
               }
             }
-          ]
+          }
         },
         "NODMA": {
           "description": "base description of 2D area NODMA",
@@ -211,142 +203,138 @@
             "channel": 2,
             "offset": "0x0"
           },
-          "channelTabs": [
-            {
-              "numberOfElements": 4,
-              "pitch": 32,
-              "channels": {
-                "0": {
-                  "offset": 0,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "1": {
-                  "offset": 2,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "2": {
-                  "offset": 4,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "3": {
-                  "offset": 6,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "4": {
-                  "offset": 8,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "5": {
-                  "offset": 10,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "6": {
-                  "offset": 12,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "7": {
-                  "offset": 14,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "8": {
-                  "offset": 16,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "9": {
-                  "offset": 18,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "10": {
-                  "offset": 20,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "11": {
-                  "offset": 22,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "12": {
-                  "offset": 24,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "13": {
-                  "offset": 26,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "14": {
-                  "offset": 28,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "15": {
-                  "offset": 30,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                }
+          "numberOfElements": 4,
+          "pitch": 32,
+          "channels": {
+            "0": {
+              "offset": 0,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "1": {
+              "offset": 2,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "2": {
+              "offset": 4,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "3": {
+              "offset": 6,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "4": {
+              "offset": 8,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "5": {
+              "offset": 10,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "6": {
+              "offset": 12,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "7": {
+              "offset": 14,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "8": {
+              "offset": 16,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "9": {
+              "offset": 18,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "10": {
+              "offset": 20,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "11": {
+              "offset": 22,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "12": {
+              "offset": 24,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "13": {
+              "offset": 26,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "14": {
+              "offset": 28,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "15": {
+              "offset": 30,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
               }
             }
-          ]
+          }
         },
         "NODMAASYNC": {
           "triggeredByInterrupt": [
@@ -356,142 +344,139 @@
             "channel": 2,
             "offset": "0x0"
           },
-          "channelTabs": [
-            {
-              "numberOfElements": 4,
-              "pitch": 32,
-              "channels": {
-                "0": {
-                  "offset": 0,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "1": {
-                  "offset": 2,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "2": {
-                  "offset": 4,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "3": {
-                  "offset": 6,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "4": {
-                  "offset": 8,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "5": {
-                  "offset": 10,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "6": {
-                  "offset": 12,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "7": {
-                  "offset": 14,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "8": {
-                  "offset": 16,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "9": {
-                  "offset": 18,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "10": {
-                  "offset": 20,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "11": {
-                  "offset": 22,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "12": {
-                  "offset": 24,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "13": {
-                  "offset": 26,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "14": {
-                  "offset": 28,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "15": {
-                  "offset": 30,
-                  "bytesPerElement": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                }
+          "numberOfElements": 4,
+          "pitch": 32,
+          "channels": {
+            "0": {
+              "offset": 0,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "1": {
+              "offset": 2,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "2": {
+              "offset": 4,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "3": {
+              "offset": 6,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "4": {
+              "offset": 8,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "5": {
+              "offset": 10,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "6": {
+              "offset": 12,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "7": {
+              "offset": 14,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "8": {
+              "offset": 16,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "9": {
+              "offset": 18,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "10": {
+              "offset": 20,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "11": {
+              "offset": 22,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "12": {
+              "offset": 24,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "13": {
+              "offset": 26,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "14": {
+              "offset": 28,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "15": {
+              "offset": 30,
+              "bytesPerElement": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
               }
             }
-          ]
+          }
+        }
         },
         "DBL": {
           "address": {
@@ -599,7 +584,6 @@
               }
             }
           }
-        }
       }
     }
   }
