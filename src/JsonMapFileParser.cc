@@ -191,42 +191,69 @@ namespace ChimeraTK::detail {
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned, bitShift)
     } representation{RepresentationType::representationNotSet};
 
-    struct ChannelTab {
-      size_t numberOfElements{0};
-      size_t pitch{0};
+    // 'register' is a C++ keyword, so the JSON member is deserialized manually into 'regPath'.
+    struct SelectedBy {
+      std::string regPath; ///< path of the register selecting this channel
+      int64_t value{0};    ///< active when the 'register' equals this value
 
-      struct Channel {
-        std::string engineeringUnit;
-        std::string description;
-        size_t offset;
-        size_t bytesPerElement{4};
-        Representation representation{};
-
-        /// adds channel representation of this Channel to channels of info
-        void fill(NumericAddressedRegisterInfo& info) const { representation.fill(info, offset, bytesPerElement); }
-
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-            Channel, engineeringUnit, description, offset, bytesPerElement, representation)
-      };
-
-      // The channels, sorted by byte offset so that per-channel information (and thus the channel index of a
-      // 2D accessor) follows the natural memory order, independent of the lexically sorted map key. Returns the
-      // channel names together with the pointers so both the plain fill and the slice creation can use it.
-      [[nodiscard]] std::vector<std::pair<std::string, const Channel*>> channelsInOffsetOrder() const {
-        std::vector<std::pair<std::string, const Channel*>> result;
-        result.reserve(channels.size());
-        for(const auto& [channelName, channel] : channels) {
-          result.emplace_back(channelName, &channel);
+      // NOLINTNEXTLINE(readability-identifier-naming)
+      friend void from_json(const nlohmann::json& j, SelectedBy& s) {
+        // Both 'register' and 'value' are required for a 'selectedBy' entry. A muxed channel whose selector is
+        // underspecified is a map authoring error, so reject it with a ChimeraTK::logic_error instead of silently
+        // defaulting the missing field (which would otherwise make a *conditional* channel look unconditional).
+        if(!j.contains("register")) {
+          throw ChimeraTK::logic_error("'selectedBy' requires a 'register' member.");
         }
-        std::ranges::sort(result, [](const auto& a, const auto& b) { return a.second->offset < b.second->offset; });
-        return result;
+        if(!j.contains("value")) {
+          throw ChimeraTK::logic_error("'selectedBy' requires a 'value' member.");
+        }
+        j.at("register").get_to(s.regPath);
+        j.at("value").get_to(s.value);
       }
 
-      std::map<std::string, Channel> channels;
-
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ChannelTab, numberOfElements, pitch, channels)
+      // NOLINTNEXTLINE(readability-identifier-naming)
+      friend void to_json(nlohmann::json& j, const SelectedBy& s) {
+        j = nlohmann::json{{"register", s.regPath}, {"value", s.value}};
+      }
     };
-    std::vector<ChannelTab> channelTabs;
+
+    struct Channel {
+      std::string engineeringUnit;
+      std::string description;
+      size_t offset;
+      size_t bytesPerElement{4};
+      Representation representation{};
+      std::optional<SelectedBy> selectedBy;
+
+      void fill(NumericAddressedRegisterInfo& info) const {
+        representation.fill(info, offset, bytesPerElement);
+        if(selectedBy) {
+          RegisterPath selReg(selectedBy.value().regPath);
+          selReg.setAltSeparator(".");
+          info.channels.back().selectedBy.emplace(selReg, selectedBy->value);
+        }
+      }
+
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+          Channel, engineeringUnit, description, offset, bytesPerElement, representation, selectedBy)
+    };
+
+    // The channels, sorted by byte offset so that per-channel information (and thus the channel index of a
+    // 2D accessor) follows the natural memory order, independent of the lexically sorted map key. Returns the
+    // channel names together with the pointers so both the plain fill and the slice creation can use it.
+    [[nodiscard]] std::vector<std::pair<std::string, const Channel*>> channelsInOffsetOrder() const {
+      std::vector<std::pair<std::string, const Channel*>> result;
+      result.reserve(channels.size());
+      for(const auto& [channelName, channel] : channels) {
+        result.emplace_back(channelName, &channel);
+      }
+      std::ranges::stable_sort(
+          result, [](const auto& a, const auto& b) { return a.second->offset < b.second->offset; });
+      return result;
+    }
+
+    size_t pitch{0}; ///< byte pitch between two samples of the same channel in the 2D register
+    std::map<std::string, Channel> channels;
 
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
         bool addressSetByParent) const {
@@ -253,28 +280,25 @@ namespace ChimeraTK::detail {
       if(representation.type != RepresentationType::VOID) {
         if(address.type != AddressType::addressTypeNotSet) {
           address.fill(info);
-          if(channelTabs.empty()) {
+          if(channels.empty()) {
             auto bPerElem = (bytesPerElement != 0 ? bytesPerElement : 4); // create default if not set
             info.elementPitchBits = bPerElem * 8;
             info.nElements = numberOfElements;
             representation.fill(info, 0, bPerElem);
           }
           else {
-            if(channelTabs[0].channels.empty()) {
-              throw ChimeraTK::logic_error("Empty channel definition in register " + info.pathName);
-            }
-            info.elementPitchBits = channelTabs[0].pitch * 8;
-            info.nElements = channelTabs[0].numberOfElements;
-            // Iterate the channels sorted by byte offset (see ChannelTab::channelsInOffsetOrder) so the per-channel
-            // information (and hence the channel index of the 2D accessor) stays in the natural memory order.
-            for(const auto& [channelName, channel] : channelTabs[0].channelsInOffsetOrder()) {
+            info.elementPitchBits = pitch * 8;
+            info.nElements = numberOfElements;
+            // Iterate the channels sorted by byte offset (see channelsInOffsetOrder) so the per-channel information
+            // (and hence the channel index of the 2D accessor) stays in the natural memory order.
+            for(const auto& [channelName, channel] : channelsInOffsetOrder()) {
               (void)channelName; // the channel name is the map key; the channel data carries its own offset
               channel->fill(info);
             }
           }
         }
         else if(addressSetByParent) {
-          if(channelTabs.empty()) {
+          if(channels.empty()) {
             if(representation.type == RepresentationType::representationNotSet) {
               throw ChimeraTK::logic_error("Representation not set for register " + parentName / name +
                   " which inherited the address from parent!");
@@ -283,7 +307,7 @@ namespace ChimeraTK::detail {
             representation.fill(info, 0, (bytesPerElement != 0 ? bytesPerElement : info.elementPitchBits / 8));
           }
           else {
-            throw ChimeraTK::logic_error("Address must be set for entries in channel tabs: register " + info.pathName);
+            throw ChimeraTK::logic_error("Address must be set for entries with channels: register " + info.pathName);
           }
         }
         else {
@@ -333,12 +357,12 @@ namespace ChimeraTK::detail {
         fill(my, name, parentName, addressSetByParent);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
-        if(!channelTabs.empty()) {
-          // create one register entry per named channel of the first channel tab: a read-only 1D slice of the
+        if(!channels.empty()) {
+          // create one register entry per named channel of the 2D register: a read-only 1D slice of the
           // 2D register. The channel's byte offset is folded into the address (so bitOffset == 0), and the full
           // element pitch is kept as the stride between samples. Iterate sorted by byte offset (see
-          // ChannelTab::channelsInOffsetOrder) so the created slice registers follow the natural memory order.
-          for(const auto& [channelName, channel] : channelTabs[0].channelsInOffsetOrder()) {
+          // channelsInOffsetOrder) so the created slice registers follow the natural memory order.
+          for(const auto& [channelName, channel] : channelsInOffsetOrder()) {
             RegisterPath slicePath = my.pathName / channelName;
             slicePath.setAltSeparator(".");
             // skip a channel whose slice path would collide with an already created slice (e.g. a
@@ -347,10 +371,17 @@ namespace ChimeraTK::detail {
               continue;
             }
             const auto& rep = channel->representation;
+
+            std::optional<NumericAddressedRegisterInfo::SelectedBy> selectedBy = std::nullopt;
+            if(channel->selectedBy) {
+              auto selReg = RegisterPath(channel->selectedBy->regPath);
+              selReg.setAltSeparator(".");
+              selectedBy.emplace(selReg, channel->selectedBy->value);
+            }
             NumericAddressedRegisterInfo::ChannelInfo ci{rep.bitShift, // bitOffset within the channel element
                 NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
                 rep.type != RepresentationType::IEEE754 ? rep.isSigned : true,
-                DataType("int" + std::to_string(channel->bytesPerElement * 8))};
+                DataType("int" + std::to_string(channel->bytesPerElement * 8)), selectedBy};
             // A channel slice of a non-interrupt 2D register is read-only: writing to a single channel of a 2D
             // register would require a read-modify-write cycle across the channels, which is deliberately not
             // supported. A slice of an interrupt-driven 2D register additionally advertises wait_for_new_data,
@@ -424,7 +455,7 @@ namespace ChimeraTK::detail {
     }
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonAddressSpaceEntry, engineeringUnit, description, access,
-        triggeredByInterrupt, numberOfElements, bytesPerElement, address, representation, children, channelTabs,
+        triggeredByInterrupt, numberOfElements, bytesPerElement, pitch, address, representation, children, channels,
         doubleBuffering)
   };
 
