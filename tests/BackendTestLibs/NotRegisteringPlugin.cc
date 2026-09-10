@@ -13,6 +13,6 @@ struct NotRegisteringPlugin : public DummyBackend {
 
   static boost::shared_ptr<DeviceBackend> createInstance(
       std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/) {
-    return returnInstance<NotRegisteringPlugin>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
+    return returnInstance<NotRegisteringPlugin>(instance, parameters.front());
   }
 };

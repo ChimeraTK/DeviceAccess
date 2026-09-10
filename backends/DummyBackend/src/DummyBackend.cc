@@ -4,7 +4,6 @@
 #include "BackendFactory.h"
 #include "DummyRegisterAccessor.h"
 #include "Exception.h"
-#include "parserUtilities.h"
 
 #include <boost/lambda/lambda.hpp>
 
@@ -165,20 +164,9 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("No map file name given.");
     }
 
-    // when the factory is used to create the dummy device, mapfile path in the
-    // dmap file is relative to the dmap file location. Converting the relative
-    // mapFile path to an absolute path avoids issues when the dmap file is not
-    // in the working directory of the application.
-    return returnInstance<DummyBackend>(
-        address, convertPathRelativeToDmapToAbs(parameters["map"]), parameters["DataConsistencyKeys"]);
-  }
-
-  std::string DummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
-    std::string dmapDir = parserUtilities::extractDirectory(BackendFactory::getInstance().getDMapFilePath());
-    std::string absPathToDmapDir = parserUtilities::convertToAbsolutePath(dmapDir);
-    // the map file is relative to the dmap file location. Convert the relative
-    // mapfilename to an absolute path
-    return parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
+    // the relative map file path is resolved (relative to the DMAP directory, then to the cwd) in the
+    // NumericAddressedBackend base class
+    return returnInstance<DummyBackend>(address, parameters["map"], parameters["DataConsistencyKeys"]);
   }
 
   DummyRegisterRawAccessor DummyBackend::getRawAccessor(const std::string& module, const std::string& register_name) {

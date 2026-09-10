@@ -78,7 +78,7 @@ class SubArrayDecoratorTestBackend : public DummyBackend {
   }
 
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
-    return boost::make_shared<SubArrayDecoratorTestBackend>(convertPathRelativeToDmapToAbs(parameters.at("map")));
+    return boost::make_shared<SubArrayDecoratorTestBackend>(parameters.at("map"));
   }
 
  private:

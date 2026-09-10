@@ -157,8 +157,6 @@ namespace ChimeraTK {
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
-    static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
-
     /****************** definitions for across-instance triggering ********/
 
     // We are using the process id as an id of the semaphore which is to be triggered for the interrupt dispatcher

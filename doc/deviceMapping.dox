@@ -21,10 +21,28 @@ TIMER (doocs:XFEL.RF/TIMER/LLA6M)
 
 The alias names can be chosen freely by the developer.
 
+\section Map file search (NumericAddressedBackend-based backends)
+
+The \c map parameter of a ChimeraTK device descriptor gives the name of a map
+file. The backend resolves this name to a single absolute path that is used both
+for loading the map and for any derived naming (e.g. the shared memory segment
+name of the shared memory dummy). A relative map file name is resolved as
+follows:
+
+\li If a dmap file is set (e.g. via ChimeraTK::BackendFactory::setDMapFilePath()
+or when the device was opened through a dmap file), the map file is first
+searched for in the directory containing the dmap file.
+\li If it is not found there (or if no dmap file is set), the map file is
+searched for relative to the current working directory.
+\li An absolute map file name is used directly.
+
+The resolved absolute path is stored internally and made available to derived
+backends as NumericAddressedBackend::_resolvedMapFileName.
+
 Please note that for compatibility reasons an old format with three columns is still supported. The third column was
-specifying the map file in combination with either specifying directly the path to the device node for PCI express or 
+specifying the map file in combination with either specifying directly the path to the device node for PCI express or
 with a "standard device model" URI. Since both approaches do not really fit the structure of the DeviceAccess library
-any more, they have been superseeded by the ChimeraTK device descriptor. If you encounter a dmap file containing the 
+any more, they have been superseeded by the ChimeraTK device descriptor. If you encounter a dmap file containing the
 old format, consider updating it to the new format. Support for the old formats will eventually be deprecated and
 removed.
 

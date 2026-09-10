@@ -154,6 +154,12 @@ namespace ChimeraTK {
     std::unique_ptr<NumericAddressedRegisterCatalogue> _registerMapPointer;
     NumericAddressedRegisterCatalogue& _registerMap;
 
+    /// The resolved absolute path of the map file used for parsing and for any
+    /// derived naming (e.g. the shared dummy SHM segment name). This is the
+    /// single path the backend really uses; it can be read by derived backends
+    /// once the base class constructor has run.
+    std::string _resolvedMapFileName;
+
     /// metadata catalogue
     MetadataCatalogue _metadataCatalogue;
 
@@ -176,6 +182,13 @@ namespace ChimeraTK {
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getSyncRegisterAccessor(
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
+    /** Resolve the given map file name to a single absolute path used for map
+     *  parsing and derived naming. See the documentation of the map file search
+     *  rule for all details. The returned path always exists (or an exception is
+     *  thrown).
+     */
+    static std::string resolveMapFileName(const std::string& mapFileName);
 
     /** We have to remember this in case a new async::Domain is created after calling ActivateAsyncRead. */
     std::atomic_bool _asyncIsActive{false};
