@@ -257,34 +257,30 @@ This will create a push-type register (supporting ChimeraTK::AccessMode::wait_fo
 
 \subsection jmap_2d 2D multiplexed registers
 
-A register holding several channels of time-multiplexed samples is declared by giving a \c channelTabs entry:
+A register holding several channels of time-multiplexed samples is declared by giving a flat \c channels entry together with \c numberOfElements and \c pitch:
 \li \c numberOfElements - the number of samples (time slots) per channel.
 \li \c pitch - the number of bytes between two samples of the same channel.
-\li \c channels - the channels of this tab, given as a dictionary keyed by channel \c name. Each channel value has a byte \c offset relative to the register base address, a \c bytesPerElement and an optional \c representation. (Channel order in memory follows the \c offset, independent of the order of the dictionary keys.)
+\li \c channels - the channels, given as a dictionary keyed by channel \c name. Each channel value has a byte \c offset relative to the register base address, a \c bytesPerElement and an optional \c representation. (Channel order in memory follows the \c offset, independent of the order of the dictionary keys.) An optional per-channel \c selectedBy selects a muxed channel (see \ref jmap_channel_selection).
 
 Channels can have arbitrary names; single-word channels are simply indexed \c "0", \c "1", ... Example:
 \verbatim
 "addressSpace": {
   "DMA": {
     "address": { "type": "DMA", "offset": "0x0" },
-    "channelTabs": [
-      {
-        "numberOfElements": 16384,
-        "pitch": 32,
-        "channels": {
-          "0": {
-            "offset": 0,
-            "bytesPerElement": 2,
-            "representation": { "type": "fixedPoint", "width": 16 }
-          },
-          "1": {
-            "offset": 2,
-            "bytesPerElement": 2,
-            "representation": { "type": "fixedPoint", "width": 12, "fractionalBits": 12 }
-          }
-        }
+    "numberOfElements": 16384,
+    "pitch": 32,
+    "channels": {
+      "0": {
+        "offset": 0,
+        "bytesPerElement": 2,
+        "representation": { "type": "fixedPoint", "width": 16 }
+      },
+      "1": {
+        "offset": 2,
+        "bytesPerElement": 2,
+        "representation": { "type": "fixedPoint", "width": 12, "fractionalBits": 12 }
       }
-    ]
+    }
   }
 }
 \endverbatim
@@ -294,9 +290,41 @@ Here \c DMA is a 2D register with two channels, each holding 16384 samples, with
 
 For every channel, a read-only one-dimensional register slice is created automatically. The slice is named after the channel, e.g. \c DMA/0, \c DMA/1 in the example above. Each slice exposes the samples of that single channel as a one-dimensional array, reading them out of the 2D register with the correct stride. The channel's byte \c offset is folded into the slice address, so it can be addressed independently of the parent 2D register. Writing is deliberately not supported for these slices, since writing a single channel of a 2D register would require a read-modify-write cycle across the channels. If multiple slice accessors for the same 2D register shall be read simultaneously (without ChimeraTK::AccessMode::wait_for_new_data), it is highly recommended to add them all to the same ChimeraTK::TransferGroup to avoid transferring the full 2D data multiple times unnecessarily from the device.
 
-\subsubsection jmap_channel_tabs Channel tabs
+\subsubsection jmap_channel_selection Muxed channels (selectedBy)
 
-The example above uses a single channel tab, which is the common case. For multi-tab DAQ setups an additional \c tabSelectRegister can be used to switch between the tabs, but the support for multiple tabs is not yet implemented.
+The example above is the common case with a single, unconditional channel layout. Some DAQ setups are muxed: hardware switches the register between several mutually exclusive channel layouts depending on a selector register. In that case all channel alternatives are listed in the same flat \c channels dictionary, and each channel carries a \c selectedBy object naming the selector \c register and the \c value for which that channel is active. A channel is only part of the register while the selector register equals its \c selectedBy value.
+
+Example with two muxed layouts selected by \c DAQ.MUX_SEL:
+\verbatim
+"addressSpace": {
+  "FD": {
+    "address": { "type": "DMA", "offset": "0x81000" },
+    "numberOfElements": 16384,
+    "pitch": 64,
+    "channels": {
+      "AmplitudeCh0": {
+        "selectedBy": { "register": "DAQ.MUX_SEL", "value": 0 },
+        "bytesPerElement": 2,
+        "offset": 0,
+        "representation": { "type": "fixedPoint", "width": 16 }
+      },
+      "RawCh0": {
+        "selectedBy": { "register": "DAQ.MUX_SEL", "value": 1 },
+        "bytesPerElement": 4,
+        "offset": 0,
+        "representation": { "type": "fixedPoint", "width": 32 }
+      },
+      "RawCh1": {
+        "selectedBy": { "register": "DAQ.MUX_SEL", "value": 1 },
+        "bytesPerElement": 4,
+        "offset": 4,
+        "representation": { "type": "fixedPoint", "width": 32 }
+      }
+    }
+  }
+}
+\endverbatim
+The \c DAQ.MUX_SEL dot-separated path is normalised to \c /DAQ/MUX_SEL. Channel slices (see \ref jmap_channel_slices) are generated for every channel in the dictionary, regardless of the selector value.
 
 \subsection jmap_double_buffering Double buffering
 
@@ -318,24 +346,20 @@ In addition to the main register, two read-only registers named \c NAME/BUF0 and
       "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
       "index": 0
     },
-    "channelTabs": [
-      {
-        "numberOfElements": 16384,
-        "pitch": 64,
-        "channels": {
-          "errorI": {
-            "bytesPerElement": 2,
-            "offset": 0,
-            "representation": {
-              "type": "fixedPoint",
-              "width": 16,
-              "fractionalBits": -2,
-              "isSigned": true
-            }
-          }
+    "numberOfElements": 16384,
+    "pitch": 64,
+    "channels": {
+      "errorI": {
+        "bytesPerElement": 2,
+        "offset": 0,
+        "representation": {
+          "type": "fixedPoint",
+          "width": 16,
+          "fractionalBits": -2,
+          "isSigned": true
         }
       }
-    ]
+    }
   }
 }
 \endverbatim
