@@ -5,14 +5,41 @@
 
 #define BOOST_TEST_MODULE JsonMapFileParser
 
-#include "Device.h"
 #include "Exception.h"
 #include "MapFileParser.h"
 
 using namespace ChimeraTK;
 
+#include <nlohmann/json.hpp>
+
+#include <boost/pointer_cast.hpp>
 #include <boost/test/unit_test.hpp>
+
+#include <fstream>
+#include <string>
+#include <vector>
 using namespace boost::unit_test_framework;
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
+// Helper used by the selectedBy fault tests below: load simpleJsonFile.jmap as the base map, overwrite the
+// selectedBy of the existing COLLISION/FD/Sel0 channel with the supplied (possibly malformed) one, write the result
+// to <outFile>, then parse it. This replaces the standalone selectedBy*.jmap fixtures: the fault is injected into an
+// existing entry of the full simpleJsonFile map (via nlohmann-json) and the produced file is what gets parsed, so no
+// separate fault-only map files need to be kept.
+static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue>
+    parseInjectedSelectedByFault(const std::string& outFile, const nlohmann::json& selectedBy) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+
+  // Overwrite the selectedBy of an existing channel (COLLISION/FD/Sel0) already carrying one, so the fault is
+  // injected into an existing entry rather than introducing a new register.
+  map["addressSpace"]["COLLISION"]["children"]["FD"]["channels"]["Sel0"]["selectedBy"] = selectedBy;
+
+  std::ofstream(outFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(outFile);
+}
 
 BOOST_AUTO_TEST_SUITE(JsonMapFileParserTestSuite)
 
@@ -100,6 +127,15 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
     BOOST_TEST(reg.isBitRange == false);
+  }
+  {
+    BOOST_TEST(regs.hasRegister("/SCALAR"));
+    auto reg = regs.getBackendRegister("/SCALAR");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/MUX");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
   }
   {
     auto reg = regs.getBackendRegister("APP.STATUS.ProbeLimiter");
@@ -255,6 +291,10 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
 
     BOOST_REQUIRE(reg.channels.size() == 5);
 
+    for(const auto& channel : reg.channels) {
+      BOOST_TEST(!channel.selectedBy);
+    }
+
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 16);
@@ -295,6 +335,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
     BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
+    // A slice of a non-muxed channel carries no selector
+    BOOST_TEST(!reg.channels[0].selectedBy);
     BOOST_TEST(reg.doubleBuffer.has_value());
     BOOST_TEST(reg.doubleBuffer->address == 0x40200);
     BOOST_TEST(reg.doubleBuffer->enableRegisterPath == "/DAQ.DOUBLE_BUF.ENA");
@@ -374,6 +416,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
+    // A slice of a non-muxed SIMPLE2D channel carries no selector
+    BOOST_TEST(!reg.channels[0].selectedBy);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.FD");
@@ -385,19 +429,43 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
     BOOST_TEST(reg.interruptId == std::vector<size_t>({0}), boost::test_tools::per_element());
 
-    BOOST_REQUIRE(reg.channels.size() == 2);
+    BOOST_REQUIRE(reg.channels.size() == 4);
 
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
 
-    BOOST_TEST(reg.channels[1].bitOffset == 2 * 8);
+    BOOST_TEST(reg.channels[1].bitOffset == 0);
     BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
-    BOOST_TEST(reg.channels[1].width == 16);
-    BOOST_TEST(reg.channels[1].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[1].width == 32);
+    BOOST_TEST(reg.channels[1].nFractionalBits == 0);
     BOOST_TEST(reg.channels[1].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[1].selectedBy);
+    BOOST_TEST(reg.channels[1].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+
+    BOOST_TEST(reg.channels[2].bitOffset == 2 * 8);
+    BOOST_CHECK(reg.channels[2].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[2].width == 16);
+    BOOST_TEST(reg.channels[2].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[2].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[2].selectedBy);
+    BOOST_TEST(reg.channels[2].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[2].selectedBy->val == 0);
+
+    BOOST_TEST(reg.channels[3].bitOffset == 4 * 8);
+    BOOST_CHECK(reg.channels[3].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[3].width == 32);
+    BOOST_TEST(reg.channels[3].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[3].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[3].selectedBy);
+    BOOST_TEST(reg.channels[3].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[3].selectedBy->val == 1);
     BOOST_TEST(reg.isBitRange == false);
   }
   {
@@ -438,19 +506,43 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.bar == 13);
     BOOST_TEST(reg.address == 0x81000);
 
-    BOOST_REQUIRE(reg.channels.size() == 2);
+    BOOST_REQUIRE(reg.channels.size() == 4);
 
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
 
-    BOOST_TEST(reg.channels[1].bitOffset == 2 * 8);
+    BOOST_TEST(reg.channels[1].bitOffset == 0);
     BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
-    BOOST_TEST(reg.channels[1].width == 16);
-    BOOST_TEST(reg.channels[1].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[1].width == 32);
+    BOOST_TEST(reg.channels[1].nFractionalBits == 0);
     BOOST_TEST(reg.channels[1].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[1].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+
+    BOOST_TEST(reg.channels[2].bitOffset == 2 * 8);
+    BOOST_CHECK(reg.channels[2].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[2].width == 16);
+    BOOST_TEST(reg.channels[2].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[2].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[2].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[2].selectedBy->val == 0);
+
+    BOOST_TEST(reg.channels[3].bitOffset == 4 * 8);
+    BOOST_CHECK(reg.channels[3].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[3].width == 32);
+    BOOST_TEST(reg.channels[3].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[3].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[3].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[3].selectedBy->val == 1);
     BOOST_TEST(reg.isBitRange == false);
   }
   {
@@ -460,19 +552,43 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.elementPitchBits == 64 * 8);
     BOOST_TEST(reg.bar == 13);
 
-    BOOST_REQUIRE(reg.channels.size() == 2);
+    BOOST_REQUIRE(reg.channels.size() == 4);
 
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
 
-    BOOST_TEST(reg.channels[1].bitOffset == 2 * 8);
+    BOOST_TEST(reg.channels[1].bitOffset == 0);
     BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
-    BOOST_TEST(reg.channels[1].width == 16);
-    BOOST_TEST(reg.channels[1].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[1].width == 32);
+    BOOST_TEST(reg.channels[1].nFractionalBits == 0);
     BOOST_TEST(reg.channels[1].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[1].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+
+    BOOST_TEST(reg.channels[2].bitOffset == 2 * 8);
+    BOOST_CHECK(reg.channels[2].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[2].width == 16);
+    BOOST_TEST(reg.channels[2].nFractionalBits == -2);
+    BOOST_TEST(reg.channels[2].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[2].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[2].selectedBy->val == 0);
+
+    BOOST_TEST(reg.channels[3].bitOffset == 4 * 8);
+    BOOST_CHECK(reg.channels[3].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_TEST(reg.channels[3].width == 32);
+    BOOST_TEST(reg.channels[3].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[3].signedFlag == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[3].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[3].selectedBy->val == 1);
     BOOST_TEST(reg.isBitRange == false);
   }
   {
@@ -577,17 +693,84 @@ BOOST_AUTO_TEST_CASE(TestDoubleBufferDiffBarThrows) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(TestInterruptIntegration) {
-  ChimeraTK::Device dev("(dummy?map=simpleJsonFile.jmap)");
+// ChannelInfo::operator== (and !=) must include the selectedByRegister/selectedByValue members. Two channel infos
+// that differ only in their selector must compare unequal.
+BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
+  NumericAddressedRegisterInfo::ChannelInfo a;
+  NumericAddressedRegisterInfo::ChannelInfo b;
 
-  dev.open();
+  // NOTE: ChannelInfo is an aggregate whose scalar members carry no default member initializers, so they must be set
+  // explicitly before comparing (default initialization leaves them indeterminate).
+  auto initChannelInfo = [](NumericAddressedRegisterInfo::ChannelInfo& c) {
+    c.bitOffset = 0;
+    c.dataType = NumericAddressedRegisterInfo::Type::FIXED_POINT;
+    c.width = 16;
+    c.nFractionalBits = 0;
+    c.signedFlag = true;
+    c.rawType = ChimeraTK::DataType(ChimeraTK::DataType::int16);
+    c.selectedBy = std::nullopt;
+  };
+  initChannelInfo(a);
+  initChannelInfo(b);
 
-  auto int0 = dev.getVoidRegisterAccessor("/BSP/VOID_INTERRUPT_0", {ChimeraTK::AccessMode::wait_for_new_data});
-  auto int301 = dev.getVoidRegisterAccessor("/BSP/VOID_INTERRUPT_3_0_1", {ChimeraTK::AccessMode::wait_for_new_data});
-  dev.activateAsyncRead();
-  BOOST_TEST(int0.readNonBlocking() == true);
-  BOOST_TEST(int301.readNonBlocking() == true);
+  // Two identically initialized infos are equal (both unconditional: empty register, default value).
+  BOOST_CHECK(a == b);
+  BOOST_CHECK(!(a != b));
+
+  BOOST_REQUIRE(!a.selectedBy);
+  BOOST_REQUIRE(!b.selectedBy);
+
+  // Differing only in selectedByRegister -> unequal.
+  b.selectedBy.emplace(RegisterPath("/DAQ/MUX_SEL"), 0);
+  BOOST_CHECK(a != b);
+  BOOST_CHECK(!(a == b));
+
+  // Same register again -> equal.
+  a.selectedBy.emplace(RegisterPath("/DAQ/MUX_SEL"), 0);
+  BOOST_CHECK(a == b);
+
+  // Differing only in selectedByValue -> unequal.
+  b.selectedBy->val = 1;
+  BOOST_CHECK(a != b);
+  BOOST_CHECK(!(a == b));
 }
+
+/**********************************************************************************************************************/
+
+// selectedBy with only 'register', no 'value'. Desired semantics (documented): both fields are required, so the
+// parser must reject the map with std::logic_error (a missing 'value' must not silently default). NOTE: the current
+// lax deserializer does not yet enforce this; this test documents the desired behaviour.
+BOOST_AUTO_TEST_CASE(TestSelectedByMissingValue) {
+  nlohmann::json sel{{"register", "COLLISION.MUX"}}; // missing 'value'
+  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingValue.jmap", sel), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// selectedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
+// because both fields are required. NOTE: expected std::logic_error, not guaranteed by the current lax deserializer.
+BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
+  nlohmann::json sel{{"value", 0}}; // missing 'register'
+  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingRegister.jmap", sel), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
+// register's single channel must carry the selector.
+BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+}
+
+/**********************************************************************************************************************/
+
+// selectedBy with a non-numeric 'value' (e.g. a string) must be rejected with std::logic_error. NOTE: currently a
+// nlohmann::json type error surfaces instead; this test documents the desired behaviour.
+BOOST_AUTO_TEST_CASE(TestSelectedByBadValue) {
+  nlohmann::json sel{{"register", "COLLISION.MUX"}, {"value", "not-a-number"}};
+  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByBadValue.jmap", sel), ChimeraTK::logic_error);
+}
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

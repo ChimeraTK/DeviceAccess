@@ -27,7 +27,8 @@ namespace ChimeraTK {
     doubleBuffer(std::move(doubleBufferInfo_)), isBitRange(isBitRange_),
     channels({{0, dataType_, width_, nFractionalBits_, signedFlag_,
         nElements_ > 0 ? ChimeraTK::DataType("int" + std::to_string(elementPitchBits)) :
-                         ChimeraTK::DataType(ChimeraTK::DataType::Void)}}) {
+                         ChimeraTK::DataType(ChimeraTK::DataType::Void),
+        std::nullopt}}) {
     assert(channels.size() == 1);
 
     // make sure . and / is treated as similar as possible
@@ -180,7 +181,10 @@ namespace ChimeraTK {
 
   bool NumericAddressedRegisterInfo::ChannelInfo::operator==(const ChannelInfo& rhs) const {
     return bitOffset == rhs.bitOffset && dataType == rhs.dataType && width == rhs.width &&
-        nFractionalBits == rhs.nFractionalBits && signedFlag == rhs.signedFlag && rawType == rhs.rawType;
+        nFractionalBits == rhs.nFractionalBits && signedFlag == rhs.signedFlag && rawType == rhs.rawType &&
+        ((!selectedBy && !rhs.selectedBy) ||
+            (selectedBy && rhs.selectedBy &&
+                (selectedBy->val == rhs.selectedBy->val && selectedBy->regPath == rhs.selectedBy->regPath)));
   }
 
   /********************************************************************************************************************/
@@ -211,8 +215,8 @@ namespace ChimeraTK {
       }
       auto bar = std::stoi(components[1]);
       // Scan the second entry, starting with the signed/unsigned indicator and the bit width
-      // We use the fact that stoi stops at the first non-numeric character, so it will stop at a * if it comes after
-      // the u/s entry, or the other way around.
+      // We use the fact that stoi stops at the first non-numeric character, so it will stop at a * if it comes
+      // after the u/s entry, or the other way around.
       bool signedFlag = true;
       size_t bitWidth = 32;
       size_t pos = components[2].find_first_of("uU");

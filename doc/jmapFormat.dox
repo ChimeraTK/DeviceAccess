@@ -298,6 +298,31 @@ For every channel, a read-only one-dimensional register slice is created automat
 
 The example above uses a single channel tab, which is the common case. For multi-tab DAQ setups an additional \c tabSelectRegister can be used to switch between the tabs, but the support for multiple tabs is not yet implemented.
 
+\par Single registers (scalar/1D)
+
+The \c selectedBy feature works for single (scalar or 1D, non-2D) registers as well. In that case the \c selectedBy object is given on the register itself rather than per channel, and makes the whole register conditional: the register is only active while the selector register equals the given \c value. Example:
+\verbatim
+"addressSpace": {
+  "SINGLE_MUXED": {
+    "numberOfElements": 1,
+    "selectedBy": { "register": "DAQ.MUX_SEL", "value": 0 },
+    "address": { "channel": 0, "offset": 1246 },
+    "bytesPerElement": 4,
+    "representation": { "type": "fixedPoint", "width": 32 }
+  }
+}
+\endverbatim
+Specifying \c selectedBy on a register that also has per-channel \c channels (a 2D register) is rejected, since for 2D registers the selector is given per channel (see \ref jmap_channel_selection).
+
+For a hardware multiplexer, several mutually exclusive scalar alternatives can be declared as separate registers that share the same \c address and differ only in their \c selectedBy \c value. Only one of them is active at a time, selected by the selector register:
+\verbatim
+"addressSpace": {
+  "SINGLE_MUXED":     { "numberOfElements": 1, "selectedBy": { "register": "DAQ.MUX_SEL", "value": 0 }, "address": { "channel": 0, "offset": 1246 }, "bytesPerElement": 4, "representation": { "type": "fixedPoint", "width": 32 } },
+  "SINGLE_MUXED_ALT": { "numberOfElements": 1, "selectedBy": { "register": "DAQ.MUX_SEL", "value": 1 }, "address": { "channel": 0, "offset": 1246 }, "bytesPerElement": 4, "representation": { "type": "fixedPoint", "width": 32 } }
+}
+\endverbatim
+Both alternatives map to the same address (\c 1246); they differ only in the selector value, exactly like muxed channels inside a 2D register.
+
 \subsection jmap_double_buffering Double buffering
 
 A register that is fed by double-buffered DMA hardware is marked with a \c doubleBuffering object. It contains:
