@@ -6,11 +6,9 @@
 #include "BackendFactory.h"
 #include "Exception.h"
 #include "MapFileParser.h"
-#include "parserUtilities.h"
 #include "ProcessManagement.h"
 #include "Utilities.h"
 
-#include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
 
 #include <algorithm>
@@ -22,16 +20,16 @@ namespace ChimeraTK {
 
   SharedDummyBackend::SharedDummyBackend(
       size_t instanceIdHash, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
-  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName),
+  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(_resolvedMapFileName),
     _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()) {
   retry:
     try {
-      sharedMemoryManager = std::make_unique<SharedMemoryManager>(*this, instanceIdHash, mapFileName);
+      sharedMemoryManager = std::make_unique<SharedMemoryManager>(*this, instanceIdHash, _resolvedMapFileName);
     }
     catch(boost::interprocess::lock_exception&) {
       std::cerr << "SharedDummyBackend: boost::interprocess error, clearing shared memory segment." << std::endl;
       // remove shared memory and mutex
-      std::string name = Utilities::createShmName(instanceIdHash, mapFileName, getUserName());
+      std::string name = Utilities::createShmName(instanceIdHash, _resolvedMapFileName, getUserName());
       boost::interprocess::shared_memory_object::remove(name.c_str());
       boost::interprocess::named_mutex::remove(name.c_str());
       goto retry;
@@ -140,23 +138,9 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("No map file name given.");
     }
 
-    // when the factory is used to create the dummy device, mapfile path in the
-    // dmap file is relative to the dmap file location. Converting the relative
-    // mapFile path to an absolute path avoids issues when the dmap file is not
-    // in the working directory of the application.
-    return returnInstance<SharedDummyBackend>(
-        address, instanceIdHash, convertPathRelativeToDmapToAbs(mapFileName), parameters["DataConsistencyKeys"]);
-  }
-
-  std::string SharedDummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
-    std::string dmapDir = parserUtilities::extractDirectory(BackendFactory::getInstance().getDMapFilePath());
-    std::string absPathToDmapDir = parserUtilities::convertToAbsolutePath(dmapDir);
-    // the map file is relative to the dmap file location. Convert the relative
-    // mapfilename to an absolute path
-    boost::filesystem::path absPathToMapFile{parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName)};
-    // Possible ./, ../ elements are removed, as the path may be constructed
-    // differently in different client applications
-    return boost::filesystem::canonical(absPathToMapFile).string();
+    // the relative map file path is resolved (relative to the DMAP directory, then to the cwd) in the
+    // NumericAddressedBackend base class
+    return returnInstance<SharedDummyBackend>(address, instanceIdHash, mapFileName, parameters["DataConsistencyKeys"]);
   }
 
   VersionNumber SharedDummyBackend::triggerInterrupt(uint32_t interruptNumber) {

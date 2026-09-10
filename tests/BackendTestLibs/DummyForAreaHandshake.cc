@@ -12,9 +12,9 @@ using namespace ChimeraTK;
 struct DummyForAreaHandshakeBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
 
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
-    return returnInstance<DummyForAreaHandshakeBackend>(
-        parameters.at("map"), convertPathRelativeToDmapToAbs(parameters.at("map")));
+  static boost::shared_ptr<DeviceBackend> createInstance(
+      std::string address, std::map<std::string, std::string> parameters) {
+    return returnInstance<DummyForAreaHandshakeBackend>(address, parameters["map"]);
   }
 
   struct BackendRegisterer {

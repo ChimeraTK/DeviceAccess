@@ -12,7 +12,7 @@ struct AnotherWorkingBackend : public DummyBackend {
 
   static boost::shared_ptr<DeviceBackend> createInstance(
       std::string instance, std::map<std::string, std::string> parameters) {
-    return returnInstance<AnotherWorkingBackend>(instance, convertPathRelativeToDmapToAbs(parameters["map"]));
+    return returnInstance<AnotherWorkingBackend>(instance, parameters["map"]);
   }
 
   struct BackendRegisterer {

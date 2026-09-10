@@ -28,9 +28,9 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferingBackendUnifiedTestSuite)
 struct DummyForDoubleBuffering : public ExceptionDummy {
   using ExceptionDummy::ExceptionDummy;
 
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
-    return returnInstance<DummyForDoubleBuffering>(
-        parameters.at("map"), convertPathRelativeToDmapToAbs(parameters.at("map")));
+  static boost::shared_ptr<DeviceBackend> createInstance(
+      std::string address, std::map<std::string, std::string> parameters) {
+    return returnInstance<DummyForDoubleBuffering>(address, parameters["map"]);
   }
 
   struct BackendRegisterer {

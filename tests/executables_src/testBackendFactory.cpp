@@ -21,7 +21,7 @@ struct NewBackend : public DummyBackend {
 
   static boost::shared_ptr<DeviceBackend> createInstance(
       std::string instance, std::map<std::string, std::string> parameters) {
-    return returnInstance<NewBackend>(instance, convertPathRelativeToDmapToAbs(parameters["map"]));
+    return returnInstance<NewBackend>(instance, parameters["map"]);
   }
 
   // no registerer, we do it manually

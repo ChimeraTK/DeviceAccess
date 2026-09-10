@@ -13,7 +13,7 @@ struct WrongVersionBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
   static boost::shared_ptr<DeviceBackend> createInstance(
       std::string instance, std::map<std::string, std::string> parameters) {
-    return returnInstance<WrongVersionBackend>(instance, convertPathRelativeToDmapToAbs(parameters.at("map")));
+    return returnInstance<WrongVersionBackend>(instance, parameters.at("map"));
   }
 
   // LCOV_EXCL_STOP The registerern and the version functions have to be called

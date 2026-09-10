@@ -37,23 +37,15 @@ class CustomBackend : public ChimeraTK::DummyBackend {
      parameters
      * while the factory can always call a function with the same signature.
 
-     * In this example we have to convert the "map" parameter to an absolute
-     path
-     * (there is already a function for it in the DummyBackend parent class),
-     * and pass it on to the constructor, which has the same signature as
-     DummyBackend
-     * (see 'using' clause above).
+     * The relative "map" parameter is resolved (relative to the DMAP directory,
+     * then to the current working directory) in the NumericAddressedBackend
+     * base class, so we simply pass it on unchanged to the constructor, which
+     * has the same signature as DummyBackend (see 'using' clause above).
      *
      * This part will vary, depending on the requirements of the particular
      backend.
      */
-    std::string absolutePath = convertPathRelativeToDmapToAbs(parameters["map"]);
-
-    /*
-     * Now we have all parameters for the constructor. We just have to create a
-     * shared pointer of the CustomBackend with it.
-     */
-    return boost::make_shared<CustomBackend>(absolutePath);
+    return boost::make_shared<CustomBackend>(parameters["map"]);
   }
 
   /*

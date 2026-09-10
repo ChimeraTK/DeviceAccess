@@ -132,8 +132,6 @@ namespace ChimeraTK {
 
     friend class DummyRegisterRawAccessor;
     friend class SharedDummyBackend;
-
-    static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
   };
 
 } // namespace ChimeraTK

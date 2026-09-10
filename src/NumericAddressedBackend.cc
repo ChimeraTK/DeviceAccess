@@ -5,6 +5,7 @@
 
 #include "async/DomainImpl.h"
 #include "async/DomainsContainer.h"
+#include "BackendFactory.h"
 #include "BitRangeAccessorDecorator.h"
 #include "DoubleBufferAccessor.h"
 #include "Exception.h"
@@ -13,8 +14,11 @@
 #include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
+#include "parserUtilities.h"
 
 #include <nlohmann/json.hpp>
+
+#include <filesystem>
 
 using json = nlohmann::json;
 
@@ -28,8 +32,9 @@ namespace ChimeraTK {
   : _registerMapPointer(std::move(registerMapPointer)), _registerMap(*_registerMapPointer) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(!mapFileName.empty()) {
+      _resolvedMapFileName = resolveMapFileName(mapFileName);
       MapFileParser parser;
-      std::tie(_registerMap, _metadataCatalogue) = parser.parse(mapFileName);
+      std::tie(_registerMap, _metadataCatalogue) = parser.parse(_resolvedMapFileName);
     }
     if(!dataConsistencyKeyDescriptor.empty()) {
       // parse as JSON
@@ -44,6 +49,36 @@ namespace ChimeraTK {
             dataConsistencyKeyDescriptor, e.what()));
       }
     }
+  }
+
+  /********************************************************************************************************************/
+
+  std::string NumericAddressedBackend::resolveMapFileName(const std::string& mapFileName) {
+    // an absolute path is used directly, legacy DMAP entries are already delivered as absolute paths
+    if(mapFileName[0] == '/') {
+      if(std::filesystem::exists(mapFileName)) {
+        return std::filesystem::canonical(mapFileName).string();
+      }
+      throw ChimeraTK::logic_error("Cannot open map file \"" + mapFileName + "\": file not found.");
+    }
+
+    // relative path candidate: relative to the directory of the DMAP file (if a DMAP path is set)
+    std::string dmapFilePath = BackendFactory::getInstance().getDMapFilePath();
+    std::string dmapDir = parserUtilities::extractDirectory(dmapFilePath);
+    std::string candidateA = parserUtilities::concatenatePaths(dmapDir, mapFileName);
+    // a relative DMAP path is itself relative to the cwd; an unset DMAP path yields "./" as directory,
+    // so candidateA collapses to the cwd-relative path, which is the desired fallback anyway
+    if(std::filesystem::exists(candidateA)) {
+      return std::filesystem::canonical(candidateA).string();
+    }
+
+    // fallback candidate: relative to the current working directory
+    std::string candidateB = parserUtilities::convertToAbsolutePath(mapFileName);
+    if(std::filesystem::exists(candidateB)) {
+      return std::filesystem::canonical(candidateB).string();
+    }
+
+    throw ChimeraTK::logic_error("Cannot open map file \"" + mapFileName + "\": file not found.");
   }
 
   /********************************************************************************************************************/
