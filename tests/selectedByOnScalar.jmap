@@ -1,0 +1,33 @@
+{
+  "mapFormatVersion": "0.0.1",
+  "metadata": {},
+  "interruptHandler": {},
+  "addressSpace": {
+    "MUX": {
+      "numberOfElements": 1,
+      "address": {
+        "channel": 0,
+        "offset": 0
+      },
+      "representation": {
+        "type": "fixedPoint",
+        "width": 2
+      }
+    },
+    "SCALAR": {
+      "numberOfElements": 1,
+      "selectedBy": {
+        "register": "MUX",
+        "value": 0
+      },
+      "address": {
+        "channel": 0,
+        "offset": 4
+      },
+      "representation": {
+        "type": "fixedPoint",
+        "width": 32
+      }
+    }
+  }
+}
