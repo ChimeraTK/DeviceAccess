@@ -23,7 +23,6 @@ namespace ChimeraTK {
     _buffer0 = backend->getRegisterAccessor<UserType>(buf0Name, numberOfWords, wordOffsetInRegister, flags);
     _buffer1 = backend->getRegisterAccessor<UserType>(buf1Name, numberOfWords, wordOffsetInRegister, flags);
     size_t nChannels = _buffer0->getNumberOfChannels();
-    // size_t nSamples = _buffer0->getNumberOfSamples();
 
     this->buffer_2D.resize(nChannels);
     for(size_t i = 0; i < nChannels; ++i) {
@@ -32,7 +31,7 @@ namespace ChimeraTK {
 
     {
       std::lock_guard<detail::CountedRecursiveMutex> lg(*_mutex);
-      if(_mutex->useCount() == 1) {
+      if(_mutex->useCount() == 1 && _backend->isOpen()) {
         _enableDoubleBufferReg->accessChannel(0)[0] = 1;
         _enableDoubleBufferReg->write();
       }
