@@ -21,10 +21,12 @@ channel uses the existing double-buffer implementation.
   finishing buffer 1, each returning that buffer's channel data. Testing only
   one buffer would not catch an implementation that always delivers the same
   buffer.
-- Use the `TEST.DBL.1` slice (not the first channel, so a missing byte-offset
-  fold into the addresses would be caught).
+- Use a slice that is not the first channel, so a missing byte-offset fold into
+  the addresses would be caught.
 - Do not re-verify the double-buffer handshake itself (e.g. the enable register
   staying enabled); that is covered by the double-buffer accessor's own tests.
+- The existing polled double-buffer test must remain as it is. A new register
+  and a separate interrupt test are added; the existing test is not substituted.
 
 ## Specifications
 
@@ -32,18 +34,23 @@ Affected components: only `tests/muxedDataAccessor.jmap` and
 `tests/executables_src/testNumericAddressedBackendUnified.cpp`. No production
 code changes.
 
-- Make the 2D register `TEST.DBL` in `tests/muxedDataAccessor.jmap`
-  interrupt-triggered. The parser then gives its named-channel slices interrupt
-  access and the inherited double-buffer configuration, so the async path routes
-  the slice through the existing `DoubleBufferAccessor`.
-- Update the `DoubleBufferedNamedChannelSlice` struct so the existing
-  `testDoubleBufferedNamedChannelSlices` still passes with the new map state.
+- Add a new 2D register `TEST.DBLASYNC` to `tests/muxedDataAccessor.jmap`, a
+  copy of `TEST.DBL` (double-buffered, named channels) but with
+  `triggeredByInterrupt` set (new interrupt id). `TEST.DBL` itself stays
+  interrupt-free. The parser then gives the new register's named-channel slices
+  interrupt access and the inherited double-buffer configuration, so the async
+  path routes the slice through the existing `DoubleBufferAccessor`.
+- Add a new unified test case on the `/TEST/DBLASYNC.1` slice (not the first
+  channel), advertising `wait_for_new_data` and raising the test interrupt
+  after each firmware-side buffer finish. The existing
+  `testDoubleBufferedNamedChannelSlices` and the `DoubleBufferedNamedChannelSlice`
+  struct are unchanged.
 
 ## Test plan
 
-- A simple check on `TEST.DBL.1`: drive two buffer finishes with distinct
+- A simple check on `TEST.DBLASYNC.1`: drive two buffer finishes with distinct
   channel values (one finishing buffer 0, one finishing buffer 1), raise the
   interrupt after each, and assert the returned values equal the freshly
   finished buffer's channel data. No assertion on handshake internals.
 - Full sub-suite run (`ctest`) of the numeric addressed backend unified and
-  double-buffering tests to ensure the map change causes no regression.
+  double-buffering tests to ensure the untouched existing tests still pass.
