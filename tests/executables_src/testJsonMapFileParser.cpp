@@ -679,7 +679,7 @@ BOOST_AUTO_TEST_CASE(TestInterruptIntegration) {
 
 /**********************************************************************************************************************/
 
-// A9: ChannelInfo::operator== (and !=) must include the selectedByRegister/selectedByValue members. Two channel infos
+// ChannelInfo::operator== (and !=) must include the selectedByRegister/selectedByValue members. Two channel infos
 // that differ only in their selector must compare unequal.
 BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
   NumericAddressedRegisterInfo::ChannelInfo a;
@@ -723,56 +723,102 @@ BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
 
 /**********************************************************************************************************************/
 
-// B1: selectedBy with only 'register', no 'value'. Desired semantics (documented): both fields are required, so the
+// selectedBy with only 'register', no 'value'. Desired semantics (documented): both fields are required, so the
 // parser must reject the map with std::logic_error (a missing 'value' must not silently default). NOTE: the current
 // lax deserializer does not yet enforce this; this test documents the desired behaviour.
 BOOST_AUTO_TEST_CASE(TestSelectedByMissingValue) {
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse("selectedByOnlyRegister.jmap"), ChimeraTK::logic_error);
 }
 
-// B2: selectedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
+/**********************************************************************************************************************/
+
+// selectedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
 // because both fields are required. NOTE: expected std::logic_error, not guaranteed by the current lax deserializer.
 BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse("selectedByOnlyValue.jmap"), ChimeraTK::logic_error);
 }
 
-// B3: selectedBy on a non-2D (scalar) register must be ignored without crashing. The scalar channel stays
-// unconditional.
+/**********************************************************************************************************************/
+
+// selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
+// register's single channel must carry the selector.
 BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByOnScalar.jmap");
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
   BOOST_TEST(regs.hasRegister("/SCALAR"));
   auto reg = regs.getBackendRegister("/SCALAR");
   BOOST_TEST(reg.nElements == 1);
   BOOST_REQUIRE(reg.channels.size() == 1);
-  BOOST_TEST(!reg.channels[0].selectedBy);
+  BOOST_REQUIRE(reg.channels[0].selectedBy);
+  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/MUX");
+  BOOST_TEST(reg.channels[0].selectedBy->val == 0);
 }
 
-// B4: selectedBy with a non-numeric 'value' (e.g. a string) must be rejected with std::logic_error. NOTE: currently a
+/**********************************************************************************************************************/
+
+// selectedBy with a non-numeric 'value' (e.g. a string) must be rejected with std::logic_error. NOTE: currently a
 // nlohmann::json type error surfaces instead; this test documents the desired behaviour.
 BOOST_AUTO_TEST_CASE(TestSelectedByBadValue) {
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse("selectedByBadValue.jmap"), ChimeraTK::logic_error);
 }
 
-// B5: two channels with the same offset but different selectors, plus one unconditional channel at the same offset.
+/**********************************************************************************************************************/
+
+// Two channels with the same offset but different selectors, plus one unconditional channel at the same offset.
 // The parser must not crash; the ordering/dedup semantics are documented here (both conditional and unconditional
 // channels at the same offset constitute an ambiguous mux).
 BOOST_AUTO_TEST_CASE(TestSelectedByOffsetCollision) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByOffsetCollision.jmap");
-  auto reg = regs.getBackendRegister("/MQ/FD");
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
+  auto reg = regs.getBackendRegister("/COLLISION/FD");
   // All three channels survive (no crash, no merge), order preserved by map order then byte offset.
   BOOST_TEST(reg.channels.size() == 3);
   BOOST_REQUIRE(reg.channels[0].selectedBy);
-  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/MQ/MUX");
+  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/COLLISION/MUX");
   BOOST_TEST(reg.channels[0].selectedBy->val == 0);
   BOOST_REQUIRE(reg.channels[1].selectedBy);
-  BOOST_TEST(reg.channels[1].selectedBy->regPath == "/MQ/MUX");
+  BOOST_TEST(reg.channels[1].selectedBy->regPath == "/COLLISION/MUX");
   BOOST_TEST(reg.channels[1].selectedBy->val == 1);
   BOOST_TEST(!reg.channels[2].selectedBy);
 }
 
 /**********************************************************************************************************************/
 
-// C1 (integration): open a 2D accessor on a muxed register via the dummy backend. A dedicated, non-double-buffered
+// Alternative selectedBy channels that share a byte offset also share the same register address. In a well-formed
+// muxed register the alternatives (different selector values) must resolve to the same address + bit offset.
+BOOST_AUTO_TEST_CASE(TestSelectedByAlternativesShareAddress) {
+  // Channel-level within a 2D register: /COLLISION/FD has three channels at the same byte offset (Sel0/Sel1/Uncond).
+  {
+    auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
+    auto reg = regs.getBackendRegister("/COLLISION/FD");
+    // Unconditional and muxed alternatives all reside on the same register / address.
+    BOOST_REQUIRE(reg.channels.size() == 3);
+    BOOST_TEST(reg.address == 0x1000);
+    for(const auto& ch : reg.channels) {
+      BOOST_TEST(ch.bitOffset == 0);
+    }
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == reg.channels[1].bitOffset);
+  }
+  // Channel-level within the production /DAQ/FD: AmplitudeCh0(raw) and RawCh0 raw both at bitOffset 0 with different
+  // selectors, all within the same register address.
+  {
+    auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+    auto reg = regs.getBackendRegister("/DAQ/FD");
+    BOOST_REQUIRE(reg.channels.size() == 4);
+    BOOST_TEST(reg.address == 0x81000);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[1].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == reg.channels[1].bitOffset);
+    // Ambiguity guard: two alternatives at the same offset must not have the same selector value.
+    BOOST_TEST(reg.channels[0].selectedBy->val != reg.channels[1].selectedBy->val);
+  }
+}
+
+/**********************************************************************************************************************/
+
+// Open a 2D accessor on a muxed register via the dummy backend. A dedicated, non-double-buffered
 // fixture is used because the production DAQ/FD register is double-buffered; opening a 2D accessor on it would try to
 // open <slice>/BUF0 double-buffer copies that do not exist in the map.
 BOOST_AUTO_TEST_CASE(TestSelectedByTwoDAccessor) {
@@ -794,7 +840,9 @@ BOOST_AUTO_TEST_CASE(TestSelectedByTwoDAccessor) {
   dev.close();
 }
 
-// C2 (integration): open a muxed interrupt channel slice as a read-only 1D accessor. Address = base + channel
+/**********************************************************************************************************************/
+
+// Open a muxed interrupt channel slice as a read-only 1D accessor. Address = base + channel
 // offset; wait_for_new_data advertised (interrupt-driven). Uses the dedicated muxed+interrupt fixture (the
 // production DAQ/FD would require double-buffer copies that do not exist in the map).
 BOOST_AUTO_TEST_CASE(TestSelectedByMuxedSliceAccessor) {
@@ -816,7 +864,9 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMuxedSliceAccessor) {
   dev.close();
 }
 
-// C3 (integration): open a slice of the non-muxed SIMPLE2D register; must open without bad_optional_access and
+/**********************************************************************************************************************/
+
+// Open a slice of the non-muxed SIMPLE2D register; must open without bad_optional_access and
 // without wait_for_new_data.
 BOOST_AUTO_TEST_CASE(TestSelectedByNonMuxedSliceAccessor) {
   ChimeraTK::Device dev("(dummy?map=simpleJsonFile.jmap)");
@@ -835,7 +885,9 @@ BOOST_AUTO_TEST_CASE(TestSelectedByNonMuxedSliceAccessor) {
   dev.close();
 }
 
-// C4 (integration): selectedBy surfaced in the runtime catalogue of an opened device.
+/**********************************************************************************************************************/
+
+// selectedBy correctly turns up in the catalogue
 BOOST_AUTO_TEST_CASE(TestSelectedByRuntimeCatalogue) {
   ChimeraTK::Device dev("(dummy?map=simpleJsonFile.jmap)");
   dev.open();
@@ -857,39 +909,67 @@ BOOST_AUTO_TEST_CASE(TestSelectedByRuntimeCatalogue) {
 
 /**********************************************************************************************************************/
 
-// D2 (regression): a muxed channel that also has bit-field sub-entries. The named channel slice collides with the
+// Check that the selectBy alternatives share the same addresses
+BOOST_AUTO_TEST_CASE(TestSelectedBySingleRegisterInSimpleJsonFile) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+
+  BOOST_TEST(regs.hasRegister("/DAQ/SINGLE_MUXED"));
+  auto reg0 = regs.getBackendRegister("/DAQ/SINGLE_MUXED");
+  BOOST_TEST(reg0.nElements == 1);
+  BOOST_REQUIRE(reg0.channels.size() == 1);
+  BOOST_REQUIRE(reg0.channels[0].selectedBy);
+  BOOST_TEST(reg0.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+  BOOST_TEST(reg0.channels[0].selectedBy->val == 0);
+
+  BOOST_TEST(regs.hasRegister("/DAQ/SINGLE_MUXED_ALT"));
+  auto reg1 = regs.getBackendRegister("/DAQ/SINGLE_MUXED_ALT");
+  BOOST_TEST(reg1.nElements == 1);
+  BOOST_REQUIRE(reg1.channels.size() == 1);
+  BOOST_REQUIRE(reg1.channels[0].selectedBy);
+  BOOST_TEST(reg1.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+  BOOST_TEST(reg1.channels[0].selectedBy->val == 1);
+
+  // The two muxed alternatives share the same address but differ in their selector value.
+  BOOST_TEST(reg0.address == 1246);
+  BOOST_TEST(reg1.address == 1246);
+  BOOST_TEST(reg0.address == reg1.address);
+}
+
+/**********************************************************************************************************************/
+
+// A muxed channel that also has bit-field sub-entries. The named channel slice collides with the
 // generated bit-field sub-entries; the parser must not crash and the slice must remain queryable via hasRegister
 // (no duplicate registers for the slice path).
 BOOST_AUTO_TEST_CASE(TestSelectedByBitFieldSliceCollision) {
   // Parsing must not crash.
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByBitField.jmap");
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
 
   // The register and its muxed channel slice are present exactly once.
-  BOOST_TEST(regs.hasRegister("/MQ/FD"));
-  BOOST_TEST(regs.hasRegister("/MQ/FD/Ch0"));
+  BOOST_TEST(regs.hasRegister("/BITFIELD/FD"));
+  BOOST_TEST(regs.hasRegister("/BITFIELD/FD/Ch0"));
 
   // The channel slice persists and carries the selector.
-  auto slice = regs.getBackendRegister("/MQ/FD/Ch0");
+  auto slice = regs.getBackendRegister("/BITFIELD/FD/Ch0");
   BOOST_REQUIRE(slice.channels.size() == 1);
   BOOST_REQUIRE(slice.channels[0].selectedBy);
-  BOOST_TEST(slice.channels[0].selectedBy->regPath == "/MQ/MUX");
+  BOOST_TEST(slice.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
   BOOST_TEST(slice.channels[0].selectedBy->val == 0);
 
   // The other muxed channel slice resolves too.
-  auto slice1 = regs.getBackendRegister("/MQ/FD/Ch1");
+  auto slice1 = regs.getBackendRegister("/BITFIELD/FD/Ch1");
   BOOST_REQUIRE(slice1.channels[0].selectedBy);
-  BOOST_TEST(slice1.channels[0].selectedBy->regPath == "/MQ/MUX");
+  BOOST_TEST(slice1.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
   BOOST_TEST(slice1.channels[0].selectedBy->val == 1);
 }
 
 /**********************************************************************************************************************/
 
-// D3/D4 (regression): muxed register combined with doubleBuffering (FD) and interrupt. BUF0/BUF1 slices carry the
+// Muxed register combined with doubleBuffering (FD) and interrupt. BUF0/BUF1 slices carry the
 // selector and wait_for_new_data is propagated to the muxed slices.
 BOOST_AUTO_TEST_CASE(TestSelectedByDoubleBufferAndInterrupt) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
 
-  // D3: the double-buffer copies mirror the main register's selector info.
+  // The double-buffer copies mirror the main register's selector info.
   for(const auto* name : {"/DAQ/FD/BUF0", "/DAQ/FD/BUF1"}) {
     auto reg = regs.getBackendRegister(name);
     BOOST_REQUIRE(reg.channels.size() == 4);
@@ -901,7 +981,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedByDoubleBufferAndInterrupt) {
     BOOST_TEST(reg.channels[1].selectedBy->val == 1);
   }
 
-  // D4: interrupt propagates wait_for_new_data to the muxed slices.
+  // Interrupt propagates wait_for_new_data to the muxed slices.
   auto slice = regs.getBackendRegister("/DAQ/FD/AmplitudeCh0");
   BOOST_CHECK(slice.getSupportedAccessModes().has(ChimeraTK::AccessMode::wait_for_new_data) == true);
 }
