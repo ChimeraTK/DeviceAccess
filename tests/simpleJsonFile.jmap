@@ -466,7 +466,7 @@
               "numberOfElements": 3,
               "address": {
                 "channel": 0,
-                "offset": 1234
+                "offset": 1236
               },
               "representation": {
                 "width": 1
@@ -477,7 +477,7 @@
               "numberOfElements": 3,
               "address": {
                 "channel": 0,
-                "offset": 1238
+                "offset": 1240
               },
               "representation": {
                 "width": 1
@@ -490,7 +490,7 @@
           "numberOfElements": 1,
           "address": {
             "channel": 0,
-            "offset": 1242
+            "offset": 1244
           },
           "representation": {
             "width": 2
@@ -515,6 +515,26 @@
           },
           "representation": {
             "width": 32
+          }
+        },
+        "ASYNC_DBLBUF": {
+          "triggeredByInterrupt": [
+            1
+          ],
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "type": "DMA",
+            "offset": "0x81070"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "offset": "0x81270"
+            },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 2
           }
         }
       }

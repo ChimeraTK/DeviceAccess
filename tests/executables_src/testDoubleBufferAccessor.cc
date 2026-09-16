@@ -93,3 +93,119 @@ BOOST_AUTO_TEST_CASE(test_buffer_selection_current_buffer_1) {
   // Must not crash, and must have valid data
   BOOST_CHECK(accessor.dataValidity() != ChimeraTK::DataValidity::faulty);
 }
+
+// ------------------------------------------------------------
+// Helper that simulates the firmware finishing a buffer and raising the
+// interrupt. An interrupt-triggered read must return that freshly finished
+// buffer (the inactive one at the time of the read).
+class AsyncDoubleBufferFixture {
+ public:
+  AsyncDoubleBufferFixture()
+  : dummy(openDeviceAndGetDummy(device)),
+    accessor(device.getOneDRegisterAccessor<uint32_t>("/DAQ/ASYNC_DBLBUF", 1, 0, {AccessMode::wait_for_new_data})),
+    enable(dummy.get(), "DAQ/DOUBLE_BUF", "ENA"), inactive(dummy.get(), "DAQ/DOUBLE_BUF", "INACTIVE_BUF_ID"),
+    buffer0(dummy.get(), "DAQ/ASYNC_DBLBUF", "BUF0"), buffer1(dummy.get(), "DAQ/ASYNC_DBLBUF", "BUF1") {
+    // Enable double buffering for index 2.
+    enable[2] = 1;
+  }
+
+  // Simulate the firmware finishing a buffer: fill the freshly finished buffer
+  // and point INACTIVE_BUF_ID at it, then raise the interrupt.
+  void firmwareFinishesBuffer(uint32_t value, uint32_t newInactiveBuffer) {
+    if(newInactiveBuffer == 1) {
+      buffer0 = value;
+    }
+    else {
+      buffer1 = value;
+    }
+    inactive[2] = newInactiveBuffer;
+    dummy->triggerInterrupt(1);
+  }
+
+  Device device;
+  boost::shared_ptr<DummyBackend> dummy;
+  OneDRegisterAccessor<uint32_t> accessor;
+  DummyRegisterAccessor<uint32_t> enable;
+  DummyRegisterAccessor<uint32_t> inactive;
+  DummyRegisterAccessor<uint32_t> buffer0;
+  DummyRegisterAccessor<uint32_t> buffer1;
+
+ private:
+  static boost::shared_ptr<DummyBackend> openDeviceAndGetDummy(Device& dev) {
+    dev.open("(dummy?map=simpleJsonFile.jmap)");
+    auto backend = boost::dynamic_pointer_cast<DummyBackend>(dev.getBackend());
+    if(!backend) {
+      BOOST_FAIL("Device did not produce a DummyBackend");
+    }
+    return backend;
+  }
+};
+
+// ------------------------------------------------------------
+// Test that an interrupt-triggered wait_for_new_data read of the full
+// double-buffered register returns the buffer the firmware just finished, over
+// several consecutive buffer swaps.
+BOOST_AUTO_TEST_CASE(TestInterruptDrivenReadReturnsFinishedBuffer) {
+  AsyncDoubleBufferFixture f;
+  f.device.activateAsyncRead();
+
+  // An initial value is delivered when the async domain is activated.
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK(f.accessor.dataValidity() != ChimeraTK::DataValidity::faulty);
+
+  // No further data before the firmware completes the next buffer.
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Swap 1: firmware finishes buffer0 (=100) and flips to buffer1.
+  f.firmwareFinishesBuffer(100, 1);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 100);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Swap 2: firmware finishes buffer1 (=200) and flips to buffer0.
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+  f.firmwareFinishesBuffer(200, 0);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 200);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Swap 3: firmware finishes buffer0 (=300) and flips to buffer1.
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+  f.firmwareFinishesBuffer(300, 1);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 300);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Swap 4: firmware finishes buffer1 (=400) and flips to buffer0.
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+  f.firmwareFinishesBuffer(400, 0);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 400);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  f.device.close();
+}
+
+// ------------------------------------------------------------
+// Test that the double-buffer handshake stays enabled after interrupt-driven
+// reads: ENA must still hold 1 after a wait_for_new_data read cycle.
+BOOST_AUTO_TEST_CASE(TestInterruptDrivenReadKeepsHandshakeEnabled) {
+  AsyncDoubleBufferFixture f;
+  f.device.activateAsyncRead();
+
+  // An initial value is delivered when the async domain is activated.
+  BOOST_CHECK(f.accessor.readNonBlocking());
+
+  // No data before the firmware completes the next buffer.
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  f.firmwareFinishesBuffer(500, 0);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 500);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // The handshake must not disable swapping, so ENA stays enabled.
+  BOOST_CHECK(f.enable[2] == 1);
+
+  f.device.close();
+}

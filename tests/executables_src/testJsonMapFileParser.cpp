@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.nElements == 3);
     BOOST_TEST(reg.elementPitchBits == 4 * 8);
     BOOST_TEST(reg.bar == 0);
-    BOOST_TEST(reg.address == 1234);
+    BOOST_TEST(reg.address == 1236);
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.nElements == 3);
     BOOST_TEST(reg.elementPitchBits == 4 * 8);
     BOOST_TEST(reg.bar == 0);
-    BOOST_TEST(reg.address == 1238);
+    BOOST_TEST(reg.address == 1240);
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
@@ -481,7 +481,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.nElements == 1);
     BOOST_TEST(reg.elementPitchBits == 4 * 8);
     BOOST_TEST(reg.bar == 0);
-    BOOST_TEST(reg.address == 1242);
+    BOOST_TEST(reg.address == 1244);
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
@@ -559,9 +559,10 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   BOOST_TEST(metas.getMetadata("![3,1]") == R"({"INTC":{"options":["MER"],"path":"MY_INTC.SUB1","version":1}})");
 
   auto loi = regs.getListOfInterrupts();
-  BOOST_TEST(loi.size() == 2);
+  BOOST_TEST(loi.size() == 3);
   BOOST_CHECK(loi.find({0}) != loi.end());
   BOOST_CHECK(loi.find({3, 0, 1}) != loi.end());
+  BOOST_CHECK(loi.find({1}) != loi.end());
 }
 
 /**********************************************************************************************************************/
