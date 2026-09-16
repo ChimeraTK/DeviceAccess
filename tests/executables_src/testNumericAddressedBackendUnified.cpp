@@ -1203,6 +1203,105 @@ uint32_t DoubleBufferedNamedChannelSlice::_currentBufferNumber = 0;
 
 /**********************************************************************************************************************/
 
+// Interrupt-driven double-buffered named channel slice of the 2D register TEST.DBLASYNC. Same channel slice as
+// DoubleBufferedNamedChannelSlice, but the register is triggered by interrupt, so the read of the freshly finished
+// buffer must go through the DoubleBufferAccessor on the async path.
+struct DoubleBufferedNamedChannelSliceAsync {
+  static std::string path() { return "/TEST/DBLASYNC.1"; }
+  static bool isWriteable() { return false; }
+  static bool isReadable() { return true; }
+  static ChimeraTK::AccessModeFlags supportedFlags() { return {ChimeraTK::AccessMode::wait_for_new_data}; }
+  static size_t nChannels() { return 1; }
+  static size_t nElementsPerChannel() { return 4; }
+  static size_t writeQueueLength() { return std::numeric_limits<size_t>::max(); }
+  static size_t nRuntimeErrorCases() { return 1; }
+  using minimumUserType = uint16_t;
+  using rawUserType = int16_t;
+
+  static uint32_t _currentBufferNumber;
+
+  static constexpr auto capabilities = TestCapabilities<>()
+                                           .disableForceDataLossWrite()
+                                           .disableAsyncReadInconsistency()
+                                           .disableSwitchReadOnly()
+                                           .disableSwitchWriteOnly()
+                                           .disableTestWriteNeverLosesData()
+                                           .disableTestRawTransfer()
+                                           .disableTestCatalogue();
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> generateValue(bool = false) {
+    auto values = getRemoteValue<minimumUserType>();
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      values[0][e] += uint16_t(37 + 11 * e);
+    }
+    return values;
+  }
+
+  DummyRegisterAccessor<uint32_t> currentBufferNumber{exceptionDummyMuxed.get(), "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
+  DummyRegisterAccessor<minimumUserType> buffer0{exceptionDummyMuxed.get(), "TEST/DBLASYNC.1", "BUF0"};
+  DummyRegisterAccessor<minimumUserType> buffer1{exceptionDummyMuxed.get(), "TEST/DBLASYNC.1", "BUF1"};
+
+  template<typename UserType>
+  std::vector<std::vector<UserType>> getRemoteValue(bool = false) {
+    std::vector<std::vector<UserType>> v(1);
+    if(currentBufferNumber[0] == 1) {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        v[0].push_back(buffer0[e]);
+      }
+    }
+    else {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        v[0].push_back(buffer1[e]);
+      }
+    }
+    return v;
+  }
+
+  void setRemoteValue() {
+    currentBufferNumber[0] = _currentBufferNumber;
+    _currentBufferNumber = (_currentBufferNumber != 0) ? 0 : 1; // change current buffer no. 0->1 or 1->0
+
+    // Each buffer carries distinct channel data: a buffer-dependent offset is added on top of the common base
+    // sequence produced by generateValue(). An implementation that always delivers the same buffer would then fail
+    // one of the two buffer checks.
+    const bool finishingBuffer0 = (currentBufferNumber[0] == 1);
+    const uint16_t bufferOffset = finishingBuffer0 ? 0 : 1000;
+
+    auto values = generateValue<minimumUserType>();
+    for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+      values[0][e] += bufferOffset;
+    }
+
+    if(currentBufferNumber[0] == 1) {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        buffer0[e] = values[0][e];
+      }
+    }
+    else {
+      for(size_t e = 0; e < nElementsPerChannel(); ++e) {
+        buffer1[e] = values[0][e];
+      }
+    }
+    if(exceptionDummyMuxed->isOpen()) {
+      exceptionDummyMuxed->triggerInterrupt(7);
+    }
+  }
+
+  static void setForceRuntimeError(bool enable, size_t) {
+    exceptionDummyMuxed->throwExceptionRead = enable;
+    exceptionDummyMuxed->throwExceptionWrite = enable;
+    exceptionDummyMuxed->throwExceptionOpen = enable;
+    if(exceptionDummyMuxed->isOpen()) {
+      exceptionDummyMuxed->triggerInterrupt(7);
+    }
+  }
+};
+
+uint32_t DoubleBufferedNamedChannelSliceAsync::_currentBufferNumber = 0;
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testRegisterAccessor) {
   std::cout << "*** testRegisterAccessor *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>()
@@ -1253,6 +1352,13 @@ BOOST_AUTO_TEST_CASE(testNamedChannelSliceAsync) {
 BOOST_AUTO_TEST_CASE(testDoubleBufferedNamedChannelSlices) {
   std::cout << "*** testDoubleBufferedNamedChannelSlices *** " << std::endl;
   ChimeraTK::UnifiedBackendTest<>().addRegister<DoubleBufferedNamedChannelSlice>().runTests(cddMuxed);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDoubleBufferedNamedChannelSliceAsync) {
+  std::cout << "*** testDoubleBufferedNamedChannelSliceAsync *** " << std::endl;
+  ChimeraTK::UnifiedBackendTest<>().addRegister<DoubleBufferedNamedChannelSliceAsync>().runTests(cddMuxed);
 }
 
 /**********************************************************************************************************************/
