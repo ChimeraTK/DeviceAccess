@@ -43,6 +43,10 @@ static std::string cddBitRange("(ExceptionDummy:1?map=unifiedTest.jmap)");
 static auto exceptionDummyBitRange =
     boost::dynamic_pointer_cast<ExceptionDummy>(BackendFactory::getInstance().createBackend(cddBitRange));
 
+static std::string cddBitRangeChannels("(dummy?map=bitRangeChannels.jmap)");
+static auto dummyBitRangeChannels =
+    boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend(cddBitRangeChannels));
+
 /**********************************************************************************************************************/
 
 struct Integers_signed32 {
@@ -1373,6 +1377,66 @@ BOOST_AUTO_TEST_CASE(testBitRanges) {
       .addRegister<ArrayBitRangeLow>()
       .addRegister<ArrayBitRangeHigh>()
       .runTests(cddBitRange);
+}
+
+/**********************************************************************************************************************/
+
+// Bit ranges inside the named channels of a 2D register (bitRangeChannels.jmap). A channel carrying bit-field
+// children (A) exposes a full-word parent slice plus one bit-range slice per child; a channel that is itself a
+// single bit range (B) exposes a bit-range slice. All slices read the strided 2D sample data correctly. Writes to
+// a bit-range slice are rejected and obtaining the full-2D accessor of a register with a direct bit-range channel
+// raises a clear error.
+BOOST_AUTO_TEST_CASE(TestBitRangeNamedChannelSlices) {
+  std::cout << "*** TestBitRangeNamedChannelSlices *** " << std::endl;
+
+  ChimeraTK::Device dev(cddBitRangeChannels);
+  dev.open();
+
+  // Place known sample words into the shared DMA buffer through the plain read-write view RAW (BAR 13, address
+  // 0x4000). Each 64-bit element word of TEST/BR spans two RAW words: the lower one is channel A's word at byte
+  // offset 0x4000 + 8*e, the upper one is channel B's word at byte offset 0x4004 + 8*e.
+  DummyRegisterAccessor<uint32_t> raw{dummyBitRangeChannels.get(), "RAW", ""};
+
+  const size_t n = 4;
+  std::vector<uint32_t> wordA(n), wordB(n);
+  for(size_t e = 0; e < n; ++e) {
+    wordA[e] = 0x12345678u + e * 0x01010101u;
+    wordB[e] = 0xABCDEF01u + e * 0x00001111u;
+    raw[2 * e] = wordA[e];
+    raw[2 * e + 1] = wordB[e];
+  }
+
+  // The full-word parent slice and the two child slices return the expected values.
+  auto accA = dev.getOneDRegisterAccessor<uint32_t>("TEST/BR/A");
+  auto accLo = dev.getOneDRegisterAccessor<uint32_t>("TEST/BR/A/Lo");
+  auto accHi = dev.getOneDRegisterAccessor<uint32_t>("TEST/BR/A/Hi");
+  // Channel B is a direct bit-range channel; its slice extracts bits 16..23 of each sample word.
+  auto accB = dev.getOneDRegisterAccessor<uint32_t>("TEST/BR/B");
+  BOOST_REQUIRE(accA.getNElements() == n);
+  BOOST_REQUIRE(accLo.getNElements() == n);
+  BOOST_REQUIRE(accHi.getNElements() == n);
+  BOOST_REQUIRE(accB.getNElements() == n);
+
+  accA.read();
+  accLo.read();
+  accHi.read();
+  accB.read();
+
+  for(size_t e = 0; e < n; ++e) {
+    BOOST_TEST(accA[e] == wordA[e]);
+    BOOST_TEST(accLo[e] == (wordA[e] & 0xFFu));
+    BOOST_TEST(accHi[e] == ((wordA[e] >> 8) & 0xFFu));
+    BOOST_TEST(accB[e] == ((wordB[e] >> 16) & 0xFFu));
+  }
+
+  // Writing to a bit-range slice is not supported.
+  BOOST_CHECK_THROW(accLo.write(), ChimeraTK::logic_error);
+
+  // Reading the whole 2D register that contains a direct bit-range channel raises a clear error at accessor
+  // obtaining time.
+  BOOST_CHECK_THROW(dev.getTwoDRegisterAccessor<uint32_t>("TEST/BR"), ChimeraTK::logic_error);
+
+  dev.close();
 }
 
 /**********************************************************************************************************************/

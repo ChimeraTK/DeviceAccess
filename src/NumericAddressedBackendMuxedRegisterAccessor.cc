@@ -22,6 +22,14 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("NumericAddressedBackendMuxedRegisterAccessor: blocks must be byte aligned.");
     }
 
+    // A 2D register whose channel is a direct bit range (e.g. a byte-aligned bitShift that would otherwise pass the
+    // byte-alignment checks and silently yield wrong values) cannot be read through the full-2D-register accessor.
+    // Bit ranges are exposed through the named-channel slices only.
+    if(_registerInfo.isBitRange) {
+      throw ChimeraTK::logic_error("NumericAddressedBackendMuxedRegisterAccessor: register '" + registerPathName +
+          "' contains bit-range channels. Access them through the named-channel slices.");
+    }
+
     // Helper struct containing everything in ChannelInfo except the bitOffset. This helps to identify which channels
     // can share the RawConverter.
     struct ConverterInfo {

@@ -4,6 +4,7 @@
 #include "JsonMapFileParser.h"
 
 #include "JsonExtensions.h"
+#include "SupportedUserTypes.h"
 
 #include <nlohmann/json.hpp>
 
@@ -12,6 +13,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <typeinfo>
 
 using json = nlohmann::json;
 
@@ -214,6 +216,8 @@ namespace ChimeraTK::detail {
       }
     };
 
+    struct ChannelChild;
+
     struct Channel {
       std::string engineeringUnit;
       std::string description;
@@ -221,6 +225,7 @@ namespace ChimeraTK::detail {
       size_t bytesPerElement{4};
       Representation representation;
       std::optional<SelectedBy> selectedBy;
+      std::map<std::string, ChannelChild> children;
 
       void fill(NumericAddressedRegisterInfo& info) const {
         representation.fill(info, offset, bytesPerElement);
@@ -232,7 +237,17 @@ namespace ChimeraTK::detail {
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-          Channel, engineeringUnit, description, offset, bytesPerElement, representation, selectedBy)
+          Channel, engineeringUnit, description, offset, bytesPerElement, representation, selectedBy, children)
+    };
+
+    // A bit-field child of a named channel of a 2D register. Works like the top-level bit-field mechanism of a 1D
+    // register, but is interpreted relative to the channel's sample word (the member byte offset/bytesPerElement).
+    struct ChannelChild {
+      std::string engineeringUnit;
+      std::string description;
+      Representation representation;
+
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ChannelChild, engineeringUnit, description, representation)
     };
 
     // The channels, sorted by byte offset so that per-channel information (and thus the channel index of a
@@ -361,6 +376,42 @@ namespace ChimeraTK::detail {
       }
     }
 
+    // Build the ChannelInfo of a channel or bit-field child slice from its 'representation'. The raw type always
+    // spans the whole sample word (wordBits), so the slice reads the element with its full word width in the
+    // underlying transport and extracts the range via the bit offset/width. Shared by the parent channel slice and
+    // the bit-field child slice creation.
+    static NumericAddressedRegisterInfo::ChannelInfo makeChannelInfo(const Representation& rep, size_t wordBits,
+        const std::optional<NumericAddressedRegisterInfo::SelectedBy>& selectedBy) {
+      return {rep.bitShift, NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
+          rep.type != RepresentationType::IEEE754 ? rep.isSigned : true, DataType("int" + std::to_string(wordBits)),
+          selectedBy};
+    }
+
+    // Add a slice register to the catalogue and, for a double-buffered register, its two buffer-view registers
+    // BUF0/BUF1, exactly as the parent 2D register's BUF0/BUF1 block but folded to the slice. The slice's own
+    // (already channel-shifted) secondary buffer address is reused for the BUF1 view, which is why both the parent
+    // channel slice and the inherited child slice can share this helper.
+    static void addSliceWithBufferViews(NumericAddressedRegisterCatalogue& catalogue,
+        NumericAddressedRegisterInfo& slice, const RegisterPath& slicePath) {
+      catalogue.addRegister(slice);
+      if(!slice.doubleBuffer.has_value()) {
+        return;
+      }
+      NumericAddressedRegisterInfo sliceBuf0 = slice;
+      sliceBuf0.pathName = slicePath + "/BUF0";
+      sliceBuf0.doubleBuffer.reset();
+      sliceBuf0.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+      sliceBuf0.computeDataDescriptor();
+      catalogue.addRegister(sliceBuf0);
+      NumericAddressedRegisterInfo sliceBuf1 = slice;
+      sliceBuf1.pathName = slicePath + "/BUF1";
+      sliceBuf1.doubleBuffer.reset();
+      sliceBuf1.address = slice.doubleBuffer->address;
+      sliceBuf1.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
+      sliceBuf1.computeDataDescriptor();
+      catalogue.addRegister(sliceBuf1);
+    }
+
     std::map<std::string, JsonAddressSpaceEntry> children;
 
     void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
@@ -383,10 +434,10 @@ namespace ChimeraTK::detail {
           for(const auto& [channelName, channel] : channelsInOffsetOrder()) {
             RegisterPath slicePath = my.pathName / channelName;
             slicePath.setAltSeparator(".");
-            // skip a channel whose slice path would collide with an already created slice (e.g. a
-            // bit-field channel split into multiple entries carrying the same name)
+            // A channel slice whose path collides with an already existing register is a map authoring error.
             if(catalogue.hasRegister(slicePath)) {
-              continue;
+              throw ChimeraTK::logic_error(
+                  "Channel slice '" + (slicePath) + "' collides with an already existing register.");
             }
             const auto& rep = channel->representation;
 
@@ -396,10 +447,7 @@ namespace ChimeraTK::detail {
               selReg.setAltSeparator(".");
               channelSelectedBy.emplace(selReg, channel->selectedBy->value);
             }
-            NumericAddressedRegisterInfo::ChannelInfo ci{rep.bitShift, // bitOffset within the channel element
-                NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
-                rep.type != RepresentationType::IEEE754 ? rep.isSigned : true,
-                DataType("int" + std::to_string(channel->bytesPerElement * 8)), channelSelectedBy};
+            auto wordBits = channel->bytesPerElement * 8;
             // A channel slice of a non-interrupt 2D register is read-only: writing to a single channel of a 2D
             // register would require a read-modify-write cycle across the channels, which is deliberately not
             // supported. A slice of an interrupt-driven 2D register additionally advertises wait_for_new_data,
@@ -408,7 +456,8 @@ namespace ChimeraTK::detail {
                 NumericAddressedRegisterInfo::Access::INTERRUPT :
                 NumericAddressedRegisterInfo::Access::READ_ONLY;
             NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel->offset, my.nElements,
-                my.elementPitchBits, {ci}, sliceAccessType, my.interruptId, my.doubleBuffer);
+                my.elementPitchBits, {makeChannelInfo(rep, wordBits, channelSelectedBy)}, sliceAccessType,
+                my.interruptId, my.doubleBuffer);
             // The slice's double-buffer configuration inherits the parent's, but its secondary buffer address
             // is the parent's shifted by the channel byte offset, matching the slice's own data address and the
             // slice's BUF1 buffer-view register created below.
@@ -419,24 +468,33 @@ namespace ChimeraTK::detail {
             slice.computeDataDescriptor();
             slice.engineeringUnit = channel->engineeringUnit;
             slice.description = channel->description;
-            catalogue.addRegister(slice);
-            if(my.doubleBuffer.has_value()) {
-              // Create the slice's two buffer-view registers, mirroring the parent BUF0/BUF1 block but folding
-              // the channel byte offset into both buffer addresses. They are plain read-only views of the
-              // buffers, exactly what DoubleBufferAccessor reads on the leaf paths.
-              NumericAddressedRegisterInfo sliceBuf0 = slice;
-              sliceBuf0.pathName = slicePath + "/BUF0";
-              sliceBuf0.doubleBuffer.reset();
-              sliceBuf0.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
-              sliceBuf0.computeDataDescriptor();
-              catalogue.addRegister(sliceBuf0);
-              NumericAddressedRegisterInfo sliceBuf1 = slice;
-              sliceBuf1.pathName = slicePath + "/BUF1";
-              sliceBuf1.doubleBuffer.reset();
-              sliceBuf1.address = my.doubleBuffer->address + channel->offset;
-              sliceBuf1.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
-              sliceBuf1.computeDataDescriptor();
-              catalogue.addRegister(sliceBuf1);
+            addSliceWithBufferViews(catalogue, slice, slicePath);
+            // Create one read-only bit-range slice per bit-field child of the channel, at <channel>/<child>.
+            // The child slice behaves exactly like the parent channel slice (same address, stride, interrupt and
+            // double-buffer inheritance, including the BUF0/BUF1 buffer views), but extracts the child's bit range
+            // from every sample word. The word context is the channel's byte offset and bytesPerElement.
+            for(const auto& [childName, child] : channel->children) {
+              const auto& crep = child.representation;
+              // A child that is not a proper bit range of the channel word is unsupported and is ignored, so newer
+              // map files that use a not yet supported child feature still parse for the supported parts.
+              if((crep.bitShift == 0 && crep.width == wordBits) || (crep.bitShift + crep.width > wordBits)) {
+                continue;
+              }
+              RegisterPath childPath = slicePath / childName;
+              childPath.setAltSeparator(".");
+              // A child slice whose path collides with an already existing register is a map authoring error.
+              if(catalogue.hasRegister(childPath)) {
+                throw ChimeraTK::logic_error(
+                    "Child slice '" + (childPath) + "' collides with an already existing register.");
+              }
+              NumericAddressedRegisterInfo childSlice = slice;
+              childSlice.pathName = childPath;
+              childSlice.channels = {makeChannelInfo(crep, wordBits, channelSelectedBy)};
+              childSlice.isBitRange = true;
+              childSlice.engineeringUnit = child.engineeringUnit;
+              childSlice.description = child.description;
+              childSlice.computeDataDescriptor();
+              addSliceWithBufferViews(catalogue, childSlice, childPath);
             }
           }
         }
@@ -531,9 +589,19 @@ namespace ChimeraTK::detail {
         }
       }
       if(addressesWithBitRange.size()) {
+        // Compute the element data width (bytes per element times 8) from the single channel's raw type. This equals
+        // the element pitch only for non-strided registers; a strided channel slice has a larger element pitch than
+        // its element data width, so such slices must not be reclassified as bit ranges even when their element data
+        // width is smaller than the pitch or they share their address with a bit range.
+        auto elementDataWidth = [](const NumericAddressedRegisterInfo::ChannelInfo& c) {
+          // Obtain the element data width (bytes per element times 8) from the channel's raw type via
+          // DataType::getNumberOfBytes(); no std::bad_cast can arise because the switch covers every DataType value.
+          return c.getRawType().getNumberOfBytes() * 8;
+        };
         for(auto& reg : catalogue) {
           if((reg.channels.size() == 1) && (reg.channels[0].bitOffset == 0) &&
-              (reg.channels[0].width < reg.elementPitchBits)) {
+              (reg.channels[0].width < elementDataWidth(reg.channels[0])) &&
+              (reg.elementPitchBits == elementDataWidth(reg.channels[0]))) {
             if(addressesWithBitRange.find({reg.bar, reg.address}) != addressesWithBitRange.end()) {
               reg.isBitRange = true;
             }

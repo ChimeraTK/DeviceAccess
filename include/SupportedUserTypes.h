@@ -9,8 +9,10 @@
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>
 
+#include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <limits>
 #include <sstream>
 #include <utility>
 
@@ -818,6 +820,40 @@ namespace ChimeraTK {
         case none:
           return typeid(std::nullptr_t);
       }
+    }
+
+    /**
+     * Return the number of bytes per element for the data type. Returns 1, 2, 4 or 8 for the signed and unsigned
+     * integer types by their width, 4 for \c float32 and 8 for \c float64, \c sizeof(ChimeraTK::Boolean) for \c
+     * Boolean, 0 for \c none and \c Void (no data). It is not allowed to call this function for \c string (will trigger
+     * an assertion).
+     */
+    [[nodiscard]] size_t getNumberOfBytes() const {
+      switch(_value) {
+        case int8:
+        case uint8:
+          return 1;
+        case int16:
+        case uint16:
+          return 2;
+        case int32:
+        case uint32:
+        case float32:
+          return 4;
+        case int64:
+        case uint64:
+        case float64:
+          return 8;
+        case Boolean:
+          return sizeof(ChimeraTK::Boolean);
+        case string:
+          assert(false);
+          return std::numeric_limits<size_t>::max();
+        case none:
+        case Void:
+          return 0;
+      }
+      return 0;
     }
 
    protected:

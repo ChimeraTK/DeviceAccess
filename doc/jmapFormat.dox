@@ -321,6 +321,12 @@ Here \c DMA is a 2D register with two channels, each holding 16384 samples, with
 
 For every channel, a read-only one-dimensional register slice is created automatically. The slice is named after the channel, e.g. \c DMA/0, \c DMA/1 in the example above. Each slice exposes the samples of that single channel as a one-dimensional array, reading them out of the 2D register with the correct stride. The channel's byte \c offset is folded into the slice address, so it can be addressed independently of the parent 2D register. Writing is deliberately not supported for these slices, since writing a single channel of a 2D register would require a read-modify-write cycle across the channels. If multiple slice accessors for the same 2D register shall be read simultaneously (without ChimeraTK::AccessMode::wait_for_new_data), it is highly recommended to add them all to the same ChimeraTK::TransferGroup to avoid transferring the full 2D data multiple times unnecessarily from the device.
 
+\subsubsection jmap_channel_bitfields Channel bit fields
+
+A channel of a 2D register may declare a \c children dictionary of bit fields of its sample word, working like the top-level bit-field mechanism of a 1D register (see \ref jmap_bitfields). The children share the channel's byte \c offset and \c bytesPerElement as their word context. The channel itself may also be a single bit range by setting \c bitShift and \c width in its own \c representation.
+
+For every channel a read-only slice `<channel>` is created exposing the parent sample word: byte-aligned, unshifted and not a bit range. For a channel with \c children, one read-only bit-range slice `<channel>/<child>` is created per child, extracting the child's bit range from every sample word. All these slices are read-only; writing is not supported. A child that is not a proper bit range of the channel word (spanning the whole word, or extending past it) is ignored. Reading a channel that is a bit range is done through its slice; the whole 2D register read is not supported for such channels.
+
 \subsubsection jmap_channel_selection Conditional channels
 
 Similar to the \ref jmap_register_selection it is possible to define alternative sets of channels using the
@@ -449,7 +455,7 @@ A register can carry a \c children dictionary of entries which are bit fields of
   }
 }
 \endverbatim
-Registers which share the starting address with a bit range and have a width smaller than their element size are automatically recognised as bit ranges as well.
+Registers which share the starting address with a bit range and have a width smaller than their element size are automatically recognised as bit ranges as well. The same \c children mechanism is also available per channel of a 2D register (see \ref jmap_channel_bitfields).
 
 \section jmap_metadata Metadata
 

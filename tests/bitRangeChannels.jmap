@@ -1,0 +1,61 @@
+{
+  "mapFormatVersion": "0.0.1",
+  "metadata": {},
+  "interruptHandler": {},
+  "addressSpace": {
+    "RAW": {
+      "_": "Plain 32-bit read-write view of the same DMA buffer as TEST/BR, used to place known sample words for the bit-range slices to read back.",
+      "address": {
+        "type": "DMA",
+        "offset": "0x4000"
+      },
+      "numberOfElements": 8,
+      "bytesPerElement": 4,
+      "representation": {
+        "type": "fixedPoint",
+        "isSigned": false
+      }
+    },
+    "TEST": {
+      "children": {
+        "BR": {
+          "address": {
+            "type": "DMA",
+            "offset": "0x4000"
+          },
+          "numberOfElements": 4,
+          "pitch": 8,
+          "channels": {
+            "A": {
+              "offset": 0,
+              "bytesPerElement": 4,
+              "children": {
+                "Lo": {
+                  "representation": {
+                    "bitShift": 0,
+                    "width": 8
+                  }
+                },
+                "Hi": {
+                  "representation": {
+                    "bitShift": 8,
+                    "width": 8
+                  }
+                }
+              }
+            },
+            "B": {
+              "offset": 4,
+              "bytesPerElement": 4,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 8,
+                "bitShift": 16
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
