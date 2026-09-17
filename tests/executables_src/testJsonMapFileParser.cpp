@@ -12,9 +12,15 @@
 
 using namespace ChimeraTK;
 
+#include <nlohmann/json.hpp>
+
 #include <boost/pointer_cast.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include <unistd.h>
+
+#include <cstdio>
+#include <fstream>
 #include <limits>
 #include <vector>
 using namespace boost::unit_test_framework;
@@ -651,6 +657,266 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   BOOST_CHECK(loi.find({0}) != loi.end());
   BOOST_CHECK(loi.find({3, 0, 1}) != loi.end());
   BOOST_CHECK(loi.find({1}) != loi.end());
+}
+
+/**********************************************************************************************************************/
+
+// Bit ranges inside the named channels of a 2D register (simpleJsonFile.jmap DAQ.CTRL). A channel with a
+// `children` dictionary yields the parent word slice (byte-aligned, unshifted, not a bit range) plus one
+// read-only bit-range slice per child. The slices inherit the parent 2D register's address, stride, interrupt
+// access and double-buffer settings (including the BUF0/BUF1 buffer views).
+BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeChildren) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+
+  // The parent channel slice /DAQ/CTRL/status spans the whole channel word: byte-aligned, unshifted, not a bit
+  // range. It inherits nElements (16384) and the 64-byte pitch from the parent 2D register.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.status");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/status");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    // DAQ.CTRL is a DMA register, so its (and the slices') BAR is the DMA pseudo-BAR 13. It is at DMA offset
+    // 0x40000 and channel 'status' sits at byte offset 4.
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x40004);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 32);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == false);
+    BOOST_REQUIRE(reg.doubleBuffer);
+    BOOST_TEST(reg.doubleBuffer->address == 0x40204);
+    BOOST_TEST(regs.hasRegister("DAQ.CTRL.status.BUF0"));
+    BOOST_TEST(regs.hasRegister("DAQ.CTRL.status.BUF1"));
+  }
+  // First bit-field child: bit range at bit offset 0, width 1.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.status.ProbeLimiter");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/status/ProbeLimiter");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x40004);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 1);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == true);
+    BOOST_REQUIRE(reg.doubleBuffer);
+    BOOST_TEST(reg.doubleBuffer->address == 0x40204);
+    BOOST_TEST(regs.hasRegister("DAQ.CTRL.status.ProbeLimiter.BUF0"));
+    BOOST_TEST(regs.hasRegister("DAQ.CTRL.status.ProbeLimiter.BUF1"));
+  }
+  // Second bit-field child at bit offset 1, width 1.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.status.ExternalInterlock");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/status/ExternalInterlock");
+    BOOST_TEST(reg.nElements == 16384);
+    BOOST_TEST(reg.elementPitchBits == 64 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x40004);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 1);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 1);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  // Third child carries a fixedPoint representation: fractionalBits and isSigned are taken from the child.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.status.ErrorCounter");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/status/ErrorCounter");
+    BOOST_TEST(reg.address == 0x40004);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 2);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 3);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  // VectorSum_I has a single child 'I' at bit offset 0, width 18.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.VectorSum_I.I");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/VectorSum_I/I");
+    BOOST_TEST(reg.address == 0x40008);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 18);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  // VectorSum_Q has a single child 'Q' at bit offset 2, width 18.
+  {
+    auto reg = regs.getBackendRegister("DAQ.CTRL.VectorSum_Q.Q");
+    BOOST_TEST(reg.pathName == "/DAQ/CTRL/VectorSum_Q/Q");
+    BOOST_TEST(reg.address == 0x4000a);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 2);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 18);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+}
+
+/**********************************************************************************************************************/
+
+// A channel that is itself a single bit range (bitShift/width in its own representation, e.g. channel B of
+// bitRangeChannels.jmap) yields a bit-range slice: bitOffset 16, width 8, isBitRange true, read-only.
+BOOST_AUTO_TEST_CASE(TestNamedChannelDirectBitRange) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("bitRangeChannels.jmap");
+
+  // Channel B is a direct bit range: bits 16..23 of every sample word.
+  {
+    auto reg = regs.getBackendRegister("TEST.BR.B");
+    BOOST_TEST(reg.pathName == "/TEST/BR/B");
+    BOOST_TEST(reg.nElements == 4);
+    BOOST_TEST(reg.elementPitchBits == 8 * 8);
+    BOOST_TEST(reg.bar == 13);
+    BOOST_TEST(reg.address == 0x4004);
+    BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 16);
+    BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 8);
+    BOOST_TEST(reg.channels[0].nFractionalBits == 0);
+    BOOST_TEST(reg.channels[0].signedFlag == false);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  // Contrast with channel A of the same register: exposing the full word it is not a bit range.
+  {
+    auto reg = regs.getBackendRegister("TEST.BR.A");
+    BOOST_TEST(reg.address == 0x4000);
+    BOOST_TEST(reg.isBitRange == false);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].width == 32);
+  }
+  // The bit-field child slices of channel A remain bit ranges.
+  {
+    auto reg = regs.getBackendRegister("TEST.BR.A.Hi");
+    BOOST_TEST(reg.channels[0].bitOffset == 8);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+}
+
+/**********************************************************************************************************************/
+
+// A channel child that is not a proper bit range of the channel word must be ignored while the supported sibling
+// children are still created. 'Good' (bitShift 0, width 8, within a 32-bit word) is a valid bit range; 'Whole'
+// spans the entire channel word (bitShift 0, width 32) and 'Overflow' extends past it (bitShift 28, width 8).
+BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeIgnoredChildren) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("bitRangeChildCases.jmap");
+
+  // The valid child slice is present.
+  {
+    auto reg = regs.getBackendRegister("CHILD.A.Good");
+    BOOST_TEST(reg.pathName == "/CHILD/A/Good");
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_CHECK(reg.channels[0].rawType == DataType::int32);
+    BOOST_TEST(reg.channels[0].width == 8);
+    BOOST_TEST(reg.isBitRange == true);
+  }
+  // The unsupported children must not be present.
+  BOOST_CHECK(!regs.hasRegister("CHILD.A.Whole"));
+  BOOST_CHECK(!regs.hasRegister("CHILD.A.Overflow"));
+  // The parent channel slice still exists.
+  BOOST_CHECK(regs.hasRegister("CHILD.A"));
+}
+
+/**********************************************************************************************************************/
+
+// A channel literally named 'BUF0' in a double-buffered 2D register collides with the parent's auto-generated BUF0
+// buffer view. This is a map authoring error and must fail fast with a logic_error at parse time. The colliding
+// channel is injected into a copy of simpleJsonFile.jmap (the double-buffered DAQ.CTRL register) with nlohmann::json,
+// written to a temporary file, and that file is parsed.
+BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeBuf0CollisionThrows) {
+  // Load the existing jmap file and inject a channel named 'BUF0' into the double-buffered DAQ.CTRL register.
+  std::ifstream in("simpleJsonFile.jmap");
+  nlohmann::json doc;
+  in >> doc;
+  doc["addressSpace"]["DAQ"]["children"]["CTRL"]["channels"]["BUF0"] = {{"bytesPerElement", 4}, {"offset", 6},
+      {"representation", {{"type", "fixedPoint"}, {"width", 16}, {"fractionalBits", 0}}}};
+  std::string tmpFile = "bitRangeBuf0Collision_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream out(tmpFile);
+  out << doc.dump();
+  out.close();
+
+  ChimeraTK::MapFileParser parser;
+  BOOST_CHECK_THROW(parser.parse(tmpFile), ChimeraTK::logic_error);
+
+  std::remove(tmpFile.c_str());
+}
+
+// A bit-field child literally named 'BUF0' of a double-buffered channel collides with the parent channel slice's
+// auto-generated BUF0 buffer view. This is a map authoring error and must fail fast with a logic_error at parse
+// time, rather than silently skipping the child slice. The colliding child is injected into a copy of
+// simpleJsonFile.jmap (whose DAQ.CTRL 'status' channel already carries children) with nlohmann::json, written to a
+// temporary file, and that file is parsed.
+BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeChildBuf0CollisionThrows) {
+  // Load the existing jmap file and add a child named 'BUF0' to the 'status' channel of DAQ.CTRL.
+  std::ifstream in("simpleJsonFile.jmap");
+  nlohmann::json doc;
+  in >> doc;
+  doc["addressSpace"]["DAQ"]["children"]["CTRL"]["channels"]["status"]["children"]["BUF0"] = {
+      {"representation", {{"bitShift", 8}, {"width", 8}}}};
+  std::string tmpFile = "bitRangeChildBuf0Collision_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream out(tmpFile);
+  out << doc.dump();
+  out.close();
+
+  ChimeraTK::MapFileParser parser;
+  BOOST_CHECK_THROW(parser.parse(tmpFile), ChimeraTK::logic_error);
+
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A bit-field child slice of a muxed channel inherits the channel's selectedBy condition (fixture
+// selectedByCases.jmap BITFIELD/FD/Ch0, which combines a per-channel 'selectedBy' with a 'children' dictionary).
+// Every child slice carries the same register+value selector as the parent channel slice.
+BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeMuxedChildSelectedBy) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
+
+  // The muxed parent channel slice inherits the selectedBy condition.
+  {
+    auto reg = regs.getBackendRegister("BITFIELD.FD.Ch0");
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_TEST(reg.isBitRange == false);
+  }
+  // Each bit-field child slice of the muxed channel inherits the channel's selectedBy condition.
+  {
+    auto reg = regs.getBackendRegister("BITFIELD.FD.Ch0.Bit0");
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 0);
+    BOOST_TEST(reg.channels[0].width == 1);
+    BOOST_TEST(reg.isBitRange == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+  }
+  {
+    auto reg = regs.getBackendRegister("BITFIELD.FD.Ch0.Bit1");
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 1);
+    BOOST_TEST(reg.isBitRange == true);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+  }
 }
 
 /**********************************************************************************************************************/

@@ -8,7 +8,30 @@ using namespace boost::unit_test_framework;
 
 #include "Device.h"
 
+#include <limits>
+
 using namespace ChimeraTK;
+
+// DataType::getNumberOfBytes() returns the element data width in bytes for every DataType value: 1/2/4/8 for the
+// integer types by their width, 4 for float32 and 8 for float64, sizeof(ChimeraTK::Boolean) for Boolean, 0 for
+// none and Void (no data), and std::numeric_limits<size_t>::max() for string (variable length, no fixed size).
+BOOST_AUTO_TEST_CASE(TestGetNumberOfBytes) {
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::int8).getNumberOfBytes()) == 1);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::uint8).getNumberOfBytes()) == 1);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::int16).getNumberOfBytes()) == 2);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::uint16).getNumberOfBytes()) == 2);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::int32).getNumberOfBytes()) == 4);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::uint32).getNumberOfBytes()) == 4);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::int64).getNumberOfBytes()) == 8);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::uint64).getNumberOfBytes()) == 8);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::float32).getNumberOfBytes()) == 4);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::float64).getNumberOfBytes()) == 8);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::Boolean).getNumberOfBytes()) == sizeof(ChimeraTK::Boolean));
+  BOOST_TEST(
+      (ChimeraTK::DataType(ChimeraTK::DataType::string).getNumberOfBytes()) == std::numeric_limits<size_t>::max());
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::none).getNumberOfBytes()) == 0);
+  BOOST_TEST((ChimeraTK::DataType(ChimeraTK::DataType::Void).getNumberOfBytes()) == 0);
+}
 
 BOOST_AUTO_TEST_CASE(testRawAccessor) {
   setDMapFilePath("dummies.dmap");
