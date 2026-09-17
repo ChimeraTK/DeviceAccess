@@ -1,0 +1,42 @@
+{
+  "mapFormatVersion": "0.0.1",
+  "metadata": {},
+  "interruptHandler": {},
+  "addressSpace": {
+    "CHILD": {
+      "_": "2D register whose channel A carries bit-field children including unsupported ones. 'Good' is a proper bit range; 'Whole' spans the entire channel word (bitShift 0, width 32) and 'Overflow' extends past it (bitShift 28, width 8). The unsupported children are ignored while the supported slice is still created.",
+      "address": {
+        "type": "DMA",
+        "offset": "0x1000"
+      },
+      "numberOfElements": 4,
+      "pitch": 8,
+      "channels": {
+        "A": {
+          "offset": 0,
+          "bytesPerElement": 4,
+          "children": {
+            "Good": {
+              "representation": {
+                "bitShift": 0,
+                "width": 8
+              }
+            },
+            "Whole": {
+              "representation": {
+                "bitShift": 0,
+                "width": 32
+              }
+            },
+            "Overflow": {
+              "representation": {
+                "bitShift": 28,
+                "width": 8
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

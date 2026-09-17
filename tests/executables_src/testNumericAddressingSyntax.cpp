@@ -214,3 +214,79 @@ BOOST_AUTO_TEST_CASE(TestOnlyS64) {
 }
 
 /**********************************************************************************************************************/
+
+// The extended BAR() numeric address accepts an explicit element pitch component 'p<pitchBits>' after the u/s
+// width marker. The element pitch in bits determines the number of elements: nElements = nBytes * 8 / pitchBits,
+// and the register is strided with elementPitchBits = pitchBits.
+BOOST_AUTO_TEST_CASE(TestPitchPrefixU32) {
+  NumericAddressedRegisterCatalogue catalogue;
+  auto info1 = catalogue.getBackendRegister("/#/5/12*8u32p64");
+
+  compareRegister(info1, "/#/5/12*8u32p64", 1, 12, 8, 5, 32, 0, false);
+  BOOST_TEST(info1.elementPitchBits == 64);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestPitchPrefixU32SameAsWidth) {
+  NumericAddressedRegisterCatalogue catalogue;
+  auto info1 = catalogue.getBackendRegister("/#/5/12*8u32p32");
+
+  // pitchBits equals the element width -> same nElements as the short form, but the explicit stride is kept.
+  compareRegister(info1, "/#/5/12*8u32p32", 2, 12, 8, 5, 32, 0, false);
+  BOOST_TEST(info1.elementPitchBits == 32);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestPitchPrefixU16) {
+  NumericAddressedRegisterCatalogue catalogue;
+  auto info1 = catalogue.getBackendRegister("/#/5/12*8u16p64");
+
+  compareRegister(info1, "/#/5/12*8u16p64", 1, 12, 8, 5, 16, 0, false);
+  BOOST_TEST(info1.elementPitchBits == 64);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestPitchPrefixSigned) {
+  NumericAddressedRegisterCatalogue catalogue;
+  auto info1 = catalogue.getBackendRegister("/#/5/12*4s16p32");
+
+  compareRegister(info1, "/#/5/12*4s16p32", 1, 12, 4, 5, 16, 0, true);
+  BOOST_TEST(info1.elementPitchBits == 32);
+}
+
+/**********************************************************************************************************************/
+
+// A pitch of zero is invalid.
+BOOST_AUTO_TEST_CASE(TestPitchPrefixZeroPitchThrows) {
+  NumericAddressedRegisterCatalogue catalogue;
+  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/12*8u32p0"), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// A pitch that is not a multiple of 8 bits is invalid.
+BOOST_AUTO_TEST_CASE(TestPitchPrefixNonAlignedPitchThrows) {
+  NumericAddressedRegisterCatalogue catalogue;
+  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/12*8u32p12"), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// A pitch that does not divide the total byte span is invalid (nElements would not be integral).
+BOOST_AUTO_TEST_CASE(TestPitchPrefixNonDivisiblePitchThrows) {
+  NumericAddressedRegisterCatalogue catalogue;
+  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/12*10u32p24"), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// An empty register (nBytes * 8 / pitchBits == 0) is invalid.
+BOOST_AUTO_TEST_CASE(TestPitchPrefixZeroElementsThrows) {
+  NumericAddressedRegisterCatalogue catalogue;
+  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/0u32p64"), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/

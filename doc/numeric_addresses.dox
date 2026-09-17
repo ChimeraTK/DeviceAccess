@@ -8,6 +8,19 @@ NumericAddress::BAR constant can be used. This notation can be used in any conte
 expected. Outside C++, e.g. when using the command line tools, a "#" character has to be used instead of the BAR
 constant, e.g.: #/0/32*4
 
+The complete numeric address syntax is
+\verbatim
+BAR()/<bar>/<address>*<nBytes>u<bitWidth>p<pitchBits>
+\endverbatim
+where every part after the byte address `<address>` is optional:
+
+\li `*<nBytes>` the total span of the register in bytes (default: the element size).
+\li `u<bitWidth>` an unsigned element of width `<bitWidth>` (8, 16, 32 or 64);
+    `s<bitWidth>` selects a signed element (default: signed 32-bit).
+\li `p<pitchBits>` the element pitch in bits, a multiple of 8. When present the register
+    is strided: each element has a distance of \c pitchBits bits in memory, and
+    \c nElements = \c nBytes*8/\c pitchBits.
+
 \include numeric_address.cpp
 
 */

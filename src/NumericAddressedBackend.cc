@@ -15,6 +15,7 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "parserUtilities.h"
+#include "SupportedUserTypes.h"
 
 #include <nlohmann/json.hpp>
 
@@ -170,11 +171,15 @@ namespace ChimeraTK {
                 std::to_string(numberOfWords + wordOffsetInRegister) + " exceeds register size of " +
                 std::to_string(nParentElements) + ".");
           }
-          // Target must point to the full parent register (all elements)
+          // Target must point to the full parent register (all elements). The element data width of the slice's
+          // sample word is derived from the channel raw type via DataType::getNumberOfBytes(), so the 'u<width>'
+          // marker in the target path matches the sample word width (which may differ from the element pitch for
+          // strided slices) instead of being hardcoded to 64 as before.
           uint64_t targetSizeBytes = nParentElements * registerInfo.elementPitchBits / 8;
+          uint32_t wordWidth = registerInfo.channels.front().getRawType().getNumberOfBytes() * 8;
           RegisterPath targetRegisterPath = numeric_address::BAR() / std::to_string(registerInfo.bar) /
-              (std::to_string(registerInfo.address) + "*" + std::to_string(targetSizeBytes) + 'u' +
-                  std::to_string(registerInfo.elementPitchBits));
+              (std::to_string(registerInfo.address) + "*" + std::to_string(targetSizeBytes) + "u" +
+                  std::to_string(wordWidth) + "p" + std::to_string(registerInfo.elementPitchBits));
           auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, nParentElements, 0, {});
 
           if(flags.has(AccessMode::raw)) {

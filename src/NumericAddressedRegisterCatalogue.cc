@@ -53,7 +53,7 @@ namespace ChimeraTK {
       Access dataAccess_, std::vector<size_t> interruptId_, std::optional<DoubleBufferInfo> doubleBufferInfo_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(elementPitchBits_), bar(bar_), address(address_),
     registerAccess(dataAccess_), interruptId(std::move(interruptId_)), doubleBuffer(std::move(doubleBufferInfo_)),
-    channels(std::move(channelInfo_)) {
+    isBitRange(false), channels(std::move(channelInfo_)) {
     assert(!channels.empty());
 
     // make sure . and / is treated as similar as possible
@@ -246,9 +246,23 @@ namespace ChimeraTK {
       else {
         nBytes = bytesPerElement;
       }
-      auto nElements = nBytes / bytesPerElement;
-      if(nBytes == 0 || nBytes % bytesPerElement != 0) {
-        throw ChimeraTK::logic_error("Illegal numeric address: '" + (path) + "'");
+
+      // optional explicit element pitch (stride) component, e.g. ..*..u64p32. When present, the element pitch in bits
+      // determines the number of elements (nBytes * 8 / pitchBits) and the register becomes strided.
+      auto pitchPos = components[2].find_last_of("pP");
+      size_t nElements;
+      if(pitchPos != std::string::npos) {
+        auto pitchBits = std::stoi(components[2].substr(pitchPos + 1));
+        if(pitchBits == 0 || pitchBits % 8 != 0 || nBytes * 8 % pitchBits != 0 || nBytes * 8 / pitchBits == 0) {
+          throw ChimeraTK::logic_error("Illegal numeric address: '" + (path) + "'");
+        }
+        nElements = nBytes * 8 / pitchBits;
+      }
+      else {
+        nElements = nBytes / bytesPerElement;
+        if(nBytes == 0 || nBytes % bytesPerElement != 0) {
+          throw ChimeraTK::logic_error("Illegal numeric address: '" + (path) + "'");
+        }
       }
       return NumericAddressedRegisterInfo(
           path, nElements, address, nBytes, bar, bitWidth, /* fracBits */ 0, signedFlag);
