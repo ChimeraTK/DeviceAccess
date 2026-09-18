@@ -1,0 +1,11 @@
+/**
+\page change_requests Change Requests
+
+This page lists all change request documents of this project. It is generated
+automatically from the files in doc/change-requests/ during the CMake
+configuration step, so it does not need to be maintained by hand.
+
+\section change_requests_index Index
+
+@CR_DOXYGEN_LIST@
+*/

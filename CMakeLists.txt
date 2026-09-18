@@ -145,6 +145,7 @@ install(TARGETS ${PROJECT_NAME}
 set(PROVIDES_EXPORTED_TARGETS 1)
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
+include(cmake/generate_change_requests_doc.cmake)
 include(cmake/enable_doxygen_documentation.cmake)
 
 include(cmake/enable_code_style_check.cmake)

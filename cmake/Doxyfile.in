@@ -10,7 +10,8 @@ EXTRACT_ALL            = YES
 CASE_SENSE_NAMES       = NO
 SORT_MEMBERS_CTORS_1ST = YES
 QUIET                  = YES
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@ @DOXYGEN_EXTRA_INPUT@
+STRIP_FROM_PATH        = @CMAKE_CURRENT_SOURCE_DIR@
 FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \
