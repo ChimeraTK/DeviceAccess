@@ -51,38 +51,45 @@ Out of scope (assessed separately, not part of this change request):
 
 ## Specifications
 
-Affected components: only the double-buffering/data-consistency tests and a
-new map file. Production code is unchanged unless a test uncovers a defect.
+Affected components: the double-buffering/data-consistency tests and the
+re-used JMAP file `tests/muxedDataAccessor.jmap`, which gains two scalar key
+registers. Production code is unchanged unless a test uncovers a defect.
 
-- Add a new JMAP file for the test (e.g. `tests/dblDataConsistencyKey.jmap`)
-  providing two interrupt-driven async domains:
+- Reuse `tests/muxedDataAccessor.jmap` instead of adding a new map file. Its
+  register `TEST.DBLASYNC` (double-buffered, `triggeredByInterrupt: [7]`) and
+  the control registers `TEST.DOUBLE_BUF.ENA` and
+  `TEST.DOUBLE_BUF.INACTIVE_BUF_ID` already provide the data register and the
+  double-buffer control state; the channel slice `TEST/DBLASYNC.1` is already
+  driven through the dummy backend in `testNumericAddressedBackendUnified`.
+- Add two scalar key registers (single 32-bit words) to that map only:
 
-  - Domain A (basic case): a plain, non-double-buffered key register (a single
-    32-bit word) and a double-buffered data register, both with the same
-    interrupt id. The data register has `doubleBuffering` configured
-    (secondary buffer address, enable register, inactive-buffer register,
-    index) and `triggeredByInterrupt` set to that interrupt id.
-  - Domain B (correlated case): a double-buffered key register and a
-    double-buffered data register with their own buffer addresses, but both
-    referencing the same enable register and inactive-buffer register (and
-    the same index), so both resolve to one shared control state in the
-    backend's `_doubleBufferMutexMap` and swap together. Each carries
-    `triggeredByInterrupt` for its own interrupt id.
-  - Shared by both domains: the two double-buffer control registers (enable
-    and inactive buffer id), single 32-bit words each.
-- Extend `tests/executables_src/testDataConsistencyRealm.cpp` (or a dedicated
-  new test executable) with a test case per domain that opens the backend with
-  a CDD whose `DataConsistencyKeys` parameter maps the respective key register
-  to a realm, then drives the firmware side through the dummy backend: write
-  the key value and the data into the buffers the firmware will expose, set
-  the inactive buffer id so key and data swap together to the freshly written
-  buffers, and raise the interrupt.
+  - `TEST.KEY`, a plain register with `triggeredByInterrupt: [7]`, for the
+    basic case (non-double-buffered key).
+  - `TEST.KEYDB`, a double-buffered register whose `doubleBuffering` references
+    the same `TEST.DOUBLE_BUF.ENA`, `TEST.DOUBLE_BUF.INACTIVE_BUF_ID` and
+    index 0 as `TEST.DBLASYNC`, so it resolves to the same shared control
+    state in the backend's `_doubleBufferMutexMap` and its buffer swap is
+    correlated with the data register. It has its own primary and secondary
+    buffer addresses, distinct from the data buffers.
+- The key registers must be scalar: the key accessor is a
+  `ScalarRegisterAccessor<uint64_t>` (`TriggeredPollDistributor.h`), and only
+  element (0,0) is used to build the `DataConsistencyKey`. A wider register
+  would silently read only its first element, so the key must be a single
+  word.
+- Extend `tests/executables_src/testDataConsistencyRealm.cpp` with a test case
+  per configuration that opens the backend with a CDD whose
+  `DataConsistencyKeys` parameter maps `TEST.KEY` (basic) or `TEST.KEYDB`
+  (correlated) to a realm, then drives the firmware side through the dummy
+  backend: write the key value and the data into the freshly written buffers,
+  set the inactive buffer id, and raise the interrupt.
 - The tests subscribe to the data register with `wait_for_new_data` and drive
   both buffers with different values, so delivering the wrong buffer or a
   mismatched key/data pair would fail the check. They verify the delivered
   `VersionNumber` equals the realm version of the key value read together with
   the data, iterate over both buffer indices, and cover the repeated-key and
-  backward-key cases from the Requirements.
+  backward-key cases from the Requirements. For the correlated case, key and
+  data swap together on the single inactive-buffer id of the shared control
+  state.
 - For the correlated case, an inconsistency between the key and the data
   accessor would point at the shared-control handshake in
   `DoubleBufferAccessor` (neither of the two sharing accessors writes the
@@ -93,15 +100,19 @@ new map file. Production code is unchanged unless a test uncovers a defect.
 
 ## Test plan
 
-- New tests `TestDataConsistencyKeyDoubleBufferPlain` (basic case) and
-  `TestDataConsistencyKeyDoubleBufferCorrelated` (correlated double-buffered
-  key) in the data-consistency test executable: for a sequence of buffer
-  finishes, each raising the interrupt with an increasing key, assert the
-  returned data is the freshly finished buffer and the `VersionNumber` matches
-  `realm->getVersion(key)`. The correlated case additionally asserts that the
-  key and the data come from the same buffer generation (they swap together on
-  a single inactive-buffer id). With a repeated key the `VersionNumber` stays,
-  and with a backward key the last `VersionNumber` is kept while the data
-  validity is `faulty`.
+- New tests `TestDataConsistencyKeyDoubleBufferPlain` (basic case, key
+  `TEST.KEY`) and `TestDataConsistencyKeyDoubleBufferCorrelated` (correlated
+  double-buffered key, `TEST.KEYDB`) in the data-consistency test executable:
+  for a sequence of buffer finishes, each raising the interrupt with an
+  increasing key, assert the returned data is the freshly finished buffer and
+  the `VersionNumber` matches `realm->getVersion(key)`. The correlated case
+  additionally asserts that the key and the data come from the same buffer
+  generation (they swap together on the single inactive-buffer id of the
+  shared control state). With a repeated key the `VersionNumber` stays, and
+  with a backward key the last `VersionNumber` is kept while the data validity
+  is `faulty`.
 - Full sub-suite run (`ctest`) of the data-consistency and double-buffering
-  tests to ensure the untouched existing tests still pass.
+  tests, plus the three executables that consume `muxedDataAccessor.jmap`
+  (`testNumericAddressedBackendUnified`,
+  `testNumericAddressedBackendRegisterAccessor`, `testLMapBackendUnified`), to
+  confirm the two added key registers disturb no existing test.
