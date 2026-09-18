@@ -13,8 +13,33 @@ using namespace ChimeraTK;
 #include <boost/pointer_cast.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include <nlohmann/json.hpp>
+
+#include <fstream>
+#include <string>
 #include <vector>
 using namespace boost::unit_test_framework;
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
+// Helper used by the selectedBy fault tests below: load simpleJsonFile.jmap as the base map, overwrite the
+// selectedBy of the existing COLLISION/FD/Sel0 channel with the supplied (possibly malformed) one, write the result
+// to <outFile>, then parse it. This replaces the standalone selectedBy*.jmap fixtures: the fault is injected into an
+// existing entry of the full simpleJsonFile map (via nlohmann-json) and the produced file is what gets parsed, so no
+// separate fault-only map files need to be kept.
+static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue> parseInjectedSelectedByFault(
+    const std::string& outFile, const nlohmann::json& selectedBy) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+
+  // Overwrite the selectedBy of an existing channel (COLLISION/FD/Sel0) already carrying one, so the fault is
+  // injected into an existing entry rather than introducing a new register.
+  map["addressSpace"]["COLLISION"]["children"]["FD"]["channels"]["Sel0"]["selectedBy"] = selectedBy;
+
+  std::ofstream(outFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(outFile);
+}
 
 BOOST_AUTO_TEST_SUITE(JsonMapFileParserTestSuite)
 
@@ -710,7 +735,8 @@ BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
 // parser must reject the map with std::logic_error (a missing 'value' must not silently default). NOTE: the current
 // lax deserializer does not yet enforce this; this test documents the desired behaviour.
 BOOST_AUTO_TEST_CASE(TestSelectedByMissingValue) {
-  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse("selectedByOnlyRegister.jmap"), ChimeraTK::logic_error);
+  nlohmann::json sel{{"register", "COLLISION.MUX"}};                 // missing 'value'
+  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingValue.jmap", sel), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
@@ -718,7 +744,8 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingValue) {
 // selectedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
 // because both fields are required. NOTE: expected std::logic_error, not guaranteed by the current lax deserializer.
 BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
-  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse("selectedByOnlyValue.jmap"), ChimeraTK::logic_error);
+  nlohmann::json sel{{"value", 0}};                                 // missing 'register'
+  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingRegister.jmap", sel), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
@@ -741,7 +768,8 @@ BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
 // selectedBy with a non-numeric 'value' (e.g. a string) must be rejected with std::logic_error. NOTE: currently a
 // nlohmann::json type error surfaces instead; this test documents the desired behaviour.
 BOOST_AUTO_TEST_CASE(TestSelectedByBadValue) {
-  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse("selectedByBadValue.jmap"), ChimeraTK::logic_error);
+  nlohmann::json sel{{"register", "COLLISION.MUX"}, {"value", "not-a-number"}};
+  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByBadValue.jmap", sel), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
