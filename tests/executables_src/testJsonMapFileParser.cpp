@@ -785,6 +785,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedByAlternativesShareAddress) {
     BOOST_TEST(reg.channels[1].selectedBy->val == 1);
     BOOST_TEST(reg.channels[0].bitOffset == reg.channels[1].bitOffset);
   }
+
   // Channel-level within the production /DAQ/FD: AmplitudeCh0(raw) and RawCh0 raw both at bitOffset 0 with different
   // selectors, all within the same register address.
   {
