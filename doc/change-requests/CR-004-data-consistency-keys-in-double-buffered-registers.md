@@ -1,4 +1,4 @@
-# CR-004: Data consistency keys in double-buffered registers
+# CR-004: Tests for data consistency keys in double-buffered registers
 
 Synopsis: Certify that an interrupt-driven `wait_for_new_data` read of a
 double-buffered register is tagged with the `VersionNumber` of a
