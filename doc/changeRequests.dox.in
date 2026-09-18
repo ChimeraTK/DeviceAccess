@@ -1,0 +1,9 @@
+/**
+\page change_requests Change Requests
+
+This page lists all change request documents of this project. These documents summarise the updated requirements and specification for each one change to the code base. They are mostly used for the development process but kept here for future reference. Keep in mind that older change requests may contain outdated information as they will not be updated after the change has been merged. Also not all changes will be accompanied by a change request document, so this list does not contain all chances made to the code base.
+
+\section change_requests_index Index
+
+@CR_DOXYGEN_LIST@
+*/
