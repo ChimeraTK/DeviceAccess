@@ -256,90 +256,86 @@
             "index": 0,
             "_": "Index inside control registers"
           },
-          "__": "There is an extra level in 'channels', which is only really useful with multiple DAQ tabs. See example below with a defined 'tabSelectRegister'.",
-          "channelTabs": [
-            {
-              "numberOfElements": 16384,
-              "pitch": 64,
-              "channels": {
-                "errorI": {
-                  "bytesPerElement": 2,
-                  "offset": 0,
-                  "description": "Error signal in I",
-                  "engineeringUnit": "bits",
+          "__": "The channels below are the layout of this 2D DAQ register. For registers whose layout is selected by a register value (multiple DAQ tabs), a 'selectedBy' dict is added as shown in the FD example below.",
+          "numberOfElements": 16384,
+          "pitch": 64,
+          "channels": {
+            "errorI": {
+              "bytesPerElement": 2,
+              "offset": 0,
+              "description": "Error signal in I",
+              "engineeringUnit": "bits",
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": -2,
+                "isSigned": true
+              }
+            },
+            "errorQ": {
+              "bytesPerElement": 2,
+              "offset": 2,
+              "description": "Error signal in Q",
+              "engineeringUnit": "bits",
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": -2,
+                "isSigned": true
+              }
+            },
+            "status": {
+              "bytesPerElement": 4,
+              "offset": 4,
+              "children": {
+                "ProbeLimiter": {
                   "representation": {
-                    "type": "fixedPoint",
-                    "width": 16,
-                    "fractionalBits": -2,
-                    "isSigned": true
+                    "bitShift": 0,
+                    "width": 1
                   }
                 },
-                "errorQ": {
-                  "bytesPerElement": 2,
-                  "offset": 2,
-                  "description": "Error signal in Q",
-                  "engineeringUnit": "bits",
+                "ExternalInterlock": {
                   "representation": {
+                    "bitShift": 1,
+                    "width": 1
+                  }
+                },
+                "ErrorCounter": {
+                  "representation": {
+                    "bitShift": 2,
                     "type": "fixedPoint",
-                    "width": 16,
-                    "fractionalBits": -2,
-                    "isSigned": true
+                    "width": 3,
+                    "fractionalBits": 0,
+                    "isSigned": false
                   }
-                },
-                "status": {
-                  "bytesPerElement": 4,
-                  "offset": 4,
-                  "children": {
-                    "ProbeLimiter": {
-                      "representation": {
-                        "bitShift": 0,
-                        "width": 1
-                      }
-                    },
-                    "ExternalInterlock": {
-                      "representation": {
-                        "bitShift": 1,
-                        "width": 1
-                      }
-                    },
-                    "ErrorCounter": {
-                      "representation": {
-                        "bitShift": 2,
-                        "type": "fixedPoint",
-                        "width": 3,
-                        "fractionalBits": 0,
-                        "isSigned": false
-                      }
-                    }
+                }
+              }
+            },
+            "VectorSum_I": {
+              "bytesPerElement": 4,
+              "offset": 8,
+              "children": {
+                "I": {
+                  "representation": {
+                    "bitShift": 0,
+                    "width": 18
                   }
-                },
-                "VectorSum_I": {
-                  "bytesPerElement": 4,
-                  "offset": 8,
-                  "children": {
-                    "I": {
-                      "representation": {
-                        "bitShift": 0,
-                        "width": 18
-                      }
-                    }
-                  }
-                },
-                "VectorSum_Q": {
-                  "bytesPerElement": 4,
-                  "offset": 10,
-                  "children": {
-                    "Q": {
-                      "representation": {
-                        "bitShift": 2,
-                        "width": 18
-                      }
-                    }
+                }
+              }
+            },
+            "VectorSum_Q": {
+              "bytesPerElement": 4,
+              "offset": 10,
+              "children": {
+                "Q": {
+                  "representation": {
+                    "bitShift": 2,
+                    "width": 18
                   }
                 }
               }
             }
-          ]
+          }
         },
         "FD": {
           "description": "Field detection DAQ",
@@ -359,70 +355,75 @@
             "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
             "index": 1
           },
-          "tabSelectRegister": "DAQ.MUX_SEL",
-          "_": "Value of the tabSelectRegister determines the used set of channels (index of muxedChannels array)",
-          "channelTabs": [
-            {
-              "numberOfElements": 16384,
-              "pitch": 64,
-              "channels": {
-                "AmplitudeCh0": {
-                  "bytesPerElement": 2,
-                  "offset": 0,
-                  "description": "Amplitude of channel 0",
-                  "engineeringUnit": "bits",
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16,
-                    "fractionalBits": -2,
-                    "isSigned": true
-                  }
-                },
-                "PhaseCh0": {
-                  "bytesPerElement": 2,
-                  "offset": 2,
-                  "description": "Phase of channel 0",
-                  "engineeringUnit": "bits",
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16,
-                    "fractionalBits": -2,
-                    "isSigned": true
-                  }
-                }
+          "_": "Each channel below is active only when the 'selectedBy' register (DAQ.MUX_SEL) equals its 'selectedBy' value.",
+          "numberOfElements": 16384,
+          "pitch": 64,
+          "channels": {
+            "AmplitudeCh0": {
+              "selectedBy": {
+                "register": "DAQ.MUX_SEL",
+                "value": 0
+              },
+              "bytesPerElement": 2,
+              "offset": 0,
+              "description": "Amplitude of channel 0",
+              "engineeringUnit": "bits",
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": -2,
+                "isSigned": true
               }
             },
-            {
-              "numberOfElements": 16384,
-              "pitch": 64,
-              "channels": {
-                "RawCh0": {
-                  "bytesPerElement": 4,
-                  "offset": 0,
-                  "description": "Raw signal for channel 0",
-                  "engineeringUnit": "bits",
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 32,
-                    "fractionalBits": 0,
-                    "isSigned": true
-                  }
-                },
-                "RawCh1": {
-                  "bytesPerElement": 4,
-                  "offset": 4,
-                  "description": "Phase of channel 1",
-                  "engineeringUnit": "bits",
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 32,
-                    "fractionalBits": 0,
-                    "isSigned": true
-                  }
-                }
+            "PhaseCh0": {
+              "selectedBy": {
+                "register": "DAQ.MUX_SEL",
+                "value": 0
+              },
+              "bytesPerElement": 2,
+              "offset": 2,
+              "description": "Phase of channel 0",
+              "engineeringUnit": "bits",
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": -2,
+                "isSigned": true
+              }
+            },
+            "RawCh0": {
+              "selectedBy": {
+                "register": "DAQ.MUX_SEL",
+                "value": 1
+              },
+              "bytesPerElement": 4,
+              "offset": 0,
+              "description": "Raw signal for channel 0",
+              "engineeringUnit": "bits",
+              "representation": {
+                "type": "fixedPoint",
+                "width": 32,
+                "fractionalBits": 0,
+                "isSigned": true
+              }
+            },
+            "RawCh1": {
+              "selectedBy": {
+                "register": "DAQ.MUX_SEL",
+                "value": 1
+              },
+              "bytesPerElement": 4,
+              "offset": 4,
+              "description": "Phase of channel 1",
+              "engineeringUnit": "bits",
+              "representation": {
+                "type": "fixedPoint",
+                "width": 32,
+                "fractionalBits": 0,
+                "isSigned": true
               }
             }
-          ]
+          }
         },
         "SIMPLE2D": {
           "_": "A non-interrupt 2D register with named channels; its slices stay read-only and never advertise wait_for_new_data.",
@@ -430,34 +431,30 @@
             "channel": 13,
             "offset": "0x51000"
           },
-          "channelTabs": [
-            {
-              "numberOfElements": 4,
-              "pitch": 32,
-              "channels": {
-                "A": {
-                  "bytesPerElement": 2,
-                  "offset": 0,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16,
-                    "fractionalBits": 0,
-                    "isSigned": true
-                  }
-                },
-                "B": {
-                  "bytesPerElement": 2,
-                  "offset": 2,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16,
-                    "fractionalBits": 0,
-                    "isSigned": true
-                  }
-                }
+          "numberOfElements": 4,
+          "pitch": 32,
+          "channels": {
+            "A": {
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "isSigned": true
+              }
+            },
+            "B": {
+              "bytesPerElement": 2,
+              "offset": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "isSigned": true
               }
             }
-          ]
+          }
         },
         "DOUBLE_BUF": {
           "children": {
@@ -494,6 +491,38 @@
           },
           "representation": {
             "width": 2
+          }
+        },
+        "SINGLE_MUXED": {
+          "_": "A scalar (non-2D) register can carry a register-level 'selectedBy' too: the whole register is only active while DAQ.MUX_SEL equals the 'value'. For scalar/1D registers the selector is given on the register itself (not per channel, which is a 2D concept).",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "selectedBy": {
+            "register": "DAQ.MUX_SEL",
+            "value": 0
+          },
+          "address": {
+            "channel": 0,
+            "offset": 1246
+          },
+          "representation": {
+            "width": 32
+          }
+        },
+        "SINGLE_MUXED_ALT": {
+          "_": "Alternative scalar register for SINGLE_MUXED: muxed alternatives share the same address (offset 1246) and differ only in the 'selectedBy' value (here 1 instead of 0). Only one is active at a time depending on DAQ.MUX_SEL.",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "selectedBy": {
+            "register": "DAQ.MUX_SEL",
+            "value": 1
+          },
+          "address": {
+            "channel": 0,
+            "offset": 1246
+          },
+          "representation": {
+            "width": 32
           }
         },
         "MACRO_PULSE_NUMBER": {
@@ -583,6 +612,96 @@
                 "offset": 0
               }
             }
+          }
+        }
+      }
+    },
+    "MUX": {
+      "numberOfElements": 1,
+      "address": {
+        "channel": 0,
+        "offset": 0
+      },
+      "representation": {
+        "type": "fixedPoint",
+        "width": 2
+      }
+    },
+    "SCALAR": {
+      "numberOfElements": 1,
+      "selectedBy": {
+        "register": "MUX",
+        "value": 0
+      },
+      "address": {
+        "channel": 0,
+        "offset": 4
+      },
+      "representation": {
+        "type": "fixedPoint",
+        "width": 32
+      }
+    },
+    "COLLISION": {
+      "_": "Two muxed channels (Sel0/Sel1) plus an unconditional channel (Uncond) all at the same byte offset: an ambiguous mux that must parse without crashing.",
+      "children": {
+        "FD": {
+          "address": {
+            "type": "DMA",
+            "offset": "0x1000"
+          },
+          "numberOfElements": 100,
+          "pitch": 8,
+          "channels": {
+            "Sel0": {
+              "selectedBy": {
+                "register": "COLLISION.MUX",
+                "value": 0
+              },
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "isSigned": true
+              }
+            },
+            "Sel1": {
+              "selectedBy": {
+                "register": "COLLISION.MUX",
+                "value": 1
+              },
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "isSigned": true
+              }
+            },
+            "Uncond": {
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "isSigned": true
+              }
+            }
+          }
+        },
+        "MUX": {
+          "numberOfElements": 1,
+          "address": {
+            "channel": 0,
+            "offset": 0
+          },
+          "representation": {
+            "type": "fixedPoint",
+            "width": 2
           }
         }
       }

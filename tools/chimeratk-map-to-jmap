@@ -325,10 +325,10 @@ def _fill_entry_from_reg(entry: dict[str, Any], reg: RegisterDescr) -> None:
     interrupt_ids = reg['interruptIDs']
 
     # -- 2D (multiplexed) registers --------------------------------------------
-    # A descriptor carrying a "channelTabs" key is a 2D (multiplexed)
-    # register.  Emit its address/access/interrupts plus the channelTabs
-    # structure instead of the standard scalar/1D fields.
-    if 'channelTabs' in reg:
+    # A descriptor carrying a "channels" key is a 2D (multiplexed, DAQ-tabs)
+    # register.  Emit its address/access/interrupts plus the promoted
+    # numberOfElements/pitch/channels instead of the standard scalar/1D fields.
+    if 'channels' in reg:
         if reg['accessType'] != 'INTERRUPT':
             access = _access_to_jmap(reg['accessType'])
             if access != 'RW':
@@ -336,7 +336,9 @@ def _fill_entry_from_reg(entry: dict[str, Any], reg: RegisterDescr) -> None:
         if interrupt_ids:
             entry['triggeredByInterrupt'] = interrupt_ids
         entry['address'] = _make_address(reg)
-        entry['channelTabs'] = reg['channelTabs']
+        entry['numberOfElements'] = reg['numberOfElements']
+        entry['pitch'] = reg['pitch']
+        entry['channels'] = reg['channels']
         return
 
     # -- Void interrupt registers ---------------------------------------------
@@ -524,7 +526,8 @@ def _ensure_void_parents(entries):
 #      channels are any register whose path strictly starts with the container
 #      path plus a dot.
 #
-# Both are converted to the jmap-native ``channelTabs`` form.
+# Both are converted to the jmap-native flat ``channels`` form (with the
+# ``numberOfElements`` and ``pitch`` promoted to the register level).
 
 
 def _is_2d_container(name: str) -> bool:
@@ -606,9 +609,14 @@ def _build_2d_descriptor(container_name: str, container: RegisterDescr, channels
 
     *container_name* is the flat path of the container register (used for the
     renamed output path).  The returned dict carries the container's
-    address/access/interrupt information plus a ``channelTabs`` structure.
-    ``_fill_entry_from_reg`` detects the ``channelTabs`` key and emits these
+    address/access/interrupt information plus a promoted ``channels``
+    structure with the register-level ``numberOfElements`` and ``pitch``.
+    ``_fill_entry_from_reg`` detects the ``channels`` key and emits these
     fields instead of the standard scalar/1D fields.
+
+    Since a classic .map file carries no reference to a DAQ-tab selector
+    register, the channels are emitted without a per-channel ``selectedBy``
+    (single-tab layout, unconditional channels).
     """
     bytes_per_block = sum(reg['nBytes'] for _, reg in channels)
     n_blocks = container['nBytes'] // bytes_per_block if bytes_per_block else 0
@@ -626,11 +634,9 @@ def _build_2d_descriptor(container_name: str, container: RegisterDescr, channels
 
     descriptor: dict[str, Any] = dict(container)
     descriptor['name'] = container_name
-    descriptor['channelTabs'] = [{
-        'numberOfElements': n_blocks,
-        'pitch': bytes_per_block,
-        'channels': channel_entries,
-    }]
+    descriptor['numberOfElements'] = n_blocks
+    descriptor['pitch'] = bytes_per_block
+    descriptor['channels'] = channel_entries
     return descriptor
 
 
@@ -643,8 +649,8 @@ def _build_tree(all_registers):
     Steps:
     1. Identify 2D (multiplexed) container registers in the classic
        ``AREA_MULTIPLEXED_SEQUENCE_*`` / ``MEM_MULTIPLEXED_*`` syntax, collect
-       their channel registers and build jmap-native ``channelTabs``
-       descriptors.  The consumed container/channel paths are removed from
+       their channel registers and build jmap-native flat ``channels``
+       descriptors (with promoted ``numberOfElements`` and ``pitch``).  The consumed container/channel paths are removed from
        the set processed by the normal tree builder.  A ``SEQUENCE_*``
        register that belongs to no container indicates a broken map: it is
        skipped and a warning is printed to stderr.

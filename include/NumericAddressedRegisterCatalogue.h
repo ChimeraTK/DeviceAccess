@@ -6,6 +6,7 @@
 #include "BackendRegisterInfoBase.h"
 
 #include <cstdint>
+#include <limits>
 #include <string>
 
 namespace ChimeraTK {
@@ -36,6 +37,19 @@ namespace ChimeraTK {
     enum class Type { VOID = 0, FIXED_POINT = 1, IEEE754 = 2, ASCII = 3 };
 
     /**
+     * Per-channel information that contains a pair of register and value determining a condition
+     * under which this register is considered active.
+     */
+
+    /* Unfortunately, register is a reserved keyword so we use regPath.
+     * And since this is used as a std::optional, which has a value() method would make "value" a weird name
+     */
+    struct SelectedBy {
+      RegisterPath regPath; /**< Path of register that determines if a Channel/Register is considered active */
+      int64_t val;          /**< Value of that register that determines if that Channel/Register is active */
+    };
+
+    /**
      *  Per-channel information. For scalar and 1D registers, exactly one ChannelInfo is present. For 2D register, one
      *  ChannelInfo per channel is present.
      */
@@ -46,6 +60,7 @@ namespace ChimeraTK {
       int32_t nFractionalBits; /**< Number of fractional bits */
       bool signedFlag;         /**< Signed/Unsigned flag */
       DataType rawType;
+      std::optional<SelectedBy> selectedBy{std::nullopt};
       bool operator==(const ChannelInfo& rhs) const;
       bool operator!=(const ChannelInfo& rhs) const;
       [[nodiscard]] DataType getRawType() const;

@@ -12,7 +12,6 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 
-#include <functional>
 #include <list>
 #include <string>
 #include <typeinfo>
