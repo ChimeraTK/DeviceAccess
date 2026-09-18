@@ -6,8 +6,7 @@ double-buffered register is tagged with the `VersionNumber` of a
 together with the data. Two key-register configurations are covered: a plain
 (non-double-buffered) key register, and a double-buffered key register
 sharing the double-buffer control registers with the data register so the
-buffer swaps are correlated. Reading by polling without an interrupt is
-recorded as out of scope. Verification only; the underlying machinery is
+buffer swaps are correlated. Verification only; the underlying machinery is
 already implemented.
 
 Status: PLANNED
@@ -41,13 +40,6 @@ Aspect: data consistency key for interrupt-driven double-buffered reads.
   delivered `VersionNumber`; a key value going backwards must keep the last
   delivered `VersionNumber` and mark the data `DataValidity::faulty`, as the
   `TriggeredPollDistributor` already implements.
-
-Out of scope (assessed separately, not part of this change request):
-
-- Reading the data by polling without an interrupt, typically with a
-  double-buffered data consistency key register on its own. This is the only
-  remaining extension and is considerably larger: it needs a new triggering
-  mechanism in the async framework, so it is not part of this change request.
 
 ## Specifications
 
