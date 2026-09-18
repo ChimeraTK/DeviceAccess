@@ -7,7 +7,7 @@ together with the data. Two key configurations are covered: a plain key, and a
 double-buffered key sharing the data register's control state (correlated
 swap). Verification only; the production machinery is already in place.
 
-Status: IMPLEMENTED
+Status: READY TO TEST
 
 ## Requirements
 
@@ -30,14 +30,21 @@ Aspect: data consistency key for interrupt-driven double-buffered reads.
 
 ## Specifications
 
-Affected components: the data-consistency/double-buffering tests and the
-re-used `tests/muxedDataAccessor.jmap`, which gains two key registers. No
-production code, unless a test uncovers a defect.
+Affected components: the data-consistency/double-buffering tests, the
+re-used `tests/muxedDataAccessor.jmap`, which gains two key registers, and the
+`ExceptionDummy` backend factory. No production code, unless a test uncovers a
+defect.
 
 - Map: reuse `tests/muxedDataAccessor.jmap`. `TEST.DBLASYNC` (double-buffered,
   interrupt 7) is the data register, `TEST.DOUBLE_BUF.ENA` and
   `TEST.DOUBLE_BUF.INACTIVE_BUF_ID` the control state; the slice
   `TEST/DBLASYNC.1` is already exercised there.
+- Backend: `ExceptionDummy::createInstance` previously discarded the
+  `DataConsistencyKeys` parameter, so a `DataConsistencyKeys` CDD had no
+  effect with the `ExceptionDummy` backend (unlike `DummyBackend`). It now
+  forwards that parameter to the `ExceptionDummy` constructor, so the tests
+  here can map a key register to a realm with the `ExceptionDummy` backend,
+  which the `muxedDataAccessor.jmap` map requires.
 - Add two scalar key registers. Keys must be scalar because the key accessor is
   a `ScalarRegisterAccessor<uint64_t>` and only element (0,0) forms the
   `DataConsistencyKey`. Both are single 32-bit words with

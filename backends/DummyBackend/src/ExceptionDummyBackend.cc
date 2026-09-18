@@ -103,7 +103,7 @@ namespace ChimeraTK {
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("No map file name given.");
     }
-    return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
+    return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"], parameters["DataConsistencyKeys"]));
   }
 
   /********************************************************************************************************************/

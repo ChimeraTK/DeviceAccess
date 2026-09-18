@@ -12,6 +12,7 @@ using namespace boost::unit_test_framework;
 #include "BackendFactory.h"
 #include "Device.h"
 #include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 
 namespace ctk = ChimeraTK;
 
@@ -234,6 +235,117 @@ BOOST_AUTO_TEST_CASE(TestMultiInterrupt) {
 
   BOOST_TEST(dataA.getVersionNumber() == v2);
   BOOST_TEST(intA.getVersionNumber() == v2);
+
+  dev.close();
+}
+
+/**********************************************************************************************************************/
+
+namespace {
+
+  /// Drive the firmware side of the double-buffered registers in muxedDataAccessor.jmap once, finishing buffer 1.
+  /// Writes the key and the data into buffer 1 of the respective registers, sets the inactive-buffer id to 0 (so
+  /// buffer 1 becomes the freshly finished buffer), and raises interrupt 7.
+  void triggerDataConsistencyKeyDoubleBuffer(
+      ctk::DummyBackend* backend, uint32_t keyValue, const std::vector<uint16_t>& dataValue) {
+    ctk::DummyRegisterAccessor<uint32_t> key{backend, "TEST", "KEY"};
+    ctk::DummyRegisterAccessor<uint16_t> dataBuf1{backend, "TEST/DBLASYNC.1", "BUF1"};
+    ctk::DummyRegisterAccessor<uint32_t> inactiveBuf{backend, "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
+
+    // write a distinguishable value into buffer 1 only
+    for(size_t e = 0; e < dataValue.size(); ++e) {
+      dataBuf1[e] = dataValue[e];
+    }
+    // set the inactive-buffer id to 0 so buffer 1 is the freshly finished buffer
+    inactiveBuf[0] = 0;
+
+    key[0] = keyValue;
+    backend->triggerInterrupt(7);
+  }
+
+  /// Drive the firmware side of the correlated double-buffered key (TEST.KEYDB) and data (TEST.DBLASYNC) once,
+  /// finishing buffer 1 of both. Writes the key into buffer 1 of TEST.KEYDB and the data into buffer 1 of
+  /// TEST.DBLASYNC, sets the inactive-buffer id to 0, and raises interrupt 7.
+  void triggerCorrelatedDataConsistencyKeyDoubleBuffer(
+      ctk::DummyBackend* backend, uint32_t keyValue, const std::vector<uint16_t>& dataValue) {
+    ctk::DummyRegisterAccessor<uint32_t> keyBuf1{backend, "TEST/KEYDB", "BUF1"};
+    ctk::DummyRegisterAccessor<uint16_t> dataBuf1{backend, "TEST/DBLASYNC.1", "BUF1"};
+    ctk::DummyRegisterAccessor<uint32_t> inactiveBuf{backend, "TEST/DOUBLE_BUF", "INACTIVE_BUF_ID"};
+
+    // write a distinguishable value into buffer 1 of both key and data
+    keyBuf1[0] = keyValue;
+    for(size_t e = 0; e < dataValue.size(); ++e) {
+      dataBuf1[e] = dataValue[e];
+    }
+    // set the inactive-buffer id to 0 so buffer 1 is the freshly finished buffer
+    inactiveBuf[0] = 0;
+
+    backend->triggerInterrupt(7);
+  }
+
+} // namespace
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestDataConsistencyKeyDoubleBufferPlain) {
+  std::cout << "TestDataConsistencyKeyDoubleBufferPlain" << std::endl;
+  std::string keyCdd =
+      R"((ExceptionDummy:1?map=muxedDataAccessor.jmap&DataConsistencyKeys={"/TEST.KEY":"DoubleBufferKeyRealm"}))";
+  auto backend =
+      boost::dynamic_pointer_cast<ctk::DummyBackend>(ctk::BackendFactory::getInstance().createBackend(keyCdd));
+  ctk::Device dev(keyCdd);
+  dev.open();
+  auto realm = realmStore.getRealm("DoubleBufferKeyRealm");
+
+  auto data = dev.getOneDRegisterAccessor<uint16_t>("/TEST/DBLASYNC.1", 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+  dev.activateAsyncRead();
+  BOOST_REQUIRE(data.readNonBlocking()); // consume the initial value
+
+  // drive the firmware once: finish buffer 1 of the double-buffered data register with a plain key
+  const uint32_t keyValue = 42;
+  const std::vector<uint16_t> dataValue{100, 101, 102, 103};
+  triggerDataConsistencyKeyDoubleBuffer(backend.get(), keyValue, dataValue);
+
+  BOOST_REQUIRE(data.readNonBlocking());
+  BOOST_TEST(data.getVersionNumber() == realm->getVersion(ctk::async::DataConsistencyKey(keyValue)));
+  for(size_t e = 0; e < data.getNElements(); ++e) {
+    BOOST_TEST(data[e] == dataValue[e]);
+  }
+
+  dev.close();
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestDataConsistencyKeyDoubleBufferCorrelated) {
+  std::cout << "TestDataConsistencyKeyDoubleBufferCorrelated" << std::endl;
+  std::string keyCdd =
+      R"((ExceptionDummy:1?map=muxedDataAccessor.jmap&DataConsistencyKeys={"/TEST.KEYDB":"DoubleBufferKeyRealm"}))";
+  auto backend =
+      boost::dynamic_pointer_cast<ctk::DummyBackend>(ctk::BackendFactory::getInstance().createBackend(keyCdd));
+  ctk::Device dev(keyCdd);
+  dev.open();
+  auto realm = realmStore.getRealm("DoubleBufferKeyRealm");
+
+  auto data = dev.getOneDRegisterAccessor<uint16_t>("/TEST/DBLASYNC.1", 0, 0, {ctk::AccessMode::wait_for_new_data});
+
+  dev.activateAsyncRead();
+  BOOST_REQUIRE(data.readNonBlocking()); // consume the initial value
+
+  // drive the firmware once: finish buffer 1 of the correlated double-buffered key and data
+  const uint32_t keyValue = 42;
+  const std::vector<uint16_t> dataValue{200, 201, 202, 203};
+  triggerCorrelatedDataConsistencyKeyDoubleBuffer(backend.get(), keyValue, dataValue);
+
+  BOOST_REQUIRE(data.readNonBlocking());
+  // The key and the data share the same control state, so they are guaranteed to be read from the same buffer
+  // generation. Asserting the delivered version equals the realm version for the freshly written key value proves the
+  // key was read from buffer 1 (the same generation as the data), since the other buffer holds a different key value.
+  BOOST_TEST(data.getVersionNumber() == realm->getVersion(ctk::async::DataConsistencyKey(keyValue)));
+  for(size_t e = 0; e < data.getNElements(); ++e) {
+    BOOST_TEST(data[e] == dataValue[e]);
+  }
 
   dev.close();
 }
