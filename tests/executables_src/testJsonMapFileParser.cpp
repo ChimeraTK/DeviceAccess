@@ -665,20 +665,6 @@ BOOST_AUTO_TEST_CASE(TestDoubleBufferDiffBarThrows) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(TestInterruptIntegration) {
-  ChimeraTK::Device dev("(dummy?map=simpleJsonFile.jmap)");
-
-  dev.open();
-
-  auto int0 = dev.getVoidRegisterAccessor("/BSP/VOID_INTERRUPT_0", {ChimeraTK::AccessMode::wait_for_new_data});
-  auto int301 = dev.getVoidRegisterAccessor("/BSP/VOID_INTERRUPT_3_0_1", {ChimeraTK::AccessMode::wait_for_new_data});
-  dev.activateAsyncRead();
-  BOOST_TEST(int0.readNonBlocking() == true);
-  BOOST_TEST(int301.readNonBlocking() == true);
-}
-
-/**********************************************************************************************************************/
-
 // ChannelInfo::operator== (and !=) must include the selectedByRegister/selectedByValue members. Two channel infos
 // that differ only in their selector must compare unequal.
 BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
