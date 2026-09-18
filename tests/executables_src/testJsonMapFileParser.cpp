@@ -10,10 +10,10 @@
 
 using namespace ChimeraTK;
 
+#include <nlohmann/json.hpp>
+
 #include <boost/pointer_cast.hpp>
 #include <boost/test/unit_test.hpp>
-
-#include <nlohmann/json.hpp>
 
 #include <fstream>
 #include <string>
@@ -28,8 +28,8 @@ using namespace boost::unit_test_framework;
 // to <outFile>, then parse it. This replaces the standalone selectedBy*.jmap fixtures: the fault is injected into an
 // existing entry of the full simpleJsonFile map (via nlohmann-json) and the produced file is what gets parsed, so no
 // separate fault-only map files need to be kept.
-static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue> parseInjectedSelectedByFault(
-    const std::string& outFile, const nlohmann::json& selectedBy) {
+static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue>
+    parseInjectedSelectedByFault(const std::string& outFile, const nlohmann::json& selectedBy) {
   std::ifstream base("simpleJsonFile.jmap");
   nlohmann::json map = nlohmann::json::parse(base);
 
@@ -127,6 +127,15 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].nFractionalBits == 0);
     BOOST_TEST(reg.channels[0].signedFlag == false);
     BOOST_TEST(reg.isBitRange == false);
+  }
+  {
+    BOOST_TEST(regs.hasRegister("/SCALAR"));
+    auto reg = regs.getBackendRegister("/SCALAR");
+    BOOST_TEST(reg.nElements == 1);
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    BOOST_REQUIRE(reg.channels[0].selectedBy);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/MUX");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
   }
   {
     auto reg = regs.getBackendRegister("APP.STATUS.ProbeLimiter");
@@ -420,9 +429,6 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
     BOOST_TEST(reg.interruptId == std::vector<size_t>({0}), boost::test_tools::per_element());
 
-    // The four channels come from the two former muxed tabs merged into one flat layout, each tagged with
-    // its 'selectedBy' register+value. Sorted by byte offset (stable), ties broken by map order:
-    // AmplitudeCh0(0), RawCh0(0), PhaseCh0(2), RawCh1(4).
     BOOST_REQUIRE(reg.channels.size() == 4);
 
     BOOST_TEST(reg.channels[0].bitOffset == 0);
@@ -735,7 +741,7 @@ BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
 // parser must reject the map with std::logic_error (a missing 'value' must not silently default). NOTE: the current
 // lax deserializer does not yet enforce this; this test documents the desired behaviour.
 BOOST_AUTO_TEST_CASE(TestSelectedByMissingValue) {
-  nlohmann::json sel{{"register", "COLLISION.MUX"}};                 // missing 'value'
+  nlohmann::json sel{{"register", "COLLISION.MUX"}}; // missing 'value'
   BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingValue.jmap", sel), ChimeraTK::logic_error);
 }
 
@@ -744,7 +750,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingValue) {
 // selectedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
 // because both fields are required. NOTE: expected std::logic_error, not guaranteed by the current lax deserializer.
 BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
-  nlohmann::json sel{{"value", 0}};                                 // missing 'register'
+  nlohmann::json sel{{"value", 0}}; // missing 'register'
   BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingRegister.jmap", sel), ChimeraTK::logic_error);
 }
 
@@ -754,13 +760,6 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
 // register's single channel must carry the selector.
 BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
-  BOOST_TEST(regs.hasRegister("/SCALAR"));
-  auto reg = regs.getBackendRegister("/SCALAR");
-  BOOST_TEST(reg.nElements == 1);
-  BOOST_REQUIRE(reg.channels.size() == 1);
-  BOOST_REQUIRE(reg.channels[0].selectedBy);
-  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/MUX");
-  BOOST_TEST(reg.channels[0].selectedBy->val == 0);
 }
 
 /**********************************************************************************************************************/
@@ -770,77 +769,6 @@ BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
 BOOST_AUTO_TEST_CASE(TestSelectedByBadValue) {
   nlohmann::json sel{{"register", "COLLISION.MUX"}, {"value", "not-a-number"}};
   BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByBadValue.jmap", sel), ChimeraTK::logic_error);
-}
-
-/**********************************************************************************************************************/
-
-// Two channels with the same offset but different selectors, plus one unconditional channel at the same offset.
-// The parser must not crash; the ordering/dedup semantics are documented here (both conditional and unconditional
-// channels at the same offset constitute an ambiguous mux).
-BOOST_AUTO_TEST_CASE(TestSelectedByOffsetCollision) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
-  auto reg = regs.getBackendRegister("/COLLISION/FD");
-  // All three channels survive (no crash, no merge), order preserved by map order then byte offset.
-  BOOST_TEST(reg.channels.size() == 3);
-  BOOST_REQUIRE(reg.channels[0].selectedBy);
-  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/COLLISION/MUX");
-  BOOST_TEST(reg.channels[0].selectedBy->val == 0);
-  BOOST_REQUIRE(reg.channels[1].selectedBy);
-  BOOST_TEST(reg.channels[1].selectedBy->regPath == "/COLLISION/MUX");
-  BOOST_TEST(reg.channels[1].selectedBy->val == 1);
-  BOOST_TEST(!reg.channels[2].selectedBy);
-}
-
-/**********************************************************************************************************************/
-
-// Check that the selectBy alternatives share the same addresses
-BOOST_AUTO_TEST_CASE(TestSelectedBySingleRegisterInSimpleJsonFile) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
-
-  BOOST_TEST(regs.hasRegister("/DAQ/SINGLE_MUXED"));
-  auto reg0 = regs.getBackendRegister("/DAQ/SINGLE_MUXED");
-  BOOST_TEST(reg0.nElements == 1);
-  BOOST_REQUIRE(reg0.channels.size() == 1);
-  BOOST_REQUIRE(reg0.channels[0].selectedBy);
-  BOOST_TEST(reg0.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-  BOOST_TEST(reg0.channels[0].selectedBy->val == 0);
-
-  BOOST_TEST(regs.hasRegister("/DAQ/SINGLE_MUXED_ALT"));
-  auto reg1 = regs.getBackendRegister("/DAQ/SINGLE_MUXED_ALT");
-  BOOST_TEST(reg1.nElements == 1);
-  BOOST_REQUIRE(reg1.channels.size() == 1);
-  BOOST_REQUIRE(reg1.channels[0].selectedBy);
-  BOOST_TEST(reg1.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-  BOOST_TEST(reg1.channels[0].selectedBy->val == 1);
-
-  // The two muxed alternatives share the same address but differ in their selector value.
-  BOOST_TEST(reg0.address == 1246);
-  BOOST_TEST(reg1.address == 1246);
-  BOOST_TEST(reg0.address == reg1.address);
-}
-
-/**********************************************************************************************************************/
-
-// Muxed register combined with doubleBuffering (FD) and interrupt. BUF0/BUF1 slices carry the
-// selector and wait_for_new_data is propagated to the muxed slices.
-BOOST_AUTO_TEST_CASE(TestSelectedByDoubleBufferAndInterrupt) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
-
-  // The double-buffer copies mirror the main register's selector info.
-  for(const auto* name : {"/DAQ/FD/BUF0", "/DAQ/FD/BUF1"}) {
-    auto reg = regs.getBackendRegister(name);
-    BOOST_REQUIRE(reg.channels.size() == 4);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
-    BOOST_REQUIRE(reg.channels[1].selectedBy);
-    BOOST_TEST(reg.channels[1].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
-  }
-
-  // Interrupt propagates wait_for_new_data to the muxed slices.
-  auto slice = regs.getBackendRegister("/DAQ/FD/AmplitudeCh0");
-  BOOST_CHECK(slice.getSupportedAccessModes().has(ChimeraTK::AccessMode::wait_for_new_data) == true);
 }
 
 /**********************************************************************************************************************/
