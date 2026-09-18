@@ -726,7 +726,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
 // selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
 // register's single channel must carry the selector.
 BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
   BOOST_TEST(regs.hasRegister("/SCALAR"));
   auto reg = regs.getBackendRegister("/SCALAR");
   BOOST_TEST(reg.nElements == 1);
@@ -750,7 +750,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedByBadValue) {
 // The parser must not crash; the ordering/dedup semantics are documented here (both conditional and unconditional
 // channels at the same offset constitute an ambiguous mux).
 BOOST_AUTO_TEST_CASE(TestSelectedByOffsetCollision) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
   auto reg = regs.getBackendRegister("/COLLISION/FD");
   // All three channels survive (no crash, no merge), order preserved by map order then byte offset.
   BOOST_TEST(reg.channels.size() == 3);
@@ -798,7 +798,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedBySingleRegisterInSimpleJsonFile) {
 // (no duplicate registers for the slice path).
 BOOST_AUTO_TEST_CASE(TestSelectedByBitFieldSliceCollision) {
   // Parsing must not crash.
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
 
   // The register and its muxed channel slice are present exactly once.
   BOOST_TEST(regs.hasRegister("/BITFIELD/FD"));
