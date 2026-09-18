@@ -7,7 +7,7 @@ together with the data, and record the two extensions (a double-buffered key
 register, and polling without an interrupt) as out of scope. Verification
 only; the underlying machinery is already implemented.
 
-Status: IN PROGRESS
+Status: PLANNED
 
 ## Requirements
 
