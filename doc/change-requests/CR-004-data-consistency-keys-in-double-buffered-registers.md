@@ -51,9 +51,10 @@ production code, unless a test uncovers a defect.
   key register to a realm, then driving the firmware side once: write key and
   data into buffer 1, set the inactive-buffer id to 0 so buffer 1 becomes the
   freshly finished buffer, and raise the interrupt.
-- Each test fills the two buffers of its registers with different values, so a
-  wrong buffer fails the check. It asserts the delivered data equals the
-  freshly written buffer and the `VersionNumber` equals
+- Each test writes a distinguishable value into the buffer to be read (buffer
+  1) only; the other buffer keeps whatever it held before (zeros or previous
+  test data), so a wrong buffer fails the check. It asserts the delivered
+  data equals the freshly written buffer and the `VersionNumber` equals
   `realm->getVersion(key)`; the correlated test additionally asserts the key
   value is the one of the same buffer generation as the data.
 - Edge cases of the individual features (repeated/backwards key, both buffer
