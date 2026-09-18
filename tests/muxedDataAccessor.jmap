@@ -575,6 +575,44 @@
               }
             }
           }
+        },
+        "KEY": {
+          "triggeredByInterrupt": [
+            7
+          ],
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 0,
+            "offset": 3008
+          },
+          "representation": {
+            "width": 32
+          }
+        },
+        "KEYDB": {
+          "triggeredByInterrupt": [
+            7
+          ],
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 0,
+            "offset": 3020
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "channel": 0,
+              "type": "IO",
+              "offset": 3024
+            },
+            "enableRegister": "TEST.DOUBLE_BUF.ENA",
+            "readBufferRegister": "TEST.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 0
+          },
+          "representation": {
+            "width": 32
+          }
         }
       }
     }
