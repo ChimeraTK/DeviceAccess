@@ -5,17 +5,14 @@
 
 #define BOOST_TEST_MODULE JsonMapFileParser
 
-#include "Device.h"
 #include "Exception.h"
 #include "MapFileParser.h"
-#include "NumericAddressedBackend.h"
 
 using namespace ChimeraTK;
 
 #include <boost/pointer_cast.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <limits>
 #include <vector>
 using namespace boost::unit_test_framework;
 
