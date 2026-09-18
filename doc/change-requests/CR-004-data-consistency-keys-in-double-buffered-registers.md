@@ -22,11 +22,10 @@ Aspect: data consistency key for interrupt-driven double-buffered reads.
   - a double-buffered key register sharing the data register's control
     registers (enable, inactive-buffer id, index), so both accessors resolve
     to one control state in `_doubleBufferMutexMap` and swap together.
-- Each interrupt delivers the freshly finished buffer tagged with the version
-  of the key read at that interrupt; in the correlated configuration, key and
-  data come from the same buffer generation.
-- A repeated key keeps the delivered `VersionNumber`; a backwards key keeps the
-  last one and marks the data `DataValidity::faulty`.
+- After the firmware finishes one buffer and raises the interrupt, the read
+  must return that freshly finished buffer tagged with the realm version of
+  the key value written alongside it. In the correlated configuration, the key
+  value read must be the one of the same buffer generation as the data.
 
 ## Specifications
 
@@ -48,21 +47,26 @@ production code, unless a test uncovers a defect.
     Requirements).
 - In `testDataConsistencyRealm.cpp`, add one test case per configuration, each
   opening the backend with a `DataConsistencyKeys` CDD mapping the respective
-  key register to a realm, then driving the firmware side: write key and data
-  into the freshly written buffers, set the inactive-buffer id, raise the
+  key register to a realm, then driving the firmware side once: write key and
+  data into the freshly finished buffer, set the inactive-buffer id, raise the
   interrupt.
-- Each test subscribes with `wait_for_new_data` and drives the two buffers with
-  different values, so a wrong buffer or mismatched key/data pair fails. It
-  checks the delivered `VersionNumber` against `realm->getVersion(key)`,
-  iterates both buffer indices, and covers the repeated/backwards-key cases.
+- Each test fills the two buffers of its registers with different values, so a
+  wrong buffer fails the check. It asserts the delivered data equals the
+  freshly written buffer and the `VersionNumber` equals
+  `realm->getVersion(key)`; the correlated test additionally asserts the key
+  value is the one of the same buffer generation as the data.
+- Edge cases of the individual features (repeated/backwards key, both buffer
+  indices, switching validity) are covered by the existing data-consistency and
+  double-buffering tests and are out of scope here.
 - The existing `testDataConsistencyRealm` tests and map file stay unchanged.
 
 ## Test plan
 
 - `TestDataConsistencyKeyDoubleBufferPlain` and
   `TestDataConsistencyKeyDoubleBufferCorrelated` in the data-consistency test
-  executable, implementing the two Specifications cases above; the correlated
-  case asserts key and data from one buffer generation.
+  executable, each performing one buffer finish as described in the
+  Specifications; each fails if either double buffering or the data consistency
+  key handling is turned off.
 - Full `ctest` of the data-consistency/double-buffering tests plus the three
   executables using `muxedDataAccessor.jmap`
   (`testNumericAddressedBackendUnified`,
