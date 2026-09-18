@@ -7,7 +7,7 @@ together with the data. Two key configurations are covered: a plain key, and a
 double-buffered key sharing the data register's control state (correlated
 swap). Verification only; the production machinery is already in place.
 
-Status: READY TO TEST
+Status: TESTS PASSED
 
 ## Requirements
 
