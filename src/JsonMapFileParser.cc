@@ -198,9 +198,6 @@ namespace ChimeraTK::detail {
 
       // NOLINTNEXTLINE(readability-identifier-naming)
       friend void from_json(const nlohmann::json& j, SelectedBy& s) {
-        // Both 'register' and 'value' are required for a 'selectedBy' entry. A muxed channel whose selector is
-        // underspecified is a map authoring error, so reject it with a ChimeraTK::logic_error instead of silently
-        // defaulting the missing field (which would otherwise make a *conditional* channel look unconditional).
         if(!j.contains("register")) {
           throw ChimeraTK::logic_error("'selectedBy' requires a 'register' member.");
         }
@@ -222,7 +219,7 @@ namespace ChimeraTK::detail {
       std::string description;
       size_t offset;
       size_t bytesPerElement{4};
-      Representation representation{};
+      Representation representation;
       std::optional<SelectedBy> selectedBy;
 
       void fill(NumericAddressedRegisterInfo& info) const {
@@ -294,8 +291,7 @@ namespace ChimeraTK::detail {
           }
           else {
             if(selectedBy) {
-              throw ChimeraTK::logic_error(
-                  "Register " + info.pathName +
+              throw ChimeraTK::logic_error("Register " + info.pathName +
                   ": 'selectedBy' must be given per channel for a 2D register, not on the register itself.");
             }
             info.elementPitchBits = pitch * 8;

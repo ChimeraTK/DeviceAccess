@@ -765,43 +765,6 @@ BOOST_AUTO_TEST_CASE(TestSelectedByOffsetCollision) {
 
 /**********************************************************************************************************************/
 
-// Alternative selectedBy channels that share a byte offset also share the same register address. In a well-formed
-// muxed register the alternatives (different selector values) must resolve to the same address + bit offset.
-BOOST_AUTO_TEST_CASE(TestSelectedByAlternativesShareAddress) {
-  // Channel-level within a 2D register: /COLLISION/FD has three channels at the same byte offset (Sel0/Sel1/Uncond).
-  {
-    auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
-    auto reg = regs.getBackendRegister("/COLLISION/FD");
-    // Unconditional and muxed alternatives all reside on the same register / address.
-    BOOST_REQUIRE(reg.channels.size() == 3);
-    BOOST_TEST(reg.address == 0x1000);
-    for(const auto& ch : reg.channels) {
-      BOOST_TEST(ch.bitOffset == 0);
-    }
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
-    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
-    BOOST_TEST(reg.channels[0].bitOffset == reg.channels[1].bitOffset);
-  }
-
-  // Channel-level within the production /DAQ/FD: AmplitudeCh0(raw) and RawCh0 raw both at bitOffset 0 with different
-  // selectors, all within the same register address.
-  {
-    auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
-    auto reg = regs.getBackendRegister("/DAQ/FD");
-    BOOST_REQUIRE(reg.channels.size() == 4);
-    BOOST_TEST(reg.address == 0x81000);
-    BOOST_TEST(reg.channels[0].bitOffset == 0);
-    BOOST_TEST(reg.channels[1].bitOffset == 0);
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
-    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
-    BOOST_TEST(reg.channels[0].bitOffset == reg.channels[1].bitOffset);
-    // Ambiguity guard: two alternatives at the same offset must not have the same selector value.
-    BOOST_TEST(reg.channels[0].selectedBy->val != reg.channels[1].selectedBy->val);
-  }
-}
-
-/**********************************************************************************************************************/
-
 // Check that the selectBy alternatives share the same addresses
 BOOST_AUTO_TEST_CASE(TestSelectedBySingleRegisterInSimpleJsonFile) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
