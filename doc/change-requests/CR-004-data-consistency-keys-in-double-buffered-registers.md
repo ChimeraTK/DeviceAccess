@@ -55,10 +55,6 @@ production code, unless a test uncovers a defect.
   different values, so a wrong buffer or mismatched key/data pair fails. It
   checks the delivered `VersionNumber` against `realm->getVersion(key)`,
   iterates both buffer indices, and covers the repeated/backwards-key cases.
-- If the correlated test shows key/data inconsistency, that points at the
-  shared-control handshake in `DoubleBufferAccessor` (no accessor writes the
-  enable register during the group read); a small fix there or in
-  `NumericAddressedBackend` is expected, not a redesign.
 - The existing `testDataConsistencyRealm` tests and map file stay unchanged.
 
 ## Test plan
