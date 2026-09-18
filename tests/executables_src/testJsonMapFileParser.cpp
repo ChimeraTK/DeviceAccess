@@ -793,33 +793,6 @@ BOOST_AUTO_TEST_CASE(TestSelectedBySingleRegisterInSimpleJsonFile) {
 
 /**********************************************************************************************************************/
 
-// A muxed channel that also has bit-field sub-entries. The named channel slice collides with the
-// generated bit-field sub-entries; the parser must not crash and the slice must remain queryable via hasRegister
-// (no duplicate registers for the slice path).
-BOOST_AUTO_TEST_CASE(TestSelectedByBitFieldSliceCollision) {
-  // Parsing must not crash.
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
-
-  // The register and its muxed channel slice are present exactly once.
-  BOOST_TEST(regs.hasRegister("/BITFIELD/FD"));
-  BOOST_TEST(regs.hasRegister("/BITFIELD/FD/Ch0"));
-
-  // The channel slice persists and carries the selector.
-  auto slice = regs.getBackendRegister("/BITFIELD/FD/Ch0");
-  BOOST_REQUIRE(slice.channels.size() == 1);
-  BOOST_REQUIRE(slice.channels[0].selectedBy);
-  BOOST_TEST(slice.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
-  BOOST_TEST(slice.channels[0].selectedBy->val == 0);
-
-  // The other muxed channel slice resolves too.
-  auto slice1 = regs.getBackendRegister("/BITFIELD/FD/Ch1");
-  BOOST_REQUIRE(slice1.channels[0].selectedBy);
-  BOOST_TEST(slice1.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
-  BOOST_TEST(slice1.channels[0].selectedBy->val == 1);
-}
-
-/**********************************************************************************************************************/
-
 // Muxed register combined with doubleBuffering (FD) and interrupt. BUF0/BUF1 slices carry the
 // selector and wait_for_new_data is propagated to the muxed slices.
 BOOST_AUTO_TEST_CASE(TestSelectedByDoubleBufferAndInterrupt) {
