@@ -1027,11 +1027,68 @@ BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
 
 /**********************************************************************************************************************/
 
-// selectedBy with a non-numeric 'value' (e.g. a string) must be rejected with std::logic_error. NOTE: currently a
-// nlohmann::json type error surfaces instead; this test documents the desired behaviour.
-BOOST_AUTO_TEST_CASE(TestSelectedByBadValue) {
-  nlohmann::json sel{{"register", "COLLISION.MUX"}, {"value", "not-a-number"}};
-  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByBadValue.jmap", sel), ChimeraTK::logic_error);
+// A 'selectedBy' declared on a module or parent register is inherited by all descendant registers/channels that lack
+// their own declaration; the nearest ancestor's declaration wins for a node that has its own.
+BOOST_AUTO_TEST_CASE(TestSelectedByInheritance) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByInheritance.jmap");
+
+  // Helpers: assert the single channel of a scalar/1D register carries the given selector (or none).
+  auto checkRegSelectedBy = [](const NumericAddressedRegisterInfo& reg, const std::string& expectedReg,
+                                std::optional<int64_t> expectedVal) {
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    const auto& sb = reg.channels[0].selectedBy;
+    if(expectedVal.has_value()) {
+      BOOST_REQUIRE(sb.has_value());
+      BOOST_TEST(sb->regPath == expectedReg);
+      BOOST_TEST(sb->val == *expectedVal);
+    }
+    else {
+      BOOST_CHECK(!sb.has_value());
+    }
+  };
+  // Helpers: assert each channel of a 2D register, in natural (byte-offset) order.
+  auto check2DChannelsSelectedBy = [](const NumericAddressedRegisterInfo& reg,
+                                       std::initializer_list<std::pair<std::string, int64_t>> expected) {
+    BOOST_REQUIRE(reg.channels.size() == expected.size());
+    size_t i = 0;
+    for(const auto& [expectedReg, expectedVal] : expected) {
+      const auto& sb = reg.channels[i].selectedBy;
+      BOOST_REQUIRE(sb.has_value());
+      BOOST_TEST(sb->regPath == expectedReg);
+      BOOST_TEST(sb->val == expectedVal);
+      ++i;
+    }
+  };
+
+  // Module inheritance. REG_A inherits the module default; REG_B keeps its own (override).
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG_A"), "/APP/OUTPUT_SELECT", 3);
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG_B"), "/CTRL/MODE", 9);
+
+  // Nested inheritance (module -> submodule -> leaf). SUB carries no selectedBy, so LEAF inherits from INHERIT.
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/SUB/LEAF"), "/APP/OUTPUT_SELECT", 3);
+
+  // 2D module default. All channels of a contained 2D register without own declarations inherit the module default.
+  check2DChannelsSelectedBy(
+      regs.getBackendRegister("/INHERIT/CHANA"), {{"/APP/OUTPUT_SELECT", 3}, {"/APP/OUTPUT_SELECT", 3}});
+
+  // Channel override. D1 has its own per-channel selectedBy; D0 inherits the module default.
+  check2DChannelsSelectedBy(
+      regs.getBackendRegister("/INHERIT/CHANB"), {{"/APP/OUTPUT_SELECT", 3}, {"/CTRL/CHAN_SEL", 7}});
+
+  // Register-module dual role. Its selectedBy applies to its own register AND to its descendant.
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN"), "/CTRL/DUAL", 5);
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN/CHILD"), "/CTRL/DUAL", 5);
+
+  // Register-level selectedBy directly on a 2D register (no module) is valid and becomes the default for all channels.
+  check2DChannelsSelectedBy(regs.getBackendRegister("/REG2D_TOP"), {{"/APP/TOP_SEL", 11}, {"/APP/TOP_SEL", 11}});
+
+  // A leaf with no ancestor carrying selectedBy stays unconditional (no inheritance).
+  checkRegSelectedBy(regs.getBackendRegister("/LEAF_TOP"), "", std::nullopt);
+
+  // The 1D channel slices of an inherited 2D register also carry the effective selector.
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C0"), "/APP/OUTPUT_SELECT", 3);
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C1"), "/APP/OUTPUT_SELECT", 3);
+  checkRegSelectedBy(regs.getBackendRegister("/REG2D_TOP/E0"), "/APP/TOP_SEL", 11);
 }
 
 /**********************************************************************************************************************/

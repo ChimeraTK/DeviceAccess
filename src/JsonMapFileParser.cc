@@ -227,12 +227,13 @@ namespace ChimeraTK::detail {
       std::optional<SelectedBy> selectedBy;
       std::map<std::string, ChannelChild> children;
 
-      void fill(NumericAddressedRegisterInfo& info) const {
+      void fill(NumericAddressedRegisterInfo& info, const std::optional<SelectedBy>& inheritedSelectedBy) const {
         representation.fill(info, offset, bytesPerElement);
-        if(selectedBy) {
-          RegisterPath selReg(selectedBy.value().regPath);
+        if(selectedBy || inheritedSelectedBy) {
+          const auto& selected = selectedBy ? *selectedBy : *inheritedSelectedBy;
+          RegisterPath selReg(selected.regPath);
           selReg.setAltSeparator(".");
-          info.channels.back().selectedBy.emplace(selReg, selectedBy->value);
+          info.channels.back().selectedBy.emplace(selReg, selected.value);
         }
       }
 
@@ -273,7 +274,7 @@ namespace ChimeraTK::detail {
     std::optional<SelectedBy> selectedBy;
 
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent) const {
+        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy) const {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
 
@@ -302,20 +303,16 @@ namespace ChimeraTK::detail {
             info.elementPitchBits = bPerElem * 8;
             info.nElements = numberOfElements;
             representation.fill(info, 0, bPerElem);
-            applyRegisterSelectedBy(info);
+            applyRegisterSelectedBy(info, inheritedSelectedBy);
           }
           else {
-            if(selectedBy) {
-              throw ChimeraTK::logic_error("Register " + info.pathName +
-                  ": 'selectedBy' must be given per channel for a 2D register, not on the register itself.");
-            }
             info.elementPitchBits = pitch * 8;
             info.nElements = numberOfElements;
             // Iterate the channels sorted by byte offset (see channelsInOffsetOrder) so the per-channel information
             // (and hence the channel index of the 2D accessor) stays in the natural memory order.
             for(const auto& [channelName, channel] : channelsInOffsetOrder()) {
               (void)channelName; // the channel name is the map key; the channel data carries its own offset
-              channel->fill(info);
+              channel->fill(info, inheritedSelectedBy);
             }
           }
         }
@@ -327,7 +324,7 @@ namespace ChimeraTK::detail {
             }
             // If bytesPerElement has not been set in the json file, take it from parent info
             representation.fill(info, 0, (bytesPerElement != 0 ? bytesPerElement : info.elementPitchBits / 8));
-            applyRegisterSelectedBy(info);
+            applyRegisterSelectedBy(info, inheritedSelectedBy);
           }
           else {
             throw ChimeraTK::logic_error("Address must be set for entries with channels: register " + info.pathName);
@@ -367,12 +364,14 @@ namespace ChimeraTK::detail {
     }
 
     // Apply a register-level 'selectedBy' (scalar/1D registers) to the register's single channel. Must only be called
-    // after 'representation.fill' created exactly one channel.
-    void applyRegisterSelectedBy(NumericAddressedRegisterInfo& info) const {
-      if(selectedBy) {
-        RegisterPath selReg(selectedBy.value().regPath);
+    // after 'representation.fill' created exactly one channel. A local 'selectedBy' overrides an inherited one.
+    void applyRegisterSelectedBy(
+        NumericAddressedRegisterInfo& info, const std::optional<SelectedBy>& inheritedSelectedBy) const {
+      if(selectedBy || inheritedSelectedBy) {
+        const auto& selected = selectedBy ? *selectedBy : *inheritedSelectedBy;
+        RegisterPath selReg(selected.regPath);
         selReg.setAltSeparator(".");
-        info.channels.back().selectedBy.emplace(selReg, selectedBy->value);
+        info.channels.back().selectedBy.emplace(selReg, selected.value);
       }
     }
 
@@ -415,15 +414,17 @@ namespace ChimeraTK::detail {
     std::map<std::string, JsonAddressSpaceEntry> children;
 
     void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent) const {
+        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt) const {
       if(name.empty()) {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
       }
+      // The effective selector for this subtree: a local 'selectedBy' overrides an inherited one.
+      const auto& effective = selectedBy ? selectedBy : inheritedSelectedBy;
       if(address.type != AddressType::addressTypeNotSet) {
         // New address entry. Don't use parent information
         NumericAddressedRegisterInfo my;
         my.channels.clear(); // default constructor already creates a channel with default settings...
-        fill(my, name, parentName, addressSetByParent);
+        fill(my, name, parentName, addressSetByParent, effective);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
         if(!channels.empty()) {
@@ -446,6 +447,11 @@ namespace ChimeraTK::detail {
               auto selReg = RegisterPath(channel->selectedBy->regPath);
               selReg.setAltSeparator(".");
               channelSelectedBy.emplace(selReg, channel->selectedBy->value);
+            }
+            else if(effective) {
+              auto selReg = RegisterPath(effective->regPath);
+              selReg.setAltSeparator(".");
+              channelSelectedBy.emplace(selReg, effective->value);
             }
             auto wordBits = channel->bytesPerElement * 8;
             // A channel slice of a non-interrupt 2D register is read-only: writing to a single channel of a 2D
@@ -518,15 +524,15 @@ namespace ChimeraTK::detail {
       else if(representation.type != RepresentationType::representationNotSet) {
         // take over parent address (except void interrupt registers which don't have an address)
         auto my = catalogue.getBackendRegister(parentName);
-        my.channels.clear();                            // will be refilled from representation
-        fill(my, name, parentName, addressSetByParent); // only updates the name and the representation
+        my.channels.clear();                                       // will be refilled from representation
+        fill(my, name, parentName, addressSetByParent, effective); // only updates the name and the representation
         my.computeDataDescriptor();
         catalogue.addRegister(my);
       }
 
       for(const auto& [childName, child] : children) {
         child.addInfos(catalogue, childName, parentName / name,
-            addressSetByParent || (address.type != AddressType::addressTypeNotSet));
+            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effective);
       }
     }
 
