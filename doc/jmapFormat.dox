@@ -142,7 +142,7 @@ a dedicated selector register and an expected value of that register that determ
 All alternative registers will be present in the catalog.
 
 \li \c register Path to a register that determines which register set
-\li \c value The value of \register that enables this register
+\li \c value The value of \c register that enables this register
 
 \verbatim
 "addressSpace": {
