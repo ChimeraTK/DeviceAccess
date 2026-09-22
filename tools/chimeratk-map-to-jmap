@@ -825,7 +825,7 @@ def convert(filepath, output_path=None):
 
     # Build the jmap document
     jmap = {}
-    jmap['mapFormatVersion'] = '0.0.1'
+    jmap['mapFormatVersion'] = '1.0'
 
     # Metadata is optional but always emitted (empty object if absent)
     jmap['metadata'] = data['metadata'] if data['metadata'] else {}

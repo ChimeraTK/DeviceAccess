@@ -7,8 +7,8 @@
   "properties": {
     "mapFormatVersion": {
       "type": "string",
-      "description": "jmap format version, e.g. '0.0.1'.",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+      "description": "jmap format version, e.g. '1.0'.",
+      "pattern": "^\\d+\\.\\d+$"
     },
     "metadata": {
       "type": "object",
