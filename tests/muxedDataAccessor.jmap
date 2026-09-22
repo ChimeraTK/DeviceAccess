@@ -529,30 +529,26 @@
             "readBufferRegister": "TEST.DOUBLE_BUF.INACTIVE_BUF_ID",
             "index": 0
           },
-          "channelTabs": [
-            {
-              "numberOfElements": 4,
-              "pitch": 32,
-              "channels": {
-                "0": {
-                  "offset": 0,
-                  "bytesPerElement": 4,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                },
-                "1": {
-                  "offset": 4,
-                  "bytesPerElement": 4,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16
-                  }
-                }
+          "numberOfElements": 4,
+          "pitch": 32,
+          "channels": {
+            "0": {
+              "offset": 0,
+              "bytesPerElement": 4,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
+              }
+            },
+            "1": {
+              "offset": 4,
+              "bytesPerElement": 4,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16
               }
             }
-          ]
+          }
         },
         "DOUBLE_BUF": {
           "children": {
