@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
   }
 
   json output;
-  output["mapFormatVersion"] = "0.0.1";
+  output["mapFormatVersion"] = "1.0";
   output["metadata"] = json::object();
   output["interruptHandler"] = json::object();
   output["addressSpace"] = addressSpace;

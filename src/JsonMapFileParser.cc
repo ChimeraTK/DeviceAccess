@@ -3,17 +3,16 @@
 
 #include "JsonMapFileParser.h"
 
-#include "JsonExtensions.h"
+#include "JsonExtensions.h" // IWYU pragma: keep - used indirectly by nlohmann json
 #include "SupportedUserTypes.h"
 
 #include <nlohmann/json.hpp>
 
-#include <boost/algorithm/string.hpp>
-
 #include <algorithm>
+#include <charconv>
 #include <map>
 #include <string>
-#include <typeinfo>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -601,6 +600,33 @@ namespace ChimeraTK::detail {
     try {
       auto data = json::parse(stream);
 
+      // Supported map format version (MAJOR.MINOR, no patch component).
+      constexpr uint32_t supportedMapFormatMajor = 1;
+      constexpr uint32_t supportedMapFormatMinor = 0;
+
+      // Check the map format version: an exactly two-component MAJOR.MINOR string whose components are non-empty
+      // sequences of decimal digits, compared numerically against the supported version. Each component is parsed with
+      // std::from_chars into a uint32_t; a malformed or oversized component is reported through the returned error
+      // code or a trailing character rather than by throwing, so no exception escapes the version check.
+      std::string ver = data.at("mapFormatVersion").get<std::string>();
+      uint32_t major = 0;
+      uint32_t minor = 0;
+
+      auto [p, e1] = std::from_chars(ver.data(), ver.data() + ver.size(), major);
+      if(e1 != std::errc{} || p == ver.data() + ver.size() || *p++ != '.') {
+        throw ChimeraTK::logic_error("Error parsing JMAP file, mapFormatVersion contains wrong version format");
+      }
+
+      auto [q, e2] = std::from_chars(p, ver.data() + ver.size(), minor);
+      if(e2 != std::errc{} || q != ver.data() + ver.size()) {
+        throw ChimeraTK::logic_error("Error parsing JMAP file, mapFormatVersion contains wrong version format");
+      }
+
+      if(major != supportedMapFormatMajor || minor != supportedMapFormatMinor) {
+        throw ChimeraTK::logic_error("Unsupported map format version '" + ver + "'. Supported version: 1.0");
+      }
+
+      // Parse the "addressSpace" entries recursively
       std::map<std::string, JsonAddressSpaceEntry> addressSpace = data.at("addressSpace");
       for(const auto& [addressSpaceName, entry] : addressSpace) {
         entry.addInfos(catalogue, addressSpaceName, "/", /*addressSetByParent=*/false);

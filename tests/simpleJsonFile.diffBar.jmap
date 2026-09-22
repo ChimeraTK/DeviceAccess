@@ -1,6 +1,6 @@
 {
   "_comment": "Fixture for the differing-BAR double-buffer check: the secondary buffer address lives on a different channel (hence a different BAR, via channel + (type == DMA ? 13 : 0)) than the primary address, which is not supported for double-buffered registers.",
-  "mapFormatVersion": "0.0.1",
+  "mapFormatVersion": "1.0",
   "addressSpace": {
     "DEV": {
       "children": {

@@ -43,6 +43,26 @@ static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::Metada
   return ChimeraTK::MapFileParser::parse(outFile);
 }
 
+// Helper used by the map format version tests below: load simpleJsonFile.jmap as the base map, set the top-level
+// mapFormatVersion entry to the supplied value (or remove it when the value is null), write the result to <outFile>,
+// then parse it. As with the selectedBy fault helper above, this avoids keeping a set of near-identical variant
+// fixtures: the version under test is injected into an existing full map and the produced file is what gets parsed.
+static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue> parseWithMapFormatVersion(
+    const std::string& outFile, const nlohmann::json& version) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+
+  if(version.is_null()) {
+    map.erase("mapFormatVersion");
+  }
+  else {
+    map["mapFormatVersion"] = version;
+  }
+
+  std::ofstream(outFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(outFile);
+}
+
 BOOST_AUTO_TEST_SUITE(JsonMapFileParserTestSuite)
 
 /**********************************************************************************************************************/
@@ -1022,7 +1042,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
 // S1: 'selectedBy' referencing a selector register that does not exist in the catalogue must be rejected.
 BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotFound) {
   nlohmann::json map;
-  map["mapFormatVersion"] = "0.0.1";
+  map["mapFormatVersion"] = "1.0";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
   // APP.DATA gates on a selector register 'APP.NONEXISTENT' that is never declared.
@@ -1038,7 +1058,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotFound) {
 // selector drives the gate of another register and must therefore be readable unconditionally.
 BOOST_AUTO_TEST_CASE(TestSelectedBySelectorItselfGated) {
   nlohmann::json map;
-  map["mapFormatVersion"] = "0.0.1";
+  map["mapFormatVersion"] = "1.0";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
   // APP.SEL is itself gated by APP.MASTER_SEL, and APP.DATA gates on APP.SEL. The selector APP.SEL must not be gated.
@@ -1063,7 +1083,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedBySelectorItselfGated) {
 static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture(
     const std::string& access, const nlohmann::json& dataExtra = nlohmann::json::object()) {
   nlohmann::json map;
-  map["mapFormatVersion"] = "0.0.1";
+  map["mapFormatVersion"] = "1.0";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
   map["addressSpace"]["APP"]["children"]["SEL"] = {
@@ -1119,7 +1139,7 @@ BOOST_AUTO_TEST_CASE(TestSelectedByInterruptAccepted) {
 static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByInheritedAccessFixture(
     const std::string& childAccess, const std::string& childName) {
   nlohmann::json map;
-  map["mapFormatVersion"] = "0.0.1";
+  map["mapFormatVersion"] = "1.0";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
   map["addressSpace"]["APP"]["children"]["SEL"] = {
@@ -1222,6 +1242,34 @@ BOOST_AUTO_TEST_CASE(TestSelectedByInheritance) {
   checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C0"), "/APP/OUTPUT_SELECT", 3);
   checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C1"), "/APP/OUTPUT_SELECT", 3);
   checkRegSelectedBy(regs.getBackendRegister("/REG2D_TOP/E0"), "/APP/TOP_SEL", 11);
+}
+
+/**********************************************************************************************************************/
+
+// All mapFormatVersion checks: a file declaring the supported version "1.0" parses without error, and any other
+// version throws ChimeraTK::logic_error.
+BOOST_AUTO_TEST_CASE(TestMapFormatVersionWithPatch) {
+  BOOST_CHECK_NO_THROW(parseWithMapFormatVersion("mapFormatVersionSupported.jmap", "1.0"));
+  BOOST_CHECK_NO_THROW(parseWithMapFormatVersion("mapFormatVersionLeadingZerosMinor.jmap", "1.00"));
+  BOOST_CHECK_NO_THROW(parseWithMapFormatVersion("mapFormatVersionLeadingZerosMajor.jmap", "01.0"));
+  BOOST_CHECK_NO_THROW(parseWithMapFormatVersion("mapFormatVersionLeadingZeros.jmap", "01.00"));
+
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionOld.jmap", "0.0.1"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionMismatchedMinor.jmap", "1.1"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionMismatchedMajor.jmap", "2.0"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionSingle.jmap", "1"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionMissingMajor.jmap", ".0"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionMissingMinor.jmap", "1."), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionMajorNoDot.jmap", "1x.0"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionNonDecimal.jmap", "1.0 "), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionOversizedMinor.jmap", "1.999999999999999999999999"),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithMapFormatVersion("mapFormatVersionOversizedMajor.jmap", "999999999999999999999999.0"),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      parseWithMapFormatVersion("mapFormatVersionMissing.jmap", nlohmann::json(nullptr)), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      parseWithMapFormatVersion("mapFormatVersionWrongType.jmap", nlohmann::json(1.0)), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/

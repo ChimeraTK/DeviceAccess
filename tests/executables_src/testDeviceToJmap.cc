@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(TestEmptyCatalogue) {
   {
     std::ofstream stream(emptySource);
     stream << R"({
-  "mapFormatVersion": "0.0.1",
+  "mapFormatVersion": "1.0",
   "metadata": {},
   "interruptHandler": {},
   "addressSpace": {}
