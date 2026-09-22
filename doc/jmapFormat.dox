@@ -165,6 +165,30 @@ All alternative registers will be present in the catalog.
 }
 \endverbatim
 
+\subsubsection jmap_module_selection_inheritance Module-Level Selection Inheritance
+
+It is possible to declare a `selectedBy` on a **module** or a parent register with children. This selection criterion is **inherited** by all descendant registers and channels that do not declare their own `selectedBy`. The nearest ancestor's `selectedBy` takes precedence.
+
+Example:
+\verbatim
+"addressSpace": {
+  "MODULE": {
+    "selectedBy": { "register": "APP.OUTPUT_SELECT", "value": 3 },
+    "children": {
+      "REG_A": {
+        "address": { "channel": 0, "offset": 32 },          // Inherits MODULE's selectedBy
+        "representation": { "type": "fixedPoint", "width": 32 }
+      },
+      "REG_B": {                                            // Own selectedBy overrides
+        "selectedBy": { "register": "CTRL.MODE", "value": 9 },
+        "address": { "channel": 0, "offset": 36 },
+        "representation": { "type": "fixedPoint", "width": 32 }
+      }
+    }
+  }
+}
+\endverbatim
+
 \section jmap_modules Modules and hierarchical names
 
 \subsection jmap_simple_modules Modules
@@ -377,7 +401,7 @@ The \c selectedBy feature works for single (scalar or 1D, non-2D) registers as w
   }
 }
 \endverbatim
-Specifying \c selectedBy on a register that also has per-channel \c channels (a 2D register) is rejected, since for 2D registers the selector is given per channel (see \ref jmap_channel_selection).
+Specifying \c selectedBy on a register that also has per-channel \c channels (a 2D register) is **valid**: it serves as the default selection for all channels that do not declare their own \c selectedBy (see \ref jmap_channel_selection and \ref jmap_module_selection_inheritance). Per-channel \c selectedBy declarations always override this register-level default.
 
 For a hardware multiplexer, several mutually exclusive scalar alternatives can be declared as separate registers that share the same \c address and differ only in their \c selectedBy \c value. Only one of them is active at a time, selected by the selector register:
 \verbatim
