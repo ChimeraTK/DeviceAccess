@@ -1,7 +1,6 @@
 {
   "_comment": "Any unknown keys will be ignored. By convention, comments shall use keys starting with an underscore.",
   "_blubb": "This is also a comment",
-  "foo": "This is ignored as well, but shouldn't be used for comments",
   "mapFormatVersion": "0.0.1",
   "metadata": {
     "_comment": "Suggested naming convention: camelcase for property names",
@@ -47,11 +46,9 @@
       "engineeringUnit": "mV",
       "description": "This is an example register",
       "access": "RW",
-      "cacheable": true,
-      "_": "cacheable: Software may assume value never changed from remote side - unused in the beginning. Default: true",
       "numberOfElements": 1,
       "address": {
-        "type": "I/O",
+        "type": "IO",
         "channel": 0,
         "offset": 32,
         "_comment": "'type' can be 'IO' (default), or 'DMA'. 'channel' is optional and defaults to 0."
@@ -61,14 +58,8 @@
         "width": 32,
         "fractionalBits": 8,
         "isSigned": true,
-        "_comment": "type might be fixedPoint (default), IEEE754, string, or void",
-        "validRange": [
-          -0.5,
-          12.345
-        ]
-      },
-      "initialValue": 3.5,
-      "__": "Unclear how to implement, must be written only during initialisation, not upon every open. Maybe remove."
+        "_comment": "type might be fixedPoint (default), IEEE754, string, or void"
+      }
     },
     "BSP": {
       "address": {
@@ -92,9 +83,7 @@
             "width": 32,
             "fractionalBits": 0,
             "isSigned": false
-          },
-          "constant": "0x01080300",
-          "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
+          }
         },
         "SOME_INFO": {
           "access": "RO",
@@ -106,9 +95,7 @@
           },
           "representation": {
             "type": "string"
-          },
-          "constant": "0x01080300",
-          "_comment": "Defining 'constant' value allows to identify/verify firmware version (an type with BSP.PRJ_ID)"
+          }
         },
         "VOID_INTERRUPT_0": {
           "triggeredByInterrupt": [

@@ -8,7 +8,7 @@
     "WORD_FIRMWARE": {
       "bytesPerElement": 4,
       "address": {
-        "type": "I/O",
+        "type": "IO",
         "channel": 0,
         "offset": 0
       },
@@ -43,7 +43,7 @@
       "bytesPerElement": 4,
       "numberOfElements": 3,
       "address": {
-        "type": "I/O",
+        "type": "IO",
         "channel": 0,
         "offset": 16
       },

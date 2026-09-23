@@ -20,23 +20,19 @@
             "readBufferRegister": "DEV.DOUBLE_BUF.INACTIVE_BUF_ID",
             "index": 0
           },
-          "channelTabs": [
-            {
-              "numberOfElements": 16384,
-              "pitch": 4,
-              "channels": {
-                "A": {
-                  "bytesPerElement": 4,
-                  "offset": 0,
-                  "representation": {
-                    "type": "fixedPoint",
-                    "width": 16,
-                    "fractionalBits": 0
-                  }
-                }
+          "numberOfElements": 16384,
+          "pitch": 4,
+          "channels": {
+            "A": {
+              "bytesPerElement": 4,
+              "offset": 0,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0
               }
             }
-          ]
+          }
         }
       }
     }
