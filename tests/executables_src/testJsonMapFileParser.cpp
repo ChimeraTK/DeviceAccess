@@ -910,36 +910,37 @@ BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeChildBuf0CollisionThrows) {
 // selectedByCases.jmap BITFIELD/FD/Ch0, which combines a per-channel 'selectedBy' with a 'children' dictionary).
 // Every child slice carries the same register+value selector as the parent channel slice.
 BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeMuxedChildSelectedBy) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByCases.jmap");
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
 
   // The muxed parent channel slice inherits the selectedBy condition.
   {
-    auto reg = regs.getBackendRegister("BITFIELD.FD.Ch0");
+    auto reg = regs.getBackendRegister("DAQ.MUXED_WITH_STATUS.StatusCh0");
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 2);
     BOOST_TEST(reg.isBitRange == false);
   }
   // Each bit-field child slice of the muxed channel inherits the channel's selectedBy condition.
   {
-    auto reg = regs.getBackendRegister("BITFIELD.FD.Ch0.Bit0");
+    auto reg = regs.getBackendRegister("DAQ.MUXED_WITH_STATUS.StatusCh0.ProbeLimiter");
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.isBitRange == true);
     BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 2);
   }
   {
-    auto reg = regs.getBackendRegister("BITFIELD.FD.Ch0.Bit1");
+    auto reg = regs.getBackendRegister("DAQ.MUXED_WITH_STATUS.StatusCh0.ErrorCounter");
     BOOST_REQUIRE(reg.channels.size() == 1);
-    BOOST_TEST(reg.channels[0].bitOffset == 1);
+    BOOST_TEST(reg.channels[0].bitOffset == 2);
+    BOOST_TEST(reg.channels[0].width == 3);
     BOOST_TEST(reg.isBitRange == true);
     BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/BITFIELD/MUX");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].selectedBy->val == 2);
   }
 }
 
