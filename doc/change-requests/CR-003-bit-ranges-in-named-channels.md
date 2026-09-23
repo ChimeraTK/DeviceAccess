@@ -8,7 +8,7 @@ slice, and a channel may itself be a single bit range via its
 `representation.bitShift`. The bit-range slices read the strided 2D sample
 data correctly.
 
-Status: TESTED
+Status: DONE
 
 ## Requirements
 
