@@ -35,12 +35,14 @@ Aspect: push mode.
 
 Aspect: JMAP format.
 
-- A new top-level `dmaChannels` section defines named virtual DMA channels
-  (in parallel to `interruptHandler`). It carries the channel type, the names
+- The `dmaChannels` section (introduced by CR-007) defines virtual DMA
+  channels indexed by non-negative integers. Each entry carries the mandatory
+  `type` key (validated by CR-007) and the backend-specific keys: the names
   of the DMA-engine control registers, the buffer allocator selection, the
-  ring depth and the block size.
+  ring depth and the block size. The Xilinx ringbuffer uses the `type` value
+  `"XilinxS2MM"`.
 - A register references a channel with the existing `address` object of type
-  `"DMA"` whose `channel` is the channel *name* defined in `dmaChannels`; the
+  `"DMA"` whose `channel` is a channel *index* defined in `dmaChannels`; the
   register's `offset` is relative to the beginning of the DAQ frame.
 - The frame size is constant in the first implementation, but the format must
   not make variable frame lengths impossible (e.g. a per-frame size or
@@ -83,15 +85,20 @@ fixtures and parser tests.
 Aspect: raw-json catch-all.
 
 - The `dmaChannels` section is consumed through the generic backend-specific
-  raw-json mechanism introduced by CR-007. The parser preserves the section
-  opaquely; `XdmaBackend` interprets it. No `dmaChannels`-specific structure
-  enters the generic `NumericAddressedRegisterCatalogue`.
+  raw-json mechanism introduced by CR-007: entries are reached via
+  `hasDmaChannel`/`getDmaChannel` on the register catalogue (held as the
+  protected `_registerMap`). The parser preserves the section opaquely;
+  `XdmaBackend` interprets it. No `dmaChannels`-specific structure enters the
+  generic `NumericAddressedRegisterCatalogue`.
+- `XdmaBackend` interprets a frame-channel register's channel entry only when
+  its `type` value is the supported `"XilinxS2MM"`; any other value raises
+  `ChimeraTK::logic_error` (as required by CR-007).
 
 Aspect: register-to-channel mapping.
 
 - A register whose `address` has `type` `"DMA"` and a `channel` matching a
-  name in `dmaChannels` is a frame-channel register. Its `offset` is the byte
-  offset into the frame, not into a bar.
+  channel index in `dmaChannels` is a frame-channel register. Its `offset` is
+  the byte offset into the frame, not into a bar.
 - A single 2D multiplexed register at offset 0 represents the whole frame; its
   channel slices give structured access to the frame content. Several
   registers at frame-relative offsets give sub-region access. All slices of
@@ -137,7 +144,7 @@ Aspect: Dummy backend mirror.
 ## Test plan
 
 - Parser tests: a `dmaChannels` section with a register referencing a channel
-  by name parses; register offsets are frame-relative.
+  by index parses; register offsets are frame-relative.
 - Dummy backend frame channel tests: a frame read returns the oldest unread
   frame; several offset-slices of one frame return one coherent snapshot;
   a frame read advances the dequeue state; push mode
