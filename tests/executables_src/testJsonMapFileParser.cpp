@@ -1120,6 +1120,27 @@ BOOST_AUTO_TEST_CASE(TestSelectedByInheritedWritableDescendantRejected) {
 
 /**********************************************************************************************************************/
 
+// C1: the catalogue lookup getSelectedBy() returns the effective selection of a register that carries a
+// 'selectedBy'. The lookup works purely on the already-propagated ChannelInfo, so the single-channel register's
+// selection is returned as-is.
+BOOST_AUTO_TEST_CASE(TestCatalogueGetSelectedByPresent) {
+  // APP.DATA carries selectedBy {APP.SEL, 1} (see parseSelectedByAccessFixture).
+  auto regs = parseSelectedByAccessFixture("RO");
+  auto sel = regs.getSelectedBy("/APP/DATA");
+  BOOST_REQUIRE(sel.has_value());
+  BOOST_TEST(sel->regPath == "/APP/SEL");
+  BOOST_TEST(sel->val == 1);
+}
+
+// C2: getSelectedBy() returns std::nullopt for a register without any 'selectedBy' (regression).
+BOOST_AUTO_TEST_CASE(TestCatalogueGetSelectedByAbsent) {
+  // APP.SEL (in the same fixture) has no 'selectedBy'.
+  auto regs = parseSelectedByAccessFixture("RO");
+  BOOST_CHECK(!regs.getSelectedBy("/APP/SEL").has_value());
+}
+
+/**********************************************************************************************************************/
+
 // selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
 // register's single channel must carry the selector.
 BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
