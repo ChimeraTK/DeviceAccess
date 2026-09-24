@@ -9,6 +9,7 @@
 #include "DataConsistencyRealm.h"
 #include "MuxedInterruptDistributor.h"
 
+#include <map>
 #include <memory>
 
 namespace ChimeraTK::async {
@@ -46,6 +47,11 @@ namespace ChimeraTK::async {
     ScalarRegisterAccessor<DataConsistencyKey::BaseType> _dataConsistencyKeyAccessor;
     bool _forceFaulty{false};
     VersionNumber _lastVersion{nullptr};
+
+    /// Shared selector register accessors, keyed by selector register path. Several subscriptions
+    /// may gate on the same selector register; sharing one accessor per selector lets the
+    /// _transferGroup read it at most once per poll (deduplicated). See buildSelectorGate().
+    std::map<RegisterPath, boost::shared_ptr<ScalarRegisterAccessor<int64_t>>> _selectorAccessors;
   };
 
   /********************************************************************************************************************/
