@@ -71,10 +71,19 @@ namespace ChimeraTK::async {
     if(!selectedBy) {
       return SelectorGate();
     }
+    // Share one selector accessor per selector register path. The first subscription gating on a
+    // given selector creates the accessor and adds it to the transfer group; subsequent ones reuse
+    // it (TransferGroup deduplicates by TransferElement, so the register is read at most once per
+    // poll, shared by every variable choosing the same selector).
+    auto& accessor = _selectorAccessors[selectedBy->regPath];
+    if(!accessor) {
+      accessor = SelectorGate::makeSharedAccessor(numericAddressed, *selectedBy);
+      _transferGroup.addAccessor(*accessor);
+    }
     // forceFirstFaulty=true: a freshly subscribed consumer is reported faulty until the selector
     // register actually matches, so it does not spuriously see valid data before the selection is set.
     SelectorGate gate;
-    gate.replace(numericAddressed, *selectedBy, true);
+    gate.attach(accessor, selectedBy->val, true);
     return gate;
   }
 

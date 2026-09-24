@@ -37,7 +37,30 @@ namespace ChimeraTK {
     void replace(const boost::shared_ptr<NumericAddressedBackend>& backend, const SelectedBy& selectedBy,
         bool forceFirstFaulty);
 
-    /** Read the selector register and remember whether it currently selects this gate. */
+    /**
+     * Attach a selector accessor that is owned and read by an external TransferGroup instead
+     * of by this gate. Multiple gates may share the same accessor, so the TransferGroup reads
+     * the selector register at most once per poll (deduplicated). check() then evaluates the
+     * already-read value rather than issuing its own read; the caller must ensure the accessor
+     * has been read (via the TransferGroup) before check() is called.
+     */
+    void attach(const boost::shared_ptr<ScalarRegisterAccessor<int64_t>>& accessor, int64_t expectedValue,
+        bool forceFirstFaulty);
+
+    /**
+     * Create a scalar accessor for the selector register, to be owned (and read) by a
+     * TransferGroup and shared by several gates. Static so it can also act as a factory from
+     * NumericAddressedBackend's friend context.
+     */
+    static boost::shared_ptr<ScalarRegisterAccessor<int64_t>> makeSharedAccessor(
+        const boost::shared_ptr<NumericAddressedBackend>& backend, const SelectedBy& selectedBy);
+
+    /**
+     * Evaluate the current selector state and remember whether the selector register currently
+     * selects this gate. For a self-owned gate (replace/{} constructor) this reads the selector
+     * register; for a TransferGroup-managed gate (attach) it only reads the already-populated
+     * buffer.
+     */
     bool check();
 
     /**
@@ -51,11 +74,14 @@ namespace ChimeraTK {
     explicit operator bool() const { return _accessor.get() != nullptr; }
 
    private:
-    ScalarRegisterAccessor<int64_t> _accessor;
+    boost::shared_ptr<ScalarRegisterAccessor<int64_t>> _accessor;
     int64_t _expectedValue{0};
     bool _matches{true};
     bool _forceFirstFaulty{false};
     bool _firstCheck{true};
+    /// True when the selector accessor is owned and read by an external TransferGroup; check()
+    /// must not issue its own read in that case.
+    bool _managedExternally{false};
   };
 
 } // namespace ChimeraTK

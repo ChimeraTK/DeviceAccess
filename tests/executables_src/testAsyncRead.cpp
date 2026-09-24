@@ -967,3 +967,59 @@ BOOST_AUTO_TEST_CASE(testSelectedByInterruptAlternatingSwaps) {
 }
 
 /**********************************************************************************************************************/
+
+// I6: Two subscriptions to mutually exclusive alternatives (DAQ.DATA sel 1, DAQ.DATA_ALT sel 2) that share the
+// SAME selector register DAQ.MUX_SEL. This exercises the shared-selector path in buildSelectorGate(): both
+// variables gate on one shared selector accessor that is added to the transfer group (read once per poll,
+// deduplicated), and each consumer wakes only when its own selection is active.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptSharedSelector) {
+  Device device;
+  device.open("(dummy?map=selectedByInterrupt.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy);
+  auto data = device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA", 1, 0, {AccessMode::wait_for_new_data});
+  auto dataAlt = device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA_ALT", 1, 0, {AccessMode::wait_for_new_data});
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+  DummyRegisterAccessor<uint32_t> enable(dummy.get(), "DAQ/DOUBLE_BUF", "ENA");
+  DummyRegisterAccessor<uint32_t> inactive(dummy.get(), "DAQ/DOUBLE_BUF", "INACTIVE_BUF_ID");
+  DummyRegisterAccessor<uint32_t> buffer0(dummy.get(), "DAQ/DATA", "BUF0");
+  DummyRegisterAccessor<uint32_t> buffer1(dummy.get(), "DAQ/DATA", "BUF1");
+  enable[0] = 1;
+
+  auto finishBuffer = [&](uint32_t v, uint32_t buf) {
+    if(buf == 1) {
+      buffer0 = v;
+    }
+    else {
+      buffer1 = v;
+    }
+    inactive[0] = buf;
+    dummy->triggerInterrupt(1);
+  };
+
+  // Select DATA_ALT (MUX_SEL==2). Both initial values arrive: DATA is faulty, DATA_ALT valid.
+  muxSel[0] = 2;
+  device.activateAsyncRead();
+  BOOST_REQUIRE(data.readNonBlocking());
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_REQUIRE(dataAlt.readNonBlocking());
+  BOOST_CHECK(dataAlt.dataValidity() != ChimeraTK::DataValidity::faulty);
+
+  // A finished buffer while DATA_ALT is selected: DATA_ALT wakes with it, DATA stays quiet.
+  finishBuffer(100, 1);
+  BOOST_CHECK(!data.readNonBlocking());
+  BOOST_CHECK(dataAlt.readNonBlocking());
+  BOOST_CHECK_EQUAL(dataAlt[0], 100);
+
+  // Switch to DATA: DATA wakes with the freshly finished buffer, DATA_ALT stays quiet.
+  muxSel[0] = 1;
+  finishBuffer(200, 0);
+  BOOST_CHECK(data.readNonBlocking());
+  BOOST_CHECK(data.dataValidity() != ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(data[0], 200);
+  BOOST_CHECK(!dataAlt.readNonBlocking());
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
