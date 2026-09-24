@@ -1019,6 +1019,42 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
 
 /**********************************************************************************************************************/
 
+// Helper used by the selectedBy selector-register validation tests (S1-S2): build a minimal map whose selector
+// register APP.SEL has the given bit 'offset' and 'width', gated by a register APP.DATA whose 'selectedBy' points to
+// it, write it to a temp file and parse it. The caller expects a throw via BOOST_CHECK_THROW.
+static void parseSelectorLayoutFixture(const std::string& outFile, uint32_t bitOffset, uint32_t width) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  map["addressSpace"]["APP"]["children"]["SEL"] = {
+      {"numberOfElements", 1},
+      {"address", {{"channel", 0}, {"offset", 0}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", width}, {"bitShift", bitOffset}}}};
+  map["addressSpace"]["APP"]["children"]["DATA"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  std::ofstream(outFile) << map.dump(2);
+  ChimeraTK::MapFileParser::parse(outFile);
+}
+
+/**********************************************************************************************************************/
+
+// S1: A selector register whose channel is not byte-aligned (bit offset not a multiple of 8) must be rejected.
+BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotByteAligned) {
+  BOOST_CHECK_THROW(parseSelectorLayoutFixture("selectedBySelectorNotByteAligned.jmap", 4, 32), ChimeraTK::logic_error);
+}
+
+// S2: A selector register wider than 64 bits must be rejected.
+BOOST_AUTO_TEST_CASE(TestSelectedBySelectorTooWide) {
+  BOOST_CHECK_THROW(parseSelectorLayoutFixture("selectedBySelectorTooWide.jmap", 0, 128), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
 // Helper used by the selectedBy read-only restriction tests (PR1-PR5): build a minimal map in a temp file and parse
 // it. The map carries a selector register APP.SEL and a register APP.DATA whose 'selectedBy' points to it; the
 // register's access is controlled by the caller. If 'access' is empty the 'access' member is omitted, defaulting to

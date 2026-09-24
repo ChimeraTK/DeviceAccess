@@ -639,6 +639,37 @@ namespace ChimeraTK::detail {
         }
       }
 
+      // Validate every 'selectedBy' selector register referenced by any channel.
+      for(const auto& reg : catalogue) {
+        for(const auto& channel : reg.channels) {
+          if(!channel.selectedBy) {
+            continue;
+          }
+          std::string regPath = channel.selectedBy->regPath;
+          std::string channelName = reg.getRegisterName();
+          // The selector register must exist in the catalogue.
+          if(!catalogue.hasRegister(channel.selectedBy->regPath)) {
+            throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': channel '" + channelName +
+                "' is gated by 'selectedBy' referencing undefined register '" + regPath + "'.");
+          }
+          // The selector register must be byte-aligned (channel bit offset must be a multiple of 8) and at most
+          // 64 bits wide, so its value always fits the int64_t selector comparison.
+          auto selectorReg = catalogue.getBackendRegister(channel.selectedBy->regPath);
+          for(const auto& selectorChannel : selectorReg.channels) {
+            if((selectorChannel.bitOffset % 8) != 0) {
+              throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': selector register '" +
+                  regPath + "' of channel '" + channelName + "' is not byte-aligned (channel bit offset " +
+                  std::to_string(selectorChannel.bitOffset) + " is not a multiple of 8).");
+            }
+            if(selectorChannel.width > 64) {
+              throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': selector register '" +
+                  regPath + "' of channel '" + channelName + "' has width " + std::to_string(selectorChannel.width) +
+                  " which exceeds the supported 64 bits.");
+            }
+          }
+        }
+      }
+
       for(const auto& entry : data.at("metadata").items()) {
         if(entry.key().empty()) {
           throw ChimeraTK::logic_error(

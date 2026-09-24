@@ -3,6 +3,41 @@
   "interruptHandler": {},
   "metadata": {},
   "addressSpace": {
+    "APP": {
+      "_": "Selector registers referenced by the selectedBy conditions below.",
+      "children": {
+        "OUTPUT_SELECT": {
+          "access": "RO",
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        },
+        "TOP_SEL": {
+          "access": "RO",
+          "address": { "offset": 4 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "CTRL": {
+      "_": "Selector registers referenced by the selectedBy conditions below.",
+      "children": {
+        "MODE": {
+          "access": "RO",
+          "address": { "offset": 8 },
+          "representation": { "width": 32 }
+        },
+        "CHAN_SEL": {
+          "access": "RO",
+          "address": { "offset": 12 },
+          "representation": { "width": 32 }
+        },
+        "DUAL": {
+          "access": "RO",
+          "address": { "offset": 16 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
     "INHERIT": {
       "_": "Module-level selectedBy: all descendants without their own selectedBy inherit it.",
       "selectedBy": { "register": "APP.OUTPUT_SELECT", "value": 3 },
