@@ -9,11 +9,13 @@
       "children": {
         "REG_A": {
           "_": "Leaf without own selectedBy inherits INHERIT's.",
+          "access": "RO",
           "address": { "offset": 32 },
           "representation": { "width": 32 }
         },
         "REG_B": {
           "_": "Own selectedBy overrides the inherited one.",
+          "access": "RO",
           "selectedBy": { "register": "CTRL.MODE", "value": 9 },
           "address": { "offset": 36 },
           "representation": { "width": 32 }
@@ -22,6 +24,7 @@
           "_": "Nested inheritance -- SUB has no selectedBy, so LEAF inherits from INHERIT.",
           "children": {
             "LEAF": {
+              "access": "RO",
               "address": { "offset": 40 },
               "representation": { "width": 32 }
             }
@@ -29,6 +32,7 @@
         },
         "CHANA": {
           "_": "2D register inside a module; channels have no own selectedBy, so they all inherit the module default.",
+          "access": "RO",
           "address": { "offset": "0x1000" },
           "numberOfElements": 4,
           "pitch": 4,
@@ -39,6 +43,7 @@
         },
         "CHANB": {
           "_": "One channel overrides the module default while the other inherits it.",
+          "access": "RO",
           "address": { "offset": "0x2000" },
           "numberOfElements": 4,
           "pitch": 4,
@@ -54,11 +59,13 @@
         },
         "REG2D_OWN": {
           "_": "Register-module dual role -- its selectedBy applies to its own register AND its descendants.",
+          "access": "RO",
           "selectedBy": { "register": "CTRL.DUAL", "value": 5 },
           "address": { "offset": "0x3000" },
           "representation": { "width": 32 },
           "children": {
             "CHILD": {
+              "access": "RO",
               "address": { "offset": 44 },
               "representation": { "width": 32 }
             }
@@ -68,6 +75,7 @@
     },
     "REG2D_TOP": {
       "_": "Register-level selectedBy directly on a 2D register (no module) is valid and becomes the default for all channels.",
+      "access": "RO",
       "selectedBy": { "register": "APP.TOP_SEL", "value": 11 },
       "address": { "offset": "0x4000" },
       "numberOfElements": 4,
