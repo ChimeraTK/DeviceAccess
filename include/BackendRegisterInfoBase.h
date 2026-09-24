@@ -12,6 +12,17 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  /**
+   * Condition under which a register or channel is considered "active": it is readable/valid only while the register
+   * at 'regPath' equals 'val'. 'regPath' is a fully qualified register path within the same catalogue.
+   */
+  struct SelectedBy {
+    RegisterPath regPath; /**< Path of register that determines if a Channel/Register is considered active */
+    int64_t val;          /**< Value of that register that determines if that Channel/Register is active */
+  };
+
+  /********************************************************************************************************************/
+
   /** DeviceBackend-independent register description. */
   class BackendRegisterInfoBase {
    public:

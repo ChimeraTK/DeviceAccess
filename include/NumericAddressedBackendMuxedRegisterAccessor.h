@@ -7,6 +7,7 @@
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedRegisterCatalogue.h"
 #include "RawConverter.h"
+#include "SelectorGate.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -94,6 +95,13 @@ namespace ChimeraTK {
 
     /** The device from (/to) which to perform the DMA transfer */
     boost::shared_ptr<NumericAddressedBackend> _ioDevice;
+
+    /** Per-channel runtime gates for channels declared 'selectedBy'. A default-constructed gate is
+     *  always active (no selection). */
+    std::vector<SelectorGate> _selectorGates;
+
+    /** Whether each channel is currently active (selection met). Re-evaluated in doPostRead. */
+    std::vector<char> _channelActive;
 
     std::vector<int32_t> _ioBuffer;
 

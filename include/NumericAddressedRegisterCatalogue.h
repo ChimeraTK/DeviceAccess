@@ -15,6 +15,9 @@ namespace ChimeraTK {
 
   class NumericAddressedRegisterInfo : public BackendRegisterInfoBase {
    public:
+    /** Alias for the (namespace-scope) selection condition type, kept for backwards compatibility. */
+    using SelectedBy = ChimeraTK::SelectedBy;
+
     /**
      * Enum describing the access mode of the register:
      * \li read-only
@@ -37,21 +40,9 @@ namespace ChimeraTK {
     enum class Type { VOID = 0, FIXED_POINT = 1, IEEE754 = 2, ASCII = 3 };
 
     /**
-     * Per-channel information that contains a pair of register and value determining a condition
-     * under which this register is considered active.
-     */
-
-    /* Unfortunately, register is a reserved keyword so we use regPath.
-     * And since this is used as a std::optional, which has a value() method would make "value" a weird name
-     */
-    struct SelectedBy {
-      RegisterPath regPath; /**< Path of register that determines if a Channel/Register is considered active */
-      int64_t val;          /**< Value of that register that determines if that Channel/Register is active */
-    };
-
-    /**
-     *  Per-channel information. For scalar and 1D registers, exactly one ChannelInfo is present. For 2D register, one
-     *  ChannelInfo per channel is present.
+     *  Per-channel information that contains a pair of register and value determining a condition
+     *  under which this register is considered active. For scalar and 1D registers exactly one ChannelInfo is
+     *  present; for 2D registers one ChannelInfo per channel is present.
      */
     struct ChannelInfo {
       uint32_t bitOffset;      /**< Offset in bits w.r.t. begining of the register. Often "big", i.e. byteOffset*8 */
@@ -177,6 +168,8 @@ namespace ChimeraTK {
     [[nodiscard]] NumericAddressedRegisterInfo getBackendRegister(const RegisterPath& registerPathName) const override;
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
+
+    [[nodiscard]] std::optional<SelectedBy> getSelectedBy(const RegisterPath& registerPathName) const override;
 
     [[nodiscard]] const std::set<std::vector<size_t>>& getListOfInterrupts() const;
 

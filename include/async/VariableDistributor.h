@@ -51,7 +51,7 @@ namespace ChimeraTK::async {
   template<typename UserType>
   class VoidAsyncVariable : public GenericAsyncVariable<std::nullptr_t, UserType> {
     using GenericAsyncVariable<std::nullptr_t, UserType>::GenericAsyncVariable;
-    void fillSendBuffer() final;
+    bool fillSendBuffer() final;
   };
 
   /********************************************************************************************************************/
@@ -78,11 +78,12 @@ namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
   template<typename UserType>
-  void VoidAsyncVariable<UserType>::fillSendBuffer() {
+  bool VoidAsyncVariable<UserType>::fillSendBuffer() {
     // We know that the SourceBuffer contains nullptr. We don't have a conversion formula for that to user type
     // (especially for string). But we know how to convert ChimeraTK::Void, so we do this instead.
     this->_sendBuffer.value[0][0] = userTypeToUserType<UserType, ChimeraTK::Void>({});
     this->_sendBuffer.versionNumber = this->_version;
+    return true;
   }
 
 } // namespace ChimeraTK::async

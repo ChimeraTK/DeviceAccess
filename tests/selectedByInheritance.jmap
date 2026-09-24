@@ -1,0 +1,129 @@
+{
+  "mapFormatVersion": "0.0.1",
+  "interruptHandler": {},
+  "metadata": {},
+  "addressSpace": {
+    "APP": {
+      "_": "Selector registers referenced by the selectedBy conditions below.",
+      "children": {
+        "OUTPUT_SELECT": {
+          "access": "RO",
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        },
+        "TOP_SEL": {
+          "access": "RO",
+          "address": { "offset": 4 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "CTRL": {
+      "_": "Selector registers referenced by the selectedBy conditions below.",
+      "children": {
+        "MODE": {
+          "access": "RO",
+          "address": { "offset": 8 },
+          "representation": { "width": 32 }
+        },
+        "CHAN_SEL": {
+          "access": "RO",
+          "address": { "offset": 12 },
+          "representation": { "width": 32 }
+        },
+        "DUAL": {
+          "access": "RO",
+          "address": { "offset": 16 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "INHERIT": {
+      "_": "Module-level selectedBy: all descendants without their own selectedBy inherit it.",
+      "selectedBy": { "register": "APP.OUTPUT_SELECT", "value": 3 },
+      "children": {
+        "REG_A": {
+          "_": "Leaf without own selectedBy inherits INHERIT's.",
+          "access": "RO",
+          "address": { "offset": 32 },
+          "representation": { "width": 32 }
+        },
+        "REG_B": {
+          "_": "Own selectedBy overrides the inherited one.",
+          "access": "RO",
+          "selectedBy": { "register": "CTRL.MODE", "value": 9 },
+          "address": { "offset": 36 },
+          "representation": { "width": 32 }
+        },
+        "SUB": {
+          "_": "Nested inheritance -- SUB has no selectedBy, so LEAF inherits from INHERIT.",
+          "children": {
+            "LEAF": {
+              "access": "RO",
+              "address": { "offset": 40 },
+              "representation": { "width": 32 }
+            }
+          }
+        },
+        "CHANA": {
+          "_": "2D register inside a module; channels have no own selectedBy, so they all inherit the module default.",
+          "access": "RO",
+          "address": { "offset": "0x1000" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "C0": { "bytesPerElement": 2, "offset": 0, "representation": { "type": "fixedPoint", "width": 16 } },
+            "C1": { "bytesPerElement": 2, "offset": 2, "representation": { "type": "fixedPoint", "width": 16 } }
+          }
+        },
+        "CHANB": {
+          "_": "One channel overrides the module default while the other inherits it.",
+          "access": "RO",
+          "address": { "offset": "0x2000" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "D0": { "bytesPerElement": 2, "offset": 0, "representation": { "type": "fixedPoint", "width": 16 } },
+            "D1": {
+              "selectedBy": { "register": "CTRL.CHAN_SEL", "value": 7 },
+              "bytesPerElement": 2,
+              "offset": 2,
+              "representation": { "type": "fixedPoint", "width": 16 }
+            }
+          }
+        },
+        "REG2D_OWN": {
+          "_": "Register-module dual role -- its selectedBy applies to its own register AND its descendants.",
+          "access": "RO",
+          "selectedBy": { "register": "CTRL.DUAL", "value": 5 },
+          "address": { "offset": "0x3000" },
+          "representation": { "width": 32 },
+          "children": {
+            "CHILD": {
+              "access": "RO",
+              "address": { "offset": 44 },
+              "representation": { "width": 32 }
+            }
+          }
+        }
+      }
+    },
+    "REG2D_TOP": {
+      "_": "Register-level selectedBy directly on a 2D register (no module) is valid and becomes the default for all channels.",
+      "access": "RO",
+      "selectedBy": { "register": "APP.TOP_SEL", "value": 11 },
+      "address": { "offset": "0x4000" },
+      "numberOfElements": 4,
+      "pitch": 4,
+      "channels": {
+        "E0": { "bytesPerElement": 2, "offset": 0, "representation": { "type": "fixedPoint", "width": 16 } },
+        "E1": { "bytesPerElement": 2, "offset": 2, "representation": { "type": "fixedPoint", "width": 16 } }
+      }
+    },
+    "LEAF_TOP": {
+      "_": "A top-level leaf with no ancestor carrying selectedBy must stay unconditional.",
+      "address": { "offset": 48 },
+      "representation": { "width": 32 }
+    }
+  }
+}

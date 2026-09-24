@@ -8,10 +8,11 @@ namespace ChimeraTK {
   DoubleBufferAccessor<UserType>::DoubleBufferAccessor(
       NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
+      SelectorGate selectorGate)
   : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(std::move(doubleBufferConfig)),
     _backend(boost::dynamic_pointer_cast<NumericAddressedBackend>(backend)), _mutex(std::move(mutex)),
-    _transferLock(*_mutex, std::defer_lock) {
+    _transferLock(*_mutex, std::defer_lock), _selectorGate(std::move(selectorGate)) {
     _enableDoubleBufferReg =
         backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
@@ -92,6 +93,18 @@ namespace ChimeraTK {
     }
     else {
       this->_dataValidity = _buffer1->dataValidity();
+    }
+
+    // Gate the read: if this double-buffered register is conditionally active ('selectedBy'), the
+    // buffer just read is only the active one while the selector register matches. If it does not
+    // match, the data is marked faulty and the read is treated as not-new (the payload is
+    // unspecified, consumers must not wake/swap on an inactive alternative).
+    if(_selectorGate) {
+      _selectorGate.check();
+      this->_dataValidity = _selectorGate.dataValidity();
+      if(this->_dataValidity == DataValidity::faulty) {
+        hasNewData = false;
+      }
     }
 
     // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
