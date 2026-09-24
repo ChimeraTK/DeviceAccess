@@ -40,7 +40,7 @@ Aspect: JMAP format.
   `type` key (validated by CR-007) and the backend-specific keys: the names
   of the DMA-engine control registers, the buffer allocator selection, the
   ring depth and the block size. The Xilinx ringbuffer uses the `type` value
-  `"XilinxS2MM"`.
+  `"XilinxAxiS2MM"`.
 - A register references a channel with the existing `address` object of type
   `"DMA"` whose `channel` is a channel *index* defined in `dmaChannels`; the
   register's `offset` is relative to the beginning of the DAQ frame.
@@ -91,7 +91,7 @@ Aspect: raw-json catch-all.
   `XdmaBackend` interprets it. No `dmaChannels`-specific structure enters the
   generic `NumericAddressedRegisterCatalogue`.
 - `XdmaBackend` interprets a frame-channel register's channel entry only when
-  its `type` value is the supported `"XilinxS2MM"`; any other value raises
+  its `type` value is the supported `"XilinxAxiS2MM"`; any other value raises
   `ChimeraTK::logic_error` (as required by CR-007).
 
 Aspect: register-to-channel mapping.
