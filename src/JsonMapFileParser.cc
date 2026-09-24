@@ -613,6 +613,34 @@ namespace ChimeraTK::detail {
         }
       }
 
+      // Validate every 'selectedBy' selector register referenced by any channel: (a) the referenced selector
+      // register must exist in the catalogue, and (b) it must not itself be conditionally enabled by a 'selectedBy'
+      // (a selector must be unconditionally readable, otherwise gating would depend on another gate).
+      for(const auto& reg : catalogue) {
+        for(const auto& channel : reg.channels) {
+          if(!channel.selectedBy) {
+            continue;
+          }
+          std::string regPath = channel.selectedBy->regPath;
+          std::string channelName = reg.getRegisterName();
+          // (a) The selector register must exist in the catalogue.
+          if(!catalogue.hasRegister(channel.selectedBy->regPath)) {
+            throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': channel '" + channelName +
+                "' is gated by 'selectedBy' referencing undefined register '" + regPath + "'.");
+          }
+          // (b) The selector register must not itself be conditionally enabled by a 'selectedBy' of its own,
+          // since the gate it drives must be readable unconditionally to evaluate the selection.
+          auto selectorReg = catalogue.getBackendRegister(channel.selectedBy->regPath);
+          for(const auto& selectorChannel : selectorReg.channels) {
+            if(selectorChannel.selectedBy) {
+              throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': selector register '" +
+                  regPath + "' of channel '" + channelName +
+                  "' is itself conditionally enabled by 'selectedBy'; a selector register must not be gated.");
+            }
+          }
+        }
+      }
+
       for(const auto& entry : data.at("metadata").items()) {
         if(entry.key().empty()) {
           throw ChimeraTK::logic_error(

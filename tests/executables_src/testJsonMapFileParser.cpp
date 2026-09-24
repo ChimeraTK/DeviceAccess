@@ -1019,6 +1019,56 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
 
 /**********************************************************************************************************************/
 
+// S1: 'selectedBy' referencing a selector register that does not exist in the catalogue must be rejected.
+BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotFound) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  // APP.DATA gates on a selector register 'APP.NONEXISTENT' that is never declared.
+  map["addressSpace"]["APP"]["children"]["DATA"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"selectedBy", {{"register", "APP.NONEXISTENT"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  std::string tmpFile = "selectedBySelectorNotFound_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
+}
+
+// S2: a selector register that is itself conditionally enabled by a 'selectedBy' of its own must be rejected: a
+// selector drives the gate of another register and must therefore be readable unconditionally.
+BOOST_AUTO_TEST_CASE(TestSelectedBySelectorItselfGated) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  // APP.SEL is itself gated by APP.MASTER_SEL, and APP.DATA gates on APP.SEL. The selector APP.SEL must not be gated.
+  map["addressSpace"]["APP"]["children"]["SEL"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"selectedBy", {{"register", "APP.MASTER_SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 0}}},
+      {"representation", {{"width", 32}}}};
+  map["addressSpace"]["APP"]["children"]["MASTER_SEL"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"address", {{"channel", 0}, {"offset", 8}}},
+      {"representation", {{"width", 32}}}};
+  map["addressSpace"]["APP"]["children"]["DATA"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  std::string tmpFile = "selectedBySelectorItselfGated_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
 // selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
 // register's single channel must carry the selector.
 BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
