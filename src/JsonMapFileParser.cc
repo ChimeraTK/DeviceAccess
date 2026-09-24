@@ -419,12 +419,12 @@ namespace ChimeraTK::detail {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
       }
       // The effective selector for this subtree: a local 'selectedBy' overrides an inherited one.
-      const auto& effective = selectedBy ? selectedBy : inheritedSelectedBy;
+      const auto& effectiveSelectedBy = selectedBy ? selectedBy : inheritedSelectedBy;
       if(address.type != AddressType::addressTypeNotSet) {
         // New address entry. Don't use parent information
         NumericAddressedRegisterInfo my;
         my.channels.clear(); // default constructor already creates a channel with default settings...
-        fill(my, name, parentName, addressSetByParent, effective);
+        fill(my, name, parentName, addressSetByParent, effectiveSelectedBy);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
         if(!channels.empty()) {
@@ -443,16 +443,13 @@ namespace ChimeraTK::detail {
             const auto& rep = channel->representation;
 
             std::optional<NumericAddressedRegisterInfo::SelectedBy> channelSelectedBy = std::nullopt;
-            if(channel->selectedBy) {
-              auto selReg = RegisterPath(channel->selectedBy->regPath);
+            if(channel->selectedBy || effectiveSelectedBy) {
+              const auto& sb = channel->selectedBy ? *channel->selectedBy : *effectiveSelectedBy;
+              auto selReg = RegisterPath(sb.regPath);
               selReg.setAltSeparator(".");
-              channelSelectedBy.emplace(selReg, channel->selectedBy->value);
+              channelSelectedBy.emplace(selReg, sb.value);
             }
-            else if(effective) {
-              auto selReg = RegisterPath(effective->regPath);
-              selReg.setAltSeparator(".");
-              channelSelectedBy.emplace(selReg, effective->value);
-            }
+
             auto wordBits = channel->bytesPerElement * 8;
             // A channel slice of a non-interrupt 2D register is read-only: writing to a single channel of a 2D
             // register would require a read-modify-write cycle across the channels, which is deliberately not
@@ -524,15 +521,16 @@ namespace ChimeraTK::detail {
       else if(representation.type != RepresentationType::representationNotSet) {
         // take over parent address (except void interrupt registers which don't have an address)
         auto my = catalogue.getBackendRegister(parentName);
-        my.channels.clear();                                       // will be refilled from representation
-        fill(my, name, parentName, addressSetByParent, effective); // only updates the name and the representation
+        my.channels.clear(); // will be refilled from representation
+        fill(my, name, parentName, addressSetByParent,
+            effectiveSelectedBy); // only updates the name and the representation
         my.computeDataDescriptor();
         catalogue.addRegister(my);
       }
 
       for(const auto& [childName, child] : children) {
         child.addInfos(catalogue, childName, parentName / name,
-            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effective);
+            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effectiveSelectedBy);
       }
     }
 
