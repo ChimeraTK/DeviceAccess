@@ -10,9 +10,9 @@ namespace ChimeraTK {
   template<typename UserType, bool isRaw>
   NumericAddressedBackendRegisterAccessor<UserType, isRaw>::NumericAddressedBackendRegisterAccessor(
       const boost::shared_ptr<DeviceBackend>& dev, const RegisterPath& registerPathName, size_t numberOfWords,
-      size_t wordOffsetInRegister, AccessModeFlags flags)
+      size_t wordOffsetInRegister, AccessModeFlags flags, SelectorGate selectorGate)
   : NDRegisterAccessor<UserType>(registerPathName, flags),
-    _dev(boost::dynamic_pointer_cast<NumericAddressedBackend>(dev)) {
+    _dev(boost::dynamic_pointer_cast<NumericAddressedBackend>(dev)), _selectorGate(std::move(selectorGate)) {
     // check for unknown flags
     flags.checkForUnknownFlags({AccessMode::raw});
 
@@ -161,6 +161,13 @@ namespace ChimeraTK {
     // know about _versionNumber. It's just easier here.
     this->_versionNumber = _rawAccessor->getVersionNumber();
     this->_dataValidity = _rawAccessor->dataValidity();
+
+    // Gate the read: if this register is conditionally active ('selectedBy'), the physical read
+    // above is always performed but the data is only valid while the selector register matches.
+    if(_selectorGate) {
+      _selectorGate.check();
+      this->_dataValidity = _selectorGate.dataValidity();
+    }
   }
 
   /********************************************************************************************************************/

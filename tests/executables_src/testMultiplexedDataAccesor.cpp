@@ -5,6 +5,8 @@
 
 #include "BackendFactory.h"
 #include "Device.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "MapFileParser.h"
 #include "TwoDRegisterAccessor.h"
 
@@ -460,6 +462,50 @@ BOOST_DATA_TEST_CASE(testAreaOfInterestLength, boost::unit_test::data::make({ARE
     BOOST_TEST(myMixedData[9][i] == 0);
     BOOST_TEST(myMixedData[10][i] == 0);
   }
+}
+
+/**********************************************************************************************************************/
+
+// Runtime 'selectedBy' gating on polled 2D muxed registers (plan tests PD1-PD2).
+//
+// simpleJsonFile.jmap's DAQ.MUXED_WITH_STATUS is a muxed 2D register with per-channel selections: AmplitudeCh0 and
+// PhaseCh0 are active while DAQ.MUX_SEL == 0, StatusCh0 and StatusCh1 while DAQ.MUX_SEL == 2. Because the framework
+// has no per-channel DataValidity (dataValidity() is accessor-global) and the muxed per-channel gating collapses to
+// a global "faulty if any channel inactive" signal on the full register, these tests assert the gate on the
+// single-channel slice accessors, where the accessor-global validity equals that channel's own selection state.
+BOOST_AUTO_TEST_CASE(testSelectedByMuxedChannelSlices) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy != nullptr);
+
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+  DummyRegisterAccessor<int16_t> amp0(dummy.get(), "DAQ/MUXED_WITH_STATUS", "AmplitudeCh0");
+  DummyRegisterAccessor<int16_t> status0(dummy.get(), "DAQ/MUXED_WITH_STATUS", "StatusCh0");
+
+  auto amp0Acc = device.getOneDRegisterAccessor<int16_t>("/DAQ/MUXED_WITH_STATUS/AmplitudeCh0");
+  auto status0Acc = device.getOneDRegisterAccessor<int16_t>("/DAQ/MUXED_WITH_STATUS/StatusCh0");
+
+  // PD1: select DAQ.MUX_SEL == 0 -> the AmplitudeCh0 channel is active and delivers valid data.
+  muxSel[0] = 0;
+  amp0[0] = 321;
+  amp0Acc.read();
+  BOOST_CHECK(amp0Acc.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  // The StatusCh0 channel (selected by MUX_SEL == 2) is inactive while MUX_SEL == 0.
+  status0Acc.read();
+  BOOST_CHECK(status0Acc.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // PD2: select DAQ.MUX_SEL == 2 -> StatusCh0 becomes active, AmplitudeCh0 becomes faulty.
+  muxSel[0] = 2;
+  status0[0] = 654;
+  status0Acc.read();
+  BOOST_CHECK(status0Acc.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  amp0Acc.read();
+  BOOST_CHECK(amp0Acc.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  device.close();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

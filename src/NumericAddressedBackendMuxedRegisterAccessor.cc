@@ -17,6 +17,17 @@ namespace ChimeraTK {
     _registerInfo = _ioDevice->_registerMap.getBackendRegister(registerPathName);
     assert(!_registerInfo.channels.empty());
 
+    // Build the per-channel gates for channels declared 'selectedBy'. Channels without a selection
+    // keep a default-constructed (always active) gate. The selector reads go through the backend's
+    // cheap synchronous accessor so a channel's activity is one narrow read per poll.
+    _selectorGates.resize(_registerInfo.getNumberOfChannels());
+    for(size_t c = 0; c < _registerInfo.getNumberOfChannels(); ++c) {
+      if(_registerInfo.channels[c].selectedBy) {
+        _selectorGates[c].replace(_ioDevice, *_registerInfo.channels[c].selectedBy, false);
+      }
+    }
+    _channelActive.assign(_registerInfo.getNumberOfChannels(), 1);
+
     // check information
     if(_registerInfo.elementPitchBits % 8 != 0) {
       throw ChimeraTK::logic_error("NumericAddressedBackendMuxedRegisterAccessor: blocks must be byte aligned.");
@@ -152,6 +163,17 @@ namespace ChimeraTK {
   template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead(TransferType, bool hasNewData) {
     if(hasNewData) {
+      // Evaluate the per-channel gates: an inactive channel keeps its previous (unspecified) payload
+      // and is not demuxed with the inactive layout; the data validity becomes faulty if any active
+      // channel's selection is not met.
+      bool allActive = true;
+      for(size_t c = 0; c < _registerInfo.getNumberOfChannels(); ++c) {
+        _channelActive[c] = _selectorGates[c].check() ? 1 : 0;
+        if(!_channelActive[c]) {
+          allActive = false;
+        }
+      }
+
       // This will call doPostReadImpl (see below) with the proper converter for each channel group
       for(auto& group : _channelGroups) {
         group.converterLoopHelper->doPostRead();
@@ -162,7 +184,8 @@ namespace ChimeraTK {
       this->_versionNumber = {};
 
       // we just read good data. Set validity back to ok if someone marked it faulty for writing.
-      this->_dataValidity = DataValidity::ok;
+      // If any gated channel is currently inactive, the data is marked faulty for the whole register.
+      this->_dataValidity = allActive ? DataValidity::ok : DataValidity::faulty;
     }
   }
 
@@ -193,11 +216,15 @@ namespace ChimeraTK {
           RawType rawValue;
           std::memcpy(&rawValue, rawIterator, sizeof(RawType));
 
-          // perform conversion and store to cooked buffer
-          *channel.cookedIterator = converter.toCooked(rawValue);
+          // Only demux channels whose selection is currently active. Inactive channels keep their
+          // previous (unspecified) payload and their cooked iterator is not advanced.
+          if(_channelActive[channel.index]) {
+            // perform conversion and store to cooked buffer
+            *channel.cookedIterator = converter.toCooked(rawValue);
+            ++channel.cookedIterator;
+          }
 
           // increment iterators
-          ++channel.cookedIterator;
           rawIterator += channel.offsetToNext;
         }
       }

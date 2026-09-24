@@ -15,6 +15,7 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "parserUtilities.h"
+#include "SelectorGate.h"
 #include "SupportedUserTypes.h"
 
 #include <nlohmann/json.hpp>
@@ -192,15 +193,21 @@ namespace ChimeraTK {
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::IEEE754) {
+          // Runtime gate for scalar/1D registers declared 'selectedBy' (the effective selection is on the
+          // single channel). The gate is a narrow synchronous read of the selector register.
+          SelectorGate selectorGate;
+          if(registerInfo.channels.front().selectedBy) {
+            selectorGate.replace(boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()), *registerInfo.channels.front().selectedBy, false);
+          }
           if(flags.has(AccessMode::raw)) {
             accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
                 new NumericAddressedBackendRegisterAccessor<UserType, true>(
-                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate)));
           }
           else {
             accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
                 new NumericAddressedBackendRegisterAccessor<UserType, false>(
-                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate)));
           }
         }
         else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {
@@ -234,8 +241,14 @@ namespace ChimeraTK {
       if(!controlState) {
         controlState = std::make_shared<detail::CountedRecursiveMutex>();
       }
+      // Runtime gate for double-buffered registers declared 'selectedBy'. The gate decides whether the
+      // buffer just read is the active one; if not, the read is treated as not-new and faulty.
+      SelectorGate selectorGate;
+      if(registerInfo.channels.front().selectedBy) {
+        selectorGate.replace(boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()), *registerInfo.channels.front().selectedBy, false);
+      }
       accessor = boost::make_shared<DoubleBufferAccessor<UserType>>(*registerInfo.doubleBuffer, shared_from_this(),
-          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags);
+          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate));
     }
     accessor->setExceptionBackend(shared_from_this());
     return accessor;
