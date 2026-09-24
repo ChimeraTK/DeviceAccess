@@ -35,9 +35,12 @@ namespace ChimeraTK::async {
     virtual const std::string& getDescription() = 0;
 
     /** Fill the send buffer with data and version number. It is implementation specific where this information is
-     * coming from.
+     *  coming from. The return value signals whether the filled buffer should be sent to the subscriber: returning
+     *  `false` (e.g. an unselected `selectedBy` subscription) suppresses the delivery, so the consumer does not wake.
+     *  Note: the subscription-time initial delivery in `subscribe()` always sends regardless of this return value, so
+     *  a consumer activated while the selection is not met still receives its initial (faulty) value.
      */
-    virtual void fillSendBuffer() = 0;
+    virtual bool fillSendBuffer() = 0;
   };
 
   /** Helper class to have a complete descriton to create an Accessor.
@@ -259,6 +262,8 @@ namespace ChimeraTK::async {
     asyncVariable->_asyncAccessor = newSubscriber;
     // Now that the AsyncVariable is complete we can finally activate it.
     if(_asyncDomain->unsafeGetIsActive()) {
+      // The initial value is always sent, even while the selection is not met (cf. fillSendBuffer() docs): the
+      // consumer activated under an unselected alternative must still receive its initial (faulty) value.
       asyncVariable->fillSendBuffer();
       asyncVariable->send();
     }
@@ -281,7 +286,11 @@ namespace ChimeraTK::async {
     if(prepareIntermediateBuffers()) {
       assert(_delayedUnsubscriptions.empty());
       for(auto& var : _asyncVariables) {
-        var.second->fillSendBuffer();
+        // Only deliver when the variable wants to (e.g. an unselected `selectedBy` subscription suppresses delivery
+        // so its consumer does not wake with the inactive alternative). See fillSendBuffer() docs.
+        if(!var.second->fillSendBuffer()) {
+          continue;
+        }
         _isHoldingDomainLock = this;
         var.second->send(); // function from  the AsyncVariable base class
         _isHoldingDomainLock = nullptr;

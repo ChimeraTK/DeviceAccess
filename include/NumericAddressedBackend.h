@@ -16,6 +16,7 @@ namespace ChimeraTK {
 
   class NumericAddressedLowLevelTransferElement;
   class TriggeredPollDistributor;
+  class SelectorGate;
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
@@ -168,6 +169,7 @@ namespace ChimeraTK {
 
     friend NumericAddressedLowLevelTransferElement;
     friend TriggeredPollDistributor;
+    friend SelectorGate;
 
     template<class UserType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;

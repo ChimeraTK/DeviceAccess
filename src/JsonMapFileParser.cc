@@ -396,7 +396,7 @@ namespace ChimeraTK::detail {
     // underlying transport and extracts the range via the bit offset/width. Shared by the parent channel slice and
     // the bit-field child slice creation.
     static NumericAddressedRegisterInfo::ChannelInfo makeChannelInfo(const Representation& rep, size_t wordBits,
-        const std::optional<NumericAddressedRegisterInfo::SelectedBy>& selectedBy) {
+        const std::optional<ChimeraTK::SelectedBy>& selectedBy) {
       return {rep.bitShift, NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
           rep.type != RepresentationType::IEEE754 ? rep.isSigned : true, DataType("int" + std::to_string(wordBits)),
           selectedBy};
@@ -464,7 +464,7 @@ namespace ChimeraTK::detail {
             }
             const auto& rep = channel->representation;
 
-            std::optional<NumericAddressedRegisterInfo::SelectedBy> channelSelectedBy = std::nullopt;
+            std::optional<ChimeraTK::SelectedBy> channelSelectedBy = std::nullopt;
             if(channel->selectedBy || effectiveSelectedBy) {
               const auto& sb = channel->selectedBy ? *channel->selectedBy : *effectiveSelectedBy;
               auto selReg = RegisterPath(sb.regPath);
