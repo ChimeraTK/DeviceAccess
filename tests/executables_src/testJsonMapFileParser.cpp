@@ -1019,6 +1019,107 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
 
 /**********************************************************************************************************************/
 
+// Helper used by the selectedBy read-only restriction tests (PR1-PR5): build a minimal map in a temp file and parse
+// it. The map carries a selector register APP.SEL and a register APP.DATA whose 'selectedBy' points to it; the
+// register's access is controlled by the caller. If 'access' is empty the 'access' member is omitted, defaulting to
+// READ_WRITE at parse time.
+static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture(const std::string& access,
+    const nlohmann::json& dataExtra = nlohmann::json::object()) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  map["addressSpace"]["APP"]["children"]["SEL"] = {
+      {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
+  nlohmann::json reg = {
+      {"numberOfElements", 1},
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  if(!access.empty()) {
+    reg["access"] = access;
+  }
+  for(auto it = dataExtra.begin(); it != dataExtra.end(); ++it) {
+    reg[it.key()] = it.value();
+  }
+  map["addressSpace"]["APP"]["children"]["DATA"] = reg;
+  std::string tmpFile = "selectedByAccess_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(tmpFile).first;
+}
+
+/**********************************************************************************************************************/
+
+// PR1: 'selectedBy' on a register with Access::READ_WRITE must be rejected as a parsing error.
+BOOST_AUTO_TEST_CASE(TestSelectedByReadWriteRejected) {
+  BOOST_CHECK_THROW(parseSelectedByAccessFixture("RW"), ChimeraTK::logic_error);
+}
+
+// PR2: 'selectedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
+BOOST_AUTO_TEST_CASE(TestSelectedByWriteOnlyRejected) {
+  BOOST_CHECK_THROW(parseSelectedByAccessFixture("WO"), ChimeraTK::logic_error);
+}
+
+// PR3: 'selectedBy' on a register with Access::READ_ONLY is accepted.
+BOOST_AUTO_TEST_CASE(TestSelectedByReadOnlyAccepted) {
+  auto regs = parseSelectedByAccessFixture("RO");
+  auto reg = regs.getBackendRegister("/APP/DATA");
+  BOOST_REQUIRE(reg.channels[0].selectedBy);
+  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/APP/SEL");
+  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+}
+
+// PR4: 'selectedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
+// 'triggeredByInterrupt' (which implies read-only) instead of 'access'.
+BOOST_AUTO_TEST_CASE(TestSelectedByInterruptAccepted) {
+  auto regs = parseSelectedByAccessFixture("", {{"triggeredByInterrupt", nlohmann::json::array({0})}});
+  auto reg = regs.getBackendRegister("/APP/DATA");
+  BOOST_REQUIRE(reg.channels[0].selectedBy);
+  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+}
+
+/**********************************************************************************************************************/
+
+// Helper used by PR5: build a map with a module 'MOD' that declares 'selectedBy', and a single descendant register
+// '<childName>' under it. The child's access is controlled by 'childAccess' (empty => READ_WRITE default).
+static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByInheritedAccessFixture(
+    const std::string& childAccess, const std::string& childName) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  map["addressSpace"]["APP"]["children"]["SEL"] = {
+      {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
+  nlohmann::json child = {
+      {"numberOfElements", 1},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  if(!childAccess.empty()) {
+    child["access"] = childAccess;
+  }
+  map["addressSpace"]["APP"]["children"]["MOD"] = {
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}}, {"children", {{childName, child}}}};
+  std::string tmpFile = "selectedByInheritedAccess_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(tmpFile).first;
+}
+
+// PR5: a module/parent declaring 'selectedBy' must be rejected if any descendant register inheriting it is writable;
+// the error points to the parent declaration, not the child.
+BOOST_AUTO_TEST_CASE(TestSelectedByInheritedWritableDescendantRejected) {
+  // A writable (default READ_WRITE) descendant inheriting the module's selectedBy is rejected.
+  BOOST_CHECK_THROW(parseSelectedByInheritedAccessFixture("", "CHILD"), ChimeraTK::logic_error);
+  // An explicitly writable descendant is rejected as well.
+  BOOST_CHECK_THROW(parseSelectedByInheritedAccessFixture("WO", "CHILD"), ChimeraTK::logic_error);
+  // A read-only descendant satisfies the constraint.
+  auto regs = parseSelectedByInheritedAccessFixture("RO", "CHILD");
+  auto reg = regs.getBackendRegister("/APP/MOD/CHILD");
+  BOOST_REQUIRE(reg.channels[0].selectedBy);
+  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+}
+
+/**********************************************************************************************************************/
+
 // selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
 // register's single channel must carry the selector.
 BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {

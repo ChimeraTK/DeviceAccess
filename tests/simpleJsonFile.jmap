@@ -413,6 +413,7 @@
           }
         },
         "MUXED_WITH_STATUS": {
+          "access": "RO",
           "address": {
             "type": "DMA",
             "offset": "0x81000"
@@ -586,6 +587,7 @@
         },
         "SINGLE_MUXED": {
           "_": "A scalar (non-2D) register can carry a register-level 'selectedBy' too: the whole register is only active while DAQ.MUX_SEL equals the 'value'. For scalar/1D registers the selector is given on the register itself (not per channel, which is a 2D concept).",
+          "access": "RO",
           "bytesPerElement": 4,
           "numberOfElements": 1,
           "selectedBy": {
@@ -602,6 +604,7 @@
         },
         "SINGLE_MUXED_ALT": {
           "_": "Alternative scalar register for SINGLE_MUXED: muxed alternatives share the same address (offset 1246) and differ only in the 'selectedBy' value (here 1 instead of 0). Only one is active at a time depending on DAQ.MUX_SEL.",
+          "access": "RO",
           "bytesPerElement": 4,
           "numberOfElements": 1,
           "selectedBy": {
@@ -719,6 +722,7 @@
       }
     },
     "SCALAR": {
+      "access": "RO",
       "numberOfElements": 1,
       "selectedBy": {
         "register": "MUX",
@@ -741,6 +745,7 @@
             "type": "DMA",
             "offset": "0x1000"
           },
+          "access": "RO",
           "numberOfElements": 100,
           "pitch": 8,
           "channels": {
