@@ -274,7 +274,8 @@ namespace ChimeraTK::detail {
     std::optional<SelectedBy> selectedBy;
 
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy) const {
+        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy,
+        const std::string& selectedBySource) const {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
 
@@ -361,6 +362,21 @@ namespace ChimeraTK::detail {
 
       info.description = description;
       info.engineeringUnit = engineeringUnit;
+
+      // 'selectedBy' describes when data is valid to read, so it may only be applied to read-only registers.
+      // A writable register (READ_WRITE or WRITE_ONLY) carrying a 'selectedBy' (own, per-channel or inherited)
+      // is rejected here; the error points to the entry declaring the 'selectedBy' (the parent for inherited ones).
+      if((info.registerAccess != NumericAddressedRegisterInfo::Access::READ_ONLY) &&
+          (info.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT)) {
+        for(const auto& channel : info.channels) {
+          if(channel.selectedBy) {
+            throw ChimeraTK::logic_error("Register " + info.pathName +
+                ": 'selectedBy' may only be used on read-only registers (Access::READ_ONLY or Access::INTERRUPT). "
+                "The offending 'selectedBy' is declared at '" +
+                selectedBySource + "'.");
+          }
+        }
+      }
     }
 
     // Apply a register-level 'selectedBy' (scalar/1D registers) to the register's single channel. Must only be called
@@ -414,17 +430,23 @@ namespace ChimeraTK::detail {
     std::map<std::string, JsonAddressSpaceEntry> children;
 
     void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt) const {
+        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt,
+        const std::string& inheritedSelectedBySource = "") const {
       if(name.empty()) {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
       }
       // The effective selector for this subtree: a local 'selectedBy' overrides an inherited one.
       const auto& effective = selectedBy ? selectedBy : inheritedSelectedBy;
+      // The entry declaring the effective selector: a local 'selectedBy' is declared at this entry's path, otherwise
+      // it is inherited from the entry that declared it further up (used for error messages pointing to the parent).
+      RegisterPath thisPath = parentName / name;
+      thisPath.setAltSeparator(".");
+      const std::string effectiveSelectedBySource = selectedBy ? std::string(thisPath) : inheritedSelectedBySource;
       if(address.type != AddressType::addressTypeNotSet) {
         // New address entry. Don't use parent information
         NumericAddressedRegisterInfo my;
         my.channels.clear(); // default constructor already creates a channel with default settings...
-        fill(my, name, parentName, addressSetByParent, effective);
+        fill(my, name, parentName, addressSetByParent, effective, effectiveSelectedBySource);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
         if(!channels.empty()) {
@@ -525,14 +547,16 @@ namespace ChimeraTK::detail {
         // take over parent address (except void interrupt registers which don't have an address)
         auto my = catalogue.getBackendRegister(parentName);
         my.channels.clear();                                       // will be refilled from representation
-        fill(my, name, parentName, addressSetByParent, effective); // only updates the name and the representation
+        fill(my, name, parentName, addressSetByParent, effective,
+            effectiveSelectedBySource); // only updates the name and the representation
         my.computeDataDescriptor();
         catalogue.addRegister(my);
       }
 
       for(const auto& [childName, child] : children) {
         child.addInfos(catalogue, childName, parentName / name,
-            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effective);
+            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effective,
+            effectiveSelectedBySource);
       }
     }
 
