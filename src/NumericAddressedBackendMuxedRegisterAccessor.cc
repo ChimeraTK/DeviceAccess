@@ -167,12 +167,16 @@ namespace ChimeraTK {
       // and is not demuxed with the inactive layout; the data validity becomes faulty if any active
       // channel's selection is not met.
       bool allActive = true;
+      std::vector<ChimeraTK::DataValidity> channelValidity(_registerInfo.getNumberOfChannels());
       for(size_t c = 0; c < _registerInfo.getNumberOfChannels(); ++c) {
         _channelActive[c] = _selectorGates[c].check() ? 1 : 0;
+        channelValidity[c] = _channelActive[c] ? ChimeraTK::DataValidity::ok : ChimeraTK::DataValidity::faulty;
         if(!_channelActive[c]) {
           allActive = false;
         }
       }
+      // Publish the per-channel validity so consumers can tell exactly which channels are active.
+      this->setDataValidityOfChannels(std::move(channelValidity));
 
       // This will call doPostReadImpl (see below) with the proper converter for each channel group
       for(auto& group : _channelGroups) {
