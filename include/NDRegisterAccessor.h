@@ -60,6 +60,24 @@ namespace ChimeraTK {
     /** Return number of channels */
     unsigned int getNumberOfChannels() const { return buffer_2D.size(); }
 
+    /** Per-channel data validity, if the accessor maintains it.
+     *
+     *  Most accessors have a single DataValidity for the whole register (available through
+     *  getDataValidity()). Accessors that can distinguish the validity of individual channels
+     *  (e.g. the muxed 2D accessor gating each channel by its own `selectedBy`) expose it here.
+     *  An empty vector means "no per-channel information available; use the global validity".
+     *  When non-empty, its size equals getNumberOfChannels().
+     */
+    const std::vector<ChimeraTK::DataValidity>& getDataValidityOfChannels() const {
+      return _dataValidityOfChannels;
+    }
+
+    /** Set the per-channel data validity (see getDataValidityOfChannels()). An empty vector clears
+     *  the per-channel information. */
+    void setDataValidityOfChannels(std::vector<ChimeraTK::DataValidity> validity) {
+      _dataValidityOfChannels = std::move(validity);
+    }
+
     const std::type_info& getValueType() const override { return typeid(UserType); }
 
     template<typename COOKED_TYPE>
@@ -145,6 +163,10 @@ namespace ChimeraTK {
      * elements in the constructor! */
     std::vector<std::vector<UserType>> buffer_2D;
     // boost::container::vector<boost::container::vector<UserType>> buffer_2D;
+
+    /// Per-channel data validity, exposed via getDataValidityOfChannels(). Empty (default) means no
+    /// per-channel information is available and the global getDataValidity() applies to all channels.
+    std::vector<ChimeraTK::DataValidity> _dataValidityOfChannels;
 
     /// the compatibility layers need access to the buffer_2D
     friend class RegisterAccessor;

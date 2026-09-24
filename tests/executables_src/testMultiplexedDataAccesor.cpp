@@ -508,4 +508,35 @@ BOOST_AUTO_TEST_CASE(testSelectedByMuxedChannelSlices) {
   device.close();
 }
 
+/**********************************************************************************************************************/
+
+// PD3: per-channel gate on a full 2D read — the active channel set of a muxed register is visible in a single
+// read via getDataValidityOfChannels(): the selected channel is ok while the unselected partner of the same
+// read is faulty (plan: "the selected channels of the same read remain valid"). Uses MQ.FD (2D DMA, Ch0 sel 0,
+// Ch1 sel 1, uniform 16-bit channels) so the whole register reads cleanly as int16_t.
+BOOST_AUTO_TEST_CASE(testSelectedByMuxedPerChannelValidity) {
+  Device device;
+  device.open("(dummy?map=muxedPolled.jmap)");
+
+  DummyRegisterAccessor<int32_t> mux(
+      boost::dynamic_pointer_cast<DummyBackend>(device.getBackend()).get(), "MQ", "MUX");
+  auto fd = device.getBackend()->getRegisterAccessor<int16_t>("/MQ/FD", 0, 0, {});
+  BOOST_REQUIRE(fd->getNumberOfChannels() == 2);
+
+  // Select Ch0 (MUX == 0): Ch0 valid, Ch1 faulty in the same read.
+  mux[0] = 0;
+  fd->read();
+  BOOST_REQUIRE(fd->getDataValidityOfChannels().size() == 2);
+  BOOST_CHECK(fd->getDataValidityOfChannels()[0] == ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(fd->getDataValidityOfChannels()[1] == ChimeraTK::DataValidity::faulty);
+
+  // Select Ch1 (MUX == 1): Ch1 valid, Ch0 faulty.
+  mux[0] = 1;
+  fd->read();
+  BOOST_CHECK(fd->getDataValidityOfChannels()[0] == ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(fd->getDataValidityOfChannels()[1] == ChimeraTK::DataValidity::ok);
+
+  device.close();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
