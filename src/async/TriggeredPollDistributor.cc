@@ -6,6 +6,8 @@
 #include "async/DataConsistencyKey.h"
 #include "async/SubDomain.h"
 #include "BackendRegisterCatalogue.h"
+#include "NumericAddressedBackend.h"
+#include "SelectorGate.h"
 
 namespace ChimeraTK::async {
 
@@ -54,6 +56,26 @@ namespace ChimeraTK::async {
     }
 
     return true;
+  }
+
+  /********************************************************************************************************************/
+
+  SelectorGate TriggeredPollDistributor::buildSelectorGate(const AccessorInstanceDescriptor& descriptor) {
+    // Only numeric-addressed backends carry per-register selection metadata; other backends have no
+    // getSelectedBy and remain ungated.
+    auto numericAddressed = boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend);
+    if(!numericAddressed) {
+      return SelectorGate();
+    }
+    auto selectedBy = _backend->getRegisterCatalogue().getImpl().getSelectedBy(descriptor.name);
+    if(!selectedBy) {
+      return SelectorGate();
+    }
+    // forceFirstFaulty=true: a freshly subscribed consumer is reported faulty until the selector
+    // register actually matches, so it does not spuriously see valid data before the selection is set.
+    SelectorGate gate;
+    gate.replace(numericAddressed, *selectedBy, true);
+    return gate;
   }
 
   /********************************************************************************************************************/
