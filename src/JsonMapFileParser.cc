@@ -544,8 +544,8 @@ namespace ChimeraTK::detail {
         // take over parent address (except void interrupt registers which don't have an address)
         auto my = catalogue.getBackendRegister(parentName);
         my.channels.clear(); // will be refilled from representation
-        fill(my, name, parentName, addressSetByParent,
-            effectiveSelectedBy); // only updates the name and the representation
+        fill(my, name, parentName, addressSetByParent, effectiveSelectedBy,
+            effectiveSelectedBySource); // only updates the name and the representation
         my.computeDataDescriptor();
         catalogue.addRegister(my);
       }
