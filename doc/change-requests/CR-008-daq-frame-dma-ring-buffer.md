@@ -14,24 +14,35 @@ Status: IN PROGRESS
 
 Aspect: virtual DMA channel as an addressable resource.
 
-- A read targeting a register that maps to a configured virtual DMA channel
-  returns that channel's oldest unread DAQ frame, delivered in the
-  `NDRegisterAccessor` buffer exactly like a regular DMA-channel register read.
+- A register that maps to a configured virtual DMA channel supports two read
+  flavours, chosen through the standard API:
+  - Push (accessor with `wait_for_new_data`): the channel delivers its oldest
+    unread DAQ frame, one frame per delivered new-data event, oldest first.
+    This is the production data path.
+  - Poll (plain accessor read): the channel returns the newest fully written
+    frame at the time the read transfer is initiated, on a best-effort basis,
+    with no side effects (no dequeue advance, no buffer release, no interrupt
+    acknowledgement). The data may be corrupted if the ring completes a full
+    turn and overwrites the buffer during the read. This serves debugging
+    tools (e.g. a register viewer) and must not interfere with a concurrent
+    push consumer.
 - The generic `NumericAddressedBackend` needs no new structure: no new
   register type, no new accessor path. The frame channel is an ordinary
   addressable register.
 - All DMA-engine work and all handshaking happen inside `XdmaBackend::read()`:
   buffer allocation and pinning, physical-address exposure, descriptor-ring
-  programming, S2MM controller start, dequeue state (w\. which frame was last
+  programming, S2MM controller start, dequeue state (which frame was last
   delivered), frame reassembly across ring blocks, ring advancement, interrupt
-  servicing and acknowledgement, and overrun detection.
+  servicing and acknowledgement, and overrun detection. The dequeue state
+  advances only on a push read; a poll read never changes it.
 - A consumer that lags the producer (ring overrun) is reported to the caller
   through a companion read-only register per channel declared in the JMAP.
 
 Aspect: push mode.
 
-- Frame channels support `wait_for_new_data`, driven by the existing
-  `triggeredByInterrupt` mechanism.
+- Frame channels support `wait_for_new_data` (the push read), driven by the
+  existing `triggeredByInterrupt` mechanism. The push read delivers one frame
+  per new-data notification, oldest first, and is the production data path.
 
 Aspect: JMAP format.
 
@@ -99,6 +110,11 @@ Aspect: register-to-channel mapping.
 - A register whose `address` has `type` `"DMA"` and a `channel` matching a
   channel index in `dmaChannels` is a frame-channel register. Its `offset` is
   the byte offset into the frame, not into a bar.
+- Each frame-channel register is internally represented with two bar values,
+  one per read flavour: a peek bar for ordinary reads and a pop bar for the
+  interrupt-driven push read. Both bars address the same virtual DMA channel
+  and frame offset; the bar values are reserved by the `XdmaBackend` and are
+  not bar numbers of the engine's register space.
 - A single 2D multiplexed register at offset 0 represents the whole frame; its
   channel slices give structured access to the frame content. Several
   registers at frame-relative offsets give sub-region access. All slices of
@@ -107,19 +123,26 @@ Aspect: register-to-channel mapping.
 
 Aspect: `XdmaBackend::read()`.
 
-- `read()` determines from the bar/address that the access targets a
-  configured virtual DMA channel and then performs one frame read for the
-  whole frame (all offset-slices together).
+- `read()` selects the read flavour from the bar: a peek-bar read returns the
+  newest fully written frame without side effects; a pop-bar read returns the
+  oldest unread frame and advances the dequeue state. Both perform one frame
+  read for the whole frame (all offset-slices together).
 - Frame read: allocate/pin host buffers and expose their physical addresses
   (buffer allocator, e.g. `u-dma-buf` model), program the S2MM descriptor
   ring, start the S2MM controller, walk the descriptors from `rxsof` to
-  `rxeof` to reassemble the frame (which may span several ring blocks), copy
-  the concatenated bytes into the accessor buffer, clear `cmplt` to
-  acknowledge, and advance the dequeue state.
+  `rxeof` to reassemble the frame (which may span several ring blocks), and
+  copy the concatenated bytes into the accessor buffer. The pop read
+  additionally clears `cmplt` to acknowledge, releases the consumed buffers
+  and advances the dequeue state.
 - All handshaking stays inside the read path: frame-arrival interrupt
   service/ack, S2MM status/control register reactions, consumed-buffer
   acknowledgement, and overrun/overflow reporting when the consumer lags the
-  producer.
+  producer. The interrupt-driven push read acknowledges the frame-arrival
+  interrupt; a poll read never does.
+- The push read is triggered by the S2MM engine's frame-arrival interrupt,
+  configured for per-frame notification (S2MM IRQ threshold 1) and routed to
+  an interrupt vector which the frame channel register references
+  (`triggeredByInterrupt`).
 - Builds on the existing `DmaIntf`/`CtrlIntf`/event infrastructure.
 
 Aspect: overrun reporting.
@@ -145,10 +168,11 @@ Aspect: Dummy backend mirror.
 
 - Parser tests: a `dmaChannels` section with a register referencing a channel
   by index parses; register offsets are frame-relative.
-- Dummy backend frame channel tests: a frame read returns the oldest unread
-  frame; several offset-slices of one frame return one coherent snapshot;
-  a frame read advances the dequeue state; push mode
-  (`wait_for_new_data`) fires on a new frame.
+- Dummy backend frame channel tests: a push read delivers the oldest unread
+  frame one by one and advances the dequeue state; a poll read returns the
+  newest frame and leaves the dequeue state and a concurrent push consumer
+  untouched; several offset-slices of one frame return one coherent snapshot;
+  `wait_for_new_data` fires on a new frame.
 - Overrun tests: a lagging consumer is reported through the companion
   register.
 - Regression: the double-buffer tests keep passing (feature stays separate).
