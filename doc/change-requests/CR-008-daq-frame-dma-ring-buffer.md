@@ -12,6 +12,23 @@ Status: IN PROGRESS
 
 ## Requirements
 
+Aspect: JMAP format.
+
+- The `dmaChannels` section (introduced by CR-007) defines virtual DMA
+  channels indexed by non-negative integers. Each entry carries the mandatory
+  `type` key (validated by CR-007) and the backend-specific keys: the names
+  of the DMA-engine control registers, the buffer allocator selection, the
+  ring depth and the block size. The Xilinx ringbuffer uses the `type` value
+  `"XilinxAxiS2MM"`.
+- A register references a channel with the existing `address` object of type
+  `"DMA"` whose `channel` is a channel *index* defined in `dmaChannels`; the
+  register's `offset` is relative to the beginning of the DAQ frame.
+- The frame size is constant in the first implementation, but the format must
+  not make variable frame lengths impossible (e.g. a per-frame size or
+  header-driven length is expressible).
+- The hidden DMA-engine control registers are named in the `dmaChannels`
+  section only; the register description never replicates them.
+
 Aspect: virtual DMA channel as an addressable resource.
 
 - A register that maps to a configured virtual DMA channel supports two read
@@ -52,23 +69,6 @@ Aspect: push mode.
   Only the push read returns consumed buffers to the engine, so the push
   stream is gap-free and the channel keeps producing new frames while a push
   consumer runs.
-
-Aspect: JMAP format.
-
-- The `dmaChannels` section (introduced by CR-007) defines virtual DMA
-  channels indexed by non-negative integers. Each entry carries the mandatory
-  `type` key (validated by CR-007) and the backend-specific keys: the names
-  of the DMA-engine control registers, the buffer allocator selection, the
-  ring depth and the block size. The Xilinx ringbuffer uses the `type` value
-  `"XilinxAxiS2MM"`.
-- A register references a channel with the existing `address` object of type
-  `"DMA"` whose `channel` is a channel *index* defined in `dmaChannels`; the
-  register's `offset` is relative to the beginning of the DAQ frame.
-- The frame size is constant in the first implementation, but the format must
-  not make variable frame lengths impossible (e.g. a per-frame size or
-  header-driven length is expressible).
-- The hidden DMA-engine control registers are named in the `dmaChannels`
-  section only; the register description never replicates them.
 
 Aspect: slice coherence.
 
