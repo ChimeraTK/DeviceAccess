@@ -32,7 +32,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
   set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem program_options REQUIRED)
 FIND_PACKAGE(ChimeraTK-cppext 01.07 REQUIRED)
 FIND_PACKAGE(exprtk 01.04 REQUIRED)
 
@@ -133,7 +133,7 @@ include(GNUInstallDirs)
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_FULL_LIBDIR} -l${PROJECT_NAME}")
 
 # we need the public dependencies so create_cmake_config_files can find them as implicit dependencies
-list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem")
+list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem program_options")
 list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "ChimeraTK-cppext")
 
 # Install the library and the executables
@@ -163,6 +163,19 @@ endif()
 foreach(toolScripts chimeratk-lmap-editor chimeratk-map-to-jmap)
   install(PROGRAMS "tools/${toolScripts}" DESTINATION bin)
 endforeach(toolScripts)
+
+# Tool: write a jmap file from a device catalogue
+add_executable(chimeratk-device-to-jmap tools/src/chimeratk-device-to-jmap.cc)
+target_link_libraries(chimeratk-device-to-jmap PRIVATE ${PROJECT_NAME} nlohmann_json::nlohmann_json ${Boost_LIBRARIES})
+add_dependencies(chimeratk-device-to-jmap ${PROJECT_NAME})
+# The installed tool must find its shared library when installed into a user defined prefix.
+set_property(TARGET chimeratk-device-to-jmap PROPERTY INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+install(TARGETS chimeratk-device-to-jmap RUNTIME DESTINATION bin)
+
+# Let the test executable know where the tool is installed in the build tree.
+if(TARGET testDeviceToJmap)
+  target_compile_definitions(testDeviceToJmap PRIVATE CHIMERATK_DEVICE_TO_JMAP="${PROJECT_BINARY_DIR}/chimeratk-device-to-jmap")
+endif()
 
 # Install the example source code.
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc)
