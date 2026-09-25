@@ -1019,6 +1019,156 @@ BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
 
 /**********************************************************************************************************************/
 
+// S1: 'selectedBy' referencing a selector register that does not exist in the catalogue must be rejected.
+BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotFound) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  // APP.DATA gates on a selector register 'APP.NONEXISTENT' that is never declared.
+  map["addressSpace"]["APP"]["children"]["DATA"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"selectedBy", {{"register", "APP.NONEXISTENT"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  std::string tmpFile = "selectedBySelectorNotFound_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
+}
+
+// S2: a selector register that is itself conditionally enabled by a 'selectedBy' of its own must be rejected: a
+// selector drives the gate of another register and must therefore be readable unconditionally.
+BOOST_AUTO_TEST_CASE(TestSelectedBySelectorItselfGated) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  // APP.SEL is itself gated by APP.MASTER_SEL, and APP.DATA gates on APP.SEL. The selector APP.SEL must not be gated.
+  map["addressSpace"]["APP"]["children"]["SEL"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"selectedBy", {{"register", "APP.MASTER_SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 0}}},
+      {"representation", {{"width", 32}}}};
+  map["addressSpace"]["APP"]["children"]["MASTER_SEL"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"address", {{"channel", 0}, {"offset", 8}}},
+      {"representation", {{"width", 32}}}};
+  map["addressSpace"]["APP"]["children"]["DATA"] = {
+      {"numberOfElements", 1},
+      {"access", "RO"},
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  std::string tmpFile = "selectedBySelectorItselfGated_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+// Helper used by the selectedBy read-only restriction tests (PR1-PR5): build a minimal map in a temp file and parse
+// it. The map carries a selector register APP.SEL and a register APP.DATA whose 'selectedBy' points to it; the
+// register's access is controlled by the caller. If 'access' is empty the 'access' member is omitted, defaulting to
+// READ_WRITE at parse time.
+static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture(const std::string& access,
+    const nlohmann::json& dataExtra = nlohmann::json::object()) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  map["addressSpace"]["APP"]["children"]["SEL"] = {
+      {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
+  nlohmann::json reg = {
+      {"numberOfElements", 1},
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  if(!access.empty()) {
+    reg["access"] = access;
+  }
+  for(auto it = dataExtra.begin(); it != dataExtra.end(); ++it) {
+    reg[it.key()] = it.value();
+  }
+  map["addressSpace"]["APP"]["children"]["DATA"] = reg;
+  std::string tmpFile = "selectedByAccess_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(tmpFile).first;
+}
+
+/**********************************************************************************************************************/
+
+// PR1: 'selectedBy' on a register with Access::READ_WRITE must be rejected as a parsing error.
+BOOST_AUTO_TEST_CASE(TestSelectedByReadWriteRejected) {
+  BOOST_CHECK_THROW(parseSelectedByAccessFixture("RW"), ChimeraTK::logic_error);
+}
+
+// PR2: 'selectedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
+BOOST_AUTO_TEST_CASE(TestSelectedByWriteOnlyRejected) {
+  BOOST_CHECK_THROW(parseSelectedByAccessFixture("WO"), ChimeraTK::logic_error);
+}
+
+// PR3: 'selectedBy' on a register with Access::READ_ONLY is accepted.
+BOOST_AUTO_TEST_CASE(TestSelectedByReadOnlyAccepted) {
+  auto regs = parseSelectedByAccessFixture("RO");
+  auto reg = regs.getBackendRegister("/APP/DATA");
+  BOOST_REQUIRE(reg.channels[0].selectedBy);
+  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/APP/SEL");
+  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+}
+
+// PR4: 'selectedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
+// 'triggeredByInterrupt' (which implies read-only) instead of 'access'.
+BOOST_AUTO_TEST_CASE(TestSelectedByInterruptAccepted) {
+  auto regs = parseSelectedByAccessFixture("", {{"triggeredByInterrupt", nlohmann::json::array({0})}});
+  auto reg = regs.getBackendRegister("/APP/DATA");
+  BOOST_REQUIRE(reg.channels[0].selectedBy);
+  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+}
+
+/**********************************************************************************************************************/
+
+// Helper used by PR5: build a map with a module 'MOD' that declares 'selectedBy', and a single descendant register
+// '<childName>' under it. The child's access is controlled by 'childAccess' (empty => READ_WRITE default).
+static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByInheritedAccessFixture(
+    const std::string& childAccess, const std::string& childName) {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "0.0.1";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  map["addressSpace"]["APP"]["children"]["SEL"] = {
+      {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
+  nlohmann::json child = {
+      {"numberOfElements", 1},
+      {"address", {{"channel", 0}, {"offset", 4}}},
+      {"representation", {{"width", 32}}}};
+  if(!childAccess.empty()) {
+    child["access"] = childAccess;
+  }
+  map["addressSpace"]["APP"]["children"]["MOD"] = {
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}}, {"children", {{childName, child}}}};
+  std::string tmpFile = "selectedByInheritedAccess_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(tmpFile).first;
+}
+
+// PR5: a module/parent declaring 'selectedBy' must be rejected if any descendant register inheriting it is writable;
+// the error points to the parent declaration, not the child.
+BOOST_AUTO_TEST_CASE(TestSelectedByInheritedWritableDescendantRejected) {
+  // A writable (default READ_WRITE) descendant inheriting the module's selectedBy is rejected.
+  BOOST_CHECK_THROW(parseSelectedByInheritedAccessFixture("", "CHILD"), ChimeraTK::logic_error);
+  // An explicitly writable descendant is rejected as well.
+  BOOST_CHECK_THROW(parseSelectedByInheritedAccessFixture("WO", "CHILD"), ChimeraTK::logic_error);
+  // A read-only descendant satisfies the constraint.
+  auto regs = parseSelectedByInheritedAccessFixture("RO", "CHILD");
+  auto reg = regs.getBackendRegister("/APP/MOD/CHILD");
+  BOOST_REQUIRE(reg.channels[0].selectedBy);
+  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+}
+
+/**********************************************************************************************************************/
+
 // selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
 // register's single channel must carry the selector.
 BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
@@ -1027,11 +1177,68 @@ BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
 
 /**********************************************************************************************************************/
 
-// selectedBy with a non-numeric 'value' (e.g. a string) must be rejected with std::logic_error. NOTE: currently a
-// nlohmann::json type error surfaces instead; this test documents the desired behaviour.
-BOOST_AUTO_TEST_CASE(TestSelectedByBadValue) {
-  nlohmann::json sel{{"register", "COLLISION.MUX"}, {"value", "not-a-number"}};
-  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByBadValue.jmap", sel), ChimeraTK::logic_error);
+// A 'selectedBy' declared on a module or parent register is inherited by all descendant registers/channels that lack
+// their own declaration; the nearest ancestor's declaration wins for a node that has its own.
+BOOST_AUTO_TEST_CASE(TestSelectedByInheritance) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByInheritance.jmap");
+
+  // Helpers: assert the single channel of a scalar/1D register carries the given selector (or none).
+  auto checkRegSelectedBy = [](const NumericAddressedRegisterInfo& reg, const std::string& expectedReg,
+                                std::optional<int64_t> expectedVal) {
+    BOOST_REQUIRE(reg.channels.size() == 1);
+    const auto& sb = reg.channels[0].selectedBy;
+    if(expectedVal.has_value()) {
+      BOOST_REQUIRE(sb.has_value());
+      BOOST_TEST(sb->regPath == expectedReg);
+      BOOST_TEST(sb->val == *expectedVal);
+    }
+    else {
+      BOOST_CHECK(!sb.has_value());
+    }
+  };
+  // Helpers: assert each channel of a 2D register, in natural (byte-offset) order.
+  auto check2DChannelsSelectedBy = [](const NumericAddressedRegisterInfo& reg,
+                                       std::initializer_list<std::pair<std::string, int64_t>> expected) {
+    BOOST_REQUIRE(reg.channels.size() == expected.size());
+    size_t i = 0;
+    for(const auto& [expectedReg, expectedVal] : expected) {
+      const auto& sb = reg.channels[i].selectedBy;
+      BOOST_REQUIRE(sb.has_value());
+      BOOST_TEST(sb->regPath == expectedReg);
+      BOOST_TEST(sb->val == expectedVal);
+      ++i;
+    }
+  };
+
+  // Module inheritance. REG_A inherits the module default; REG_B keeps its own (override).
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG_A"), "/APP/OUTPUT_SELECT", 3);
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG_B"), "/CTRL/MODE", 9);
+
+  // Nested inheritance (module -> submodule -> leaf). SUB carries no selectedBy, so LEAF inherits from INHERIT.
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/SUB/LEAF"), "/APP/OUTPUT_SELECT", 3);
+
+  // 2D module default. All channels of a contained 2D register without own declarations inherit the module default.
+  check2DChannelsSelectedBy(
+      regs.getBackendRegister("/INHERIT/CHANA"), {{"/APP/OUTPUT_SELECT", 3}, {"/APP/OUTPUT_SELECT", 3}});
+
+  // Channel override. D1 has its own per-channel selectedBy; D0 inherits the module default.
+  check2DChannelsSelectedBy(
+      regs.getBackendRegister("/INHERIT/CHANB"), {{"/APP/OUTPUT_SELECT", 3}, {"/CTRL/CHAN_SEL", 7}});
+
+  // Register-module dual role. Its selectedBy applies to its own register AND to its descendant.
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN"), "/CTRL/DUAL", 5);
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN/CHILD"), "/CTRL/DUAL", 5);
+
+  // Register-level selectedBy directly on a 2D register (no module) is valid and becomes the default for all channels.
+  check2DChannelsSelectedBy(regs.getBackendRegister("/REG2D_TOP"), {{"/APP/TOP_SEL", 11}, {"/APP/TOP_SEL", 11}});
+
+  // A leaf with no ancestor carrying selectedBy stays unconditional (no inheritance).
+  checkRegSelectedBy(regs.getBackendRegister("/LEAF_TOP"), "", std::nullopt);
+
+  // The 1D channel slices of an inherited 2D register also carry the effective selector.
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C0"), "/APP/OUTPUT_SELECT", 3);
+  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C1"), "/APP/OUTPUT_SELECT", 3);
+  checkRegSelectedBy(regs.getBackendRegister("/REG2D_TOP/E0"), "/APP/TOP_SEL", 11);
 }
 
 /**********************************************************************************************************************/

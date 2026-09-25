@@ -10,6 +10,7 @@
             "type": "DMA",
             "offset": "0x1000"
           },
+          "access": "RO",
           "numberOfElements": 100,
           "pitch": 8,
           "channels": {
