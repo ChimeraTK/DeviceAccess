@@ -907,8 +907,8 @@ BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeChildBuf0CollisionThrows) {
 /**********************************************************************************************************************/
 
 // A bit-field child slice of a muxed channel inherits the channel's selectedBy condition (fixture
-// selectedByCases.jmap BITFIELD/FD/Ch0, which combines a per-channel 'selectedBy' with a 'children' dictionary).
-// Every child slice carries the same register+value selector as the parent channel slice.
+// simpleJsonFile.jmap DAQ.MUXED_WITH_STATUS, which combines a per-channel 'selectedBy' with a 'children'
+// dictionary). Every child slice carries the same register+value selector as the parent channel slice.
 BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeMuxedChildSelectedBy) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
 
