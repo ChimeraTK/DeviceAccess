@@ -6,7 +6,7 @@ scenario: a double-buffered named channel in a selectedBy muxed register, driven
 by an interrupt, with a data-consistency key and bit ranges in one channel.
 Each feature must be provably selected; nothing may be silently dropped.
 
-Status: IN PROGRESS (from PLANNED, redo via IN PROGRESS)
+Status: PLANNED
 
 ## Requirements
 
