@@ -1,14 +1,16 @@
 # CR-010: Integration test for combined muxed double-buffer features
 
-Synopsis: Verification-only change request. Add one integration test that
-combines the NumericAddressedBackend muxed double-buffer features in a single
-scenario: a double-buffered named channel in a selectedBy muxed register, driven
-by an interrupt, with a data-consistency key and bit ranges in one channel.
-Each feature must be provably selected; nothing may be silently dropped.
+Synopsis: Add one integration test that combines the NumericAddressedBackend
+muxed double-buffer features in a single scenario: a double-buffered named
+channel in a selectedBy muxed register, driven by an interrupt, with a
+data-consistency key and bit ranges in one channel. Each feature must be
+provably selected; nothing may be silently dropped. The test exposes a
+production bug in the async shared-target accounting for multiple bit-range
+children, which this change request fixes.
 
 Depends on: CR-001, CR-002, CR-003, CR-004
 
-Status: IN PROGRESS (from READY TO IMPLEMENT)
+Status: PLANNED (from READY TO IMPLEMENT)
 
 ## Requirements
 
@@ -27,15 +29,20 @@ the same transfer group (data-consistency key),
 - the bit-range child slices must extract the correct fields (bit ranges).
 - The exercised named-channel slice must not be the first channel, so a missing
 byte-offset fold into the addresses would be caught.
-- Verification only: no production-code change. Aspects already covered by
-CR-001..CR-004 and the selectedBy feature tests (double-buffer handshake
-internals, both key configurations individually, per-channel validity, write
-rejection of bit ranges) are not re-tested here.
+- The production code must implement the documented combination in the async
+path: when several bit-range children of the same muxed, double-buffered named
+channel are subscribed with `wait_for_new_data`, each child must be delivered
+its extracted field from the freshly finished buffer. The test must fail while
+this is not the case.
+- Aspects already covered by CR-001..CR-004 and the selectedBy feature tests
+(double-buffer handshake internals, both key configurations individually,
+per-channel validity, write rejection of bit ranges) are not re-tested here.
 
 ## Specifications
 
-Affected components: a new jmap fixture and the numeric addressed backend unified
-test executable. No production code.
+Affected components: a new jmap fixture, the numeric addressed backend unified
+test executable, and the bit-range shared-target accounting in the async
+double-buffer path.
 
 - New fixture `tests/selectedByCombined.jmap` (DummyBackend): 2D DMA register
 `DAQ.DATA`, 4 elements, pitch 32 bits, register-level `selectedBy` (selector
@@ -61,6 +68,15 @@ half-words.
 - Then the selector is set to unselected (`MUX.SEL` == 2) and a buffer finish is
 performed: no data must be delivered. Re-selecting (`MUX.SEL` == 1) and
 finishing another buffer must deliver again.
+- Fix the shared-target accounting in `BitRangeAccessorDecorator` (shared with
+`SubArrayAccessorDecorator`): multiple bit-range children of the same raw DMA
+target are read in separate transfer sequences within the same async transfer
+group (each child wrapped in its own double-buffer accessor), so the check
+`_lock.mutex()->useCount() == _sharedAccessors->instanceCount(_target->getId())`
+in `doPostRead`/`doPreRead` never matches and `_target->postRead()` is skipped,
+leaving the shared raw word stale. The accounting must ensure `postRead()` runs
+exactly once per target per transfer across the separate sequences, so each
+child's bit-range extraction sees the freshly finished buffer.
 - Existing tests and fixtures stay unchanged; the new jmap is used only by the
 new test.
 
@@ -94,12 +110,3 @@ only asserts that the delivered `VersionNumber` increases
 (`UnifiedBackendTest.h`), which a silently dropped data-consistency key would
 also satisfy, and it cannot express the unselected gating-off check, so two of
 the four "nothing silently dropped" aspects would be missed.
-
-## Deferred issue
-
-- Genuine production-code bug exposed by the CR-010 verification test: the two bit-range child slices Lo and Hi of a double-buffered, selectedBy, interrupt-driven named channel do not deliver correct data through the async (wait_for_new_data) path; they report new data but return 0 instead of the expected 16-bit half-words.
-- Root cause: in the async path each subscribed accessor (including each bit-range child, each wrapped in its own DoubleBufferAccessor) is placed into the TriggeredPollDistributor's internal TransferGroup (src/async/TriggeredPollDistributor.cc:122). Two children (…/Lo/BUF0 and …/Hi/BUF0) share the same raw DMA target; the shared-target accounting in BitRangeAccessorDecorator::doPostRead (include/BitRangeAccessorDecorator.h:214) requires _lock.mutex()->useCount() == _sharedAccessors->instanceCount(target). Because the double-buffer wrapper reads Lo.BUF0 and Hi.BUF0 in separate transfer sequences within the group, useCount never reaches instanceCount (2), so _target->postRead() is skipped and the shared buffer holds stale/zero data.
-- Empirically confirmed: with only ONE bit-range child (lo) the whole test passes (data, realm version, both buffer finishes, selector gating, and bit-range extraction are all correct); adding the second child (hi) breaks both lo and hi. So the failure is specific to two bit-range children sharing the parent-channel raw word in the async double-buffer path.
-- A manual TransferGroup is not a workaround: TransferGroup::addAccessor rejects wait_for_new_data accessors (src/TransferGroup.cc:197-200), and the CR requires wait_for_new_data.
-- Conflict with the CR contract: CR-003 documents that bit-range child slices inherit wait_for_new_data and the BUF0/BUF1 double-buffer views (CR-003 line 30-31), which is exactly the combination CR-010 is meant to verify. The current production code fails this documented combination, so CR-010 (verification-only, no production change allowed) cannot legitimately pass as specified.
-- Deliverable kept faithful to the CR spec: tests/selectedByCombined.jmap (fixture, pitch 8 bytes/minimal valid) and a clean test case TestCombinedMuxedDoubleBuffer in tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp (data+lo+hi) are in the working tree; all debug instrumentation removed; existing tests in the same suite pass (all 24 reported failures are in the new test only). No existing test or fixture was modified. CR document header untouched; nothing committed/pushed.
