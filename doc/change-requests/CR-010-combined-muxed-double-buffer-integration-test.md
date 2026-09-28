@@ -10,7 +10,7 @@ children, which this change request fixes.
 
 Depends on: CR-001, CR-002, CR-003, CR-004
 
-Status: PLANNED (from READY TO IMPLEMENT)
+Status: IN PROGRESS (from READY TO IMPLEMENT)
 
 ## Requirements
 
@@ -110,3 +110,10 @@ only asserts that the delivered `VersionNumber` increases
 (`UnifiedBackendTest.h`), which a silently dropped data-consistency key would
 also satisfy, and it cannot express the unselected gating-off check, so two of
 the four "nothing silently dropped" aspects would be missed.
+
+## Deferred issue
+
+- Missing '## Deferred issue' section for go-back status 'PLANNED (from READY TO IMPLEMENT)'
+- Mixing production bug fix with integration test violates single-purpose principle
+- No justification for new fixture 'selectedByCombined.jmap'
+- 'VersionNumber' check may pass trivially due to monotonic increments
