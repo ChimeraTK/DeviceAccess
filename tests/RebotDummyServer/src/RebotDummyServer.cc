@@ -212,4 +212,16 @@ namespace ChimeraTK {
     return not _io.stopped();
   }
 
+  void RebotDummyServer::resetConnection() {
+    auto session = _currentSession.lock();
+    if(!session) {
+      return;
+    }
+    boost::asio::post(_io, [session] {
+      boost::system::error_code ec;
+      session->_currentClientConnection.shutdown(ip::tcp::socket::shutdown_both, ec);
+      session->_currentClientConnection.close(ec);
+    });
+  }
+
 } /* namespace ChimeraTK */

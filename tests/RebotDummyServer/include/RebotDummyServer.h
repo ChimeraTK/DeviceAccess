@@ -91,6 +91,12 @@ namespace ChimeraTK {
     boost::asio::io_context& service() { return _io; }
     std::shared_ptr<RebotDummySession> session() { return _currentSession.lock(); }
 
+    // Close the current session's client connection from the server io thread.
+    // The session socket is owned by the server io thread, so the close is
+    // posted onto the io loop from the calling (test) thread. The client sees
+    // the peer connection as reset.
+    void resetConnection();
+
    private:
     void do_accept();
     unsigned int _protocolVersion;
