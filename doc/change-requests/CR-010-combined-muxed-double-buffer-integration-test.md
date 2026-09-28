@@ -8,7 +8,7 @@ Each feature must be provably selected; nothing may be silently dropped.
 
 Depends on: CR-001, CR-002, CR-003, CR-004
 
-Status: PLANNED
+Status: READY TO IMPLEMENT
 
 ## Requirements
 
