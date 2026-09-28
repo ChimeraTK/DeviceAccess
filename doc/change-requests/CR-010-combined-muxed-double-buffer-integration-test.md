@@ -8,7 +8,7 @@ Each feature must be provably selected; nothing may be silently dropped.
 
 Depends on: CR-001, CR-002, CR-003, CR-004
 
-Status: READY TO IMPLEMENT
+Status: IN PROGRESS (from READY TO IMPLEMENT)
 
 ## Requirements
 
@@ -72,17 +72,17 @@ and the bit-range extraction; then the unselected-and-reselected gating check.
 A `std::cout` line names each scenario step. Each "silently dropped" aspect is
 tied to a concrete assertion whose failure proves the aspect was dropped:
 - the two buffer finishes deliver distinct value sets, so a dropped
-  double-buffer handshake would fail a value comparison against the expected
-  buffer,
+double-buffer handshake would fail a value comparison against the expected
+buffer,
 - after setting `MUX.SEL` to unselected and finishing a buffer, no data is
-  delivered (an unexpected delivery fails on a read timeout), so a dropped
-  selector gating would fail that assertion; reselecting and finishing again
-  must deliver,
+delivered (an unexpected delivery fails on a read timeout), so a dropped
+selector gating would fail that assertion; reselecting and finishing again
+must deliver,
 - each delivered `VersionNumber` equals the realm version of the key written
-  in the same transfer group, so a dropped data-consistency mapping would fail
-  the version comparison,
+in the same transfer group, so a dropped data-consistency mapping would fail
+the version comparison,
 - the child slices extract the expected Lo/Hi half-words, so a dropped bit
-  range would fail the field comparison.
+range would fail the field comparison.
 - Full sub-suite `ctest` run of the numeric addressed backend register accessor,
 double-buffering and data-consistency tests to confirm the new fixture and
 test disturb nothing.
@@ -94,3 +94,12 @@ only asserts that the delivered `VersionNumber` increases
 (`UnifiedBackendTest.h`), which a silently dropped data-consistency key would
 also satisfy, and it cannot express the unselected gating-off check, so two of
 the four "nothing silently dropped" aspects would be missed.
+
+## Deferred issue
+
+- Genuine production-code bug exposed by the CR-010 verification test: the two bit-range child slices Lo and Hi of a double-buffered, selectedBy, interrupt-driven named channel do not deliver correct data through the async (wait_for_new_data) path; they report new data but return 0 instead of the expected 16-bit half-words.
+- Root cause: in the async path each subscribed accessor (including each bit-range child, each wrapped in its own DoubleBufferAccessor) is placed into the TriggeredPollDistributor's internal TransferGroup (src/async/TriggeredPollDistributor.cc:122). Two children (…/Lo/BUF0 and …/Hi/BUF0) share the same raw DMA target; the shared-target accounting in BitRangeAccessorDecorator::doPostRead (include/BitRangeAccessorDecorator.h:214) requires _lock.mutex()->useCount() == _sharedAccessors->instanceCount(target). Because the double-buffer wrapper reads Lo.BUF0 and Hi.BUF0 in separate transfer sequences within the group, useCount never reaches instanceCount (2), so _target->postRead() is skipped and the shared buffer holds stale/zero data.
+- Empirically confirmed: with only ONE bit-range child (lo) the whole test passes (data, realm version, both buffer finishes, selector gating, and bit-range extraction are all correct); adding the second child (hi) breaks both lo and hi. So the failure is specific to two bit-range children sharing the parent-channel raw word in the async double-buffer path.
+- A manual TransferGroup is not a workaround: TransferGroup::addAccessor rejects wait_for_new_data accessors (src/TransferGroup.cc:197-200), and the CR requires wait_for_new_data.
+- Conflict with the CR contract: CR-003 documents that bit-range child slices inherit wait_for_new_data and the BUF0/BUF1 double-buffer views (CR-003 line 30-31), which is exactly the combination CR-010 is meant to verify. The current production code fails this documented combination, so CR-010 (verification-only, no production change allowed) cannot legitimately pass as specified.
+- Deliverable kept faithful to the CR spec: tests/selectedByCombined.jmap (fixture, pitch 8 bytes/minimal valid) and a clean test case TestCombinedMuxedDoubleBuffer in tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp (data+lo+hi) are in the working tree; all debug instrumentation removed; existing tests in the same suite pass (all 24 reported failures are in the new test only). No existing test or fixture was modified. CR document header untouched; nothing committed/pushed.
