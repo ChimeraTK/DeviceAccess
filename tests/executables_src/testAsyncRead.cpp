@@ -28,7 +28,8 @@ std::string cdd = "(AsyncTestDummy)";
 
 /**********************************************************************************************************************/
 
-class AsyncTestDummy : public DeviceBackendImpl { public:
+class AsyncTestDummy : public DeviceBackendImpl {
+ public:
   explicit AsyncTestDummy() { FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl); }
 
   std::string readDeviceInfo() override { return "AsyncTestDummy"; }
@@ -780,8 +781,7 @@ class SelectedByInterruptFixture {
  public:
   SelectedByInterruptFixture()
   : dummy(openDeviceAndGetDummy(device)),
-    accessor(
-        device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA", 1, 0, {AccessMode::wait_for_new_data})),
+    accessor(device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA", 1, 0, {AccessMode::wait_for_new_data})),
     muxSel(dummy.get(), "DAQ", "MUX_SEL"), enable(dummy.get(), "DAQ/DOUBLE_BUF", "ENA"),
     inactive(dummy.get(), "DAQ/DOUBLE_BUF", "INACTIVE_BUF_ID"), buffer0(dummy.get(), "DAQ/DATA", "BUF0"),
     buffer1(dummy.get(), "DAQ/DATA", "BUF1") {

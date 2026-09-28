@@ -60,7 +60,7 @@ namespace ChimeraTK::async {
    */
   template<typename UserType>
   struct PolledAsyncVariable : public AsyncVariableImpl<UserType> {
-  bool fillSendBuffer() final;
+    bool fillSendBuffer() final;
 
     /// The constructor takes an already created synchronous accessor and a reference to the owing distributor
     explicit PolledAsyncVariable(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_,
@@ -149,9 +149,8 @@ namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
   template<typename UserType>
-  PolledAsyncVariable<UserType>::PolledAsyncVariable(
-      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, TriggeredPollDistributor& owner,
-      SelectorGate selectorGate)
+  PolledAsyncVariable<UserType>::PolledAsyncVariable(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_,
+      TriggeredPollDistributor& owner, SelectorGate selectorGate)
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
     _syncAccessor(syncAccessor_), _owner(owner), _selectorGate(std::move(selectorGate)) {}
 

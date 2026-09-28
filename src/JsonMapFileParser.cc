@@ -546,7 +546,7 @@ namespace ChimeraTK::detail {
       else if(representation.type != RepresentationType::representationNotSet) {
         // take over parent address (except void interrupt registers which don't have an address)
         auto my = catalogue.getBackendRegister(parentName);
-        my.channels.clear();                                       // will be refilled from representation
+        my.channels.clear(); // will be refilled from representation
         fill(my, name, parentName, addressSetByParent, effective,
             effectiveSelectedBySource); // only updates the name and the representation
         my.computeDataDescriptor();

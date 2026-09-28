@@ -1027,15 +1027,11 @@ static void parseSelectorLayoutFixture(const std::string& outFile, uint32_t bitO
   map["mapFormatVersion"] = "0.0.1";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
-  map["addressSpace"]["APP"]["children"]["SEL"] = {
-      {"numberOfElements", 1},
+  map["addressSpace"]["APP"]["children"]["SEL"] = {{"numberOfElements", 1},
       {"address", {{"channel", 0}, {"offset", 0}}},
       {"representation", {{"type", "fixedPoint"}, {"width", width}, {"bitShift", bitOffset}}}};
-  map["addressSpace"]["APP"]["children"]["DATA"] = {
-      {"numberOfElements", 1},
-      {"access", "RO"},
-      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
-      {"address", {{"channel", 0}, {"offset", 4}}},
+  map["addressSpace"]["APP"]["children"]["DATA"] = {{"numberOfElements", 1}, {"access", "RO"},
+      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 4}}},
       {"representation", {{"width", 32}}}};
   std::ofstream(outFile) << map.dump(2);
   ChimeraTK::MapFileParser::parse(outFile);
@@ -1059,19 +1055,16 @@ BOOST_AUTO_TEST_CASE(TestSelectedBySelectorTooWide) {
 // it. The map carries a selector register APP.SEL and a register APP.DATA whose 'selectedBy' points to it; the
 // register's access is controlled by the caller. If 'access' is empty the 'access' member is omitted, defaulting to
 // READ_WRITE at parse time.
-static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture(const std::string& access,
-    const nlohmann::json& dataExtra = nlohmann::json::object()) {
+static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture(
+    const std::string& access, const nlohmann::json& dataExtra = nlohmann::json::object()) {
   nlohmann::json map;
   map["mapFormatVersion"] = "0.0.1";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
   map["addressSpace"]["APP"]["children"]["SEL"] = {
       {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
-  nlohmann::json reg = {
-      {"numberOfElements", 1},
-      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
-      {"address", {{"channel", 0}, {"offset", 4}}},
-      {"representation", {{"width", 32}}}};
+  nlohmann::json reg = {{"numberOfElements", 1}, {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
+      {"address", {{"channel", 0}, {"offset", 4}}}, {"representation", {{"width", 32}}}};
   if(!access.empty()) {
     reg["access"] = access;
   }
@@ -1127,9 +1120,7 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByInheritedAcce
   map["addressSpace"]["APP"]["children"]["SEL"] = {
       {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
   nlohmann::json child = {
-      {"numberOfElements", 1},
-      {"address", {{"channel", 0}, {"offset", 4}}},
-      {"representation", {{"width", 32}}}};
+      {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 4}}}, {"representation", {{"width", 32}}}};
   if(!childAccess.empty()) {
     child["access"] = childAccess;
   }

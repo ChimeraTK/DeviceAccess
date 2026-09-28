@@ -34,8 +34,8 @@ namespace ChimeraTK {
      * be considered active. If 'forceFirstFaulty' is set, the first dataValidity() call after
      * (re)initialisation returns faulty until a check() observed a matching selector.
      */
-    void replace(const boost::shared_ptr<NumericAddressedBackend>& backend, const SelectedBy& selectedBy,
-        bool forceFirstFaulty);
+    void replace(
+        const boost::shared_ptr<NumericAddressedBackend>& backend, const SelectedBy& selectedBy, bool forceFirstFaulty);
 
     /**
      * Attach a selector accessor that is owned and read by an external TransferGroup instead

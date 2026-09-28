@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "SelectorGate.h"
+
 #include "NumericAddressedBackend.h"
 
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void SelectorGate::replace(const boost::shared_ptr<NumericAddressedBackend>& backend, const SelectedBy& selectedBy,
-      bool forceFirstFaulty) {
+  void SelectorGate::replace(
+      const boost::shared_ptr<NumericAddressedBackend>& backend, const SelectedBy& selectedBy, bool forceFirstFaulty) {
     _accessor = boost::make_shared<ScalarRegisterAccessor<int64_t>>(
         backend->template getSyncRegisterAccessor<int64_t>(selectedBy.regPath, 0, 0, {}));
     _managedExternally = false;

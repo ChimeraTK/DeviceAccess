@@ -518,8 +518,7 @@ BOOST_AUTO_TEST_CASE(testSelectedByMuxedPerChannelValidity) {
   Device device;
   device.open("(dummy?map=muxedPolled.jmap)");
 
-  DummyRegisterAccessor<int32_t> mux(
-      boost::dynamic_pointer_cast<DummyBackend>(device.getBackend()).get(), "MQ", "MUX");
+  DummyRegisterAccessor<int32_t> mux(boost::dynamic_pointer_cast<DummyBackend>(device.getBackend()).get(), "MQ", "MUX");
   auto fd = device.getBackend()->getRegisterAccessor<int16_t>("/MQ/FD", 0, 0, {});
   BOOST_REQUIRE(fd->getNumberOfChannels() == 2);
 

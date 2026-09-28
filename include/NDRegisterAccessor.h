@@ -68,9 +68,7 @@ namespace ChimeraTK {
      *  An empty vector means "no per-channel information available; use the global validity".
      *  When non-empty, its size equals getNumberOfChannels().
      */
-    const std::vector<ChimeraTK::DataValidity>& getDataValidityOfChannels() const {
-      return _dataValidityOfChannels;
-    }
+    const std::vector<ChimeraTK::DataValidity>& getDataValidityOfChannels() const { return _dataValidityOfChannels; }
 
     /** Set the per-channel data validity (see getDataValidityOfChannels()). An empty vector clears
      *  the per-channel information. */

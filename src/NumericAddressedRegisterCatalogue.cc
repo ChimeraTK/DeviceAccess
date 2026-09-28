@@ -294,7 +294,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::optional<SelectedBy> NumericAddressedRegisterCatalogue::getSelectedBy(const RegisterPath& registerPathName) const {
+  std::optional<SelectedBy> NumericAddressedRegisterCatalogue::getSelectedBy(
+      const RegisterPath& registerPathName) const {
     // A full 2D register has multiple channels with per-channel selections; there is no single gate, and gating is
     // handled per-channel inside the muxed accessor. A scalar/1D register (or a generated channel/BUF view, which are
     // all single-channel) carries the effective selection on its single channel.

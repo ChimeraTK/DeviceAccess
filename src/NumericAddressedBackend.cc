@@ -197,17 +197,18 @@ namespace ChimeraTK {
           // single channel). The gate is a narrow synchronous read of the selector register.
           SelectorGate selectorGate;
           if(registerInfo.channels.front().selectedBy) {
-            selectorGate.replace(boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()), *registerInfo.channels.front().selectedBy, false);
+            selectorGate.replace(boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
+                *registerInfo.channels.front().selectedBy, false);
           }
           if(flags.has(AccessMode::raw)) {
             accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-                new NumericAddressedBackendRegisterAccessor<UserType, true>(
-                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate)));
+                new NumericAddressedBackendRegisterAccessor<UserType, true>(shared_from_this(), registerPathName,
+                    numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate)));
           }
           else {
             accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-                new NumericAddressedBackendRegisterAccessor<UserType, false>(
-                    shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate)));
+                new NumericAddressedBackendRegisterAccessor<UserType, false>(shared_from_this(), registerPathName,
+                    numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate)));
           }
         }
         else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {
@@ -245,7 +246,8 @@ namespace ChimeraTK {
       // buffer just read is the active one; if not, the read is treated as not-new and faulty.
       SelectorGate selectorGate;
       if(registerInfo.channels.front().selectedBy) {
-        selectorGate.replace(boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()), *registerInfo.channels.front().selectedBy, false);
+        selectorGate.replace(boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
+            *registerInfo.channels.front().selectedBy, false);
       }
       accessor = boost::make_shared<DoubleBufferAccessor<UserType>>(*registerInfo.doubleBuffer, shared_from_this(),
           controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags, std::move(selectorGate));
