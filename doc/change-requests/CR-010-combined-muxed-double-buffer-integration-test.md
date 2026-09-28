@@ -6,7 +6,9 @@ scenario: a double-buffered named channel in a selectedBy muxed register, driven
 by an interrupt, with a data-consistency key and bit ranges in one channel.
 Each feature must be provably selected; nothing may be silently dropped.
 
-Status: IN PROGRESS (from PLANNED)
+Depends on: CR-001, CR-002, CR-003, CR-004
+
+Status: PLANNED
 
 ## Requirements
 
@@ -67,8 +69,20 @@ new test.
 - One integration test case running the full scenario: both buffer finishes,
 each asserting delivered data, the realm version of that buffer's key value
 and the bit-range extraction; then the unselected-and-reselected gating check.
-A `std::cout` line names each scenario step. The test fails when any of the
-combined features is dropped.
+A `std::cout` line names each scenario step. Each "silently dropped" aspect is
+tied to a concrete assertion whose failure proves the aspect was dropped:
+- the two buffer finishes deliver distinct value sets, so a dropped
+  double-buffer handshake would fail a value comparison against the expected
+  buffer,
+- after setting `MUX.SEL` to unselected and finishing a buffer, no data is
+  delivered (an unexpected delivery fails on a read timeout), so a dropped
+  selector gating would fail that assertion; reselecting and finishing again
+  must deliver,
+- each delivered `VersionNumber` equals the realm version of the key written
+  in the same transfer group, so a dropped data-consistency mapping would fail
+  the version comparison,
+- the child slices extract the expected Lo/Hi half-words, so a dropped bit
+  range would fail the field comparison.
 - Full sub-suite `ctest` run of the numeric addressed backend register accessor,
 double-buffering and data-consistency tests to confirm the new fixture and
 test disturb nothing.
@@ -80,8 +94,3 @@ only asserts that the delivered `VersionNumber` increases
 (`UnifiedBackendTest.h`), which a silently dropped data-consistency key would
 also satisfy, and it cannot express the unselected gating-off check, so two of
 the four "nothing silently dropped" aspects would be missed.
-
-## Deferred issue
-
-- Missing 'Depends on:' field in the header to declare reliance on CR-001, CR-002, CR-003, and CR-004 (playbook requires explicit dependencies)
-- Test plan does not explicitly link each 'silently dropped feature' to a concrete test failure, despite requirements demanding provable selection of all features
