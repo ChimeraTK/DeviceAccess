@@ -6,7 +6,7 @@ scenario: a double-buffered named channel in a selectedBy muxed register, driven
 by an interrupt, with a data-consistency key and bit ranges in one channel.
 Each feature must be provably selected; nothing may be silently dropped.
 
-Status: PLANNED
+Status: IN PROGRESS (from PLANNED)
 
 ## Requirements
 
@@ -14,21 +14,21 @@ Aspect: certify that the NumericAddressedBackend muxed double-buffer feature
 combination works together.
 
 - A named-channel slice of a 2D register that is simultaneously
-  double-buffered, interrupt-triggered, muxed by a register-level `selectedBy`
-  and contains bit ranges in one channel must deliver the freshly finished
-  buffer's channel data through the slice on interrupt.
+double-buffered, interrupt-triggered, muxed by a register-level `selectedBy`
+and contains bit ranges in one channel must deliver the freshly finished
+buffer's channel data through the slice on interrupt.
 - The test must fail when any one feature is silently dropped:
-  - both buffers must be delivered with distinct data (double buffering),
-  - delivery must be gated by the selector (selectedBy),
-  - the delivered `VersionNumber` must be the realm version of the key read in
-    the same transfer group (data-consistency key),
-  - the bit-range child slices must extract the correct fields (bit ranges).
+- both buffers must be delivered with distinct data (double buffering),
+- delivery must be gated by the selector (selectedBy),
+- the delivered `VersionNumber` must be the realm version of the key read in
+the same transfer group (data-consistency key),
+- the bit-range child slices must extract the correct fields (bit ranges).
 - The exercised named-channel slice must not be the first channel, so a missing
-  byte-offset fold into the addresses would be caught.
+byte-offset fold into the addresses would be caught.
 - Verification only: no production-code change. Aspects already covered by
-  CR-001..CR-004 and the selectedBy feature tests (double-buffer handshake
-  internals, both key configurations individually, per-channel validity, write
-  rejection of bit ranges) are not re-tested here.
+CR-001..CR-004 and the selectedBy feature tests (double-buffer handshake
+internals, both key configurations individually, per-channel validity, write
+rejection of bit ranges) are not re-tested here.
 
 ## Specifications
 
@@ -36,47 +36,52 @@ Affected components: a new jmap fixture and the numeric addressed backend unifie
 test executable. No production code.
 
 - New fixture `tests/selectedByCombined.jmap` (DummyBackend): 2D DMA register
-  `DAQ.DATA`, 4 elements, pitch 32 bits, register-level `selectedBy` (selector
-  `MUX.SEL` == 1), `triggeredByInterrupt`, and `doubleBuffering` sharing the
-  `DB.ENA`/`DB.INACTIVE_BUF_ID` control state. Flat named channels: `0` (plain
-  full word) and `1` (offset 4, with bit-field `children` `Lo`/`Hi`, 16 bits at
-  `bitShift` 0/16). Plain scalar key register `DAQ.KEY` (single 32-bit word) on
-  the same interrupt domain, for the `DataConsistencyKeys` mapping.
+`DAQ.DATA`, 4 elements, pitch 32 bits, register-level `selectedBy` (selector
+`MUX.SEL` == 1), `triggeredByInterrupt`, and `doubleBuffering` sharing the
+`DB.ENA`/`DB.INACTIVE_BUF_ID` control state. Flat named channels: `0` (plain
+full word) and `1` (offset 4, with bit-field `children` `Lo`/`Hi`, 16 bits at
+`bitShift` 0/16). Plain scalar key register `DAQ.KEY` (single 32-bit word) on
+the same interrupt domain, for the `DataConsistencyKeys` mapping.
 - New hand-written integration test case in
-  `tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp`, built
-  with the dummy backend, opening
-  `(dummy?map=selectedByCombined.jmap&DataConsistencyKeys={"/DAQ.KEY":"CombinedRealm"})`
-  and reading the realm from `DataConsistencyRealmStore` (add the
-  `async/DataConsistencyRealmStore.h` include).
+`tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp`, built
+with the dummy backend, opening
+`(dummy?map=selectedByCombined.jmap&DataConsistencyKeys={"/DAQ.KEY":"CombinedRealm"})`
+and reading the realm from `DataConsistencyRealmStore` (add the
+`async/DataConsistencyRealmStore.h` include).
 - Consumer: the `/DAQ/DATA.1` full-word slice with `wait_for_new_data`. Firmware
-  side drives the selector, the double-buffer handshake (enable,
-  inactive-buffer id), full 32-bit buffer words, and the key value.
+side drives the selector, the double-buffer handshake (enable,
+inactive-buffer id), full 32-bit buffer words, and the key value.
 - The firmware finishes both buffers once, each carrying a distinct base value
-  set (Lo and Hi halves distinct per element and differing between buffers) and
-  its own key value. After each interrupt the test checks the delivered data,
-  the realm version of the just-written key, and the two child slices' extracted
-  half-words.
+set (Lo and Hi halves distinct per element and differing between buffers) and
+its own key value. After each interrupt the test checks the delivered data,
+the realm version of the just-written key, and the two child slices' extracted
+half-words.
 - Then the selector is set to unselected (`MUX.SEL` == 2) and a buffer finish is
-  performed: no data must be delivered. Re-selecting (`MUX.SEL` == 1) and
-  finishing another buffer must deliver again.
+performed: no data must be delivered. Re-selecting (`MUX.SEL` == 1) and
+finishing another buffer must deliver again.
 - Existing tests and fixtures stay unchanged; the new jmap is used only by the
-  new test.
+new test.
 
 ## Test plan
 
 - One integration test case running the full scenario: both buffer finishes,
-  each asserting delivered data, the realm version of that buffer's key value
-  and the bit-range extraction; then the unselected-and-reselected gating check.
-  A `std::cout` line names each scenario step. The test fails when any of the
-  combined features is dropped.
+each asserting delivered data, the realm version of that buffer's key value
+and the bit-range extraction; then the unselected-and-reselected gating check.
+A `std::cout` line names each scenario step. The test fails when any of the
+combined features is dropped.
 - Full sub-suite `ctest` run of the numeric addressed backend register accessor,
-  double-buffering and data-consistency tests to confirm the new fixture and
-  test disturb nothing.
+double-buffering and data-consistency tests to confirm the new fixture and
+test disturb nothing.
 
 ## Alternatives considered
 
 - Unified backend test variants for the combination: rejected. The framework
-  only asserts that the delivered `VersionNumber` increases
-  (`UnifiedBackendTest.h`), which a silently dropped data-consistency key would
-  also satisfy, and it cannot express the unselected gating-off check, so two of
-  the four "nothing silently dropped" aspects would be missed.
+only asserts that the delivered `VersionNumber` increases
+(`UnifiedBackendTest.h`), which a silently dropped data-consistency key would
+also satisfy, and it cannot express the unselected gating-off check, so two of
+the four "nothing silently dropped" aspects would be missed.
+
+## Deferred issue
+
+- Missing 'Depends on:' field in the header to declare reliance on CR-001, CR-002, CR-003, and CR-004 (playbook requires explicit dependencies)
+- Test plan does not explicitly link each 'silently dropped feature' to a concrete test failure, despite requirements demanding provable selection of all features
