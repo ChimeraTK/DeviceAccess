@@ -55,9 +55,10 @@ namespace ChimeraTK::Rebot {
     }
 
     if(s_.is_open()) {
-      s_.cancel();
-      s_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-      s_.close();
+      boost::system::error_code ec;
+      s_.cancel(ec);
+      s_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+      s_.close(ec);
     }
   }
 

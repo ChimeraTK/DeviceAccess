@@ -42,6 +42,7 @@ target_link_libraries(RebotDummyServer PRIVATE RebotDummyServerLib ${PROJECT_NAM
 
 target_link_libraries(testRebotHeartbeatCount PRIVATE RebotDummyServerLib)
 target_link_libraries(testRebotConnectionTimeouts PRIVATE RebotDummyServerLib)
+target_link_libraries(testRebotConnectionCloseOnReset PRIVATE RebotDummyServerLib)
 
 #
 # Introduced directory unitTestsNotUnderCtest; This contains the boost unit
