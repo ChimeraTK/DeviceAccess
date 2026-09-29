@@ -1,4 +1,16 @@
 #######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
+#######################################################################################################################
 # Generate the Doxygen page listing all change request documents.
 #
 # A Doxygen page 'change_requests' is generated from the markdown files in doc/change-requests/ during the CMake
