@@ -38,6 +38,10 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
+  # Generate the 'Change Requests' Doxygen page (if there are any change request documents). This sets
+  # DOXYGEN_EXTRA_INPUT which is used in the Doxyfile, so it must run before the Doxyfile is configured.
+  include(${CMAKE_CURRENT_LIST_DIR}/generate_change_requests_doc.cmake)
+
   # Add custom version variable for Doxygen since configure_file does not seem to be able to do double dereferencing for ${${PROJECT_NAME}_version} etc.
   set(DOXYGEN_PROJECT_NUMBER ${${PROJECT_NAME}_VERSION})
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
