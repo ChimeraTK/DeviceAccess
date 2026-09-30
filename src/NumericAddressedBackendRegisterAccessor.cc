@@ -91,6 +91,11 @@ namespace ChimeraTK {
           RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, 0, *this);
     }
 
+    // Register this read consumer with the raw element's read coordinator. Registration is unconditional and assumes no
+    // property of the register (in particular not its read-onlyness); the coordinator serves every read consumer. The
+    // accessor's own converter loop and raw copy serve the write path only.
+    registerWithReadCoordinator();
+
     if(flags.has(AccessMode::raw)) {
       if(DataType(typeid(UserType)) != _registerInfo.getDataDescriptor().rawDataType()) {
         throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in "
@@ -137,24 +142,10 @@ namespace ChimeraTK {
       return;
     }
 
-    if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
-      _converterLoopHelper->doPostRead();
-    }
-    else {
-      // optimised variant for raw transfers (unless type is a string)
-      // the elements are strided by elementPitchBits, which may exceed sizeof(UserType) for a channel slice
-      auto* itsrc = _rawAccessor->begin(_registerInfo.address);
-      auto* itdst = buffer_2D[0].data();
-      const size_t stride = _registerInfo.elementPitchBits / 8;
-      if(stride == sizeof(UserType)) {
-        memcpy(itdst, itsrc, buffer_2D[0].size() * sizeof(UserType));
-      }
-      else {
-        for(size_t i = 0; i < buffer_2D[0].size(); ++i) {
-          memcpy(itdst + i, itsrc + i * stride, sizeof(UserType));
-        }
-      }
-    }
+    // The conversion has already been performed by the raw element's read coordinator into the staging buffer; swap it
+    // into the application buffer. Data and meta data are updated together below, and the buffers stay unchanged when
+    // hasNewData is false.
+    buffer_2D[0].swap(_readRegistration.staging());
 
     // we don't put the setting of the version number into the PrePostActionImplementor
     // because it does not need template specialisation, and the implementer does not
@@ -334,6 +325,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType, bool isRaw>
+  void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::registerWithReadCoordinator() {
+    _readRegistration = detail::ReadCoordinator::Registration<UserType>(&_rawAccessor->_readCoordinator, _registerInfo,
+        isRaw, _registerInfo.address - _rawAccessor->_startAddress, _registerInfo.elementPitchBits / 8,
+        _registerInfo.nElements);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, bool isRaw>
   std::vector<boost::shared_ptr<TransferElement>> NumericAddressedBackendRegisterAccessor<UserType,
       isRaw>::getHardwareAccessingElements() {
     return _rawAccessor->getHardwareAccessingElements();
@@ -358,8 +358,12 @@ namespace ChimeraTK {
       size_t newStopAddress = std::max(
           casted->_startAddress + casted->_numberOfBytes, _rawAccessor->_startAddress + _rawAccessor->_numberOfBytes);
       size_t newNumberOfBytes = newStopAddress - newStartAddress;
+      // Unregister before the old element loses its last reference below, then re-register with the merged element,
+      // which has a different start address.
+      _readRegistration.reset();
       casted->changeAddress(newStartAddress, newNumberOfBytes);
       _rawAccessor = casted;
+      registerWithReadCoordinator();
     }
     _rawAccessor->setExceptionBackend(this->_exceptionBackend);
   }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "NumericAddressedBackend.h"
+#include "ReadCoordinator.h"
 #include "TransferElement.h"
 
 namespace ChimeraTK {
@@ -56,6 +57,9 @@ namespace ChimeraTK {
         // it is acceptable to create a new version number only in doPostRead because the LowLevelTransferElement never
         // has wait_for_new_data.
         _versionNumber = {};
+
+        // Run the read coordinator once for this read (the base class calls doPostRead at most once per read)
+        _readCoordinator.run(rawDataBuffer);
       }
     }
 
@@ -184,6 +188,12 @@ namespace ChimeraTK {
 
     /** raw buffer */
     std::vector<uint8_t> rawDataBuffer;
+
+    /**
+     * Read coordinator serving every read consumer of this element (scalar registers, non-muxed 1D arrays and
+     * strided channel slices of a muxed 2D register). Inert when no consumers are registered.
+     */
+    detail::ReadCoordinator _readCoordinator;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
