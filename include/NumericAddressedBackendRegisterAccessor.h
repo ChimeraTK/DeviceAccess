@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ForwardDeclarations.h"
+#include "MuxedChannelDemultiplexer.h"
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "RawConverter.h"
@@ -83,6 +84,15 @@ namespace ChimeraTK {
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
 
+    /**
+     * Registration of this accessor's channel consumer with the demultiplexer of its raw element (strided only). The
+     * handle owns the staging buffer the demultiplexer fills.
+     */
+    detail::MuxedChannelDemultiplexer::Registration<UserType> _demuxRegistration;
+
+    /** True for a strided channel slice, whose conversion is done by the raw element's demultiplexer. */
+    bool _isStrided{false};
+
     /** the backend to use for the actual hardware access */
     boost::shared_ptr<NumericAddressedBackend> _dev;
 
@@ -91,6 +101,9 @@ namespace ChimeraTK {
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override;
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override;
+
+    /** (Re-)register the channel consumer with the current raw element's demultiplexer. */
+    void registerWithDemultiplexer();
 
     using NDRegisterAccessor<UserType>::buffer_2D;
   }; // namespace ChimeraTK

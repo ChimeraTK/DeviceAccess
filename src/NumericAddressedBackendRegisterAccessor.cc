@@ -91,6 +91,12 @@ namespace ChimeraTK {
           RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, 0, *this);
     }
 
+    // A strided channel slice (element pitch larger than the element data width) is converted by the demultiplexer.
+    _isStrided = _registerInfo.elementPitchBits > _registerInfo.channels[0].getRawType().getNumberOfBytes() * 8;
+    if(_isStrided) {
+      registerWithDemultiplexer();
+    }
+
     if(flags.has(AccessMode::raw)) {
       if(DataType(typeid(UserType)) != _registerInfo.getDataDescriptor().rawDataType()) {
         throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in "
@@ -137,7 +143,13 @@ namespace ChimeraTK {
       return;
     }
 
-    if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
+    // For a strided channel slice of a 2D register the conversion has already been performed by the raw element's
+    // demultiplexer into the staging buffer; swap it into the application buffer. Data and meta data are updated
+    // together below, and the buffers stay unchanged when hasNewData is false.
+    if(_isStrided) {
+      buffer_2D[0].swap(_demuxRegistration.staging());
+    }
+    else if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
       _converterLoopHelper->doPostRead();
     }
     else {
@@ -334,6 +346,24 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType, bool isRaw>
+  void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::registerWithDemultiplexer() {
+    // This is only ever called for a strided slice, so there is no isStrided guard and no internal reset of the
+    // previous registration: the constructor starts from a fresh registration, and replaceTransferElement resets the
+    // previous handle before re-registering.
+    auto& demux = _rawAccessor->_demultiplexer;
+
+    // The demultiplexer fills the staging buffer owned by the registration handle; a swap exchanges its internal
+    // buffers with buffer_2D[0] on every read, so the demultiplexer resolves the staging data pointer only at
+    // demultiplexing time. The full register info (with the register name) and the channel index keep RawConverter
+    // error messages informative for the demultiplexing path.
+    _demuxRegistration = detail::MuxedChannelDemultiplexer::Registration<UserType>(&demux, _registerInfo, isRaw,
+        _registerInfo.address - _rawAccessor->_startAddress, _registerInfo.elementPitchBits / 8,
+        _registerInfo.nElements);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, bool isRaw>
   std::vector<boost::shared_ptr<TransferElement>> NumericAddressedBackendRegisterAccessor<UserType,
       isRaw>::getHardwareAccessingElements() {
     return _rawAccessor->getHardwareAccessingElements();
@@ -358,8 +388,14 @@ namespace ChimeraTK {
       size_t newStopAddress = std::max(
           casted->_startAddress + casted->_numberOfBytes, _rawAccessor->_startAddress + _rawAccessor->_numberOfBytes);
       size_t newNumberOfBytes = newStopAddress - newStartAddress;
+      // Unregister before the old element loses its last reference below, then re-register with the merged element,
+      // which has a different start address. Only strided slices are registered with the demultiplexer.
+      _demuxRegistration.reset();
       casted->changeAddress(newStartAddress, newNumberOfBytes);
       _rawAccessor = casted;
+      if(_isStrided) {
+        registerWithDemultiplexer();
+      }
     }
     _rawAccessor->setExceptionBackend(this->_exceptionBackend);
   }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "MuxedChannelDemultiplexer.h"
 #include "NumericAddressedBackend.h"
 #include "TransferElement.h"
 
@@ -42,6 +43,7 @@ namespace ChimeraTK {
       // There is nothing we can do about reinterpet_casting with the C-style interface
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       _dev->read(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
+      _demultiplexer.demultiplexingPending();
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override {
@@ -56,6 +58,11 @@ namespace ChimeraTK {
         // it is acceptable to create a new version number only in doPostRead because the LowLevelTransferElement never
         // has wait_for_new_data.
         _versionNumber = {};
+        // demultiplexingPending() is true only until the demultiplexing has run once for this read, so the shared raw
+        // buffer is demultiplexed once here even though this post-read runs once per consumer slice of the group.
+        if(_demultiplexer.pendingDemultiplexing()) {
+          _demultiplexer.run(rawDataBuffer);
+        }
       }
     }
 
@@ -184,6 +191,10 @@ namespace ChimeraTK {
 
     /** raw buffer */
     std::vector<uint8_t> rawDataBuffer;
+
+    /** Demultiplexer coordinating the conversion of strided channel slices of a
+     * muxed 2D register which read through this element. Inert when empty. */
+    detail::MuxedChannelDemultiplexer _demultiplexer;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
