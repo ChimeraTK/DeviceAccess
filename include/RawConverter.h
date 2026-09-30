@@ -123,6 +123,14 @@ namespace ChimeraTK::RawConverter {
         const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, size_t implParameter,
         Accessor& accessor);
 
+    /**
+     * Same as the fixed-raw factory above, but taking a ChannelInfo directly instead of a register info plus channel
+     * index. Used by callers which hold only the channel fields, not a full register info.
+     */
+    template<typename UserType, typename RawType, typename Accessor>
+    static std::unique_ptr<ConverterLoopHelper> makeConverterLoopHelperFixedRaw(
+        const ChimeraTK::NumericAddressedRegisterInfo::ChannelInfo& channel, size_t implParameter, Accessor& accessor);
+
    protected:
     const size_t _implParameter;
   };
@@ -263,12 +271,12 @@ namespace ChimeraTK::RawConverter {
     /******************************************************************************************************************/
 
     template<typename UserType, typename RawType, typename F>
-    void callWithConverterParamsFixedRaw(
-        const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, F&& fun) {
+    void callWithConverterParamsFixedRaw(const ChimeraTK::NumericAddressedRegisterInfo::ChannelInfo& channel, F&& fun,
+        const std::string& registerName = {}, size_t channelIndex = 0) {
       // get number of bits from info and determine SignificantBitsCase
-      detail::callForSignificantBitsCase<RawType>(info.channels[channelIndex], [&]<SignificantBitsCase sc> {
+      detail::callForSignificantBitsCase<RawType>(channel, [&]<SignificantBitsCase sc> {
         // get number of fractional bits from info and determine FractionalCase
-        detail::callForFractionalCase<RawType, UserType>(info.channels[channelIndex], [&]<FractionalCase fc> {
+        detail::callForFractionalCase<RawType, UserType>(channel, [&]<FractionalCase fc> {
           if constexpr(numberOfBits<RawType> >= detail::getMinWidthsForFractionalCase(fc)) {
             if constexpr(fc == FractionalCase::ieee754_32) {
               // special case: IEEE754 is always signed, so we can avoid an additional code instance
@@ -277,15 +285,14 @@ namespace ChimeraTK::RawConverter {
             else if constexpr(fc == FractionalCase::fixedNegativeFast) {
               // special case: fixed negative fast has some special requirements on the types, so we try not to
               // instantiate impossible combinations (to speed up compilation time)
-              assert(numberOfBits<UserType> >= int(info.channels[channelIndex].width) -
-                      info.channels[channelIndex].nFractionalBits); // ensured by callForFractionalCase
-              assert(std::is_signed_v<UserType> ==
-                  info.channels[channelIndex].signedFlag); // ensured by callForFractionalCase
+              assert(numberOfBits<UserType> >=
+                  int(channel.width) - channel.nFractionalBits);        // ensured by callForFractionalCase
+              assert(std::is_signed_v<UserType> == channel.signedFlag); // ensured by callForFractionalCase
               std::forward<F>(fun).template operator()<RawType, sc, fc, std::is_signed_v<UserType>>();
             }
             else {
               // Fractional/Integers: distinguish signed/unsigned and do the call
-              if(info.channels[channelIndex].signedFlag) {
+              if(channel.signedFlag) {
                 std::forward<F>(fun).template operator()<RawType, sc, fc, true>();
               }
               else {
@@ -294,14 +301,23 @@ namespace ChimeraTK::RawConverter {
             }
           }
           else {
-            throw ChimeraTK::logic_error(
-                std::format("Specified raw data width of {} bits does not fit into the significant bit "
-                            "width of {} bits for register '{}', channel {}.",
-                    numberOfBits<RawType>, detail::getMinWidthsForFractionalCase(fc),
-                    std::string(info.getRegisterName()), channelIndex));
+            throw ChimeraTK::logic_error(std::format(
+                "Specified raw data width of {} bits does not fit into the significant bit "
+                "width of {} bits{}.",
+                numberOfBits<RawType>, detail::getMinWidthsForFractionalCase(fc),
+                registerName.empty() ? "" : std::format(" for register '{}', channel {}", registerName, channelIndex)));
           }
         });
       });
+    }
+
+    template<typename UserType, typename RawType, typename F>
+    void callWithConverterParamsFixedRaw(
+        const ChimeraTK::NumericAddressedRegisterInfo& info, size_t channelIndex, F&& fun) {
+      // Delegate to the ChannelInfo overload; the register name and channel index are forwarded only to enrich the
+      // error message when the raw data width does not fit.
+      callWithConverterParamsFixedRaw<UserType, RawType>(
+          info.channels[channelIndex], std::forward<F>(fun), std::string(info.getRegisterName()), channelIndex);
     }
 
     /******************************************************************************************************************/
@@ -587,6 +603,28 @@ namespace ChimeraTK::RawConverter {
           static_assert(std::is_same_v<RawTypeAgain, RawType>);
           RawConverter::Converter<UserType, std::make_unsigned_t<RawTypeAgain>, sc, fc, isSigned> converter(
               info.channels[0]);
+          rv = std::make_unique<RawConverter::ConverterLoopHelperImpl<UserType, std::make_unsigned_t<RawTypeAgain>, sc,
+              fc, isSigned, Accessor>>(implParameter, converter, accessor);
+        });
+
+    assert(rv != nullptr);
+    return rv;
+  }
+
+  /********************************************************************************************************************/
+
+  /** Fixed-raw factory overload taking a ChannelInfo directly instead of a register info plus channel index. Used by
+   *  consumers which hold only the channel fields (e.g. the muxed-slice demultiplexer), not a full register info. */
+  template<typename UserType, typename RawType, typename Accessor>
+  std::unique_ptr<ConverterLoopHelper> ConverterLoopHelper::makeConverterLoopHelperFixedRaw(
+      const ChimeraTK::NumericAddressedRegisterInfo::ChannelInfo& channel, size_t implParameter, Accessor& accessor) {
+    std::unique_ptr<ConverterLoopHelper> rv;
+
+    RawConverter::detail::callWithConverterParamsFixedRaw<UserType, RawType>(channel,
+        [&]<typename RawTypeAgain, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
+            bool isSigned> {
+          static_assert(std::is_same_v<RawTypeAgain, RawType>);
+          RawConverter::Converter<UserType, std::make_unsigned_t<RawTypeAgain>, sc, fc, isSigned> converter(channel);
           rv = std::make_unique<RawConverter::ConverterLoopHelperImpl<UserType, std::make_unsigned_t<RawTypeAgain>, sc,
               fc, isSigned, Accessor>>(implParameter, converter, accessor);
         });

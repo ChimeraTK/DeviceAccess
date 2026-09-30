@@ -3,6 +3,8 @@
 
 #include "NumericAddressedBackendRegisterAccessor.h"
 
+#include <typeindex>
+
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
@@ -91,6 +93,10 @@ namespace ChimeraTK {
           RawConverter::ConverterLoopHelper::makeConverterLoopHelper<UserType>(_registerInfo, 0, 0, *this);
     }
 
+    // A strided channel slice (element pitch larger than the element data width) is converted by the demultiplexer.
+    _isStrided = _registerInfo.elementPitchBits > _registerInfo.channels[0].getRawType().getNumberOfBytes() * 8;
+    registerWithDemultiplexer();
+
     if(flags.has(AccessMode::raw)) {
       if(DataType(typeid(UserType)) != _registerInfo.getDataDescriptor().rawDataType()) {
         throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in "
@@ -137,7 +143,13 @@ namespace ChimeraTK {
       return;
     }
 
-    if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
+    // For a strided channel slice of a 2D register the conversion has already been performed by the raw element's
+    // demultiplexer into the staging buffer; swap it into the application buffer. Data and meta data are updated
+    // together below, and the buffers stay unchanged when hasNewData is false.
+    if(_isStrided) {
+      buffer_2D[0].swap(_demuxRegistration.staging());
+    }
+    else if constexpr(!isRaw || std::is_same<UserType, std::string>::value) {
       _converterLoopHelper->doPostRead();
     }
     else {
@@ -334,6 +346,41 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType, bool isRaw>
+  void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::registerWithDemultiplexer() {
+    // Unregister from the previous raw element first.
+    _demuxRegistration.reset();
+
+    if(!_isStrided) {
+      return;
+    }
+
+    auto& demux = _rawAccessor->_demultiplexer;
+
+    detail::MuxedChannelDemultiplexer::Consumer consumer;
+    consumer.byteOffset = _registerInfo.address - _rawAccessor->_startAddress;
+    consumer.stride = _registerInfo.elementPitchBits / 8;
+    consumer.nSamples = _registerInfo.nElements;
+    // The demultiplexer fills the staging buffer owned by the registration handle. A swap exchanges its internal
+    // buffers with buffer_2D[0] on every read, so the staging data pointer is resolved only at demultiplexing time.
+    consumer.cookedBuffer = [this]() {
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      return reinterpret_cast<uint8_t*>(_demuxRegistration.staging().data());
+    };
+
+    // Same grouping as the 2D accessor: converter information plus user type. The demultiplexer creates the typed
+    // conversion loop helper for a cooking group from these channel fields; raw slices are grouped separately and
+    // copied without conversion.
+    const auto& channel = _registerInfo.channels[0];
+    detail::MuxedChannelDemultiplexer::GroupKey key{channel.dataType, channel.width, channel.nFractionalBits,
+        channel.signedFlag, channel.rawType, std::type_index(typeid(UserType)), isRaw};
+
+    _demuxRegistration =
+        detail::MuxedChannelDemultiplexer::Registration<UserType>(&demux, std::move(key), std::move(consumer));
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, bool isRaw>
   std::vector<boost::shared_ptr<TransferElement>> NumericAddressedBackendRegisterAccessor<UserType,
       isRaw>::getHardwareAccessingElements() {
     return _rawAccessor->getHardwareAccessingElements();
@@ -358,8 +405,12 @@ namespace ChimeraTK {
       size_t newStopAddress = std::max(
           casted->_startAddress + casted->_numberOfBytes, _rawAccessor->_startAddress + _rawAccessor->_numberOfBytes);
       size_t newNumberOfBytes = newStopAddress - newStartAddress;
+      // Unregister before the old element loses its last reference below.
+      _demuxRegistration.reset();
       casted->changeAddress(newStartAddress, newNumberOfBytes);
       _rawAccessor = casted;
+      // The merged element has a different start address, so the consumer re-registers with it.
+      registerWithDemultiplexer();
     }
     _rawAccessor->setExceptionBackend(this->_exceptionBackend);
   }
