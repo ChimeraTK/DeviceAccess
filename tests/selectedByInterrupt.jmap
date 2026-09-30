@@ -1,0 +1,112 @@
+{
+  "mapFormatVersion": "0.0.1",
+  "metadata": {},
+  "interruptHandler": {
+    "1": {
+      "INTC": {
+        "path": "DAQ",
+        "version": 1
+      }
+    }
+  },
+  "addressSpace": {
+    "DAQ": {
+      "children": {
+        "MUX_SEL": {
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 0,
+            "offset": 1244
+          },
+          "representation": {
+            "width": 32
+          },
+          "_comment": "Selector register: DAQ.DATA is only active while this equals 1, DAQ.DATA_ALT while it equals 2."
+        },
+        "DOUBLE_BUF": {
+          "children": {
+            "ENA": {
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 0,
+                "offset": 1236
+              },
+              "representation": {
+                "width": 1
+              }
+            },
+            "INACTIVE_BUF_ID": {
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 0,
+                "offset": 1240
+              },
+              "representation": {
+                "width": 1
+              }
+            }
+          }
+        },
+        "DATA": {
+          "triggeredByInterrupt": [
+            1
+          ],
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "selectedBy": {
+            "register": "DAQ.MUX_SEL",
+            "value": 1
+          },
+          "address": {
+            "type": "DMA",
+            "offset": "0x81000"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "offset": "0x81200"
+            },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 0
+          },
+          "representation": {
+            "width": 32
+          },
+          "_comment": "Interrupt-triggered double-buffered data register, active only while DAQ.MUX_SEL == 1."
+        },
+        "DATA_ALT": {
+          "triggeredByInterrupt": [
+            1
+          ],
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "selectedBy": {
+            "register": "DAQ.MUX_SEL",
+            "value": 2
+          },
+          "address": {
+            "type": "DMA",
+            "offset": "0x81000"
+          },
+          "doubleBuffering": {
+            "secondaryBufferAddress": {
+              "type": "DMA",
+              "offset": "0x81200"
+            },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
+            "index": 0
+          },
+          "representation": {
+            "width": 32
+          },
+          "_comment": "Mutually exclusive alternative to DAQ.DATA (same buffer base), active only while DAQ.MUX_SEL == 2."
+        }
+      }
+    }
+  }
+}
