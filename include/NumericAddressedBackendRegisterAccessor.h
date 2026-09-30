@@ -6,6 +6,7 @@
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "RawConverter.h"
+#include "ReadCoordinator.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -83,6 +84,12 @@ namespace ChimeraTK {
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
 
+    /**
+     * Registration of this read consumer with the read coordinator of its raw element. The handle owns the staging
+     * buffer the coordinator fills.
+     */
+    detail::ReadCoordinator::Registration<UserType> _readRegistration;
+
     /** the backend to use for the actual hardware access */
     boost::shared_ptr<NumericAddressedBackend> _dev;
 
@@ -91,6 +98,9 @@ namespace ChimeraTK {
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override;
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override;
+
+    /** (Re-)register this read consumer with the read coordinator of the current raw element. */
+    void registerWithReadCoordinator();
 
     using NDRegisterAccessor<UserType>::buffer_2D;
   }; // namespace ChimeraTK
