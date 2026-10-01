@@ -4,13 +4,11 @@ Synopsis: Add support for combining the NumericAddressedBackend muxed
 double-buffer features in a single scenario: a double-buffered named channel in
 a selectedBy muxed register, driven by an interrupt, with a data-consistency
 key and bit ranges in one channel. The async shared-target accounting for
-multiple bit-range children of one channel is fixed so each child is delivered
-its field from the freshly finished buffer. One integration test proves each
-feature is selected; nothing may be silently dropped.
+multiple bit-range children of one channel is currently broken. It will be
+fixed so each child is delivered its field from the freshly finished buffer.
+One integration test proves each feature is selected.
 
-Depends on: CR-001, CR-002, CR-003, CR-004
-
-Status: IN PROGRESS (from READY TO IMPLEMENT)
+Status: READY TO IMPLEMENT
 
 ## Requirements
 
@@ -25,16 +23,16 @@ child must be delivered its extracted field from the freshly finished buffer,
 never a stale word.
 - An integration test must prove each feature is selected; the test must fail
 when any one feature is silently dropped:
-- both buffers must be delivered with distinct data (double buffering),
-- delivery must be gated by the selector (selectedBy),
-- the delivered `VersionNumber` must be the realm version of the key read in
-the same transfer group (data-consistency key),
-- the bit-range child slices must extract the correct fields (bit ranges).
-- The exercised named-channel slice must not be the first channel, so a missing
-byte-offset fold into the addresses would be caught.
-- Aspects already covered by CR-001..CR-004 and the selectedBy feature tests
-(double-buffer handshake internals, both key configurations individually,
-per-channel validity, write rejection of bit ranges) are not re-tested here.
+  - both buffers must be delivered with distinct data (double buffering),
+  - delivery must be gated by the selector (selectedBy),
+  - the delivered `VersionNumber` must be the realm version of the key read in
+  the same transfer group (data-consistency key),
+  - the bit-range child slices must extract the correct fields (bit ranges).
+  - The exercised named-channel slice must not be the first channel, so a missing
+  byte-offset fold into the addresses would be caught.
+  - Aspects already covered by existing tests for the individual features
+  (double-buffer handshake internals, both key configurations individually,
+  per-channel validity, write rejection of bit ranges) are not re-tested here.
 
 ## Specifications
 
