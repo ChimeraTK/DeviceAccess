@@ -802,5 +802,21 @@
         }
       }
     }
+  },
+  "dmaChannels": {
+    "0": {
+      "type": "Xdma",
+      "ringBufferSize": 4096,
+      "nested": {
+        "object": {
+          "key": "value"
+        },
+        "array": [1, 2, 3]
+      }
+    },
+    "1": {
+      "type": "Xdma",
+      "ringBufferSize": 8192
+    }
   }
 }

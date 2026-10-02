@@ -63,6 +63,22 @@ static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::Metada
   return ChimeraTK::MapFileParser::parse(outFile);
 }
 
+// Helper used by the dmaChannels fault tests below: load simpleJsonFile.jmap as the base map (which already carries a
+// valid dmaChannels section), replace the whole dmaChannels section with the supplied (possibly malformed) one, write
+// the result to <outFile>, then parse it. As with the selectedBy fault helper above, this avoids keeping a set of
+// near-identical fault-only fixtures: the fault is injected into an existing full map and the produced file is what
+// gets parsed.
+static ChimeraTK::NumericAddressedRegisterCatalogue parseWithDmaChannels(
+    const std::string& outFile, const nlohmann::json& dmaChannels) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+
+  map["dmaChannels"] = dmaChannels;
+
+  std::ofstream(outFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(outFile).first;
+}
+
 BOOST_AUTO_TEST_SUITE(JsonMapFileParserTestSuite)
 
 /**********************************************************************************************************************/
@@ -1270,6 +1286,125 @@ BOOST_AUTO_TEST_CASE(TestMapFormatVersionWithPatch) {
       parseWithMapFormatVersion("mapFormatVersionMissing.jmap", nlohmann::json(nullptr)), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
       parseWithMapFormatVersion("mapFormatVersionWrongType.jmap", nlohmann::json(1.0)), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// The valid dmaChannels section of simpleJsonFile.jmap reaches the by-index getter, each carrying its 'type'.
+BOOST_AUTO_TEST_CASE(TestDmaChannelsPresent) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+
+  BOOST_TEST(regs.getDmaChannel(0).at("type") == "Xdma");
+  BOOST_TEST(regs.getDmaChannel(1).at("type") == "Xdma");
+}
+
+/**********************************************************************************************************************/
+
+// A jmap file without a dmaChannels section parses unchanged; the existence test reports an absent channel and the
+// by-index getter throws.
+BOOST_AUTO_TEST_CASE(TestDmaChannelsAbsentSection) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("bitRangeChannels.jmap");
+
+  BOOST_TEST(!regs.hasDmaChannel(0));
+  BOOST_CHECK_THROW((void)regs.getDmaChannel(0), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// hasDmaChannel reports a present index as found and the by-index getter returns the stored entry.
+BOOST_AUTO_TEST_CASE(TestDmaChannelsHasAndGet) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+
+  BOOST_TEST(regs.hasDmaChannel(0));
+  BOOST_TEST(regs.hasDmaChannel(1));
+  BOOST_TEST(!regs.hasDmaChannel(2));
+  BOOST_TEST(regs.getDmaChannel(0).at("ringBufferSize") == 4096);
+  BOOST_TEST(regs.getDmaChannel(1).at("ringBufferSize") == 8192);
+}
+
+/**********************************************************************************************************************/
+
+// The entry's backend-specific keys beyond 'type', including nested objects and arrays, are preserved verbatim in the
+// raw json returned by the by-index getter.
+BOOST_AUTO_TEST_CASE(TestDmaChannelsPreservedVerbatim) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+
+  const auto& channel0 = regs.getDmaChannel(0);
+  BOOST_TEST(channel0.at("nested").at("object").at("key") == "value");
+  BOOST_TEST(channel0.at("nested").at("array") == nlohmann::json({1, 2, 3}));
+}
+
+/**********************************************************************************************************************/
+
+// The by-index getter on an absent index throws a ChimeraTK::logic_error carrying the specified message.
+BOOST_AUTO_TEST_CASE(TestDmaChannelsGetterThrows) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+
+  bool thrown = false;
+  try {
+    (void)regs.getDmaChannel(42);
+  }
+  catch(const ChimeraTK::logic_error& e) {
+    thrown = true;
+    BOOST_CHECK(std::string(e.what()).find("No DMA channel with index 42 configured.") != std::string::npos);
+  }
+  BOOST_TEST(thrown);
+}
+
+/**********************************************************************************************************************/
+
+// Each shallowly malformed dmaChannels envelope throws ChimeraTK::logic_error with the map-file prefix.
+BOOST_AUTO_TEST_CASE(TestDmaChannelsMalformed) {
+  // dmaChannels not an object (here an array, a string and a number).
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsNotObject.jmap", nlohmann::json::array()), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsNotObjectStr.jmap", "hello"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsNotObjectNum.jmap", 42), ChimeraTK::logic_error);
+
+  // A key that is not a non-negative integer: negative, leading sign, non-numeric, empty, and exceeding uint64_t.
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsNegativeKey.jmap", nlohmann::json({{"-1", {{"type", "Xdma"}}}})),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      parseWithDmaChannels("dmaChannelsLeadingSignKey.jmap", nlohmann::json({{"+1", {{"type", "Xdma"}}}})),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      parseWithDmaChannels("dmaChannelsNonNumericKey.jmap", nlohmann::json({{"hello", {{"type", "Xdma"}}}})),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsEmptyKey.jmap", nlohmann::json({{"", {{"type", "Xdma"}}}})),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithDmaChannels(
+                        "dmaChannelsOversizedKey.jmap", nlohmann::json({{"18446744073709551616", {{"type", "Xdma"}}}})),
+      ChimeraTK::logic_error);
+
+  // An effective duplicate: two different spellings of the same numeric value.
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsDuplicateKey.jmap",
+                        nlohmann::json({{"1", {{"type", "Xdma"}}}, {"01", {{"type", "Xdma"}}}})),
+      ChimeraTK::logic_error);
+
+  // An entry that is not an object.
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsNonObjectEntry.jmap", nlohmann::json({{"0", "not an object"}})),
+      ChimeraTK::logic_error);
+
+  // An entry without a 'type' and an entry with a non-string 'type'.
+  BOOST_CHECK_THROW(
+      parseWithDmaChannels("dmaChannelsMissingType.jmap", nlohmann::json({{"0", {{"ringBufferSize", 4096}}}})),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseWithDmaChannels("dmaChannelsNonStringType.jmap", nlohmann::json({{"0", {{"type", 42}}}})),
+      ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// Cloning a catalogue preserves the channel entries.
+BOOST_AUTO_TEST_CASE(TestDmaChannelsClone) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+
+  auto cloned = regs.clone();
+  auto* cloneCatalogue = dynamic_cast<ChimeraTK::NumericAddressedRegisterCatalogue*>(cloned.get());
+  BOOST_REQUIRE(cloneCatalogue != nullptr);
+  BOOST_TEST(cloneCatalogue->hasDmaChannel(0));
+  BOOST_TEST(cloneCatalogue->hasDmaChannel(1));
+  BOOST_TEST(cloneCatalogue->getDmaChannel(0).at("type") == "Xdma");
+  BOOST_TEST(cloneCatalogue->getDmaChannel(1).at("type") == "Xdma");
 }
 
 /**********************************************************************************************************************/
