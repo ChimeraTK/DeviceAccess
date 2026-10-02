@@ -26,18 +26,21 @@ Aspect: interrupt handler metadata is backend agnostic.
 
 Aspect: parser (`src/JsonMapFileParser.cc`).
 
-- Remove the fixed `InterruptHandlerEntry` and `Controller` structs
-  (currently lines 566-593); they hardcode "INTC" and silently drop unknown
+- Keep `InterruptHandlerEntry` as the recursion carrier; its `subhandler` map
+  and `fill()` already recurse with the id appended.
+- Drop the typed `Controller` struct and the fixed `INTC` member (currently
+  lines 566-593); the fixed member hardcodes "INTC" and silently drops unknown
   keys, so a backend-specific entry would be replaced by an empty default
   "INTC" controller.
-- Replace the deserialisation and `fill()` call in `parse()` (currently lines
-  704-707) with generic JSON handling: a file-local recursive walk over the
-  `interruptHandler` section that descends through `subhandler` members with
-  the id appended, and for each entry with a non-empty id stores the key
-  `"!" + json(id)` with the verbatim entry JSON minus its `subhandler` member
-  as metadata value.
-- The emitted value is produced by `json::dump()` of the entry, so object keys
-  are sorted; the existing `![3]` value stays byte-identical.
+- Give `InterruptHandlerEntry` a raw `nlohmann::json` member holding the
+  entry minus its `subhandler` member, and replace the
+  `NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT` macro with a custom
+  `from_json` that performs this split and deserialises `subhandler`
+  recursively.
+- `fill()` emits the raw member's `dump()` as the metadata value; the keys,
+  the recursion and the `parse()` call site are unchanged.
+- The emitted value is produced by `json::dump()`, so object keys are sorted;
+  the existing `![3]` value stays byte-identical.
 - `schemas/jmap.schema.json` is left unchanged; it is only meant for
   interactive validation and is not enforced by the parser.
 
