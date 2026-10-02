@@ -716,7 +716,7 @@ namespace ChimeraTK::detail {
         if(!dmaChannels.is_object()) {
           throw ChimeraTK::logic_error("'dmaChannels' must be an object.");
         }
-        for(auto& [key, entry] : dmaChannels.items()) {
+        for(const auto& [key, entry] : dmaChannels.items()) {
           uint64_t index = 0;
           auto [keyEnd, e] = std::from_chars(key.data(), key.data() + key.size(), index);
           if(e != std::errc{} || keyEnd != key.data() + key.size()) {
