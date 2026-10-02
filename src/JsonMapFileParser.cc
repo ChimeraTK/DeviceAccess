@@ -564,12 +564,8 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
 
   struct InterruptHandlerEntry {
-    struct Controller {
-      std::string path;
-      std::set<std::string> options;
-      int version{1};
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Controller, path, options, version)
-    } INTC;
+    // The whole interrupt handler entry except its 'subhandler' member, kept verbatim as backend-specific metadata.
+    json raw;
 
     std::map<std::string, InterruptHandlerEntry> subhandler;
 
@@ -577,19 +573,53 @@ namespace ChimeraTK::detail {
       if(!intId.empty()) {
         json jsonIntId;
         jsonIntId = intId;
-        json jsonController;
-        jsonController = INTC;
-        metadata.addMetadata("!" + jsonIntId.dump(), R"({"INTC":)" + jsonController.dump() + "}");
+        metadata.addMetadata("!" + jsonIntId.dump(), raw.dump());
       }
 
       for(const auto& [subIntId, handler] : subhandler) {
-        std::vector<size_t> qualfiedSubIntId = intId;
-        qualfiedSubIntId.push_back(std::stoll(subIntId));
-        handler.fill(qualfiedSubIntId, metadata);
+        std::vector<size_t> qualifiedSubIntId = intId;
+        qualifiedSubIntId.push_back(std::stoll(subIntId));
+        handler.fill(qualifiedSubIntId, metadata);
       }
     }
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(InterruptHandlerEntry, INTC, subhandler)
+    // NOLINTNEXTLINE(readability-identifier-naming)
+    friend void from_json(const json& j, InterruptHandlerEntry& e) {
+      e.raw = j;
+      e.raw.erase("subhandler");
+      // Apply the common normalisation to the entry and to each controller data object it carries: drop keys starting
+      // with an underscore and default a missing 'version' to 1. The rest of the backend-specific data structure is
+      // preserved verbatim and passed on as metadata.
+      // First drop underscore-prefixed keys at the entry's top level (e.g. a "_comment" sibling of the controller key).
+      for(auto it = e.raw.begin(); it != e.raw.end();) {
+        if(!it.key().empty() && it.key().front() == '_') {
+          it = e.raw.erase(it);
+        }
+        else {
+          ++it;
+        }
+      }
+      // Then normalise each controller data object carried by the entry.
+      for(auto& value : e.raw) {
+        if(!value.is_object()) {
+          continue;
+        }
+        if(!value.contains("version")) {
+          value["version"] = 1;
+        }
+        for(auto it = value.begin(); it != value.end();) {
+          if(!it.key().empty() && it.key().front() == '_') {
+            it = value.erase(it);
+          }
+          else {
+            ++it;
+          }
+        }
+      }
+      if(j.contains("subhandler")) {
+        e.subhandler = j.at("subhandler").get<std::map<std::string, InterruptHandlerEntry>>();
+      }
+    }
   };
 
   /********************************************************************************************************************/

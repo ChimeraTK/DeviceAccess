@@ -691,7 +691,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   BOOST_TEST(metas.getMetadata("mapfileRevision") == "1.8.3-0-gdeadbeef");
   BOOST_TEST(metas.getMetadata("someRandomEntry") == "some random value");
 
-  BOOST_TEST(metas.getMetadata("![0]") == R"({"INTC":{"options":[],"path":"DAQ","version":1}})");
+  BOOST_TEST(metas.getMetadata("![0]") == R"({"INTC":{"path":"DAQ","version":1}})");
   BOOST_TEST(metas.getMetadata("![3]") == R"({"INTC":{"options":["MER"],"path":"MY_INTC","version":1}})");
   BOOST_TEST(metas.getMetadata("![3,0]") == R"({"INTC":{"options":[],"path":"MY_INTC.SUB0","version":1}})");
   BOOST_TEST(metas.getMetadata("![3,1]") == R"({"INTC":{"options":["MER"],"path":"MY_INTC.SUB1","version":1}})");
@@ -701,6 +701,53 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   BOOST_CHECK(loi.find({0}) != loi.end());
   BOOST_CHECK(loi.find({3, 0, 1}) != loi.end());
   BOOST_CHECK(loi.find({1}) != loi.end());
+}
+
+/**********************************************************************************************************************/
+
+// An interrupt handler entry is passed through as metadata regardless of its controller type and data structure: a
+// backend-specific "MyINTC" controller carrying an arbitrary structure that is incompatible with the fixed "INTC"
+// controller parses and reaches the metadata, normalised only per the common rules (underscore-prefixed keys dropped,
+// a missing 'version' defaulted to 1) and re-serialised with json::dump() without the 'subhandler' member.
+BOOST_AUTO_TEST_CASE(TestBackendSpecificInterruptHandler) {
+  // Build a map with a single interrupt handler entry whose "MyINTC" controller carries a nested object and
+  // unexpected value types (a boolean, a floating point, an array with mixed and null entries) that the old fixed
+  // "INTC" controller would have dropped. Underscore-prefixed keys (a "_comment" at the top level and inside the
+  // controller) must be dropped by the common normalisation.
+  nlohmann::json entry = {{"_comment", "dropped top level"},
+      {"MyINTC",
+          {{"path", "MY_INTC"}, {"cfg", {{"mode", "triggered"}, {"count", 3}, {"flag", true}, {"ratio", 1.5}}},
+              {"list", nlohmann::json::array({"a", 2, nullptr})}, {"_comment", "dropped in controller"}}}};
+  nlohmann::json subEntry = {{"_comment", "dropped in subhandler"},
+      {"MyINTC", {{"path", "MY_INTC.SUB0"}, {"extra", {{"deep", {{"k", "v"}}}}}}}};
+  entry["subhandler"]["0"] = subEntry;
+
+  nlohmann::json map;
+  map["mapFormatVersion"] = "1.0";
+  map["interruptHandler"]["4"] = entry;
+  map["metadata"] = nlohmann::json::object();
+  map["addressSpace"] = nlohmann::json::object();
+
+  std::string tmpFile = "backendSpecificInterruptHandler_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse(tmpFile);
+
+  // Expected metadata values: the entry minus its 'subhandler' member, normalised per the common rules (underscore
+  // keys dropped, a missing 'version' defaulted to 1), re-serialised with json::dump().
+  nlohmann::json expectedTop = entry;
+  expectedTop.erase("_comment");
+  expectedTop.erase("subhandler");
+  expectedTop["MyINTC"].erase("_comment");
+  expectedTop["MyINTC"]["version"] = 1;
+  BOOST_TEST(metas.getMetadata("![4]") == expectedTop.dump());
+
+  // The subhandler recursion appends its id component and normalises its own entry in the same way.
+  nlohmann::json expectedSub = subEntry;
+  expectedSub.erase("_comment");
+  expectedSub["MyINTC"]["version"] = 1;
+  BOOST_TEST(metas.getMetadata("![4,0]") == expectedSub.dump());
+
+  std::remove(tmpFile.c_str());
 }
 
 /**********************************************************************************************************************/
