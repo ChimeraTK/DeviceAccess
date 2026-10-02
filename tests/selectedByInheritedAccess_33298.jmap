@@ -1,0 +1,40 @@
+{
+  "addressSpace": {
+    "APP": {
+      "children": {
+        "MOD": {
+          "children": {
+            "CHILD": {
+              "access": "RO",
+              "address": {
+                "channel": 0,
+                "offset": 4
+              },
+              "numberOfElements": 1,
+              "representation": {
+                "width": 32
+              }
+            }
+          },
+          "selectedBy": {
+            "register": "APP.SEL",
+            "value": 1
+          }
+        },
+        "SEL": {
+          "address": {
+            "channel": 0,
+            "offset": 0
+          },
+          "numberOfElements": 1,
+          "representation": {
+            "width": 32
+          }
+        }
+      }
+    }
+  },
+  "interruptHandler": {},
+  "mapFormatVersion": "1.0",
+  "metadata": {}
+}
