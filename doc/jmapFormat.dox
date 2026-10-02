@@ -264,7 +264,7 @@ A child entry does not have to carry an address of its own: it inherits the addr
 
 \subsection jmap_interrupts Interrupts
 
-The \c interruptHandler top-level object describes interrupt controllers which are used to multiplex multiple interrupt sources in firmware into the same hardware interrupt request. Each key is an interrupt id and each entry carries an \c INTC controller with its configuration and optionally nested \c subhandler entries:
+The \c interruptHandler top-level object describes interrupt controllers which are used to multiplex multiple interrupt sources in firmware into the same hardware interrupt request. Each key is an interrupt id and each entry carries a controller with its configuration and optionally nested \c subhandler entries. The content of the controller entry is backend-specific and extensible: the backend defines the controller type (e.g. \c INTC) and the data structure it carries, and the parser passes the entry on to the metadata verbatim without interpreting it:
 \verbatim
 "interruptHandler": {
   "3": {
@@ -277,6 +277,8 @@ The \c interruptHandler top-level object describes interrupt controllers which a
   }
 }
 \endverbatim
+
+The JSON schema distributed with this project (\c schemas/jmap.schema.json) is advisory only and meant for interactive validation in editors; it is not enforced by the parser.
 
 Registers can be triggered by an interrupt. The \c "triggeredByInterrupt" field contains the full interrupt id, which is an array of all ids and sub-ids as described in the \c interruptHandler object. Such registers are always read-only, hence the \c "triggeredByInterrupt" field is mutually exclusive with the \c "access" field.
 
