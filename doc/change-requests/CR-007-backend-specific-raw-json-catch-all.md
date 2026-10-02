@@ -6,7 +6,7 @@ subclasses of `NumericAddressedBackend`. The generic parser validates only the
 shallow envelope; the content is interpreted by the specific backend (first
 consumer: the XdmaBackend ring-buffer feature, CR-008).
 
-Status: TESTS PASSED (from IMPLEMENTATION REVIEWED)
+Status: READY TO IMPLEMENT (from IMPLEMENTATION REVIEWED)
 
 ## Requirements
 
@@ -149,4 +149,7 @@ temporary file which is parsed in the test and deleted afterwards.
 - Catalogue test: cloning a catalogue preserves the channel entries (via
 `clone()).`
 
+## Deferred issue
 
+- 22 obsolete, unreferenced jmap fixture files were committed in fixup fa98baf9 but are not part of CR-007: tests/mapFormatVersionLeadingZeros.jmap, tests/mapFormatVersionLeadingZerosMajor.jmap, tests/mapFormatVersionLeadingZerosMinor.jmap, tests/mapFormatVersionMajorNoDot.jmap, tests/mapFormatVersionMismatchedMajor.jmap, tests/mapFormatVersionMismatchedMinor.jmap, tests/mapFormatVersionMissing.jmap, tests/mapFormatVersionMissingMajor.jmap, tests/mapFormatVersionMissingMinor.jmap, tests/mapFormatVersionNonDecimal.jmap, tests/mapFormatVersionOld.jmap, tests/mapFormatVersionOversizedMajor.jmap, tests/mapFormatVersionOversizedMinor.jmap, tests/mapFormatVersionSingle.jmap, tests/mapFormatVersionSupported.jmap, tests/mapFormatVersionWrongType.jmap, tests/selectedByAccess_33298.jmap, tests/selectedByInheritedAccess_33298.jmap, tests/selectedByMissingRegister.jmap, tests/selectedByMissingValue.jmap, tests/selectedBySelectorItselfGated_33298.jmap, tests/selectedBySelectorNotFound_33298.jmap. The CR test plan states 'no additional jmap files are added', and the test helper comments say these fixtures were replaced by the fault-injection helpers (parseWithMapFormatVersion / parseInjectedSelectedByFault / parseWithDmaChannels), which only generate temporary files and never read these static fixtures. Remove the dead files.
+- Minor nit (not blocking): TemporaryJmapFileGuard in tests/executables_src/testJsonMapFileParser.cpp uses std::remove, which is only available through a transitive <cstdio> include from <fstream>; an explicit include would be more robust.
