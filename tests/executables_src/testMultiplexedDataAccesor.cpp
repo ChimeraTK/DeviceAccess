@@ -510,11 +510,12 @@ BOOST_AUTO_TEST_CASE(testSelectedByMuxedChannelSlices) {
 
 /**********************************************************************************************************************/
 
-// PD3: per-channel gate on a full 2D read — the active channel set of a muxed register is visible in a single
-// read via getDataValidityOfChannels(): the selected channel is ok while the unselected partner of the same
-// read is faulty (plan: "the selected channels of the same read remain valid"). Uses MQ.FD (2D DMA, Ch0 sel 0,
-// Ch1 sel 1, uniform 16-bit channels) so the whole register reads cleanly as int16_t.
-BOOST_AUTO_TEST_CASE(testSelectedByMuxedPerChannelValidity) {
+// The full-2D read of a muxed register does NOT apply per-channel 'selectedBy' gating: that gating belongs to the
+// named channel-slice accessors, which are individually wrapped in a SelectedByDecorator. Since the framework has
+// no per-channel DataValidity, a single read of the whole register reports its accessor-global validity (ok) for
+// every channel; the per-channel gate is only visible on the slice accessors (see testSelectedByMuxedChannelSlices).
+// Uses MQ.FD (2D DMA, Ch0 sel 0, Ch1 sel 1, uniform 16-bit channels) so the whole register reads cleanly as int16_t.
+BOOST_AUTO_TEST_CASE(testSelectedByMuxedFullReadNoPerChannelGate) {
   Device device;
   device.open("(dummy?map=muxedPolled.jmap)");
 
@@ -522,18 +523,15 @@ BOOST_AUTO_TEST_CASE(testSelectedByMuxedPerChannelValidity) {
   auto fd = device.getBackend()->getRegisterAccessor<int16_t>("/MQ/FD", 0, 0, {});
   BOOST_REQUIRE(fd->getNumberOfChannels() == 2);
 
-  // Select Ch0 (MUX == 0): Ch0 valid, Ch1 faulty in the same read.
+  // Regardless of the selector value, the full-2D read carries no per-channel gating: it reports its
+  // accessor-global validity (ok), since per-channel 'selectedBy' gating only lives on the slice accessors.
   mux[0] = 0;
   fd->read();
-  BOOST_REQUIRE(fd->getDataValidityOfChannels().size() == 2);
-  BOOST_CHECK(fd->getDataValidityOfChannels()[0] == ChimeraTK::DataValidity::ok);
-  BOOST_CHECK(fd->getDataValidityOfChannels()[1] == ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(fd->dataValidity() == ChimeraTK::DataValidity::ok);
 
-  // Select Ch1 (MUX == 1): Ch1 valid, Ch0 faulty.
   mux[0] = 1;
   fd->read();
-  BOOST_CHECK(fd->getDataValidityOfChannels()[0] == ChimeraTK::DataValidity::faulty);
-  BOOST_CHECK(fd->getDataValidityOfChannels()[1] == ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(fd->dataValidity() == ChimeraTK::DataValidity::ok);
 
   device.close();
 }

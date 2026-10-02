@@ -6,7 +6,6 @@
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "RawConverter.h"
-#include "SelectorGate.h"
 
 #include <ChimeraTK/cppext/finally.hpp>
 
@@ -24,8 +23,7 @@ namespace ChimeraTK {
   class NumericAddressedBackendRegisterAccessor : public NDRegisterAccessor<UserType> {
    public:
     NumericAddressedBackendRegisterAccessor(const boost::shared_ptr<DeviceBackend>& dev,
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
-        SelectorGate selectorGate = SelectorGate());
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     void doReadTransferSynchronously() override;
 
@@ -84,9 +82,6 @@ namespace ChimeraTK {
 
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
-
-    /** Optional runtime gate for registers declared 'selectedBy'. */
-    SelectorGate _selectorGate;
 
     /** the backend to use for the actual hardware access */
     boost::shared_ptr<NumericAddressedBackend> _dev;

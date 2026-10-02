@@ -7,6 +7,7 @@
 #include "Exception.h"
 #include "TransferElement.h"
 #include "TransferElementAbstractor.h"
+#include "TransferElementGateHandler.h"
 
 #include <iostream>
 
@@ -66,10 +67,40 @@ namespace ChimeraTK {
       }
     }
 
+    // ---- 'selectedBy' gate handling ----
+    // Collect the gates exposed by the high-level elements. Each gate evaluates (and reads) its own
+    // selector via isGateOpen(); the data elements of closed gates are skipped in the data pass below.
+    std::vector<TransferElementGateHandler*> gateHandlers;
+    for(const auto& elem : _highLevelElements) {
+      if(auto* gate = dynamic_cast<TransferElementGateHandler*>(elem.get())) {
+        gateHandlers.push_back(gate);
+      }
+    }
+
+    // Low-level data elements whose transfer is suppressed because their gate is currently closed.
+    std::set<boost::shared_ptr<TransferElement>> gatedClosedElements;
+
+    if(firstDetectedRuntimeError == nullptr) {
+      // Evaluate each gate (each reads its own selector synchronously, so this happens before any data
+      // element is transferred); collect the data elements of closed gates for skipping.
+      for(auto* gate : gateHandlers) {
+        if(!gate->isGateOpen()) {
+          for(auto& g : gate->getGatedElements()) {
+            gatedClosedElements.insert(g);
+          }
+        }
+      }
+    }
+
+
     if(firstDetectedRuntimeError == nullptr) {
       // only execute the transfers if there has been no exception yet
       for(const auto& it : _lowLevelElementsAndExceptionFlags) {
         const auto& elem = it.first;
+        // Skip the data elements of closed gates (not to be transferred at all).
+        if(gatedClosedElements.count(elem) != 0) {
+          continue;
+        }
         elem->handleTransferException([&] { elem->readTransfer(); });
         if((elem->_activeException != nullptr) && (firstDetectedRuntimeError == nullptr)) {
           firstDetectedRuntimeError = elem->_activeException;

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "../ScalarRegisterAccessor.h"
-#include "../SelectorGate.h"
 #include "../TransferGroup.h"
 #include "AsyncAccessorManager.h"
 #include "DataConsistencyRealm.h"
@@ -13,6 +12,24 @@
 #include <memory>
 
 namespace ChimeraTK::async {
+
+  /********************************************************************************************************************/
+
+  /**
+   * Result of buildSelectorGate: the shared selector accessor (already registered in the distributor's
+   * TransferGroup and deduplicated across subscriptions) plus the selector value that selects this
+   * register. `isSet() == false` means the register has no selection gate.
+   */
+  struct SelectorGateInfo {
+    boost::shared_ptr<ScalarRegisterAccessor<int64_t>> accessor;
+    int64_t expectedValue{0};
+
+    bool isSet() const { return accessor.get() != nullptr; }
+    bool selected() const { return isSet() && static_cast<int64_t>(*accessor) == expectedValue; }
+  };
+
+  /********************************************************************************************************************/
+
   /**
    *  The TriggeredPollDistributor has std::nullptr_t source data type and is polling the data for the AsyncVariables
    *  via synchronous accessors in TransferGroup.
@@ -30,11 +47,13 @@ namespace ChimeraTK::async {
     std::unique_ptr<AsyncVariable> createAsyncVariable(AccessorInstanceDescriptor const& descriptor);
 
     /**
-     * Build the wake-level gate for a subscription to a register declared 'selectedBy', or an empty
-     * gate if the register is not conditionally active. Defined in the .cc so that
-     * NumericAddressedBackend is a complete type (avoids a header include cycle).
+     * Build the wake/version-level gate for a subscription to a register declared 'selectedBy', or an
+     * unset gate (SelectorGateInfo::isSet()==false) if the register is not conditionally active. Shares
+     * the selector accessor so that all subscriptions gating on the same selector register share one
+     * read per poll (deduplicated). Defined in the .cc so that NumericAddressedBackend is a complete
+     * type (avoids a header include cycle).
      */
-    SelectorGate buildSelectorGate(const AccessorInstanceDescriptor& descriptor);
+    SelectorGateInfo buildSelectorGate(const AccessorInstanceDescriptor& descriptor);
 
     VersionNumber getVersion() const { return _version; }
 
@@ -64,7 +83,7 @@ namespace ChimeraTK::async {
 
     /// The constructor takes an already created synchronous accessor and a reference to the owing distributor
     explicit PolledAsyncVariable(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_,
-        TriggeredPollDistributor& owner, SelectorGate selectorGate = SelectorGate());
+        TriggeredPollDistributor& owner, SelectorGateInfo selectorGate = {});
 
     unsigned int getNumberOfChannels() override { return _syncAccessor->getNumberOfChannels(); }
     unsigned int getNumberOfSamples() override { return _syncAccessor->getNumberOfSamples(); }
@@ -76,10 +95,10 @@ namespace ChimeraTK::async {
 
     TriggeredPollDistributor& _owner;
 
-    /// Optional wake-level gate: while the selection is not met the subscription's delivery is suppressed entirely
-    /// (after the initial value has been delivered), so wait_for_new_data consumers do not wake on the inactive
-    /// alternative.
-    SelectorGate _selectorGate;
+    /// Optional wake/version-level gate: while the selection is not met the subscription's delivery is
+    /// suppressed entirely (after the initial value has been delivered), so wait_for_new_data consumers
+    /// do not wake on the inactive alternative.
+    SelectorGateInfo _selectorGate;
 
     /// Whether the initial value has been delivered yet. The initial delivery always happens (a consumer activated
     /// while the selection is not met still receives its initial faulty value); only subsequent distributions are
@@ -107,7 +126,7 @@ namespace ChimeraTK::async {
     // Wake-level gate for subscriptions to a register declared 'selectedBy' (see buildSelectorGate).
     // The synchronous accessor already gates validity in doPostRead (validity level); this gate
     // additionally suppresses wake/version advance while unselected.
-    SelectorGate selectorGate = buildSelectorGate(descriptor);
+    SelectorGateInfo selectorGate = buildSelectorGate(descriptor);
 
     // read the initial value before adding it to the transfer group
     if(_asyncDomain->unsafeGetIsActive()) {
@@ -131,10 +150,7 @@ namespace ChimeraTK::async {
     // distributions while the selection is not met are suppressed entirely (return false), so wait_for_new_data
     // consumers do not wake with the inactive alternative and `_lastPublishedVersion` stays untouched. Once
     // selected, deliver with the domain version and the accessor's (already gated) validity.
-    bool unselected = false;
-    if(_selectorGate) {
-      unselected = !_selectorGate.check();
-    }
+    bool unselected = _selectorGate.isSet() && !_selectorGate.selected();
     if(unselected && _initialDelivered) {
       return false;
     }
@@ -149,7 +165,7 @@ namespace ChimeraTK::async {
   /********************************************************************************************************************/
   template<typename UserType>
   PolledAsyncVariable<UserType>::PolledAsyncVariable(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_,
-      TriggeredPollDistributor& owner, SelectorGate selectorGate)
+      TriggeredPollDistributor& owner, SelectorGateInfo selectorGate)
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
     _syncAccessor(syncAccessor_), _owner(owner), _selectorGate(std::move(selectorGate)) {}
 

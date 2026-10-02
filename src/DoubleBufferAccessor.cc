@@ -5,14 +5,11 @@
 namespace ChimeraTK {
 
   template<typename UserType>
-  DoubleBufferAccessor<UserType>::DoubleBufferAccessor(
-      NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
+  DoubleBufferAccessor<UserType>::DoubleBufferAccessor(NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
-      SelectorGate selectorGate)
-  : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(std::move(doubleBufferConfig)),
-    _backend(boost::dynamic_pointer_cast<NumericAddressedBackend>(backend)), _mutex(std::move(mutex)),
-    _transferLock(*_mutex, std::defer_lock), _selectorGate(std::move(selectorGate)) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
+  : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(doubleBufferConfig), _backend(backend),
+    _mutex(std::move(mutex)), _transferLock(*_mutex, std::defer_lock) {
     _enableDoubleBufferReg =
         backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
@@ -95,14 +92,8 @@ namespace ChimeraTK {
       this->_dataValidity = _buffer1->dataValidity();
     }
 
-    // Gate the read: if this double-buffered register is conditionally active ('selectedBy'), the
-    // buffer just read is only the active one while the selector register matches. If it does not
-    // match, the data is marked faulty and the read is treated as not-new (the payload is
-    // unspecified, consumers must not wake/swap on an inactive alternative).
-    if(_selectorGate && !_selectorGate.check()) {
-      this->_dataValidity = DataValidity::faulty;
-      hasNewData = false;
-    }
+    // Runtime 'selectedBy' gating (faulty + not-new while unselected) is applied by the wrapping
+    // SelectedByDecorator, which forwards with updateDataBuffer=false when the selection is not met.
 
     // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
     // check.

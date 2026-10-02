@@ -89,33 +89,37 @@ Aspect: runtime enforcement of `selectedBy` on registers of the `NumericAddresse
 
 Affected components:
 
-- New `include/SelectorGate.h` / `src/SelectorGate.cc`: reusable selector read/compare
-  plus the `DataValidity` policy.
-- `include/NumericAddressedBackendRegisterAccessor.h` / `src/...cc`: gate scalar/1D
-  reads.
-- `include/NumericAddressedBackendMuxedRegisterAccessor.h` / `src/...cc`: per-channel
-  layout gate + per-channel `DataValidity` for 2D reads.
-- `include/DoubleBufferAccessor.h` / `src/DoubleBufferAccessor.cc`: gate double-buffer
-  reads on the active selection.
+- New `include/SelectedByDecorator.h` / `src/SelectedByDecorator.cc`: a
+  `NDRegisterAccessorDecorator<UserType>` template (the GoF decorator) that wraps the
+  gated data accessor and applies the `selectedBy` `DataValidity` policy in
+  `doPostRead()` (plus a `check()` for the async wake/version level).
+  Replaces the former concrete `SelectorGate` helper.
+- `include/NumericAddressedBackendRegisterAccessor.h` / `src/...cc`: scalar/1D reads are
+  wrapped in a `SelectedByDecorator` when the register is declared `selectedBy`.
+- `include/NumericAddressedBackendMuxedRegisterAccessor.h` / `src/...cc`: the full-2D
+  read does **not** apply per-channel gating — per-channel gating belongs to the named
+  channel-slice accessors, which carry their own decorator. The demux simply reports its
+  accessor-global validity.
+- `include/DoubleBufferAccessor.h` / `src/DoubleBufferAccessor.cc`: double-buffer reads
+  are wrapped in a `SelectedByDecorator` (the gate also treats the read as not-new when
+  unselected).
 - `include/async/TriggeredPollDistributor.h` / `src/async/TriggeredPollDistributor.cc`:
-  per-subscription wake/version gating for the interrupt path.
-- `include/BackendRegisterCatalogue.h` (class `BackendRegisterCatalogueBase`),
-  `include/NumericAddressedRegisterCatalogue.h`
-  / `src/NumericAddressedRegisterCatalogue.cc`: per-register `selectedBy` lookup
-  (`getSelectedBy`).
-- `src/NumericAddressedBackend.cc` (function `getSyncRegisterAccessor`): thread the gate
-  into the accessor constructors.
+  per-subscription wake/version gating for the interrupt path (shares the selector
+  accessor across subscriptions reading the same selector register).
 - `src/JsonMapFileParser.cc`: enforce the read-only constraint.
 - `doc/jmapFormat.dox`: document runtime gating + the read-only restriction.
 - `tests/...`: new tests and fixtures (see Test plan), plus an audit of existing jmap
   fixtures (see below).
 
-Selector gate (`SelectorGate`):
+Selector gate (`SelectedByDecorator<UserType>`):
 
-- A small class holding a `ScalarRegisterAccessor<int64_t>` for the selector register,
-  the expected value, and the validity policy:
-  `bool check()` (read selector, compare), `void replace(backend, SelectedBy,
-  forceFirstFaulty)`, `DataValidity dataValidity()` (ok / faulty per the policy).
+- A `NDRegisterAccessorDecorator<UserType>` template (the GoF decorator) wrapping the
+  gated data accessor. It holds a `ScalarRegisterAccessor<int64_t>` for the selector
+  register (owned, self-read on check/doPostRead, or shared with an external
+  TransferGroup), the expected value, and the validity policy.
+- `doPostRead()` applies the polled semantics (mark `DataValidity::faulty` when
+  unselected; also treat the read as not-new for the double-buffer case); `check()`
+  evaluates the selector state for the async wake/version level.
 - Reuses the existing `ScalarRegisterAccessor` /
   `getSyncRegisterAccessor<int64_t>` so no new I/O primitive is needed.
 
@@ -128,27 +132,27 @@ Scalar / 1D accessor (`NumericAddressedBackendRegisterAccessor`):
 
 2D muxed accessor (`NumericAddressedBackendMuxedRegisterAccessor`):
 
-- `doPostRead()` currently demultiplexes every channel unconditionally; add a
-  **per-channel gate**: if a channel's selector matches, convert/demux its data normally
-  and keep `DataValidity::ok`; if it does not match, mark that channel
-  `DataValidity::faulty` and do not overwrite it with the inactive layout (the channel's
-  payload is unspecified when inactive, per *Payload when unselected* above).
-- Per-channel validity is propagated through `buffer_2D` and the accessor's per-channel
-  validity, so consumers see exactly which channels are active.
+- `doPostRead()` demultiplexes every channel unconditionally and reports its
+  accessor-global validity (`DataValidity::ok`). Per-channel `selectedBy` gating is **not**
+  applied at the full-register level: it belongs to the named channel-slice accessors,
+  which are individually wrapped in a `SelectedByDecorator` (per *Payload when
+  unselected* above). The slice accessor's accessor-global validity then equals that
+  channel's own selection state.
 
 Double-buffered accessor (`DoubleBufferAccessor`):
 
 - Double-buffered data registers are the classic interrupt-triggered muxed case (one
-  firmware data block, switchable content selected by a control register). Add an
-  optional `SelectorGate`; the gate decides whether the buffer just read is the active
-  one, and if not the read is treated as not-new (see the async integration below).
+  firmware data block, switchable content selected by a control register). The
+  `DoubleBufferAccessor` is wrapped in a `SelectedByDecorator`; the decorator decides
+  whether the buffer just read is the active one, and if not the read is treated as
+  not-new (see the async integration below).
 
 Async interrupt integration (per subscription — main focus):
 
 - The gate is evaluated **per `AsyncVariable`**, which is the granularity at which the
-  interrupt data is delivered: `createAsyncVariable()` (`TriggeredPollDistributor.h:71`)
-  builds a per-variable `SelectorGate` from the catalogue lookup `getSelectedBy(...)`
-  (§Catalogue below) and adds the selector register accessor to `_transferGroup`.
+  interrupt data is delivered: `createAsyncVariable()` (`TriggeredPollDistributor.h`)
+  builds a per-variable `SelectedByDecorator` from the catalogue lookup `getSelectedBy(...)`
+  (§Catalogue below) and adds the shared selector register accessor to `_transferGroup`.
   TransferGroup deduplicates by TransferElement, so one selector register is read at most
   once per poll, shared by all variables choosing the same selector.
 - Two levels:
@@ -171,8 +175,10 @@ Async interrupt integration (per subscription — main focus):
   keeps returning `true`, and its domain-global `_forceFaulty`/version machinery stays
   reserved for genuine DataConsistencyRealm staleness only.
 - Note: a **full-register** subscription to a muxed 2D register (`DAQ.FD`) has no
-  register-level `selectedBy`, hence no wake suppression; per-channel validity governs
-  (§2D accessor above). This is exactly the "different channel sets" use case.
+  register-level `selectedBy`, hence no wake suppression and no per-channel gating at the
+  full-register level; the per-channel validity only appears on the named channel-slice
+  accessors (§2D accessor above). This addresses the "different channel sets" use case at
+  the slice granularity.
 - Selector-chain recursion (a selector register that is itself conditionally selected) is
   out of scope (see Alternatives).
 
@@ -203,14 +209,15 @@ Catalogue lookup (`getSelectedBy`):
 
 Backend accessor construction (`getSyncRegisterAccessor`):
 
-- A single place to route based on `selectedBy` (`src/NumericAddressedBackend.cc:155-242`):
-  - scalar/1D with a `selectedBy` → `NumericAddressedBackendRegisterAccessor` with the
-    gate supplied;
-  - 2D / default-selected → `NumericAddressedBackendMuxedRegisterAccessor` (per-channel
-    gates);
-  - double-buffer → `DoubleBufferAccessor` with the gate.
-- No structural change; just thread an optional `SelectedBy`/`SelectorGate` through the
-  existing constructors.
+- A single place to route based on `selectedBy` (`src/NumericAddressedBackend.cc`):
+  - scalar/1D with a `selectedBy` → a `NumericAddressedBackendRegisterAccessor` wrapped in
+    a `SelectedByDecorator` (self-owned selector read);
+  - 2D default-selected → `NumericAddressedBackendMuxedRegisterAccessor` (no per-channel
+    gate; per-channel gating lives on the slice accessors);
+  - double-buffer → a `DoubleBufferAccessor` wrapped in a `SelectedByDecorator`.
+- No structural change to the underlying accessors; the decorator is layered on top.
+
+
 
 Parser read-only enforcement (`JsonMapFileParser`):
 

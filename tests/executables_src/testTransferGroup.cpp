@@ -11,6 +11,8 @@ using namespace boost::unit_test_framework;
 #include "ExceptionDummyBackend.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "NumericAddressedLowLevelTransferElement.h"
+#include "ScalarRegisterAccessor.h"
+#include "SelectedByDecorator.h"
 #include "TransferElementTestAccessor.h"
 #include "TransferGroup.h"
 
@@ -1049,6 +1051,62 @@ BOOST_AUTO_TEST_CASE(testTemporaryAbstractorWorks) {
   group.read();
   BOOST_CHECK_EQUAL(a, 13);
   BOOST_CHECK_EQUAL(b->accessChannel(0)[0], 13);
+}
+
+/**********************************************************************************************************************/
+/**
+ * Selector that mirrors the behaviour of a real selectedBy selector register: its value is populated on every
+ * read, both in the transfer step and in postRead (the plain TransferElementTestAccessor populates its buffer
+ * only in postRead, so a full read() would clobber the value the selectedBy gate needs to see).
+ */
+struct SelectorTestAccessor : public TransferElementTestAccessor<int64_t> {
+  SelectorTestAccessor() : TransferElementTestAccessor<int64_t>({}) {}
+  void doReadTransferSynchronously() override {
+    TransferElementTestAccessor<int64_t>::doReadTransferSynchronously();
+    this->buffer_2D[0][0] = _value;
+  }
+  void doPostRead(TransferType type, bool hasNewData) override {
+    TransferElementTestAccessor<int64_t>::doPostRead(type, hasNewData);
+    this->buffer_2D[0][0] = _value;
+  }
+  int64_t _value{0};
+};
+
+/**
+ * Regression test: a SelectedByDecorator used inside a TransferGroup must suppress the actual bus/register
+ * transfer of the gated data element while its selector does not match (gate closed), instead of merely
+ * reporting the read as faulty. This is the behaviour required by the asynchronous 'selectedByInterrupt'
+ * path, where a TransferGroup honouring the gate must not read the unselected register.
+ */
+BOOST_AUTO_TEST_CASE(testSelectedByGateSkipsTransfer) {
+  // Data accessor (the gated register) and a manually-fed selector accessor (gate). The decorator owns the
+  // selector accessor and reads it itself (single self-owned mode), mimicking the production decorator.
+  auto dataImpl = boost::make_shared<TransferElementTestAccessor<int32_t>>(AccessModeFlags{});
+  auto selectorImpl = boost::make_shared<SelectorTestAccessor>();
+
+  auto selector = boost::make_shared<ScalarRegisterAccessor<int64_t>>(selectorImpl);
+  auto decorator = boost::make_shared<SelectedByDecorator<int32_t>>(dataImpl, selector, 1);
+
+  TransferGroup group;
+  group.addAccessor(decorator);
+
+  // --- gate open: selector == expected value (1) -> data register is transferred ---
+  selectorImpl->_value = 1;
+  group.read();
+  BOOST_CHECK_EQUAL(dataImpl->_readTransfer_counter, 1u);
+  BOOST_CHECK_EQUAL(decorator->dataValidity(), ChimeraTK::DataValidity::ok);
+
+  // --- gate closed: selector != expected value -> data transfer is skipped, not just marked faulty ---
+  selectorImpl->_value = 0;
+  group.read();
+  BOOST_CHECK_EQUAL(dataImpl->_readTransfer_counter, 1u); // NOT incremented -> actual transfer suppressed
+  BOOST_CHECK_EQUAL(decorator->dataValidity(), ChimeraTK::DataValidity::faulty);
+
+  // --- gate open again -> transfer resumes ---
+  selectorImpl->_value = 1;
+  group.read();
+  BOOST_CHECK_EQUAL(dataImpl->_readTransfer_counter, 2u);
+  BOOST_CHECK_EQUAL(decorator->dataValidity(), ChimeraTK::DataValidity::ok);
 }
 
 /**********************************************************************************************************************/

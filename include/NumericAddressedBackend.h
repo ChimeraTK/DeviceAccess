@@ -14,9 +14,13 @@
 
 namespace ChimeraTK {
 
+  namespace async {
+    class TriggeredPollDistributor;
+  }
+
   class NumericAddressedLowLevelTransferElement;
-  class TriggeredPollDistributor;
-  class SelectorGate;
+  template<typename UserType>
+  class SelectedByDecorator;
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
@@ -168,8 +172,9 @@ namespace ChimeraTK {
     std::mutex _unalignedAccess;
 
     friend NumericAddressedLowLevelTransferElement;
-    friend TriggeredPollDistributor;
-    friend SelectorGate;
+    friend async::TriggeredPollDistributor;
+    template<typename UserType>
+    friend class SelectedByDecorator;
 
     template<class UserType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;

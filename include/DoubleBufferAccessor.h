@@ -6,7 +6,6 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "NumericAddressedBackend.h"
 #include "RegisterInfo.h"
-#include "SelectorGate.h"
 #include "TransferElement.h"
 
 #include <string>
@@ -18,8 +17,7 @@ namespace ChimeraTK {
    public:
     DoubleBufferAccessor(NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
         const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
-        SelectorGate selectorGate = SelectorGate());
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     void doPreRead(TransferType type) override;
 
@@ -60,9 +58,6 @@ namespace ChimeraTK {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _enableDoubleBufferReg;
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<uint32_t>> _currentBufferNumberReg;
     uint32_t _currentBuffer{0};
-
-    /** Optional runtime gate for double-buffered registers declared 'selectedBy'. */
-    SelectorGate _selectorGate;
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(DoubleBufferAccessor);
