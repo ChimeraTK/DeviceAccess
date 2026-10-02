@@ -1418,8 +1418,8 @@ BOOST_AUTO_TEST_CASE(TestDmaChannelsClone) {
   auto cloned = regs.clone();
   auto* cloneCatalogue = dynamic_cast<ChimeraTK::NumericAddressedRegisterCatalogue*>(cloned.get());
   BOOST_REQUIRE(cloneCatalogue != nullptr);
-  // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage) -- false positive: BOOST_REQUIRE aborts when cloneCatalogue is
-  // null, which the static analyser does not model.
+  // The static analyser does not model that BOOST_REQUIRE aborts when cloneCatalogue is null.
+  // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
   BOOST_TEST(cloneCatalogue->hasDmaChannel(0));
   BOOST_TEST(cloneCatalogue->hasDmaChannel(1));
   BOOST_TEST(cloneCatalogue->getDmaChannel(0).at("type") == "Xdma");
