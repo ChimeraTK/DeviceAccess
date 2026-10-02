@@ -25,6 +25,21 @@ using namespace boost::unit_test_framework;
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 
+// RAII guard that removes a temporary .jmap file on scope exit, including when the parse (which may throw a
+// ChimeraTK::logic_error for the fault tests) unwinds the stack. The parseWithDmaChannels helper below writes a
+// temporary map file that must not outlive the test, so the guard is declared right after the file is written.
+class TemporaryJmapFileGuard {
+ public:
+  explicit TemporaryJmapFileGuard(const std::string& file) : _file(file) {}
+  ~TemporaryJmapFileGuard() { std::remove(_file.c_str()); }
+
+ private:
+  std::string _file;
+};
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
 // Helper used by the selectedBy fault tests below: load simpleJsonFile.jmap as the base map, overwrite the
 // selectedBy of the existing COLLISION/FD/Sel0 channel with the supplied (possibly malformed) one, write the result
 // to <outFile>, then parse it. This replaces the standalone selectedBy*.jmap fixtures: the fault is injected into an
@@ -76,6 +91,7 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseWithDmaChannels(
   map["dmaChannels"] = dmaChannels;
 
   std::ofstream(outFile) << map.dump(2);
+  TemporaryJmapFileGuard guard(outFile);
   return ChimeraTK::MapFileParser::parse(outFile).first;
 }
 
