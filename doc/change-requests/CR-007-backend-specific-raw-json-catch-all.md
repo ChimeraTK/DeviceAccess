@@ -6,7 +6,7 @@ subclasses of `NumericAddressedBackend`. The generic parser validates only the
 shallow envelope; the content is interpreted by the specific backend (first
 consumer: the XdmaBackend ring-buffer feature, CR-008).
 
-Status: PLANNED (from IMPLEMENTATION REVIEWED)
+Status: READY TO IMPLEMENT (from IMPLEMENTATION REVIEWED)
 
 ## Requirements
 
@@ -48,8 +48,8 @@ backend-specific subclasses already hold as the protected member
 - Two public query methods on the catalogue: `hasDmaChannel(uint64_t index)
 const` (a `std::map` lookup, no allocation, no throwing) and
 `getDmaChannel(uint64_t index) const` (returning a const reference to the raw
-`nlohmann::json` object, throws `ChimeraTK::logic_error` with the message
-`"No DMA channel with index " + std::to_string(index) + " configured."`).
+`nlohmann::json` object, throws `ChimeraTK::logic_error` if the index is not
+configured).
 Note: The catalogue is read-only after construction, so concurrent access is safe.
 - The `type` value determines which backend interprets an entry; a backend
 will throw a `ChimeraTK::logic_error` if it finds a `type` it does not
@@ -92,10 +92,9 @@ entry.
 - Two public query methods are added to `NumericAddressedRegisterCatalogue`:
 `bool hasDmaChannel(uint64_t index) const` (non-throwing, O(log n) lookup) and
 `const nlohmann::json& getDmaChannel(uint64_t index) const` (returns a const
-reference to the raw json object, throws `ChimeraTK::logic_error` with the
-message for the absent index: `"No DMA channel with index " +
-std::to_string(index) + " configured."`). These allow
-backend-specific subclasses to access the preserved channel entries.
+reference to the raw json object, throws `ChimeraTK::logic_error` if the index
+is not configured). These allow backend-specific subclasses to access the
+preserved channel entries.
 - `clone()`/`fillFromThis()` (`src/NumericAddressedRegisterCatalogue.cc:320`)
 copy the new member like the existing `_listOfInterrupts`,
 `_canonicalInterrupts` and `_dataConsistencyRealms`.
@@ -135,11 +134,10 @@ getter returns the entry.
 nested objects and arrays) are preserved verbatim in the raw json returned by
 the by-index getter.
 - Parser test: the by-index getter on an absent index throws a
-`ChimeraTK::logic_error` carrying the message `"No DMA channel with index " +
-std::to_string(index) + " configured."`.
+`ChimeraTK::logic_error`.
 - Parser test: each malformed envelope (`dmaChannels` not an object, non-integer
 key, non-object entry, missing `type`, non-string `type`) throws
-`ChimeraTK::logic_error` with the map-file prefix. The key-validation cases
+`ChimeraTK::logic_error`. The key-validation cases
 cover negative keys (e.g. "-1"), keys with a leading sign (e.g. "+1"),
 non-numeric keys (e.g. "hello"), an empty key (e.g. "") as a non-numeric
 key, values exceeding `uint64_t` (e.g. "18446744073709551616"), and
@@ -153,6 +151,4 @@ temporary file which is parsed in the test and deleted afterwards.
 
 ## Deferred issue
 
-- Coverage gap: TestDmaChannelsMalformed (tests/executables_src/testJsonMapFileParser.cpp:1357) never asserts the 'Error parsing JSON map file ...' prefix that the Test plan requires ('throws ChimeraTK::logic_error with the map-file prefix') and that the test's own comment (line 1356) claims is verified; only the exception type is checked.
-- Coding-rule violation: TestDmaChannelsGetterThrows (tests/executables_src/testJsonMapFileParser.cpp:1349) asserts the exact content of the exception what()-string ('No DMA channel with index 42 configured.'), violating the cpp-testing rule 'Never test the content of exception what-strings'; this was prescribed by the change request Requirements/Test plan, so it is a plan-level conflict between the plan and the coding rules.
 - Minor: parseWithDmaChannels (tests/executables_src/testJsonMapFileParser.cpp:71) writes a temporary .jmap file that is never deleted, contrary to the Test plan statement that the file 'is parsed in the test and deleted afterwards' (cf. the std::remove pattern at lines 917/940).
