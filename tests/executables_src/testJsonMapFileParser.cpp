@@ -19,6 +19,7 @@ using namespace ChimeraTK;
 
 #include <fstream>
 #include <string>
+#include <utility>
 #include <vector>
 using namespace boost::unit_test_framework;
 
@@ -30,7 +31,7 @@ using namespace boost::unit_test_framework;
 // temporary map file that must not outlive the test, so the guard is declared right after the file is written.
 class TemporaryJmapFileGuard {
  public:
-  explicit TemporaryJmapFileGuard(const std::string& file) : _file(file) {}
+  explicit TemporaryJmapFileGuard(std::string file) : _file(std::move(file)) {}
   ~TemporaryJmapFileGuard() { std::remove(_file.c_str()); }
 
  private:
@@ -1417,6 +1418,8 @@ BOOST_AUTO_TEST_CASE(TestDmaChannelsClone) {
   auto cloned = regs.clone();
   auto* cloneCatalogue = dynamic_cast<ChimeraTK::NumericAddressedRegisterCatalogue*>(cloned.get());
   BOOST_REQUIRE(cloneCatalogue != nullptr);
+  // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage) -- false positive: BOOST_REQUIRE aborts when cloneCatalogue is
+  // null, which the static analyser does not model.
   BOOST_TEST(cloneCatalogue->hasDmaChannel(0));
   BOOST_TEST(cloneCatalogue->hasDmaChannel(1));
   BOOST_TEST(cloneCatalogue->getDmaChannel(0).at("type") == "Xdma");
